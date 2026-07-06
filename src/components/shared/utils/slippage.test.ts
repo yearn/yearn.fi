@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import {
-  calculateRemainingEnsoSlippagePercentage,
   clampZapSlippage,
   getZapSlippageSaveState,
   requiresZapSlippageRiskAcknowledgement,
@@ -42,23 +41,5 @@ describe('slippage utils', () => {
   it('converts percentages to basis points without rounding up', () => {
     expect(toBasisPoints(0.5)).toBe(50)
     expect(toBasisPoints(1.239)).toBe(123)
-  })
-
-  it('allocates only the remaining tolerance to Enso execution slippage', () => {
-    expect(
-      calculateRemainingEnsoSlippagePercentage({
-        userTolerancePercentage: 1,
-        quoteImpactPercentage: 0.5
-      })
-    ).toBe(0.5)
-  })
-
-  it('returns zero remaining Enso slippage when the quote already exceeds tolerance', () => {
-    expect(
-      calculateRemainingEnsoSlippagePercentage({
-        userTolerancePercentage: 1,
-        quoteImpactPercentage: 1.2
-      })
-    ).toBe(0)
   })
 })

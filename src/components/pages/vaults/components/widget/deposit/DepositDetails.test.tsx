@@ -14,6 +14,7 @@ describe('DepositDetails', () => {
         inputTokenUsdPrice={1}
         routeType="ENSO"
         isSwap
+        usesMinExpectedOut
         isLoadingQuote={false}
         isQuoteStale={false}
         expectedOutInAsset={10n * ONE_ETHER}
@@ -56,6 +57,7 @@ describe('DepositDetails', () => {
         inputTokenUsdPrice={1}
         routeType="ENSO"
         isSwap={false}
+        usesMinExpectedOut
         isLoadingQuote={false}
         isQuoteStale={false}
         expectedOutInAsset={10n * ONE_ETHER}
@@ -81,8 +83,9 @@ describe('DepositDetails', () => {
     )
 
     expect(html).toContain('You Will Deposit')
+    expect(html).toContain('You Will Receive at least')
     expect(html).not.toContain('For expected / at least')
-    expect(html).not.toContain('Est. / Worst price impact')
+    expect(html).toContain('Est. / Worst price impact')
   })
 
   it('shows positive slippage for favorable swap quotes', () => {
@@ -94,6 +97,7 @@ describe('DepositDetails', () => {
         inputTokenUsdPrice={1}
         routeType="ENSO"
         isSwap
+        usesMinExpectedOut
         isLoadingQuote={false}
         isQuoteStale={false}
         expectedOutInAsset={10n * ONE_ETHER}

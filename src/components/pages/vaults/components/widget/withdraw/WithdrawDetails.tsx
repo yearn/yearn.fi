@@ -27,7 +27,7 @@ interface WithdrawDetailsProps {
   expectedPriceImpactPercentage: number
   priceImpactPercentage: number
   shouldHighlightPriceImpact: boolean
-  hasSwap: boolean
+  usesMinExpectedOut: boolean
   // Modal trigger
   onShowDetailsModal: () => void
   // Approval info (for zap withdrawals)
@@ -62,7 +62,7 @@ export function WithdrawDetails({
   expectedPriceImpactPercentage,
   priceImpactPercentage,
   shouldHighlightPriceImpact,
-  hasSwap,
+  usesMinExpectedOut,
   onShowDetailsModal,
   allowance,
   allowanceTokenDecimals,
@@ -83,8 +83,8 @@ export function WithdrawDetails({
   const withdrawUsdDisplay = formatCounterValue(formatUnits(withdrawAmountBn, assetDecimals), assetUsdPrice)
   const expectedOutUsdDisplay = formatCounterValue(formatUnits(expectedOut, outputDecimals), outputUsdPrice)
   const shouldShowWithdrawUsdBadge = showSwapRow && assetUsdPrice > 0 && withdrawAmountBn > 0n
-  const shouldShowExpectedOutUsdBadge = hasSwap && outputUsdPrice > 0 && expectedOut > 0n
-  const shouldShowWorstCasePriceImpact = showSwapRow && hasSwap
+  const shouldShowExpectedOutUsdBadge = usesMinExpectedOut && outputUsdPrice > 0 && expectedOut > 0n
+  const shouldShowWorstCasePriceImpact = usesMinExpectedOut
   const shouldUseHighlight = !isQuoteStale && !isLoadingQuote && shouldHighlightPriceImpact
   return (
     <div>
@@ -126,7 +126,7 @@ export function WithdrawDetails({
 
         {/* You will receive */}
         <div className="flex items-center justify-between h-5">
-          <p className="text-sm text-text-secondary">You will receive{hasSwap ? ' at least' : ''}</p>
+          <p className="text-sm text-text-secondary">You will receive{usesMinExpectedOut ? ' at least' : ''}</p>
           <div className="flex items-center gap-1">
             <p className={`text-sm ${shouldUseHighlight ? 'text-red-500' : 'text-text-primary'}`}>
               {isLoadingQuote ? (

@@ -50,19 +50,6 @@ export function fromBasisPoints(value: number): number {
   return Math.max(0, sanitizeNumber(value) / 100)
 }
 
-export function calculateRemainingEnsoSlippagePercentage({
-  userTolerancePercentage,
-  quoteImpactPercentage
-}: {
-  userTolerancePercentage: number
-  quoteImpactPercentage: number
-}): number {
-  const tolerance = clampZapSlippage(userTolerancePercentage)
-  const quoteImpact = Math.min(100, Math.max(0, sanitizeNumber(quoteImpactPercentage)))
-
-  if (tolerance <= 0 || quoteImpact >= tolerance || quoteImpact >= 100) {
-    return 0
-  }
-
-  return fromBasisPoints(toBasisPoints(((tolerance - quoteImpact) / (100 - quoteImpact)) * 100))
+export function optionalBasisPointsToPercentage(value: number | null | undefined): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) ? fromBasisPoints(value) : undefined
 }

@@ -11,6 +11,7 @@ interface DepositDetailsProps {
   // Route info
   routeType: DepositRouteType
   isSwap: boolean
+  usesMinExpectedOut: boolean
   isLoadingQuote: boolean
   isQuoteStale: boolean
   expectedOutInAsset: bigint
@@ -50,6 +51,7 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
   inputTokenDecimals,
   routeType,
   isSwap,
+  usesMinExpectedOut,
   isLoadingQuote,
   isQuoteStale,
   expectedOutInAsset,
@@ -96,7 +98,8 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
   const vaultShareValueDisplay = formatWidgetValue(vaultShareValueInAsset, assetTokenDecimals)
   const vaultShareValueUsd = formatWidgetValue(vaultShareValueUsdRaw)
   const shouldUseHighlight = !isQuoteStale && !isLoadingQuote && shouldHighlightPriceImpact
-  const shouldShowWorstCasePriceImpact = isSwap && !isStake
+  const shouldShowWorstCasePriceImpact = usesMinExpectedOut && !isStake
+  const receiveLabel = usesMinExpectedOut ? 'You Will Receive at least' : 'You Will Receive'
   return (
     <div className="">
       <div className="flex flex-col gap-2">
@@ -143,7 +146,7 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
             onClick={onShowVaultSharesModal}
             className="text-sm text-text-secondary hover:text-text-primary transition-colors yearn--link-dots"
           >
-            You Will Receive
+            {receiveLabel}
           </button>
           <p className="text-sm text-text-primary">
             {isLoadingQuote ? (

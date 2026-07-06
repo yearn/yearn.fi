@@ -54,7 +54,7 @@ export function PriceImpactWarning({
     <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-3 py-2">
       <div className="flex items-center justify-between gap-2">
         <p className="text-sm text-red-500">
-          Total price impact is <span className="font-semibold">{percentage.toFixed(2)}%</span>.
+          Route price impact is <span className="font-semibold">{percentage.toFixed(2)}%</span>.
         </p>
         <Tooltip
           className="h-auto shrink-0 gap-0"
