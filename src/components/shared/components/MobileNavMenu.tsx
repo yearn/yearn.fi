@@ -11,6 +11,7 @@ import { IconDiscord } from '@shared/icons/IconDiscord'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
 import { IconMoon } from '@shared/icons/IconMoon'
 import { IconSettings } from '@shared/icons/IconSettings'
+import { IconStack } from '@shared/icons/IconStack'
 import { IconSun } from '@shared/icons/IconSun'
 import { IconTwitter } from '@shared/icons/IconTwitter'
 import { IconWallet } from '@shared/icons/IconWallet'
@@ -359,6 +360,12 @@ export function MobileNavMenu({
   ]
 
   const resourceCommunityItems: TNavTile[] = [
+    {
+      name: 'Partners',
+      href: 'https://partners.yearn.fi/',
+      description: 'Build on Yearn',
+      icon: <IconStack className={cl('size-5', neutralIconForeground)} />
+    },
     {
       name: 'Support',
       href: 'https://discord.gg/yearn',
