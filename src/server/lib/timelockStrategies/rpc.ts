@@ -71,8 +71,6 @@ const CHAINS_BY_ID = new Map<number, Chain>([
 ])
 
 const CALL_SCHEDULED_EVENT = timelockControllerAbi[0]
-const CALL_EXECUTED_EVENT = timelockControllerAbi[1]
-const CANCELLED_EVENT = timelockControllerAbi[2]
 
 const resolveRpcUrl = (chainId: number): string | undefined =>
   (process.env[`RPC_URI_FOR_${chainId}`] || process.env[`NEXT_PUBLIC_RPC_URI_FOR_${chainId}`])?.trim()
@@ -170,8 +168,8 @@ function normalizeScheduledLogs(logs: TTimelockLog[], blockTimestamps: Map<bigin
   })
 }
 
-const operationIdsFromLogs = (logs: TTimelockLog[]): Set<`0x${string}`> =>
-  new Set(logs.map((log) => log.args?.id).filter((id): id is `0x${string}` => Boolean(id)))
+const isScheduledLogForVault = (log: TTimelockLog, vaultAddress: `0x${string}`): boolean =>
+  Boolean(log.args?.target && isAddressEqual(log.args.target, vaultAddress))
 
 async function fetchOperationStatuses(
   client: TTimelockPublicClient,
@@ -299,29 +297,23 @@ export async function fetchPendingTimelockStrategies({
   const fromBlock =
     currentBlock > controller.defaultLookbackBlocks ? currentBlock - controller.defaultLookbackBlocks : 0n
   const ranges = buildBlockRanges(fromBlock, currentBlock)
-  const [scheduledLogs, executedLogs, cancelledLogs] = await Promise.all([
-    fetchLogsByEvent({
-      address: controller.timelockAddress,
-      client: publicClient,
-      event: CALL_SCHEDULED_EVENT,
-      ranges
-    }),
-    fetchLogsByEvent({ address: controller.timelockAddress, client: publicClient, event: CALL_EXECUTED_EVENT, ranges }),
-    fetchLogsByEvent({ address: controller.timelockAddress, client: publicClient, event: CANCELLED_EVENT, ranges })
-  ])
-  const sortedScheduledLogs = [...scheduledLogs].sort((a, b) => logSortKey(a).localeCompare(logSortKey(b)))
+  const scheduledLogs = await fetchLogsByEvent({
+    address: controller.timelockAddress,
+    client: publicClient,
+    event: CALL_SCHEDULED_EVENT,
+    ranges
+  })
+  const sortedScheduledLogs = [...scheduledLogs]
+    .filter((log) => isScheduledLogForVault(log, vaultAddress))
+    .sort((a, b) => logSortKey(a).localeCompare(logSortKey(b)))
   const blockTimestamps = await resolveBlockTimestamps(publicClient, sortedScheduledLogs)
-  const scheduledCalls = normalizeScheduledLogs(sortedScheduledLogs, blockTimestamps).filter((call) =>
-    isAddressEqual(call.target, vaultAddress)
-  )
+  const scheduledCalls = normalizeScheduledLogs(sortedScheduledLogs, blockTimestamps)
   const operationIds = [...new Set(scheduledCalls.map((call) => call.operationId))]
   const operationStatuses = await fetchOperationStatuses(publicClient, controller.timelockAddress, operationIds)
   const provisionalItems = decodePendingTimelockStrategies({
     controller,
     vaultAddress,
     scheduledCalls,
-    executedOperationIds: operationIdsFromLogs(executedLogs),
-    cancelledOperationIds: operationIdsFromLogs(cancelledLogs),
     operationStatuses
   })
   const strategyMetadata = await fetchStrategyMetadata(
@@ -332,8 +324,6 @@ export async function fetchPendingTimelockStrategies({
     controller,
     vaultAddress,
     scheduledCalls,
-    executedOperationIds: operationIdsFromLogs(executedLogs),
-    cancelledOperationIds: operationIdsFromLogs(cancelledLogs),
     operationStatuses,
     strategyMetadata
   })

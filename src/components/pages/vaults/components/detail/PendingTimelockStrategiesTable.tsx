@@ -282,7 +282,7 @@ export function PendingTimelockStrategiesTable({
         </div>
         {items.map((item) => (
           <PendingTimelockStrategyRow
-            key={item.operationId}
+            key={`${item.operationId}:${item.strategyAddress}`}
             blockExplorer={blockExplorer}
             chainId={chainId}
             defaultExpanded={item.operationId === defaultExpandedOperationId}

@@ -4,6 +4,7 @@ import { clearTimelockStrategiesCache, fetchPendingTimelockStrategies } from './
 
 const OPERATION_ID = '0x5dac358a2f25b7148ebb9bca035dc4739fae4092086f4e8f98cc201f7e773a98'
 const VAULT = '0x696d02Db93291651ED510704c9b286841d506987'
+const OTHER_VAULT = '0x1111111111111111111111111111111111111111'
 const STRATEGY = '0x908244B6ef0e52911a380a5454aEC0743598Fb20'
 const ADD_STRATEGY_DATA = '0xde7aeb41000000000000000000000000908244b6ef0e52911a380a5454aec0743598fb20'
 const UPDATE_MAX_DEBT_DATA =
@@ -30,6 +31,18 @@ function createMockClient(): any {
           },
           blockNumber: 251_882_99n,
           logIndex: 10,
+          transactionHash: TX_HASH
+        },
+        {
+          args: {
+            id: OPERATION_ID,
+            index: 2n,
+            target: OTHER_VAULT,
+            data: ADD_STRATEGY_DATA,
+            delay: 604_800n
+          },
+          blockNumber: 251_883_00n,
+          logIndex: 12,
           transactionHash: TX_HASH
         },
         {
@@ -87,6 +100,11 @@ describe('fetchPendingTimelockStrategies', () => {
       })
     )
     expect(client.getLogs.mock.calls.length).toBeGreaterThan(3)
+    expect(new Set(client.getLogs.mock.calls.map(([params]: any[]) => params.event.name))).toEqual(
+      new Set(['CallScheduled'])
+    )
+    expect(client.getBlock).toHaveBeenCalledTimes(1)
+    expect(client.getBlock).toHaveBeenCalledWith({ blockNumber: 251_882_99n })
   })
 
   it('uses the request cache for repeat lookups', async () => {

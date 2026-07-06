@@ -23,8 +23,6 @@ export type TDecodePendingTimelockStrategiesParams = {
   controller: TTimelockControllerConfig
   vaultAddress: `0x${string}`
   scheduledCalls: TTimelockScheduledCall[]
-  executedOperationIds?: Set<`0x${string}`>
-  cancelledOperationIds?: Set<`0x${string}`>
   operationStatuses: Map<`0x${string}`, TTimelockOperationStatus>
   strategyMetadata?: Map<`0x${string}`, { name?: string; symbol?: string }>
 }
@@ -116,17 +114,14 @@ export function decodePendingTimelockStrategies({
   controller,
   vaultAddress,
   scheduledCalls,
-  executedOperationIds = new Set(),
-  cancelledOperationIds = new Set(),
   operationStatuses,
   strategyMetadata = new Map()
 }: TDecodePendingTimelockStrategiesParams): TPendingTimelockStrategy[] {
   return [...groupByOperationId(scheduledCalls)]
     .flatMap(([operationId, operationCalls]) => {
       const liveStatus = operationStatuses.get(operationId)
-      const isHistoricallyClosed = executedOperationIds.has(operationId) || cancelledOperationIds.has(operationId)
 
-      if (!liveStatus?.isPending || liveStatus.isDone || isHistoricallyClosed) {
+      if (!liveStatus?.isPending || liveStatus.isDone) {
         return []
       }
 
