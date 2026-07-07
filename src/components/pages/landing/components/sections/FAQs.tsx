@@ -68,7 +68,7 @@ const faqData = [
     )
   },
   {
-    title: 'Are there Developer Docs?',
+    title: 'Are there developer docs?',
     content: (
       <p>
         {'Yes! Yearn has extensive documentation for developers looking to build on top of our protocol. Visit our'}{' '}

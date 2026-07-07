@@ -112,8 +112,8 @@ export function Hero({ earningsHeadline }: { earningsHeadline: TLifetimeEarnings
               <SectionHeader
                 isH1
                 align={'center'}
-                title={'Earn on your Crypto'}
-                description={"Yearn is DeFi's Yield Aggregator"}
+                title={'Earn on your crypto'}
+                description={"Yearn is DeFi's yield aggregator"}
               />
               <div className={'flex flex-row items-center justify-center gap-4'}>
                 <Link
@@ -145,7 +145,7 @@ export function Hero({ earningsHeadline }: { earningsHeadline: TLifetimeEarnings
         <div className={'mt-4 flex w-full max-w-sm flex-col items-center gap-6 text-center sm:gap-8'}>
           <Image
             src={'/landing/yfi-top-right.png'}
-            alt={'Yearn Finance Logo'}
+            alt={'Yearn Finance logo'}
             width={180}
             height={180}
             className={'size-auto max-w-[120px] sm:max-w-[150px]'}
@@ -156,8 +156,8 @@ export function Hero({ earningsHeadline }: { earningsHeadline: TLifetimeEarnings
             <SectionHeader
               isH1
               align={'center'}
-              title={'Earn on your Crypto'}
-              description={"DeFi's most battle tested yield aggregator"}
+              title={'Earn on your crypto'}
+              description={"Yearn is DeFi's yield aggregator"}
             />
             <div className={'flex flex-col items-center justify-center'}>
               <Link

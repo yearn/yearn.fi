@@ -50,7 +50,7 @@ const faqJsonLd = {
     },
     {
       '@type': 'Question',
-      name: 'Are there Developer Docs?',
+      name: 'Are there developer docs?',
       acceptedAnswer: {
         '@type': 'Answer',
         text: 'Yes. Yearn has documentation for developers building on top of the protocol at https://docs.yearn.fi.'
