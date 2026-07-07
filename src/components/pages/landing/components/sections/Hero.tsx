@@ -1,15 +1,13 @@
 import { usePlausible } from '@hooks/usePlausible'
 import { Button } from '@shared/components/Button'
+import { LifetimeEarningsStat } from '@shared/components/LifetimeEarningsStat'
 import { SectionHeader } from '@shared/components/SectionHeader'
-import { TvlStat } from '@shared/components/TvlStat'
-import { YEARN_TVL_ENDPOINT } from '@shared/data/publicQueryEndpoints'
-import { useFetch } from '@shared/hooks/useFetch'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
+import type { TLifetimeEarningsHeadline } from '@shared/utils/schemas/lifetimeEarningsSchema'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import type { ReactElement } from 'react'
 import { useEffect } from 'react'
-import * as z from 'zod'
 import Image from '/src/components/Image'
 
 function AnimatedLogos(): ReactElement {
@@ -75,13 +73,9 @@ function AnimatedLogos(): ReactElement {
   )
 }
 
-export function Hero(): ReactElement {
+export function Hero({ earningsHeadline }: { earningsHeadline: TLifetimeEarningsHeadline | null }): ReactElement {
   const trackEvent = usePlausible()
   const router = useRouter()
-  const { data: tvl } = useFetch<number>({
-    endpoint: YEARN_TVL_ENDPOINT,
-    schema: z.number()
-  })
 
   useEffect(() => {
     const prefetchTimer = window.setTimeout(() => {
@@ -113,7 +107,7 @@ export function Hero(): ReactElement {
           <div className={'flex h-full items-center justify-center'}>
             <div className={'z-20 flex flex-col items-center justify-center gap-12 text-center'}>
               <div className={'mb-8 mt-12'}>
-                <TvlStat tvl={tvl ?? 0} />
+                {earningsHeadline ? <LifetimeEarningsStat headline={earningsHeadline} /> : null}
               </div>
               <SectionHeader
                 isH1
@@ -157,9 +151,7 @@ export function Hero(): ReactElement {
             className={'size-auto max-w-[120px] sm:max-w-[150px]'}
             priority
           />
-          <div className={'mb-2'}>
-            <TvlStat tvl={tvl ?? 0} />
-          </div>
+          <div className={'mb-2'}>{earningsHeadline ? <LifetimeEarningsStat headline={earningsHeadline} /> : null}</div>
           <div className={'flex flex-col gap-8 sm:gap-10'}>
             <SectionHeader
               isH1

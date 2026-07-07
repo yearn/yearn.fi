@@ -1,8 +1,7 @@
 import { JsonLd } from '@shared/components/JsonLd'
-import { HydrationBoundary } from '@tanstack/react-query'
 import type { ReactElement } from 'react'
 import PublicApp from '@/PublicApp'
-import { getLandingPageDehydratedState } from '@/server/ssr/publicDataHydration'
+import { getLifetimeEarningsHeadlineOrNull } from '@/server/earnings/headline'
 import { landingMetadata, yearnOrganizationJsonLd } from './metadata'
 import HomePageClient from './page-client'
 
@@ -61,7 +60,7 @@ const faqJsonLd = {
 }
 
 export default async function Page(): Promise<ReactElement> {
-  const dehydratedState = await getLandingPageDehydratedState()
+  const earningsHeadline = await getLifetimeEarningsHeadlineOrNull()
 
   return (
     <>
@@ -69,9 +68,7 @@ export default async function Page(): Promise<ReactElement> {
       <JsonLd schema={websiteJsonLd} />
       <JsonLd schema={faqJsonLd} />
       <PublicApp>
-        <HydrationBoundary state={dehydratedState}>
-          <HomePageClient />
-        </HydrationBoundary>
+        <HomePageClient earningsHeadline={earningsHeadline} />
       </PublicApp>
     </>
   )
