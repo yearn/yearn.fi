@@ -41,6 +41,7 @@ interface DepositDetailsProps {
   allowanceTokenDecimals?: number
   allowanceTokenSymbol?: string
   approvalSpenderName?: string
+  isApprovalLoading?: boolean
   onAllowanceClick?: () => void
   onShowApprovalOverlay?: () => void
 }
@@ -75,6 +76,7 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
   allowanceTokenDecimals,
   allowanceTokenSymbol,
   approvalSpenderName,
+  isApprovalLoading = false,
   onAllowanceClick,
   onShowApprovalOverlay
 }) => {
@@ -95,6 +97,8 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
     return 'Deposit'
   }
   const allowanceDisplay = formatWidgetAllowance(allowance, allowanceTokenDecimals)
+  const shouldShowAllowanceRow = isApprovalLoading || allowanceDisplay !== null
+  const renderedAllowanceDisplay = allowanceDisplay ?? '0'
   const vaultShareValueDisplay = formatWidgetValue(vaultShareValueInAsset, assetTokenDecimals)
   const vaultShareValueUsd = formatWidgetValue(vaultShareValueUsdRaw)
   const shouldUseHighlight = !isQuoteStale && !isLoadingQuote && shouldHighlightPriceImpact
@@ -105,7 +109,13 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
       <div className="flex flex-col gap-2">
         {/* You will deposit/swap/stake */}
         <div className="flex items-center justify-between h-5">
-          <p className="text-sm text-text-secondary">{'You Will ' + getActionVerb()}</p>
+          <p className="text-sm text-text-secondary">
+            {isLoadingQuote ? (
+              <span className="inline-block h-4 w-24 bg-surface-secondary rounded animate-pulse" />
+            ) : (
+              'You Will ' + getActionVerb()
+            )}
+          </p>
           <p className="text-sm text-text-primary">
             <span className="font-semibold">
               {depositAmountBn > 0n ? formatWidgetValue(depositAmountBn, inputTokenDecimals) : '0'}
@@ -226,9 +236,13 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
         </div>
 
         {/* Approved allowance */}
-        {allowanceDisplay && (
+        {shouldShowAllowanceRow && (
           <div className="flex items-center justify-between h-5">
-            {onShowApprovalOverlay ? (
+            {isApprovalLoading ? (
+              <p className="text-sm text-text-secondary">
+                <span className="inline-block h-4 w-36 bg-surface-secondary rounded animate-pulse" />
+              </p>
+            ) : onShowApprovalOverlay ? (
               <button
                 type="button"
                 onClick={onShowApprovalOverlay}
@@ -241,21 +255,23 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
                 Existing Approval{approvalSpenderName ? ` (${approvalSpenderName})` : ''}
               </p>
             )}
-            {onAllowanceClick && allowanceDisplay !== 'Unlimited' ? (
+            {isApprovalLoading ? (
+              <span className="inline-block h-4 w-20 bg-surface-secondary rounded animate-pulse" />
+            ) : onAllowanceClick && renderedAllowanceDisplay !== 'Unlimited' ? (
               <button
                 type="button"
                 onClick={onAllowanceClick}
                 className="text-sm text-text-primary hover:text-blue-500 transition-colors cursor-pointer"
               >
                 <span className="font-normal">
-                  <span className={'font-semibold'}>{allowanceDisplay} </span>{' '}
+                  <span className={'font-semibold'}>{renderedAllowanceDisplay} </span>{' '}
                   <span> {allowanceTokenSymbol || ''}</span>
                 </span>
               </button>
             ) : (
               <p className="text-sm text-text-primary">
                 <span className="font-normal">
-                  <span className={'font-semibold'}>{allowanceDisplay} </span>{' '}
+                  <span className={'font-semibold'}>{renderedAllowanceDisplay} </span>{' '}
                   <span> {allowanceTokenSymbol || ''}</span>
                 </span>
               </p>

@@ -35,6 +35,7 @@ interface WithdrawDetailsProps {
   allowanceTokenDecimals?: number
   allowanceTokenSymbol?: string
   approvalSpenderName?: string
+  isApprovalLoading?: boolean
   onAllowanceClick?: () => void
   onShowApprovalOverlay?: () => void
 }
@@ -68,10 +69,13 @@ export function WithdrawDetails({
   allowanceTokenDecimals,
   allowanceTokenSymbol,
   approvalSpenderName,
+  isApprovalLoading = false,
   onAllowanceClick,
   onShowApprovalOverlay
 }: WithdrawDetailsProps): ReactElement {
   const allowanceDisplay = formatWidgetAllowance(allowance, allowanceTokenDecimals)
+  const shouldShowAllowanceRow = isApprovalLoading || allowanceDisplay !== null
+  const renderedAllowanceDisplay = allowanceDisplay ?? '0'
   const approvalLabel = getApprovalLabel(approvalSpenderName)
   const formatSignedSlippage = (percentage: number) => {
     if (percentage === 0) {
@@ -170,9 +174,13 @@ export function WithdrawDetails({
         )}
 
         {/* Approved allowance (for zap withdrawals) */}
-        {allowanceDisplay && (
+        {shouldShowAllowanceRow && (
           <div className="flex items-center justify-between h-5">
-            {onShowApprovalOverlay ? (
+            {isApprovalLoading ? (
+              <p className="text-sm text-text-secondary">
+                <span className="inline-block h-4 w-36 bg-surface-secondary rounded animate-pulse" />
+              </p>
+            ) : onShowApprovalOverlay ? (
               <button
                 type="button"
                 onClick={onShowApprovalOverlay}
@@ -183,22 +191,24 @@ export function WithdrawDetails({
             ) : (
               <p className="text-sm text-text-secondary">{approvalLabel}</p>
             )}
-            {onAllowanceClick && allowanceDisplay !== 'Unlimited' ? (
+            {isApprovalLoading ? (
+              <span className="inline-block h-4 w-20 bg-surface-secondary rounded animate-pulse" />
+            ) : onAllowanceClick && renderedAllowanceDisplay !== 'Unlimited' ? (
               <button
                 type="button"
                 onClick={onAllowanceClick}
                 className="text-sm text-text-primary hover:text-blue-500 transition-colors cursor-pointer"
               >
                 <span className="font-semibold">
-                  {allowanceDisplay}
-                  {allowanceDisplay !== 'Unlimited' && allowanceTokenSymbol ? ` ${allowanceTokenSymbol}` : ''}
+                  {renderedAllowanceDisplay}
+                  {renderedAllowanceDisplay !== 'Unlimited' && allowanceTokenSymbol ? ` ${allowanceTokenSymbol}` : ''}
                 </span>
               </button>
             ) : (
               <p className="text-sm text-text-primary">
                 <span className="font-semibold">
-                  {allowanceDisplay}
-                  {allowanceDisplay !== 'Unlimited' && allowanceTokenSymbol ? ` ${allowanceTokenSymbol}` : ''}
+                  {renderedAllowanceDisplay}
+                  {renderedAllowanceDisplay !== 'Unlimited' && allowanceTokenSymbol ? ` ${allowanceTokenSymbol}` : ''}
                 </span>
               </p>
             )}
