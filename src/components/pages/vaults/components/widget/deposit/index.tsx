@@ -15,7 +15,11 @@ import { cl, formatTAmount, toAddress } from '@shared/utils'
 import { requiresAllowanceResetBeforeApproval } from '@shared/utils/approve'
 import { ETH_TOKEN_ADDRESS } from '@shared/utils/constants'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
-import { calculateRemainingEnsoSlippagePercentage, ZAP_SLIPPAGE_HARD_CAP } from '@shared/utils/slippage'
+import {
+  calculateRemainingEnsoSlippagePercentage,
+  optionalBasisPointsToPercentage,
+  ZAP_SLIPPAGE_HARD_CAP
+} from '@shared/utils/slippage'
 import type { ReactElement, ReactNode } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { formatUnits, isAddressEqual } from 'viem'
@@ -373,6 +377,8 @@ export function WidgetDeposit({
   })
 
   const isCrossChain = sourceChainId !== chainId
+  const isEnsoRoute = routeType === 'ENSO'
+  const ensoRouteHasSwap = isEnsoRoute && Boolean(activeFlow.periphery.routeHasSwap)
   const { approveNotificationParams, depositNotificationParams } = useDepositNotifications({
     inputToken,
     vault,
@@ -385,10 +391,7 @@ export function WidgetDeposit({
     sourceChainId,
     chainId,
     depositAmount: depositAmount.debouncedBn,
-    expectedShareAmount:
-      routeType === 'ENSO' && activeFlow.periphery.routeHasSwap
-        ? activeFlow.periphery.minExpectedOut
-        : activeFlow.periphery.expectedOut,
+    expectedShareAmount: isEnsoRoute ? activeFlow.periphery.minExpectedOut : activeFlow.periphery.expectedOut,
     routeType,
     routerAddress: activeFlow.periphery.routerAddress,
     isCrossChain
@@ -519,17 +522,34 @@ export function WidgetDeposit({
       assetTokenPrice
     ]
   )
-  const ensoRouteHasSwap = routeType === 'ENSO' && Boolean(activeFlow.periphery.routeHasSwap)
-
+  const ensoPriceImpactPercentage = isEnsoRoute
+    ? optionalBasisPointsToPercentage(activeFlow.periphery.priceImpact)
+    : undefined
+  const estimatedPriceImpactPercentage =
+    isEnsoRoute && ensoPriceImpactPercentage !== undefined
+      ? Math.max(depositValueInfo.priceImpactPercentage, ensoPriceImpactPercentage)
+      : depositValueInfo.priceImpactPercentage
+  const worstCaseRouteImpactPercentage =
+    isEnsoRoute && ensoPriceImpactPercentage !== undefined
+      ? Math.max(depositValueInfo.worstCasePriceImpactPercentage, ensoPriceImpactPercentage)
+      : depositValueInfo.worstCasePriceImpactPercentage
   const desiredEnsoQuoteSlippage = useMemo(
     () =>
-      routeType === 'ENSO' && activeFlow.periphery.routeHasSwap !== false
-        ? calculateRemainingEnsoSlippagePercentage({
-            userTolerancePercentage: zapSlippage,
-            quoteImpactPercentage: depositValueInfo.priceImpactPercentage
-          })
+      isEnsoRoute
+        ? depositValueInfo.hasIncompleteUsdValuation && ensoPriceImpactPercentage === undefined
+          ? 0
+          : calculateRemainingEnsoSlippagePercentage({
+              userTolerancePercentage: zapSlippage,
+              quoteImpactPercentage: estimatedPriceImpactPercentage
+            })
         : 0,
-    [activeFlow.periphery.routeHasSwap, depositValueInfo.priceImpactPercentage, routeType, zapSlippage]
+    [
+      depositValueInfo.hasIncompleteUsdValuation,
+      ensoPriceImpactPercentage,
+      estimatedPriceImpactPercentage,
+      isEnsoRoute,
+      zapSlippage
+    ]
   )
 
   useEffect(() => {
@@ -545,6 +565,11 @@ export function WidgetDeposit({
 
     setEnsoQuoteSlippage(desiredEnsoQuoteSlippage)
   }, [depositAmount.debouncedBn, desiredEnsoQuoteSlippage, ensoQuoteSlippage, isLoadingQuote, routeType])
+
+  const hasBootstrapEnsoQuote =
+    isEnsoRoute && ensoQuoteSlippage === 0 && activeFlow.periphery.expectedOut > 0n && depositAmount.debouncedBn > 0n
+  const isWaitingForProtectedEnsoQuote = hasBootstrapEnsoQuote && desiredEnsoQuoteSlippage > 0
+  const isPreparingEnsoQuote = isLoadingQuote || isWaitingForProtectedEnsoQuote
 
   useEffect(() => {
     if (
@@ -570,8 +595,11 @@ export function WidgetDeposit({
       normalizedMinExpectedOutRaw: normalizedMinExpectedOut.toString(),
       expectedOutInAssetRaw: expectedOutInAsset.toString(),
       minExpectedOutInAssetRaw: minExpectedOutInAsset.toString(),
-      expectedPriceImpactPercentage: depositValueInfo.priceImpactPercentage,
-      worstCasePriceImpactPercentage: depositValueInfo.worstCasePriceImpactPercentage,
+      localPriceImpactPercentage: depositValueInfo.priceImpactPercentage,
+      ensoPriceImpactPercentage,
+      selectedPriceImpactPercentage: estimatedPriceImpactPercentage,
+      localWorstCasePriceImpactPercentage: depositValueInfo.worstCasePriceImpactPercentage,
+      selectedWorstCasePriceImpactPercentage: worstCaseRouteImpactPercentage,
       inputTokenSymbol: inputToken?.symbol,
       destinationTokenSymbol: assetToken?.symbol
     }
@@ -608,7 +636,7 @@ export function WidgetDeposit({
     console.log('[ENSO][deposit] protected quote comparison', {
       bootstrapQuote: bootstrapEnsoQuoteDebugRef.current,
       protectedQuote: quoteSummary,
-      note: 'expectedPriceImpactPercentage comes from amountOut; worstCasePriceImpactPercentage comes from minAmountOut; widget warnings currently use worstCasePriceImpactPercentage.'
+      note: 'localPriceImpactPercentage comes from amountOut; localWorstCasePriceImpactPercentage comes from minAmountOut; selected values also include Enso priceImpact when Enso is stricter.'
     })
   }, [
     activeFlow.periphery.expectedOut,
@@ -619,8 +647,10 @@ export function WidgetDeposit({
     depositValueInfo.priceImpactPercentage,
     depositValueInfo.worstCasePriceImpactPercentage,
     desiredEnsoQuoteSlippage,
+    ensoPriceImpactPercentage,
     ensoQuoteSlippage,
     ensoSlippageCalibrationKey,
+    estimatedPriceImpactPercentage,
     expectedOutInAsset,
     inputToken?.symbol,
     isLoadingQuote,
@@ -628,12 +658,13 @@ export function WidgetDeposit({
     normalizedExpectedOut,
     normalizedMinExpectedOut,
     routeType,
+    worstCaseRouteImpactPercentage,
     zapSlippage
   ])
 
-  // Calculate total price impact for warning and blocking.
+  // Calculate worst-case route impact for warning and blocking.
   const priceImpactInfo = useMemo(() => {
-    if (!ensoRouteHasSwap) {
+    if (!isEnsoRoute) {
       return {
         percentage: 0,
         isAboveTolerance: false,
@@ -642,18 +673,18 @@ export function WidgetDeposit({
     }
 
     return {
-      percentage: depositValueInfo.worstCasePriceImpactPercentage,
-      isAboveTolerance: depositValueInfo.worstCasePriceImpactPercentage > zapSlippage,
-      isBlocking: depositValueInfo.worstCasePriceImpactPercentage >= ZAP_SLIPPAGE_HARD_CAP
+      percentage: worstCaseRouteImpactPercentage,
+      isAboveTolerance: worstCaseRouteImpactPercentage > zapSlippage,
+      isBlocking: worstCaseRouteImpactPercentage >= ZAP_SLIPPAGE_HARD_CAP
     }
-  }, [depositValueInfo.worstCasePriceImpactPercentage, ensoRouteHasSwap, zapSlippage])
+  }, [isEnsoRoute, worstCaseRouteImpactPercentage, zapSlippage])
   const unpricedEnsoDepositError =
-    routeType === 'ENSO' &&
-    ensoRouteHasSwap &&
+    isEnsoRoute &&
+    ensoPriceImpactPercentage === undefined &&
     depositValueInfo.hasIncompleteUsdValuation &&
     depositAmount.debouncedBn > 0n &&
     !depositAmount.isDebouncing &&
-    !isLoadingQuote
+    !isPreparingEnsoQuote
       ? 'Unable to estimate zap price impact for the selected token. Use the base asset flow or swap elsewhere.'
       : null
   const effectiveDepositError = depositError || unpricedEnsoDepositError
@@ -695,6 +726,7 @@ export function WidgetDeposit({
   const [completedApprovalFlowKey, setCompletedApprovalFlowKey] = useState<string | null>(null)
   const hasCompletedApprovalInActiveFlow = completedApprovalFlowKey === approvalFlowKey
   const effectiveNeedsApproval = needsApproval && !hasCompletedApprovalInActiveFlow
+  const executableEnsoTx = isWaitingForProtectedEnsoQuote ? undefined : activeFlow.periphery.tx
   const safeDepositBatch = useMemo(() => {
     if (!isWalletSafe || !needsApproval) {
       return undefined
@@ -712,11 +744,11 @@ export function WidgetDeposit({
       stakingSource,
       approvalSpenderAddress: approvalWarning ? undefined : approvalSpenderAddress,
       routerAddress: activeFlow.periphery.routerAddress ? toAddress(activeFlow.periphery.routerAddress) : undefined,
-      ensoTx: activeFlow.periphery.tx
+      ensoTx: executableEnsoTx
         ? {
-            to: toAddress(activeFlow.periphery.tx.to),
-            data: activeFlow.periphery.tx.data,
-            value: activeFlow.periphery.tx.value
+            to: toAddress(executableEnsoTx.to),
+            data: executableEnsoTx.data,
+            value: executableEnsoTx.value
           }
         : undefined
     })
@@ -724,7 +756,6 @@ export function WidgetDeposit({
     account,
     activeFlow.periphery.allowance,
     activeFlow.periphery.routerAddress,
-    activeFlow.periphery.tx,
     approvalSpenderAddress,
     approvalWarning,
     chainId,
@@ -732,6 +763,7 @@ export function WidgetDeposit({
     depositToken,
     isWalletSafe,
     needsApproval,
+    executableEnsoTx,
     routeType,
     sourceChainId,
     stakingDepositAddress,
@@ -752,7 +784,10 @@ export function WidgetDeposit({
         successMessage: isCrossChain
           ? `Your cross-chain ${actionLabel.toLowerCase()} has been submitted.\nIt may take a few minutes to complete on the destination chain.`
           : `You have ${pastTenseLabel} ${formattedDepositAmount} ${inputToken?.symbol || ''} into ${vaultSymbol}.`,
-        isEnabled: activeFlow.periphery.prepareApproveEnabled && safeDepositBatch.calls.length > 0,
+        isEnabled:
+          !isWaitingForProtectedEnsoQuote &&
+          activeFlow.periphery.prepareApproveEnabled &&
+          safeDepositBatch.calls.length > 0,
         completesFlow: true,
         showConfetti: true,
         notification: depositNotificationParams
@@ -766,7 +801,7 @@ export function WidgetDeposit({
         confirmMessage: `Approving ${formattedDepositAmount} ${inputToken?.symbol || ''}`,
         successTitle: 'Approval successful',
         successMessage: `Approved ${formattedDepositAmount} ${inputToken?.symbol || ''}.\nReady to deposit.`,
-        isEnabled: activeFlow.periphery.prepareApproveEnabled,
+        isEnabled: !isWaitingForProtectedEnsoQuote && activeFlow.periphery.prepareApproveEnabled,
         completesFlow: false,
         notification: approveNotificationParams
       }
@@ -779,7 +814,7 @@ export function WidgetDeposit({
         confirmMessage: `${progressLabel} ${formattedDepositAmount} ${inputToken?.symbol || ''}`,
         successTitle: 'Transaction Submitted',
         successMessage: `Your cross-chain ${actionLabel.toLowerCase()} has been submitted.\nIt may take a few minutes to complete on the destination chain.`,
-        isEnabled: activeFlow.periphery.prepareDepositEnabled,
+        isEnabled: !isWaitingForProtectedEnsoQuote && activeFlow.periphery.prepareDepositEnabled,
         completesFlow: true,
         showConfetti: true,
         notification: depositNotificationParams
@@ -792,7 +827,7 @@ export function WidgetDeposit({
       confirmMessage: `${progressLabel} ${formattedDepositAmount} ${inputToken?.symbol || ''}`,
       successTitle: `${actionLabel} successful!`,
       successMessage: `You have ${pastTenseLabel} ${formattedDepositAmount} ${inputToken?.symbol || ''} into ${vaultSymbol}.`,
-      isEnabled: activeFlow.periphery.prepareDepositEnabled,
+      isEnabled: !isWaitingForProtectedEnsoQuote && activeFlow.periphery.prepareDepositEnabled,
       completesFlow: true,
       showConfetti: true,
       notification: depositNotificationParams
@@ -810,7 +845,8 @@ export function WidgetDeposit({
     routeType,
     approveNotificationParams,
     depositNotificationParams,
-    isCrossChain
+    isCrossChain,
+    isWaitingForProtectedEnsoQuote
   ])
 
   const { fetchMaxQuote, isFetching: isFetchingMaxQuote } = useFetchMaxQuote({
@@ -1049,24 +1085,21 @@ export function WidgetDeposit({
           setDepositInput(formatUnits(activeFlow.periphery.allowance, inputToken?.decimals ?? 18))
         }
       : undefined
-  const displayedExpectedVaultShares =
-    routeType === 'ENSO' && ensoRouteHasSwap ? activeFlow.periphery.minExpectedOut : activeFlow.periphery.expectedOut
-  const displayedVaultShareValueInAsset =
-    routeType === 'ENSO' && ensoRouteHasSwap
-      ? depositValueInfo.minVaultShareValueInAsset
-      : depositValueInfo.vaultShareValueInAsset
-  const displayedVaultShareValueUsdRaw =
-    routeType === 'ENSO' && ensoRouteHasSwap
-      ? depositValueInfo.minVaultShareValueUsdRaw
-      : depositValueInfo.vaultShareValueUsdRaw
-  const displayedPriceImpactPercentage =
-    routeType === 'ENSO' && ensoRouteHasSwap
-      ? depositValueInfo.worstCasePriceImpactPercentage
-      : depositValueInfo.priceImpactPercentage
+  const displayedExpectedVaultShares = isEnsoRoute
+    ? activeFlow.periphery.minExpectedOut
+    : activeFlow.periphery.expectedOut
+  const displayedVaultShareValueInAsset = isEnsoRoute
+    ? depositValueInfo.minVaultShareValueInAsset
+    : depositValueInfo.vaultShareValueInAsset
+  const displayedVaultShareValueUsdRaw = isEnsoRoute
+    ? depositValueInfo.minVaultShareValueUsdRaw
+    : depositValueInfo.vaultShareValueUsdRaw
+  const displayedPriceImpactPercentage = isEnsoRoute
+    ? worstCaseRouteImpactPercentage
+    : depositValueInfo.priceImpactPercentage
   const displayedShouldHighlightPriceImpact =
-    routeType === 'ENSO' && ensoRouteHasSwap && (priceImpactInfo.isAboveTolerance || priceImpactInfo.isBlocking)
-  const displayedConvertedVaultShares =
-    routeType === 'ENSO' && ensoRouteHasSwap ? normalizedMinExpectedOut : normalizedExpectedOut
+    isEnsoRoute && (priceImpactInfo.isAboveTolerance || priceImpactInfo.isBlocking)
+  const displayedConvertedVaultShares = isEnsoRoute ? normalizedMinExpectedOut : normalizedExpectedOut
   const shouldShowShareConversion =
     willReceiveStakedShares && displayedExpectedVaultShares !== displayedConvertedVaultShares
 
@@ -1080,7 +1113,8 @@ export function WidgetDeposit({
       inputTokenUsdPrice={inputTokenPrice}
       routeType={routeType}
       isSwap={ensoRouteHasSwap}
-      isLoadingQuote={isLoadingQuote}
+      usesMinExpectedOut={isEnsoRoute}
+      isLoadingQuote={isPreparingEnsoQuote}
       isQuoteStale={depositAmount.isDebouncing || depositAmount.bn !== depositAmount.debouncedBn}
       expectedOutInAsset={expectedOutInAsset}
       minExpectedOutInAsset={minExpectedOutInAsset}
@@ -1093,7 +1127,7 @@ export function WidgetDeposit({
       assetUsdPrice={assetTokenPrice}
       vaultShareValueInAsset={displayedVaultShareValueInAsset}
       vaultShareValueUsdRaw={displayedVaultShareValueUsdRaw}
-      expectedPriceImpactPercentage={depositValueInfo.priceImpactPercentage}
+      expectedPriceImpactPercentage={estimatedPriceImpactPercentage}
       priceImpactPercentage={displayedPriceImpactPercentage}
       shouldHighlightPriceImpact={displayedShouldHighlightPriceImpact}
       willReceiveStakedShares={willReceiveStakedShares}
@@ -1116,7 +1150,7 @@ export function WidgetDeposit({
       percentage={priceImpactInfo.percentage}
       userTolerancePercentage={zapSlippage}
       isBlocking={priceImpactInfo.isBlocking}
-      isLoading={isLoadingQuote}
+      isLoading={isPreparingEnsoQuote}
       isDebouncing={depositAmount.isDebouncing}
       isAmountSynced={depositAmount.bn === depositAmount.debouncedBn}
       hasAmount={depositAmount.bn > 0n}
@@ -1176,7 +1210,7 @@ export function WidgetDeposit({
   const showActionRow = !hideActionButton || !!onOpenSettings
   const showSettingsButton = !!account && !!onOpenSettings
   const depositButtonLabel = getDepositButtonLabel(
-    isLoadingQuote,
+    isPreparingEnsoQuote,
     effectiveNeedsApproval,
     routeType,
     actionLabelOverride
@@ -1190,17 +1224,17 @@ export function WidgetDeposit({
       !currentStep.prepare.isError
   )
   const isDepositButtonBusy =
-    !shouldBlockApprovalForAllowanceReset && (activeFlow.periphery.isLoadingRoute || isCurrentStepWaitingForPrepare)
+    !shouldBlockApprovalForAllowanceReset && (isPreparingEnsoQuote || isCurrentStepWaitingForPrepare)
   const isDepositButtonDisabled =
     !!effectiveDepositError ||
     depositAmount.bn === 0n ||
-    isLoadingQuote ||
+    isPreparingEnsoQuote ||
     depositAmount.isDebouncing ||
     shouldBlockApprovalForAllowanceReset ||
     isCurrentStepWaitingForPrepare ||
     (effectiveNeedsApproval && !activeFlow.periphery.prepareApproveEnabled) ||
     (!effectiveNeedsApproval && !activeFlow.periphery.prepareDepositEnabled) ||
-    (ensoRouteHasSwap && (priceImpactInfo.isBlocking || priceImpactInfo.isAboveTolerance))
+    (isEnsoRoute && (priceImpactInfo.isBlocking || priceImpactInfo.isAboveTolerance))
 
   const actionRow = showActionRow ? (
     <div className="flex flex-col gap-3">

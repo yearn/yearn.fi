@@ -7,7 +7,12 @@ import { IconCross } from '@shared/icons/IconCross'
 import { IconSettings } from '@shared/icons/IconSettings'
 import { cl, formatTAmount, toAddress, toNormalizedBN } from '@shared/utils'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
-import { calculateRemainingEnsoSlippagePercentage, toBasisPoints, ZAP_SLIPPAGE_HARD_CAP } from '@shared/utils/slippage'
+import {
+  calculateRemainingEnsoSlippagePercentage,
+  optionalBasisPointsToPercentage,
+  toBasisPoints,
+  ZAP_SLIPPAGE_HARD_CAP
+} from '@shared/utils/slippage'
 import type { ReactElement, ReactNode } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { formatUnits } from 'viem'
@@ -395,11 +400,12 @@ export function WidgetWithdraw({
   ])
 
   const isCrossChain = destinationChainId !== chainId
-  const ensoRouteHasSwap = routeType === 'ENSO' && Boolean(activeFlow.periphery.routeHasSwap)
+  const isEnsoRoute = routeType === 'ENSO'
+  const ensoRouteHasSwap = isEnsoRoute && Boolean(activeFlow.periphery.routeHasSwap)
   const effectiveSourceShares = activeFlow.periphery.shareAmount ?? effectiveRequiredShares
   const effectiveExpectedOut = expectedOutOverride ?? activeFlow.periphery.expectedOut
   const effectiveMinExpectedOut = expectedOutOverride ?? activeFlow.periphery.minExpectedOut
-  const displayedExpectedOut = routeType === 'ENSO' && ensoRouteHasSwap ? effectiveMinExpectedOut : effectiveExpectedOut
+  const displayedExpectedOut = isEnsoRoute ? effectiveMinExpectedOut : effectiveExpectedOut
   const { approveNotificationParams, unstakeNotificationParams, withdrawNotificationParams } = useWithdrawNotifications(
     {
       vault,
@@ -552,22 +558,33 @@ export function WidgetWithdraw({
       withdrawAmount.bn
     ]
   )
+  const ensoPriceImpactPercentage = isEnsoRoute
+    ? optionalBasisPointsToPercentage(activeFlow.periphery.priceImpact)
+    : undefined
+  const estimatedPriceImpactPercentage =
+    isEnsoRoute && ensoPriceImpactPercentage !== undefined
+      ? Math.max(withdrawValueInfo.priceImpactPercentage, ensoPriceImpactPercentage)
+      : withdrawValueInfo.priceImpactPercentage
+  const worstCaseRouteImpactPercentage =
+    isEnsoRoute && ensoPriceImpactPercentage !== undefined
+      ? Math.max(withdrawValueInfo.worstCasePriceImpactPercentage, ensoPriceImpactPercentage)
+      : withdrawValueInfo.worstCasePriceImpactPercentage
 
   const desiredEnsoQuoteSlippage = useMemo(
     () =>
-      routeType === 'ENSO' && activeFlow.periphery.routeHasSwap !== false
-        ? withdrawValueInfo.hasIncompleteUsdValuation
+      isEnsoRoute
+        ? withdrawValueInfo.hasIncompleteUsdValuation && ensoPriceImpactPercentage === undefined
           ? 0
           : calculateRemainingEnsoSlippagePercentage({
               userTolerancePercentage: zapSlippage,
-              quoteImpactPercentage: withdrawValueInfo.priceImpactPercentage
+              quoteImpactPercentage: estimatedPriceImpactPercentage
             })
         : 0,
     [
-      activeFlow.periphery.routeHasSwap,
-      routeType,
+      ensoPriceImpactPercentage,
+      estimatedPriceImpactPercentage,
+      isEnsoRoute,
       withdrawValueInfo.hasIncompleteUsdValuation,
-      withdrawValueInfo.priceImpactPercentage,
       zapSlippage
     ]
   )
@@ -585,6 +602,11 @@ export function WidgetWithdraw({
 
     setEnsoQuoteSlippage(desiredEnsoQuoteSlippage)
   }, [desiredEnsoQuoteSlippage, ensoQuoteSlippage, flowRequiredShares, isFetchingQuote, routeType])
+
+  const hasBootstrapEnsoQuote =
+    isEnsoRoute && ensoQuoteSlippage === 0 && activeFlow.periphery.expectedOut > 0n && flowRequiredShares > 0n
+  const isWaitingForProtectedEnsoQuote = hasBootstrapEnsoQuote && desiredEnsoQuoteSlippage > 0
+  const isPreparingEnsoQuote = isFetchingQuote || isWaitingForProtectedEnsoQuote
 
   useEffect(() => {
     if (
@@ -606,8 +628,11 @@ export function WidgetWithdraw({
       inputAmountRaw: flowRequiredShares.toString(),
       expectedOutRaw: activeFlow.periphery.expectedOut.toString(),
       minExpectedOutRaw: activeFlow.periphery.minExpectedOut.toString(),
-      expectedPriceImpactPercentage: withdrawValueInfo.priceImpactPercentage,
-      worstCasePriceImpactPercentage: withdrawValueInfo.worstCasePriceImpactPercentage,
+      localPriceImpactPercentage: withdrawValueInfo.priceImpactPercentage,
+      ensoPriceImpactPercentage,
+      selectedPriceImpactPercentage: estimatedPriceImpactPercentage,
+      localWorstCasePriceImpactPercentage: withdrawValueInfo.worstCasePriceImpactPercentage,
+      selectedWorstCasePriceImpactPercentage: worstCaseRouteImpactPercentage,
       sourceTokenSymbol: assetToken?.symbol,
       destinationTokenSymbol: outputToken?.symbol
     }
@@ -644,15 +669,17 @@ export function WidgetWithdraw({
     console.log('[ENSO][withdraw] protected quote comparison', {
       bootstrapQuote: bootstrapEnsoQuoteDebugRef.current,
       protectedQuote: quoteSummary,
-      note: 'expectedPriceImpactPercentage comes from amountOut; worstCasePriceImpactPercentage comes from minAmountOut; widget warnings currently use worstCasePriceImpactPercentage.'
+      note: 'localPriceImpactPercentage comes from amountOut; localWorstCasePriceImpactPercentage comes from minAmountOut; selected values also include Enso priceImpact when Enso is stricter.'
     })
   }, [
     activeFlow.periphery.expectedOut,
     activeFlow.periphery.minExpectedOut,
     assetToken?.symbol,
     desiredEnsoQuoteSlippage,
+    ensoPriceImpactPercentage,
     ensoQuoteSlippage,
     ensoSlippageCalibrationKey,
+    estimatedPriceImpactPercentage,
     flowRequiredShares,
     isFetchingQuote,
     outputToken?.symbol,
@@ -661,12 +688,13 @@ export function WidgetWithdraw({
     withdrawAmount.isDebouncing,
     withdrawValueInfo.priceImpactPercentage,
     withdrawValueInfo.worstCasePriceImpactPercentage,
+    worstCaseRouteImpactPercentage,
     zapSlippage
   ])
 
-  // Calculate total price impact for warning and blocking.
+  // Calculate worst-case route impact for warning and blocking.
   const priceImpactInfo = useMemo(() => {
-    if (!ensoRouteHasSwap) {
+    if (!isEnsoRoute) {
       return {
         percentage: 0,
         isAboveTolerance: false,
@@ -675,18 +703,18 @@ export function WidgetWithdraw({
     }
 
     return {
-      percentage: withdrawValueInfo.worstCasePriceImpactPercentage,
-      isAboveTolerance: withdrawValueInfo.worstCasePriceImpactPercentage > zapSlippage,
-      isBlocking: withdrawValueInfo.worstCasePriceImpactPercentage >= ZAP_SLIPPAGE_HARD_CAP
+      percentage: worstCaseRouteImpactPercentage,
+      isAboveTolerance: worstCaseRouteImpactPercentage > zapSlippage,
+      isBlocking: worstCaseRouteImpactPercentage >= ZAP_SLIPPAGE_HARD_CAP
     }
-  }, [ensoRouteHasSwap, withdrawValueInfo.worstCasePriceImpactPercentage, zapSlippage])
+  }, [isEnsoRoute, worstCaseRouteImpactPercentage, zapSlippage])
   const unpricedEnsoWithdrawError =
-    routeType === 'ENSO' &&
-    ensoRouteHasSwap &&
+    isEnsoRoute &&
+    ensoPriceImpactPercentage === undefined &&
     withdrawValueInfo.hasIncompleteUsdValuation &&
     withdrawAmount.debouncedBn > 0n &&
     !withdrawAmount.isDebouncing &&
-    !isFetchingQuote
+    !isPreparingEnsoQuote
       ? 'Unable to estimate zap price impact for the selected token. Withdraw the base asset or swap elsewhere.'
       : null
   const effectiveWithdrawError = baseWithdrawError || unpricedEnsoWithdrawError
@@ -698,12 +726,11 @@ export function WidgetWithdraw({
     enableTokenListFetch()
     setShowTokenSelector(true)
   }
-  const displayedPriceImpactPercentage =
-    routeType === 'ENSO' && ensoRouteHasSwap
-      ? withdrawValueInfo.worstCasePriceImpactPercentage
-      : withdrawValueInfo.priceImpactPercentage
+  const displayedPriceImpactPercentage = isEnsoRoute
+    ? worstCaseRouteImpactPercentage
+    : withdrawValueInfo.priceImpactPercentage
   const shouldHighlightDisplayedPriceImpact =
-    routeType === 'ENSO' && ensoRouteHasSwap && (priceImpactInfo.isAboveTolerance || priceImpactInfo.isBlocking)
+    isEnsoRoute && (priceImpactInfo.isAboveTolerance || priceImpactInfo.isBlocking)
 
   const zapToken = useMemo(() => {
     if (!shouldShowZapUi) return undefined
@@ -726,7 +753,7 @@ export function WidgetWithdraw({
       expectedAmount: getExpectedAmount(),
       expectedAmountRaw: isUnstake ? effectiveRequiredShares : displayedExpectedOut,
       expectedAmountDecimals: isUnstake ? (vault?.decimals ?? 18) : (outputToken?.decimals ?? 18),
-      isLoading: isUnstake ? false : isFetchingQuote
+      isLoading: isUnstake ? false : isPreparingEnsoQuote
     }
   }, [
     shouldShowZapUi,
@@ -734,7 +761,7 @@ export function WidgetWithdraw({
     effectiveRequiredShares,
     vault?.decimals,
     displayedExpectedOut,
-    isFetchingQuote,
+    isPreparingEnsoQuote,
     outputToken?.symbol,
     outputToken?.address,
     outputToken?.chainID,
@@ -748,6 +775,7 @@ export function WidgetWithdraw({
   })
   const formattedRequiredShares = formatTAmount({ value: effectiveRequiredShares, decimals: sharesDecimals })
   const formattedApprovalAmount = formatTAmount({ value: effectiveSourceShares, decimals: sharesDecimals })
+  const executableEnsoTx = isWaitingForProtectedEnsoQuote ? undefined : activeFlow.periphery.tx
   const safeWithdrawBatch = useMemo(() => {
     if (!isWalletSafe || !approvalState.needsApproval) {
       return undefined
@@ -763,11 +791,11 @@ export function WidgetWithdraw({
       approvalSpenderAddress: approvalState.spenderAddress,
       routerAddress: activeFlow.periphery.routerAddress ? toAddress(activeFlow.periphery.routerAddress) : undefined,
       maxLoss: BigInt(toBasisPoints(zapSlippage)),
-      ensoTx: activeFlow.periphery.tx
+      ensoTx: executableEnsoTx
         ? {
-            to: toAddress(activeFlow.periphery.tx.to),
-            data: activeFlow.periphery.tx.data,
-            value: activeFlow.periphery.tx.value
+            to: toAddress(executableEnsoTx.to),
+            data: executableEnsoTx.data,
+            value: executableEnsoTx.value
           }
         : undefined
     })
@@ -775,11 +803,11 @@ export function WidgetWithdraw({
     account,
     activeFlow.periphery.allowance,
     activeFlow.periphery.routerAddress,
-    activeFlow.periphery.tx,
     approvalState.needsApproval,
     approvalState.spenderAddress,
     chainId,
     effectiveSourceShares,
+    executableEnsoTx,
     isWalletSafe,
     routeType,
     sourceToken,
@@ -808,8 +836,8 @@ export function WidgetWithdraw({
         unstakeNotificationParams,
         withdrawNotificationParams,
         safeWithdrawBatch,
-        prepareApproveEnabled: Boolean(activeFlow.periphery.prepareApproveEnabled),
-        prepareWithdrawEnabled: Boolean(activeFlow.periphery.prepareWithdrawEnabled),
+        prepareApproveEnabled: !isWaitingForProtectedEnsoQuote && Boolean(activeFlow.periphery.prepareApproveEnabled),
+        prepareWithdrawEnabled: !isWaitingForProtectedEnsoQuote && Boolean(activeFlow.periphery.prepareWithdrawEnabled),
         directUnstakePrepareEnabled: Boolean(directUnstakeFlow.periphery.prepareWithdrawEnabled),
         directWithdrawPrepareEnabled: Boolean(directWithdrawFlow.periphery.prepareWithdrawEnabled)
       }),
@@ -836,7 +864,8 @@ export function WidgetWithdraw({
       withdrawNotificationParams,
       safeWithdrawBatch,
       activeFlow.periphery.prepareApproveEnabled,
-      activeFlow.periphery.prepareWithdrawEnabled
+      activeFlow.periphery.prepareWithdrawEnabled,
+      isWaitingForProtectedEnsoQuote
     ]
   )
 
@@ -978,7 +1007,7 @@ export function WidgetWithdraw({
       actionLabel={actionLabel}
       requiredShares={effectiveRequiredShares}
       sharesDecimals={sharesDecimals}
-      isLoadingQuote={isFetchingQuote}
+      isLoadingQuote={isPreparingEnsoQuote}
       isQuoteStale={withdrawAmount.isDebouncing || withdrawAmount.bn !== withdrawAmount.debouncedBn}
       expectedOut={displayedExpectedOut}
       outputDecimals={outputToken?.decimals ?? 18}
@@ -992,10 +1021,10 @@ export function WidgetWithdraw({
       assetUsdPrice={assetTokenPrice}
       assetSymbol={assetToken?.symbol}
       outputUsdPrice={outputTokenPrice}
-      expectedPriceImpactPercentage={withdrawValueInfo.priceImpactPercentage}
+      expectedPriceImpactPercentage={estimatedPriceImpactPercentage}
       priceImpactPercentage={displayedPriceImpactPercentage}
       shouldHighlightPriceImpact={shouldHighlightDisplayedPriceImpact}
-      hasSwap={ensoRouteHasSwap}
+      usesMinExpectedOut={isEnsoRoute}
       onShowDetailsModal={() => setShowWithdrawDetailsModal(true)}
       allowance={approvalState.hasApprovalStep ? activeFlow.periphery.allowance : undefined}
       allowanceTokenDecimals={approvalState.hasApprovalStep ? approvalState.tokenDecimals : undefined}
@@ -1011,7 +1040,7 @@ export function WidgetWithdraw({
       percentage={priceImpactInfo.percentage}
       userTolerancePercentage={zapSlippage}
       isBlocking={priceImpactInfo.isBlocking}
-      isLoading={isFetchingQuote}
+      isLoading={isPreparingEnsoQuote}
       isDebouncing={withdrawAmount.isDebouncing}
       isAmountSynced={withdrawAmount.bn === withdrawAmount.debouncedBn}
       hasAmount={withdrawAmount.bn > 0n}
@@ -1020,7 +1049,7 @@ export function WidgetWithdraw({
 
   const showSettingsButton = !!account && !!onOpenSettings
   const withdrawButtonLabel = getWithdrawCtaLabel({
-    isFetchingQuote,
+    isFetchingQuote: isPreparingEnsoQuote,
     showApprove: approvalState.hasApprovalStep,
     isAllowanceSufficient: approvalState.isAllowanceSufficient,
     transactionName
@@ -1029,14 +1058,14 @@ export function WidgetWithdraw({
     isWithdrawCtaDisabled({
       hasError: !!effectiveWithdrawError || isActionDisabled,
       withdrawAmountRaw: withdrawAmount.bn,
-      isFetchingQuote,
+      isFetchingQuote: isPreparingEnsoQuote,
       isDebouncing: withdrawAmount.isDebouncing,
       showApprove: approvalState.hasApprovalStep,
       isAllowanceSufficient: approvalState.isAllowanceSufficient,
       prepareApproveEnabled: Boolean(activeFlow.periphery.prepareApproveEnabled),
       prepareWithdrawEnabled: Boolean(activeFlow.periphery.prepareWithdrawEnabled)
     }) ||
-    (ensoRouteHasSwap && (priceImpactInfo.isBlocking || priceImpactInfo.isAboveTolerance))
+    (isEnsoRoute && (priceImpactInfo.isBlocking || priceImpactInfo.isAboveTolerance))
 
   const actionRow = (
     <div className="flex flex-col gap-3">
@@ -1055,8 +1084,8 @@ export function WidgetWithdraw({
           ) : (
             <Button
               onClick={handleOpenTransactionOverlay}
-              variant={isFetchingQuote ? 'busy' : 'filled'}
-              isBusy={isFetchingQuote}
+              variant={isPreparingEnsoQuote ? 'busy' : 'filled'}
+              isBusy={isPreparingEnsoQuote}
               disabled={isWithdrawButtonDisabled}
               className="w-full"
               classNameOverride="yearn--button--nextgen w-full"
@@ -1211,7 +1240,8 @@ export function WidgetWithdraw({
         routeType={routeType}
         isZap={routeType === 'ENSO' && shouldShowZapUi}
         hasSwap={ensoRouteHasSwap}
-        isLoadingQuote={isFetchingQuote}
+        usesMinExpectedOut={isEnsoRoute}
+        isLoadingQuote={isPreparingEnsoQuote}
       />
 
       <ApprovalOverlay

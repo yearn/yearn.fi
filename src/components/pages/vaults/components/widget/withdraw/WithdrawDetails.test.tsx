@@ -26,7 +26,7 @@ describe('WithdrawDetails', () => {
         expectedPriceImpactPercentage={0}
         priceImpactPercentage={0}
         shouldHighlightPriceImpact={false}
-        hasSwap
+        usesMinExpectedOut
         onShowDetailsModal={() => undefined}
       />
     )
@@ -55,7 +55,7 @@ describe('WithdrawDetails', () => {
         expectedPriceImpactPercentage={0}
         priceImpactPercentage={10}
         shouldHighlightPriceImpact
-        hasSwap
+        usesMinExpectedOut
         onShowDetailsModal={() => undefined}
       />
     )
@@ -66,7 +66,7 @@ describe('WithdrawDetails', () => {
     expect(html).toContain('text-red-500')
   })
 
-  it('uses receive copy for routed ENSO withdrawals without swaps', () => {
+  it('uses protected receive copy for routed ENSO withdrawals without swaps', () => {
     const html = renderToStaticMarkup(
       <WithdrawDetails
         actionLabel="You will redeem"
@@ -87,14 +87,15 @@ describe('WithdrawDetails', () => {
         expectedPriceImpactPercentage={0}
         priceImpactPercentage={0}
         shouldHighlightPriceImpact={false}
-        hasSwap={false}
+        usesMinExpectedOut
         onShowDetailsModal={() => undefined}
       />
     )
 
     expect(html).toContain('You will receive')
-    expect(html).not.toContain('You will receive at least')
-    expect(html).not.toContain('Est. / Worst price impact')
+    expect(html).toContain('You will receive at least')
+    expect(html).not.toContain('You will swap')
+    expect(html).toContain('Est. / Worst price impact')
   })
 
   it('shows positive slippage for favorable zap withdrawals', () => {
@@ -118,7 +119,7 @@ describe('WithdrawDetails', () => {
         expectedPriceImpactPercentage={-6}
         priceImpactPercentage={-3}
         shouldHighlightPriceImpact={false}
-        hasSwap
+        usesMinExpectedOut
         onShowDetailsModal={() => undefined}
       />
     )
