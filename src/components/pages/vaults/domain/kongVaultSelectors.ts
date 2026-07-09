@@ -599,6 +599,10 @@ export const getVaultAPR = (vault: TKongVaultInput, snapshot?: TKongVaultSnapsho
 
   const forwardNet = isKatanaVault
     ? pickNumber(
+        snapshot?.performance?.estimated?.apy,
+        snapshot?.performance?.estimated?.apr,
+        vault.performance?.estimated?.apy,
+        vault.performance?.estimated?.apr,
         snapshot?.performance?.oracle?.netAPY,
         snapshot?.performance?.oracle?.apy,
         snapshot?.performance?.oracle?.netAPR,
@@ -606,9 +610,6 @@ export const getVaultAPR = (vault: TKongVaultInput, snapshot?: TKongVaultSnapsho
         vault.performance?.oracle?.netAPY,
         vault.performance?.oracle?.apy,
         vault.performance?.oracle?.netAPR,
-        snapshot?.performance?.estimated?.apy,
-        snapshot?.performance?.estimated?.apr,
-        vault.performance?.estimated?.apy,
         vault.performance?.historical?.net,
         historical?.net
       )
