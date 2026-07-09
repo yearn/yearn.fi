@@ -18,7 +18,7 @@ import type { TVaultAggressiveness } from '@pages/vaults/utils/vaultListFacets'
 import type { TVaultType } from '@pages/vaults/utils/vaultTypeCopy'
 import { isYvBtcVault } from '@pages/vaults/utils/yvBtc'
 import {
-  getYvUsdSharePrice,
+  getYvUsdPositionValues,
   isYvUsdAddress,
   YVUSD_CHAIN_ID,
   YVUSD_LOCKED_ADDRESS,
@@ -176,7 +176,7 @@ export function useVaultsListModel({
       : undefined
   )
   const { listVault: yvUsdVault } = yvUsdVaults
-  const { getBalance } = useWalletTokens()
+  const { getToken, getBalance } = useWalletTokens()
   const { getVaultHoldingsUsd } = useWalletHoldings()
   const { isLoading: isWalletLoading } = useWalletStatus()
 
@@ -217,12 +217,13 @@ export function useVaultsListModel({
     return unlockedBalance > 0n || lockedBalance > 0n
   }, [getBalance])
   const yvUsdHoldingsValue = useMemo(() => {
-    const unlockedBalance = getBalance({ address: YVUSD_UNLOCKED_ADDRESS, chainID: YVUSD_CHAIN_ID }).normalized
-    const lockedBalance = getBalance({ address: YVUSD_LOCKED_ADDRESS, chainID: YVUSD_CHAIN_ID }).normalized
-    const unlockedSharePrice = getYvUsdSharePrice(yvUsdVaults.unlockedVault)
-    const lockedSharePrice = getYvUsdSharePrice(yvUsdVaults.lockedVault)
-    return unlockedBalance * unlockedSharePrice + lockedBalance * lockedSharePrice
-  }, [getBalance, yvUsdVaults.lockedVault, yvUsdVaults.unlockedVault])
+    return getYvUsdPositionValues({
+      unlockedVault: yvUsdVaults.unlockedVault,
+      lockedVault: yvUsdVaults.lockedVault,
+      getToken,
+      getBalance
+    }).combinedValue
+  }, [getBalance, getToken, yvUsdVaults.lockedVault, yvUsdVaults.unlockedVault])
   const yvUsdListVaults = useMemo(
     (): TYvUsdListVaults => ({
       metrics: yvUsdVaults.metrics,
