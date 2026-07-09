@@ -531,7 +531,7 @@ export const getVaultTVL = (vault: TKongVaultInput, snapshot?: TKongVaultSnapsho
   const totalAssetsRaw = snapshot?.totalAssets ?? '0'
   const totalAssets = toBigIntValue(totalAssetsRaw)
   const normalizedAssets = toNormalizedBN(totalAssets, token.decimals).normalized
-  const tvl = pickNumber(snapshot?.tvl?.close ?? null, vault.tvl)
+  const tvl = pickNumber(vault.tvl, snapshot?.tvl?.close ?? null)
   const price = Number.isFinite(tvl) && tvl > 0 && normalizedAssets > 0 ? tvl / normalizedAssets : 0
 
   return {
