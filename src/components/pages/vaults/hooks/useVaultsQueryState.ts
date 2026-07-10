@@ -6,6 +6,7 @@ import {
   buildSnapshotFromParams,
   buildUrlParamsFromSnapshot,
   clearVaultQueryParams,
+  ensureDefaultSortParam,
   hasVaultQueryParams,
   normalizeChainsSelection,
   normalizeMinTvl,
@@ -345,6 +346,17 @@ export function useVaultsQueryState(config: TVaultsQueryStateConfig): TVaultsQue
     }
     if (isInitialMountRef.current) {
       isInitialMountRef.current = false
+      const currentParams = getCurrentUrlSearchParams()
+      const nextParams = ensureDefaultSortParam(currentParams, defaultSortBy)
+      if (nextParams.toString() === currentParams.toString()) {
+        return
+      }
+      const nextQuery = nextParams.toString()
+      lastSyncedQueryRef.current = nextQuery
+      isOwnUrlUpdateRef.current = true
+      startTransition(() => {
+        replaceSearchParams(nextParams)
+      })
       return
     }
     const nextParams = buildUrlParamsFromSnapshot(snapshot, defaults)
@@ -358,7 +370,7 @@ export function useVaultsQueryState(config: TVaultsQueryStateConfig): TVaultsQue
     startTransition(() => {
       replaceSearchParams(nextParams)
     })
-  }, [snapshot, defaults, getCurrentUrlSearchParams, replaceSearchParams, shouldSyncUrlOnChange])
+  }, [snapshot, defaults, defaultSortBy, getCurrentUrlSearchParams, replaceSearchParams, shouldSyncUrlOnChange])
 
   return {
     vaultType: snapshot.vaultType,

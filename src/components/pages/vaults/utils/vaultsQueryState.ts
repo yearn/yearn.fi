@@ -149,6 +149,19 @@ export function parseSortDirection(raw: string | null): TNormalizedSortDirection
   return raw === 'asc' || raw === 'desc' ? raw : DEFAULT_SORT_DIRECTION
 }
 
+export function ensureDefaultSortParam(params: URLSearchParams, defaultSortBy: TPossibleSortBy): URLSearchParams {
+  const nextParams = new URLSearchParams(params)
+  const currentSortBy = nextParams.get('sortBy')
+  if ((currentSortBy && currentSortBy !== 'none') || defaultSortBy === 'none') {
+    return nextParams
+  }
+  if (currentSortBy === 'none') {
+    nextParams.delete('sortDirection')
+  }
+  nextParams.set('sortBy', defaultSortBy)
+  return nextParams
+}
+
 export function areQuerySnapshotsEqual(left: TVaultsQuerySnapshot, right: TVaultsQuerySnapshot): boolean {
   return (
     left.vaultType === right.vaultType &&
@@ -196,6 +209,7 @@ export function buildSnapshotFromParams(
   defaults: TVaultsQueryDefaults = DEFAULT_VAULT_QUERY_DEFAULTS
 ): TVaultsQuerySnapshot {
   const vaultType = normalizeVaultTypeParam(params.get('type'))
+  const rawSortBy = params.get('sortBy')
   const rawTypes = parseStringList(params.get('types'))
   const hasTypesParam = params.has('types')
   const normalizedTypes = normalizeV3Types(rawTypes)
@@ -214,8 +228,8 @@ export function buildSnapshotFromParams(
     showLegacyVaults: showLegacyParam !== null ? showLegacyFromParam : rawTypes.includes('legacy'),
     showHiddenVaults: false,
     showStrategies: readBooleanParam(params, 'showStrategies'),
-    sortBy: (params.get('sortBy') as TPossibleSortBy) || defaults.defaultSortBy,
-    sortDirection: parseSortDirection(params.get('sortDirection'))
+    sortBy: rawSortBy && rawSortBy !== 'none' ? (rawSortBy as TPossibleSortBy) : defaults.defaultSortBy,
+    sortDirection: rawSortBy === 'none' ? DEFAULT_SORT_DIRECTION : parseSortDirection(params.get('sortDirection'))
   }
 }
 
@@ -275,11 +289,11 @@ export function buildUrlParamsFromSnapshot(
     params.set('showStrategies', '1')
   }
 
-  if (snap.sortBy !== defaults.defaultSortBy) {
+  if (snap.sortBy !== 'none') {
     params.set('sortBy', snap.sortBy)
   }
 
-  if (normalizedSortDirection !== DEFAULT_SORT_DIRECTION) {
+  if (snap.sortBy !== 'none' && normalizedSortDirection !== DEFAULT_SORT_DIRECTION) {
     params.set('sortDirection', normalizedSortDirection)
   }
 
