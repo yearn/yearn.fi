@@ -13,7 +13,12 @@ type TYvUsdTooltipProps = {
   iconClassName?: string
   unlockedIconClassName?: string
   infinifiPointsNote?: string
+  onRequestMoreInfo?: () => void
 }
+
+const YVUSD_TOOLTIP_CTA_CLASS =
+  'mt-1 block font-semibold underline decoration-neutral-600/30 decoration-dotted underline-offset-4 ' +
+  'transition-opacity hover:decoration-neutral-600'
 
 const YvUsdTooltipRow = ({
   icon,
@@ -52,7 +57,8 @@ export function YvUsdApyTooltipContent({
   className,
   iconClassName = 'size-3',
   unlockedIconClassName,
-  infinifiPointsNote
+  infinifiPointsNote,
+  onRequestMoreInfo
 }: TYvUsdTooltipProps): ReactElement {
   const resolvedUnlockedIconClassName = unlockedIconClassName ?? iconClassName.replace(/size-(\S+)/, 'h-$1 w-4')
   return (
@@ -75,6 +81,16 @@ export function YvUsdApyTooltipContent({
           iconGapClassName="gap-1"
           options={{ maximumFractionDigits: 2, minimumFractionDigits: 2 }}
         />
+        <div className="space-y-1 border-t border-border pt-2 text-text-secondary">
+          <p>
+            <span className="font-semibold text-text-primary">{'Locked:'}</span>{' '}
+            {`Shares require a ${YVUSD_LOCKED_COOLDOWN_DAYS}-day cooldown before withdrawal.`}
+          </p>
+          <p>
+            <span className="font-semibold text-text-primary">{'Unlocked:'}</span>{' '}
+            {'Shares can be withdrawn without a cooldown.'}
+          </p>
+        </div>
         {infinifiPointsNote ? (
           <div className="border-t border-border pt-2">
             <p className="flex items-start gap-2 text-text-secondary">
@@ -82,6 +98,16 @@ export function YvUsdApyTooltipContent({
               <span>{infinifiPointsNote}</span>
             </p>
           </div>
+        ) : null}
+        {onRequestMoreInfo ? (
+          <button
+            type={'button'}
+            data-tooltip-close={'true'}
+            className={YVUSD_TOOLTIP_CTA_CLASS}
+            onClick={onRequestMoreInfo}
+          >
+            {'Click for more information'}
+          </button>
         ) : null}
       </div>
     </div>

@@ -335,11 +335,14 @@ function VaultsListRowPresentationComponent({
     return getYvUsdListMetrics({ currentVault, apr, isYvUsd, yvUsdMetrics: yvUsdVaultsForRow.metrics })
   }, [apr, currentVault, isYvUsd, yvUsdVaultsForRow])
 
+  const openYvUsdApyDetails = (): void => setIsYvUsdModalOpen(true)
+
   const yvUsdApyTooltip = resolvedYvUsdMetrics ? (
     <YvUsdApyTooltipContent
       lockedValue={resolvedYvUsdMetrics.lockedApy}
       unlockedValue={resolvedYvUsdMetrics.unlockedApy}
       infinifiPointsNote={resolvedYvUsdMetrics.hasInfinifiPointsNote ? getYvUsdInfinifiPointsNote() : undefined}
+      onRequestMoreInfo={openYvUsdApyDetails}
     />
   ) : undefined
 
@@ -362,7 +365,7 @@ function VaultsListRowPresentationComponent({
   const handleYvUsdApyClick = (event: MouseEvent<HTMLButtonElement>): void => {
     event.stopPropagation()
     event.preventDefault()
-    setIsYvUsdModalOpen(true)
+    openYvUsdApyDetails()
   }
   const handleExpandedChange = (next: boolean): void => {
     if (onExpandedChange) {
@@ -741,16 +744,25 @@ function VaultsListRowPresentationComponent({
                       onClick={handleYvUsdApyClick}
                       onMouseEnter={() => handleInteractiveHoverChange(true)}
                       onMouseLeave={() => handleInteractiveHoverChange(false)}
-                      className={'inline-flex flex-col items-start gap-0.5 text-left leading-none'}
+                      className={'inline-flex items-center text-left leading-none'}
                       aria-label={'View yvUSD APY details'}
                     >
-                      <span className={'text-[10px] uppercase tracking-wide text-text-secondary'}>{'Up to'}</span>
                       <b
                         className={
-                          'yearn--table-data-section-item-value inline-flex items-center gap-2 text-lg font-semibold text-text-primary'
+                          'yearn--table-data-section-item-value relative inline-flex items-center gap-2 text-lg font-semibold ' +
+                          'text-text-primary underline decoration-neutral-600/30 decoration-dotted underline-offset-4 ' +
+                          'transition-opacity hover:decoration-neutral-600'
                         }
                       >
                         {yvUsdApyValue}
+                        <span
+                          aria-hidden={'true'}
+                          className={
+                            'pointer-events-none absolute left-full -top-px ml-px text-sm font-bold text-text-secondary'
+                          }
+                        >
+                          {'*'}
+                        </span>
                       </b>
                     </button>
                   </Tooltip>
@@ -829,17 +841,23 @@ function VaultsListRowPresentationComponent({
                     {resolvedYvUsdMetrics.hasInfinifiPointsNote ? (
                       <IconInfinifiPoints className={'size-3.5 shrink-0'} aria-label={'Infinifi points'} />
                     ) : null}
-                    <span className={'relative inline-flex'}>
-                      <span
-                        className={
-                          'pointer-events-none absolute bottom-full left-0 mb-0.5 whitespace-nowrap text-[10px] uppercase tracking-wide text-text-secondary'
-                        }
-                      >
-                        {'Up to'}
-                      </span>
+                    <span
+                      className={
+                        'relative inline-flex items-center gap-1 underline decoration-neutral-600/30 decoration-dotted ' +
+                        'underline-offset-4 transition-opacity hover:decoration-neutral-600'
+                      }
+                    >
                       <b className={'yearn--table-data-section-item-value font-semibold text-text-primary'}>
                         {formatApyDisplay(resolvedYvUsdMetrics.lockedApy)}
                       </b>
+                      <span
+                        aria-hidden={'true'}
+                        className={
+                          'pointer-events-none absolute left-full -top-px ml-px text-sm font-bold text-text-secondary'
+                        }
+                      >
+                        {'*'}
+                      </span>
                     </span>
                   </button>
                 </Tooltip>
