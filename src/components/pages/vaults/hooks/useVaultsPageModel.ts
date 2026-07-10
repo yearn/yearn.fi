@@ -391,7 +391,7 @@ export function useVaultsPageModel(
   }, [listUnderlyingAssets])
   const [activeToggleValues, setActiveToggleValues] = useState<string[]>([])
   const effectiveSortBy = sortBy === 'featuringScore' ? DEFAULT_SORT_BY : sortBy
-  const effectiveSortDirection = sortBy === 'none' ? '' : sortBy === 'featuringScore' ? 'desc' : sortDirection
+  const effectiveSortDirection = effectiveSortBy === 'none' ? '' : sortBy === 'featuringScore' ? 'desc' : sortDirection
   const isAvailablePinned = activeToggleValues.includes(AVAILABLE_TOGGLE_VALUE)
   const {
     listCategoriesSanitized,

@@ -348,7 +348,7 @@ export function useVaultsListModel({
   )
 
   const pinnedSections = useMemo(() => {
-    const sections: TVaultsPinnedSection[] = [...getProductPinnedSections({ shouldShowYvUsd, yvUsdVault })]
+    const sections: TVaultsPinnedSection[] = [...getProductPinnedSections({ shouldShowYvUsd, sortBy, yvUsdVault })]
     const seen = new Set(sections.flatMap((section) => section.vaults.map((vault) => getVaultKey(vault))))
     const takeUnseenVaults = (vaults: TKongVaultInput[]): TKongVaultInput[] =>
       vaults.filter((vault) => {
@@ -371,7 +371,7 @@ export function useVaultsListModel({
     }
 
     return sections
-  }, [isAvailablePinned, sortedAvailableVaults, shouldShowYvUsd, yvUsdVault])
+  }, [isAvailablePinned, sortBy, sortedAvailableVaults, shouldShowYvUsd, yvUsdVault])
 
   const pinnedVaults = useMemo(() => pinnedSections.flatMap((section) => section.vaults), [pinnedSections])
 

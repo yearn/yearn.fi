@@ -3,18 +3,41 @@ import {
   buildSnapshotFromParams,
   buildUrlParamsFromSnapshot,
   DEFAULT_VAULT_QUERY_DEFAULTS,
-  ensureDefaultSortParam
+  sanitizeInactiveSortParams
 } from './vaultsQueryState'
 
 describe('vaults sort query state', () => {
-  it('uses TVL by default and writes it to the query', () => {
+  it('uses the raw list by default and keeps sorting out of the query', () => {
     const snapshot = buildSnapshotFromParams(new URLSearchParams(), DEFAULT_VAULT_QUERY_DEFAULTS)
     const params = buildUrlParamsFromSnapshot(snapshot, DEFAULT_VAULT_QUERY_DEFAULTS)
 
-    expect(snapshot.sortBy).toBe('tvl')
+    expect(snapshot.sortBy).toBe('none')
     expect(snapshot.sortDirection).toBe('desc')
+    expect(params.has('sortBy')).toBe(false)
+    expect(params.has('sortDirection')).toBe(false)
+  })
+
+  it('writes an active descending sort without the default direction', () => {
+    const snapshot = {
+      ...buildSnapshotFromParams(new URLSearchParams(), DEFAULT_VAULT_QUERY_DEFAULTS),
+      sortBy: 'tvl' as const
+    }
+    const params = buildUrlParamsFromSnapshot(snapshot, DEFAULT_VAULT_QUERY_DEFAULTS)
+
     expect(params.get('sortBy')).toBe('tvl')
     expect(params.has('sortDirection')).toBe(false)
+  })
+
+  it('writes the direction for an active ascending sort', () => {
+    const snapshot = {
+      ...buildSnapshotFromParams(new URLSearchParams(), DEFAULT_VAULT_QUERY_DEFAULTS),
+      sortBy: 'estAPY' as const,
+      sortDirection: 'asc' as const
+    }
+    const params = buildUrlParamsFromSnapshot(snapshot, DEFAULT_VAULT_QUERY_DEFAULTS)
+
+    expect(params.get('sortBy')).toBe('estAPY')
+    expect(params.get('sortDirection')).toBe('asc')
   })
 
   it('keeps the internal unsorted state out of the query', () => {
@@ -29,31 +52,31 @@ describe('vaults sort query state', () => {
     expect(params.has('sortDirection')).toBe(false)
   })
 
-  it('normalizes a legacy sortBy=none query to the TVL descending default', () => {
-    const snapshot = buildSnapshotFromParams(
+  it('normalizes inactive sort directions to the descending sentinel', () => {
+    const fromLegacyNone = buildSnapshotFromParams(
       new URLSearchParams('sortBy=none&sortDirection=asc'),
       DEFAULT_VAULT_QUERY_DEFAULTS
     )
+    const fromDirectionOnly = buildSnapshotFromParams(
+      new URLSearchParams('sortDirection=asc'),
+      DEFAULT_VAULT_QUERY_DEFAULTS
+    )
 
-    expect(snapshot.sortBy).toBe('tvl')
-    expect(snapshot.sortDirection).toBe('desc')
+    expect(fromLegacyNone).toMatchObject({ sortBy: 'none', sortDirection: 'desc' })
+    expect(fromDirectionOnly).toMatchObject({ sortBy: 'none', sortDirection: 'desc' })
   })
 
-  it('adds the default sort without dropping existing query params', () => {
-    const params = ensureDefaultSortParam(new URLSearchParams('search=usdc&utm_source=test'), 'tvl')
+  it('removes inactive sort keys while preserving other query params', () => {
+    const params = sanitizeInactiveSortParams(
+      new URLSearchParams('search=usdc&sortBy=none&sortDirection=asc&utm_source=test')
+    )
 
-    expect(params.toString()).toBe('search=usdc&utm_source=test&sortBy=tvl')
-  })
-
-  it('replaces a legacy unsorted query and its stale direction', () => {
-    const params = ensureDefaultSortParam(new URLSearchParams('search=usdc&sortBy=none&sortDirection=asc'), 'tvl')
-
-    expect(params.toString()).toBe('search=usdc&sortBy=tvl')
+    expect(params.toString()).toBe('search=usdc&utm_source=test')
   })
 
   it('leaves an explicit public sort unchanged', () => {
-    const params = ensureDefaultSortParam(new URLSearchParams('sortBy=estAPY&sortDirection=asc'), 'tvl')
+    const params = sanitizeInactiveSortParams(new URLSearchParams('sortBy=deposited&sortDirection=asc'))
 
-    expect(params.toString()).toBe('sortBy=estAPY&sortDirection=asc')
+    expect(params.toString()).toBe('sortBy=deposited&sortDirection=asc')
   })
 })

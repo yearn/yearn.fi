@@ -32,7 +32,7 @@ export type TVaultsQueryDefaults = {
 type TNormalizedSortDirection = 'asc' | 'desc'
 
 export const DEFAULT_VAULT_QUERY_TYPES = ['multi', 'single']
-export const DEFAULT_VAULT_QUERY_SORT_BY: TPossibleSortBy = 'tvl'
+export const DEFAULT_VAULT_QUERY_SORT_BY: TPossibleSortBy = 'none'
 export const DEFAULT_VAULT_QUERY_DEFAULTS: TVaultsQueryDefaults = {
   defaultTypes: DEFAULT_VAULT_QUERY_TYPES,
   defaultCategories: [],
@@ -149,16 +149,13 @@ export function parseSortDirection(raw: string | null): TNormalizedSortDirection
   return raw === 'asc' || raw === 'desc' ? raw : DEFAULT_SORT_DIRECTION
 }
 
-export function ensureDefaultSortParam(params: URLSearchParams, defaultSortBy: TPossibleSortBy): URLSearchParams {
+export function sanitizeInactiveSortParams(params: URLSearchParams): URLSearchParams {
   const nextParams = new URLSearchParams(params)
-  const currentSortBy = nextParams.get('sortBy')
-  if ((currentSortBy && currentSortBy !== 'none') || defaultSortBy === 'none') {
-    return nextParams
-  }
-  if (currentSortBy === 'none') {
+  const sortBy = nextParams.get('sortBy')
+  if (!sortBy || sortBy === 'none') {
+    nextParams.delete('sortBy')
     nextParams.delete('sortDirection')
   }
-  nextParams.set('sortBy', defaultSortBy)
   return nextParams
 }
 
@@ -215,6 +212,7 @@ export function buildSnapshotFromParams(
   const normalizedTypes = normalizeV3Types(rawTypes)
   const showLegacyParam = params.get('showLegacy')
   const showLegacyFromParam = showLegacyParam !== null ? readBooleanParam(params, 'showLegacy') : false
+  const sortBy = rawSortBy && rawSortBy !== 'none' ? (rawSortBy as TPossibleSortBy) : defaults.defaultSortBy
 
   return {
     vaultType,
@@ -228,8 +226,8 @@ export function buildSnapshotFromParams(
     showLegacyVaults: showLegacyParam !== null ? showLegacyFromParam : rawTypes.includes('legacy'),
     showHiddenVaults: false,
     showStrategies: readBooleanParam(params, 'showStrategies'),
-    sortBy: rawSortBy && rawSortBy !== 'none' ? (rawSortBy as TPossibleSortBy) : defaults.defaultSortBy,
-    sortDirection: rawSortBy === 'none' ? DEFAULT_SORT_DIRECTION : parseSortDirection(params.get('sortDirection'))
+    sortBy,
+    sortDirection: sortBy === 'none' ? DEFAULT_SORT_DIRECTION : parseSortDirection(params.get('sortDirection'))
   }
 }
 
