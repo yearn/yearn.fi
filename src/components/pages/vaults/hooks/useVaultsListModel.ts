@@ -9,7 +9,6 @@ import { type TYvUsdListVaults, useYvUsdVaults } from '@pages/vaults/hooks/useYv
 import {
   AGGRESSIVENESS_OPTIONS,
   AVAILABLE_TOGGLE_VALUE,
-  HOLDINGS_TOGGLE_VALUE,
   selectVaultsByType,
   V3_ASSET_CATEGORIES
 } from '@pages/vaults/utils/constants'
@@ -48,8 +47,6 @@ type TVaultsListModelArgs = {
   searchValue: string
   sortBy: TPossibleSortBy
   sortDirection: TSortDirection
-  holdingsPinnedSortDirection: TSortDirection
-  isHoldingsPinned: boolean
   isAvailablePinned: boolean
 }
 
@@ -159,8 +156,6 @@ export function useVaultsListModel({
   searchValue,
   sortBy,
   sortDirection,
-  holdingsPinnedSortDirection,
-  isHoldingsPinned,
   isAvailablePinned
 }: TVaultsListModelArgs): TVaultsListModel {
   const isAllVaults = listVaultType === 'all'
@@ -345,20 +340,7 @@ export function useVaultsListModel({
 
   const sortedVaults = useSortVaults(filteredVaults, sortBy, sortDirection)
 
-  const holdingsKeySet = useMemo(() => new Set(holdingsVaults.map((vault) => getVaultKey(vault))), [holdingsVaults])
-
   const availableKeySet = useMemo(() => new Set(availableVaults.map((vault) => getVaultKey(vault))), [availableVaults])
-
-  const sortedHoldingsVaults = useMemo(
-    () => sortedVaults.filter((vault) => holdingsKeySet.has(getVaultKey(vault))),
-    [sortedVaults, holdingsKeySet]
-  )
-
-  const sortedHoldingsVaultsByDeposited = useSortVaults(
-    sortedHoldingsVaults,
-    'deposited',
-    holdingsPinnedSortDirection || 'desc'
-  )
 
   const sortedAvailableVaults = useMemo(
     () => sortedVaults.filter((vault) => availableKeySet.has(getVaultKey(vault))),
@@ -388,30 +370,8 @@ export function useVaultsListModel({
       }
     }
 
-    if (isHoldingsPinned) {
-      const holdingsSourceVaults =
-        holdingsPinnedSortDirection === '' ? sortedHoldingsVaults : sortedHoldingsVaultsByDeposited
-      const holdingsSectionVaults = takeUnseenVaults(holdingsSourceVaults)
-      if (holdingsSectionVaults.length > 0) {
-        sections.push({
-          key: HOLDINGS_TOGGLE_VALUE,
-          vaults: holdingsSectionVaults
-        })
-      }
-    }
-
     return sections
-  }, [
-    isAvailablePinned,
-    holdingsPinnedSortDirection,
-    isHoldingsPinned,
-    sortedHoldingsVaults,
-    sortedHoldingsVaultsByDeposited,
-    sortedAvailableVaults,
-    sortedVaults,
-    shouldShowYvUsd,
-    yvUsdVault
-  ])
+  }, [isAvailablePinned, sortedAvailableVaults, shouldShowYvUsd, yvUsdVault])
 
   const pinnedVaults = useMemo(() => pinnedSections.flatMap((section) => section.vaults), [pinnedSections])
 
