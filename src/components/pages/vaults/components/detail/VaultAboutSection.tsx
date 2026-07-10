@@ -222,7 +222,14 @@ export function VaultAboutSection({
   const vaultKindDescription = shouldShowKind ? getKindDescription(kindType, kindLabel) : null
   const managementFee = formatPercent((apr.fees.management || 0) * 100, 0, 2)
   const performanceFee = formatPercent((apr.fees.performance || 0) * 100, 0, 2)
-  const feesSummary = `${managementFee} Management Fee | ${performanceFee} Performance Fee`
+  const feesSummary = (
+    <>
+      <strong className={'font-bold'}>{managementFee}</strong>
+      {' Management Fee | '}
+      <strong className={'font-bold'}>{performanceFee}</strong>
+      {' Performance Fee'}
+    </>
+  )
   const chainIcon = <TokenLogo src={chainLogoSrc} tokenSymbol={chainName} width={16} height={16} />
   const explorerBase = getNetwork(chainID).defaultBlockExplorer
   const explorerHref = explorerBase ? `${explorerBase}/address/${vaultAddress}` : ''
