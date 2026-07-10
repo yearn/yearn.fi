@@ -133,6 +133,8 @@ export function YvUsdDualLineChart({
               return [formatValue(numericValue), getSeriesLabel(name)]
             }}
             labelFormatter={formatChartTooltipDate}
+            labelStyle={{ marginBottom: 8 }}
+            itemStyle={{ paddingTop: 0, paddingBottom: 2 }}
             contentStyle={{
               backgroundColor: 'var(--chart-tooltip-bg)',
               borderRadius: 'var(--chart-tooltip-radius)',
