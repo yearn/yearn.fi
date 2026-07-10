@@ -83,9 +83,9 @@ function ExpandableInfoItem({
       }}
     >
       <summary
-        className={cl(
-          'w-full cursor-pointer list-none rounded-lg text-left transition-colors py-2 hover:bg-surface-secondary/80 [&::-webkit-details-marker]:hidden'
-        )}
+        className={
+          '-ml-2 w-[calc(100%+0.5rem)] cursor-pointer list-none rounded-lg px-2 py-2 text-left transition-colors hover:bg-surface-secondary/80 [&::-webkit-details-marker]:hidden'
+        }
       >
         <InlineHeading
           label={label}

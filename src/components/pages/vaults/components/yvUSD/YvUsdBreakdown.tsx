@@ -20,12 +20,14 @@ const YvUsdTooltipRow = ({
   label,
   value,
   symbol,
-  options
+  options,
+  iconGapClassName = 'gap-2'
 }: {
   icon: ReactElement
   label: string
   value: number
   symbol: 'percent' | 'USD'
+  iconGapClassName?: string
   options?: {
     maximumFractionDigits?: number
     minimumFractionDigits?: number
@@ -35,7 +37,7 @@ const YvUsdTooltipRow = ({
   const decimals = symbol === 'percent' ? 6 : 0
   return (
     <div className="flex items-center justify-between gap-4">
-      <span className="inline-flex items-center gap-2 text-text-secondary">
+      <span className={cl('inline-flex items-center text-text-secondary', iconGapClassName)}>
         {icon}
         {label}
       </span>
@@ -70,6 +72,7 @@ export function YvUsdApyTooltipContent({
           label="Unlocked APY"
           value={unlockedValue}
           symbol="percent"
+          iconGapClassName="gap-1"
           options={{ maximumFractionDigits: 2, minimumFractionDigits: 2 }}
         />
         {infinifiPointsNote ? (
