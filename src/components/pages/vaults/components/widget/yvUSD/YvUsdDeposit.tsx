@@ -4,9 +4,7 @@ import {
   convertYvUsdVariantAmountString,
   type TYvUsdVariant,
   YVUSD_LOCKED_ADDRESS,
-  YVUSD_LOCKED_COOLDOWN_DAYS,
-  YVUSD_UNLOCKED_ADDRESS,
-  YVUSD_WITHDRAW_WINDOW_DAYS
+  YVUSD_UNLOCKED_ADDRESS
 } from '@pages/vaults/utils/yvUsd'
 import type { TToken } from '@shared/types'
 import { toAddress, zeroNormalizedBN } from '@shared/utils'
@@ -15,7 +13,7 @@ import { useState } from 'react'
 import { useAccount } from 'wagmi'
 import { WidgetDeposit } from '../deposit'
 import { getDefaultTokenLogoSrc } from '../tokenLogo.utils'
-import { scheduleAdditionalYvUsdDepositRefetch } from './YvUsdDeposit.helpers'
+import { getYvUsdDepositTypeItems, scheduleAdditionalYvUsdDepositRefetch } from './YvUsdDeposit.helpers'
 import { YvUsdVariantToggle } from './YvUsdVariantToggle'
 
 type Props = {
@@ -232,14 +230,15 @@ export function YvUsdDeposit({
   const depositPrefill = getDepositPrefill(variant, unlockedAssetAddress, chainId, pendingPrefillAmount)
 
   const headerToggle = <YvUsdVariantToggle activeVariant={variant} onChange={handleVariantChange} />
+  const depositTypeItems = getYvUsdDepositTypeItems(variant)
 
   const depositTypeSection = (
     <div className="rounded-lg border border-primary/80 bg-surface-tertiary/80 px-3 py-2 text-sm text-text-primary">
-      <p className="text-sm text-text-primary">
-        {variant === 'locked'
-          ? `Locked deposits earn additional yield from unlocked positions. Your position will be locked with a ${YVUSD_LOCKED_COOLDOWN_DAYS}-day cooldown and a ${YVUSD_WITHDRAW_WINDOW_DAYS} day withdrawal window.`
-          : `Unlocked deposits stay liquid but earn less than locked deposits.`}
-      </p>
+      <ul className="list-disc space-y-1 pl-5">
+        {depositTypeItems.map((item) => (
+          <li key={item}>{item}</li>
+        ))}
+      </ul>
     </div>
   )
 
