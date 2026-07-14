@@ -181,7 +181,7 @@ export const Widget = forwardRef<TWidgetRef, Props>(function Widget(
 
   if (hideTabSelector) {
     return (
-      <div className="flex flex-col gap-0 w-full h-full">
+      <div data-page-bot-guard={true} className="flex flex-col gap-0 w-full h-full">
         <div
           className={cl('bg-surface relative w-full min-w-0', {
             'rounded-lg': !disableBorderRadius
@@ -194,7 +194,7 @@ export const Widget = forwardRef<TWidgetRef, Props>(function Widget(
   }
 
   return (
-    <div className="flex flex-col gap-0 w-full h-full flex-1">
+    <div data-page-bot-guard={true} className="flex flex-col gap-0 w-full h-full flex-1">
       <div
         className={cl('bg-app overflow-hidden relative w-full min-w-0 flex flex-col flex-1', {
           'rounded-b-lg': !disableBorderRadius

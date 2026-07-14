@@ -39,7 +39,7 @@ export function YvBtcWidget({
   const setMode = onModeChange ?? setInternalMode
 
   return (
-    <div className="flex flex-col gap-0 w-full h-full">
+    <div data-page-bot-guard={true} className="flex flex-col gap-0 w-full h-full">
       <div className="bg-surface rounded-lg border border-border overflow-hidden relative w-full min-w-0">
         {showTabs ? (
           <div className="bg-surface rounded-lg flex h-11">

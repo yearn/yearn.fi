@@ -163,7 +163,7 @@ export function WidgetRewards(props: TWidgetRewardsProps): ReactElement | null {
   }
 
   return (
-    <div className={cl('flex w-full flex-col pt-4', isPanelOpen ? 'flex-1 min-h-0' : '')}>
+    <div data-page-bot-guard={true} className={cl('flex w-full flex-col pt-4', isPanelOpen ? 'flex-1 min-h-0' : '')}>
       <div
         className={cl(
           'relative overflow-hidden rounded-lg border border-border bg-surface',

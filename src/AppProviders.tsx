@@ -4,6 +4,7 @@ import { IframeAutoConnect } from '@components/IframeAutoConnect'
 import { AppSettingsContextApp } from '@pages/vaults/contexts/useAppSettings'
 import { EnsoStatusProvider } from '@pages/vaults/contexts/useEnsoStatus'
 import { RainbowKitProvider } from '@rainbow-me/rainbowkit'
+import { PageBot } from '@shared/components/pageBot'
 import { ChartStyleContextApp } from '@shared/contexts/useChartStyle'
 import { IndexedDB } from '@shared/contexts/useIndexedDB'
 import { WithNotifications } from '@shared/contexts/useNotifications'
@@ -75,6 +76,7 @@ export function AppProviders({ children }: { children: ReactNode }): ReactElemen
                                     <AppClientEffects />
                                     {children}
                                     <TenderlyControlPanel />
+                                    <PageBot />
                                   </TenderlyPanelProvider>
                                 </WithNotificationsActions>
                               </WithNotifications>
