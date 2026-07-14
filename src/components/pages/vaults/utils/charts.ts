@@ -41,7 +41,8 @@ function parseChartDateParts(value: string): { month: number; day: number; year:
     return null
   }
 
-  const [monthPart, dayPart, yearPart] = value.split('/')
+  const isoParts = /^(\d{4})-(\d{2})-(\d{2})$/.exec(value)
+  const [monthPart, dayPart, yearPart] = isoParts ? [isoParts[2], isoParts[3], isoParts[1]] : value.split('/')
   const month = Number(monthPart)
   const day = Number(dayPart)
   const year = Number(yearPart)

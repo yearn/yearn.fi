@@ -1,6 +1,6 @@
 import type { TChartTimeseriesResponse } from '@pages/vaults/types/charts'
 import { describe, expect, it } from 'vitest'
-import { transformVaultChartData } from './charts'
+import { formatChartMonthYearLabel, getChartMonthlyTicks, transformVaultChartData } from './charts'
 
 function tvlPoint(time: number, value: number): TChartTimeseriesResponse['tvl'][number] {
   return {
@@ -38,5 +38,17 @@ describe('transformVaultChartData', () => {
     )
 
     expect(result.tvlData?.map((point) => point.TVL)).toEqual([0, 100, 0])
+  })
+})
+
+describe('portfolio history date labels', () => {
+  it('formats ISO dates as month and year', () => {
+    expect(formatChartMonthYearLabel('2026-05-13')).toBe('05/26')
+  })
+
+  it('selects one ISO date per month for chart ticks', () => {
+    const data = [{ date: '2026-05-13' }, { date: '2026-05-14' }, { date: '2026-06-01' }, { date: '2026-06-30' }]
+
+    expect(getChartMonthlyTicks(data)).toEqual(['2026-05-13', '2026-06-01'])
   })
 })
