@@ -10,13 +10,7 @@ import {
   type TKongVaultStrategy
 } from '@pages/vaults/domain/kongVaultSelectors'
 import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
-import {
-  getYvUsdSharePrice,
-  isYvUsdVault,
-  YVUSD_CHAIN_ID,
-  YVUSD_LOCKED_ADDRESS,
-  YVUSD_UNLOCKED_ADDRESS
-} from '@pages/vaults/utils/yvUsd'
+import { getYvUsdPositionValues, isYvUsdVault } from '@pages/vaults/utils/yvUsd'
 import { useWalletHoldings, useWalletTokens } from '@shared/contexts/useWallet'
 import type { TSortDirection } from '@shared/types'
 import { normalizeApyDisplayValue, toAddress, toNormalizedBN } from '@shared/utils'
@@ -42,16 +36,17 @@ export function useSortVaults<TVault extends TKongVaultInput & { details?: TKong
   sortBy: TPossibleSortBy,
   sortDirection: TSortDirection
 ): TVault[] {
-  const { getBalance } = useWalletTokens()
+  const { getToken, getBalance } = useWalletTokens()
   const { getVaultHoldingsUsd } = useWalletHoldings()
   const { unlockedVault: yvUsdUnlockedVault, lockedVault: yvUsdLockedVault, metrics: yvUsdMetrics } = useYvUsdVaults()
   const yvUsdDepositedValue = useMemo((): number => {
-    const unlockedBalance = getBalance({ address: YVUSD_UNLOCKED_ADDRESS, chainID: YVUSD_CHAIN_ID }).normalized
-    const lockedBalance = getBalance({ address: YVUSD_LOCKED_ADDRESS, chainID: YVUSD_CHAIN_ID }).normalized
-    const unlockedSharePrice = getYvUsdSharePrice(yvUsdUnlockedVault)
-    const lockedSharePrice = getYvUsdSharePrice(yvUsdLockedVault)
-    return unlockedBalance * unlockedSharePrice + lockedBalance * lockedSharePrice
-  }, [getBalance, yvUsdLockedVault, yvUsdUnlockedVault])
+    return getYvUsdPositionValues({
+      unlockedVault: yvUsdUnlockedVault,
+      lockedVault: yvUsdLockedVault,
+      getToken,
+      getBalance
+    }).combinedValue
+  }, [getBalance, getToken, yvUsdLockedVault, yvUsdUnlockedVault])
 
   const yvUsdDisplayedApy = useMemo((): number => {
     const lockedApy = yvUsdMetrics.locked.apy
