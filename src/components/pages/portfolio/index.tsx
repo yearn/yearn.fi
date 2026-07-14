@@ -635,7 +635,7 @@ function ActivityTypeDropdown({
                     <span
                       className={cl(
                         'inline-flex size-4 items-center justify-center rounded-full border bg-surface',
-                        selected ? 'border-primary text-primary' : 'border-border text-transparent'
+                        selected ? 'border-transparent text-primary' : 'border-border text-transparent'
                       )}
                     >
                       <IconCheck className="size-3" />
@@ -719,7 +719,7 @@ function ActivityCalendarMonth({
           </span>
         ))}
       </div>
-      <div className="mt-1 grid grid-cols-7 gap-y-1">
+      <div className="mt-1 grid grid-cols-7 justify-items-center gap-1">
         {emptyCalendarDays.map((emptyDay) => (
           <span key={emptyDay} className="size-8" />
         ))}
