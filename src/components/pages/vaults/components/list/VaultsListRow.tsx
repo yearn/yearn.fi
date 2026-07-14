@@ -39,14 +39,7 @@ import {
   NOT_YEARN_TAG_DESCRIPTION,
   RETIRED_TAG_DESCRIPTION
 } from '@pages/vaults/utils/vaultTagCopy'
-import {
-  getYvUsdInfinifiPointsNote,
-  getYvUsdSharePrice,
-  isYvUsdAddress,
-  YVUSD_CHAIN_ID,
-  YVUSD_LOCKED_ADDRESS,
-  YVUSD_UNLOCKED_ADDRESS
-} from '@pages/vaults/utils/yvUsd'
+import { getYvUsdInfinifiPointsNote, getYvUsdPositionValues, isYvUsdAddress } from '@pages/vaults/utils/yvUsd'
 import { useMediaQuery } from '@react-hookz/web'
 import { RenderAmount } from '@shared/components/RenderAmount'
 import { TokenLogo } from '@shared/components/TokenLogo'
@@ -944,21 +937,23 @@ function VaultsListRowWithWallet(props: TVaultsListRowProps): ReactElement {
   const isYvUsd = isYvUsdAddress(vaultAddress)
   const yvUsdVaultsForRow = isYvUsd ? yvUsdVaults : undefined
   const { address } = useWeb3()
-  const { getBalance } = useWalletTokens()
+  const { getToken, getBalance } = useWalletTokens()
   const { getVaultHoldingsUsd } = useWalletHoldings()
   const { isLoading: isWalletLoading } = useWalletStatus()
   const holdingsValue = useMemo(() => {
     if (isYvUsd) {
-      const unlockedBalance = getBalance({ address: YVUSD_UNLOCKED_ADDRESS, chainID: YVUSD_CHAIN_ID }).normalized
-      const lockedBalance = getBalance({ address: YVUSD_LOCKED_ADDRESS, chainID: YVUSD_CHAIN_ID }).normalized
-      const unlockedSharePrice = getYvUsdSharePrice(yvUsdVaultsForRow?.unlockedVault)
-      const lockedSharePrice = getYvUsdSharePrice(yvUsdVaultsForRow?.lockedVault)
-      return unlockedBalance * unlockedSharePrice + lockedBalance * lockedSharePrice
+      return getYvUsdPositionValues({
+        unlockedVault: yvUsdVaultsForRow?.unlockedVault,
+        lockedVault: yvUsdVaultsForRow?.lockedVault,
+        getToken,
+        getBalance
+      }).combinedValue
     }
     return getVaultHoldingsUsd(currentVault)
   }, [
     currentVault,
     getBalance,
+    getToken,
     getVaultHoldingsUsd,
     isYvUsd,
     yvUsdVaultsForRow?.lockedVault,
