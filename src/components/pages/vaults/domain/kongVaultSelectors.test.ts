@@ -1,3 +1,4 @@
+import { calculateVaultEstimatedAPY } from '@shared/utils/vaultApy'
 import { describe, expect, it } from 'vitest'
 import { getVaultAPR, getVaultStaking, getVaultStrategies, getVaultTVL } from './kongVaultSelectors'
 
@@ -272,6 +273,134 @@ describe('getVaultAPR', () => {
     } as any)
 
     expect(apr.forwardAPR.netAPR).toBe(0.03431466938555827)
+  })
+
+  it('prefers Katana estimated APY over oracle APY for vault forward APR values', () => {
+    const apr = getVaultAPR({
+      ...BASE_LIST_VAULT,
+      performance: {
+        estimated: {
+          apr: 0.049,
+          apy: 0.051,
+          type: 'katana-estimated-apr',
+          components: {}
+        },
+        oracle: {
+          apr: 0.029,
+          apy: 0.03,
+          netAPR: 0.028,
+          netAPY: 0.03
+        },
+        historical: {
+          net: 0.01,
+          weeklyNet: 0.01,
+          monthlyNet: 0.01,
+          inceptionNet: 0.01
+        }
+      }
+    } as any)
+
+    expect(apr.forwardAPR.netAPR).toBe(0.051)
+  })
+
+  it('uses Katana estimated APR before oracle values when estimated APY is absent', () => {
+    const apr = getVaultAPR({
+      ...BASE_LIST_VAULT,
+      performance: {
+        estimated: {
+          apr: 0.05,
+          type: 'katana-estimated-apr',
+          components: {}
+        },
+        oracle: {
+          apr: 0.029,
+          apy: 0.03,
+          netAPR: 0.028,
+          netAPY: 0.03
+        },
+        historical: {
+          net: 0.01,
+          weeklyNet: 0.01,
+          monthlyNet: 0.01,
+          inceptionNet: 0.01
+        }
+      }
+    } as any)
+
+    expect(apr.forwardAPR.netAPR).toBe(0.05)
+  })
+
+  it('prefers snapshot Katana estimated values over list estimated values', () => {
+    const apr = getVaultAPR(
+      {
+        ...BASE_LIST_VAULT,
+        performance: {
+          estimated: {
+            apr: 0.04,
+            apy: 0.045,
+            type: 'katana-estimated-apr',
+            components: {}
+          },
+          oracle: {
+            apr: 0.03,
+            apy: 0.031
+          },
+          historical: {
+            net: 0.01,
+            weeklyNet: 0.01,
+            monthlyNet: 0.01,
+            inceptionNet: 0.01
+          }
+        }
+      } as any,
+      {
+        performance: {
+          estimated: {
+            apr: 0.06,
+            apy: 0.07,
+            type: 'katana-estimated-apr',
+            components: {}
+          },
+          oracle: {
+            apr: 0.035,
+            apy: 0.036
+          }
+        }
+      } as any
+    )
+
+    expect(apr.forwardAPR.type).toBe('estimated')
+    expect(apr.forwardAPR.netAPR).toBe(0.07)
+  })
+
+  it('adds Katana app rewards on top of the selected estimated APY', () => {
+    const apy = calculateVaultEstimatedAPY({
+      ...BASE_LIST_VAULT,
+      performance: {
+        estimated: {
+          apr: 0.049,
+          apy: 0.051,
+          type: 'katana-estimated-apr',
+          components: {
+            katanaAppRewardsAPR: 0.02
+          }
+        },
+        oracle: {
+          apr: 0.029,
+          apy: 0.03,
+          netAPR: 0.028,
+          netAPY: 0.03
+        },
+        historical: {
+          net: 0.01,
+          weeklyNet: 0.01,
+          monthlyNet: 0.01,
+          inceptionNet: 0.01
+        }
+      }
+    } as any)
+
+    expect(apy).toBeCloseTo(0.071, 6)
   })
 })
 
