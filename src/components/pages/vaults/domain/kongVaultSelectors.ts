@@ -531,7 +531,7 @@ export const getVaultTVL = (vault: TKongVaultInput, snapshot?: TKongVaultSnapsho
   const totalAssetsRaw = snapshot?.totalAssets ?? '0'
   const totalAssets = toBigIntValue(totalAssetsRaw)
   const normalizedAssets = toNormalizedBN(totalAssets, token.decimals).normalized
-  const tvl = pickNumber(snapshot?.tvl?.close ?? null, vault.tvl)
+  const tvl = pickNumber(vault.tvl, snapshot?.tvl?.close ?? null)
   const price = Number.isFinite(tvl) && tvl > 0 && normalizedAssets > 0 ? tvl / normalizedAssets : 0
 
   return {
@@ -599,6 +599,10 @@ export const getVaultAPR = (vault: TKongVaultInput, snapshot?: TKongVaultSnapsho
 
   const forwardNet = isKatanaVault
     ? pickNumber(
+        snapshot?.performance?.estimated?.apy,
+        snapshot?.performance?.estimated?.apr,
+        vault.performance?.estimated?.apy,
+        vault.performance?.estimated?.apr,
         snapshot?.performance?.oracle?.netAPY,
         snapshot?.performance?.oracle?.apy,
         snapshot?.performance?.oracle?.netAPR,
@@ -606,9 +610,6 @@ export const getVaultAPR = (vault: TKongVaultInput, snapshot?: TKongVaultSnapsho
         vault.performance?.oracle?.netAPY,
         vault.performance?.oracle?.apy,
         vault.performance?.oracle?.netAPR,
-        snapshot?.performance?.estimated?.apy,
-        snapshot?.performance?.estimated?.apr,
-        vault.performance?.estimated?.apy,
         vault.performance?.historical?.net,
         historical?.net
       )
