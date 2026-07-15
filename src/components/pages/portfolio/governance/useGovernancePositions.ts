@@ -39,7 +39,6 @@ import type { ContractFunctionParameters, PublicClient } from 'viem'
 type TUseGovernancePositionsReturn = {
   positions: TGovernancePosition[]
   governanceReward: TGovernanceReward | null
-  totalValueUsd: number
   isLoading: boolean
   refetch: () => Promise<void>
 }
@@ -330,10 +329,6 @@ export function useGovernancePositions(enabled: boolean): TUseGovernancePosition
       }),
     [globalDataQuery.data, rawQuery.data, yfiPrice]
   )
-  const totalValueUsd = useMemo(
-    () => positions.reduce((sum, position) => sum + (Number.isFinite(position.valueUsd) ? position.valueUsd : 0), 0),
-    [positions]
-  )
   const refetch = useCallback(async () => {
     await Promise.all([rawQuery.refetch(), globalDataQuery.refetch()])
   }, [globalDataQuery.refetch, rawQuery.refetch])
@@ -341,7 +336,6 @@ export function useGovernancePositions(enabled: boolean): TUseGovernancePosition
   return {
     positions,
     governanceReward,
-    totalValueUsd,
     isLoading: enabled && (rawQuery.isLoading || globalDataQuery.isLoading),
     refetch
   }

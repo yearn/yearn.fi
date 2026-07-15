@@ -82,6 +82,7 @@ export type TPortfolioBlendedMetrics = {
 export type TPortfolioModel = {
   blendedMetrics: TPortfolioBlendedMetrics
   hasClaimableRewards: boolean
+  hasGovernancePositions: boolean
   hasHoldings: boolean
   holdingsRows: THoldingsRow[]
   isActive: boolean
@@ -523,7 +524,7 @@ export function usePortfolioModel(): TPortfolioModel {
     [sortedHoldings]
   )
   const ethPrice = getPrice({ address: ETH_TOKEN_ADDRESS, chainID: 1 }).normalized
-  const totalPortfolioValue = vaultTotalPortfolioValue + governancePositions.totalValueUsd
+  const totalPortfolioValue = vaultTotalPortfolioValue
 
   const liveBalanceSnapshot = useMemo<TPortfolioLiveBalanceSnapshot | null>(() => {
     if (isHoldingsLoading || !Number.isFinite(vaultTotalPortfolioValue)) {
@@ -571,41 +572,24 @@ export function usePortfolioModel(): TPortfolioModel {
       { totalValue: 0, weightedCurrent: 0, weightedHistorical: 0, hasCurrent: false, hasHistorical: false }
     )
 
-    const currentMetrics = governancePositions.positions.reduce(
-      (acc, position) => {
-        const value = position.valueUsd
-        if (!Number.isFinite(value) || value <= 0) return acc
-        const apy = position.apy
-        return {
-          totalValue: acc.totalValue + value,
-          weightedCurrent: acc.weightedCurrent + (isFiniteNumber(apy) ? value * apy : 0),
-          hasCurrent: acc.hasCurrent || isFiniteNumber(apy)
-        }
-      },
-      {
-        totalValue: vaultMetrics.totalValue,
-        weightedCurrent: vaultMetrics.weightedCurrent,
-        hasCurrent: vaultMetrics.hasCurrent
-      }
-    )
-
     const blendedCurrentAPY =
-      currentMetrics.totalValue > 0 && currentMetrics.hasCurrent
-        ? (currentMetrics.weightedCurrent / currentMetrics.totalValue) * 100
+      vaultMetrics.totalValue > 0 && vaultMetrics.hasCurrent
+        ? (vaultMetrics.weightedCurrent / vaultMetrics.totalValue) * 100
         : null
     const blendedHistoricalAPY =
       vaultMetrics.totalValue > 0 && vaultMetrics.hasHistorical
         ? (vaultMetrics.weightedHistorical / vaultMetrics.totalValue) * 100
         : null
     const estimatedAnnualReturn =
-      currentMetrics.totalValue > 0 && currentMetrics.hasCurrent ? currentMetrics.weightedCurrent : null
+      vaultMetrics.totalValue > 0 && vaultMetrics.hasCurrent ? vaultMetrics.weightedCurrent : null
 
     return { blendedCurrentAPY, blendedHistoricalAPY, estimatedAnnualReturn }
-  }, [getVaultEstimatedAPY, getVaultHistoricalAPY, getVaultValue, governancePositions.positions, sortedHoldings])
+  }, [getVaultEstimatedAPY, getVaultHistoricalAPY, getVaultValue, sortedHoldings])
 
   return {
     blendedMetrics,
     hasClaimableRewards: hasClaimableRewardNotification(governancePositions.governanceReward?.usdValue ?? 0),
+    hasGovernancePositions: governancePositions.positions.length > 0,
     hasHoldings,
     holdingsRows,
     isActive,

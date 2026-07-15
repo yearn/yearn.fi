@@ -1607,7 +1607,7 @@ function PortfolioHeaderSection({
   const metrics: TMetricBlock[] = [
     {
       key: 'total-balance',
-      header: <MetricHeader label="Total Balance" tooltip="Total USD value of all your vault deposits." />,
+      header: <MetricHeader label="Total Vault Balance" tooltip="Total USD value of all your vault deposits." />,
       value: (
         <span className={METRIC_VALUE_CLASS}>
           {isSearchingBalances || isHoldingsLoading ? metricSpinner : currencyFormatter.format(totalPortfolioValue)}
@@ -2852,71 +2852,28 @@ function PortfolioHoldingsSection({
   setSortDirection,
   vaultFlags
 }: TPortfolioHoldingsProps): ReactElement {
+  const vaultRows = holdingsRows.filter((row) => row.type === 'vault')
+  const governanceRows = holdingsRows.filter((row) => row.type === 'governance')
+
   function handleSort(newSortBy: string, newDirection: TSortDirection): void {
     setSortBy(newSortBy as TPossibleSortBy)
     setSortDirection(newDirection)
   }
 
-  function renderHoldingsContent(): ReactElement {
-    if (isHoldingsLoading) {
-      return (
-        <div className="flex flex-col items-center justify-center gap-3 px-4 py-12 text-sm text-text-secondary sm:px-6 sm:py-16">
-          <YearnLogoSpinner className="size-12" logoClassName="size-8" />
-          <span>{'Searching for portfolio balances...'}</span>
-        </div>
-      )
-    }
-    if (!hasHoldings) {
-      return (
-        <EmptySectionCard
-          title="No portfolio positions yet"
-          description="Deposit into a Yearn vault or stake YFI to see it here."
-          ctaLabel="Explore Vaults"
-          ctaClassName="yearn--button--nextgen min-h-[44px] px-6"
-          href="/vaults"
-        />
-      )
-    }
-    return (
-      <div className="flex flex-col gap-px bg-border">
-        {holdingsRows.map((row) =>
-          row.type === 'vault' ? (
-            <VaultsListRow
-              key={row.key}
-              currentVault={row.vault}
-              flags={vaultFlags[row.key]}
-              hrefOverride={row.hrefOverride}
-              showBoostDetails={false}
-              activeProductType="all"
-              showStrategies
-              showAllocatorChip={false}
-              showProductTypeChipOverride={true}
-              showHoldingsChipOverride={false}
-              mobileSecondaryMetric="holdings"
-              expandedChartVariant="portfolio-user-tvl-overlay"
-              clickEventName={PLAUSIBLE_EVENTS.VAULT_CLICK_PORTFOLIO_LIST_ROW}
-            />
-          ) : (
-            <GovernancePositionRow key={row.key} position={row.position} />
-          )
-        )}
-      </div>
-    )
-  }
+  function renderHoldingsTable({
+    nameLabel,
+    rows,
+    title
+  }: {
+    nameLabel: string
+    rows: typeof holdingsRows
+    title: string
+  }): ReactElement | null {
+    if (rows.length === 0) return null
 
-  return (
-    <section className="flex flex-col gap-2">
-      {!isActive ? (
-        <div className="flex flex-col gap-2">
-          <EmptySectionCard
-            title="Connect a wallet to view your portfolio."
-            ctaLabel="Connect wallet"
-            onClick={openLoginModal}
-            secondaryCtaLabel="Explore Vaults"
-            secondaryCtaHref="/vaults"
-          />
-        </div>
-      ) : (
+    return (
+      <section className="flex flex-col gap-2">
+        <h2 className="text-lg font-semibold text-text-primary">{title}</h2>
         <div className="rounded-lg">
           <div className="flex flex-col">
             <div
@@ -2935,7 +2892,7 @@ function PortfolioHoldingsSection({
                 items={[
                   {
                     type: 'sort',
-                    label: 'Vault Name',
+                    label: nameLabel,
                     value: 'vault',
                     sortable: false,
                     className: 'col-span-12'
@@ -2964,11 +2921,79 @@ function PortfolioHoldingsSection({
                 ]}
               />
             </div>
-            <div className="overflow-hidden rounded-lg md:rounded-t-none border-x border-b border-border">
-              {renderHoldingsContent()}
+            <div className="overflow-hidden rounded-lg border-x border-b border-border md:rounded-t-none">
+              <div className="flex flex-col gap-px bg-border">
+                {rows.map((row) =>
+                  row.type === 'vault' ? (
+                    <VaultsListRow
+                      key={row.key}
+                      currentVault={row.vault}
+                      flags={vaultFlags[row.key]}
+                      hrefOverride={row.hrefOverride}
+                      showBoostDetails={false}
+                      activeProductType="all"
+                      showStrategies
+                      showAllocatorChip={false}
+                      showProductTypeChipOverride={true}
+                      showHoldingsChipOverride={false}
+                      mobileSecondaryMetric="holdings"
+                      expandedChartVariant="portfolio-user-tvl-overlay"
+                      clickEventName={PLAUSIBLE_EVENTS.VAULT_CLICK_PORTFOLIO_LIST_ROW}
+                    />
+                  ) : (
+                    <GovernancePositionRow key={row.key} position={row.position} />
+                  )
+                )}
+              </div>
             </div>
           </div>
         </div>
+      </section>
+    )
+  }
+
+  function renderHoldingsContent(): ReactElement {
+    if (isHoldingsLoading) {
+      return (
+        <div className="flex flex-col items-center justify-center gap-3 px-4 py-12 text-sm text-text-secondary sm:px-6 sm:py-16">
+          <YearnLogoSpinner className="size-12" logoClassName="size-8" />
+          <span>{'Searching for portfolio balances...'}</span>
+        </div>
+      )
+    }
+    if (!hasHoldings) {
+      return (
+        <EmptySectionCard
+          title="No portfolio positions yet"
+          description="Deposit into a Yearn vault or stake YFI to see it here."
+          ctaLabel="Explore Vaults"
+          ctaClassName="yearn--button--nextgen min-h-[44px] px-6"
+          href="/vaults"
+        />
+      )
+    }
+    return (
+      <div className="flex flex-col gap-6">
+        {renderHoldingsTable({ nameLabel: 'Vault Name', rows: vaultRows, title: 'Vaults' })}
+        {renderHoldingsTable({ nameLabel: 'YFI Position', rows: governanceRows, title: 'YFI Positions' })}
+      </div>
+    )
+  }
+
+  return (
+    <section className="flex flex-col gap-2">
+      {!isActive ? (
+        <div className="flex flex-col gap-2">
+          <EmptySectionCard
+            title="Connect a wallet to view your portfolio."
+            ctaLabel="Connect wallet"
+            onClick={openLoginModal}
+            secondaryCtaLabel="Explore Vaults"
+            secondaryCtaHref="/vaults"
+          />
+        </div>
+      ) : (
+        renderHoldingsContent()
       )}
     </section>
   )
@@ -3259,6 +3284,11 @@ function PortfolioPage(): ReactElement {
                     />
                   </div>
                 </div>
+                {model.hasGovernancePositions ? (
+                  <p className="border-t border-border bg-surface-secondary px-5 py-2 text-sm text-text-secondary">
+                    {'* Charts and aggregate stats do not include stYFI and other YFI positions.'}
+                  </p>
+                ) : null}
               </div>
             ) : null}
             <PortfolioHoldingsSection
