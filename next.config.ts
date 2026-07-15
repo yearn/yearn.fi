@@ -57,7 +57,7 @@ const nextConfig: NextConfig = {
       { source: '/telegram', destination: 'https://t.me/yearnfinance/', permanent: false },
       { source: '/medium', destination: 'https://medium.com/iearn', permanent: false },
       { source: '/governance', destination: 'https://gov.yearn.fi/', permanent: false },
-      { source: '/snapshot', destination: 'https://snapshot.org/#/veyfi.eth', permanent: false },
+      { source: '/snapshot', destination: 'https://snapshot.org/#/styfi.eth', permanent: false },
       { source: '/github', destination: 'https://github.com/yearn/yearn.fi', permanent: false }
     ]
   },

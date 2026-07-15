@@ -18,6 +18,7 @@ const VaultTvlGrowthChart = lazy(() =>
 type TYvUsdUserChartTab = 'user-position'
 export type TYvUsdChartTab = (typeof VAULT_CHART_TABS)[number]['id'] | TYvUsdUserChartTab
 export type TYvUsdChartTimeframe = (typeof VAULT_CHART_TIMEFRAME_OPTIONS)[number]['value']
+const DEFAULT_YVUSD_CHART_TIMEFRAME: TYvUsdChartTimeframe = '90d'
 
 type YvUsdChartsSectionProps = {
   chartTab?: TYvUsdChartTab
@@ -87,7 +88,8 @@ export function YvUsdChartsSection({
   const { apyData, performanceData, tvlData, isLoading, error } = useYvUsdCharts()
 
   const [uncontrolledTab, setUncontrolledTab] = useState<TYvUsdChartTab>('historical-apy')
-  const [uncontrolledTimeframe, setUncontrolledTimeframe] = useState<TYvUsdChartTimeframe>('1y')
+  const [uncontrolledTimeframe, setUncontrolledTimeframe] =
+    useState<TYvUsdChartTimeframe>(DEFAULT_YVUSD_CHART_TIMEFRAME)
 
   const activeTab = chartTab ?? uncontrolledTab
   const activeTimeframe = timeframe ?? uncontrolledTimeframe
