@@ -25,10 +25,9 @@ import { usePersistedShowHiddenVaults } from '@pages/vaults/hooks/vaultsFiltersS
 import { deriveListKind, isAllocatorVaultOverride } from '@pages/vaults/utils/vaultListFacets'
 import {
   getWeightedYvUsdApy,
-  getYvUsdSharePrice,
+  getYvUsdPositionValues,
   isYvUsdAddress,
   isYvUsdVault,
-  YVUSD_CHAIN_ID,
   YVUSD_LOCKED_ADDRESS,
   YVUSD_UNLOCKED_ADDRESS
 } from '@pages/vaults/utils/yvUsd'
@@ -184,7 +183,7 @@ function getStablecoinHoldingMatch(balances: ReturnType<typeof useWalletTokens>[
 }
 
 export function usePortfolioModel(): TPortfolioModel {
-  const { getBalance, balances } = useWalletTokens()
+  const { getToken, getBalance, balances } = useWalletTokens()
   const { getVaultHoldingsUsd } = useWalletHoldings()
   const { isLoading: isWalletLoading, hasCompletedBalanceLoad } = useWalletStatus()
   const { totalValue: vaultTotalPortfolioValue } = useWalletVaultTotals()
@@ -200,10 +199,12 @@ export function usePortfolioModel(): TPortfolioModel {
   const governancePositions = useGovernancePositions(isActive)
 
   const yvUsdPosition = useMemo<TYvUsdPortfolioPosition>(() => {
-    const unlockedBalance = getBalance({ address: YVUSD_UNLOCKED_ADDRESS, chainID: YVUSD_CHAIN_ID })
-    const lockedBalance = getBalance({ address: YVUSD_LOCKED_ADDRESS, chainID: YVUSD_CHAIN_ID })
-    const unlockedValue = unlockedBalance.normalized * getYvUsdSharePrice(yvUsdUnlockedVault)
-    const lockedValue = lockedBalance.normalized * getYvUsdSharePrice(yvUsdLockedVault)
+    const { unlockedValue, lockedValue, combinedValue, hasHoldings } = getYvUsdPositionValues({
+      unlockedVault: yvUsdUnlockedVault,
+      lockedVault: yvUsdLockedVault,
+      getToken,
+      getBalance
+    })
 
     return {
       blendedCurrentApy: getWeightedYvUsdApy({
@@ -218,10 +219,10 @@ export function usePortfolioModel(): TPortfolioModel {
         unlockedApy: getLatestYvUsdHistoricalApyValue(yvUsdHistoricalApyData, 'unlocked'),
         lockedApy: getLatestYvUsdHistoricalApyValue(yvUsdHistoricalApyData, 'locked')
       }),
-      combinedValue: unlockedValue + lockedValue,
-      hasHoldings: unlockedBalance.raw > 0n || lockedBalance.raw > 0n
+      combinedValue,
+      hasHoldings
     }
-  }, [getBalance, yvUsdHistoricalApyData, yvUsdLockedVault, yvUsdUnlockedVault])
+  }, [getBalance, getToken, yvUsdHistoricalApyData, yvUsdLockedVault, yvUsdUnlockedVault])
 
   const vaultLookup = useMemo(() => {
     const map = new Map<string, TKongVaultInput>()

@@ -17,6 +17,7 @@ export interface EnsoRouteResponse {
   }
   amountOut: string
   minAmountOut: string
+  priceImpact?: number | null
   gas: string
   route: EnsoRouteStep[]
 }
@@ -35,7 +36,8 @@ type EnsoRouteErrorPayload = {
   statusCode?: number
 }
 
-type EnsoRouteCandidate = Omit<EnsoRouteResponse, 'tx'> & {
+type EnsoRouteCandidate = Omit<EnsoRouteResponse, 'tx' | 'priceImpact'> & {
+  priceImpact?: unknown
   tx: Omit<EnsoRouteResponse['tx'], 'chainId'> & {
     chainId?: number
   }
@@ -85,6 +87,18 @@ function buildEnsoError(data: unknown, statusCode: number): EnsoError {
   }
 }
 
+function normalizeEnsoPriceImpact(value: unknown): number | null | undefined {
+  if (typeof value === 'number' && Number.isFinite(value)) {
+    return value
+  }
+
+  if (value === null) {
+    return null
+  }
+
+  return undefined
+}
+
 export function normalizeEnsoRouteResponse(
   data: unknown,
   statusCode: number,
@@ -95,6 +109,8 @@ export function normalizeEnsoRouteResponse(
 } {
   if (isEnsoRouteCandidate(data)) {
     const resolvedChainId = typeof data.tx.chainId === 'number' ? data.tx.chainId : fallbackChainId
+    const priceImpact = normalizeEnsoPriceImpact(data.priceImpact)
+    const { priceImpact: _rawPriceImpact, tx, ...routeData } = data
 
     if (typeof resolvedChainId !== 'number') {
       return { error: buildEnsoError({ message: 'Enso route payload missing tx.chainId' }, statusCode) }
@@ -102,9 +118,10 @@ export function normalizeEnsoRouteResponse(
 
     return {
       route: {
-        ...data,
+        ...routeData,
+        ...(priceImpact !== undefined ? { priceImpact } : {}),
         tx: {
-          ...data.tx,
+          ...tx,
           chainId: resolvedChainId
         }
       }

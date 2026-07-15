@@ -1,6 +1,7 @@
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconDiscord } from '@shared/icons/IconDiscord'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
+import { IconStack } from '@shared/icons/IconStack'
 import { IconTelegram } from '@shared/icons/IconTelegram'
 import { IconTwitter } from '@shared/icons/IconTwitter'
 import { LogoCuration } from '@shared/icons/LogoCuration'
@@ -212,6 +213,12 @@ export function HeaderNavMenu({ isHomePage, isDarkTheme }: THeaderNavMenuProps):
   ]
 
   const communityItems: TNavTile[] = [
+    {
+      name: 'Partners',
+      href: 'https://partners.yearn.fi/',
+      description: 'Build on Yearn',
+      icon: <IconStack className={cl('size-5', neutralIconForeground)} />
+    },
     {
       name: 'Support',
       href: 'https://discord.gg/yearn',

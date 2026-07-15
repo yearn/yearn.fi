@@ -57,6 +57,25 @@ describe('normalizeEnsoRouteResponse', () => {
     })
   })
 
+  it('keeps numeric and null Enso price impact values', () => {
+    const basePayload = {
+      tx: {
+        to: '0x0000000000000000000000000000000000000001',
+        data: '0x1234',
+        value: '0',
+        from: '0x0000000000000000000000000000000000000002',
+        chainId: 1
+      },
+      amountOut: '100',
+      minAmountOut: '95',
+      gas: '123456',
+      route: []
+    }
+
+    expect(normalizeEnsoRouteResponse({ ...basePayload, priceImpact: 12 }, 200).route?.priceImpact).toBe(12)
+    expect(normalizeEnsoRouteResponse({ ...basePayload, priceImpact: null }, 200).route?.priceImpact).toBeNull()
+  })
+
   it('treats 422 simulation failures without an error field as route errors', () => {
     expect(
       normalizeEnsoRouteResponse(

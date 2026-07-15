@@ -14,6 +14,7 @@ describe('DepositDetails', () => {
         inputTokenUsdPrice={1}
         routeType="ENSO"
         isSwap
+        usesMinExpectedOut
         isLoadingQuote={false}
         isQuoteStale={false}
         expectedOutInAsset={10n * ONE_ETHER}
@@ -56,6 +57,7 @@ describe('DepositDetails', () => {
         inputTokenUsdPrice={1}
         routeType="ENSO"
         isSwap={false}
+        usesMinExpectedOut
         isLoadingQuote={false}
         isQuoteStale={false}
         expectedOutInAsset={10n * ONE_ETHER}
@@ -81,8 +83,9 @@ describe('DepositDetails', () => {
     )
 
     expect(html).toContain('You Will Deposit')
+    expect(html).toContain('You Will Receive at least')
     expect(html).not.toContain('For expected / at least')
-    expect(html).not.toContain('Est. / Worst price impact')
+    expect(html).toContain('Est. / Worst price impact')
   })
 
   it('shows positive slippage for favorable swap quotes', () => {
@@ -94,6 +97,7 @@ describe('DepositDetails', () => {
         inputTokenUsdPrice={1}
         routeType="ENSO"
         isSwap
+        usesMinExpectedOut
         isLoadingQuote={false}
         isQuoteStale={false}
         expectedOutInAsset={10n * ONE_ETHER}
@@ -120,5 +124,51 @@ describe('DepositDetails', () => {
 
     expect(html).toContain('+5.00%')
     expect(html).toContain('+2.00%')
+  })
+
+  it('masks existing approval details while an ENSO quote is loading', () => {
+    const html = renderToStaticMarkup(
+      <DepositDetails
+        depositAmountBn={10n * ONE_ETHER}
+        inputTokenSymbol="BOLD"
+        inputTokenDecimals={18}
+        inputTokenUsdPrice={1}
+        routeType="ENSO"
+        isSwap
+        usesMinExpectedOut
+        isLoadingQuote
+        isApprovalLoading
+        isQuoteStale={false}
+        expectedOutInAsset={10n * ONE_ETHER}
+        minExpectedOutInAsset={9n * ONE_ETHER}
+        assetTokenSymbol="yvUSDC"
+        assetTokenDecimals={18}
+        expectedVaultShares={9n * ONE_ETHER}
+        vaultDecimals={18}
+        sharesDisplayDecimals={18}
+        pricePerShare={ONE_ETHER}
+        assetUsdPrice={1}
+        vaultShareValueInAsset={9n * ONE_ETHER}
+        vaultShareValueUsdRaw={9}
+        expectedPriceImpactPercentage={0}
+        priceImpactPercentage={10}
+        shouldHighlightPriceImpact
+        willReceiveStakedShares={false}
+        onShowVaultSharesModal={() => undefined}
+        onShowVaultShareValueModal={() => undefined}
+        estimatedAnnualReturn={1}
+        onShowAnnualReturnModal={() => undefined}
+        allowance={123n * ONE_ETHER}
+        allowanceTokenDecimals={18}
+        allowanceTokenSymbol="BOLD"
+        approvalSpenderName="Enso Router"
+        onShowApprovalOverlay={() => undefined}
+      />
+    )
+
+    expect(html).not.toContain('Existing Approval')
+    expect(html).not.toContain('Enso Router')
+    expect(html).not.toContain('123')
+    expect(html).toContain('animate-pulse')
   })
 })

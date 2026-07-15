@@ -52,7 +52,7 @@ The holdings implementation is the largest API surface here. See [`lib/holdings/
 
 ## Enso Proxies
 
-`/api/enso/*` routes keep `ENSO_API_KEY` server-side and forward requests to `https://api.enso.finance`.
+`/api/enso/*` routes keep `ENSO_API_KEY` server-side and forward requests to `https://api.enso.build`.
 
 - `/api/enso/status` returns `{ "configured": boolean }`.
 - `/api/enso/balances` requires `eoaAddress` and requests `chainId=all` upstream.
