@@ -26,7 +26,7 @@ describe('WithdrawDetails', () => {
         expectedPriceImpactPercentage={0}
         priceImpactPercentage={0}
         shouldHighlightPriceImpact={false}
-        hasSwap
+        usesMinExpectedOut
         onShowDetailsModal={() => undefined}
       />
     )
@@ -55,7 +55,7 @@ describe('WithdrawDetails', () => {
         expectedPriceImpactPercentage={0}
         priceImpactPercentage={10}
         shouldHighlightPriceImpact
-        hasSwap
+        usesMinExpectedOut
         onShowDetailsModal={() => undefined}
       />
     )
@@ -66,7 +66,7 @@ describe('WithdrawDetails', () => {
     expect(html).toContain('text-red-500')
   })
 
-  it('uses receive copy for routed ENSO withdrawals without swaps', () => {
+  it('uses protected receive copy for routed ENSO withdrawals without swaps', () => {
     const html = renderToStaticMarkup(
       <WithdrawDetails
         actionLabel="You will redeem"
@@ -87,14 +87,15 @@ describe('WithdrawDetails', () => {
         expectedPriceImpactPercentage={0}
         priceImpactPercentage={0}
         shouldHighlightPriceImpact={false}
-        hasSwap={false}
+        usesMinExpectedOut
         onShowDetailsModal={() => undefined}
       />
     )
 
     expect(html).toContain('You will receive')
-    expect(html).not.toContain('You will receive at least')
-    expect(html).not.toContain('Est. / Worst price impact')
+    expect(html).toContain('You will receive at least')
+    expect(html).not.toContain('You will swap')
+    expect(html).toContain('Est. / Worst price impact')
   })
 
   it('shows positive slippage for favorable zap withdrawals', () => {
@@ -118,12 +119,50 @@ describe('WithdrawDetails', () => {
         expectedPriceImpactPercentage={-6}
         priceImpactPercentage={-3}
         shouldHighlightPriceImpact={false}
-        hasSwap
+        usesMinExpectedOut
         onShowDetailsModal={() => undefined}
       />
     )
 
     expect(html).toContain('+6.00%')
     expect(html).toContain('+3.00%')
+  })
+
+  it('masks existing approval details while an ENSO quote is loading', () => {
+    const html = renderToStaticMarkup(
+      <WithdrawDetails
+        actionLabel="You will redeem"
+        requiredShares={10n * ONE_ETHER}
+        sharesDecimals={18}
+        isLoadingQuote
+        isApprovalLoading
+        isQuoteStale={false}
+        expectedOut={9n * ONE_ETHER}
+        outputDecimals={18}
+        outputSymbol="USDC"
+        showSwapRow
+        withdrawAmountSimple="10"
+        withdrawAmountBn={10n * ONE_ETHER}
+        assetDecimals={18}
+        assetUsdPrice={1}
+        assetSymbol="yvUSD"
+        outputUsdPrice={1}
+        expectedPriceImpactPercentage={0}
+        priceImpactPercentage={10}
+        shouldHighlightPriceImpact
+        usesMinExpectedOut
+        onShowDetailsModal={() => undefined}
+        allowance={123n * ONE_ETHER}
+        allowanceTokenDecimals={18}
+        allowanceTokenSymbol="yvUSD"
+        approvalSpenderName="Enso Router"
+        onShowApprovalOverlay={() => undefined}
+      />
+    )
+
+    expect(html).not.toContain('Existing Approval')
+    expect(html).not.toContain('Enso Router')
+    expect(html).not.toContain('123')
+    expect(html).toContain('animate-pulse')
   })
 })

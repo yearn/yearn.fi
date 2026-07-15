@@ -39,6 +39,7 @@ interface UseSolverEnsoReturn {
     prepareApproveEnabled: boolean
     expectedOut: TNormalizedBN
     minExpectedOut: TNormalizedBN
+    priceImpact: number | null | undefined
     allowance: bigint
     isAllowanceSufficient: boolean
     route: EnsoRouteResponse | undefined
@@ -284,6 +285,7 @@ export const useSolverEnso = ({
       prepareApproveEnabled: !!prepareApproveEnabled,
       expectedOut,
       minExpectedOut,
+      priceImpact: visibleRoute?.priceImpact,
       allowance,
       isAllowanceSufficient,
       route: visibleRoute,
