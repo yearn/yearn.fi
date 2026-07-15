@@ -11,6 +11,10 @@ import { usePlausible } from '@hooks/usePlausible'
 import { mergeChainMerkleData } from '@pages/portfolio/claimRewards.helpers'
 import { EmptySectionCard } from '@pages/portfolio/components/EmptySectionCard'
 import { GovernancePositionRow } from '@pages/portfolio/components/GovernancePositionRow'
+import { GovernanceRewardRow } from '@pages/portfolio/components/GovernanceRewardRow'
+import { GOVERNANCE_CHAIN_ID } from '@pages/portfolio/governance/constants'
+import type { TGovernanceReward } from '@pages/portfolio/governance/types'
+import { useGovernancePositions } from '@pages/portfolio/governance/useGovernancePositions'
 import { usePortfolioEntryRefresh } from '@pages/portfolio/hooks/usePortfolioEntryRefresh'
 import { type TPortfolioModel, usePortfolioModel } from '@pages/portfolio/hooks/usePortfolioModel'
 import { useVaultWithStakingRewards } from '@pages/portfolio/hooks/useVaultWithStakingRewards'
@@ -2306,6 +2310,7 @@ type TChainRewardData = {
     stakingSource: string
     rewards: TStakingReward[]
   }>
+  governanceRewards: TGovernanceReward[]
   merkleRewards: TGroupedMerkleReward[]
   refetchStaking: () => void
   refetchMerkle: () => void
@@ -2420,6 +2425,8 @@ function ChainMerkleRewardsFetcher({
 function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioClaimRewardsProps): ReactElement {
   const { address: userAddress } = useWeb3()
   const { vaults } = useYearn()
+  const { isLoading: isGovernanceLoading, refetch: refetchGovernance, styfiReward } = useGovernancePositions(isActive)
+  const governanceRewards = useMemo(() => (styfiReward ? [styfiReward] : []), [styfiReward])
   const trackEvent = usePlausible()
   const stakingVaults = useMemo(
     () => Object.values(vaults).filter((vault) => !isZeroAddress(getVaultStaking(vault).address)),
@@ -2508,27 +2515,31 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
 
       const stakingRewardCount = staking?.rewards.reduce((sum, r) => sum + r.rewards.length, 0) ?? 0
       const merkleRewardCount = merkle?.rewards.length ?? 0
+      const chainGovernanceRewards = chainId === GOVERNANCE_CHAIN_ID ? governanceRewards : []
       const stakingUsd =
         staking?.rewards.reduce((sum, r) => sum + r.rewards.reduce((s, rw) => s + rw.usdValue, 0), 0) ?? 0
       const merkleUsd = merkle?.rewards.reduce((sum, r) => sum + r.totalUsdValue, 0) ?? 0
+      const governanceUsd = chainGovernanceRewards.reduce((sum, reward) => sum + reward.usdValue, 0)
 
       const hasStakingVaultsOnChain = stakingVaults.some((v) => getVaultChainID(v) === chainId)
       const stakingIsLoading = hasStakingVaultsOnChain ? (staking?.isLoading ?? false) : false
       const merkleIsLoading = merkle?.isLoading ?? false
+      const governanceIsLoading = chainId === GOVERNANCE_CHAIN_ID && isGovernanceLoading
 
       return {
         chainId,
         chainName,
-        rewardCount: stakingRewardCount + merkleRewardCount,
-        totalUsd: stakingUsd + merkleUsd,
-        isLoading: stakingIsLoading || merkleIsLoading,
+        rewardCount: stakingRewardCount + merkleRewardCount + chainGovernanceRewards.length,
+        totalUsd: stakingUsd + merkleUsd + governanceUsd,
+        isLoading: stakingIsLoading || merkleIsLoading || governanceIsLoading,
         stakingRewards: staking?.rewards ?? [],
+        governanceRewards: chainGovernanceRewards,
         merkleRewards: merkle?.rewards ?? [],
         refetchStaking: staking?.refetch ?? (() => {}),
         refetchMerkle: merkle?.refetch ?? (() => {})
       }
     })
-  }, [chainIds, chainMerkleData, chainStakingData, stakingVaults])
+  }, [chainIds, chainMerkleData, chainStakingData, governanceRewards, isGovernanceLoading, stakingVaults])
 
   const totalRewardCount = useMemo(
     () => chainRewardsData.reduce((sum, c) => sum + c.rewardCount, 0),
@@ -2567,10 +2578,14 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
       }))
     }
 
-    await Promise.all(
-      chainRewardsData.flatMap((chainRewardData) => [chainRewardData.refetchStaking(), chainRewardData.refetchMerkle()])
-    )
-  }, [activeMerkleClaim, chainRewardsData])
+    await Promise.all([
+      refetchGovernance(),
+      ...chainRewardsData.flatMap((chainRewardData) => [
+        chainRewardData.refetchStaking(),
+        chainRewardData.refetchMerkle()
+      ])
+    ])
+  }, [activeMerkleClaim, chainRewardsData, refetchGovernance])
 
   const handleClaimComplete = useCallback(() => {
     trackEvent(PLAUSIBLE_EVENTS.CLAIM, {
@@ -2633,6 +2648,17 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
                 <span className="text-sm font-semibold text-text-primary">{chainData.chainName}</span>
               </div>
             )}
+            {chainData.governanceRewards.map((reward, rewardIdx) => (
+              <GovernanceRewardRow
+                key={`governance-${reward.tokenAddress}`}
+                reward={reward}
+                userAddress={userAddress}
+                onStartClaim={handleStartClaim}
+                isFirst={rewardIdx === 0}
+                isAllChainsView={isAllChainsView}
+                onSwitchChain={() => switchChainAsync({ chainId: chainData.chainId })}
+              />
+            ))}
             {chainData.stakingRewards.flatMap((sr, srIdx) =>
               sr.rewards.map((reward, rewardIdx) => (
                 <StakingRewardRow
@@ -2644,7 +2670,7 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
                   onStartClaim={(step, merkleRewardRoots) =>
                     handleStartClaim(step, merkleRewardRoots, chainData.chainId)
                   }
-                  isFirst={srIdx === 0 && rewardIdx === 0}
+                  isFirst={chainData.governanceRewards.length === 0 && srIdx === 0 && rewardIdx === 0}
                   isAllChainsView={isAllChainsView}
                   onSwitchChain={() => switchChainAsync({ chainId: chainData.chainId })}
                 />
@@ -2657,7 +2683,7 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
                 userAddress={userAddress!}
                 chainId={chainData.chainId}
                 onStartClaim={(step, merkleRewardRoots) => handleStartClaim(step, merkleRewardRoots, chainData.chainId)}
-                isFirst={idx === 0 && chainData.stakingRewards.length === 0}
+                isFirst={idx === 0 && chainData.governanceRewards.length === 0 && chainData.stakingRewards.length === 0}
                 isAllChainsView={isAllChainsView}
                 onSwitchChain={() => switchChainAsync({ chainId: chainData.chainId })}
               />

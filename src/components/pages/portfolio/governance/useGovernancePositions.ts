@@ -17,26 +17,32 @@ import {
   YVUSDC_REWARD_ADDRESS
 } from '@pages/portfolio/governance/constants'
 import { deriveGovernancePositions } from '@pages/portfolio/governance/deriveGovernancePositions'
+import { resolveYvUsdcRewardPriceUsd } from '@pages/portfolio/governance/governanceReward.helpers'
 import type {
   TGovernanceGlobalData,
   TGovernancePosition,
   TGovernanceRawAccount,
   TGovernanceRawLiquidLockerAccount,
-  TGovernanceRawReward
+  TGovernanceRawReward,
+  TGovernanceReward
 } from '@pages/portfolio/governance/types'
+import { getVaultAPR, getVaultToken } from '@pages/vaults/domain/kongVaultSelectors'
 import { useWeb3 } from '@shared/contexts/useWeb3'
+import { useYearn } from '@shared/contexts/useYearn'
 import { usePublicClient } from '@shared/hooks/useAppWagmi'
 import { useYearnSpotPrices } from '@shared/hooks/useYearnSpotPrices'
 import type { TAddress } from '@shared/types'
-import { toAddress } from '@shared/utils'
+import { toAddress, toNormalizedValue } from '@shared/utils'
 import { useQuery } from '@tanstack/react-query'
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import type { ContractFunctionParameters, PublicClient } from 'viem'
 
 type TUseGovernancePositionsReturn = {
   positions: TGovernancePosition[]
+  styfiReward: TGovernanceReward | null
   totalValueUsd: number
   isLoading: boolean
+  refetch: () => Promise<void>
 }
 
 const ZERO_STREAM = [0n, 0n, 0n] as const
@@ -311,7 +317,9 @@ function getYfiPriceFromGlobalData(globalData: TGovernanceGlobalData | null | un
 
 export function useGovernancePositions(enabled: boolean): TUseGovernancePositionsReturn {
   const { address } = useWeb3()
+  const { allVaults } = useYearn()
   const account = address ? toAddress(address) : undefined
+  const styfiRewardVault = allVaults[YVUSDC_REWARD_ADDRESS]
   const publicClient = usePublicClient({ chainId: GOVERNANCE_CHAIN_ID })
   const rawQuery = useQuery({
     queryKey: ['portfolio-governance-positions', account],
@@ -338,13 +346,39 @@ export function useGovernancePositions(enabled: boolean): TUseGovernancePosition
     return [
       { address: YFI_ADDRESS, chainID: GOVERNANCE_CHAIN_ID },
       { address: YVUSDC_REWARD_ADDRESS, chainID: GOVERNANCE_CHAIN_ID },
+      styfiRewardVault ? { address: getVaultToken(styfiRewardVault).address, chainID: GOVERNANCE_CHAIN_ID } : undefined,
       ...rewards
     ]
-  }, [rawQuery.data])
+  }, [rawQuery.data, styfiRewardVault])
   const { getPrice } = useYearnSpotPrices(rewardPriceTokens)
   const yfiSpotPrice = getPrice({ address: YFI_ADDRESS, chainID: GOVERNANCE_CHAIN_ID }).normalized
   const yfiPrice =
     Number.isFinite(yfiSpotPrice) && yfiSpotPrice > 0 ? yfiSpotPrice : getYfiPriceFromGlobalData(globalDataQuery.data)
+  const styfiReward = useMemo((): TGovernanceReward | null => {
+    const reward = rawQuery.data?.styfi.reward
+    if (!reward || reward.amountRaw <= 0n) {
+      return null
+    }
+
+    const amountNormalized = toNormalizedValue(reward.amountRaw, reward.tokenDecimals)
+    const directPrice = getPrice({ address: reward.tokenAddress, chainID: GOVERNANCE_CHAIN_ID }).normalized
+    const rewardAsset = styfiRewardVault ? getVaultToken(styfiRewardVault) : null
+    const underlyingPrice = rewardAsset
+      ? getPrice({ address: rewardAsset.address, chainID: GOVERNANCE_CHAIN_ID }).normalized
+      : 0
+    const price = resolveYvUsdcRewardPriceUsd({
+      directSharePrice: directPrice,
+      underlyingPrice,
+      pricePerShare: styfiRewardVault ? getVaultAPR(styfiRewardVault).pricePerShare.today : 0
+    })
+    return {
+      tokenAddress: reward.tokenAddress,
+      symbol: reward.tokenSymbol,
+      amountRaw: reward.amountRaw,
+      amountNormalized,
+      usdValue: Number.isFinite(price) ? amountNormalized * price : 0
+    }
+  }, [getPrice, rawQuery.data?.styfi.reward, styfiRewardVault])
   const positions = useMemo(
     () =>
       deriveGovernancePositions({
@@ -359,10 +393,15 @@ export function useGovernancePositions(enabled: boolean): TUseGovernancePosition
     () => positions.reduce((sum, position) => sum + (Number.isFinite(position.valueUsd) ? position.valueUsd : 0), 0),
     [positions]
   )
+  const refetch = useCallback(async () => {
+    await Promise.all([rawQuery.refetch(), globalDataQuery.refetch()])
+  }, [globalDataQuery.refetch, rawQuery.refetch])
 
   return {
     positions,
+    styfiReward,
     totalValueUsd,
-    isLoading: enabled && (rawQuery.isLoading || globalDataQuery.isLoading)
+    isLoading: enabled && (rawQuery.isLoading || globalDataQuery.isLoading),
+    refetch
   }
 }

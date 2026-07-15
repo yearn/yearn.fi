@@ -438,7 +438,7 @@ export function deriveGovernancePositions({
       return createPosition({
         id: `governance-llyfi-${locker.symbol.toLowerCase()}`,
         kind: 'llyfi',
-        name: locker.name,
+        name: `${locker.name} YFI`,
         symbol: locker.symbol,
         subtitle: 'Liquid locker',
         href: VEYFI_URL,

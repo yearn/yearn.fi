@@ -274,6 +274,7 @@ describe('deriveGovernancePositions', () => {
     expect(positions).toHaveLength(1)
     expect(positions[0]).toMatchObject({
       id: 'governance-llyfi-upyfi',
+      name: '1UP YFI',
       amountYfiNormalized: 6,
       valueUsd: 60_000,
       tvlYfiNormalized: 21,

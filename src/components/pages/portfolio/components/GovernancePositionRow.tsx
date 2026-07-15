@@ -4,7 +4,6 @@ import { GOVERNANCE_CHAIN_ID, YFI_ADDRESS } from '@pages/portfolio/governance/co
 import type { TGovernancePosition } from '@pages/portfolio/governance/types'
 import { VaultsListChip } from '@pages/vaults/components/list/VaultsListChip'
 import { TokenLogo } from '@shared/components/TokenLogo'
-import { IconHandCoins } from '@shared/icons/IconHandCoins'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
 import { cl, formatAmount, formatApyDisplay, formatTvlDisplay, toNormalizedValue } from '@shared/utils'
 import type { ReactElement } from 'react'
@@ -70,24 +69,6 @@ function getStatusItems(position: TGovernancePosition): string[] {
   return items
 }
 
-function RewardChip({ position }: { position: TGovernancePosition }): ReactElement | null {
-  if (!position.reward) {
-    return null
-  }
-
-  return (
-    <VaultsListChip
-      label={`Rewards ${formatTokenAmount(position.reward.amountNormalized, 4)} ${position.reward.symbol}`}
-      icon={<IconHandCoins className="size-3.5" aria-hidden={true} />}
-      tooltipDescription={
-        Number.isFinite(position.reward.usdValue) && position.reward.usdValue > 0
-          ? `Claimable rewards worth ${formatTvlDisplay(position.reward.usdValue)}`
-          : 'Claimable governance rewards'
-      }
-    />
-  )
-}
-
 export function GovernancePositionRow({ position }: TGovernancePositionRowProps): ReactElement {
   const tokenLogoSrc = getTokenLogoSrc(position.tokenAddress || YFI_ADDRESS)
   const chainLogoSrc = `${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/chains/${GOVERNANCE_CHAIN_ID}/logo-32.png`
@@ -138,7 +119,6 @@ export function GovernancePositionRow({ position }: TGovernancePositionRowProps)
                   icon={<TokenLogo src={chainLogoSrc} tokenSymbol="Ethereum" width={14} height={14} />}
                 />
                 <VaultsListChip label={position.symbol} />
-                <VaultsListChip label={position.subtitle} />
                 {position.cooldownRaw > 0n ? (
                   <VaultsListChip
                     label="Cooldown"
@@ -146,7 +126,6 @@ export function GovernancePositionRow({ position }: TGovernancePositionRowProps)
                   />
                 ) : null}
                 {position.withdrawableRaw > 0n ? <VaultsListChip label="Withdrawable" /> : null}
-                <RewardChip position={position} />
               </div>
             </div>
           </div>

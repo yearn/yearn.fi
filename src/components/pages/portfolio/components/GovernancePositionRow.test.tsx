@@ -42,7 +42,7 @@ const buildPosition = (overrides: Partial<TGovernancePosition> = {}): TGovernanc
 })
 
 describe('GovernancePositionRow', () => {
-  it('renders desktop and mobile governance metrics with rewards and status chips', () => {
+  it('renders governance metrics and actionable status chips without descriptor or reward chips', () => {
     const html = renderToStaticMarkup(<GovernancePositionRow position={buildPosition()} />)
 
     expect(html).toContain('Staked YFI')
@@ -55,7 +55,8 @@ describe('GovernancePositionRow', () => {
     expect(html).not.toContain('3 YFI eq.')
     expect(html).toContain('Cooldown')
     expect(html).toContain('Withdrawable')
-    expect(html).toContain('Rewards 2 yvUSDC')
+    expect(html).not.toContain('Governance staking')
+    expect(html).not.toContain('Rewards 2 yvUSDC')
     expect(html).toContain('https://styfi.yearn.fi')
   })
 
