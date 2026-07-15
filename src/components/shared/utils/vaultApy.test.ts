@@ -127,7 +127,7 @@ describe('vaultApy Katana calculations', () => {
 
   it('calculates Katana estimated APY from list data using native plus app rewards', () => {
     const apy = calculateVaultEstimatedAPY(withComponents(BASE_VAULT))
-    expect(apy).toBeCloseTo(0.1316, 6)
+    expect(apy).toBeCloseTo(0.1596, 6)
   })
 
   it('calculates full Katana estimate on snapshot-backed vault details', () => {
@@ -135,9 +135,9 @@ describe('vaultApy Katana calculations', () => {
     expect(apy).toBeCloseTo(0.1596, 6)
   })
 
-  it('falls back to Kong forward APY when list-level Katana components are absent', () => {
+  it('uses Kong estimated APY when list-level Katana components are absent', () => {
     const apy = calculateVaultEstimatedAPY(BASE_VAULT)
-    expect(apy).toBeCloseTo(0.04, 6)
+    expect(apy).toBeCloseTo(0.068, 6)
   })
 
   it('calculates Katana 30 day APY from historical base + app rewards', () => {

@@ -55,6 +55,7 @@ export interface DepositFlowResult {
       allowance: bigint
       expectedOut: bigint
       minExpectedOut: bigint
+      priceImpact?: number | null
       normalizedExpectedOut: bigint
       normalizedMinExpectedOut: bigint
       routeHasSwap?: boolean

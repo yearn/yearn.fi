@@ -3,6 +3,7 @@ import {
   calculateRemainingEnsoSlippagePercentage,
   clampZapSlippage,
   getZapSlippageSaveState,
+  optionalBasisPointsToPercentage,
   requiresZapSlippageRiskAcknowledgement,
   toBasisPoints,
   ZAP_SLIPPAGE_HARD_CAP,
@@ -42,6 +43,13 @@ describe('slippage utils', () => {
   it('converts percentages to basis points without rounding up', () => {
     expect(toBasisPoints(0.5)).toBe(50)
     expect(toBasisPoints(1.239)).toBe(123)
+  })
+
+  it('converts optional Enso basis points to percentage values', () => {
+    expect(optionalBasisPointsToPercentage(77)).toBe(0.77)
+    expect(optionalBasisPointsToPercentage(7778)).toBe(77.78)
+    expect(optionalBasisPointsToPercentage(null)).toBeUndefined()
+    expect(optionalBasisPointsToPercentage(undefined)).toBeUndefined()
   })
 
   it('allocates only the remaining tolerance to Enso execution slippage', () => {
