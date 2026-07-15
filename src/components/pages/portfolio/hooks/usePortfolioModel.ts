@@ -1,3 +1,5 @@
+import type { TGovernancePosition } from '@pages/portfolio/governance/types'
+import { useGovernancePositions } from '@pages/portfolio/governance/useGovernancePositions'
 import { normalizeSymbol } from '@pages/portfolio/hooks/getEligibleVaults'
 import { useTokenSuggestions } from '@pages/portfolio/hooks/useTokenSuggestions'
 import { useVaultSuggestions } from '@pages/portfolio/hooks/useVaultSuggestions'
@@ -8,7 +10,9 @@ import {
   getVaultChainID,
   getVaultInfo,
   getVaultMigration,
+  getVaultName,
   getVaultStaking,
+  getVaultTVL,
   type TKongVault,
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
@@ -37,17 +41,25 @@ import { useYearnSpotPrices } from '@shared/hooks/useYearnSpotPrices'
 import type { TSortDirection } from '@shared/types'
 import { isZeroAddress, toAddress } from '@shared/utils'
 import { ETH_TOKEN_ADDRESS } from '@shared/utils/constants'
+import { numberSort, stringSort } from '@shared/utils/helpers'
 import { calculateVaultEstimatedAPY, calculateVaultHistoricalAPY } from '@shared/utils/vaultApy'
 import { useCallback, useMemo, useState } from 'react'
 import type { TPortfolioLiveBalanceSnapshot } from '../types/api'
 import { filterVisiblePortfolioHoldings } from './portfolioVisibility'
 import { hasYvUsdPortfolioHoldings, resolveYvUsdFollowOnSuggestionVault } from './usePortfolioModel.helpers'
 
-type THoldingsRow = {
-  key: string
-  vault: TKongVaultInput
-  hrefOverride?: string
-}
+type THoldingsRow =
+  | {
+      type: 'vault'
+      key: string
+      vault: TKongVaultInput
+      hrefOverride?: string
+    }
+  | {
+      type: 'governance'
+      key: string
+      position: TGovernancePosition
+    }
 
 export type TSuggestedItem =
   | {
@@ -175,7 +187,7 @@ export function usePortfolioModel(): TPortfolioModel {
   const { getBalance, balances } = useWalletTokens()
   const { getVaultHoldingsUsd } = useWalletHoldings()
   const { isLoading: isWalletLoading, hasCompletedBalanceLoad } = useWalletStatus()
-  const { totalValue: totalPortfolioValue } = useWalletVaultTotals()
+  const { totalValue: vaultTotalPortfolioValue } = useWalletVaultTotals()
   const { isActive, openLoginModal, isUserConnecting, isIdentityLoading } = useWeb3()
   const { vaults, allVaults, isLoadingVaultList } = useYearn()
   const { getPrice } = useYearnSpotPrices([{ address: ETH_TOKEN_ADDRESS, chainID: 1 }])
@@ -185,6 +197,7 @@ export function usePortfolioModel(): TPortfolioModel {
   const showHiddenVaults = usePersistedShowHiddenVaults()
   const [sortBy, setSortBy] = useState<TPossibleSortBy>('deposited')
   const [sortDirection, setSortDirection] = useState<TSortDirection>('desc')
+  const governancePositions = useGovernancePositions(isActive)
 
   const yvUsdPosition = useMemo<TYvUsdPortfolioPosition>(() => {
     const unlockedBalance = getBalance({ address: YVUSD_UNLOCKED_ADDRESS, chainID: YVUSD_CHAIN_ID })
@@ -344,7 +357,8 @@ export function usePortfolioModel(): TPortfolioModel {
 
   const isSearchingBalances =
     (isActive || isUserConnecting) && (isWalletLoading || isUserConnecting || isIdentityLoading)
-  const isHoldingsLoading = (isLoadingVaultList && isActive) || isSearchingBalances || !hasCompletedBalanceLoad
+  const isHoldingsLoading =
+    (isLoadingVaultList && isActive) || isSearchingBalances || !hasCompletedBalanceLoad || governancePositions.isLoading
 
   const suggestedVaultCandidates = useMemo(
     () =>
@@ -378,15 +392,45 @@ export function usePortfolioModel(): TPortfolioModel {
   const tokenSuggestions = useTokenSuggestions(holdingsKeySet)
   const { suggestions: vaultSuggestions } = useVaultSuggestions(holdingsKeySet)
 
-  const holdingsRows = useMemo(
-    () =>
-      sortedHoldings.map((vault) => ({
-        key: getVaultKey(vault),
-        vault,
-        hrefOverride: getPortfolioRowHref(vault)
-      })),
-    [sortedHoldings]
-  )
+  const holdingsRows = useMemo((): THoldingsRow[] => {
+    const vaultRows: THoldingsRow[] = sortedHoldings.map((vault) => ({
+      type: 'vault',
+      key: getVaultKey(vault),
+      vault,
+      hrefOverride: getPortfolioRowHref(vault)
+    }))
+    const governanceRows: THoldingsRow[] = governancePositions.positions.map((position) => ({
+      type: 'governance',
+      key: position.id,
+      position
+    }))
+    const rows = [...vaultRows, ...governanceRows]
+
+    if (sortDirection === '') {
+      return rows
+    }
+
+    const getDeposited = (row: THoldingsRow): number =>
+      row.type === 'vault' ? getVaultValue(row.vault) : row.position.valueUsd
+    const getEstimatedApy = (row: THoldingsRow): number =>
+      row.type === 'vault' ? (getVaultEstimatedAPY(row.vault) ?? 0) : (row.position.apy ?? 0)
+    const getName = (row: THoldingsRow): string => (row.type === 'vault' ? getVaultName(row.vault) : row.position.name)
+    const getTvl = (row: THoldingsRow): number =>
+      row.type === 'vault' ? (getVaultTVL(row.vault).tvl ?? 0) : row.position.tvlUsd
+
+    switch (sortBy) {
+      case 'deposited':
+        return rows.toSorted((a, b) => numberSort({ a: getDeposited(a), b: getDeposited(b), sortDirection }))
+      case 'estAPY':
+        return rows.toSorted((a, b) => numberSort({ a: getEstimatedApy(a), b: getEstimatedApy(b), sortDirection }))
+      case 'name':
+        return rows.toSorted((a, b) => stringSort({ a: getName(a), b: getName(b), sortDirection }))
+      case 'tvl':
+        return rows.toSorted((a, b) => numberSort({ a: getTvl(a), b: getTvl(b), sortDirection }))
+      default:
+        return rows
+    }
+  }, [getVaultEstimatedAPY, getVaultValue, governancePositions.positions, sortBy, sortDirection, sortedHoldings])
 
   const suggestedRows = useMemo((): TSuggestedItem[] => {
     const yvUsdSuggestedVaultKey = yvUsdSuggestedVault ? getVaultKey(yvUsdSuggestedVault) : null
@@ -470,19 +514,20 @@ export function usePortfolioModel(): TPortfolioModel {
     stablecoinHoldingMatch
   ])
 
-  const hasHoldings = sortedHoldings.length > 0
+  const hasHoldings = holdingsRows.length > 0
   const hasKatanaHoldings = useMemo(
     () => sortedHoldings.some((vault) => getVaultChainID(vault) === KATANA_CHAIN_ID),
     [sortedHoldings]
   )
   const ethPrice = getPrice({ address: ETH_TOKEN_ADDRESS, chainID: 1 }).normalized
+  const totalPortfolioValue = vaultTotalPortfolioValue + governancePositions.totalValueUsd
 
   const liveBalanceSnapshot = useMemo<TPortfolioLiveBalanceSnapshot | null>(() => {
-    if (isHoldingsLoading || !Number.isFinite(totalPortfolioValue)) {
+    if (isHoldingsLoading || !Number.isFinite(vaultTotalPortfolioValue)) {
       return null
     }
 
-    const totalEth = Number.isFinite(ethPrice) && ethPrice > 0 ? totalPortfolioValue / ethPrice : null
+    const totalEth = Number.isFinite(ethPrice) && ethPrice > 0 ? vaultTotalPortfolioValue / ethPrice : null
     const date = new Date().toISOString().slice(0, 10)
     const vaultValues = sortedHoldings
       .map((vault) => ({
@@ -495,16 +540,16 @@ export function usePortfolioModel(): TPortfolioModel {
 
     return {
       date,
-      totalUsd: totalPortfolioValue,
+      totalUsd: vaultTotalPortfolioValue,
       totalEth,
       vaults: vaultValues
     }
-  }, [ethPrice, getVaultValue, isHoldingsLoading, sortedHoldings, totalPortfolioValue])
+  }, [ethPrice, getVaultValue, isHoldingsLoading, sortedHoldings, vaultTotalPortfolioValue])
 
   const blendedMetrics = useMemo(() => {
     const isFiniteNumber = (v: number | null): v is number => v !== null && Number.isFinite(v)
 
-    const { totalValue, weightedCurrent, weightedHistorical, hasCurrent, hasHistorical } = sortedHoldings.reduce(
+    const vaultMetrics = sortedHoldings.reduce(
       (acc, vault) => {
         const value = getVaultValue(vault)
         if (!Number.isFinite(value) || value <= 0) return acc
@@ -523,13 +568,37 @@ export function usePortfolioModel(): TPortfolioModel {
       { totalValue: 0, weightedCurrent: 0, weightedHistorical: 0, hasCurrent: false, hasHistorical: false }
     )
 
-    const blendedCurrentAPY = totalValue > 0 && hasCurrent ? (weightedCurrent / totalValue) * 100 : null
-    const blendedHistoricalAPY = totalValue > 0 && hasHistorical ? (weightedHistorical / totalValue) * 100 : null
+    const currentMetrics = governancePositions.positions.reduce(
+      (acc, position) => {
+        const value = position.valueUsd
+        if (!Number.isFinite(value) || value <= 0) return acc
+        const apy = position.apy
+        return {
+          totalValue: acc.totalValue + value,
+          weightedCurrent: acc.weightedCurrent + (isFiniteNumber(apy) ? value * apy : 0),
+          hasCurrent: acc.hasCurrent || isFiniteNumber(apy)
+        }
+      },
+      {
+        totalValue: vaultMetrics.totalValue,
+        weightedCurrent: vaultMetrics.weightedCurrent,
+        hasCurrent: vaultMetrics.hasCurrent
+      }
+    )
+
+    const blendedCurrentAPY =
+      currentMetrics.totalValue > 0 && currentMetrics.hasCurrent
+        ? (currentMetrics.weightedCurrent / currentMetrics.totalValue) * 100
+        : null
+    const blendedHistoricalAPY =
+      vaultMetrics.totalValue > 0 && vaultMetrics.hasHistorical
+        ? (vaultMetrics.weightedHistorical / vaultMetrics.totalValue) * 100
+        : null
     const estimatedAnnualReturn =
-      totalValue > 0 && hasCurrent ? totalPortfolioValue * (weightedCurrent / totalValue) : null
+      currentMetrics.totalValue > 0 && currentMetrics.hasCurrent ? currentMetrics.weightedCurrent : null
 
     return { blendedCurrentAPY, blendedHistoricalAPY, estimatedAnnualReturn }
-  }, [getVaultEstimatedAPY, getVaultHistoricalAPY, getVaultValue, sortedHoldings, totalPortfolioValue])
+  }, [getVaultEstimatedAPY, getVaultHistoricalAPY, getVaultValue, governancePositions.positions, sortedHoldings])
 
   return {
     blendedMetrics,

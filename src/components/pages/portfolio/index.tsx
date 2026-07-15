@@ -10,6 +10,7 @@ import {
 import { usePlausible } from '@hooks/usePlausible'
 import { mergeChainMerkleData } from '@pages/portfolio/claimRewards.helpers'
 import { EmptySectionCard } from '@pages/portfolio/components/EmptySectionCard'
+import { GovernancePositionRow } from '@pages/portfolio/components/GovernancePositionRow'
 import { usePortfolioEntryRefresh } from '@pages/portfolio/hooks/usePortfolioEntryRefresh'
 import { type TPortfolioModel, usePortfolioModel } from '@pages/portfolio/hooks/usePortfolioModel'
 import { useVaultWithStakingRewards } from '@pages/portfolio/hooks/useVaultWithStakingRewards'
@@ -2826,15 +2827,15 @@ function PortfolioHoldingsSection({
       return (
         <div className="flex flex-col items-center justify-center gap-3 px-4 py-12 text-sm text-text-secondary sm:px-6 sm:py-16">
           <YearnLogoSpinner className="size-12" logoClassName="size-8" />
-          <span>{'Searching for Yearn balances...'}</span>
+          <span>{'Searching for portfolio balances...'}</span>
         </div>
       )
     }
     if (!hasHoldings) {
       return (
         <EmptySectionCard
-          title="No vault positions yet"
-          description="Deposit into a Yearn vault to see it here."
+          title="No portfolio positions yet"
+          description="Deposit into a Yearn vault or stake YFI to see it here."
           ctaLabel="Explore Vaults"
           ctaClassName="yearn--button--nextgen min-h-[44px] px-6"
           href="/vaults"
@@ -2843,23 +2844,27 @@ function PortfolioHoldingsSection({
     }
     return (
       <div className="flex flex-col gap-px bg-border">
-        {holdingsRows.map((row) => (
-          <VaultsListRow
-            key={row.key}
-            currentVault={row.vault}
-            flags={vaultFlags[row.key]}
-            hrefOverride={row.hrefOverride}
-            showBoostDetails={false}
-            activeProductType="all"
-            showStrategies
-            showAllocatorChip={false}
-            showProductTypeChipOverride={true}
-            showHoldingsChipOverride={false}
-            mobileSecondaryMetric="holdings"
-            expandedChartVariant="portfolio-user-tvl-overlay"
-            clickEventName={PLAUSIBLE_EVENTS.VAULT_CLICK_PORTFOLIO_LIST_ROW}
-          />
-        ))}
+        {holdingsRows.map((row) =>
+          row.type === 'vault' ? (
+            <VaultsListRow
+              key={row.key}
+              currentVault={row.vault}
+              flags={vaultFlags[row.key]}
+              hrefOverride={row.hrefOverride}
+              showBoostDetails={false}
+              activeProductType="all"
+              showStrategies
+              showAllocatorChip={false}
+              showProductTypeChipOverride={true}
+              showHoldingsChipOverride={false}
+              mobileSecondaryMetric="holdings"
+              expandedChartVariant="portfolio-user-tvl-overlay"
+              clickEventName={PLAUSIBLE_EVENTS.VAULT_CLICK_PORTFOLIO_LIST_ROW}
+            />
+          ) : (
+            <GovernancePositionRow key={row.key} position={row.position} />
+          )
+        )}
       </div>
     )
   }
