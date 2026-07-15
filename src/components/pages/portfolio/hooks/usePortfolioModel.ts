@@ -605,7 +605,7 @@ export function usePortfolioModel(): TPortfolioModel {
 
   return {
     blendedMetrics,
-    hasClaimableRewards: hasClaimableRewardNotification(governancePositions.styfiReward?.usdValue ?? 0),
+    hasClaimableRewards: hasClaimableRewardNotification(governancePositions.governanceReward?.usdValue ?? 0),
     hasHoldings,
     holdingsRows,
     isActive,

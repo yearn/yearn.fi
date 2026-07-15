@@ -2430,8 +2430,12 @@ function ChainMerkleRewardsFetcher({
 function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioClaimRewardsProps): ReactElement {
   const { address: userAddress } = useWeb3()
   const { vaults } = useYearn()
-  const { isLoading: isGovernanceLoading, refetch: refetchGovernance, styfiReward } = useGovernancePositions(isActive)
-  const governanceRewards = useMemo(() => (styfiReward ? [styfiReward] : []), [styfiReward])
+  const {
+    governanceReward,
+    isLoading: isGovernanceLoading,
+    refetch: refetchGovernance
+  } = useGovernancePositions(isActive)
+  const governanceRewards = useMemo(() => (governanceReward ? [governanceReward] : []), [governanceReward])
   const trackEvent = usePlausible()
   const stakingVaults = useMemo(
     () => Object.values(vaults).filter((vault) => !isZeroAddress(getVaultStaking(vault).address)),

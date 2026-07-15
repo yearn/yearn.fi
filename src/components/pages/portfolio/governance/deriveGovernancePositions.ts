@@ -11,8 +11,7 @@ import type {
   TGovernanceCooldown,
   TGovernanceGlobalData,
   TGovernancePosition,
-  TGovernanceRawAccount,
-  TGovernanceRawReward
+  TGovernanceRawAccount
 } from '@pages/portfolio/governance/types'
 import type { TAddress } from '@shared/types'
 import { toAddress, toNormalizedValue } from '@shared/utils'
@@ -21,7 +20,6 @@ type TDeriveGovernancePositionsParams = {
   raw: TGovernanceRawAccount | null | undefined
   globalData: TGovernanceGlobalData | null | undefined
   yfiPrice: number
-  getRewardPrice: (tokenAddress: TAddress) => number
   nowSeconds?: number
 }
 
@@ -78,13 +76,15 @@ function deriveCooldown(
 ): TGovernanceCooldown | null {
   const total = stream[1]
   const claimed = stream[2]
-  const remaining = total - claimed
-  if (remaining <= 0n) {
+  const remaining = total > claimed ? total - claimed : 0n
+  const streamWithdrawable = withdrawable < remaining ? withdrawable : remaining
+  const cooling = remaining - streamWithdrawable
+  if (cooling <= 0n) {
     return null
   }
 
   return {
-    amountRaw: remaining,
+    amountRaw: cooling,
     endsAt: deriveCooldownEndsAt({
       total,
       claimed,
@@ -240,23 +240,6 @@ function getLlyfiTvlYfiRaw(globalData: TGovernanceGlobalData | null | undefined,
   return addOptionalRawValues(match?.staked, match?.unstaking)
 }
 
-function getReward(reward: TGovernanceRawReward | null, getRewardPrice: (tokenAddress: TAddress) => number) {
-  if (!reward || reward.amountRaw <= 0n) {
-    return null
-  }
-
-  const amountNormalized = toNormalizedValue(reward.amountRaw, reward.tokenDecimals)
-  const price = getRewardPrice(reward.tokenAddress)
-
-  return {
-    tokenAddress: reward.tokenAddress,
-    symbol: reward.tokenSymbol,
-    amountRaw: reward.amountRaw,
-    amountNormalized,
-    usdValue: amountNormalized * price
-  }
-}
-
 function createPosition(params: {
   activeRaw: bigint
   amountRaw: bigint
@@ -269,7 +252,6 @@ function createPosition(params: {
   id: string
   kind: TGovernancePosition['kind']
   name: string
-  reward?: TGovernancePosition['reward']
   subtitle: string
   symbol: string
   tokenAddress: TAddress
@@ -304,32 +286,13 @@ function createPosition(params: {
     apy: params.apy,
     unlockTime: params.unlockTime,
     boostMultiplier: params.boostMultiplier,
-    cooldown: params.cooldown,
-    reward: params.reward ?? null
+    cooldown: params.cooldown
   }
-}
-
-function attachSharedStyfiReward(
-  positions: TGovernancePosition[],
-  reward: TGovernancePosition['reward']
-): TGovernancePosition[] {
-  if (!reward) {
-    return positions
-  }
-
-  const rewardIndex = positions.findIndex((position) => position.kind === 'styfi')
-  const fallbackIndex = positions.findIndex((position) => position.kind === 'styfix')
-  const targetIndex = rewardIndex >= 0 ? rewardIndex : fallbackIndex
-
-  return targetIndex >= 0
-    ? positions.map((position, index) => (index === targetIndex ? { ...position, reward } : position))
-    : positions
 }
 
 export function deriveGovernancePositions({
   raw,
   globalData,
-  getRewardPrice,
   nowSeconds = Math.floor(Date.now() / 1000),
   yfiPrice
 }: TDeriveGovernancePositionsParams): TGovernancePosition[] {
@@ -337,12 +300,20 @@ export function deriveGovernancePositions({
     return []
   }
 
+  const styfiStreamRemainingRaw =
+    raw.styfi.styfiStream[1] > raw.styfi.styfiStream[2] ? raw.styfi.styfiStream[1] - raw.styfi.styfiStream[2] : 0n
+  const styfixStreamRemainingRaw =
+    raw.styfi.styfixStream[1] > raw.styfi.styfixStream[2] ? raw.styfi.styfixStream[1] - raw.styfi.styfixStream[2] : 0n
+  const styfiWithdrawableRaw =
+    raw.styfi.styfiWithdrawable < styfiStreamRemainingRaw ? raw.styfi.styfiWithdrawable : styfiStreamRemainingRaw
+  const styfixWithdrawableRaw =
+    raw.styfi.styfixWithdrawable < styfixStreamRemainingRaw ? raw.styfi.styfixWithdrawable : styfixStreamRemainingRaw
   const styfiCooldown = deriveCooldown(raw.styfi.styfiStream, raw.styfi.styfiWithdrawable, nowSeconds)
   const styfixCooldown = deriveCooldown(raw.styfi.styfixStream, raw.styfi.styfixWithdrawable, nowSeconds)
   const styfiCooldownRaw = styfiCooldown?.amountRaw ?? 0n
   const styfixCooldownRaw = styfixCooldown?.amountRaw ?? 0n
-  const styfiTotalRaw = raw.styfi.styfiActive + styfiCooldownRaw + raw.styfi.styfiWithdrawable
-  const styfixTotalRaw = raw.styfi.styfixActive + styfixCooldownRaw + raw.styfi.styfixWithdrawable
+  const styfiTotalRaw = raw.styfi.styfiActive + styfiStreamRemainingRaw
+  const styfixTotalRaw = raw.styfi.styfixActive + styfixStreamRemainingRaw
   const getYfiUsdValue = (amountRaw: bigint): number => toNormalizedValue(amountRaw, 18) * yfiPrice
   const styfiTvlYfiRaw = getStyfiTvlYfiRaw(globalData)
   const styfixTvlYfiRaw = getStyfixTvlYfiRaw(globalData)
@@ -360,7 +331,7 @@ export function deriveGovernancePositions({
           amountYfiRaw: styfiTotalRaw,
           activeRaw: raw.styfi.styfiActive,
           cooldownRaw: styfiCooldownRaw,
-          withdrawableRaw: raw.styfi.styfiWithdrawable,
+          withdrawableRaw: styfiWithdrawableRaw,
           valueUsd: getYfiUsdValue(styfiTotalRaw),
           tvlYfiRaw: styfiTvlYfiRaw,
           tvlUsd: getYfiUsdValue(styfiTvlYfiRaw),
@@ -381,7 +352,7 @@ export function deriveGovernancePositions({
           amountYfiRaw: styfixTotalRaw,
           activeRaw: raw.styfi.styfixActive,
           cooldownRaw: styfixCooldownRaw,
-          withdrawableRaw: raw.styfi.styfixWithdrawable,
+          withdrawableRaw: styfixWithdrawableRaw,
           valueUsd: getYfiUsdValue(styfixTotalRaw),
           tvlYfiRaw: styfixTvlYfiRaw,
           tvlUsd: getYfiUsdValue(styfixTvlYfiRaw),
@@ -390,9 +361,6 @@ export function deriveGovernancePositions({
         })
       : null
   ].filter((position): position is TGovernancePosition => Boolean(position))
-  const styfiReward = getReward(raw.styfi.reward, getRewardPrice)
-  const withStyfiRewards = attachSharedStyfiReward(styfiPositions, styfiReward)
-
   const migratedVeyfiBoostMultiplier = getVeyfiMigratedBoostMultiplier(raw.veyfi.boostEpochs, globalData?.meta.epoch)
   const migratedVeyfi =
     raw.veyfi.migrated && raw.veyfi.lockedAmount > 0n
@@ -415,7 +383,6 @@ export function deriveGovernancePositions({
             tvlUsd: getYfiUsdValue(getMigratedVeyfiTvlYfiRaw(globalData)),
             apy: getMigratedVeyfiApy(migratedVeyfiBoostMultiplier, globalData),
             boostMultiplier: migratedVeyfiBoostMultiplier,
-            reward: getReward(raw.veyfi.reward, getRewardPrice),
             unlockTime: raw.veyfi.unlockTime
           })
         ]
@@ -425,10 +392,12 @@ export function deriveGovernancePositions({
     .map((locker) => {
       const config = LIQUID_LOCKERS.find((item) => item.symbol === locker.symbol)
       const scale = config?.scale ?? locker.scale
-      const streamRemainingShares = locker.stream[1] - locker.stream[2]
-      const cooldownRaw = streamRemainingShares * scale
+      const streamRemainingShares = locker.stream[1] > locker.stream[2] ? locker.stream[1] - locker.stream[2] : 0n
+      const streamRemainingRaw = streamRemainingShares * scale
+      const withdrawableRaw = locker.withdrawable < streamRemainingRaw ? locker.withdrawable : streamRemainingRaw
+      const cooldownRaw = streamRemainingRaw - withdrawableRaw
       const stakedRaw = locker.stakedShares * scale
-      const amountRaw = locker.walletBalance + stakedRaw + cooldownRaw + locker.withdrawable
+      const amountRaw = locker.walletBalance + stakedRaw + streamRemainingRaw
       const amountYfiRaw = getLlyfiYfiEquivalentRaw(amountRaw, scale)
       const tvlYfiRaw = getLlyfiTvlYfiRaw(globalData, locker.symbol)
       if (amountRaw <= 0n) {
@@ -447,26 +416,24 @@ export function deriveGovernancePositions({
         amountYfiRaw,
         activeRaw: stakedRaw,
         cooldownRaw,
-        withdrawableRaw: locker.withdrawable,
+        withdrawableRaw,
         walletRaw: locker.walletBalance,
         valueUsd: getYfiUsdValue(amountYfiRaw),
         tvlYfiRaw,
         tvlUsd: getYfiUsdValue(tvlYfiRaw),
         apy: getLlyfiApy(globalData, locker.symbol),
-        reward: getReward(locker.reward ?? null, getRewardPrice),
         cooldown: deriveCooldown(
           [locker.stream[0], locker.stream[1] * scale, locker.stream[2] * scale],
-          locker.withdrawable,
+          withdrawableRaw,
           nowSeconds
         )
       })
     })
     .filter((position): position is TGovernancePosition => Boolean(position))
 
-  return [...withStyfiRewards, ...liquidLockerPositions, ...migratedVeyfi].map((position) => ({
+  return [...styfiPositions, ...liquidLockerPositions, ...migratedVeyfi].map((position) => ({
     ...position,
-    tokenAddress: toAddress(position.tokenAddress),
-    reward: position.reward ? { ...position.reward, tokenAddress: toAddress(position.reward.tokenAddress) } : null
+    tokenAddress: toAddress(position.tokenAddress)
   }))
 }
 

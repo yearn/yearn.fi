@@ -40,7 +40,6 @@ export type TGovernancePosition = {
   unlockTime?: number
   boostMultiplier?: number
   cooldown?: TGovernanceCooldown | null
-  reward?: TGovernanceReward | null
 }
 
 export type TGovernanceGlobalData = {
@@ -108,7 +107,6 @@ export type TGovernanceRawStyfiAccount = {
   styfixActive: bigint
   styfixStream: readonly [bigint, bigint, bigint]
   styfixWithdrawable: bigint
-  reward: TGovernanceRawReward | null
 }
 
 export type TGovernanceRawVeyfiAccount = {
@@ -118,7 +116,6 @@ export type TGovernanceRawVeyfiAccount = {
   migrationEligible: boolean
   unlockTime: number
   boostEpochs: number | null
-  reward: TGovernanceRawReward | null
 }
 
 export type TGovernanceRawLiquidLockerAccount = {
@@ -132,10 +129,10 @@ export type TGovernanceRawLiquidLockerAccount = {
   stakedShares: bigint
   stream: readonly [bigint, bigint, bigint]
   withdrawable: bigint
-  reward?: TGovernanceRawReward | null
 }
 
 export type TGovernanceRawAccount = {
+  governanceReward: TGovernanceRawReward | null
   styfi: TGovernanceRawStyfiAccount
   veyfi: TGovernanceRawVeyfiAccount
   liquidLockers: TGovernanceRawLiquidLockerAccount[]

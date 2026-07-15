@@ -13,14 +13,14 @@ const ACCOUNT_TOKEN = toAddress('0x0000000000000000000000000000000000000001')
 const YFI_PRICE = 10_000
 
 const emptyRawAccount = (): TGovernanceRawAccount => ({
+  governanceReward: null,
   styfi: {
     styfiActive: 0n,
     styfiStream: [0n, 0n, 0n],
     styfiWithdrawable: 0n,
     styfixActive: 0n,
     styfixStream: [0n, 0n, 0n],
-    styfixWithdrawable: 0n,
-    reward: null
+    styfixWithdrawable: 0n
   },
   veyfi: {
     legacyBalance: 0n,
@@ -28,8 +28,7 @@ const emptyRawAccount = (): TGovernanceRawAccount => ({
     migrated: false,
     migrationEligible: false,
     unlockTime: 0,
-    boostEpochs: null,
-    reward: null
+    boostEpochs: null
   },
   liquidLockers: [
     {
@@ -125,8 +124,6 @@ const globalData: TGovernanceGlobalData = {
   ]
 }
 
-const getRewardPrice = (): number => 1.25
-
 describe('deriveCooldownEndsAt', () => {
   it('derives the remaining linear cooldown duration from claimed and withdrawable amounts', () => {
     expect(
@@ -152,28 +149,27 @@ describe('getLlyfiYfiEquivalentRaw', () => {
 })
 
 describe('deriveGovernancePositions', () => {
-  it('derives stYFI and stYFIx positions with shared reward fallback', () => {
+  it('derives stYFI and stYFIx positions without attaching the unified governance reward', () => {
     const raw = emptyRawAccount()
+    raw.governanceReward = {
+      amountRaw: 4n * ONE,
+      tokenAddress: YVUSDC_REWARD_ADDRESS,
+      tokenSymbol: 'yvUSDC',
+      tokenDecimals: 18
+    }
     raw.styfi = {
       styfiActive: 2n * ONE,
-      styfiStream: [0n, 1n * ONE, 0n],
+      styfiStream: [0n, 2n * ONE, 0n],
       styfiWithdrawable: 1n * ONE,
       styfixActive: 3n * ONE,
       styfixStream: [0n, 0n, 0n],
-      styfixWithdrawable: 0n,
-      reward: {
-        amountRaw: 4n * ONE,
-        tokenAddress: YVUSDC_REWARD_ADDRESS,
-        tokenSymbol: 'yvUSDC',
-        tokenDecimals: 18
-      }
+      styfixWithdrawable: 0n
     }
 
     const positions = deriveGovernancePositions({
       raw,
       globalData,
       yfiPrice: YFI_PRICE,
-      getRewardPrice,
       nowSeconds: 1_000
     })
 
@@ -186,15 +182,43 @@ describe('deriveGovernancePositions', () => {
       tvlUsd: 1_050_000,
       apy: 0.08
     })
-    expect(positions[0]?.reward?.usdValue).toBe(5)
+    expect(positions[0]?.activeRaw).toBe(2n * ONE)
+    expect(positions[0]?.cooldownRaw).toBe(ONE)
+    expect(positions[0]?.withdrawableRaw).toBe(ONE)
+    expect(positions.every((position) => !('reward' in position))).toBe(true)
     expect(positions[1]).toMatchObject({
       tokenAddress: STYFIX_ADDRESS,
       amountYfiNormalized: 3,
       valueUsd: 30_000,
       tvlYfiNormalized: 52,
       tvlUsd: 520_000,
-      apy: 0.065,
-      reward: null
+      apy: 0.065
+    })
+  })
+
+  it('does not add a fully withdrawable stream balance twice', () => {
+    const raw = emptyRawAccount()
+    raw.styfi = {
+      ...raw.styfi,
+      styfiActive: 2n * ONE,
+      styfiStream: [0n, ONE, 0n],
+      styfiWithdrawable: ONE
+    }
+
+    const positions = deriveGovernancePositions({
+      raw,
+      globalData,
+      yfiPrice: YFI_PRICE,
+      nowSeconds: 1_000
+    })
+
+    expect(positions[0]).toMatchObject({
+      amountYfiNormalized: 3,
+      activeRaw: 2n * ONE,
+      cooldownRaw: 0n,
+      withdrawableRaw: ONE,
+      valueUsd: 30_000,
+      cooldown: null
     })
   })
 
@@ -209,8 +233,7 @@ describe('deriveGovernancePositions', () => {
     const positions = deriveGovernancePositions({
       raw,
       globalData: epochZeroGlobalData,
-      yfiPrice: YFI_PRICE,
-      getRewardPrice
+      yfiPrice: YFI_PRICE
     })
 
     expect(positions.map((position) => position.apy)).toEqual([0.09, 0.07])
@@ -224,15 +247,13 @@ describe('deriveGovernancePositions', () => {
       migrated: true,
       migrationEligible: false,
       unlockTime: 1_900_000_000,
-      boostEpochs: 72,
-      reward: null
+      boostEpochs: 72
     }
 
     const positions = deriveGovernancePositions({
       raw,
       globalData,
-      yfiPrice: YFI_PRICE,
-      getRewardPrice
+      yfiPrice: YFI_PRICE
     })
 
     expect(positions).toHaveLength(1)
@@ -247,27 +268,20 @@ describe('deriveGovernancePositions', () => {
     expect(positions[0]?.apy).toBeCloseTo(0.00675)
   })
 
-  it('derives liquid locker wallet, staked, cooldown, withdrawable, scale, and rewards', () => {
+  it('derives liquid locker wallet, staked, cooldown, withdrawable, and scale', () => {
     const raw = emptyRawAccount()
     raw.liquidLockers[1] = {
       ...raw.liquidLockers[1],
       walletBalance: 69_420n * ONE,
       stakedShares: 2n * ONE,
       stream: [0n, 3n * ONE, 1n * ONE],
-      withdrawable: 69_420n * ONE,
-      reward: {
-        amountRaw: 2n * ONE,
-        tokenAddress: YVUSDC_REWARD_ADDRESS,
-        tokenSymbol: 'yvUSDC',
-        tokenDecimals: 18
-      }
+      withdrawable: 69_420n * ONE
     }
 
     const positions = deriveGovernancePositions({
       raw,
       globalData,
       yfiPrice: YFI_PRICE,
-      getRewardPrice,
       nowSeconds: 1_000
     })
 
@@ -275,42 +289,33 @@ describe('deriveGovernancePositions', () => {
     expect(positions[0]).toMatchObject({
       id: 'governance-llyfi-upyfi',
       name: '1UP YFI',
-      amountYfiNormalized: 6,
-      valueUsd: 60_000,
+      amountYfiNormalized: 5,
+      valueUsd: 50_000,
       tvlYfiNormalized: 21,
       tvlUsd: 210_000,
       apy: 0.05
     })
     expect(positions[0]?.walletRaw).toBe(69_420n * ONE)
     expect(positions[0]?.activeRaw).toBe(138_840n * ONE)
-    expect(positions[0]?.cooldownRaw).toBe(138_840n * ONE)
+    expect(positions[0]?.cooldownRaw).toBe(69_420n * ONE)
     expect(positions[0]?.withdrawableRaw).toBe(69_420n * ONE)
-    expect(positions[0]?.reward?.usdValue).toBe(2.5)
   })
 
-  it('omits empty and unreadable reward positions', () => {
+  it('derives positions without global data', () => {
     const raw = emptyRawAccount()
     raw.styfi = {
       ...raw.styfi,
-      styfixActive: 1n * ONE,
-      reward: {
-        amountRaw: 0n,
-        tokenAddress: YVUSDC_REWARD_ADDRESS,
-        tokenSymbol: 'yvUSDC',
-        tokenDecimals: 18
-      }
+      styfixActive: 1n * ONE
     }
 
     const positions = deriveGovernancePositions({
       raw,
       globalData: null,
-      yfiPrice: YFI_PRICE,
-      getRewardPrice
+      yfiPrice: YFI_PRICE
     })
 
     expect(positions).toHaveLength(1)
     expect(positions[0]?.id).toBe('governance-styfix')
     expect(positions[0]?.apy).toBeNull()
-    expect(positions[0]?.reward).toBeNull()
   })
 })

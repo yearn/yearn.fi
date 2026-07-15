@@ -1,14 +1,13 @@
 import {
   GOVERNANCE_CHAIN_ID,
   GOVERNANCE_ERC20_ABI,
+  GOVERNANCE_REWARD_CLAIMER_ABI,
+  GOVERNANCE_REWARD_CLAIMER_ADDRESS,
   LEGACY_VEYFI_ABI,
   LEGACY_VEYFI_ADDRESS,
   LIQUID_LOCKER_DEPOSITOR_ABI,
-  LIQUID_LOCKER_REWARD_DISTRIBUTOR_ADDRESS,
   LIQUID_LOCKERS,
-  REWARD_CLAIMER_ABI,
-  REWARD_CLAIMER_ADDRESS,
-  REWARD_DISTRIBUTOR_ABI,
+  MIGRATED_VEYFI_ABI,
   STAKED_YFI_ABI,
   STYFI_ADDRESS,
   STYFIX_ADDRESS,
@@ -39,7 +38,7 @@ import type { ContractFunctionParameters, PublicClient } from 'viem'
 
 type TUseGovernancePositionsReturn = {
   positions: TGovernancePosition[]
-  styfiReward: TGovernanceReward | null
+  governanceReward: TGovernanceReward | null
   totalValueUsd: number
   isLoading: boolean
   refetch: () => Promise<void>
@@ -80,19 +79,6 @@ function getMulticallValue<T>(
   return result.status === 'success' ? result.result : null
 }
 
-async function getRewardToken(publicClient: PublicClient, distributorAddress: TAddress): Promise<TAddress> {
-  try {
-    const tokenAddress = await publicClient.readContract({
-      address: distributorAddress,
-      abi: REWARD_DISTRIBUTOR_ABI,
-      functionName: 'token'
-    })
-    return toAddress(tokenAddress)
-  } catch {
-    return YVUSDC_REWARD_ADDRESS
-  }
-}
-
 async function getRewardTokenMetadata(
   publicClient: PublicClient,
   tokenAddress: TAddress
@@ -112,18 +98,16 @@ async function getRewardTokenMetadata(
   }
 }
 
-async function simulateRewardClaim(params: {
+async function simulateGovernanceRewardClaim(params: {
   publicClient: PublicClient
   account: TAddress
-  contractAddress: TAddress
   tokenAddress: TAddress
-  isRewardClaimer?: boolean
 }): Promise<TGovernanceRawReward | null> {
-  const { account, contractAddress, isRewardClaimer = false, publicClient, tokenAddress } = params
+  const { account, publicClient, tokenAddress } = params
   try {
     const { result } = await publicClient.simulateContract({
-      address: contractAddress,
-      abi: isRewardClaimer ? REWARD_CLAIMER_ABI : REWARD_DISTRIBUTOR_ABI,
+      address: GOVERNANCE_REWARD_CLAIMER_ADDRESS,
+      abi: GOVERNANCE_REWARD_CLAIMER_ABI,
       functionName: 'claim',
       args: [account],
       account
@@ -149,10 +133,6 @@ async function fetchGovernanceRawAccount(
   publicClient: PublicClient,
   account: TAddress
 ): Promise<TGovernanceRawAccount> {
-  const [veYfiRewardToken, liquidLockerRewardToken] = await Promise.all([
-    getRewardToken(publicClient, VEYFI_REWARD_DISTRIBUTOR_ADDRESS),
-    getRewardToken(publicClient, LIQUID_LOCKER_REWARD_DISTRIBUTOR_ADDRESS)
-  ])
   const accountContracts = [
     { address: STYFI_ADDRESS, abi: STAKED_YFI_ABI, functionName: 'balanceOf', args: [account] },
     { address: STYFI_ADDRESS, abi: STAKED_YFI_ABI, functionName: 'streams', args: [account] },
@@ -163,19 +143,19 @@ async function fetchGovernanceRawAccount(
     { address: LEGACY_VEYFI_ADDRESS, abi: LEGACY_VEYFI_ABI, functionName: 'locked', args: [account] },
     {
       address: VEYFI_REWARD_DISTRIBUTOR_ADDRESS,
-      abi: REWARD_DISTRIBUTOR_ABI,
+      abi: MIGRATED_VEYFI_ABI,
       functionName: 'check_lock',
       args: [account]
     },
     {
       address: VEYFI_REWARD_DISTRIBUTOR_ADDRESS,
-      abi: REWARD_DISTRIBUTOR_ABI,
+      abi: MIGRATED_VEYFI_ABI,
       functionName: 'locks',
       args: [account]
     },
     {
       address: VEYFI_REWARD_DISTRIBUTOR_ADDRESS,
-      abi: REWARD_DISTRIBUTOR_ABI,
+      abi: MIGRATED_VEYFI_ABI,
       functionName: 'last_claimed',
       args: [account]
     },
@@ -201,29 +181,15 @@ async function fetchGovernanceRawAccount(
       }
     ])
   ] as readonly ContractFunctionParameters[]
-  const [accountReads, styfiReward, veYfiReward, liquidLockerReward] = await Promise.all([
+  const [accountReads, governanceReward] = await Promise.all([
     publicClient.multicall({
       contracts: accountContracts,
       allowFailure: true
     }),
-    simulateRewardClaim({
+    simulateGovernanceRewardClaim({
       publicClient,
       account,
-      contractAddress: REWARD_CLAIMER_ADDRESS,
-      tokenAddress: YVUSDC_REWARD_ADDRESS,
-      isRewardClaimer: true
-    }),
-    simulateRewardClaim({
-      publicClient,
-      account,
-      contractAddress: VEYFI_REWARD_DISTRIBUTOR_ADDRESS,
-      tokenAddress: veYfiRewardToken
-    }),
-    simulateRewardClaim({
-      publicClient,
-      account,
-      contractAddress: LIQUID_LOCKER_REWARD_DISTRIBUTOR_ADDRESS,
-      tokenAddress: liquidLockerRewardToken
+      tokenAddress: YVUSDC_REWARD_ADDRESS
     })
   ])
 
@@ -253,30 +219,15 @@ async function fetchGovernanceRawAccount(
       withdrawable: getBigIntResult(getRead(base + 3))
     }
   })
-  const liquidLockerRewardIndex = liquidLockerReward
-    ? Math.max(
-        0,
-        liquidLockers.findIndex((locker) => {
-          const streamRemainingShares = locker.stream[1] - locker.stream[2]
-          return (
-            locker.walletBalance > 0n ||
-            locker.stakedShares > 0n ||
-            streamRemainingShares > 0n ||
-            locker.withdrawable > 0n
-          )
-        })
-      )
-    : -1
-
   return {
+    governanceReward,
     styfi: {
       styfiActive: getBigIntResult(getRead(0)),
       styfiStream: getStreamResult(getRead(1)),
       styfiWithdrawable: getBigIntResult(getRead(2)),
       styfixActive: getBigIntResult(getRead(3)),
       styfixStream: getStreamResult(getRead(4)),
-      styfixWithdrawable: getBigIntResult(getRead(5)),
-      reward: styfiReward
+      styfixWithdrawable: getBigIntResult(getRead(5))
     },
     veyfi: {
       legacyBalance: Array.isArray(legacyLock) ? getBigIntResult(legacyLock[0]) : 0n,
@@ -284,12 +235,9 @@ async function fetchGovernanceRawAccount(
       migrated,
       migrationEligible: !migrated && lockedAmount > 0n && snapshotValidAmount > 0n,
       unlockTime: Number(lockInfo.unlockTime),
-      boostEpochs: Number.isFinite(boostEpochsNumber) ? Math.max(0, Math.floor(boostEpochsNumber)) : null,
-      reward: veYfiReward
+      boostEpochs: Number.isFinite(boostEpochsNumber) ? Math.max(0, Math.floor(boostEpochsNumber)) : null
     },
-    liquidLockers: liquidLockers.map((locker, index) =>
-      index === liquidLockerRewardIndex && liquidLockerReward ? { ...locker, reward: liquidLockerReward } : locker
-    )
+    liquidLockers
   } as TGovernanceRawAccount
 }
 
@@ -319,7 +267,7 @@ export function useGovernancePositions(enabled: boolean): TUseGovernancePosition
   const { address } = useWeb3()
   const { allVaults } = useYearn()
   const account = address ? toAddress(address) : undefined
-  const styfiRewardVault = allVaults[YVUSDC_REWARD_ADDRESS]
+  const governanceRewardVault = allVaults[YVUSDC_REWARD_ADDRESS]
   const publicClient = usePublicClient({ chainId: GOVERNANCE_CHAIN_ID })
   const rawQuery = useQuery({
     queryKey: ['portfolio-governance-positions', account],
@@ -336,40 +284,34 @@ export function useGovernancePositions(enabled: boolean): TUseGovernancePosition
     refetchOnWindowFocus: false
   })
   const rewardPriceTokens = useMemo(() => {
-    const rewards = [
-      rawQuery.data?.styfi.reward,
-      rawQuery.data?.veyfi.reward,
-      ...(rawQuery.data?.liquidLockers.map((locker) => locker.reward ?? null) ?? [])
-    ].flatMap((reward): { address: TAddress; chainID: number }[] =>
-      reward ? [{ address: reward.tokenAddress, chainID: GOVERNANCE_CHAIN_ID }] : []
-    )
     return [
       { address: YFI_ADDRESS, chainID: GOVERNANCE_CHAIN_ID },
       { address: YVUSDC_REWARD_ADDRESS, chainID: GOVERNANCE_CHAIN_ID },
-      styfiRewardVault ? { address: getVaultToken(styfiRewardVault).address, chainID: GOVERNANCE_CHAIN_ID } : undefined,
-      ...rewards
+      governanceRewardVault
+        ? { address: getVaultToken(governanceRewardVault).address, chainID: GOVERNANCE_CHAIN_ID }
+        : undefined
     ]
-  }, [rawQuery.data, styfiRewardVault])
+  }, [governanceRewardVault])
   const { getPrice } = useYearnSpotPrices(rewardPriceTokens)
   const yfiSpotPrice = getPrice({ address: YFI_ADDRESS, chainID: GOVERNANCE_CHAIN_ID }).normalized
   const yfiPrice =
     Number.isFinite(yfiSpotPrice) && yfiSpotPrice > 0 ? yfiSpotPrice : getYfiPriceFromGlobalData(globalDataQuery.data)
-  const styfiReward = useMemo((): TGovernanceReward | null => {
-    const reward = rawQuery.data?.styfi.reward
+  const governanceReward = useMemo((): TGovernanceReward | null => {
+    const reward = rawQuery.data?.governanceReward
     if (!reward || reward.amountRaw <= 0n) {
       return null
     }
 
     const amountNormalized = toNormalizedValue(reward.amountRaw, reward.tokenDecimals)
     const directPrice = getPrice({ address: reward.tokenAddress, chainID: GOVERNANCE_CHAIN_ID }).normalized
-    const rewardAsset = styfiRewardVault ? getVaultToken(styfiRewardVault) : null
+    const rewardAsset = governanceRewardVault ? getVaultToken(governanceRewardVault) : null
     const underlyingPrice = rewardAsset
       ? getPrice({ address: rewardAsset.address, chainID: GOVERNANCE_CHAIN_ID }).normalized
       : 0
     const price = resolveYvUsdcRewardPriceUsd({
       directSharePrice: directPrice,
       underlyingPrice,
-      pricePerShare: styfiRewardVault ? getVaultAPR(styfiRewardVault).pricePerShare.today : 0
+      pricePerShare: governanceRewardVault ? getVaultAPR(governanceRewardVault).pricePerShare.today : 0
     })
     return {
       tokenAddress: reward.tokenAddress,
@@ -378,16 +320,15 @@ export function useGovernancePositions(enabled: boolean): TUseGovernancePosition
       amountNormalized,
       usdValue: Number.isFinite(price) ? amountNormalized * price : 0
     }
-  }, [getPrice, rawQuery.data?.styfi.reward, styfiRewardVault])
+  }, [getPrice, governanceRewardVault, rawQuery.data?.governanceReward])
   const positions = useMemo(
     () =>
       deriveGovernancePositions({
         raw: rawQuery.data,
         globalData: globalDataQuery.data,
-        yfiPrice,
-        getRewardPrice: (tokenAddress) => getPrice({ address: tokenAddress, chainID: GOVERNANCE_CHAIN_ID }).normalized
+        yfiPrice
       }),
-    [getPrice, globalDataQuery.data, rawQuery.data, yfiPrice]
+    [globalDataQuery.data, rawQuery.data, yfiPrice]
   )
   const totalValueUsd = useMemo(
     () => positions.reduce((sum, position) => sum + (Number.isFinite(position.valueUsd) ? position.valueUsd : 0), 0),
@@ -399,7 +340,7 @@ export function useGovernancePositions(enabled: boolean): TUseGovernancePosition
 
   return {
     positions,
-    styfiReward,
+    governanceReward,
     totalValueUsd,
     isLoading: enabled && (rawQuery.isLoading || globalDataQuery.isLoading),
     refetch

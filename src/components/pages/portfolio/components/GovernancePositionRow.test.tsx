@@ -1,4 +1,3 @@
-import { YVUSDC_REWARD_ADDRESS } from '@pages/portfolio/governance/constants'
 import type { TGovernancePosition } from '@pages/portfolio/governance/types'
 import { toAddress } from '@shared/utils'
 import { renderToStaticMarkup } from 'react-dom/server'
@@ -30,13 +29,6 @@ const buildPosition = (overrides: Partial<TGovernancePosition> = {}): TGovernanc
     amountRaw: 1n * 10n ** 18n,
     totalRaw: 1n * 10n ** 18n,
     endsAt: 1_900_000_000
-  },
-  reward: {
-    amountRaw: 2n * 10n ** 18n,
-    tokenAddress: YVUSDC_REWARD_ADDRESS,
-    symbol: 'yvUSDC',
-    amountNormalized: 2,
-    usdValue: 2.5
   },
   ...overrides
 })

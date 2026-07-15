@@ -1,4 +1,8 @@
-import { GOVERNANCE_CHAIN_ID, REWARD_CLAIMER_ABI, REWARD_CLAIMER_ADDRESS } from '@pages/portfolio/governance/constants'
+import {
+  GOVERNANCE_CHAIN_ID,
+  GOVERNANCE_REWARD_CLAIMER_ABI,
+  GOVERNANCE_REWARD_CLAIMER_ADDRESS
+} from '@pages/portfolio/governance/constants'
 import type { TGovernanceReward } from '@pages/portfolio/governance/types'
 import { RewardRow } from '@pages/vaults/components/widget/rewards/RewardRow'
 import type { TransactionStep } from '@pages/vaults/components/widget/shared/TransactionOverlay'
@@ -27,8 +31,8 @@ export function GovernanceRewardRow({
   const currentChainId = useChainId()
   const { isPending } = useWriteContract()
   const prepare = useSimulateContract({
-    address: REWARD_CLAIMER_ADDRESS,
-    abi: REWARD_CLAIMER_ABI,
+    address: GOVERNANCE_REWARD_CLAIMER_ADDRESS,
+    abi: GOVERNANCE_REWARD_CLAIMER_ABI,
     functionName: 'claim',
     args: [userAddress!],
     chainId: GOVERNANCE_CHAIN_ID,
