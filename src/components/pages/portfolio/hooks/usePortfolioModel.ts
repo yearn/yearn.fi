@@ -43,6 +43,7 @@ import { ETH_TOKEN_ADDRESS } from '@shared/utils/constants'
 import { numberSort, stringSort } from '@shared/utils/helpers'
 import { calculateVaultEstimatedAPY, calculateVaultHistoricalAPY } from '@shared/utils/vaultApy'
 import { useCallback, useMemo, useState } from 'react'
+import { hasClaimableRewardNotification } from '../claimRewards.helpers'
 import type { TPortfolioLiveBalanceSnapshot } from '../types/api'
 import { filterVisiblePortfolioHoldings } from './portfolioVisibility'
 import { hasYvUsdPortfolioHoldings, resolveYvUsdFollowOnSuggestionVault } from './usePortfolioModel.helpers'
@@ -80,6 +81,7 @@ export type TPortfolioBlendedMetrics = {
 
 export type TPortfolioModel = {
   blendedMetrics: TPortfolioBlendedMetrics
+  hasClaimableRewards: boolean
   hasHoldings: boolean
   holdingsRows: THoldingsRow[]
   isActive: boolean
@@ -603,6 +605,7 @@ export function usePortfolioModel(): TPortfolioModel {
 
   return {
     blendedMetrics,
+    hasClaimableRewards: hasClaimableRewardNotification(governancePositions.styfiReward?.usdValue ?? 0),
     hasHoldings,
     holdingsRows,
     isActive,

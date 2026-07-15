@@ -1676,10 +1676,12 @@ function PortfolioHeaderSection({
 
 function PortfolioTabSelector({
   activeTab,
+  hasClaimableRewards,
   onSelectTab,
   mergeWithHeader
 }: {
   activeTab: TPortfolioTabKey
+  hasClaimableRewards: boolean
   onSelectTab: (tab: TPortfolioTabKey) => void
   mergeWithHeader?: boolean
 }): ReactElement {
@@ -1705,7 +1707,10 @@ function PortfolioTabSelector({
             )}
             aria-pressed={activeTab === tab.key}
           >
-            {tab.label}
+            <span>{tab.label}</span>
+            {tab.key === 'claim-rewards' && hasClaimableRewards ? (
+              <span className="ml-2 size-2 rounded-full bg-blue-500" aria-label="Claimable rewards over one dollar" />
+            ) : null}
           </button>
         ))}
       </div>
@@ -3305,7 +3310,11 @@ function PortfolioPage(): ReactElement {
           className="sticky z-30 bg-app pb-2"
           style={{ top: 'calc(var(--header-height) + var(--portfolio-breadcrumbs-height))' }}
         >
-          <PortfolioTabSelector activeTab={activeTab} onSelectTab={handleTabSelect} />
+          <PortfolioTabSelector
+            activeTab={activeTab}
+            hasClaimableRewards={model.hasClaimableRewards}
+            onSelectTab={handleTabSelect}
+          />
         </div>
         <div className={'pt-4'} key={activeTab}>
           {renderTabContent()}
