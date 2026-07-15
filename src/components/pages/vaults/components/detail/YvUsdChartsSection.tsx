@@ -9,12 +9,7 @@ import ChartSkeleton from './charts/ChartSkeleton'
 import ChartsLoader from './charts/ChartsLoader'
 import { FixedHeightChartContainer } from './charts/FixedHeightChartContainer'
 import { YvUsdApyChart, YvUsdChartLegend, YvUsdPerformanceChart, YvUsdTvlChart } from './charts/YvUsdDualLineChart'
-import {
-  DEFAULT_VAULT_CHART_TIMEFRAME,
-  VAULT_CHART_TABS,
-  type VAULT_CHART_TIMEFRAME_OPTIONS,
-  VaultChartTimeframeDropdown
-} from './VaultChartsSection'
+import { VAULT_CHART_TABS, type VAULT_CHART_TIMEFRAME_OPTIONS, VaultChartTimeframeDropdown } from './VaultChartsSection'
 
 const VaultTvlGrowthChart = lazy(() =>
   import('./charts/VaultTvlGrowthChart').then((m) => ({ default: m.VaultTvlGrowthChart }))
@@ -23,6 +18,7 @@ const VaultTvlGrowthChart = lazy(() =>
 type TYvUsdUserChartTab = 'user-position'
 export type TYvUsdChartTab = (typeof VAULT_CHART_TABS)[number]['id'] | TYvUsdUserChartTab
 export type TYvUsdChartTimeframe = (typeof VAULT_CHART_TIMEFRAME_OPTIONS)[number]['value']
+const DEFAULT_YVUSD_CHART_TIMEFRAME: TYvUsdChartTimeframe = '90d'
 
 type YvUsdChartsSectionProps = {
   chartTab?: TYvUsdChartTab
@@ -93,7 +89,7 @@ export function YvUsdChartsSection({
 
   const [uncontrolledTab, setUncontrolledTab] = useState<TYvUsdChartTab>('historical-apy')
   const [uncontrolledTimeframe, setUncontrolledTimeframe] =
-    useState<TYvUsdChartTimeframe>(DEFAULT_VAULT_CHART_TIMEFRAME)
+    useState<TYvUsdChartTimeframe>(DEFAULT_YVUSD_CHART_TIMEFRAME)
 
   const activeTab = chartTab ?? uncontrolledTab
   const activeTimeframe = timeframe ?? uncontrolledTimeframe

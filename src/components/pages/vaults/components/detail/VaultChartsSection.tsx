@@ -42,7 +42,7 @@ export const VAULT_CHART_TIMEFRAME_OPTIONS = [
 ] as const
 
 export type TVaultChartTimeframe = (typeof VAULT_CHART_TIMEFRAME_OPTIONS)[number]['value']
-export const DEFAULT_VAULT_CHART_TIMEFRAME: TVaultChartTimeframe = '30d'
+const DEFAULT_VAULT_CHART_TIMEFRAME: TVaultChartTimeframe = '1y'
 
 type TBaseVaultChartTab = 'historical-pps' | 'historical-apy' | 'historical-tvl'
 type TUserVaultChartTab = 'user-position'
