@@ -43,7 +43,7 @@ const NATIVE_WRAPPER_BY_CHAIN_ID: Partial<Record<number, TAddress>> = {
   42161: ARB_WETH_TOKEN_ADDRESS
 }
 
-function resolveSpotAddress(address: string | null | undefined, chainID: number): TAddress | null {
+export function resolveYearnPricesSpotAddress(address: string | null | undefined, chainID: number): TAddress | null {
   const normalizedAddress = toAddress(address)
   if (isZeroAddress(normalizedAddress)) {
     return null
@@ -68,7 +68,7 @@ function splitSpotKey(key: string): { chainName: string; address: TAddress } | n
     return null
   }
 
-  const address = resolveSpotAddress(addressRaw, chainID)
+  const address = resolveYearnPricesSpotAddress(addressRaw, chainID)
   if (!address) {
     return null
   }
@@ -87,7 +87,7 @@ export function buildYearnPricesSpotKey(token: TYearnPriceToken | null | undefin
     return null
   }
 
-  const address = resolveSpotAddress(token?.address, chainID)
+  const address = resolveYearnPricesSpotAddress(token?.address, chainID)
   if (!address) {
     return null
   }
