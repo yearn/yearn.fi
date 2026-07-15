@@ -1,7 +1,7 @@
 import { GET_CORS_HEADERS, json, noContent, queryString } from '../http'
 import { ENSO_BALANCES_CACHE_CONTROL } from './cache'
 
-const ENSO_API_BASE = 'https://api.enso.finance'
+const ENSO_API_BASE = 'https://api.enso.build'
 
 export function OPTIONS(): Response {
   return noContent(GET_CORS_HEADERS)
