@@ -50,6 +50,10 @@ export function fromBasisPoints(value: number): number {
   return Math.max(0, sanitizeNumber(value) / 100)
 }
 
+export function optionalBasisPointsToPercentage(value: number | null | undefined): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) ? fromBasisPoints(value) : undefined
+}
+
 export function calculateRemainingEnsoSlippagePercentage({
   userTolerancePercentage,
   quoteImpactPercentage
