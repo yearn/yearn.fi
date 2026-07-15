@@ -19,6 +19,7 @@ interface WithdrawDetailsOverlayProps {
   routeType: WithdrawRouteType
   isZap: boolean
   hasSwap: boolean
+  usesMinExpectedOut: boolean
   isLoadingQuote: boolean
 }
 
@@ -34,7 +35,8 @@ export const WithdrawDetailsOverlay: FC<WithdrawDetailsOverlayProps> = ({
   withdrawalSource,
   routeType,
   isZap,
-  hasSwap
+  hasSwap,
+  usesMinExpectedOut
 }) => {
   const isFromStaking = withdrawalSource === 'staking'
   const isUnstake = routeType === 'DIRECT_UNSTAKE'
@@ -69,7 +71,7 @@ export const WithdrawDetailsOverlay: FC<WithdrawDetailsOverlayProps> = ({
     return <span className="font-semibold text-text-primary">{outputTokenSymbol}</span>
   }
 
-  const receiveLabel = isZap && hasSwap && hasInputValue ? "You'll receive at least:" : "You'll receive:"
+  const receiveLabel = isZap && usesMinExpectedOut && hasInputValue ? "You'll receive at least:" : "You'll receive:"
 
   return (
     <InfoOverlay isOpen={isOpen} onClose={onClose} title="Withdrawal Details">
