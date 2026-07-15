@@ -1,7 +1,11 @@
 import { useFetchYearnPrices } from '@shared/hooks/useFetchYearnPrices'
 import type { TAddress, TNormalizedBN } from '@shared/types'
-import { toAddress, toNormalizedBN, zeroNormalizedBN } from '@shared/utils'
-import type { TYearnPricesByChain, TYearnPriceToken } from '@shared/utils/yearnPrices'
+import { toNormalizedBN, zeroNormalizedBN } from '@shared/utils'
+import {
+  resolveYearnPricesSpotAddress,
+  type TYearnPricesByChain,
+  type TYearnPriceToken
+} from '@shared/utils/yearnPrices'
 import { useCallback } from 'react'
 
 type TTokenAndChain = { address: TAddress; chainID: number }
@@ -13,7 +17,8 @@ export function useYearnSpotPrices(tokens: Array<TYearnPriceToken | null | undef
   const prices = useFetchYearnPrices(tokens)
   const getPrice = useCallback(
     ({ address, chainID }: TTokenAndChain): TNormalizedBN => {
-      const price = prices?.[chainID]?.[toAddress(address)] ?? 0
+      const resolvedAddress = resolveYearnPricesSpotAddress(address, chainID)
+      const price = resolvedAddress ? (prices?.[chainID]?.[resolvedAddress] ?? 0) : 0
       if (!Number.isFinite(price) || price <= 0) {
         return zeroNormalizedBN
       }
