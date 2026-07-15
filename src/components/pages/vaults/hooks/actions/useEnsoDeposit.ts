@@ -101,6 +101,7 @@ export function useEnsoDeposit(params: UseEnsoDepositParams): UseWidgetDepositFl
         allowance: ensoFlow.periphery.allowance,
         expectedOut: ensoFlow.periphery.expectedOut.raw,
         minExpectedOut: ensoFlow.periphery.minExpectedOut.raw,
+        priceImpact: ensoFlow.periphery.priceImpact,
         isLoadingRoute: ensoFlow.periphery.isLoadingRoute,
         isCrossChain: ensoFlow.periphery.isCrossChain,
         routeHasSwap: ensoFlow.periphery.routeHasSwap,

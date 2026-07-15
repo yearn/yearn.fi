@@ -27,7 +27,7 @@ interface WithdrawDetailsProps {
   expectedPriceImpactPercentage: number
   priceImpactPercentage: number
   shouldHighlightPriceImpact: boolean
-  hasSwap: boolean
+  usesMinExpectedOut: boolean
   // Modal trigger
   onShowDetailsModal: () => void
   // Approval info (for zap withdrawals)
@@ -35,6 +35,7 @@ interface WithdrawDetailsProps {
   allowanceTokenDecimals?: number
   allowanceTokenSymbol?: string
   approvalSpenderName?: string
+  isApprovalLoading?: boolean
   onAllowanceClick?: () => void
   onShowApprovalOverlay?: () => void
 }
@@ -62,16 +63,19 @@ export function WithdrawDetails({
   expectedPriceImpactPercentage,
   priceImpactPercentage,
   shouldHighlightPriceImpact,
-  hasSwap,
+  usesMinExpectedOut,
   onShowDetailsModal,
   allowance,
   allowanceTokenDecimals,
   allowanceTokenSymbol,
   approvalSpenderName,
+  isApprovalLoading = false,
   onAllowanceClick,
   onShowApprovalOverlay
 }: WithdrawDetailsProps): ReactElement {
   const allowanceDisplay = formatWidgetAllowance(allowance, allowanceTokenDecimals)
+  const shouldShowAllowanceRow = isApprovalLoading || allowanceDisplay !== null
+  const renderedAllowanceDisplay = allowanceDisplay ?? '0'
   const approvalLabel = getApprovalLabel(approvalSpenderName)
   const formatSignedSlippage = (percentage: number) => {
     if (percentage === 0) {
@@ -83,8 +87,8 @@ export function WithdrawDetails({
   const withdrawUsdDisplay = formatCounterValue(formatUnits(withdrawAmountBn, assetDecimals), assetUsdPrice)
   const expectedOutUsdDisplay = formatCounterValue(formatUnits(expectedOut, outputDecimals), outputUsdPrice)
   const shouldShowWithdrawUsdBadge = showSwapRow && assetUsdPrice > 0 && withdrawAmountBn > 0n
-  const shouldShowExpectedOutUsdBadge = hasSwap && outputUsdPrice > 0 && expectedOut > 0n
-  const shouldShowWorstCasePriceImpact = showSwapRow && hasSwap
+  const shouldShowExpectedOutUsdBadge = usesMinExpectedOut && outputUsdPrice > 0 && expectedOut > 0n
+  const shouldShowWorstCasePriceImpact = usesMinExpectedOut
   const shouldUseHighlight = !isQuoteStale && !isLoadingQuote && shouldHighlightPriceImpact
   return (
     <div>
@@ -126,7 +130,7 @@ export function WithdrawDetails({
 
         {/* You will receive */}
         <div className="flex items-center justify-between h-5">
-          <p className="text-sm text-text-secondary">You will receive{hasSwap ? ' at least' : ''}</p>
+          <p className="text-sm text-text-secondary">You will receive{usesMinExpectedOut ? ' at least' : ''}</p>
           <div className="flex items-center gap-1">
             <p className={`text-sm ${shouldUseHighlight ? 'text-red-500' : 'text-text-primary'}`}>
               {isLoadingQuote ? (
@@ -170,9 +174,13 @@ export function WithdrawDetails({
         )}
 
         {/* Approved allowance (for zap withdrawals) */}
-        {allowanceDisplay && (
+        {shouldShowAllowanceRow && (
           <div className="flex items-center justify-between h-5">
-            {onShowApprovalOverlay ? (
+            {isApprovalLoading ? (
+              <p className="text-sm text-text-secondary">
+                <span className="inline-block h-4 w-36 bg-surface-secondary rounded animate-pulse" />
+              </p>
+            ) : onShowApprovalOverlay ? (
               <button
                 type="button"
                 onClick={onShowApprovalOverlay}
@@ -183,22 +191,24 @@ export function WithdrawDetails({
             ) : (
               <p className="text-sm text-text-secondary">{approvalLabel}</p>
             )}
-            {onAllowanceClick && allowanceDisplay !== 'Unlimited' ? (
+            {isApprovalLoading ? (
+              <span className="inline-block h-4 w-20 bg-surface-secondary rounded animate-pulse" />
+            ) : onAllowanceClick && renderedAllowanceDisplay !== 'Unlimited' ? (
               <button
                 type="button"
                 onClick={onAllowanceClick}
                 className="text-sm text-text-primary hover:text-blue-500 transition-colors cursor-pointer"
               >
                 <span className="font-semibold">
-                  {allowanceDisplay}
-                  {allowanceDisplay !== 'Unlimited' && allowanceTokenSymbol ? ` ${allowanceTokenSymbol}` : ''}
+                  {renderedAllowanceDisplay}
+                  {renderedAllowanceDisplay !== 'Unlimited' && allowanceTokenSymbol ? ` ${allowanceTokenSymbol}` : ''}
                 </span>
               </button>
             ) : (
               <p className="text-sm text-text-primary">
                 <span className="font-semibold">
-                  {allowanceDisplay}
-                  {allowanceDisplay !== 'Unlimited' && allowanceTokenSymbol ? ` ${allowanceTokenSymbol}` : ''}
+                  {renderedAllowanceDisplay}
+                  {renderedAllowanceDisplay !== 'Unlimited' && allowanceTokenSymbol ? ` ${allowanceTokenSymbol}` : ''}
                 </span>
               </p>
             )}
