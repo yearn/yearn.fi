@@ -1850,11 +1850,10 @@ function buildSummary(vaults: HoldingsPnLSimpleVault[]): HoldingsPnLSimpleRespon
   }
 }
 
-function selectHistoryFamilies(vaults: HoldingsPnLSimpleVault[], limit = 5): HoldingsPnLSimpleVault[] {
+function selectEligibleHistoryFamilies(vaults: HoldingsPnLSimpleVault[]): HoldingsPnLSimpleVault[] {
   return vaults
-    .filter((vault) => vault.baselineWeightUsd > 0 && vault.protocolReturnPct !== null)
+    .filter((vault) => vault.status === 'ok' && vault.baselineWeightUsd > 0 && vault.protocolReturnPct !== null)
     .sort((left, right) => right.baselineWeightUsd - left.baselineWeightUsd)
-    .slice(0, limit)
 }
 
 export function buildProtocolReturnHistorySeries(args: {
@@ -2044,25 +2043,30 @@ export function buildProtocolReturnFamilyHistorySeries(args: {
       }
 
       const hasOpenPosition = (familyVault?.sharesFormatted ?? 0) > 0
+      const currentGrowthWeightUsd = familyVault?.growthWeightUsd ?? 0
+      const currentExposureWeightUsdYears = familyVault?.baselineExposureWeightUsdYears ?? 0
+      const deltaGrowthWeightUsd = currentGrowthWeightUsd - state.previousGrowthWeightUsd
+      const deltaExposureWeightUsdYears = currentExposureWeightUsdYears - state.previousExposureWeightUsdYears
+      const hasIntervalActivity =
+        state.previousTimestamp !== null && (deltaGrowthWeightUsd !== 0 || deltaExposureWeightUsdYears !== 0)
 
       state.growthIndex = advanceGrowthIndex({
         previousIndex: state.growthIndex,
-        deltaGrowthWeightUsd: (familyVault?.growthWeightUsd ?? 0) - state.previousGrowthWeightUsd,
-        deltaExposureWeightUsdYears:
-          (familyVault?.baselineExposureWeightUsdYears ?? 0) - state.previousExposureWeightUsdYears,
+        deltaGrowthWeightUsd,
+        deltaExposureWeightUsdYears,
         deltaSeconds: state.previousTimestamp === null ? 0 : Math.max(0, timestamp - state.previousTimestamp),
-        hasCapital: (familyVault?.baselineWeightUsd ?? 0) > 0 || (familyVault?.growthWeightUsd ?? 0) !== 0
+        hasCapital: (familyVault?.baselineWeightUsd ?? 0) > 0 || currentGrowthWeightUsd !== 0
       })
       state.previousTimestamp = timestamp
-      state.previousGrowthWeightUsd = familyVault?.growthWeightUsd ?? 0
-      state.previousExposureWeightUsdYears = familyVault?.baselineExposureWeightUsdYears ?? 0
+      state.previousGrowthWeightUsd = currentGrowthWeightUsd
+      state.previousExposureWeightUsdYears = currentExposureWeightUsdYears
 
       familyPointMap.get(vaultKey)?.push({
         date: timestampToDateString(timestamp),
         timestamp,
         protocolReturnPct: hasOpenPosition ? (familyVault?.protocolReturnPct ?? null) : null,
-        growthWeightUsd: hasOpenPosition ? (familyVault?.growthWeightUsd ?? null) : null,
-        growthIndex: hasOpenPosition ? state.growthIndex : null
+        growthWeightUsd: familyVault?.growthWeightUsd ?? null,
+        growthIndex: hasOpenPosition || hasIntervalActivity ? state.growthIndex : null
       })
     })
   })
@@ -2208,7 +2212,7 @@ export async function getHoldingsProtocolReturnHistory(
     currentTimestamp: latestTimestamp
   })
   reportHoldingsProgress(82, 'Calculated protocol return ledgers', `${finalVaults.length} vaults`)
-  const selectedHistoryFamilies = selectHistoryFamilies(finalVaults)
+  const eligibleHistoryFamilies = selectEligibleHistoryFamilies(finalVaults)
   const history = buildProtocolReturnHistorySeries({
     events: effectiveEvents,
     userAddress,
@@ -2229,7 +2233,7 @@ export async function getHoldingsProtocolReturnHistory(
     priceData,
     ethPriceData,
     timestamps,
-    selectedVaults: requestedVaults ? [] : selectedHistoryFamilies
+    selectedVaults: requestedVaults ? [] : eligibleHistoryFamilies
   })
   reportHoldingsProgress(92, 'Built historical chart series', `${history.length} chart points`)
   const openBaselineCompositionUsd = buildOpenBaselineCompositionUsd({

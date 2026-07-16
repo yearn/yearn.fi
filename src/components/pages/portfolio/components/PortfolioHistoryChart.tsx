@@ -36,7 +36,11 @@ import type {
   TPortfolioProtocolReturnHistorySummary
 } from '../types/api'
 import { PortfolioHistoryBreakdownModal } from './PortfolioHistoryBreakdownModal'
-import type { TPortfolioVaultGrowthChartMode, TPortfolioVaultGrowthChartSeries } from './PortfolioVaultGrowthChart'
+import type {
+  TPortfolioVaultGrowthChartMode,
+  TPortfolioVaultGrowthChartSeries,
+  TPortfolioVaultGrowthChartSortDirection
+} from './PortfolioVaultGrowthChart'
 import { PortfolioVaultGrowthChart } from './PortfolioVaultGrowthChart'
 
 export type TPortfolioHistoryChartTimeframe = '30d' | '90d' | '1y' | 'all'
@@ -56,6 +60,8 @@ type TPortfolioHistoryChartProps = {
   onGrowthDisplayModeOverrideChange: (mode: TGrowthDisplayMode | null) => void
   vaultGrowthMode: TPortfolioVaultGrowthChartMode
   onVaultGrowthModeChange: (mode: TPortfolioVaultGrowthChartMode) => void
+  vaultGrowthSortDirection: TPortfolioVaultGrowthChartSortDirection
+  onVaultGrowthSortDirectionChange: (direction: TPortfolioVaultGrowthChartSortDirection) => void
   balanceIsLoading: boolean
   balanceIsEmpty?: boolean
   balanceError?: Error | null
@@ -514,6 +520,7 @@ function buildPortfolioVaultGrowthSeries(
   labelByVaultKey: Record<string, string>
 ): TPortfolioVaultGrowthChartSeries[] {
   return familySeries.map((series) => ({
+    chainId: series.chainId,
     vaultAddress: series.vaultAddress,
     vaultName:
       labelByVaultKey[`${series.chainId}:${series.vaultAddress.toLowerCase()}`] ??
@@ -613,6 +620,8 @@ export function PortfolioHistoryChart({
   onGrowthDisplayModeOverrideChange,
   vaultGrowthMode,
   onVaultGrowthModeChange,
+  vaultGrowthSortDirection,
+  onVaultGrowthSortDirectionChange,
   balanceIsLoading,
   balanceIsEmpty = false,
   balanceError,
@@ -1054,12 +1063,15 @@ export function PortfolioHistoryChart({
           series={vaultGrowthSeries}
           mode={vaultGrowthMode}
           onModeChange={onVaultGrowthModeChange}
+          sortDirection={vaultGrowthSortDirection}
+          onSortDirectionChange={onVaultGrowthSortDirectionChange}
           timeframe={timeframe}
           maxVaults={INDEX_SERIES_COLORS.length - 1}
           colors={[...INDEX_SERIES_COLORS.slice(1)]}
           title={''}
           height={'100%'}
           showModeToggle={false}
+          showSortToggle
           className={'h-full min-h-0 pt-1'}
           emptyMessage={getEmptyMessage(activeTab, resolvedGrowthDisplayMode)}
         />

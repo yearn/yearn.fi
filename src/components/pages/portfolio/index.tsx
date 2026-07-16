@@ -95,7 +95,10 @@ import {
   PortfolioHistoryChartControls,
   resolvePortfolioGrowthDisplayMode
 } from './components/PortfolioHistoryChart'
-import type { TPortfolioVaultGrowthChartMode } from './components/PortfolioVaultGrowthChart'
+import type {
+  TPortfolioVaultGrowthChartMode,
+  TPortfolioVaultGrowthChartSortDirection
+} from './components/PortfolioVaultGrowthChart'
 import { usePortfolioActivity } from './hooks/usePortfolioActivity'
 import { usePortfolioHistory } from './hooks/usePortfolioHistory'
 import { usePortfolioProtocolReturnHistory } from './hooks/usePortfolioProtocolReturnHistory'
@@ -3021,6 +3024,8 @@ function PortfolioPage(): ReactElement {
     null
   )
   const [historyVaultGrowthMode, setHistoryVaultGrowthMode] = useState<TPortfolioVaultGrowthChartMode>('position')
+  const [historyVaultGrowthSortDirection, setHistoryVaultGrowthSortDirection] =
+    useState<TPortfolioVaultGrowthChartSortDirection>('desc')
   const searchParams = useSearchParams()
   const pathname = usePathname() || '/portfolio'
   const router = useRouter()
@@ -3090,6 +3095,8 @@ function PortfolioPage(): ReactElement {
       onGrowthDisplayModeOverrideChange={setHistoryGrowthDisplayModeOverride}
       vaultGrowthMode={historyVaultGrowthMode}
       onVaultGrowthModeChange={setHistoryVaultGrowthMode}
+      vaultGrowthSortDirection={historyVaultGrowthSortDirection}
+      onVaultGrowthSortDirectionChange={setHistoryVaultGrowthSortDirection}
       balanceIsLoading={model.isHoldingsLoading || historyLoading}
       balanceIsEmpty={historyEmpty}
       balanceError={historyError}
