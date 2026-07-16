@@ -157,7 +157,7 @@ const CHART_TABS: Array<{ id: TPortfolioHistoryChartTab; label: string }> = [
   { id: 'balance', label: 'Balance' },
   { id: 'growth', label: 'Growth' },
   { id: 'annualized', label: 'Annualized %' },
-  { id: 'index', label: 'Growth Index' }
+  { id: 'index', label: 'Vault Performance' }
 ]
 const TIMEFRAME_OPTIONS: Array<{ id: TPortfolioHistoryChartTimeframe; label: string }> = [
   { id: '30d', label: '30D' },
@@ -602,7 +602,7 @@ function getEmptyMessage(activeTab: TPortfolioHistoryChartTab, growthDisplayMode
   }
 
   if (activeTab === 'index') {
-    return 'No growth index history available'
+    return 'No vault performance history available'
   }
 
   return 'No holdings history available'
@@ -870,7 +870,7 @@ export function PortfolioHistoryChart({
                   ? 'Protocol Growth (ETH)'
                   : 'Protocol Growth (USD)'
               : activeTab === 'index'
-                ? 'Growth Index'
+                ? 'Vault Performance'
                 : 'Protocol Return (%)',
         color: 'var(--chart-1)'
       }
