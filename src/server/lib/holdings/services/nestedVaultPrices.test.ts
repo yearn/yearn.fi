@@ -4,9 +4,11 @@ import {
   deriveNestedVaultAssetPriceData,
   expandNestedVaultAssetPriceRequests,
   getNestedVaultPpsIdentifiersFromPriceRequests,
-  mergeVaultIdentifiers
+  mergeVaultIdentifiers,
+  resolveNestedVaultAssetMetadata
 } from './nestedVaultPrices'
 import { toVaultKey } from './pnlShared'
+import { getVaultMetadataFetchFailedVaults, markVaultMetadataFetchFailures } from './vaults'
 
 const INNER_VAULT = '0x696d02db93291651ed510704c9b286841d506987'
 const OUTER_VAULT = '0xaaafea48472f77563961cdb53291dedfb46f9040'
@@ -101,6 +103,15 @@ describe('nested vault asset prices', () => {
         metadata
       )
     ).toEqual([{ chainId: 1, vaultAddress: INNER_VAULT }])
+  })
+
+  it('preserves nested metadata fetch failures for cache eligibility', async () => {
+    const outerMetadata = new Map([[toVaultKey(1, OUTER_VAULT), metadata.get(toVaultKey(1, OUTER_VAULT))!]])
+    const fetchVaultMetadata = async () => markVaultMetadataFetchFailures(new Map<string, VaultMetadata>(), 1)
+
+    const resolvedMetadata = await resolveNestedVaultAssetMetadata(outerMetadata, 4, fetchVaultMetadata)
+
+    expect(getVaultMetadataFetchFailedVaults(resolvedMetadata)).toBe(1)
   })
 
   it('recursively expands multi-level vault-share asset price requests', () => {

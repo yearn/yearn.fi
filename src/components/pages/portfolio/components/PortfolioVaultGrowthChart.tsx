@@ -17,14 +17,23 @@ import {
 } from '@pages/vaults/utils/charts'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { cl, formatUSD, SELECTOR_BAR_STYLES } from '@shared/utils'
+import {
+  rankPortfolioVaultGrowthChartSeries,
+  type TPortfolioVaultGrowthChartMode,
+  type TPortfolioVaultGrowthChartSortDirection,
+  type TPortfolioVaultGrowthRankableSeries
+} from '@shared/utils/portfolioVaultGrowth'
 import type { ReactElement } from 'react'
 import { useMemo, useState } from 'react'
 import { CartesianGrid, ComposedChart, Line, XAxis, YAxis } from 'recharts'
 import type { AxisDomain } from 'recharts/types/util/types'
 
-export type TPortfolioVaultGrowthChartMode = 'position' | 'index'
 export type TPortfolioVaultGrowthChartTimeframe = '30d' | '90d' | '1y' | 'all'
-export type TPortfolioVaultGrowthChartSortDirection = 'desc' | 'asc'
+export type {
+  TPortfolioVaultGrowthChartMode,
+  TPortfolioVaultGrowthChartSortDirection,
+  TPortfolioVaultGrowthRankableSeries
+}
 
 const NON_NEGATIVE_AUTO_DOMAIN: AxisDomain = [
   (dataMin: number) => (Number.isFinite(dataMin) && dataMin < 0 ? dataMin : 0),
@@ -147,7 +156,6 @@ const PORTFOLIO_VAULT_GROWTH_CHART_MARGIN = {
   ...CHART_WITH_AXES_MARGIN,
   bottom: 4
 }
-const MIN_RELEVANCE_SCORE = 0.000001
 
 const MODE_COPY: Record<TPortfolioVaultGrowthChartMode, string> = {
   position: 'Shows actual protocol gain from your deposited positions during the selected timeframe.',
@@ -282,65 +290,7 @@ function buildIndexPoints(points: TPortfolioVaultGrowthChartPoint[], indexBase: 
   })
 }
 
-function getFiniteValues(points: Array<{ value: number | null }>): number[] {
-  return points.flatMap((point) => (isFiniteNumber(point.value) ? [point.value] : []))
-}
-
-export type TPortfolioVaultGrowthRankableSeries = {
-  positionPoints: Array<{ value: number | null }>
-  indexPoints: Array<{ value: number | null }>
-}
-
-function getSeriesSortScore(
-  series: TPortfolioVaultGrowthRankableSeries,
-  mode: TPortfolioVaultGrowthChartMode
-): number | null {
-  const points = mode === 'position' ? series.positionPoints : series.indexPoints
-  const finiteValues = getFiniteValues(points)
-
-  if (mode === 'index') {
-    if (finiteValues.length < 2) {
-      return null
-    }
-
-    return (finiteValues.at(-1) ?? 0) - finiteValues[0]
-  }
-
-  if (finiteValues.length < 2) {
-    return null
-  }
-
-  return (finiteValues.at(-1) ?? 0) - finiteValues[0]
-}
-
-export function rankPortfolioVaultGrowthChartSeries<TSeries extends TPortfolioVaultGrowthRankableSeries>(args: {
-  series: TSeries[]
-  mode: TPortfolioVaultGrowthChartMode
-  sortDirection: TPortfolioVaultGrowthChartSortDirection
-  maxVaults?: number
-}): TSeries[] {
-  const directionMultiplier = args.sortDirection === 'desc' ? -1 : 1
-  const rankedSeries = args.series
-    .map((vaultSeries, originalIndex) => ({
-      vaultSeries,
-      originalIndex,
-      score: getSeriesSortScore(vaultSeries, args.mode)
-    }))
-    .filter(
-      (candidate): candidate is { vaultSeries: TSeries; originalIndex: number; score: number } =>
-        candidate.score !== null && Math.abs(candidate.score) > MIN_RELEVANCE_SCORE
-    )
-    .toSorted(
-      (left, right) => (left.score - right.score) * directionMultiplier || left.originalIndex - right.originalIndex
-    )
-
-  const limit =
-    typeof args.maxVaults === 'number' && Number.isFinite(args.maxVaults)
-      ? Math.max(0, Math.floor(args.maxVaults))
-      : rankedSeries.length
-
-  return rankedSeries.slice(0, limit).map((candidate) => candidate.vaultSeries)
-}
+export { rankPortfolioVaultGrowthChartSeries }
 
 function applySeriesPresentation(series: TTransformedSeries[], colors: string[]): TTransformedSeries[] {
   return series.map((vaultSeries, index) => ({
@@ -862,7 +812,6 @@ export function PortfolioVaultGrowthChart({
                   strokeOpacity={0.9}
                   dot={false}
                   activeDot={{ r: 4, strokeWidth: 0, fill: vaultSeries.color }}
-                  connectNulls
                   isAnimationActive={false}
                 />
               ))}

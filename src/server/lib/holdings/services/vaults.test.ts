@@ -178,4 +178,41 @@ describe('fetchMultipleVaultsMetadata', () => {
     expect(second.get(`1:${UNDERLYING_VAULT}`)?.token.symbol).toBe('USDC')
     expect(listAttempts).toBe(2)
   })
+
+  it('reports fallback metadata requests that still fail after retries', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    const fetchStub = vi.fn(async (input: string | URL | Request) => {
+      const url = String(input)
+
+      if (url.includes('/list/vaults?origin=yearn')) {
+        return new Response(JSON.stringify([]), {
+          status: 200,
+          headers: { 'content-type': 'application/json' }
+        })
+      }
+
+      throw Object.assign(new Error('Unable to connect'), { code: 'ConnectionRefused' })
+    })
+
+    vi.stubGlobal('fetch', fetchStub)
+
+    const { fetchMultipleVaultsMetadata, getVaultMetadataFetchFailedVaults } = await importVaultsModule()
+    const metadata = await fetchMultipleVaultsMetadata([{ chainId: 1, vaultAddress: UNDERLYING_VAULT }])
+
+    expect(metadata.size).toBe(0)
+    expect(getVaultMetadataFetchFailedVaults(metadata)).toBe(1)
+  })
+
+  it('reports a failed vault list when snapshot fallback is intentionally skipped', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    vi.stubGlobal('fetch', vi.fn().mockRejectedValue(Object.assign(new Error('socket closed'), { code: 'ECONNRESET' })))
+
+    const { fetchMultipleVaultsMetadata, getVaultMetadataFetchFailedVaults } = await importVaultsModule()
+    const metadata = await fetchMultipleVaultsMetadata([{ chainId: 1, vaultAddress: UNDERLYING_VAULT }], {
+      skipSnapshotFallback: true
+    })
+
+    expect(metadata.size).toBe(0)
+    expect(getVaultMetadataFetchFailedVaults(metadata)).toBe(1)
+  })
 })
