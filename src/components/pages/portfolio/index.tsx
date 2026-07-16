@@ -2849,6 +2849,7 @@ function PortfolioHoldingsSection({
             currentVault={row.vault}
             flags={vaultFlags[row.key]}
             hrefOverride={row.hrefOverride}
+            yvUsdPositionApy={row.yvUsdPositionApy}
             showBoostDetails={false}
             activeProductType="all"
             showStrategies

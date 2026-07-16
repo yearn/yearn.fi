@@ -10,6 +10,7 @@ import {
   convertYvUsdVariantRawAmount,
   getWeightedYvUsdApy,
   getYvUsdLockedWithdrawDisplayMode,
+  getYvUsdPositionApyBreakdown,
   getYvUsdPositionValues,
   getYvUsdUnderlyingPricePerShare,
   YVUSD_CHAIN_ID,
@@ -78,6 +79,34 @@ describe('getWeightedYvUsdApy', () => {
         lockedApy: 0.09
       })
     ).toBeNull()
+  })
+})
+
+describe('getYvUsdPositionApyBreakdown', () => {
+  it('reports a 100% unlocked weight for an unlocked-only position', () => {
+    const breakdown = getYvUsdPositionApyBreakdown({
+      unlockedValue: 100,
+      lockedValue: 0,
+      unlockedApy: 0.05,
+      lockedApy: 0.09
+    })
+
+    expect(breakdown.blendedApy).toBeCloseTo(0.05, 6)
+    expect(breakdown.unlocked.weight).toBe(1)
+    expect(breakdown.locked.weight).toBe(0)
+  })
+
+  it('reports equal weights and the midpoint APY for a 50/50 position', () => {
+    const breakdown = getYvUsdPositionApyBreakdown({
+      unlockedValue: 100,
+      lockedValue: 100,
+      unlockedApy: 0.05,
+      lockedApy: 0.09
+    })
+
+    expect(breakdown.blendedApy).toBeCloseTo(0.07, 6)
+    expect(breakdown.unlocked.weight).toBe(0.5)
+    expect(breakdown.locked.weight).toBe(0.5)
   })
 })
 

@@ -20,10 +20,11 @@ import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import { usePersistedShowHiddenVaults } from '@pages/vaults/hooks/vaultsFiltersStorage'
 import { deriveListKind, isAllocatorVaultOverride } from '@pages/vaults/utils/vaultListFacets'
 import {
-  getWeightedYvUsdApy,
+  getYvUsdPositionApyBreakdown,
   getYvUsdPositionValues,
   isYvUsdAddress,
   isYvUsdVault,
+  type TYvUsdPositionApyBreakdown,
   YVUSD_LOCKED_ADDRESS,
   YVUSD_UNLOCKED_ADDRESS
 } from '@pages/vaults/utils/yvUsd'
@@ -46,6 +47,7 @@ type THoldingsRow = {
   key: string
   vault: TKongVaultInput
   hrefOverride?: string
+  yvUsdPositionApy?: TYvUsdPositionApyBreakdown
 }
 
 export type TSuggestedItem =
@@ -87,7 +89,7 @@ export type TPortfolioModel = {
 
 type TSortStateSetter<T> = (value: T | ((previous: T) => T)) => void
 type TYvUsdPortfolioPosition = {
-  blendedCurrentApy: number | null
+  currentApyBreakdown: TYvUsdPositionApyBreakdown
   blendedHistoricalApy: number | null
   combinedValue: number
   hasHoldings: boolean
@@ -194,18 +196,18 @@ export function usePortfolioModel(): TPortfolioModel {
     })
 
     return {
-      blendedCurrentApy: getWeightedYvUsdApy({
+      currentApyBreakdown: getYvUsdPositionApyBreakdown({
         unlockedValue,
         lockedValue,
         unlockedApy: yvUsdUnlockedVault ? calculateVaultEstimatedAPY(yvUsdUnlockedVault) || null : null,
         lockedApy: yvUsdLockedVault ? calculateVaultEstimatedAPY(yvUsdLockedVault) || null : null
       }),
-      blendedHistoricalApy: getWeightedYvUsdApy({
+      blendedHistoricalApy: getYvUsdPositionApyBreakdown({
         unlockedValue,
         lockedValue,
         unlockedApy: getLatestYvUsdHistoricalApyValue(yvUsdHistoricalApyData, 'unlocked'),
         lockedApy: getLatestYvUsdHistoricalApyValue(yvUsdHistoricalApyData, 'locked')
-      }),
+      }).blendedApy,
       combinedValue,
       hasHoldings
     }
@@ -285,14 +287,14 @@ export function usePortfolioModel(): TPortfolioModel {
   const getVaultEstimatedAPY = useCallback(
     (vault: (typeof holdingsVaults)[number]): number | null => {
       if (isYvUsdVault(vault)) {
-        return yvUsdPosition.blendedCurrentApy
+        return yvUsdPosition.currentApyBreakdown.blendedApy
       }
 
       const apy = calculateVaultEstimatedAPY(vault)
       const hasHistoricalNet = 'performance' in vault && Boolean(vault.performance?.historical?.net)
       return apy === 0 && !hasHistoricalNet ? null : apy
     },
-    [yvUsdPosition.blendedCurrentApy]
+    [yvUsdPosition.currentApyBreakdown.blendedApy]
   )
 
   const getVaultHistoricalAPY = useCallback(
@@ -364,7 +366,9 @@ export function usePortfolioModel(): TPortfolioModel {
     [vaults]
   )
 
-  const sortedHoldings = useSortVaults(visibleHoldingsVaults, sortBy, sortDirection)
+  const sortedHoldings = useSortVaults(visibleHoldingsVaults, sortBy, sortDirection, {
+    yvUsdApyOverride: yvUsdPosition.currentApyBreakdown.blendedApy
+  })
   const sortedCandidates = useSortVaults(suggestedVaultCandidates, 'tvl', 'desc')
 
   const holdingsKeySet = useMemo(() => new Set(sortedHoldings.map((vault) => getVaultKey(vault))), [sortedHoldings])
@@ -384,9 +388,10 @@ export function usePortfolioModel(): TPortfolioModel {
       sortedHoldings.map((vault) => ({
         key: getVaultKey(vault),
         vault,
-        hrefOverride: getPortfolioRowHref(vault)
+        hrefOverride: getPortfolioRowHref(vault),
+        yvUsdPositionApy: isYvUsdVault(vault) ? yvUsdPosition.currentApyBreakdown : undefined
       })),
-    [sortedHoldings]
+    [sortedHoldings, yvUsdPosition.currentApyBreakdown]
   )
 
   const suggestedRows = useMemo((): TSuggestedItem[] => {
