@@ -1,13 +1,8 @@
 import { usePlausible } from '@hooks/usePlausible'
-import { APYDetailsModal } from '@pages/vaults/components/table/APYDetailsModal'
 import { type TVaultForwardAPYVariant, VaultForwardAPY } from '@pages/vaults/components/table/VaultForwardAPY'
 import { VaultHoldingsAmount } from '@pages/vaults/components/table/VaultHoldingsAmount'
 import { VaultTVL } from '@pages/vaults/components/table/VaultTVL'
-import {
-  YvUsdApyDetailsContent,
-  YvUsdApyTooltipContent,
-  YvUsdTvlTooltipContent
-} from '@pages/vaults/components/yvUSD/YvUsdBreakdown'
+import { YvUsdApyTooltipContent, YvUsdTvlTooltipContent } from '@pages/vaults/components/yvUSD/YvUsdBreakdown'
 import {
   getVaultAddress,
   getVaultAPR,
@@ -297,7 +292,6 @@ function VaultsListRowPresentationComponent({
   const isExpanded = isExpandedProp ?? isExpandedState
   const [expandedView, setExpandedView] = useState<TVaultsExpandedView>(defaultExpandedView)
   const [interactiveHoverCount, setInteractiveHoverCount] = useState(0)
-  const [isYvUsdModalOpen, setIsYvUsdModalOpen] = useState(false)
   const queryClient = useQueryClient()
   const listKind = deriveListKind(currentVault)
   const {
@@ -335,14 +329,11 @@ function VaultsListRowPresentationComponent({
     return getYvUsdListMetrics({ currentVault, apr, isYvUsd, yvUsdMetrics: yvUsdVaultsForRow.metrics })
   }, [apr, currentVault, isYvUsd, yvUsdVaultsForRow])
 
-  const openYvUsdApyDetails = (): void => setIsYvUsdModalOpen(true)
-
   const yvUsdApyTooltip = resolvedYvUsdMetrics ? (
     <YvUsdApyTooltipContent
       lockedValue={resolvedYvUsdMetrics.lockedApy}
       unlockedValue={resolvedYvUsdMetrics.unlockedApy}
       infinifiPointsNote={resolvedYvUsdMetrics.hasInfinifiPointsNote ? getYvUsdInfinifiPointsNote() : undefined}
-      onRequestMoreInfo={openYvUsdApyDetails}
     />
   ) : undefined
 
@@ -362,10 +353,8 @@ function VaultsListRowPresentationComponent({
     />
   ) : undefined
 
-  const handleYvUsdApyClick = (event: MouseEvent<HTMLButtonElement>): void => {
-    event.stopPropagation()
+  const handleYvUsdApyTooltipClick = (event: MouseEvent<HTMLButtonElement>): void => {
     event.preventDefault()
-    openYvUsdApyDetails()
   }
   const handleExpandedChange = (next: boolean): void => {
     if (onExpandedChange) {
@@ -735,17 +724,18 @@ function VaultsListRowPresentationComponent({
                   <Tooltip
                     className={'apy-subline-tooltip gap-0 h-auto md:justify-end'}
                     openDelayMs={150}
+                    toggleOnClick
                     tooltip={yvUsdApyTooltip ?? ''}
                     align={'center'}
                     zIndex={90}
                   >
                     <button
                       type={'button'}
-                      onClick={handleYvUsdApyClick}
+                      onClick={handleYvUsdApyTooltipClick}
                       onMouseEnter={() => handleInteractiveHoverChange(true)}
                       onMouseLeave={() => handleInteractiveHoverChange(false)}
                       className={'inline-flex items-center text-left leading-none'}
-                      aria-label={'View yvUSD APY details'}
+                      aria-label={'Show yvUSD APY breakdown'}
                     >
                       <b
                         className={
@@ -828,15 +818,16 @@ function VaultsListRowPresentationComponent({
                 <Tooltip
                   className={'apy-subline-tooltip gap-0 h-auto md:justify-end'}
                   openDelayMs={150}
+                  toggleOnClick
                   tooltip={yvUsdApyTooltip ?? ''}
                   align={'center'}
                   zIndex={90}
                 >
                   <button
                     type={'button'}
-                    onClick={handleYvUsdApyClick}
+                    onClick={handleYvUsdApyTooltipClick}
                     className={'inline-flex items-center gap-2 text-right'}
-                    aria-label={'View yvUSD APY details'}
+                    aria-label={'Show yvUSD APY breakdown'}
                   >
                     {resolvedYvUsdMetrics.hasInfinifiPointsNote ? (
                       <IconInfinifiPoints className={'size-3.5 shrink-0'} aria-label={'Infinifi points'} />
@@ -933,14 +924,6 @@ function VaultsListRowPresentationComponent({
             expandedApyTooltip={isYvUsd ? yvUsdApyTooltip : undefined}
           />
         </Suspense>
-      ) : null}
-      {isYvUsd && resolvedYvUsdMetrics ? (
-        <APYDetailsModal isOpen={isYvUsdModalOpen} onClose={() => setIsYvUsdModalOpen(false)} title={'yvUSD APY'}>
-          <YvUsdApyDetailsContent
-            lockedValue={resolvedYvUsdMetrics.lockedApy}
-            unlockedValue={resolvedYvUsdMetrics.unlockedApy}
-          />
-        </APYDetailsModal>
       ) : null}
     </div>
   )

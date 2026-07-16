@@ -1579,7 +1579,6 @@ function Index(): ReactElement | null {
       unlockedApy={yvBtcMetrics.unlocked.apy}
       activeVariant={yvUsdApyVariant}
       onVariantChange={setYvUsdApyVariant}
-      title={'yvBTC APY'}
     />
   )
 

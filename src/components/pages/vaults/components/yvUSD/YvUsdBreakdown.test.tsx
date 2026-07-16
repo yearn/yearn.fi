@@ -1,15 +1,9 @@
 import { YVUSD_LOCKED_COOLDOWN_DAYS } from '@pages/vaults/utils/yvUsd'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it } from 'vitest'
-import { YvUsdApyDetailsContent, YvUsdApyTooltipContent } from './YvUsdBreakdown'
+import { YvUsdApyTooltipContent } from './YvUsdBreakdown'
 
-describe('YvUsdApyDetailsContent', () => {
-  it('describes the locked withdrawal window as 5 days', () => {
-    const html = renderToStaticMarkup(<YvUsdApyDetailsContent lockedValue={0.09} unlockedValue={0.05} />)
-
-    expect(html).toContain('Withdrawals are open for 5 days once the cooldown ends.')
-  })
-
+describe('YvUsdApyTooltipContent', () => {
   it('uses a tighter icon gap for the unlocked APY label', () => {
     const html = renderToStaticMarkup(<YvUsdApyTooltipContent lockedValue={0.09} unlockedValue={0.05} />)
 
@@ -25,12 +19,10 @@ describe('YvUsdApyDetailsContent', () => {
     expect(html).toContain('Shares can be withdrawn without a cooldown.')
   })
 
-  it('shows the more-information action when one is available', () => {
-    const html = renderToStaticMarkup(
-      <YvUsdApyTooltipContent lockedValue={0.09} unlockedValue={0.05} onRequestMoreInfo={() => undefined} />
-    )
+  it('does not show a more-information modal action', () => {
+    const html = renderToStaticMarkup(<YvUsdApyTooltipContent lockedValue={0.09} unlockedValue={0.05} />)
 
-    expect(html).toContain('data-tooltip-close="true"')
-    expect(html).toContain('Click for more information')
+    expect(html).not.toContain('data-tooltip-close="true"')
+    expect(html).not.toContain('Click for more information')
   })
 })

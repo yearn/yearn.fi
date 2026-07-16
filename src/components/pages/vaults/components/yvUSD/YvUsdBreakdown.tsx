@@ -1,9 +1,9 @@
-import { YVUSD_DESCRIPTION, YVUSD_LOCKED_COOLDOWN_DAYS, YVUSD_WITHDRAW_WINDOW_DAYS } from '@pages/vaults/utils/yvUsd'
+import { YVUSD_LOCKED_COOLDOWN_DAYS } from '@pages/vaults/utils/yvUsd'
 import { RenderAmount } from '@shared/components/RenderAmount'
 import { IconInfinifiPoints } from '@shared/icons/IconInfinifiPoints'
 import { IconLock } from '@shared/icons/IconLock'
 import { IconLockOpen } from '@shared/icons/IconLockOpen'
-import { cl, formatAmount } from '@shared/utils'
+import { cl } from '@shared/utils'
 import type { ReactElement } from 'react'
 
 type TYvUsdTooltipProps = {
@@ -13,12 +13,7 @@ type TYvUsdTooltipProps = {
   iconClassName?: string
   unlockedIconClassName?: string
   infinifiPointsNote?: string
-  onRequestMoreInfo?: () => void
 }
-
-const YVUSD_TOOLTIP_CTA_CLASS =
-  'mt-1 block font-semibold underline decoration-neutral-600/30 decoration-dotted underline-offset-4 ' +
-  'transition-opacity hover:decoration-neutral-600'
 
 const YvUsdTooltipRow = ({
   icon,
@@ -57,8 +52,7 @@ export function YvUsdApyTooltipContent({
   className,
   iconClassName = 'size-3',
   unlockedIconClassName,
-  infinifiPointsNote,
-  onRequestMoreInfo
+  infinifiPointsNote
 }: TYvUsdTooltipProps): ReactElement {
   const resolvedUnlockedIconClassName = unlockedIconClassName ?? iconClassName.replace(/size-(\S+)/, 'h-$1 w-4')
   return (
@@ -99,16 +93,6 @@ export function YvUsdApyTooltipContent({
             </p>
           </div>
         ) : null}
-        {onRequestMoreInfo ? (
-          <button
-            type={'button'}
-            data-tooltip-close={'true'}
-            className={YVUSD_TOOLTIP_CTA_CLASS}
-            onClick={onRequestMoreInfo}
-          >
-            {'Click for more information'}
-          </button>
-        ) : null}
       </div>
     </div>
   )
@@ -142,38 +126,6 @@ export function YvUsdTvlTooltipContent({
           options={{ shouldCompactValue: true, maximumFractionDigits: 2, minimumFractionDigits: 0 }}
         />
       </div>
-    </div>
-  )
-}
-
-export function YvUsdApyDetailsContent({
-  lockedValue,
-  unlockedValue,
-  infinifiPointsNote
-}: {
-  lockedValue: number
-  unlockedValue: number
-  infinifiPointsNote?: string
-}): ReactElement {
-  const upliftPercent = formatAmount(Math.max(0, (lockedValue - unlockedValue) * 100), 0, 2)
-
-  return (
-    <div className="space-y-4">
-      <p>{YVUSD_DESCRIPTION}</p>
-      <div className="rounded-lg border border-border bg-surface-secondary p-3">
-        <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">{'Current estimates'}</p>
-        <div className="mt-2">
-          <YvUsdApyTooltipContent
-            lockedValue={lockedValue}
-            unlockedValue={unlockedValue}
-            className="border-0 bg-transparent p-0"
-            infinifiPointsNote={infinifiPointsNote}
-          />
-        </div>
-      </div>
-      <p className="text-xs text-text-secondary">
-        {`Locked deposits currently show about ${upliftPercent}% APY uplift and require a ${YVUSD_LOCKED_COOLDOWN_DAYS}-day cooldown. Withdrawals are open for ${YVUSD_WITHDRAW_WINDOW_DAYS} days once the cooldown ends.`}
-      </p>
     </div>
   )
 }
