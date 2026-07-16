@@ -92,6 +92,7 @@ export function VaultsListStrategy({
   const allocationContent = isInactive || isUnallocated ? '-' : formatStrategiesPercent((details?.debtRatio || 0) / 100)
 
   const amountContent = isInactive ? '-' : isUnallocated ? '-' : allocation
+  const blockExplorer = getNetwork(chainId)?.defaultBlockExplorer
 
   return (
     <div className={cl('w-full rounded-lg text-text-primary', shouldShowPlaceholders ? 'opacity-50' : '')}>
@@ -165,7 +166,7 @@ export function VaultsListStrategy({
             className={`flex flex-col items-center md:items-end ${STRATEGY_PANEL_ROW_DESKTOP_LAYOUT.valueColumnSpanClass}`}
           >
             <p className={'text-xs text-text-primary/60 mb-1 md:hidden'}>{'Amount'}</p>
-            <p className={'font-semibold truncate'} title={allocation}>
+            <p className={'font-semibold truncate'} title={amountContent}>
               {amountContent}
             </p>
           </div>
@@ -234,7 +235,7 @@ export function VaultsListStrategy({
             ) : null}
             <div className={'flex items-start'}>
               <Link
-                href={`${getNetwork(chainId)?.defaultBlockExplorer}/address/${address}`}
+                href={`${blockExplorer}/address/${address}`}
                 onClick={(event: React.MouseEvent): void => event.stopPropagation()}
                 className={'flex items-center gap-1 text-text-secondary hover:text-text-primary'}
                 target={'_blank'}
