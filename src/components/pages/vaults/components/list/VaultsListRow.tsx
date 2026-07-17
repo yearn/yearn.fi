@@ -6,6 +6,7 @@ import { VaultTVL } from '@pages/vaults/components/table/VaultTVL'
 import {
   YvUsdApyDetailsContent,
   YvUsdApyTooltipContent,
+  YvUsdPositionApyTooltipContent,
   YvUsdTvlTooltipContent
 } from '@pages/vaults/components/yvUSD/YvUsdBreakdown'
 import {
@@ -39,7 +40,12 @@ import {
   NOT_YEARN_TAG_DESCRIPTION,
   RETIRED_TAG_DESCRIPTION
 } from '@pages/vaults/utils/vaultTagCopy'
-import { getYvUsdInfinifiPointsNote, getYvUsdPositionValues, isYvUsdAddress } from '@pages/vaults/utils/yvUsd'
+import {
+  getYvUsdInfinifiPointsNote,
+  getYvUsdPositionValues,
+  isYvUsdAddress,
+  type TYvUsdPositionApyBreakdown
+} from '@pages/vaults/utils/yvUsd'
 import { useMediaQuery } from '@react-hookz/web'
 import { RenderAmount } from '@shared/components/RenderAmount'
 import { TokenLogo } from '@shared/components/TokenLogo'
@@ -234,6 +240,7 @@ type TVaultsListRowProps = {
   mobileSecondaryMetric?: 'tvl' | 'holdings'
   expandedChartVariant?: 'default' | 'portfolio-user-tvl-overlay'
   yvUsdVaults?: TYvUsdListVaults
+  yvUsdPositionApy?: TYvUsdPositionApyBreakdown
   clickEventName?: TPlausibleEventName
 }
 
@@ -270,6 +277,7 @@ function VaultsListRowPresentationComponent({
   showAllocatorChip = true,
   expandedChartVariant = 'default',
   yvUsdVaults,
+  yvUsdPositionApy,
   clickEventName = PLAUSIBLE_EVENTS.VAULT_CLICK_LIST_ROW,
   hasWalletAddress = false,
   isWalletLoading = false,
@@ -351,6 +359,13 @@ function VaultsListRowPresentationComponent({
       {formatApyDisplay(resolvedYvUsdMetrics.lockedApy)}
     </>
   ) : null
+  const yvUsdPositionApyTooltip = yvUsdPositionApy ? (
+    <YvUsdPositionApyTooltipContent breakdown={yvUsdPositionApy} />
+  ) : undefined
+  const yvUsdPositionApyValue =
+    yvUsdPositionApy?.blendedApy === null || yvUsdPositionApy?.blendedApy === undefined
+      ? '—'
+      : formatApyDisplay(yvUsdPositionApy.blendedApy)
 
   const yvUsdTvlTooltip = resolvedYvUsdMetrics ? (
     <YvUsdTvlTooltipContent
@@ -728,7 +743,32 @@ function VaultsListRowPresentationComponent({
             <div className={'grid w-full grid-cols-2 gap-2 text-sm text-text-secondary'}>
               <div className={'flex items-center justify-center gap-2 whitespace-nowrap'}>
                 <span className={'text-text-primary/60'}>{'Est. APY:'}</span>
-                {resolvedYvUsdMetrics ? (
+                {yvUsdPositionApy ? (
+                  <Tooltip
+                    className={'apy-subline-tooltip gap-0 h-auto md:justify-end'}
+                    openDelayMs={150}
+                    tooltip={yvUsdPositionApyTooltip ?? ''}
+                    align={'center'}
+                    toggleOnClick
+                    zIndex={90}
+                  >
+                    <button
+                      type={'button'}
+                      onMouseEnter={() => handleInteractiveHoverChange(true)}
+                      onMouseLeave={() => handleInteractiveHoverChange(false)}
+                      className={'inline-flex items-center text-left'}
+                      aria-label={'View your yvUSD APY breakdown'}
+                    >
+                      <b
+                        className={
+                          'yearn--table-data-section-item-value text-lg font-semibold text-text-primary underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
+                        }
+                      >
+                        {yvUsdPositionApyValue}
+                      </b>
+                    </button>
+                  </Tooltip>
+                ) : resolvedYvUsdMetrics ? (
                   <Tooltip
                     className={'apy-subline-tooltip gap-0 h-auto md:justify-end'}
                     openDelayMs={150}
@@ -807,7 +847,36 @@ function VaultsListRowPresentationComponent({
           className={cl(rightColumnSpan, 'z-10 gap-4 mt-4', 'hidden md:mt-0 md:grid md:items-center', rightGridColumns)}
         >
           <div className={cl('yearn--table-data-section-item', apyColumnSpan)} datatype={'number'}>
-            {resolvedYvUsdMetrics ? (
+            {yvUsdPositionApy ? (
+              <div
+                className={'flex justify-end text-right'}
+                onMouseEnter={() => handleInteractiveHoverChange(true)}
+                onMouseLeave={() => handleInteractiveHoverChange(false)}
+              >
+                <Tooltip
+                  className={'apy-subline-tooltip gap-0 h-auto md:justify-end'}
+                  openDelayMs={150}
+                  tooltip={yvUsdPositionApyTooltip ?? ''}
+                  align={'center'}
+                  toggleOnClick
+                  zIndex={90}
+                >
+                  <button
+                    type={'button'}
+                    className={'inline-flex items-center text-right'}
+                    aria-label={'View your yvUSD APY breakdown'}
+                  >
+                    <b
+                      className={
+                        'yearn--table-data-section-item-value font-semibold text-text-primary underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-opacity hover:decoration-neutral-600'
+                      }
+                    >
+                      {yvUsdPositionApyValue}
+                    </b>
+                  </button>
+                </Tooltip>
+              </div>
+            ) : resolvedYvUsdMetrics ? (
               <div
                 className={'flex justify-end text-right'}
                 onMouseEnter={() => handleInteractiveHoverChange(true)}
@@ -912,7 +981,7 @@ function VaultsListRowPresentationComponent({
             chartVariant={expandedChartVariant}
             apyDisplayVariant={apyDisplayVariant}
             showBoostDetails={showBoostDetails}
-            expandedApyTooltip={isYvUsd ? yvUsdApyTooltip : undefined}
+            expandedApyTooltip={isYvUsd ? (yvUsdPositionApyTooltip ?? yvUsdApyTooltip) : undefined}
           />
         </Suspense>
       ) : null}
