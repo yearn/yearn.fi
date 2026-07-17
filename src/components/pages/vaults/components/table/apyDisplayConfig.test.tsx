@@ -39,6 +39,19 @@ const KATANA_APY_DATA = {
   katanaEstApr: 7
 } as TVaultApyData
 
+const KATANA_APY_DATA_WITHOUT_REWARDS = {
+  ...KATANA_APY_DATA,
+  katanaExtras: {
+    katanaAppRewardsAPR: 0,
+    steerPointsPerDollar: 1
+  }
+} as TVaultApyData
+
+const KATANA_VAULT_WITHOUT_FIXED_TERM_MARKET = {
+  ...KATANA_SPECTRA_VAULT,
+  address: '0x0000000000000000000000000000000000000002'
+} as TKongVaultInput
+
 const PENDLE_ARB_VAULT = {
   chainID: 1,
   address: '0x0000000000000000000000000000000000000001',
@@ -88,6 +101,41 @@ describe('resolveForwardApyDisplayConfig', () => {
     expect(isValidElement(tooltip?.content)).toBe(true)
     expect(renderToStaticMarkup(tooltip?.content)).toContain('+ 2500 ARB/week')
   })
+
+  it('does not show a Katana tooltip without KAT rewards or a fixed-rate market', () => {
+    const { displayConfig, modalConfig } = resolveForwardApyDisplayConfig({
+      currentVault: KATANA_VAULT_WITHOUT_FIXED_TERM_MARKET,
+      data: KATANA_APY_DATA_WITHOUT_REWARDS,
+      displayVariant: 'default',
+      showSubline: true,
+      showSublineTooltip: true,
+      showBoostDetails: true,
+      canOpenModal: true
+    })
+
+    expect(displayConfig.tooltip?.mode).toBe('none')
+    expect(displayConfig.tooltip?.content).toBeNull()
+    expect(displayConfig.showUnderline).toBe(false)
+    expect(modalConfig).toBeUndefined()
+  })
+
+  it('shows fixed-rate information without claiming the vault receives KAT rewards', () => {
+    const { displayConfig, modalConfig } = resolveForwardApyDisplayConfig({
+      currentVault: KATANA_SPECTRA_VAULT,
+      data: KATANA_APY_DATA_WITHOUT_REWARDS,
+      displayVariant: 'default',
+      showSubline: true,
+      showSublineTooltip: true,
+      showBoostDetails: true,
+      canOpenModal: true
+    })
+
+    const tooltipMarkup = renderToStaticMarkup(displayConfig.tooltip?.content)
+    expect(displayConfig.tooltip?.mode).toBe('tooltip')
+    expect(tooltipMarkup).toContain('Fixed-rate markets available on Spectra')
+    expect(tooltipMarkup).not.toContain('receiving KAT incentives')
+    expect(modalConfig).toBeUndefined()
+  })
 })
 
 describe('resolveHistoricalApyDisplayConfig', () => {
@@ -103,5 +151,18 @@ describe('resolveHistoricalApyDisplayConfig', () => {
     if (isValidElement<{ isEligibleForSpectraBoost?: boolean }>(modalConfig?.content)) {
       expect(modalConfig.content.props.isEligibleForSpectraBoost).toBe(true)
     }
+  })
+
+  it('does not show a Katana tooltip without KAT rewards or a fixed-rate market', () => {
+    const { displayConfig, modalConfig } = resolveHistoricalApyDisplayConfig({
+      currentVault: KATANA_VAULT_WITHOUT_FIXED_TERM_MARKET,
+      data: KATANA_APY_DATA_WITHOUT_REWARDS,
+      showSublineTooltip: true
+    })
+
+    expect(displayConfig.tooltip?.mode).toBe('none')
+    expect(displayConfig.tooltip?.content).toBeNull()
+    expect(displayConfig.showUnderline).toBe(false)
+    expect(modalConfig).toBeUndefined()
   })
 })

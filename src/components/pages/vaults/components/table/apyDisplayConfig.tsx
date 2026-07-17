@@ -27,7 +27,7 @@ const FIXED_RATE_LINK_CLASS =
   'inline-flex items-center gap-1 font-semibold underline decoration-neutral-600/30 decoration-dotted ' +
   'underline-offset-4 transition-opacity hover:decoration-neutral-600'
 const KATANA_TOOLTIP_CTA_CLASS =
-  'mx-auto block font-semibold underline decoration-neutral-600/30 decoration-dotted underline-offset-4 ' +
+  'mt-2 mx-auto block font-semibold underline decoration-neutral-600/30 decoration-dotted underline-offset-4 ' +
   'transition-opacity hover:decoration-neutral-600'
 
 export type TApyModalConfig = {
@@ -53,6 +53,7 @@ type TKatanaTooltipOptions = {
   fixedTermProviders: TFixedTermMarket[]
   fixedTermIcons: ReactElement[]
   fixedTermProviderLabel: string
+  hasKatanaRewards: boolean
   showModalCTA: boolean
   onRequestModalOpen?: () => void
 }
@@ -136,13 +137,22 @@ function buildKatanaTooltipContent({
   fixedTermProviders,
   fixedTermIcons,
   fixedTermProviderLabel,
+  hasKatanaRewards,
   showModalCTA,
   onRequestModalOpen
 }: TKatanaTooltipOptions): ReactElement {
   return (
     <div className={'rounded-lg border border-border bg-surface-secondary p-2 text-xs text-text-primary'}>
+      {hasKatanaRewards ? (
+        <div className={'flex items-center gap-2'}>
+          <span aria-hidden>{'⚔️'}</span>
+          <div className={'flex flex-col'}>
+            <span>{'This Vault is receiving KAT incentives'}</span>
+          </div>
+        </div>
+      ) : null}
       {fixedTermProviders.length > 0 ? (
-        <div className={'mt-1 flex items-center gap-3 mb-2'}>
+        <div className={hasKatanaRewards ? 'mt-1 flex items-center gap-3 mb-2' : 'flex items-center gap-3'}>
           <span className={'flex items-center gap-1 text-text-secondary'} aria-hidden={true}>
             {fixedTermIcons}
           </span>
@@ -244,17 +254,21 @@ export function resolveForwardApyDisplayConfig({
   const katanaExtras = data.katanaExtras
   const hasKatanaEstApr = typeof data.katanaEstApr === 'number'
   const isKatanaVault = chainID === KATANA_CHAIN_ID && katanaExtras && hasKatanaEstApr
+  const hasKatanaRewards = (katanaExtras?.katanaAppRewardsAPR ?? 0) > 0
+  const hasFixedTermMarket = fixedTermContext.fixedTermProviders.length > 0
+  const shouldShowKatanaTooltip = Boolean(isKatanaVault && (hasKatanaRewards || hasFixedTermMarket))
   const katanaTooltipContent =
-    showSublineTooltip && isKatanaVault
+    showSublineTooltip && shouldShowKatanaTooltip
       ? buildKatanaTooltipContent({
           fixedTermProviders: fixedTermContext.fixedTermProviders,
           fixedTermIcons: fixedTermContext.fixedTermIcons,
           fixedTermProviderLabel: fixedTermContext.fixedTermProviderLabel,
-          showModalCTA: canOpenModal,
+          hasKatanaRewards,
+          showModalCTA: canOpenModal && hasKatanaRewards,
           onRequestModalOpen
         })
       : null
-  const tooltipContent = katanaTooltipContent ?? standardTooltipContent
+  const tooltipContent = isKatanaVault ? katanaTooltipContent : standardTooltipContent
 
   const fixedRateIndicator = fixedTermContext.fixedTermIndicator
   const baseTooltipConfig: TApyTooltipConfig = {
@@ -283,7 +297,8 @@ export function resolveForwardApyDisplayConfig({
     )
     const modalContent = katanaDetails
 
-    const tooltipMode = allowTooltip ? resolveTooltipMode(canOpenModal, Boolean(tooltipContent)) : 'none'
+    const allowKatanaModal = canOpenModal && hasKatanaRewards
+    const tooltipMode = allowTooltip ? resolveTooltipMode(allowKatanaModal, Boolean(tooltipContent)) : 'none'
     const tooltipConfig = withTooltipMode(baseTooltipConfig, tooltipMode)
     const katanaEstApr = data.katanaEstApr ?? 0
     const displayConfig: TApyDisplayConfig = {
@@ -292,7 +307,7 @@ export function resolveForwardApyDisplayConfig({
       shouldRender: true,
       fallbackLabel: 'NEW',
       tooltip: tooltipConfig,
-      isInteractive: tooltipMode === 'tooltip+modal' && canOpenModal,
+      isInteractive: tooltipMode === 'tooltip+modal' && allowKatanaModal,
       showUnderline: tooltipMode !== 'none',
       showAsterisk: tooltipMode === 'tooltip+modal',
       subline: katanaSubline
@@ -567,19 +582,22 @@ export function resolveHistoricalApyDisplayConfig({
   const allowTooltip = allowTooltipBase && shouldRenderValue
 
   const katanaExtras = data.katanaExtras
-  const hasKatanaRewards = Boolean(shouldUseKatanaAPRs && katanaExtras && hasKatanaApr)
+  const hasKatanaRewards = Boolean(shouldUseKatanaAPRs && hasKatanaApr && (katanaExtras?.katanaAppRewardsAPR ?? 0) > 0)
+  const hasFixedTermMarket = fixedTermContext.fixedTermProviders.length > 0
+  const shouldShowKatanaTooltip = shouldUseKatanaAPRs && (hasKatanaRewards || hasFixedTermMarket)
   const allowModal = hasKatanaRewards && shouldRenderValue
   const katanaTooltipContent =
-    showSublineTooltip && hasKatanaRewards
+    showSublineTooltip && shouldShowKatanaTooltip
       ? buildKatanaTooltipContent({
           fixedTermProviders: fixedTermContext.fixedTermProviders,
           fixedTermIcons: fixedTermContext.fixedTermIcons,
           fixedTermProviderLabel: fixedTermContext.fixedTermProviderLabel,
+          hasKatanaRewards,
           showModalCTA: allowModal,
           onRequestModalOpen
         })
       : null
-  const tooltipContent = katanaTooltipContent ?? standardTooltipContent
+  const tooltipContent = shouldUseKatanaAPRs ? katanaTooltipContent : standardTooltipContent
 
   const fixedRateIndicator = fixedTermContext.fixedTermIndicator
   const baseTooltipConfig: TApyTooltipConfig = {
