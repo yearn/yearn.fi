@@ -13,7 +13,12 @@ import {
   projectVeYfiRange
 } from '@pages/vaults/utils/apy'
 import { isZero } from '@shared/utils'
-import { calculateKatanaTotalApr, getKatanaAprData, type TKatanaAprData } from '@shared/utils/vaultApy'
+import {
+  calculateKatanaTotalApr,
+  getKatanaAprData,
+  getVaultForwardAPY,
+  type TKatanaAprData
+} from '@shared/utils/vaultApy'
 import { useMemo } from 'react'
 
 export type TVaultApyMode = 'katana' | 'noForward' | 'boosted' | 'rewards' | 'spot' | 'historical'
@@ -57,7 +62,7 @@ export function useVaultApyData(vault: TKongVaultInput): TVaultApyData {
 
   const apr = getVaultAPR(vault)
   const staking = getVaultStaking(vault)
-  const baseForwardApr = apr.forwardAPR.netAPR
+  const baseForwardApr = getVaultForwardAPY(vault)
   const netApr = apr.netAPR
   const rewardsAprSum = apr.extra.stakingRewardsAPR + apr.extra.gammaRewardAPR
   const isBoosted =
