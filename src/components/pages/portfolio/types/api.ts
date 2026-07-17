@@ -29,9 +29,7 @@ const portfolioProtocolReturnHistorySummarySchema = z.object({
 })
 
 const portfolioProtocolReturnHistoryFamilyPointSchema = z.object({
-  date: z.string(),
   timestamp: z.number(),
-  protocolReturnPct: z.number().nullable(),
   growthWeightUsd: z.number().nullable(),
   growthIndex: z.number().nullable()
 })
@@ -209,9 +207,7 @@ export type TPortfolioProtocolReturnHistoryFamilySeries = Array<{
   symbol: string | null
   status: 'ok' | 'missing_metadata' | 'missing_pps' | 'missing_receipt_price' | 'partial'
   dataPoints: Array<{
-    date: string
     timestamp: number
-    protocolReturnPct: number | null
     growthWeightUsd: number | null
     growthIndex: number | null
   }>

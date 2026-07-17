@@ -88,7 +88,7 @@ describe('holdings history route', () => {
     )
   })
 
-  it('keeps public timeframe while ignoring advanced event-fetch params', async () => {
+  it('uses the requested event fetch type while ignoring advanced pagination mode', async () => {
     getHistoricalHoldingsChartMock.mockResolvedValue({
       address: TEST_WALLET_ADDRESS,
       periodDays: 365,
@@ -113,7 +113,7 @@ describe('holdings history route', () => {
     expect(getHistoricalHoldingsChartMock).toHaveBeenCalledWith(
       TEST_WALLET_ADDRESS,
       'all',
-      'seq',
+      'parallel',
       'paged',
       'eth',
       'all',

@@ -435,6 +435,8 @@ Response:
 
 When a vault filter is present, each history point can also include `currentUnderlying`, `growthUnderlying`, `sharesFormatted`, and `pricePerShare`.
 
+Non-empty settled responses are cached in Redis for up to 24 hours and invalidated lazily when one of their vaults changes. Responses produced after a failed or empty historical-price request, failed Kong PPS request, or retryable metadata fallback failure are returned to the caller but are not cached, so a temporary upstream outage cannot preserve incomplete chart data for the rest of the day.
+
 ### `POST /api/admin/invalidate-cache`
 
 Marks vaults as invalidated so affected user daily totals are lazily cleared and recomputed on the next cached history request. Requires `x-admin-secret: $ADMIN_SECRET` and DB caching.
@@ -521,6 +523,7 @@ Server-side cache is optional. When `UPSTASH_REDIS_REST_URL_PORTFOLIO` or `UPSTA
 
 1. Upstash Redis:
    - `holdings:totals:<addressHash>:<version>`: daily USD totals per hashed user address, vault version, and date. Hash fields are `YYYY-MM-DD`; values include `usdValue` and `updatedAt`.
+   - `holdings:protocol-return-history:v3:<addressHash>:<version>:<timeframe>:<vaultScope>`: successful non-empty protocol-return history snapshots. The payload includes its settled date and relevant vault identifiers for invalidation checks.
    - `holdings:vault-invalidated:<chainId>:<vaultAddress>`: per-vault invalidation timestamps for lazy cache clearing.
    - `holdings:progress:<progressId>`: authoritative short-lived progress records keyed by caller-supplied progress ID for long history requests across Vercel function instances.
 2. HTTP cache:
@@ -543,6 +546,14 @@ Cache behavior:
 - If any relevant vault was invalidated after the oldest cached row was written, the user's cached totals for that version are cleared and recomputed.
 - Recalculated totals are not cached when any token price batch failed, because partial price data can undercount chart totals.
 
+### Protocol Return History Snapshots
+
+- Protocol-return history is path-dependent, so the cache stores an atomic response snapshot instead of independent daily points.
+- Cache keys use the normalized wallet hash plus version, timeframe, and a hashed vault scope. A calculation-version prefix prevents incompatible response logic from reusing older snapshots.
+- Snapshots expire after 24 hours, must match the current settled date, and are rejected when any stored vault invalidation marker is newer than the calculation start.
+- Successful non-empty responses are cached even when some vault histories are partial; empty responses are not cached.
+- Identical requests in the same server process share one in-flight calculation.
+
 ### Progress
 
 - Progress writes only when Redis persistence is enabled and the supplied `progressId` matches `[a-zA-Z0-9:_-]{1,160}`.
@@ -559,6 +570,7 @@ No schema migration is required. Redis keys are created lazily:
 | Key | Type | TTL | Purpose |
 |-----|------|-----|---------|
 | `holdings:totals:<addressHash>:<version>` | Hash | 30 days from write | Daily holdings chart totals. |
+| `holdings:protocol-return-history:v3:<addressHash>:<version>:<timeframe>:<vaultScope>` | String JSON | 24 hours | Atomic protocol-return history response snapshot. |
 | `holdings:vault-invalidated:<chainId>:<vaultAddress>` | String timestamp | None | Lazy invalidation marker for totals cache. |
 | `holdings:progress:<progressId>` | String JSON record | 10 minutes | Progress polling state for long requests. |
 
