@@ -135,6 +135,12 @@ describe('portfolio activity helpers', () => {
     expect(entry?.action).toBe('deposit')
   })
 
+  it('marks failed local notifications as failed activity', () => {
+    const entry = toLocalActivityEntry(createNotification({ status: 'error' }))
+
+    expect(entry?.transactionStatus).toBe('failed')
+  })
+
   it('does not map local notifications without any timestamp', () => {
     const entry = toLocalActivityEntry(
       createNotification({

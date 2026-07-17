@@ -16,7 +16,7 @@ describe('PriceImpactWarning', () => {
       />
     )
 
-    expect(html).toContain('Total price impact is')
+    expect(html).toContain('Worst-case route impact is')
     expect(html).toContain('2.50%')
     expect(html).toContain('Price impact details')
     expect(html).not.toContain(

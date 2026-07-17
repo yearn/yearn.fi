@@ -51,14 +51,14 @@ export function VaultsListStrategy({
   const [isExpanded, setIsExpanded] = useState(false)
   const isInactive = status === 'not_active'
   const isUnallocated = status === 'unallocated'
-  const shouldShowPlaceholders = isInactive || isUnallocated
+  const rowOpacityClassName = isInactive ? 'opacity-70' : isUnallocated ? 'opacity-50' : ''
   const hasKatRewards = typeof katRewardsAPR === 'number' && katRewardsAPR > 0
   const baseApr = apr ?? netApr ?? 0
   const displayApr = hasKatRewards ? baseApr + (katRewardsAPR ?? 0) : baseApr
 
   const lastReportTime = details?.lastReport ? formatDuration(details.lastReport * 1000 - Date.now(), true) : 'N/A'
   let apyContent: ReactElement | string = '-'
-  if (shouldShowPlaceholders) {
+  if (isUnallocated) {
     apyContent = '-'
   } else if (hasKatRewards) {
     const tooltipContent = (
@@ -92,9 +92,10 @@ export function VaultsListStrategy({
   const allocationContent = isInactive || isUnallocated ? '-' : formatStrategiesPercent((details?.debtRatio || 0) / 100)
 
   const amountContent = isInactive ? '-' : isUnallocated ? '-' : allocation
+  const blockExplorer = getNetwork(chainId)?.defaultBlockExplorer
 
   return (
-    <div className={cl('w-full rounded-lg text-text-primary', shouldShowPlaceholders ? 'opacity-50' : '')}>
+    <div className={cl('w-full rounded-lg text-text-primary', rowOpacityClassName)}>
       {/* Collapsible header - always visible */}
       <div
         className={cl(
@@ -165,7 +166,7 @@ export function VaultsListStrategy({
             className={`flex flex-col items-center md:items-end ${STRATEGY_PANEL_ROW_DESKTOP_LAYOUT.valueColumnSpanClass}`}
           >
             <p className={'text-xs text-text-primary/60 mb-1 md:hidden'}>{'Amount'}</p>
-            <p className={'font-semibold truncate'} title={allocation}>
+            <p className={'font-semibold truncate'} title={amountContent}>
               {amountContent}
             </p>
           </div>
@@ -173,7 +174,7 @@ export function VaultsListStrategy({
             className={`flex flex-col items-center md:items-end ${STRATEGY_PANEL_ROW_DESKTOP_LAYOUT.valueColumnSpanClass}`}
           >
             <p className={'text-xs text-text-primary/60 mb-1 md:hidden'}>{'APY'}</p>
-            <p className={'font-semibold'}>{apyContent}</p>
+            <div className={'font-semibold'}>{apyContent}</div>
           </div>
         </div>
 
@@ -234,7 +235,7 @@ export function VaultsListStrategy({
             ) : null}
             <div className={'flex items-start'}>
               <Link
-                href={`${getNetwork(chainId)?.defaultBlockExplorer}/address/${address}`}
+                href={`${blockExplorer}/address/${address}`}
                 onClick={(event: React.MouseEvent): void => event.stopPropagation()}
                 className={'flex items-center gap-1 text-text-secondary hover:text-text-primary'}
                 target={'_blank'}

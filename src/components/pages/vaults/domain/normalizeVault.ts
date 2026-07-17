@@ -7,8 +7,14 @@ import { type Address, zeroAddress } from 'viem'
 export const YBOLD_VAULT_ADDRESS: Address = '0x9F4330700a36B29952869fac9b33f45EEdd8A3d8'
 export const YBOLD_STAKING_ADDRESS: Address = '0x23346B04a7f55b8760E5860AA5A77383D63491cD'
 
+const YBOLD_PRODUCT_ADDRESSES = new Set([toAddress(YBOLD_VAULT_ADDRESS), toAddress(YBOLD_STAKING_ADDRESS)])
+
 const HOLDINGS_ALIAS_BY_ADDRESS: Record<string, Address> = {
   [toAddress(YBOLD_STAKING_ADDRESS)]: YBOLD_VAULT_ADDRESS
+}
+
+export function isYBoldProductAddress(address: Address | string | undefined): boolean {
+  return Boolean(address && YBOLD_PRODUCT_ADDRESSES.has(toAddress(address)))
 }
 
 export function mergeYBoldVault(baseVault: TKongVaultListItem, stakedVault: TKongVaultListItem): TKongVaultListItem {

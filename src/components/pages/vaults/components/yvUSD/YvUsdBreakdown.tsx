@@ -1,9 +1,14 @@
-import { YVUSD_DESCRIPTION, YVUSD_LOCKED_COOLDOWN_DAYS, YVUSD_WITHDRAW_WINDOW_DAYS } from '@pages/vaults/utils/yvUsd'
+import {
+  type TYvUsdPositionApyBreakdown,
+  YVUSD_DESCRIPTION,
+  YVUSD_LOCKED_COOLDOWN_DAYS,
+  YVUSD_WITHDRAW_WINDOW_DAYS
+} from '@pages/vaults/utils/yvUsd'
 import { RenderAmount } from '@shared/components/RenderAmount'
 import { IconInfinifiPoints } from '@shared/icons/IconInfinifiPoints'
 import { IconLock } from '@shared/icons/IconLock'
 import { IconLockOpen } from '@shared/icons/IconLockOpen'
-import { cl, formatAmount } from '@shared/utils'
+import { cl, formatAmount, formatApyDisplay, formatUSD } from '@shared/utils'
 import type { ReactElement } from 'react'
 
 type TYvUsdTooltipProps = {
@@ -80,6 +85,60 @@ export function YvUsdApyTooltipContent({
             </p>
           </div>
         ) : null}
+      </div>
+    </div>
+  )
+}
+
+function YvUsdPositionApyRow({
+  icon,
+  label,
+  position
+}: {
+  icon: ReactElement
+  label: string
+  position: TYvUsdPositionApyBreakdown['locked']
+}): ReactElement {
+  return (
+    <div className="flex items-center justify-between gap-6">
+      <div className="flex min-w-0 items-start gap-2">
+        <span className="mt-0.5 shrink-0">{icon}</span>
+        <span className="flex min-w-0 flex-col">
+          <span className="text-text-primary">{label}</span>
+          <span className="whitespace-nowrap text-[11px] text-text-secondary">
+            {`${formatApyDisplay(position.weight)} of position · ${formatUSD(position.value)}`}
+          </span>
+        </span>
+      </div>
+      <strong className="shrink-0 font-semibold text-text-primary">
+        {position.apy === null ? '—' : formatApyDisplay(position.apy)}
+      </strong>
+    </div>
+  )
+}
+
+export function YvUsdPositionApyTooltipContent({
+  breakdown,
+  className
+}: {
+  breakdown: TYvUsdPositionApyBreakdown
+  className?: string
+}): ReactElement {
+  return (
+    <div
+      className={cl(
+        'min-w-64 rounded-xl border border-border bg-surface-secondary p-3 text-xs text-text-primary',
+        className
+      )}
+    >
+      <p className="mb-2 font-semibold text-text-primary">{'Your yvUSD APY breakdown'}</p>
+      <div className="flex flex-col gap-2">
+        <YvUsdPositionApyRow icon={<IconLock className="size-3" />} label="Locked" position={breakdown.locked} />
+        <YvUsdPositionApyRow
+          icon={<IconLockOpen className="h-3 w-4" />}
+          label="Unlocked"
+          position={breakdown.unlocked}
+        />
       </div>
     </div>
   )
