@@ -1,3 +1,4 @@
+import { YBOLD_VAULT_ADDRESS } from '@pages/vaults/domain/normalizeVault'
 import { YVBTC_LOCKED_ADDRESS, YVBTC_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvBtc'
 import { YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import type { ReactNode } from 'react'
@@ -181,7 +182,12 @@ vi.mock('@pages/vaults/hooks/useYvBtcVaults', () => ({
 vi.mock('@shared/components/MetricsCard', () => ({
   METRIC_FOOTNOTE_CLASS: 'metric-footnote',
   METRIC_VALUE_CLASS: 'metric-value',
-  MetricHeader: ({ label }: { label: string }) => <span>{label}</span>,
+  MetricHeader: ({ label, tooltip }: { label: string; tooltip?: ReactNode }) => (
+    <span>
+      {label}
+      {tooltip}
+    </span>
+  ),
   MetricsCard: ({
     items,
     className
@@ -303,6 +309,19 @@ const YVBTC_VAULT = {
   }
 } as const
 
+const YBOLD_VAULT = {
+  ...YVUSD_VAULT,
+  address: YBOLD_VAULT_ADDRESS,
+  symbol: 'yBOLD',
+  name: 'yBOLD',
+  token: {
+    address: '0x6440F144b7e50D6a8439336510312d2F54beB01D',
+    symbol: 'BOLD',
+    name: 'BOLD',
+    decimals: 18
+  }
+} as const
+
 describe('VaultDetailsHeaderPresentation', () => {
   beforeEach(() => {
     useVaultUserDataMock.mockClear()
@@ -349,5 +368,22 @@ describe('VaultDetailsHeaderPresentation', () => {
         enabled: false
       })
     )
+  })
+
+  it('describes the 7 day historical basis for the yBOLD estimated APY', () => {
+    const html = renderToStaticMarkup(
+      <VaultDetailsHeaderPresentation currentVault={YBOLD_VAULT as never} depositedValue={0n} isCompressed={false} />
+    )
+
+    expect(html).toContain('Projected APY based on 7 day historical performance')
+    expect(html).not.toContain('Projected APY based on underlying markets')
+  })
+
+  it('keeps the underlying-markets tooltip for other vaults', () => {
+    const html = renderToStaticMarkup(
+      <VaultDetailsHeaderPresentation currentVault={YVBTC_VAULT as never} depositedValue={0n} isCompressed={false} />
+    )
+
+    expect(html).toContain('Projected APY based on underlying markets')
   })
 })
