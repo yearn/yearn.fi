@@ -346,6 +346,28 @@ describe('VaultDetailsHeaderPresentation', () => {
     expect(html).toContain('/address/')
   })
 
+  it('shows a strategy notification indicator when a tab has pending changes', () => {
+    const html = renderToStaticMarkup(
+      <VaultDetailsHeaderPresentation
+        currentVault={YVUSD_VAULT as never}
+        depositedValue={0n}
+        isCompressed={true}
+        sectionTabs={[
+          {
+            key: 'strategies',
+            label: 'Strategies',
+            supportsNotification: true,
+            notificationTooltip: 'One pending strategy change',
+            notificationAriaLabel: '1 pending timelocked strategy change'
+          }
+        ]}
+      />
+    )
+
+    expect(html).toContain('Strategies')
+    expect(html).toContain('aria-label="1 pending timelocked strategy change"')
+  })
+
   it('hides cooldown information when there is no locked yvUSD deposit', () => {
     const html = renderToStaticMarkup(
       <VaultDetailsHeaderPresentation currentVault={YVUSD_VAULT as never} depositedValue={0n} isCompressed={false} />

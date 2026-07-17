@@ -54,6 +54,7 @@ import { yvUsdLockedVaultAbi } from '@shared/contracts/abi/yvUsdLockedVault.abi'
 import { useReadContract } from '@shared/hooks/useAppWagmi'
 import { useChainTimestamp } from '@shared/hooks/useChainTimestamp'
 import { useYearnSpotPrices } from '@shared/hooks/useYearnSpotPrices'
+import { IconAlertWarning } from '@shared/icons/IconAlertWarning'
 import { IconInfinifiPoints } from '@shared/icons/IconInfinifiPoints'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
 import { IconLock } from '@shared/icons/IconLock'
@@ -416,7 +417,13 @@ function SectionSelectorBar({
   activeSectionKey?: string
   onSelectSection?: (key: string) => void
   sectionSelectorRef?: Ref<HTMLDivElement>
-  sectionTabs: { key: string; label: string }[]
+  sectionTabs: {
+    key: string
+    label: string
+    supportsNotification?: boolean
+    notificationTooltip?: string | ReactElement
+    notificationAriaLabel?: string
+  }[]
   isCompressed: boolean
   includeTourAttributes?: boolean
 }): ReactElement {
@@ -432,27 +439,59 @@ function SectionSelectorBar({
           isCompressed ? 'border-t' : 'border-x border-b'
         )}
       >
-        {sectionTabs.map((section) => (
-          <button
-            key={section.key}
-            type={'button'}
-            onClick={(): void => {
-              if (!isCompressed && section.key === 'charts') {
-                return
-              }
-              onSelectSection?.(section.key)
-            }}
-            className={cl(
-              'flex-1 rounded-md px-2 py-2 text-xs font-semibold transition-all md:px-4 md:py-2.5',
-              SELECTOR_BAR_STYLES.buttonBase,
-              'min-h-9 active:scale-[0.98] truncate',
-              activeSectionKey === section.key ? SELECTOR_BAR_STYLES.buttonActive : SELECTOR_BAR_STYLES.buttonInactive
-            )}
-            aria-disabled={!isCompressed && section.key === 'charts'}
-          >
-            {section.label}
-          </button>
-        ))}
+        {sectionTabs.map((section) => {
+          const button = (
+            <button
+              type={'button'}
+              onClick={(): void => {
+                if (!isCompressed && section.key === 'charts') {
+                  return
+                }
+                onSelectSection?.(section.key)
+              }}
+              className={cl(
+                'w-full rounded-md px-2 py-2 text-xs font-semibold transition-all md:px-4 md:py-2.5',
+                SELECTOR_BAR_STYLES.buttonBase,
+                'min-h-9 active:scale-[0.98]',
+                activeSectionKey === section.key ? SELECTOR_BAR_STYLES.buttonActive : SELECTOR_BAR_STYLES.buttonInactive
+              )}
+              aria-disabled={!isCompressed && section.key === 'charts'}
+            >
+              <span className={'flex min-w-0 items-center justify-center gap-1.5'}>
+                <span className={'truncate'}>{section.label}</span>
+                {section.supportsNotification ? (
+                  <IconAlertWarning
+                    aria-label={section.notificationAriaLabel}
+                    aria-hidden={section.notificationTooltip ? undefined : true}
+                    className={cl(
+                      'size-3.5 shrink-0 text-amber-600 dark:text-amber-400',
+                      section.notificationTooltip ? 'visible' : 'invisible'
+                    )}
+                  />
+                ) : null}
+              </span>
+            </button>
+          )
+
+          return (
+            <div key={section.key} className={'group relative min-w-0 flex-1'}>
+              {button}
+              {section.supportsNotification ? (
+                <div
+                  role={'tooltip'}
+                  className={cl(
+                    'pointer-events-none invisible absolute bottom-full left-[calc(50%+2rem)] z-50 mb-2 -translate-x-1/2 opacity-0 transition-opacity duration-150',
+                    section.notificationTooltip
+                      ? 'group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100'
+                      : ''
+                  )}
+                >
+                  {section.notificationTooltip ?? <span />}
+                </div>
+              ) : null}
+            </div>
+          )
+        })}
       </div>
     </div>
   )
@@ -1054,7 +1093,13 @@ type TVaultDetailsHeaderBaseProps = {
   currentVault: TKongVaultInput
   depositedValue: bigint
   yvUsdApyVariant?: TYvUsdVariant
-  sectionTabs?: { key: string; label: string }[]
+  sectionTabs?: {
+    key: string
+    label: string
+    supportsNotification?: boolean
+    notificationTooltip?: string | ReactElement
+    notificationAriaLabel?: string
+  }[]
   activeSectionKey?: string
   onSelectSection?: (key: string) => void
   sectionSelectorRef?: Ref<HTMLDivElement>

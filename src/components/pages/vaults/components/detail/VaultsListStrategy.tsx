@@ -51,14 +51,14 @@ export function VaultsListStrategy({
   const [isExpanded, setIsExpanded] = useState(false)
   const isInactive = status === 'not_active'
   const isUnallocated = status === 'unallocated'
-  const shouldShowPlaceholders = isInactive || isUnallocated
+  const rowOpacityClassName = isInactive ? 'opacity-70' : isUnallocated ? 'opacity-50' : ''
   const hasKatRewards = typeof katRewardsAPR === 'number' && katRewardsAPR > 0
   const baseApr = apr ?? netApr ?? 0
   const displayApr = hasKatRewards ? baseApr + (katRewardsAPR ?? 0) : baseApr
 
   const lastReportTime = details?.lastReport ? formatDuration(details.lastReport * 1000 - Date.now(), true) : 'N/A'
   let apyContent: ReactElement | string = '-'
-  if (shouldShowPlaceholders) {
+  if (isUnallocated) {
     apyContent = '-'
   } else if (hasKatRewards) {
     const tooltipContent = (
@@ -95,7 +95,7 @@ export function VaultsListStrategy({
   const blockExplorer = getNetwork(chainId)?.defaultBlockExplorer
 
   return (
-    <div className={cl('w-full rounded-lg text-text-primary', shouldShowPlaceholders ? 'opacity-50' : '')}>
+    <div className={cl('w-full rounded-lg text-text-primary', rowOpacityClassName)}>
       {/* Collapsible header - always visible */}
       <div
         className={cl(
@@ -174,7 +174,7 @@ export function VaultsListStrategy({
             className={`flex flex-col items-center md:items-end ${STRATEGY_PANEL_ROW_DESKTOP_LAYOUT.valueColumnSpanClass}`}
           >
             <p className={'text-xs text-text-primary/60 mb-1 md:hidden'}>{'APY'}</p>
-            <p className={'font-semibold'}>{apyContent}</p>
+            <div className={'font-semibold'}>{apyContent}</div>
           </div>
         </div>
 

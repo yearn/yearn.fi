@@ -54,4 +54,15 @@ describe('VaultsListStrategy desktop layout', () => {
     expect(html).toContain('opacity-50')
     expect(html).not.toContain('Timelock ready')
   })
+
+  it('shows APY for inactive strategies', () => {
+    const html = renderStrategyHtml({
+      status: 'not_active',
+      apr: 0.042
+    })
+
+    expect(html).toContain('4.20%')
+    expect(html).toContain('opacity-70')
+    expect(html).not.toContain('opacity-50')
+  })
 })
