@@ -10,6 +10,7 @@ import {
   resolveExecutionTrackingHash,
   resolveOverlayConnectedChainId,
   resolvePendingSafeOverlayState,
+  resolveTransactionReceiptOutcome,
   SAFE_AUTO_CONTINUE_CONFIRM_DELAY_MS,
   shouldAutoContinueFromSuccessState,
   shouldAutoContinuePermitSuccess,
@@ -32,6 +33,32 @@ describe('resolveOverlayConnectedChainId', () => {
 })
 
 describe('transactionOverlay.helpers', () => {
+  it('treats a reverted receipt as an error even when the receipt query succeeded', () => {
+    expect(
+      resolveTransactionReceiptOutcome({
+        isSuccess: true,
+        isError: false,
+        status: 'reverted'
+      })
+    ).toBe('error')
+  })
+
+  it('requires a successful receipt status before completing a transaction', () => {
+    expect(
+      resolveTransactionReceiptOutcome({
+        isSuccess: true,
+        isError: false,
+        status: 'success'
+      })
+    ).toBe('success')
+    expect(
+      resolveTransactionReceiptOutcome({
+        isSuccess: true,
+        isError: false
+      })
+    ).toBe('pending')
+  })
+
   it('starts idle so conditionally mounted overlays can execute their first step on open', () => {
     expect(getInitialOverlayState()).toBe('idle')
   })
