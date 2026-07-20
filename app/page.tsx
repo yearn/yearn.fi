@@ -55,6 +55,14 @@ const faqJsonLd = {
         '@type': 'Answer',
         text: 'Yes. Yearn has documentation for developers building on top of the protocol at https://docs.yearn.fi.'
       }
+    },
+    {
+      '@type': 'Question',
+      name: 'What are Yearn Lifetime Earnings?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Lifetime Earnings measures the cumulative gross profit and loss reported by Yearn vault strategies in USD. Learn how it is calculated at https://docs.yearn.fi/developers/data-services/yearn-data/metrics/lifetime-earnings.'
+      }
     }
   ]
 }
