@@ -1,0 +1,447 @@
+import { useLocalStorageValue } from '@react-hookz/web'
+import type { Dispatch, ReactElement, SetStateAction } from 'react'
+import { createContext, useCallback, useContext, useMemo, useRef, useState } from 'react'
+import { isAddressEqual } from 'viem'
+import { env } from '@/env'
+import { useAsyncTrigger } from '../hooks/useAsyncTrigger'
+import type { TAddress } from '../types/address'
+import type { TDict, TNDict, TToken, TTokenList } from '../types/mixed'
+import { DEFAULT_ERC20 } from '../utils'
+import { zeroNormalizedBN } from '../utils/format'
+import { toAddress } from '../utils/tools.address'
+import { useWeb3 } from './useWeb3'
+
+export type TTokenListProps = {
+  tokenLists: TNDict<TDict<TToken>>
+  currentNetworkTokenList: TDict<TToken>
+  isInitialized: boolean
+  isFromExtraList: (props: { address: TAddress; chainID: number }) => boolean
+  isCustomToken: (props: { address: TAddress; chainID: number }) => boolean
+  getToken: (props: { address: TAddress; chainID: number }) => TToken | undefined
+  addCustomToken: (token: TToken) => void
+  enableTokenListFetch: () => void
+  setTokenList: Dispatch<SetStateAction<TNDict<TDict<TToken>>>>
+}
+
+type TTokenListActions = Pick<TTokenListProps, 'enableTokenListFetch'>
+
+const defaultProps: TTokenListProps = {
+  tokenLists: {},
+  currentNetworkTokenList: {},
+  isInitialized: false,
+  isFromExtraList: (): boolean => false,
+  isCustomToken: (): boolean => false,
+  getToken: (): TToken | undefined => undefined,
+  addCustomToken: (): void => undefined,
+  enableTokenListFetch: (): void => undefined,
+  setTokenList: (): void => undefined
+}
+
+/******************************************************************************
+ ** Helper function to convert a token from the TToken type to the token list
+ ** type.
+ ******************************************************************************/
+export function toTokenListToken(token: TToken): TTokenList['tokens'][0] {
+  return {
+    address: token.address,
+    chainId: token.chainID,
+    decimals: token.decimals,
+    logoURI: token.logoURI,
+    name: token.name,
+    symbol: token.symbol
+  }
+}
+
+export function getUnloadedTokenListURIs({
+  hashList,
+  loadedURIs
+}: {
+  hashList: string
+  loadedURIs: ReadonlySet<string>
+}): string[] {
+  return hashList.split(',').filter((eachURI) => eachURI && !loadedURIs.has(eachURI))
+}
+
+function mergeTokenListTokens(
+  currentTokens: TNDict<TDict<TToken>>,
+  incomingTokens: TNDict<TDict<TToken>>
+): TNDict<TDict<TToken>> {
+  const nextTokens: TNDict<TDict<TToken>> = { ...currentTokens }
+
+  Object.entries(incomingTokens).forEach(([chainId, tokensByAddress]) => {
+    const parsedChainId = Number(chainId)
+    nextTokens[parsedChainId] = {
+      ...(nextTokens[parsedChainId] || {}),
+      ...tokensByAddress
+    }
+  })
+
+  return nextTokens
+}
+
+const TokenList = createContext<TTokenListProps>(defaultProps)
+const TokenListActions = createContext<TTokenListActions>({
+  enableTokenListFetch: defaultProps.enableTokenListFetch
+})
+type TTokenListProviderProps = {
+  children: ReactElement
+  lists?: string[]
+  enabled?: boolean
+}
+export const WithTokenList = ({
+  children,
+  lists = [
+    'https://cdn.jsdelivr.net/gh/yearn/tokenLists@main/lists/etherscan.json',
+    'https://cdn.jsdelivr.net/gh/yearn/tokenLists@main/lists/tokenlistooor.json'
+  ],
+  enabled = true
+}: TTokenListProviderProps): ReactElement => {
+  const isDevelopment = env.MODE === 'development'
+  const { chainID } = useWeb3()
+  const { value: extraTokenlist } = useLocalStorageValue<string[]>('extraTokenlists')
+  const { value: extraTokens, set: setExtraTokens } = useLocalStorageValue<TTokenList['tokens']>('extraTokens')
+  const [tokenList, setTokenList] = useState<TNDict<TDict<TToken>>>({})
+  const [tokenListExtra, setTokenListExtra] = useState<TNDict<TDict<TToken>>>({})
+  const [tokenListCustom, setTokenListCustom] = useState<TNDict<TDict<TToken>>>({})
+  const [isInitialized, setIsInitialized] = useState([false, false, false])
+  const [isManuallyEnabled, setIsManuallyEnabled] = useState(false)
+  const loadedTokenListURIsRef = useRef<Set<string>>(new Set())
+  const isFetchEnabled = enabled || isManuallyEnabled
+  const hashList = useMemo((): string => lists.join(','), [lists])
+  const enableTokenListFetch = useCallback((): void => {
+    setIsManuallyEnabled(true)
+  }, [])
+  const actionsValue = useMemo(
+    (): TTokenListActions => ({
+      enableTokenListFetch
+    }),
+    [enableTokenListFetch]
+  )
+
+  /************************************************************************************
+   ** This is the main function that will be called when the component mounts and
+   ** whenever the hashList changes. It will fetch all the token lists from the
+   ** hashList and then add them to the tokenList state.
+   ** This is the list coming from the props.
+   ************************************************************************************/
+  useAsyncTrigger(async (): Promise<void> => {
+    if (!isFetchEnabled) {
+      return
+    }
+    const unloadedLists = getUnloadedTokenListURIs({
+      hashList,
+      loadedURIs: loadedTokenListURIsRef.current
+    })
+    if (unloadedLists.length === 0) {
+      setIsInitialized((prev) => [true, prev[1], prev[2]])
+      return
+    }
+    const responses = await Promise.allSettled(
+      unloadedLists.map(async (eachURI: string): Promise<TTokenList> => {
+        const res = await fetch(eachURI)
+        return res.json()
+      })
+    )
+    const tokens: TTokenList['tokens'] = []
+    const fromList: TTokenList[] = []
+
+    for (const [index, response] of responses.entries()) {
+      if (response.status === 'fulfilled') {
+        tokens.push(...response.value.tokens)
+        loadedTokenListURIsRef.current.add(unloadedLists[index])
+        fromList.push({ ...response.value, uri: unloadedLists[index] })
+      }
+    }
+
+    const tokenListTokens: TNDict<TDict<TToken>> = {}
+    for (const eachToken of tokens) {
+      if (!tokenListTokens[eachToken.chainId]) {
+        tokenListTokens[eachToken.chainId] = {}
+      }
+      if (!tokenListTokens[eachToken.chainId][toAddress(eachToken.address)]) {
+        tokenListTokens[eachToken.chainId][toAddress(eachToken.address)] = {
+          address: eachToken.address,
+          name: eachToken.name,
+          symbol: eachToken.symbol,
+          decimals: eachToken.decimals,
+          chainID: eachToken.chainId,
+          logoURI: eachToken.logoURI,
+          value: 0,
+          balance: zeroNormalizedBN
+        }
+      }
+
+      /**************************************************************************************
+       ** If we are in development mode, we also want to add the token to our list, but only
+       ** if the token's chainID is 1 (Ethereum).
+       *************************************************************************************/
+      if (isDevelopment && Boolean(env.NEXT_PUBLIC_SHOULD_USE_FORKNET) && eachToken.chainId === 1) {
+        if (!tokenListTokens[1337]) {
+          tokenListTokens[1337] = {}
+        }
+        if (!tokenListTokens[1337][toAddress(eachToken.address)]) {
+          tokenListTokens[1337][toAddress(eachToken.address)] = {
+            address: eachToken.address,
+            name: eachToken.name,
+            symbol: eachToken.symbol,
+            decimals: eachToken.decimals,
+            chainID: 1337,
+            logoURI: eachToken.logoURI,
+            value: 0,
+            balance: zeroNormalizedBN
+          }
+        }
+      }
+    }
+    setTokenList((prev) => mergeTokenListTokens(prev, tokenListTokens))
+    setIsInitialized((prev) => [true, prev[1], prev[2]])
+  }, [hashList, isFetchEnabled])
+
+  /************************************************************************************
+   ** This trigger will load the lists from the extraTokenlist state. It's not about
+   ** individual tokens, but about the whole list, that can be added by the user from
+   ** the Smol tokenlist repository.
+   ************************************************************************************/
+  useAsyncTrigger(async (): Promise<void> => {
+    if (!isFetchEnabled) {
+      return
+    }
+    const tokenListTokens: TNDict<TDict<TToken>> = {}
+    const fromList: TTokenList[] = []
+
+    for (const eachURI of extraTokenlist || []) {
+      type TLooseTokenList = TTokenList & { tokens: (TTokenList['tokens'][0] & { chainID?: number })[] }
+      const [fromUserList] = await Promise.allSettled([
+        fetch(eachURI).then((res) => res.json() as Promise<TLooseTokenList>)
+      ])
+
+      if (fromUserList.status === 'fulfilled') {
+        fromList.push({ ...fromUserList.value, uri: eachURI })
+        const { tokens } = fromUserList.value
+        for (const eachToken of tokens) {
+          const chainId = eachToken.chainId ?? eachToken.chainID ?? 1
+          if (!tokenListTokens[chainId]) {
+            tokenListTokens[chainId] = {}
+          }
+          if (!tokenListTokens[chainId][toAddress(eachToken.address)]) {
+            tokenListTokens[chainId][toAddress(eachToken.address)] = {
+              address: eachToken.address,
+              name: eachToken.name,
+              symbol: eachToken.symbol,
+              decimals: eachToken.decimals,
+              chainID: chainId,
+              logoURI: eachToken.logoURI,
+              value: 0,
+              balance: zeroNormalizedBN
+            }
+          }
+
+          /**************************************************************************************
+           ** If we are in development mode, we also want to add the token to our list, but only
+           ** if the token's chainID is 1 (Ethereum).
+           *************************************************************************************/
+          if (isDevelopment && Boolean(env.NEXT_PUBLIC_SHOULD_USE_FORKNET) && chainId === 1) {
+            if (!tokenListTokens[1337]) {
+              tokenListTokens[1337] = {}
+            }
+            if (!tokenListTokens[1337][toAddress(eachToken.address)]) {
+              tokenListTokens[1337][toAddress(eachToken.address)] = {
+                address: eachToken.address,
+                name: eachToken.name,
+                symbol: eachToken.symbol,
+                decimals: eachToken.decimals,
+                chainID: 1337,
+                logoURI: eachToken.logoURI,
+                value: 0,
+                balance: zeroNormalizedBN
+              }
+            }
+          }
+        }
+      }
+    }
+    setTokenListExtra(tokenListTokens)
+    setIsInitialized((prev) => [prev[0], true, prev[2]])
+  }, [extraTokenlist, isFetchEnabled])
+
+  /************************************************************************************
+   ** This trigger will load the lists from the extraTokens state. It's about individual
+   ** tokens, that can be added by the user.
+   ************************************************************************************/
+  useAsyncTrigger(async (): Promise<void> => {
+    if (!isFetchEnabled) {
+      return
+    }
+    if (extraTokens === undefined) {
+      return
+    }
+    if ((extraTokens || []).length > 0) {
+      const tokenListTokens: TNDict<TDict<TToken>> = {}
+      for (const eachToken of extraTokens || []) {
+        if (!tokenListTokens[eachToken.chainId]) {
+          tokenListTokens[eachToken.chainId] = {}
+        }
+        if (!tokenListTokens[eachToken.chainId][toAddress(eachToken.address)]) {
+          tokenListTokens[eachToken.chainId][toAddress(eachToken.address)] = {
+            address: eachToken.address,
+            name: eachToken.name,
+            symbol: eachToken.symbol,
+            decimals: eachToken.decimals,
+            chainID: eachToken.chainId,
+            logoURI: eachToken.logoURI,
+            value: 0,
+            balance: zeroNormalizedBN
+          }
+        }
+        /**************************************************************************************
+         ** If we are in development mode, we also want to add the token to our list, but only
+         ** if the token's chainID is 1 (Ethereum).
+         *************************************************************************************/
+        if (isDevelopment && Boolean(env.NEXT_PUBLIC_SHOULD_USE_FORKNET) && eachToken.chainId === 1) {
+          if (!tokenListTokens[1337]) {
+            tokenListTokens[1337] = {}
+          }
+          if (!tokenListTokens[1337][toAddress(eachToken.address)]) {
+            tokenListTokens[1337][toAddress(eachToken.address)] = {
+              address: eachToken.address,
+              name: eachToken.name,
+              symbol: eachToken.symbol,
+              decimals: eachToken.decimals,
+              chainID: 1337,
+              logoURI: eachToken.logoURI,
+              value: 0,
+              balance: zeroNormalizedBN
+            }
+          }
+        }
+      }
+      setTokenListCustom(tokenListTokens)
+    }
+    setIsInitialized((prev) => [prev[0], prev[1], true])
+  }, [extraTokens, isFetchEnabled])
+
+  /************************************************************************************
+   ** This will aggregate all the token lists into one big list, that will be used
+   ** by the app.
+   ************************************************************************************/
+  const aggregatedTokenList = useMemo((): TNDict<TDict<TToken>> => {
+    const aggregatedTokenList: TNDict<TDict<TToken>> = {}
+    for (const eachChainID of Object.keys(tokenList)) {
+      if (!aggregatedTokenList[Number(eachChainID)]) {
+        aggregatedTokenList[Number(eachChainID)] = {}
+      }
+      for (const eachToken of Object.values(tokenList[Number(eachChainID)])) {
+        aggregatedTokenList[Number(eachChainID)][toAddress(eachToken.address)] = eachToken
+      }
+    }
+
+    for (const eachChainID of Object.keys(tokenListExtra)) {
+      if (!aggregatedTokenList[Number(eachChainID)]) {
+        aggregatedTokenList[Number(eachChainID)] = {}
+      }
+      for (const eachToken of Object.values(tokenListExtra[Number(eachChainID)])) {
+        aggregatedTokenList[Number(eachChainID)][toAddress(eachToken.address)] = eachToken
+      }
+    }
+
+    for (const eachChainID of Object.keys(tokenListCustom)) {
+      if (!aggregatedTokenList[Number(eachChainID)]) {
+        aggregatedTokenList[Number(eachChainID)] = {}
+      }
+      for (const eachToken of Object.values(tokenListCustom[Number(eachChainID)])) {
+        aggregatedTokenList[Number(eachChainID)][toAddress(eachToken.address)] = eachToken
+      }
+    }
+    return aggregatedTokenList
+  }, [tokenList, tokenListCustom, tokenListExtra])
+
+  /************************************************************************************
+   ** This will return the token list for the current network.
+   ************************************************************************************/
+  const currentNetworkList: TDict<TToken> = useMemo(
+    () => aggregatedTokenList?.[chainID] || {},
+    [aggregatedTokenList, chainID]
+  )
+
+  /************************************************************************************
+   ** This will return a specific token from the token list, or an empty object if the
+   ** token is not found.
+   ************************************************************************************/
+  const getToken = useCallback(
+    (props: { address: TAddress; chainID: number }): TToken => {
+      const fromTokenList = aggregatedTokenList?.[props.chainID]?.[toAddress(props.address)]
+      if (fromTokenList) {
+        return fromTokenList
+      }
+      return DEFAULT_ERC20
+    },
+    [aggregatedTokenList]
+  )
+
+  /************************************************************************************
+   ** This will return true if the token is from the tokenListExtra.
+   ************************************************************************************/
+  const isFromExtraList = useCallback(
+    (props: { address: TAddress; chainID: number }): boolean => {
+      return Boolean(tokenListExtra?.[props.chainID]?.[toAddress(props.address)])
+    },
+    [tokenListExtra]
+  )
+
+  /************************************************************************************
+   ** This will return true if the token is from the tokenListCustom, aka added by the
+   ** user as an individual token.
+   ************************************************************************************/
+  const isCustomToken = useCallback(
+    (props: { address: TAddress; chainID: number }): boolean => {
+      return Boolean(tokenListCustom?.[props.chainID]?.[toAddress(props.address)])
+    },
+    [tokenListCustom]
+  )
+
+  /************************************************************************************
+   ** This will add a token to the tokenListCustom.
+   ************************************************************************************/
+  const addCustomToken = useCallback(
+    (token: TToken) => {
+      const arr = extraTokens ?? []
+      if (!arr.some((t) => isAddressEqual(t.address, token.address) && t.chainId === token.chainID)) {
+        setExtraTokens([...arr, toTokenListToken(token)])
+      }
+    },
+    [extraTokens, setExtraTokens]
+  )
+
+  const contextValue = useMemo(
+    (): TTokenListProps => ({
+      tokenLists: aggregatedTokenList,
+      currentNetworkTokenList: currentNetworkList,
+      isFromExtraList,
+      isCustomToken,
+      isInitialized: isInitialized[0] && isInitialized[1] && isInitialized[2],
+      setTokenList,
+      addCustomToken,
+      enableTokenListFetch,
+      getToken
+    }),
+    [
+      addCustomToken,
+      aggregatedTokenList,
+      currentNetworkList,
+      enableTokenListFetch,
+      getToken,
+      isCustomToken,
+      isInitialized,
+      isFromExtraList
+    ]
+  )
+
+  return (
+    <TokenListActions.Provider value={actionsValue}>
+      <TokenList.Provider value={contextValue}>{children}</TokenList.Provider>
+    </TokenListActions.Provider>
+  )
+}
+
+export const useTokenList = (): TTokenListProps => useContext(TokenList)
+export const useTokenListActions = (): TTokenListActions => useContext(TokenListActions)

@@ -1,0 +1,274 @@
+import { z } from 'zod'
+
+const portfolioHistorySimpleDataPointSchema = z.object({
+  date: z.string(),
+  value: z.number()
+})
+
+const portfolioProtocolReturnHistoryDataPointSchema = z.object({
+  date: z.string(),
+  growthWeightUsd: z.number().nullable(),
+  growthWeightEth: z.number().nullable(),
+  protocolReturnPct: z.number().nullable(),
+  annualizedProtocolReturnPct: z.number().nullable(),
+  growthIndex: z.number().nullable()
+})
+
+const portfolioProtocolReturnIncompleteVaultSchema = z.object({
+  chainId: z.number(),
+  vaultAddress: z.string(),
+  symbol: z.string().nullable(),
+  tokenAddress: z.string().nullable(),
+  status: z.enum(['missing_metadata', 'missing_pps', 'missing_receipt_price', 'partial']),
+  issues: z.array(
+    z.enum(['missing_metadata', 'missing_pps', 'missing_receipt_price', 'missing_exit_price', 'unmatched_exit'])
+  )
+})
+
+const portfolioProtocolReturnHistorySummarySchema = z.object({
+  totalVaults: z.number(),
+  completeVaults: z.number(),
+  partialVaults: z.number(),
+  recommendedGrowthDisplay: z.enum(['usd', 'eth', 'index']),
+  recommendedGrowthDisplayReason: z.enum(['stable_dominant', 'eth_dominant', 'mixed']),
+  openBaselineCompositionUsd: z.object({
+    stable: z.number(),
+    ethFamily: z.number(),
+    other: z.number()
+  }),
+  incompleteVaults: z.array(portfolioProtocolReturnIncompleteVaultSchema).optional(),
+  growthIsPartial: z.object({ usd: z.boolean(), eth: z.boolean(), index: z.boolean() }).optional(),
+  isComplete: z.boolean()
+})
+
+const portfolioProtocolReturnHistoryFamilyPointSchema = z.object({
+  timestamp: z.number(),
+  growthWeightUsd: z.number().nullable(),
+  growthWeightEth: z.number().nullable(),
+  growthIndex: z.number().nullable(),
+  growthIndexContribution: z.number().nullable().optional().default(null)
+})
+
+const portfolioProtocolReturnHistoryFamilySeriesSchema = z.object({
+  chainId: z.number(),
+  vaultAddress: z.string(),
+  symbol: z.string().nullable(),
+  status: z.enum(['ok', 'missing_metadata', 'missing_pps', 'missing_receipt_price', 'partial']),
+  dataPoints: z.array(portfolioProtocolReturnHistoryFamilyPointSchema)
+})
+
+const portfolioGrowthVaultSchema = z.object({
+  chainId: z.number(),
+  vaultAddress: z.string(),
+  status: z.enum(['ok', 'missing_metadata', 'missing_pps', 'missing_receipt_price', 'partial']),
+  issues: z.array(
+    z.enum(['missing_metadata', 'missing_pps', 'missing_receipt_price', 'missing_exit_price', 'unmatched_exit'])
+  ),
+  baselineUsd: z.number(),
+  baselineExposureUsdYears: z.number(),
+  growthUnderlying: z.number().nullable(),
+  growthUsd: z.number().nullable(),
+  growthPct: z.number().nullable(),
+  annualizedProtocolReturnPct: z.number().nullable(),
+  metadata: z.object({
+    symbol: z.string().nullable(),
+    decimals: z.number(),
+    assetDecimals: z.number(),
+    tokenAddress: z.string().nullable()
+  })
+})
+
+const portfolioBreakdownVaultSchema = z.object({
+  chainId: z.number(),
+  vaultAddress: z.string(),
+  shares: z.string(),
+  sharesFormatted: z.number(),
+  pricePerShare: z.number().nullable(),
+  tokenPrice: z.number().nullable(),
+  usdValue: z.number().nullable(),
+  metadata: z
+    .object({
+      symbol: z.string(),
+      decimals: z.number(),
+      tokenAddress: z.string()
+    })
+    .nullable(),
+  status: z.enum(['ok', 'missing_metadata', 'missing_pps', 'missing_price'])
+})
+
+export const portfolioHistorySimpleResponseSchema = z.object({
+  address: z.string(),
+  denomination: z.enum(['usd', 'eth']).optional().default('usd'),
+  timeframe: z.enum(['1y', 'all']).optional().default('1y'),
+  dataPoints: z.array(portfolioHistorySimpleDataPointSchema)
+})
+
+export const portfolioProtocolReturnHistoryResponseSchema = z.object({
+  address: z.string(),
+  timeframe: z.enum(['1y', 'all']).optional().default('1y'),
+  summary: portfolioProtocolReturnHistorySummarySchema,
+  dataPoints: z.array(portfolioProtocolReturnHistoryDataPointSchema),
+  familySeries: z.array(portfolioProtocolReturnHistoryFamilySeriesSchema).optional().default([])
+})
+
+export const portfolioResponseSchema = z.object({
+  address: z.string(),
+  version: z.literal('all'),
+  denomination: z.enum(['usd', 'eth']),
+  timeframe: z.enum(['1y', 'all']),
+  balance: portfolioHistorySimpleResponseSchema,
+  protocolReturn: portfolioProtocolReturnHistoryResponseSchema,
+  growth: z.object({
+    generatedAt: z.string(),
+    summary: z.object({
+      totalVaults: z.number(),
+      completeVaults: z.number(),
+      partialVaults: z.number(),
+      isComplete: z.boolean()
+    }),
+    vaults: z.array(portfolioGrowthVaultSchema)
+  })
+})
+
+export const portfolioHistoryProgressResponseSchema = z.object({
+  id: z.string(),
+  route: z.string(),
+  addressHash: z.string(),
+  status: z.enum(['running', 'complete', 'error']),
+  progress: z.number(),
+  message: z.string(),
+  detail: z.string().nullable(),
+  startedAt: z.number(),
+  updatedAt: z.number(),
+  logs: z
+    .array(
+      z.object({
+        elapsedMs: z.number(),
+        scope: z.string(),
+        message: z.string(),
+        payload: z.record(z.string(), z.unknown()).optional()
+      })
+    )
+    .optional()
+    .default([])
+})
+
+export const portfolioBreakdownResponseSchema = z.object({
+  address: z.string(),
+  version: z.literal('all'),
+  date: z.string(),
+  timestamp: z.number(),
+  summary: z.object({
+    totalVaults: z.number(),
+    vaultsWithShares: z.number(),
+    totalUsdValue: z.number(),
+    missingMetadata: z.number(),
+    missingPps: z.number(),
+    missingPrice: z.number()
+  }),
+  vaults: z.array(portfolioBreakdownVaultSchema),
+  issues: z.object({
+    missingMetadata: z.array(z.string()),
+    missingPps: z.array(z.string()),
+    missingPrice: z.array(z.string())
+  }),
+  message: z.string().optional()
+})
+
+const portfolioActivityEntrySchema = z.object({
+  chainId: z.number(),
+  txHash: z.string(),
+  timestamp: z.number(),
+  action: z.enum(['deposit', 'withdraw', 'stake', 'unstake', 'transfer', 'swap']),
+  displayType: z.enum(['reward_claim', 'zap']).nullable().optional().default(null),
+  transferDirection: z.enum(['in', 'out']).nullable().optional().default(null),
+  vaultAddress: z.string(),
+  familyVaultAddress: z.string(),
+  assetSymbol: z.string().nullable(),
+  assetAmount: z.string(),
+  assetAmountFormatted: z.number().nullable(),
+  inputTokenAddress: z.string().nullable(),
+  inputTokenSymbol: z.string().nullable(),
+  inputTokenAmount: z.string().nullable(),
+  inputTokenAmountFormatted: z.number().nullable(),
+  outputTokenAddress: z.string().nullable().optional().default(null),
+  outputTokenSymbol: z.string().nullable().optional().default(null),
+  outputTokenAmount: z.string().nullable().optional().default(null),
+  outputTokenAmountFormatted: z.number().nullable().optional().default(null),
+  shareAmount: z.string(),
+  shareAmountFormatted: z.number().nullable(),
+  status: z.enum(['ok', 'missing_metadata']),
+  transactionStatus: z.literal('failed').optional()
+})
+
+export const portfolioActivityResponseSchema = z.object({
+  address: z.string(),
+  version: z.literal('all'),
+  limit: z.number(),
+  offset: z.number(),
+  pageInfo: z.object({
+    hasMore: z.boolean(),
+    nextOffset: z.number().nullable()
+  }),
+  entries: z.array(portfolioActivityEntrySchema)
+})
+
+export const portfolioActivityFacetsResponseSchema = z.object({
+  address: z.string(),
+  version: z.literal('all'),
+  facets: z.object({
+    chainIds: z.array(z.number())
+  })
+})
+
+export type TPortfolioHistorySimpleResponse = z.infer<typeof portfolioHistorySimpleResponseSchema>
+export type TPortfolioProtocolReturnHistoryResponse = z.infer<typeof portfolioProtocolReturnHistoryResponseSchema>
+export type TPortfolioResponse = z.infer<typeof portfolioResponseSchema>
+export type TPortfolioGrowthVault = z.infer<typeof portfolioGrowthVaultSchema>
+export type TPortfolioHistoryProgressResponse = z.infer<typeof portfolioHistoryProgressResponseSchema>
+export type TPortfolioProtocolReturnHistorySummary = z.infer<typeof portfolioProtocolReturnHistorySummarySchema>
+export type TPortfolioBreakdownResponse = z.infer<typeof portfolioBreakdownResponseSchema>
+export type TPortfolioBreakdownVault = z.infer<typeof portfolioBreakdownVaultSchema>
+export type TPortfolioActivityResponse = z.infer<typeof portfolioActivityResponseSchema>
+export type TPortfolioActivityFacetsResponse = z.infer<typeof portfolioActivityFacetsResponseSchema>
+export type TPortfolioActivityEntry = z.infer<typeof portfolioActivityEntrySchema>
+export type TPortfolioActivityTypeFilter = TPortfolioActivityEntry['action'] | 'all'
+export type TPortfolioHistoryDenomination = z.infer<typeof portfolioHistorySimpleResponseSchema>['denomination']
+export type TPortfolioHistoryTimeframe = z.infer<typeof portfolioHistorySimpleResponseSchema>['timeframe']
+export type TPortfolioHistoryChartData = Array<{
+  date: string
+  value: number
+  isLive?: boolean
+}>
+export type TPortfolioLiveBalanceSnapshot = {
+  date: string
+  totalUsd: number
+  totalEth: number | null
+  vaults: Array<{
+    key: string
+    chainId: number
+    vaultAddress: string
+    usdValue: number
+  }>
+}
+export type TPortfolioProtocolReturnHistoryChartData = Array<{
+  date: string
+  growthWeightUsd: number | null
+  growthWeightEth: number | null
+  protocolReturnPct: number | null
+  annualizedProtocolReturnPct: number | null
+  growthIndex: number | null
+}>
+export type TPortfolioProtocolReturnHistoryFamilySeries = Array<{
+  chainId: number
+  vaultAddress: string
+  symbol: string | null
+  status: 'ok' | 'missing_metadata' | 'missing_pps' | 'missing_receipt_price' | 'partial'
+  dataPoints: Array<{
+    timestamp: number
+    growthWeightUsd: number | null
+    growthWeightEth: number | null
+    growthIndex: number | null
+    growthIndexContribution: number | null
+  }>
+}>

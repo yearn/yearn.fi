@@ -1,18 +1,20 @@
 # yearn.fi
 
-Yearn Finance vaults interface — React 19 + TypeScript SPA (Vite, TanStack Query, Tailwind CSS 4, Wagmi/Viem).
+Yearn Finance vaults interface — Next.js 16 App Router + React 19 + TypeScript, TanStack Query, Tailwind CSS 4, Wagmi/Viem.
 
 ## Commands
 
 ```bash
-bun install                              # Install dependencies
-bun run dev                              # Vite dev server + Bun API server; prompts for an API port when needed
-bun run preview                          # Vite preview + Bun API server; prompts for an API port when needed
-bun run build                            # TypeScript check + Vite build
-bun run test                             # Full Vitest suite
-bunx vitest run src/path/to/test.ts      # Single test file
-bun run lint:fix                         # Biome format and fix
-bun run tslint                           # TypeScript type check only
+bun install                                      # Install all workspace dependencies
+bun run dev                                      # Yearn dev server on 127.0.0.1:3000
+bun run preview                                  # Yearn production server after a build
+bun run build                                    # Build the Yearn app
+bun run dev:ybold                                # yBOLD dev server on 127.0.0.1:3002
+bun run build:ybold                              # Build the yBOLD app
+bun run test                                     # Run the Yearn Vitest suite
+bun run --cwd apps/yearn test -- src/path.test.ts # Run one Yearn test file
+bun run lint:fix                                 # Biome format and fix
+bun run tslint                                   # Type-check the Yearn app
 ```
 
 ## Verification
@@ -60,23 +62,31 @@ When writing a new `useEffect`, add a brief comment explaining why an alternativ
 
 ## Architecture
 
-**Tech stack:** React 19, Vite, React Router (lazy-loaded), Tailwind CSS 4, TanStack Query, Wagmi/Viem/RainbowKit
+**Tech stack:** Next.js 16 App Router, React 19, Tailwind CSS 4, TanStack Query, Wagmi/Viem/RainbowKit
 
-**Path aliases** (defined in vite.config.ts):
+The repository is a Bun workspace. The production application lives in
+`apps/yearn`; reusable packages live in `packages`.
+
+**Path aliases** (defined in `apps/yearn/tsconfig.json` and its Next config):
 - `@/*` → `src/*`
 - `@shared/*` → `src/components/shared/*`
 - `@pages/*` → `src/components/pages/*`
 - `@components/*` → `src/components/*`
 
 **Key directories:**
-- `src/components/shared/` — shared library (contexts, hooks, utils, types, contracts)
-- `src/components/pages/` — route pages (landing, portfolio, vaults)
-- `api/` — Vercel serverless functions (prod) / Bun dev server (local)
+- `apps/yearn/app/` — Next App Router pages, route handlers, metadata, redirects, and root layout
+- `apps/ybold/` — standalone yBOLD app and second shared-widget consumer
+- `apps/yearn/src/components/shared/` — shared library (contexts, hooks, utils, types, contracts)
+- `apps/yearn/src/components/pages/` — route pages (landing, portfolio, vaults)
+- `apps/yearn/src/server/` — API implementations used by `apps/yearn/app/api/**/route.ts`
+- `packages/` — reusable workspace packages that must not import application code
 
 **Key patterns:**
 - Context provider chain defined in `App.tsx` — read that file for the full order
+- Next route wrappers in `app/**/page.tsx` own route-level metadata and render client page components from `src/components/pages/`
+- `src/navigation/` provides small client helpers backed by Next navigation context
+- `/api/*` is served by explicit Next route handlers under `app/api/**/route.ts`; there is no catch-all API dispatcher
 - Vault data flows through `useYearn` context → filtered/sorted via hooks in `@shared/hooks/`
-- Dual server: `bun run dev` starts Vite plus a Bun API server and keeps `/api/*` proxied to the selected API port. In prod, `api/` runs as Vercel serverless functions.
 
 ## Multi-Chain
 

@@ -1,0 +1,528 @@
+import {
+  getVaultAddress,
+  getVaultAPR,
+  getVaultCategory,
+  getVaultChainID,
+  getVaultInfo,
+  getVaultStaking,
+  getVaultToken,
+  getVaultVersion,
+  isAutomatedVault,
+  type TKongVaultInput
+} from '@pages/vaults/domain/kongVaultSelectors'
+import { YBOLD_VAULT_ADDRESS } from '@pages/vaults/domain/normalizeVault'
+import { useYvBtcVaults } from '@pages/vaults/hooks/useYvBtcVaults'
+import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
+import { KONG_REST_BASE } from '@pages/vaults/utils/kongRest'
+import { isYvBtcAddress, YVBTC_LOCKED_ADDRESS, YVBTC_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvBtc'
+import { isYvUsdAddress, YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
+import { IconCopy } from '@shared/icons/IconCopy'
+import { IconLinkOut } from '@shared/icons/IconLinkOut'
+import { baseFetcher, isCurveHostUrl, isZeroAddress, normalizeCurveUrl, toAddress, truncateHex } from '@shared/utils'
+import { copyToClipboard } from '@shared/utils/helpers'
+import { getNetwork } from '@shared/utils/wagmi/utils'
+import { useQuery } from '@tanstack/react-query'
+import type { ReactElement } from 'react'
+
+type TCurvePoolEntry = {
+  address?: string
+  lpTokenAddress?: string
+  poolUrls?: { deposit?: string[] | null }
+}
+
+type TCurvePoolsApiResponse = {
+  data?: {
+    poolData?: unknown
+  }
+}
+
+const CURVE_POOLS_CACHE_TTL_MS = 30 * 60 * 1000
+const CURVE_POOLS_CACHE_GC_MS = 60 * 60 * 1000
+const CURVE_POOLS_ENDPOINT = 'https://api.curve.finance/v1/getPools/all'
+const YVUSD_API_URL = 'https://yvusd-api.yearn.fi/api/aprs'
+const USER_DOCS_V2_URL = 'https://docs.yearn.fi/getting-started/products/yvaults/v2'
+const USER_DOCS_V3_URL = 'https://docs.yearn.fi/getting-started/products/yvaults/v3'
+const DEVELOPER_DOCS_V2_URL = 'https://docs.yearn.fi/developers/building-on-yearn'
+const DEVELOPER_DOCS_V3_URL = 'https://docs.yearn.fi/developers/v3/overview'
+const USER_DOCS_YVUSD_URL = 'https://docs.yearn.fi/getting-started/products/yvaults/yvusd'
+const DEVELOPER_DOCS_YVUSD_URL = 'https://docs.yearn.fi/developers/yvusd/'
+const USER_DOCS_YBOLD_URL = 'https://docs.yearn.fi/getting-started/products/yvaults/yBold'
+const DEVELOPER_DOCS_YBOLD_URL = DEVELOPER_DOCS_V3_URL
+const USER_DOCS_YCRV_URL = 'https://docs.yearn.fi/getting-started/products/ylockers/ycrv/overview'
+const DEVELOPER_DOCS_YCRV_URL = DEVELOPER_DOCS_V2_URL
+const USER_DOCS_YYB_URL = 'https://docs.yearn.fi/getting-started/products/ylockers/yyb/overview'
+const DEVELOPER_DOCS_YYB_URL = DEVELOPER_DOCS_V2_URL
+const INFO_LABEL_CLASS = 'w-full text-sm text-text-secondary md:w-auto md:pr-4'
+const GAMMA_HOSTNAME = 'gamma.xyz'
+
+export function getVaultDocsLinks(
+  vaultAddress: `0x${string}`,
+  tokenSymbol: string,
+  version: string
+): {
+  userDocumentationUrl: string
+  developerDocumentationUrl: string
+} {
+  const normalizedSymbol = tokenSymbol.toLowerCase()
+
+  if (isYvUsdAddress(vaultAddress)) {
+    return {
+      developerDocumentationUrl: DEVELOPER_DOCS_YVUSD_URL,
+      userDocumentationUrl: USER_DOCS_YVUSD_URL
+    }
+  }
+
+  if (vaultAddress === YBOLD_VAULT_ADDRESS) {
+    return {
+      developerDocumentationUrl: DEVELOPER_DOCS_YBOLD_URL,
+      userDocumentationUrl: USER_DOCS_YBOLD_URL
+    }
+  }
+
+  if (normalizedSymbol === 'ycrv') {
+    return {
+      developerDocumentationUrl: DEVELOPER_DOCS_YCRV_URL,
+      userDocumentationUrl: USER_DOCS_YCRV_URL
+    }
+  }
+
+  if (normalizedSymbol === 'yyb') {
+    return {
+      developerDocumentationUrl: DEVELOPER_DOCS_YYB_URL,
+      userDocumentationUrl: USER_DOCS_YYB_URL
+    }
+  }
+
+  if (version.startsWith('3') || version.startsWith('~3')) {
+    return {
+      developerDocumentationUrl: DEVELOPER_DOCS_V3_URL,
+      userDocumentationUrl: USER_DOCS_V3_URL
+    }
+  }
+
+  return {
+    developerDocumentationUrl: DEVELOPER_DOCS_V2_URL,
+    userDocumentationUrl: USER_DOCS_V2_URL
+  }
+}
+
+export function extractCurvePools(payload: unknown): TCurvePoolEntry[] {
+  const poolData = (payload as TCurvePoolsApiResponse | null)?.data?.poolData
+  return Array.isArray(poolData) ? (poolData as TCurvePoolEntry[]) : []
+}
+
+function normalizeCurvePoolAddress(address?: string): string | null {
+  return typeof address === 'string' ? toAddress(address) : null
+}
+
+export function resolveCurveDepositUrl(pools: TCurvePoolEntry[], tokenAddress: string): string {
+  const normalizedTarget = toAddress(tokenAddress)
+  if (isZeroAddress(normalizedTarget)) {
+    return ''
+  }
+
+  for (const pool of pools) {
+    const poolAddress = normalizeCurvePoolAddress(pool.address)
+    const poolLpAddress = normalizeCurvePoolAddress(pool.lpTokenAddress)
+    if (poolAddress !== normalizedTarget && poolLpAddress !== normalizedTarget) {
+      continue
+    }
+
+    const [depositUrl] = pool.poolUrls?.deposit ?? []
+    if (typeof depositUrl === 'string') {
+      return normalizeCurveUrl(depositUrl)
+    }
+  }
+
+  return ''
+}
+
+function isGammaHostname(hostname: string): boolean {
+  const normalizedHostname = hostname.toLowerCase()
+  return normalizedHostname === GAMMA_HOSTNAME || normalizedHostname.endsWith(`.${GAMMA_HOSTNAME}`)
+}
+
+export function resolveGammaSourceUrl(sourceUrl: string): string {
+  const trimmedSourceUrl = sourceUrl.trim()
+  if (!trimmedSourceUrl) {
+    return ''
+  }
+
+  try {
+    const parsedUrl = new URL(trimmedSourceUrl)
+    const hasAllowedProtocol = parsedUrl.protocol === 'https:' || parsedUrl.protocol === 'http:'
+    return hasAllowedProtocol && isGammaHostname(parsedUrl.hostname) ? parsedUrl.toString() : ''
+  } catch {
+    return ''
+  }
+}
+
+function getLiquidityUrl({
+  isVelodrome,
+  isAerodrome,
+  tokenAddress
+}: {
+  isVelodrome: boolean
+  isAerodrome: boolean
+  tokenAddress: string
+}): string {
+  if (isVelodrome) {
+    return `https://velodrome.finance/liquidity?query=${tokenAddress}`
+  }
+
+  if (isAerodrome) {
+    return `https://aerodrome.finance/liquidity?query=${tokenAddress}`
+  }
+
+  return ''
+}
+
+function getDeployedLabel(inceptTime?: number | null): string | null {
+  if (typeof inceptTime !== 'number' || !Number.isFinite(inceptTime) || inceptTime <= 0) {
+    return null
+  }
+
+  const timestampMs = inceptTime > 1_000_000_000_000 ? inceptTime : inceptTime * 1000
+  const deployedDate = new Date(timestampMs)
+  if (Number.isNaN(deployedDate.getTime())) {
+    return null
+  }
+
+  return deployedDate.toLocaleString(undefined, { day: 'numeric', month: 'long', year: 'numeric' })
+}
+
+function AddressLink({
+  address,
+  explorerUrl,
+  label
+}: {
+  address: string
+  explorerUrl: string
+  label: string
+}): ReactElement {
+  return (
+    <div className={'flex flex-col items-start md:flex-row md:items-center'}>
+      <p className={INFO_LABEL_CLASS}>{label}</p>
+      <div className={'flex items-center gap-1 md:flex-1 md:justify-end'}>
+        <a
+          href={`${explorerUrl}/address/${address}`}
+          target={'_blank'}
+          rel={'noopener noreferrer'}
+          className={'flex items-center gap-1 md:text-sm text-text-primary transition-colors hover:text-text-secondary'}
+          suppressHydrationWarning
+        >
+          {truncateHex(address, 4)}
+          <IconLinkOut className={'size-3'} />
+        </a>
+        <button
+          type={'button'}
+          onClick={(): void => copyToClipboard(address)}
+          className={'text-text-secondary transition-colors hover:text-text-primary'}
+          aria-label={`Copy ${label.toLowerCase()}`}
+        >
+          <IconCopy className={'size-3'} />
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function YvUsdPricePerShareRows(): ReactElement {
+  const { unlockedVault, lockedVault } = useYvUsdVaults()
+  const unlockedPricePerShare = getVaultAPR(unlockedVault).pricePerShare.today
+  const lockedPricePerShare = getVaultAPR(lockedVault).pricePerShare.today
+
+  return (
+    <>
+      <div className={'flex flex-col items-start md:flex-row md:items-center'}>
+        <p className={INFO_LABEL_CLASS}>{'Unlocked Price Per Share'}</p>
+        <p className={'md:text-sm text-text-primary md:flex-1 md:text-right'} suppressHydrationWarning>
+          {unlockedPricePerShare}
+        </p>
+      </div>
+      <div className={'flex flex-col items-start md:flex-row md:items-center'}>
+        <p className={INFO_LABEL_CLASS}>{'Locked Price Per Share'}</p>
+        <p className={'md:text-sm text-text-primary md:flex-1 md:text-right'} suppressHydrationWarning>
+          {lockedPricePerShare}
+        </p>
+      </div>
+    </>
+  )
+}
+
+function YvBtcPricePerShareRows(): ReactElement {
+  const { unlockedVault, lockedVault } = useYvBtcVaults()
+  const unlockedPricePerShare = getVaultAPR(unlockedVault).pricePerShare.today
+  const lockedPricePerShare = getVaultAPR(lockedVault).pricePerShare.today
+
+  return (
+    <>
+      <div className={'flex flex-col items-start md:flex-row md:items-center'}>
+        <p className={INFO_LABEL_CLASS}>{'Unlocked Price Per Share'}</p>
+        <p className={'md:text-sm text-text-primary md:flex-1 md:text-right'} suppressHydrationWarning>
+          {unlockedPricePerShare}
+        </p>
+      </div>
+      <div className={'flex flex-col items-start md:flex-row md:items-center'}>
+        <p className={INFO_LABEL_CLASS}>{'Locked Price Per Share'}</p>
+        <p className={'md:text-sm text-text-primary md:flex-1 md:text-right'} suppressHydrationWarning>
+          {lockedPricePerShare}
+        </p>
+      </div>
+    </>
+  )
+}
+
+export function VaultInfoSection({
+  currentVault,
+  inceptTime
+}: {
+  currentVault: TKongVaultInput
+  inceptTime?: number | null
+}): ReactElement {
+  const chainID = getVaultChainID(currentVault)
+  const vaultAddress = getVaultAddress(currentVault)
+  const isYvUsd = isYvUsdAddress(vaultAddress)
+  const isYvBtc = isYvBtcAddress(vaultAddress)
+  const isDualVariantVault = isYvUsd || isYvBtc
+  const token = getVaultToken(currentVault)
+  const staking = getVaultStaking(currentVault)
+  const info = getVaultInfo(currentVault)
+  const apr = getVaultAPR(currentVault)
+  const category = getVaultCategory(currentVault)
+  const blockExplorer =
+    getNetwork(chainID).blockExplorers?.etherscan?.url || getNetwork(chainID).blockExplorers?.default.url
+  const explorerUrl = blockExplorer || ''
+  const sourceUrl = String(info?.sourceURL || '')
+  const sourceUrlLower = sourceUrl.toLowerCase()
+  const isVelodrome = category?.toLowerCase() === 'velodrome' || sourceUrlLower.includes('velodrome.finance')
+  const isAerodrome = category?.toLowerCase() === 'aerodrome' || sourceUrlLower.includes('aerodrome.finance')
+  const isCurveCategory = category?.toLowerCase() === 'curve'
+  const isCurveFactory = isCurveCategory && isAutomatedVault(currentVault)
+  const shouldFetchCurvePools = isCurveFactory && !isZeroAddress(toAddress(token.address))
+  const { data: curvePoolUrl = '' } = useQuery({
+    queryKey: ['curve-pools'],
+    queryFn: async (): Promise<TCurvePoolEntry[]> => {
+      const response = await baseFetcher<unknown>(CURVE_POOLS_ENDPOINT)
+      return extractCurvePools(response)
+    },
+    select: (pools) => resolveCurveDepositUrl(pools, token.address),
+    enabled: shouldFetchCurvePools,
+    staleTime: CURVE_POOLS_CACHE_TTL_MS,
+    gcTime: CURVE_POOLS_CACHE_GC_MS,
+    refetchOnWindowFocus: false
+  })
+  const curveSourceUrl = isCurveCategory && isCurveHostUrl(sourceUrl) ? normalizeCurveUrl(sourceUrl) : ''
+  const resolvedCurvePoolUrl = curvePoolUrl || curveSourceUrl
+  const gammaSourceUrl = resolveGammaSourceUrl(sourceUrl)
+  const liquidityUrl = getLiquidityUrl({ isVelodrome, isAerodrome, tokenAddress: token.address })
+  const powergloveUrl = `https://powerglove.yearn.fi/vaults/${chainID}/${vaultAddress}`
+  const deployedLabel = getDeployedLabel(inceptTime)
+  const vaultVersion = getVaultVersion(currentVault)
+  const { developerDocumentationUrl, userDocumentationUrl } = getVaultDocsLinks(
+    vaultAddress,
+    token.symbol,
+    vaultVersion
+  )
+
+  return (
+    <div className={'grid w-full grid-cols-1 gap-10 p-4 md:p-6 md:pt-0'}>
+      <div className={'col-span-1 grid w-full gap-1'}>
+        {isDualVariantVault ? (
+          <>
+            <AddressLink
+              address={isYvBtc ? YVBTC_UNLOCKED_ADDRESS : YVUSD_UNLOCKED_ADDRESS}
+              explorerUrl={explorerUrl}
+              label={'Unlocked Vault Contract Address'}
+            />
+            <AddressLink
+              address={isYvBtc ? YVBTC_LOCKED_ADDRESS : YVUSD_LOCKED_ADDRESS}
+              explorerUrl={explorerUrl}
+              label={'Locked Vault Contract Address'}
+            />
+          </>
+        ) : (
+          <AddressLink address={vaultAddress} explorerUrl={explorerUrl} label={'Vault Contract Address'} />
+        )}
+
+        <AddressLink address={token.address} explorerUrl={explorerUrl} label={'Token Contract Address'} />
+
+        {staking.available ? (
+          <AddressLink address={staking.address} explorerUrl={explorerUrl} label={'Staking Contract Address'} />
+        ) : null}
+
+        {resolvedCurvePoolUrl ? (
+          <div className={'flex flex-col items-start md:flex-row md:items-center'}>
+            <p className={INFO_LABEL_CLASS}>{'Curve Pool URL'}</p>
+            <div className={'flex items-center gap-1 md:flex-1 md:justify-end'}>
+              <a
+                href={resolvedCurvePoolUrl}
+                target={'_blank'}
+                rel={'noopener noreferrer'}
+                className={
+                  'flex items-center gap-1 md:text-sm text-text-primary transition-colors hover:text-text-secondary'
+                }
+                suppressHydrationWarning
+              >
+                {'Liquidity Pool Info'}
+                <IconLinkOut className={'size-3'} />
+              </a>
+            </div>
+          </div>
+        ) : null}
+
+        {gammaSourceUrl ? (
+          <div className={'flex flex-col items-start md:flex-row md:items-center'}>
+            <p className={INFO_LABEL_CLASS}>{'Gamma Pair'}</p>
+            <div className={'flex md:flex-1 md:justify-end'}>
+              <a
+                href={gammaSourceUrl}
+                target={'_blank'}
+                rel={'noopener noreferrer'}
+                className={'whitespace-nowrap md:text-sm text-text-primary hover:underline'}
+                suppressHydrationWarning
+              >
+                {gammaSourceUrl}
+              </a>
+            </div>
+          </div>
+        ) : null}
+
+        {liquidityUrl ? (
+          <div className={'flex flex-col items-start md:flex-row md:items-center'}>
+            <p className={INFO_LABEL_CLASS}>{isVelodrome ? 'Velodrome Pool URL' : 'Aerodrome Pool URL'}</p>
+            <div className={'flex items-center gap-1 md:flex-1 md:justify-end'}>
+              <a
+                href={liquidityUrl}
+                target={'_blank'}
+                rel={'noopener noreferrer'}
+                className={
+                  'flex items-center gap-1 md:text-sm text-text-primary transition-colors hover:text-text-secondary'
+                }
+                suppressHydrationWarning
+              >
+                {isVelodrome ? 'Velodrome ' : 'Aerodrome '}
+                {'Liquidity Pool Info'}
+                <IconLinkOut className={'size-3'} />
+              </a>
+            </div>
+          </div>
+        ) : null}
+
+        {isYvUsd ? (
+          <YvUsdPricePerShareRows />
+        ) : isYvBtc ? (
+          <YvBtcPricePerShareRows />
+        ) : (
+          <div className={'flex flex-col items-start md:flex-row md:items-center'}>
+            <p className={INFO_LABEL_CLASS}>{'Current Price Per Share'}</p>
+            <p className={'md:text-sm text-text-primary md:flex-1 md:text-right'} suppressHydrationWarning>
+              {apr.pricePerShare.today}
+            </p>
+          </div>
+        )}
+
+        {deployedLabel ? (
+          <div className={'flex flex-col items-start md:flex-row md:items-center'}>
+            <p className={INFO_LABEL_CLASS}>{'Deployed on'}</p>
+            <p className={'md:text-sm text-text-primary md:flex-1 md:text-right'} suppressHydrationWarning>
+              {deployedLabel}
+            </p>
+          </div>
+        ) : null}
+
+        <div className={'flex flex-col items-start md:flex-row md:items-center'}>
+          <p className={INFO_LABEL_CLASS}>{'User Documentation'}</p>
+          <div className={'flex items-center gap-1 md:flex-1 md:justify-end'}>
+            <a
+              href={userDocumentationUrl}
+              target={'_blank'}
+              rel={'noopener noreferrer'}
+              className={
+                'flex items-center gap-1 md:text-sm text-text-primary transition-colors hover:text-text-secondary'
+              }
+              suppressHydrationWarning
+            >
+              {'View Documentation'}
+              <IconLinkOut className={'size-3'} />
+            </a>
+          </div>
+        </div>
+
+        <div className={'flex flex-col items-start md:flex-row md:items-center'}>
+          <p className={INFO_LABEL_CLASS}>{'Developer Documentation'}</p>
+          <div className={'flex items-center gap-1 md:flex-1 md:justify-end'}>
+            <a
+              href={developerDocumentationUrl}
+              target={'_blank'}
+              rel={'noopener noreferrer'}
+              className={
+                'flex items-center gap-1 md:text-sm text-text-primary transition-colors hover:text-text-secondary'
+              }
+              suppressHydrationWarning
+            >
+              {'View Documentation'}
+              <IconLinkOut className={'size-3'} />
+            </a>
+          </div>
+        </div>
+
+        <div className={'flex flex-col items-start md:flex-row md:items-center'}>
+          <p className={INFO_LABEL_CLASS}>{'Powerglove Analytics Page'}</p>
+          <div className={'flex items-center gap-1 md:flex-1 md:justify-end'}>
+            <a
+              href={powergloveUrl}
+              target={'_blank'}
+              rel={'noopener noreferrer'}
+              className={
+                'flex items-center gap-1 md:text-sm text-text-primary transition-colors hover:text-text-secondary'
+              }
+              suppressHydrationWarning
+            >
+              {'View Page'}
+              <IconLinkOut className={'size-3'} />
+            </a>
+          </div>
+        </div>
+
+        {isYvUsd ? (
+          <div className={'flex flex-col items-start md:flex-row md:items-center'}>
+            <p className={INFO_LABEL_CLASS}>{'yvUSD API'}</p>
+            <div className={'flex items-center gap-1 md:flex-1 md:justify-end'}>
+              <a
+                href={YVUSD_API_URL}
+                target={'_blank'}
+                rel={'noopener noreferrer'}
+                className={
+                  'flex items-center gap-1 md:text-sm text-text-primary transition-colors hover:text-text-secondary'
+                }
+                suppressHydrationWarning
+              >
+                {'View API Data'}
+                <IconLinkOut className={'size-3'} />
+              </a>
+            </div>
+          </div>
+        ) : null}
+
+        <div className={'flex flex-col items-start md:flex-row md:items-center'}>
+          <p className={INFO_LABEL_CLASS}>{'Vault Snapshot Data'}</p>
+          <div className={'flex items-center gap-1 md:flex-1 md:justify-end'}>
+            <a
+              href={`${KONG_REST_BASE}/snapshot/${chainID}/${vaultAddress}`}
+              target={'_blank'}
+              rel={'noopener noreferrer'}
+              className={
+                'flex items-center gap-1 md:text-sm text-text-primary transition-colors hover:text-text-secondary'
+              }
+              suppressHydrationWarning
+            >
+              {'View API Data'}
+              <IconLinkOut className={'size-3'} />
+            </a>
+          </div>
+        </div>
+      </div>
+    </div>
+  )
+}

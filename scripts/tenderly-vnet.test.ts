@@ -42,11 +42,13 @@ describe('tenderly-vnet console safety', () => {
       details: connectionDetails
     })
 
-    expect(envFragment).toContain('VITE_TENDERLY_MODE=true')
-    expect(envFragment).toContain('VITE_TENDERLY_CHAIN_ID_FOR_1=694201')
-    expect(envFragment).toContain('VITE_TENDERLY_RPC_URI_FOR_1=https://predictable.public.rpc/stable-path')
+    expect(envFragment).toContain('NEXT_PUBLIC_TENDERLY_MODE=true')
+    expect(envFragment).toContain('NEXT_PUBLIC_TENDERLY_CHAIN_ID_FOR_1=694201')
+    expect(envFragment).toContain('NEXT_PUBLIC_TENDERLY_RPC_URI_FOR_1=https://predictable.public.rpc/stable-path')
     expect(envFragment).toContain('TENDERLY_ADMIN_RPC_URI_FOR_1=https://admin.rpc/secret-path')
-    expect(envFragment).toContain('VITE_TENDERLY_EXPLORER_URI_FOR_1=https://explorer.tenderly.public/virtual-mainnet')
+    expect(envFragment).toContain(
+      'NEXT_PUBLIC_TENDERLY_EXPLORER_URI_FOR_1=https://explorer.tenderly.public/virtual-mainnet'
+    )
   })
 
   it('extracts explorer urls from explorer-specific response fields without mistaking public rpc urls for explorers', () => {

@@ -1,0 +1,55 @@
+import { JsonLd } from '@shared/components/JsonLd'
+import { HydrationBoundary } from '@tanstack/react-query'
+import type { Metadata } from 'next'
+import { notFound } from 'next/navigation'
+import type { ReactElement } from 'react'
+import { getVaultDetailPageDehydratedState } from '@/server/ssr/publicDataHydration'
+import {
+  buildVaultMetadataFromInput,
+  buildVaultStructuredDataFromInput,
+  fetchVaultMetadataSnapshot,
+  yearnOrganizationJsonLd
+} from '../../../../metadata'
+import VaultsDetailPageClient from './page-client'
+
+export const revalidate = 21600
+
+type TVaultPageProps = {
+  params: Promise<{
+    chainID: string
+    address: string
+  }>
+}
+
+export async function generateMetadata({ params }: TVaultPageProps): Promise<Metadata> {
+  const { chainID, address } = await params
+  const snapshot = await fetchVaultMetadataSnapshot(chainID, address)
+  if (snapshot?.meta?.isHidden) {
+    notFound()
+  }
+  return buildVaultMetadataFromInput({ chainID, address, snapshot })
+}
+
+export default async function Page({ params }: TVaultPageProps): Promise<ReactElement> {
+  const { chainID, address } = await params
+  const snapshot = await fetchVaultMetadataSnapshot(chainID, address)
+  if (snapshot?.meta?.isHidden) {
+    notFound()
+  }
+  const structuredData = buildVaultStructuredDataFromInput({ chainID, address, snapshot })
+  const dehydratedState = await getVaultDetailPageDehydratedState(chainID, address)
+
+  return (
+    <>
+      {structuredData ? (
+        <>
+          <JsonLd schema={yearnOrganizationJsonLd} />
+          <JsonLd schema={structuredData} />
+        </>
+      ) : null}
+      <HydrationBoundary state={dehydratedState}>
+        <VaultsDetailPageClient />
+      </HydrationBoundary>
+    </>
+  )
+}

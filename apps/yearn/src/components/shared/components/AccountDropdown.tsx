@@ -1,0 +1,397 @@
+import { setThemePreference, useThemePreference } from '@hooks/useThemePreference'
+import { useAppSettings } from '@pages/vaults/contexts/useAppSettings'
+import { WalletAccountValue } from '@shared/components/WalletAccountValue'
+import { yToast } from '@shared/components/yToast'
+import { useNotifications } from '@shared/contexts/useNotifications'
+import { useWeb3 } from '@shared/contexts/useWeb3'
+import { useYearn } from '@shared/contexts/useYearn'
+import { IconArrowLeft } from '@shared/icons/IconArrowLeft'
+import { IconArrowRight } from '@shared/icons/IconArrowRight'
+import { IconChevron } from '@shared/icons/IconChevron'
+import { IconCopy } from '@shared/icons/IconCopy'
+import { IconMoon } from '@shared/icons/IconMoon'
+import { IconPower } from '@shared/icons/IconPower'
+import { IconSettings } from '@shared/icons/IconSettings'
+import { IconSun } from '@shared/icons/IconSun'
+import { LogoYearn } from '@shared/icons/LogoYearn'
+import { cl } from '@shared/utils'
+import { truncateHex } from '@shared/utils/tools.address'
+import { WalletSurface } from '@yearn/wallet-ui'
+import { useRouter } from 'next/navigation'
+import type { ReactElement } from 'react'
+import { useCallback, useMemo, useState } from 'react'
+
+type TAccountDropdownProps = {
+  isOpen: boolean
+  onClose: () => void
+}
+
+type TView = 'account' | 'settings'
+
+function AccountView({ onSettingsClick, onClose }: { onSettingsClick: () => void; onClose: () => void }): ReactElement {
+  const { address, ens, clusters, onDesactivate } = useWeb3()
+  const { cachedEntries } = useNotifications()
+  const router = useRouter()
+  const themePreference = useThemePreference()
+  const isDarkTheme = themePreference !== 'light'
+  const { toast } = yToast()
+
+  const displayName = useMemo(() => {
+    if (ens) return ens
+    if (clusters?.name) return clusters.name
+    if (address) return truncateHex(address, 4)
+    return 'Not connected'
+  }, [address, ens, clusters])
+
+  const handleCopyAddress = useCallback(async () => {
+    if (!address) return
+    try {
+      await navigator.clipboard.writeText(address)
+      toast({ content: 'Address copied', type: 'success' })
+    } catch {
+      toast({ content: 'Unable to copy address', type: 'error' })
+    }
+  }, [address, toast])
+
+  const recentActivity = useMemo(() => {
+    return cachedEntries.toSorted((a, b) => (b.timeFinished ?? 0) - (a.timeFinished ?? 0)).slice(0, 3)
+  }, [cachedEntries])
+
+  const handleViewPortfolio = useCallback(() => {
+    router.push('/portfolio')
+    onClose()
+  }, [router, onClose])
+
+  const handleDisconnect = useCallback(() => {
+    onDesactivate()
+    onClose()
+  }, [onDesactivate, onClose])
+
+  const handleViewAllActivity = useCallback(() => {
+    router.push('/portfolio?tab=activity')
+    onClose()
+  }, [router, onClose])
+
+  function formatDate(timestamp?: number): string {
+    if (!timestamp) return ''
+    const date = new Date(timestamp * 1000)
+    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
+  }
+
+  function getStatusColor(status: string): string {
+    switch (status) {
+      case 'success':
+        return 'text-[#0C9000]'
+      case 'error':
+        return 'text-red'
+      case 'pending':
+        return 'text-primary'
+      default:
+        return 'text-text-secondary'
+    }
+  }
+
+  const iconButtonClass = cl(
+    'flex size-7 items-center justify-center rounded-full transition-colors',
+    isDarkTheme
+      ? 'text-text-secondary hover:bg-surface-tertiary hover:text-text-primary'
+      : 'text-neutral-500 hover:bg-neutral-200 hover:text-neutral-700'
+  )
+
+  return (
+    <div className={'flex flex-col'}>
+      <div className={cl('rounded-2xl p-4', isDarkTheme ? 'bg-surface-secondary' : 'bg-neutral-100')}>
+        <div className={'mb-4 flex items-start justify-between'}>
+          <div className={'flex flex-col'}>
+            <button
+              aria-label="Copy wallet address"
+              title={address}
+              onClick={handleCopyAddress}
+              disabled={!address}
+              className={
+                'group flex items-center gap-1.5 text-sm font-medium text-text-primary hover:text-primary transition-colors disabled:cursor-default disabled:hover:text-text-primary'
+              }
+            >
+              <span>{displayName}</span>
+              {address && <IconCopy className={'size-3.5 opacity-50 group-hover:opacity-100 transition-opacity'} />}
+            </button>
+            <WalletAccountValue />
+          </div>
+          <div className={'flex items-center gap-1'}>
+            <button
+              id="yearn-wallet-settings"
+              aria-label="Wallet settings"
+              onClick={onSettingsClick}
+              className={iconButtonClass}
+            >
+              <IconSettings className={'size-4'} />
+            </button>
+            <button onClick={handleDisconnect} aria-label="Disconnect wallet" className={iconButtonClass}>
+              <IconPower className={'size-4'} />
+            </button>
+          </div>
+        </div>
+
+        <button
+          onClick={handleViewPortfolio}
+          className={cl(
+            'flex w-full items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-medium transition-colors',
+            isDarkTheme
+              ? 'border-border bg-transparent text-text-primary hover:bg-surface-tertiary'
+              : 'border-neutral-200 bg-white text-neutral-900 hover:bg-neutral-50'
+          )}
+        >
+          {'View portfolio'}
+          <IconArrowRight className={'size-4'} />
+        </button>
+      </div>
+
+      <div className={'mt-4'}>
+        <h3 className={'mb-3 text-sm font-semibold text-text-primary'}>{'Recent activity'}</h3>
+        {recentActivity.length > 0 ? (
+          <div className={'flex flex-col gap-3'}>
+            {recentActivity.map((activity) => (
+              <div key={activity.id} className={'flex items-center justify-between'}>
+                <div className={'flex items-center gap-3'}>
+                  <div
+                    className={cl(
+                      'flex size-9 items-center justify-center rounded-full',
+                      isDarkTheme ? 'bg-surface-secondary' : 'bg-neutral-100'
+                    )}
+                  >
+                    <LogoYearn className={'size-5'} front={'text-white'} back={'text-primary'} />
+                  </div>
+                  <div>
+                    <p className={cl('text-sm font-medium capitalize', getStatusColor(activity.status))}>
+                      {activity.type}
+                    </p>
+                    <p className={'text-xs text-text-secondary'}>
+                      {activity.amount} {activity.fromTokenName ?? ''}
+                    </p>
+                  </div>
+                </div>
+                <span className={'text-xs text-text-secondary'}>{formatDate(activity.timeFinished)}</span>
+              </div>
+            ))}
+          </div>
+        ) : (
+          <p className={'text-sm text-text-secondary'}>{'No recent activity'}</p>
+        )}
+
+        {recentActivity.length > 0 && (
+          <button
+            onClick={handleViewAllActivity}
+            className={cl(
+              'mt-3 flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+              isDarkTheme
+                ? 'text-text-secondary hover:bg-surface-secondary hover:text-text-primary'
+                : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
+            )}
+          >
+            {'More transactions'}
+            <IconArrowRight className={'size-4'} />
+          </button>
+        )}
+      </div>
+    </div>
+  )
+}
+
+const DARK_VARIANT_LABELS: Record<string, string> = {
+  'soft-dark': 'Soft Dark',
+  'blue-dark': 'Blue Dark',
+  midnight: 'Midnight'
+}
+
+function SettingsView({ onBack }: { onBack: () => void }): ReactElement {
+  const themePreference = useThemePreference()
+  const isDarkTheme = themePreference !== 'light'
+  const { mutateVaultList, enableVaultListFetch, isLoadingVaultList } = useYearn()
+  const { shouldHideDust, onSwitchHideDust } = useAppSettings()
+  const { toast } = yToast()
+  const [isAdvancedOpen, setIsAdvancedOpen] = useState(false)
+  const [isRefreshingVaults, setIsRefreshingVaults] = useState(false)
+
+  const backButtonClass = cl(
+    'flex size-7 items-center justify-center rounded-full transition-colors',
+    isDarkTheme
+      ? 'text-text-secondary hover:bg-surface-secondary hover:text-text-primary'
+      : 'text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700'
+  )
+
+  const menuItemClass = cl(
+    'flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+    isDarkTheme
+      ? 'text-text-secondary hover:bg-surface-secondary hover:text-text-primary'
+      : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
+  )
+
+  const handleRefreshVaultList = useCallback(async () => {
+    enableVaultListFetch()
+    setIsRefreshingVaults(true)
+    try {
+      await mutateVaultList()
+      toast({ content: 'Vault list refreshed', type: 'success' })
+    } catch (error) {
+      console.error('[AccountDropdown] Failed to refresh vault list', error)
+      toast({ content: 'Failed to refresh vault list', type: 'error' })
+    } finally {
+      setIsRefreshingVaults(false)
+    }
+  }, [enableVaultListFetch, mutateVaultList, toast])
+
+  function getVariantButtonClass(variant: string): string {
+    if (themePreference === variant) {
+      return 'flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors bg-primary/10 text-primary'
+    }
+    return menuItemClass
+  }
+
+  return (
+    <div className={'flex flex-col'}>
+      <div className={'mb-4 flex items-center'}>
+        <button
+          id="yearn-wallet-settings-back"
+          aria-label="Back to account"
+          onClick={onBack}
+          className={backButtonClass}
+        >
+          <IconArrowLeft className={'size-4'} />
+        </button>
+        <h2 className={'flex-1 text-center text-base font-semibold text-text-primary'}>{'Settings'}</h2>
+        <div className={'w-7'} />
+      </div>
+
+      <div className={'mb-4 flex items-center justify-between'}>
+        <span className={'text-sm font-medium text-text-primary'}>{'Theme'}</span>
+        <div className={cl('flex rounded-full p-0.5', isDarkTheme ? 'bg-surface-secondary' : 'bg-neutral-100')}>
+          <button
+            aria-label="Use light theme"
+            onClick={() => setThemePreference('light')}
+            className={cl(
+              'flex items-center justify-center rounded-full px-3 py-1 text-sm font-medium transition-colors',
+              !isDarkTheme ? 'bg-surface text-text-primary shadow-sm' : 'text-text-secondary hover:text-text-primary'
+            )}
+          >
+            <IconSun className={'size-4'} />
+          </button>
+          <button
+            aria-label="Use dark theme"
+            onClick={() => setThemePreference(themePreference === 'light' ? 'soft-dark' : themePreference)}
+            className={cl(
+              'flex items-center justify-center rounded-full px-3 py-1 text-sm font-medium transition-colors',
+              isDarkTheme ? 'bg-surface text-text-primary shadow-sm' : 'text-text-secondary hover:text-text-primary'
+            )}
+          >
+            <IconMoon className={'size-4'} />
+          </button>
+        </div>
+      </div>
+
+      {isDarkTheme && (
+        <div className={'mb-4'}>
+          <span className={'mb-2 block text-xs font-medium text-text-secondary'}>{'Dark variant'}</span>
+          <div className={'flex flex-col gap-1'}>
+            {(['soft-dark', 'blue-dark', 'midnight'] as const).map((variant) => (
+              <button
+                key={variant}
+                onClick={() => setThemePreference(variant)}
+                className={getVariantButtonClass(variant)}
+              >
+                <span>{DARK_VARIANT_LABELS[variant]}</span>
+                {themePreference === variant && <IconChevron className={'size-4 -rotate-90'} />}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
+      <button
+        className={menuItemClass}
+        onClick={() => setIsAdvancedOpen((prev) => !prev)}
+        aria-expanded={isAdvancedOpen}
+        aria-controls={'account-dropdown-advanced'}
+      >
+        <span>{'Advanced'}</span>
+        <IconChevron className={cl('size-4 transition-transform', isAdvancedOpen ? 'rotate-0' : '-rotate-90')} />
+      </button>
+      {isAdvancedOpen && (
+        <div
+          id={'account-dropdown-advanced'}
+          className={cl(
+            'mt-2 rounded-lg border p-2',
+            isDarkTheme ? 'border-border bg-surface-secondary' : 'border-neutral-200 bg-neutral-50'
+          )}
+        >
+          <div className={cl(menuItemClass, 'w-full justify-between')}>
+            <span>{'Show dust'}</span>
+            <button
+              type={'button'}
+              role={'switch'}
+              aria-checked={!shouldHideDust}
+              aria-label={!shouldHideDust ? 'Hide dust positions' : 'Show dust positions'}
+              onClick={onSwitchHideDust}
+              className={cl(
+                'relative inline-flex h-5 w-9 shrink-0 items-center rounded-full border transition-colors',
+                !shouldHideDust ? 'border-primary bg-primary/20' : 'border-border bg-surface'
+              )}
+            >
+              <span
+                className={cl(
+                  'block size-3 rounded-full transition-transform',
+                  !shouldHideDust ? 'translate-x-[18px] bg-primary' : 'translate-x-[3px] bg-text-secondary'
+                )}
+              />
+            </button>
+          </div>
+          <button
+            className={cl(menuItemClass, 'w-full justify-between')}
+            onClick={handleRefreshVaultList}
+            disabled={isRefreshingVaults || isLoadingVaultList}
+          >
+            <span>{'Refresh vault list'}</span>
+            <span className={'text-xs text-text-secondary'}>
+              {isRefreshingVaults || isLoadingVaultList ? 'Refreshing…' : 'Run'}
+            </span>
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
+function AccountContent({ onClose }: { onClose: () => void }): ReactElement {
+  const [view, setView] = useState<TView>('account')
+  const showView = (nextView: TView): void => {
+    setView(nextView)
+    requestAnimationFrame(() =>
+      document.getElementById(nextView === 'settings' ? 'yearn-wallet-settings-back' : 'yearn-wallet-settings')?.focus()
+    )
+  }
+  return (
+    <div>
+      {view === 'account' ? (
+        <AccountView onSettingsClick={() => showView('settings')} onClose={onClose} />
+      ) : (
+        <SettingsView onBack={() => showView('account')} />
+      )}
+    </div>
+  )
+}
+
+export function AccountDropdown({ isOpen, onClose }: TAccountDropdownProps): ReactElement {
+  const { address, isActive } = useWeb3()
+  return (
+    <WalletSurface
+      isOpen={isOpen && isActive}
+      onClose={onClose}
+      dialogId="yearn-wallet-account"
+      title="Wallet"
+      triggerSelector="[data-wallet-account-trigger], [data-mobile-nav-trigger]"
+      desktopTop="calc(var(--header-height) + 0.5rem)"
+      desktopRight="max(1rem,calc((100vw - 1232px)/2 + 1rem))"
+    >
+      {isOpen && <AccountContent key={address} onClose={onClose} />}
+    </WalletSurface>
+  )
+}

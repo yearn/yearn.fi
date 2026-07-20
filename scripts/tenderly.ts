@@ -1,7 +1,7 @@
 /// <reference types="node" />
 
-import { fileURLToPath } from 'node:url'
 import { getAddress } from 'viem'
+import { buildTenderlyRevertResponse } from '../apps/yearn/src/config/tenderlyServer'
 
 type TParsedCliArgs = {
   command?: string
@@ -232,6 +232,10 @@ function formatResult(result: unknown): string {
   return JSON.stringify(result, null, 2)
 }
 
+export function assertTenderlyRevertSucceeded(result: unknown, snapshotId: string): void {
+  buildTenderlyRevertResponse(result, snapshotId)
+}
+
 async function runCommand(parsedArgs: TParsedCliArgs): Promise<void> {
   const { command, flags } = parsedArgs
   const canonicalChainId = getCanonicalChainId(flags)
@@ -288,6 +292,7 @@ async function runCommand(parsedArgs: TParsedCliArgs): Promise<void> {
     case 'revert': {
       const snapshotId = requireFlag(flags, 'id')
       const result = await callAdminRpc(canonicalChainId, 'evm_revert', [snapshotId])
+      assertTenderlyRevertSucceeded(result, snapshotId)
       console.log(`Revert result on canonical chain ${canonicalChainId}: ${formatResult(result)}`)
       return
     }
@@ -343,7 +348,7 @@ async function main(): Promise<void> {
   await runCommand(parsedArgs)
 }
 
-if (process.argv[1] === fileURLToPath(import.meta.url)) {
+if (process.argv[1]?.endsWith('/scripts/tenderly.ts') || process.argv[1]?.endsWith('\\scripts\\tenderly.ts')) {
   void main().catch((error: unknown) => {
     const message = error instanceof Error ? error.message : String(error)
     console.error(message)

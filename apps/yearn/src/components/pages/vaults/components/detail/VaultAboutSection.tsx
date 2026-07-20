@@ -1,0 +1,365 @@
+import {
+  getVaultAddress,
+  getVaultAPR,
+  getVaultCategory,
+  getVaultChainID,
+  getVaultDescription,
+  getVaultKind,
+  getVaultSymbol,
+  getVaultToken,
+  type TKongVaultInput
+} from '@pages/vaults/domain/kongVaultSelectors'
+import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'
+import {
+  getCategoryDescription,
+  getChainDescription,
+  getChainWebsite,
+  getKindDescription,
+  getProductTypeDescription
+} from '@pages/vaults/utils/vaultTagCopy'
+import { Markdown } from '@shared/components/Markdown'
+import { TokenLogo } from '@shared/components/TokenLogo'
+import { IconChevron } from '@shared/icons/IconChevron'
+import { IconCopy } from '@shared/icons/IconCopy'
+import { IconLinkOut } from '@shared/icons/IconLinkOut'
+import { cl, formatPercent, truncateHex } from '@shared/utils'
+import { copyToClipboard } from '@shared/utils/helpers'
+import { getNetwork } from '@shared/utils/wagmi/utils'
+import { type ReactElement, type ReactNode, useState } from 'react'
+import { env } from '@/env'
+
+export type TVaultAddressItem = {
+  address: string
+  label: string
+}
+
+type TInlineHeading = {
+  label: string
+  value?: ReactNode
+  icon?: ReactNode
+  suffix?: ReactNode
+}
+
+function InlineHeading({ label, value, icon, suffix }: TInlineHeading): ReactElement {
+  const hasValue = value !== null && value !== undefined && value !== ''
+
+  return (
+    <div className={'flex flex-wrap items-center gap-2 text-sm'}>
+      <span className={'sr-only'}>{`${label}:`}</span>
+      <span className={'flex items-center gap-1 font-normal text-text-primary'}>
+        {hasValue ? <span>{value}</span> : null}
+        {icon ? <span className={'flex size-4 items-center justify-center'}>{icon}</span> : null}
+        {suffix ? <span className={'flex size-3 items-center justify-center'}>{suffix}</span> : null}
+      </span>
+    </div>
+  )
+}
+
+type TExpandableInfoItem = {
+  label: string
+  value?: ReactNode
+  children: ReactNode
+  className?: string
+  icon?: ReactNode
+  isOpenByDefault?: boolean
+}
+
+function ExpandableInfoItem({
+  label,
+  value,
+  children,
+  className,
+  icon,
+  isOpenByDefault
+}: TExpandableInfoItem): ReactElement {
+  const [isOpen, setIsOpen] = useState(Boolean(isOpenByDefault))
+
+  return (
+    <details
+      className={className}
+      open={isOpen}
+      onToggle={(event): void => {
+        setIsOpen(event.currentTarget.open)
+      }}
+    >
+      <summary
+        className={
+          '-ml-2 w-[calc(100%+0.5rem)] cursor-pointer list-none rounded-lg px-2 py-2 text-left transition-colors hover:bg-surface-secondary/80 [&::-webkit-details-marker]:hidden'
+        }
+      >
+        <InlineHeading
+          label={label}
+          value={value}
+          icon={icon}
+          suffix={
+            <IconChevron
+              className={'text-text-secondary transition-transform duration-200'}
+              size={12}
+              direction={isOpen ? 'up' : 'down'}
+            />
+          }
+        />
+      </summary>
+      <div className={'px-2 mb-2 text-sm text-text-secondary'}>{children}</div>
+    </details>
+  )
+}
+
+function AddressLink({
+  address,
+  explorerBase,
+  label
+}: {
+  address: string
+  explorerBase: string
+  label: string
+}): ReactElement {
+  const explorerHref = `${explorerBase}/address/${address}`
+
+  return (
+    <div className={'flex flex-col items-start md:flex-row md:items-center'}>
+      <p className={'w-full text-sm text-text-secondary md:w-auto md:pr-4'}>{label}</p>
+      <div className={'flex items-center gap-1 md:flex-1 md:justify-end'}>
+        {explorerBase ? (
+          <a
+            href={explorerHref}
+            target={'_blank'}
+            rel={'noopener noreferrer'}
+            className={
+              'flex items-center gap-1 md:text-sm text-text-primary transition-colors hover:text-text-secondary'
+            }
+            suppressHydrationWarning
+          >
+            {truncateHex(address, 4)}
+            <IconLinkOut className={'size-3'} />
+          </a>
+        ) : (
+          <span className={'md:text-sm text-text-primary'}>{truncateHex(address, 4)}</span>
+        )}
+        <button
+          type={'button'}
+          onClick={(): void => copyToClipboard(address)}
+          className={'text-text-secondary transition-colors hover:text-text-primary'}
+          aria-label={`Copy ${label.toLowerCase()}`}
+        >
+          <IconCopy className={'size-3'} />
+        </button>
+      </div>
+    </div>
+  )
+}
+
+function VaultAddressesInfo({
+  chainID,
+  addresses
+}: {
+  chainID: number
+  addresses: TVaultAddressItem[]
+}): ReactElement | null {
+  const explorerBase = getNetwork(chainID).defaultBlockExplorer
+
+  if (addresses.length === 0) {
+    return null
+  }
+
+  return (
+    <ExpandableInfoItem label={'Addresses'} value={'Addresses'}>
+      <div className={'flex flex-col gap-2'}>
+        {addresses.map((item) => (
+          <AddressLink key={item.address} address={item.address} explorerBase={explorerBase} label={item.label} />
+        ))}
+      </div>
+    </ExpandableInfoItem>
+  )
+}
+
+export function VaultAboutSection({
+  currentVault,
+  className,
+  vaultAddresses = [],
+  additionalFeaturesContent,
+  showKindTag = true,
+  showVaultAddress = false
+}: {
+  currentVault: TKongVaultInput
+  className?: string
+  vaultAddresses?: TVaultAddressItem[]
+  showKindTag?: boolean
+  showVaultAddress?: boolean
+  additionalFeaturesContent?: ReactNode
+  showHiddenTag?: boolean
+  isHidden?: boolean
+}): ReactElement {
+  const token = getVaultToken(currentVault)
+  const apr = getVaultAPR(currentVault)
+  const chainID = getVaultChainID(currentVault)
+  const vaultAddress = getVaultAddress(currentVault)
+  const vaultKind = getVaultKind(currentVault)
+  const vaultCategory = getVaultCategory(currentVault)
+  const vaultSymbol = getVaultSymbol(currentVault)
+  const description = getVaultDescription(currentVault)
+  const chainName = getNetwork(chainID).name
+  const chainLogoSrc = `${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/chains/${chainID}/logo-32.png`
+  const listKind = deriveListKind(currentVault)
+  const isAllocatorVault = listKind === 'allocator' || listKind === 'strategy'
+  const isLegacyVault = listKind === 'legacy'
+  const productTypeLabel = isAllocatorVault ? 'Single Asset' : isLegacyVault ? 'Legacy' : 'LP Token'
+  const baseKindType: 'multi' | 'single' | undefined =
+    vaultKind === 'Multi Strategy' ? 'multi' : vaultKind === 'Single Strategy' ? 'single' : undefined
+  const fallbackKindType: 'multi' | 'single' | undefined =
+    listKind === 'allocator' ? 'multi' : listKind === 'strategy' ? 'single' : undefined
+  const kindType = baseKindType ?? fallbackKindType
+  const kindLabel: string | undefined =
+    kindType === 'multi' ? 'Allocator' : kindType === 'single' ? 'Strategy' : vaultKind
+  const shouldShowKind = showKindTag && Boolean(kindLabel)
+  const vaultTypeLabel = [productTypeLabel, shouldShowKind ? kindLabel : null].filter(Boolean).join(' | ')
+  const chainDescription = getChainDescription(chainID)
+  const chainWebsite = getChainWebsite(chainID) ?? ''
+  const hasChainWebsite = Boolean(chainWebsite)
+  const assetTypeLabel = vaultCategory ?? 'Not specified'
+  const assetTypeDescription = getCategoryDescription(vaultCategory) ?? 'No asset category provided.'
+  const productTypeDescription = getProductTypeDescription(listKind)
+  const vaultKindDescription = shouldShowKind ? getKindDescription(kindType, kindLabel) : null
+  const managementFee = formatPercent((apr.fees.management || 0) * 100, 0, 2)
+  const performanceFee = formatPercent((apr.fees.performance || 0) * 100, 0, 2)
+  const feesSummary = (
+    <>
+      <strong className={'font-bold'}>{managementFee}</strong>
+      {' Management Fee | '}
+      <strong className={'font-bold'}>{performanceFee}</strong>
+      {' Performance Fee'}
+    </>
+  )
+  const chainIcon = <TokenLogo src={chainLogoSrc} tokenSymbol={chainName} width={16} height={16} />
+  const explorerBase = getNetwork(chainID).defaultBlockExplorer
+  const explorerHref = explorerBase ? `${explorerBase}/address/${vaultAddress}` : ''
+
+  const rawDescription = description?.trim() ? description : token.description?.trim() ? token.description : ''
+  const descriptionText = rawDescription ? rawDescription.replaceAll('{{token}}', vaultSymbol) : ''
+
+  return (
+    <div className={cl('p-4 md:p-6 md:pt-0', className)} data-tour="vaults-row-expanded-info">
+      <div className={'flex flex-col gap-2'}>
+        <div className={'text-sm text-text-secondary'}>
+          <div className="">
+            {rawDescription ? (
+              <Markdown content={descriptionText} />
+            ) : (
+              <div>
+                Sorry, we don't have a description for this vault right now. To learn more about how Yearn Vaults work,
+                check out our{' '}
+                <a
+                  href="https://docs.yearn.fi"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-text-primary underline"
+                >
+                  docs
+                </a>
+                , or if you want to learn more about this vault, head to our{' '}
+                <a
+                  href="https://discord.gg/yearn"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-text-primary underline"
+                >
+                  discord
+                </a>{' '}
+                or{' '}
+                <a
+                  href="https://t.me/yearnfinance"
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="text-text-primary underline"
+                >
+                  telegram
+                </a>{' '}
+                and ask.
+              </div>
+            )}
+          </div>
+          {showVaultAddress ? (
+            <div className={'flex flex-wrap items-center py-3 gap-2 text-sm border-b border-border'}>
+              {explorerHref ? (
+                <a
+                  href={explorerHref}
+                  target={'_blank'}
+                  rel={'noopener noreferrer'}
+                  className={
+                    ' flex flex-row gap-1 items-center text-text-primary transition-colors hover:text-text-secondary'
+                  }
+                  aria-label={'View vault on block explorer'}
+                >
+                  {vaultAddress}
+                  <IconLinkOut className={'size-3'} />
+                </a>
+              ) : null}
+              <button
+                type={'button'}
+                onClick={(): void => copyToClipboard(vaultAddress)}
+                className={'text-text-secondary transition-colors hover:text-text-primary'}
+                aria-label={'Copy vault address'}
+              >
+                <IconCopy className={'size-3'} />
+              </button>
+            </div>
+          ) : null}
+        </div>
+
+        <div className={'flex flex-col gap-0.5'}>
+          {additionalFeaturesContent ? (
+            <ExpandableInfoItem label={'Additional Features'} value={'Additional Features'} isOpenByDefault>
+              <div className={'px-0'}>{additionalFeaturesContent}</div>
+            </ExpandableInfoItem>
+          ) : null}
+
+          <VaultAddressesInfo chainID={chainID} addresses={vaultAddresses} />
+
+          <ExpandableInfoItem label={'Chain'} value={chainName} icon={chainIcon}>
+            <p>
+              {chainDescription}
+              {hasChainWebsite ? (
+                <>
+                  {' Learn more about '} {chainName} {' at '}
+                  <a
+                    href={chainWebsite}
+                    target={'_blank'}
+                    rel={'noopener noreferrer'}
+                    className={'inline-flex items-center gap-1 text-text-primary underline'}
+                  >
+                    {chainWebsite}
+                    <IconLinkOut className={'inline-block size-3'} />
+                  </a>
+                </>
+              ) : null}
+            </p>
+          </ExpandableInfoItem>
+
+          <ExpandableInfoItem label={'Asset Type'} value={assetTypeLabel}>
+            <p>{assetTypeDescription}</p>
+          </ExpandableInfoItem>
+
+          <ExpandableInfoItem label={'Vault Type'} value={vaultTypeLabel || productTypeLabel}>
+            <div className={'space-y-1'}>
+              <p>{productTypeDescription}</p>
+              {vaultKindDescription ? <p>{vaultKindDescription}</p> : null}
+            </div>
+          </ExpandableInfoItem>
+
+          <ExpandableInfoItem label={'Fees'} value={feesSummary}>
+            <div className={'space-y-3'}>
+              <p>
+                <strong>{'Management fees'}</strong>
+                {' are claimed from earned yield, pro-rated and up to the stated percentage of principal.'}
+              </p>
+              <p>
+                <strong>{'Performance fees'}</strong>
+                {' are claimed from earned yield, up to the stated percentage of yield earned.'}
+              </p>
+            </div>
+          </ExpandableInfoItem>
+        </div>
+      </div>
+    </div>
+  )
+}

@@ -1,0 +1,106 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+const getHistoricalHoldingsChartMock = vi.fn()
+const TEST_WALLET_ADDRESS = process.env.HOLDINGS_TEST_WALLET_ADDRESS ?? '0x1111111111111111111111111111111111111111'
+
+vi.mock('../lib/holdings', () => ({
+  getHistoricalHoldingsChart: getHistoricalHoldingsChartMock
+}))
+
+function createRequest(query: Record<string, string>): Request {
+  return new Request(`https://yearn.fi/api/holdings/history?${new URLSearchParams(query)}`)
+}
+
+describe('holdings history route', () => {
+  beforeEach(() => {
+    vi.resetModules()
+    vi.clearAllMocks()
+    process.env.ENVIO_GRAPHQL_URL = 'https://envio.example/graphql'
+  })
+
+  it('returns zero-filled settled history for wallets that only have same-day activity', async () => {
+    getHistoricalHoldingsChartMock.mockResolvedValue({
+      address: TEST_WALLET_ADDRESS,
+      periodDays: 365,
+      timeframe: '1y',
+      denomination: 'usd',
+      hasActivity: true,
+      dataPoints: [
+        { date: '2026-04-20', timestamp: 1776729599, value: 0 },
+        { date: '2026-04-21', timestamp: 1776815999, value: 0 }
+      ]
+    })
+
+    const { GET: handler } = await import('./history')
+    const response = await handler(
+      createRequest({
+        address: TEST_WALLET_ADDRESS
+      })
+    )
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get('Cache-Control')).toBe('private, no-store, max-age=0, must-revalidate')
+    await expect(response.json()).resolves.toEqual({
+      address: TEST_WALLET_ADDRESS,
+      version: 'all',
+      denomination: 'usd',
+      timeframe: '1y',
+      dataPoints: [
+        { date: '2026-04-20', value: 0 },
+        { date: '2026-04-21', value: 0 }
+      ]
+    })
+  })
+
+  it('passes multi-vault filters to historical holdings chart', async () => {
+    getHistoricalHoldingsChartMock.mockResolvedValue({
+      address: TEST_WALLET_ADDRESS,
+      periodDays: 365,
+      timeframe: '1y',
+      denomination: 'usd',
+      hasActivity: true,
+      dataPoints: [{ date: '2026-04-21', timestamp: 1776815999, value: 42 }]
+    })
+
+    const { GET: handler } = await import('./history')
+    const response = await handler(
+      createRequest({
+        address: TEST_WALLET_ADDRESS,
+        vaults: '1:0x696d02Db93291651ED510704c9b286841d506987,1:0xAaaFEa48472f77563961Cdb53291DEDfB46F9040'
+      })
+    )
+
+    expect(response.status).toBe(200)
+    expect(getHistoricalHoldingsChartMock).toHaveBeenCalledWith(TEST_WALLET_ADDRESS, 'usd', '1y', [
+      { chainId: 1, vaultAddress: '0x696d02Db93291651ED510704c9b286841d506987' },
+      { chainId: 1, vaultAddress: '0xAaaFEa48472f77563961Cdb53291DEDfB46F9040' }
+    ])
+  })
+
+  it('uses the requested timeframe and denomination', async () => {
+    getHistoricalHoldingsChartMock.mockResolvedValue({
+      address: TEST_WALLET_ADDRESS,
+      periodDays: 365,
+      timeframe: 'all',
+      denomination: 'eth',
+      hasActivity: true,
+      dataPoints: [{ date: '2026-04-21', timestamp: 1776815999, value: 1 }]
+    })
+
+    const { GET: handler } = await import('./history')
+    const response = await handler(
+      createRequest({
+        address: TEST_WALLET_ADDRESS,
+        timeframe: 'all',
+        denomination: 'eth'
+      })
+    )
+
+    expect(response.status).toBe(200)
+    expect(getHistoricalHoldingsChartMock).toHaveBeenCalledWith(TEST_WALLET_ADDRESS, 'eth', 'all', undefined)
+    await expect(response.json()).resolves.toMatchObject({
+      denomination: 'eth',
+      timeframe: 'all'
+    })
+  })
+})

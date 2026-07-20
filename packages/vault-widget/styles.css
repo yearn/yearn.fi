@@ -1,0 +1,94 @@
+@theme {
+  --color-app: hsl(0 0% 98%);
+  --color-surface: hsl(0 0% 100%);
+  --color-surface-secondary: hsl(0 0% 96%);
+  --color-surface-tertiary: hsl(0 0% 90%);
+  --color-text-primary: hsl(0 0% 9%);
+  --color-text-secondary: hsl(0 0% 32%);
+  --color-text-tertiary: hsl(0 0% 64%);
+  --color-border: hsl(0 0% 90%);
+  --color-primary: hsl(220 95% 50%);
+  --color-primary-hover: hsl(220 100% 44%);
+  --color-success: hsl(142 71% 45%);
+  --color-warning: hsl(17 88% 48%);
+  --color-error: hsl(0 73% 51%);
+  --color-neutral-0: hsl(0 0% 100%);
+  --color-neutral-700: hsl(0 0% 26%);
+  --color-neutral-800: hsl(0 0% 16%);
+  --color-neutral-900: hsl(0 0% 5%);
+  --text-xxs: 0.625rem;
+  --text-xxs--line-height: 1rem;
+}
+
+.yv-widget {
+  --color-app: hsl(0 0% 98%);
+  --color-surface: hsl(0 0% 100%);
+  --color-surface-secondary: hsl(0 0% 96%);
+  --color-surface-tertiary: hsl(0 0% 90%);
+  --color-text-primary: hsl(0 0% 9%);
+  --color-text-secondary: hsl(0 0% 32%);
+  --color-text-tertiary: hsl(0 0% 64%);
+  --color-border: hsl(0 0% 90%);
+  --color-primary: hsl(220 95% 50%);
+  color: var(--color-text-primary);
+}
+
+.yv-widget .yearn--button--nextgen {
+  @apply relative flex min-h-11 cursor-pointer items-center justify-center rounded-lg border border-transparent px-5 text-base font-normal transition-all;
+
+  &:not(:disabled):active {
+    @apply scale-[0.98];
+  }
+
+  &[aria-busy="true"],
+  &[data-variant="busy"] {
+    @apply cursor-wait bg-primary text-[#f5f5f5];
+    animation: yv-widget-button-pulse 2s ease-in-out infinite;
+  }
+
+  &:disabled {
+    @apply cursor-not-allowed;
+  }
+
+  &[data-variant="filled"] {
+    @apply bg-primary text-[#f5f5f5];
+
+    &:disabled {
+      @apply bg-primary/20 text-primary/50;
+    }
+
+    &:not(:disabled):not([aria-busy="true"]):hover {
+      @apply bg-primary/80;
+    }
+  }
+
+  &[data-variant="error"] {
+    @apply border-red-200 bg-red-50 text-red-700;
+  }
+
+  &[data-variant="light"] {
+    @apply bg-surface-secondary text-text-primary;
+
+    &:not(:disabled):not([aria-busy="true"]):hover {
+      @apply bg-surface-tertiary;
+    }
+  }
+
+  &[data-variant="outlined"] {
+    @apply border-text-primary bg-transparent text-text-primary;
+
+    &:not(:disabled):not([aria-busy="true"]):hover {
+      @apply bg-text-primary text-surface;
+    }
+  }
+}
+
+@keyframes yv-widget-button-pulse {
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.78;
+  }
+}

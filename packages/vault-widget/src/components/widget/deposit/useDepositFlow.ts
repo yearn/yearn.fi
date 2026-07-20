@@ -1,0 +1,288 @@
+import { getRedeemPreviewCall } from '@yearn/vault-widget/internal/hooks/actions/stakingAdapter'
+import { useDirectDeposit } from '@yearn/vault-widget/internal/hooks/actions/useDirectDeposit'
+import { useDirectStake } from '@yearn/vault-widget/internal/hooks/actions/useDirectStake'
+import { useEnsoDeposit } from '@yearn/vault-widget/internal/hooks/actions/useEnsoDeposit'
+import { useYBoldZapperDeposit } from '@yearn/vault-widget/internal/hooks/actions/useYBoldZapperDeposit'
+import { useYvUsdLockedZapDeposit } from '@yearn/vault-widget/internal/hooks/actions/useYvUsdLockedZapDeposit'
+import type { EnsoQuotePurpose } from '@yearn/vault-widget/internal/hooks/solvers/useSolverEnso'
+import { toAddress } from '@yearn/vault-widget/internal/utils'
+import { toBasisPoints } from '@yearn/vault-widget/internal/utils/slippage'
+import { YVUSD_LOCKED_ADDRESS } from '@yearn/vault-widget/internal/utils/yvUsd'
+import { useMemo } from 'react'
+import { type Address, type Hex, isAddressEqual } from 'viem'
+import { useReadContract } from 'wagmi'
+import type { DepositRouteType } from './types'
+import { useDepositRoute } from './useDepositRoute'
+import { resolveValuationShareCount } from './valuation'
+
+interface UseDepositFlowProps {
+  // Token addresses
+  depositToken: Address
+  assetAddress: Address
+  directDepositTokenAddress?: Address
+  destinationToken: Address
+  vaultAddress: Address
+  stakingAddress?: Address
+  // Amount
+  amount: bigint
+  currentAmount: bigint // For checking if input > 0
+  // Account & chain
+  account?: Address
+  chainId: number
+  sourceChainId: number
+  destinationChainId?: number
+  // Decimals
+  inputDecimals: number
+  vaultDecimals: number
+  // Settings
+  slippage: number
+  ensoQuotePurpose: EnsoQuotePurpose
+  ensoEnabled: boolean
+  routeRefreshKey?: number
+  stakingSource?: string
+}
+
+export interface DepositFlowResult {
+  routeType: DepositRouteType
+  activeFlow: {
+    actions: {
+      prepareApprove: ReturnType<typeof useDirectDeposit>['actions']['prepareApprove']
+      prepareDeposit: ReturnType<typeof useDirectDeposit>['actions']['prepareDeposit']
+    }
+    periphery: {
+      prepareApproveEnabled: boolean
+      prepareDepositEnabled: boolean
+      isAllowanceSufficient: boolean
+      allowance: bigint
+      expectedOut: bigint
+      minExpectedOut: bigint
+      priceImpact?: number | null
+      normalizedExpectedOut: bigint
+      normalizedMinExpectedOut: bigint
+      routeHasSwap?: boolean
+      bridgeProtocol?: 'stargate' | 'ccip' | 'relay'
+      isLoadingRoute: boolean
+      isLoadingExpectedOutNormalization: boolean
+      isCrossChain: boolean
+      routerAddress?: string
+      approvalSpenderAddress?: string
+      approvalWarning?: string
+      tx?: {
+        to: Address
+        data: Hex
+        value: string
+        from: Address
+      }
+      gas?: string
+      error?: unknown
+      refetchAllowance?: () => Promise<unknown>
+    }
+  }
+}
+
+export const useDepositFlow = ({
+  depositToken,
+  assetAddress,
+  directDepositTokenAddress,
+  destinationToken,
+  vaultAddress,
+  stakingAddress,
+  amount,
+  currentAmount,
+  account,
+  chainId,
+  sourceChainId,
+  destinationChainId,
+  inputDecimals,
+  vaultDecimals,
+  slippage,
+  ensoQuotePurpose,
+  ensoEnabled,
+  routeRefreshKey,
+  stakingSource
+}: UseDepositFlowProps): DepositFlowResult => {
+  // Determine routing type
+  const routeType = useDepositRoute({
+    depositToken,
+    assetAddress,
+    directDepositTokenAddress,
+    destinationToken,
+    vaultAddress,
+    stakingAddress,
+    ensoEnabled
+  })
+
+  const isYvUsdLockedZapDeposit = useMemo(
+    () =>
+      routeType === 'DIRECT_DEPOSIT' &&
+      !!directDepositTokenAddress &&
+      toAddress(vaultAddress) === YVUSD_LOCKED_ADDRESS &&
+      toAddress(depositToken) === toAddress(directDepositTokenAddress),
+    [routeType, directDepositTokenAddress, vaultAddress, depositToken]
+  )
+
+  // Direct deposit flow (asset → vault)
+  const directDeposit = useDirectDeposit({
+    vaultAddress,
+    assetAddress,
+    amount,
+    account,
+    chainId,
+    decimals: inputDecimals,
+    enabled: routeType === 'DIRECT_DEPOSIT' && amount > 0n && !isYvUsdLockedZapDeposit
+  })
+
+  const yvUsdLockedZapDeposit = useYvUsdLockedZapDeposit({
+    depositToken,
+    amount,
+    account,
+    chainId,
+    enabled: isYvUsdLockedZapDeposit && amount > 0n
+  })
+
+  const yBoldZapperDeposit = useYBoldZapperDeposit({
+    amount,
+    account,
+    chainId,
+    enabled: routeType === 'YBOLD_ZAPPER' && amount > 0n
+  })
+
+  // Direct stake flow (vault → staking)
+  const directStake = useDirectStake({
+    stakingAddress,
+    vaultAddress,
+    amount,
+    account,
+    chainId,
+    decimals: vaultDecimals,
+    stakingSource,
+    enabled: routeType === 'DIRECT_STAKE' && amount > 0n
+  })
+
+  // Enso flow (zaps, cross-chain, etc.)
+  const ensoFlow = useEnsoDeposit({
+    vaultAddress: destinationToken,
+    depositToken,
+    amount,
+    account,
+    chainId: sourceChainId,
+    destinationChainId,
+    decimalsOut: vaultDecimals,
+    enabled: routeType === 'ENSO' && !!depositToken && amount > 0n && currentAmount > 0n,
+    slippage: toBasisPoints(slippage),
+    quotePurpose: ensoQuotePurpose,
+    routeRefreshKey
+  })
+
+  // Select active flow based on routing type
+  const activeFlow = useMemo(() => {
+    if (routeType === 'DIRECT_DEPOSIT') {
+      return isYvUsdLockedZapDeposit ? yvUsdLockedZapDeposit : directDeposit
+    }
+    if (routeType === 'DIRECT_STAKE') return directStake
+    if (routeType === 'YBOLD_ZAPPER') return yBoldZapperDeposit
+    return ensoFlow
+  }, [
+    routeType,
+    isYvUsdLockedZapDeposit,
+    yvUsdLockedZapDeposit,
+    directDeposit,
+    directStake,
+    yBoldZapperDeposit,
+    ensoFlow
+  ])
+  const shouldNormalizeExpectedOut =
+    !!stakingAddress && isAddressEqual(destinationToken, stakingAddress) && activeFlow.periphery.expectedOut > 0n
+  const shouldNormalizeMinExpectedOut =
+    !!stakingAddress && isAddressEqual(destinationToken, stakingAddress) && activeFlow.periphery.minExpectedOut > 0n
+
+  const previewRedeemCall = useMemo(
+    () =>
+      shouldNormalizeExpectedOut ? getRedeemPreviewCall(stakingSource, activeFlow.periphery.expectedOut) : undefined,
+    [shouldNormalizeExpectedOut, stakingSource, activeFlow.periphery.expectedOut]
+  )
+
+  const { data: normalizedExpectedOutData, isLoading: isLoadingExpectedOutNormalization } = useReadContract({
+    address: stakingAddress,
+    abi: (previewRedeemCall?.abi || []) as any,
+    functionName: (previewRedeemCall?.functionName || 'previewRedeem') as any,
+    args: previewRedeemCall?.args as any,
+    chainId,
+    query: {
+      enabled: shouldNormalizeExpectedOut && !!stakingAddress && !!previewRedeemCall
+    }
+  })
+
+  const previewRedeemMinCall = useMemo(
+    () =>
+      shouldNormalizeMinExpectedOut
+        ? getRedeemPreviewCall(stakingSource, activeFlow.periphery.minExpectedOut)
+        : undefined,
+    [shouldNormalizeMinExpectedOut, stakingSource, activeFlow.periphery.minExpectedOut]
+  )
+
+  const { data: normalizedMinExpectedOutData, isLoading: isLoadingMinExpectedOutNormalization } = useReadContract({
+    address: stakingAddress,
+    abi: (previewRedeemMinCall?.abi || []) as any,
+    functionName: (previewRedeemMinCall?.functionName || 'previewRedeem') as any,
+    args: previewRedeemMinCall?.args as any,
+    chainId,
+    query: {
+      enabled: shouldNormalizeMinExpectedOut && !!stakingAddress && !!previewRedeemMinCall
+    }
+  })
+
+  const normalizedExpectedOut = useMemo(
+    () =>
+      resolveValuationShareCount({
+        expectedOut: activeFlow.periphery.expectedOut,
+        destinationToken,
+        vaultAddress,
+        stakingAddress,
+        previewedVaultShares: previewRedeemCall ? (normalizedExpectedOutData as bigint | undefined) : undefined
+      }),
+    [
+      activeFlow.periphery.expectedOut,
+      destinationToken,
+      vaultAddress,
+      stakingAddress,
+      previewRedeemCall,
+      normalizedExpectedOutData
+    ]
+  )
+
+  const normalizedMinExpectedOut = useMemo(
+    () =>
+      resolveValuationShareCount({
+        expectedOut: activeFlow.periphery.minExpectedOut,
+        destinationToken,
+        vaultAddress,
+        stakingAddress,
+        previewedVaultShares: previewRedeemMinCall ? (normalizedMinExpectedOutData as bigint | undefined) : undefined
+      }),
+    [
+      activeFlow.periphery.minExpectedOut,
+      destinationToken,
+      vaultAddress,
+      stakingAddress,
+      previewRedeemMinCall,
+      normalizedMinExpectedOutData
+    ]
+  )
+
+  return {
+    routeType,
+    activeFlow: {
+      ...activeFlow,
+      periphery: {
+        ...activeFlow.periphery,
+        normalizedExpectedOut,
+        normalizedMinExpectedOut,
+        isLoadingExpectedOutNormalization: Boolean(
+          (shouldNormalizeExpectedOut && !!previewRedeemCall && isLoadingExpectedOutNormalization) ||
+            (shouldNormalizeMinExpectedOut && !!previewRedeemMinCall && isLoadingMinExpectedOutNormalization)
+        )
+      }
+    }
+  }
+}
