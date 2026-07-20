@@ -4,21 +4,17 @@ import { isZeroAddress, toNormalizedBN } from '@shared/utils'
 import { getApproveAbi } from '@shared/utils/approve'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Address } from 'viem'
+import { env } from '@/env'
+import {
+  getKnownEnsoRouterAddress,
+  getValidatedEnsoRouterAddress,
+  UNKNOWN_ENSO_APPROVAL_ROUTER_MESSAGE
+} from '../../utils/ensoRouters'
 import { useTokenAllowance } from '../useTokenAllowance'
 import { type EnsoError, type EnsoRouteResponse, normalizeEnsoRouteResponse, routeHasSwapStep } from './ensoRoute'
 
 const ENSO_ROUTE_PROXY = '/api/enso/route'
 export type EnsoRoutingStrategy = 'router' | 'delegate' | 'router-legacy' | 'delegate-legacy' | 'ensowallet'
-
-// Known Enso router addresses per chain for pre-fetching allowance
-const ENSO_ROUTER_ADDRESSES: Record<number, Address> = {
-  1: '0xF75584eF6673aD213a685a1B58Cc0330B8eA22Cf', // Ethereum
-  10: '0xF75584eF6673aD213a685a1B58Cc0330B8eA22Cf', // Optimism
-  137: '0xF75584eF6673aD213a685a1B58Cc0330B8eA22Cf', // Polygon
-  42161: '0xF75584eF6673aD213a685a1B58Cc0330B8eA22Cf', // Arbitrum
-  8453: '0xF75584eF6673aD213a685a1B58Cc0330B8eA22Cf', // Base
-  747474: '0x3067BDBa0e6628497d527bEF511c22DA8b32cA3F' // Katana
-}
 
 interface UseSolverEnsoProps {
   tokenIn: Address
@@ -43,6 +39,7 @@ interface UseSolverEnsoReturn {
     prepareApproveEnabled: boolean
     expectedOut: TNormalizedBN
     minExpectedOut: TNormalizedBN
+    priceImpact: number | null | undefined
     allowance: bigint
     isAllowanceSufficient: boolean
     route: EnsoRouteResponse | undefined
@@ -52,6 +49,9 @@ interface UseSolverEnsoReturn {
     isLoadingAllowance: boolean
     isCrossChain: boolean
     routerAddress: Address | undefined
+    approvalSpenderAddress: Address | undefined
+    approvalWarning: string | undefined
+    refetchAllowance: () => Promise<unknown>
   }
   methods: {
     getRoute: () => Promise<void>
@@ -83,16 +83,36 @@ export const useSolverEnso = ({
   const routeAbortControllerRef = useRef<AbortController | null>(null)
 
   const isCrossChain = destinationChainId !== undefined && destinationChainId !== chainId
-  const visibleRoute = resolvedRequestKey === requestKey ? route : undefined
-  const visibleError = errorRequestKey === requestKey ? error : undefined
-  const routerAddress = visibleRoute?.tx?.to
+  const requestedRoute = resolvedRequestKey === requestKey ? route : undefined
+  const requestedRouterAddress = requestedRoute?.tx?.to
+  const routerAddress = getValidatedEnsoRouterAddress({
+    chainId,
+    routerAddress: requestedRouterAddress,
+    routeChainId: requestedRoute?.tx?.chainId
+  })
+  const hasUntrustedRouterAddress = Boolean(requestedRoute && requestedRouterAddress && !routerAddress)
+  const visibleRoute = hasUntrustedRouterAddress ? undefined : requestedRoute
+  const visibleError =
+    hasUntrustedRouterAddress && requestedRouterAddress
+      ? {
+          error: 'UnrecognizedEnsoRouter',
+          message: UNKNOWN_ENSO_APPROVAL_ROUTER_MESSAGE,
+          statusCode: 0
+        }
+      : errorRequestKey === requestKey
+        ? error
+        : undefined
   const visibleRouteHasSwap = routeHasSwapStep(visibleRoute)
 
   // Use known Enso router for pre-fetching allowance, fall back to actual router from route
-  const knownRouterAddress = ENSO_ROUTER_ADDRESSES[chainId]
+  const knownRouterAddress = getKnownEnsoRouterAddress(chainId)
   const allowanceSpender = routerAddress || knownRouterAddress
 
-  const { allowance = 0n, isLoading: isLoadingAllowance } = useTokenAllowance({
+  const {
+    allowance = 0n,
+    isLoading: isLoadingAllowance,
+    refetch: refetchAllowance
+  } = useTokenAllowance({
     account: fromAddress,
     token: tokenIn,
     spender: allowanceSpender,
@@ -159,7 +179,7 @@ export const useSolverEnso = ({
       setRoute(resolvedRoute)
       setResolvedRequestKey(requestKey)
       setErrorRequestKey(undefined)
-      if (import.meta.env.DEV && resolvedRoute) {
+      if (env.DEV && resolvedRoute) {
         console.log('[ENSO] route response', {
           chainId,
           destinationChainId,
@@ -265,6 +285,7 @@ export const useSolverEnso = ({
       prepareApproveEnabled: !!prepareApproveEnabled,
       expectedOut,
       minExpectedOut,
+      priceImpact: visibleRoute?.priceImpact,
       allowance,
       isAllowanceSufficient,
       route: visibleRoute,
@@ -273,7 +294,10 @@ export const useSolverEnso = ({
       isLoadingRoute: isLoadingCurrentRequest,
       isLoadingAllowance,
       isCrossChain,
-      routerAddress
+      routerAddress,
+      approvalSpenderAddress: requestedRouterAddress,
+      approvalWarning: hasUntrustedRouterAddress ? UNKNOWN_ENSO_APPROVAL_ROUTER_MESSAGE : undefined,
+      refetchAllowance
     },
     methods: {
       getRoute,

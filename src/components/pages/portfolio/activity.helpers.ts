@@ -192,7 +192,8 @@ export function toLocalActivityEntry(
     outputTokenAmountFormatted: isZap && isExitAction ? assetAmountFormatted : null,
     shareAmount,
     shareAmountFormatted,
-    status: 'ok'
+    status: 'ok',
+    ...(notification.status === 'error' ? { transactionStatus: 'failed' as const } : {})
   }
 }
 

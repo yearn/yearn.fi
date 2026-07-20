@@ -10,10 +10,13 @@ import {
   convertYvUsdVariantRawAmount,
   getWeightedYvUsdApy,
   getYvUsdLockedWithdrawDisplayMode,
+  getYvUsdPositionApyBreakdown,
+  getYvUsdPositionValues,
   getYvUsdUnderlyingPricePerShare,
-  YVUSD_CUSTOM_RISK_SCORE,
+  YVUSD_CHAIN_ID,
   YVUSD_DECIMALS,
-  YVUSD_RISK_SCORE_ITEMS
+  YVUSD_LOCKED_ADDRESS,
+  YVUSD_UNLOCKED_ADDRESS
 } from './yvUsd'
 
 describe('yvUSD token metadata', () => {
@@ -79,22 +82,119 @@ describe('getWeightedYvUsdApy', () => {
   })
 })
 
-describe('yvUSD risk override', () => {
-  it('uses the provisional custom score for the detail risk section', () => {
-    expect(YVUSD_CUSTOM_RISK_SCORE).toBe('3/5')
-    expect(YVUSD_RISK_SCORE_ITEMS[0]?.score).toBe('3/5')
+describe('getYvUsdPositionApyBreakdown', () => {
+  it('reports a 100% unlocked weight for an unlocked-only position', () => {
+    const breakdown = getYvUsdPositionApyBreakdown({
+      unlockedValue: 100,
+      lockedValue: 0,
+      unlockedApy: 0.05,
+      lockedApy: 0.09
+    })
+
+    expect(breakdown.blendedApy).toBeCloseTo(0.05, 6)
+    expect(breakdown.unlocked.weight).toBe(1)
+    expect(breakdown.locked.weight).toBe(0)
   })
 
-  it('keeps the current published risk sections intact', () => {
-    expect(YVUSD_RISK_SCORE_ITEMS.map((item) => item.label)).toEqual([
-      'Overall Risk Score',
-      'Leverage Looping',
-      'Duration and PT Strategies',
-      'Cross-Chain Routing'
-    ])
+  it('reports equal weights and the midpoint APY for a 50/50 position', () => {
+    const breakdown = getYvUsdPositionApyBreakdown({
+      unlockedValue: 100,
+      lockedValue: 100,
+      unlockedApy: 0.05,
+      lockedApy: 0.09
+    })
+
+    expect(breakdown.blendedApy).toBeCloseTo(0.07, 6)
+    expect(breakdown.unlocked.weight).toBe(0.5)
+    expect(breakdown.locked.weight).toBe(0.5)
   })
 })
 
+describe('getYvUsdPositionValues', () => {
+  const makeYvUsdVault = (price: number, pricePerShare: number) =>
+    ({
+      chainID: YVUSD_CHAIN_ID,
+      version: '3.0.4',
+      type: 'Automated Yearn Vault',
+      kind: 'Multi Strategy',
+      symbol: 'yvUSD',
+      name: 'yvUSD',
+      description: '',
+      category: 'Stablecoin',
+      decimals: YVUSD_DECIMALS,
+      token: {
+        address: YVUSD_UNLOCKED_ADDRESS,
+        name: 'USD yVault',
+        symbol: 'yvUSD',
+        decimals: YVUSD_DECIMALS
+      },
+      tvl: { price, tvl: 0, totalAssets: 0 },
+      apr: { pricePerShare: { today: pricePerShare, weekAgo: null, monthAgo: null } },
+      featuringScore: 0,
+      strategies: null,
+      staking: { address: '0x0000000000000000000000000000000000000000', available: false, rewards: [] },
+      migration: {},
+      info: {}
+    }) as any
+
+  it('uses Enso direct token values for unlocked and locked yvUSD holdings', () => {
+    const tokenValues = {
+      [YVUSD_UNLOCKED_ADDRESS]: 1.991627 * 1.018990889978977,
+      [YVUSD_LOCKED_ADDRESS]: 4.437947 * 1.062906287897898
+    }
+    const rawBalances = {
+      [YVUSD_UNLOCKED_ADDRESS]: 1_991_627n,
+      [YVUSD_LOCKED_ADDRESS]: 4_437_947n
+    }
+
+    const values = getYvUsdPositionValues({
+      getToken: ({ address }) => ({ value: tokenValues[address] ?? 0 }),
+      getBalance: ({ address, chainID }) => ({
+        raw: chainID === YVUSD_CHAIN_ID ? (rawBalances[address] ?? 0n) : 0n,
+        normalized: chainID === YVUSD_CHAIN_ID ? Number(rawBalances[address] ?? 0n) / 10 ** YVUSD_DECIMALS : 0
+      }),
+      unlockedVault: makeYvUsdVault(0, 0),
+      lockedVault: makeYvUsdVault(0, 0)
+    })
+
+    expect(values.unlockedValue).toBeCloseTo(2.02944976923616, 12)
+    expect(values.lockedValue).toBeCloseTo(4.717121771657613, 12)
+    expect(values.combinedValue).toBeCloseTo(6.746571540893774, 12)
+    expect(values.hasHoldings).toBe(true)
+  })
+
+  it('falls back to vault share prices when direct token values are unavailable', () => {
+    const values = getYvUsdPositionValues({
+      getToken: () => ({ value: 0 }),
+      getBalance: ({ address }) => ({
+        raw: address === YVUSD_UNLOCKED_ADDRESS ? 2_000_000n : 3_000_000n,
+        normalized: address === YVUSD_UNLOCKED_ADDRESS ? 2 : 3
+      }),
+      unlockedVault: makeYvUsdVault(1, 1.01),
+      lockedVault: makeYvUsdVault(1, 1.05)
+    })
+
+    expect(values.unlockedValue).toBeCloseTo(2.02, 8)
+    expect(values.lockedValue).toBeCloseTo(3.15, 8)
+    expect(values.combinedValue).toBeCloseTo(5.17, 8)
+    expect(values.hasHoldings).toBe(true)
+  })
+
+  it('ignores direct token values when no yvUSD raw balance is present', () => {
+    const values = getYvUsdPositionValues({
+      getToken: () => ({ value: 10 }),
+      getBalance: () => ({
+        raw: 0n,
+        normalized: 0
+      }),
+      unlockedVault: makeYvUsdVault(1, 1.01),
+      lockedVault: makeYvUsdVault(1, 1.05)
+    })
+
+    expect(values.combinedValue).toBe(0)
+    expect(values.hasHoldings).toBe(false)
+  })
+})
 describe('yvUSD variant amount conversion', () => {
   const unlockedPricePerShare = 1_050_000n
   const unlockedVaultDecimals = 18

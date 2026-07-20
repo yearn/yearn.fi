@@ -530,8 +530,8 @@ export const getVaultTVL = (vault: TKongVaultInput, snapshot?: TKongVaultSnapsho
   const token = getVaultToken(vault, snapshot)
   const totalAssetsRaw = snapshot?.totalAssets ?? '0'
   const totalAssets = toBigIntValue(totalAssetsRaw)
-  const tvl = pickNumber(snapshot?.tvl?.close ?? null, vault.tvl)
   const normalizedAssets = toNormalizedBN(totalAssets, token.decimals).normalized
+  const tvl = pickNumber(vault.tvl, snapshot?.tvl?.close ?? null)
   const price = Number.isFinite(tvl) && tvl > 0 && normalizedAssets > 0 ? tvl / normalizedAssets : 0
 
   return {
@@ -599,6 +599,10 @@ export const getVaultAPR = (vault: TKongVaultInput, snapshot?: TKongVaultSnapsho
 
   const forwardNet = isKatanaVault
     ? pickNumber(
+        snapshot?.performance?.estimated?.apy,
+        snapshot?.performance?.estimated?.apr,
+        vault.performance?.estimated?.apy,
+        vault.performance?.estimated?.apr,
         snapshot?.performance?.oracle?.netAPY,
         snapshot?.performance?.oracle?.apy,
         snapshot?.performance?.oracle?.netAPR,
@@ -606,9 +610,6 @@ export const getVaultAPR = (vault: TKongVaultInput, snapshot?: TKongVaultSnapsho
         vault.performance?.oracle?.netAPY,
         vault.performance?.oracle?.apy,
         vault.performance?.oracle?.netAPR,
-        snapshot?.performance?.estimated?.apy,
-        snapshot?.performance?.estimated?.apr,
-        vault.performance?.estimated?.apy,
         vault.performance?.historical?.net,
         historical?.net
       )
@@ -697,13 +698,22 @@ export const getVaultStaking = (vault: TKongVaultInput, snapshot?: TKongVaultSna
   }
   const snapshotStaking = snapshot?.staking
   const listStaking = vault.staking
+  const stakingAddress = snapshotStaking?.address ?? listStaking?.address
 
   return {
-    address: toAddress(snapshotStaking?.address ?? listStaking?.address ?? zeroAddress),
+    address: stakingAddress ? toAddress(stakingAddress) : zeroAddress,
     available: Boolean(snapshotStaking?.available ?? listStaking?.available ?? false),
     source: snapshotStaking?.source ?? listStaking?.source ?? '',
     rewards: mapStakingRewards(snapshotStaking?.rewards ?? listStaking?.rewards)
   }
+}
+
+export const getVaultStakingAddress = (vault: TKongVaultInput, snapshot?: TKongVaultSnapshot): `0x${string}` => {
+  if (isVaultView(vault)) {
+    return vault.staking?.address ? toAddress(vault.staking.address) : zeroAddress
+  }
+  const stakingAddress = snapshot?.staking?.address ?? vault.staking?.address
+  return stakingAddress ? toAddress(stakingAddress) : zeroAddress
 }
 
 export const getVaultMigration = (vault: TKongVaultInput, snapshot?: TKongVaultSnapshot): TKongVaultMigration => {

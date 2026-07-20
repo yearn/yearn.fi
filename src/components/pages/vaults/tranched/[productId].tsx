@@ -30,7 +30,6 @@ import { IconChevron } from '@shared/icons/IconChevron'
 import { cl, toNormalizedBN } from '@shared/utils'
 import type { ReactElement, ReactNode } from 'react'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
-import { Navigate, useParams } from 'react-router'
 
 type TSectionKey = 'charts' | 'about' | 'strategies' | 'risk' | 'info'
 
@@ -495,12 +494,11 @@ function TranchedProductDetail({ product }: { product: TTranchedProduct }): Reac
   )
 }
 
-export default function TranchedProductDetailPage(): ReactElement {
-  const { productId } = useParams()
+export default function TranchedProductDetailPage({ productId }: { productId: string }): ReactElement | null {
   const product = getTranchedProductById(productId)
 
   if (!product) {
-    return <Navigate to={'/vaults?type=fixed'} replace />
+    return null
   }
 
   return <TranchedProductDetail product={product} />

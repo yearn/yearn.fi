@@ -22,13 +22,13 @@ export function FixedHeightChartContainer({
   return (
     <div
       className={cl(
-        'fixed-height-chart-container relative h-[var(--chart-height)] md:h-[var(--chart-height-md)]',
+        'fixed-height-chart-container relative h-[var(--chart-height)] min-h-0 w-full min-w-0 md:h-[var(--chart-height-md)]',
         className
       )}
       style={heightVars}
     >
-      <div className={'absolute inset-0 overflow-visible'}>
-        <div className={'h-full w-full overflow-visible'}>
+      <div className={'absolute inset-0 min-h-0 min-w-0 overflow-visible'}>
+        <div className={'h-full min-h-0 w-full min-w-0 overflow-visible'}>
           <style>{`
             .fixed-height-chart-container .aspect-video {
               aspect-ratio: auto !important;

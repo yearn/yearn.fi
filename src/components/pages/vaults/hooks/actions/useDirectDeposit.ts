@@ -19,7 +19,7 @@ interface UseDirectDepositParams {
 
 export function useDirectDeposit(params: UseDirectDepositParams): UseWidgetDepositFlowReturn {
   // Check current allowance using shared hook
-  const { allowance = 0n } = useTokenAllowance({
+  const { allowance = 0n, refetch: refetchAllowance } = useTokenAllowance({
     account: params.account,
     token: params.assetAddress,
     spender: params.vaultAddress,
@@ -79,7 +79,8 @@ export function useDirectDeposit(params: UseDirectDepositParams): UseWidgetDepos
       minExpectedOut: expectedOut,
       isLoadingRoute: false,
       isCrossChain: false,
-      error
+      error,
+      refetchAllowance
     }
   }
 }

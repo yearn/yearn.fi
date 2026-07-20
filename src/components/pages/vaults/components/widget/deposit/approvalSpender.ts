@@ -1,3 +1,4 @@
+import { getValidatedEnsoRouterAddress, UNKNOWN_ENSO_APPROVAL_ROUTER_MESSAGE } from '@pages/vaults/utils/ensoRouters'
 import { YBOLD_ZAPPER_ADDRESS } from '@pages/vaults/utils/yBold'
 import { toAddress } from '@shared/utils'
 import type { Address } from 'viem'
@@ -6,6 +7,7 @@ import type { DepositRouteType } from './types'
 type TGetDepositApprovalSpender = {
   routeType: DepositRouteType
   destinationToken: Address
+  chainId?: number
   stakingAddress?: Address
   routerAddress?: string
   vaultSymbol?: string
@@ -15,20 +17,42 @@ type TGetDepositApprovalSpender = {
 type TDepositApprovalSpender = {
   spenderAddress?: Address
   spenderName?: string
+  approvalWarning?: string
 }
 
 export function getDepositApprovalSpender({
   routeType,
   destinationToken,
+  chainId,
   stakingAddress,
   routerAddress,
   vaultSymbol,
   stakingTokenSymbol
 }: TGetDepositApprovalSpender): TDepositApprovalSpender {
   if (routeType === 'ENSO') {
+    if (!routerAddress) {
+      return {}
+    }
+
+    const validatedRouterAddress =
+      chainId === undefined
+        ? undefined
+        : getValidatedEnsoRouterAddress({
+            chainId,
+            routerAddress
+          })
+
+    if (!validatedRouterAddress) {
+      return {
+        spenderAddress: toAddress(routerAddress),
+        spenderName: 'Enso Router',
+        approvalWarning: UNKNOWN_ENSO_APPROVAL_ROUTER_MESSAGE
+      }
+    }
+
     return {
-      spenderAddress: toAddress(routerAddress || destinationToken),
-      spenderName: routerAddress ? 'Enso Router' : (vaultSymbol ?? 'Vault')
+      spenderAddress: validatedRouterAddress,
+      spenderName: 'Enso Router'
     }
   }
 

@@ -10,6 +10,52 @@ import { YEARN_4626_ROUTER } from '@/components/shared/utils'
 
 // Default permit deadline: 20 minutes from now
 const DEFAULT_PERMIT_DEADLINE_MINUTES = 20
+const DEFAULT_MIGRATION_MIN_SHARES_OUT = 0n
+
+type VaultMigratorArgs = readonly [Address, Address, bigint]
+type Erc4626RouterMigrateArgs = readonly [Address, Address, bigint, bigint]
+type YearnVeCrvZapArgs = readonly [Address, Address, bigint, bigint, Address]
+type MigrateArgs = VaultMigratorArgs | Erc4626RouterMigrateArgs | YearnVeCrvZapArgs
+
+export function getVaultMigratorArgs(vaultFrom: Address, vaultTo: Address, shares: bigint): VaultMigratorArgs {
+  return [vaultFrom, vaultTo, shares]
+}
+
+export function getErc4626RouterMigrateArgs(
+  vaultFrom: Address,
+  vaultTo: Address,
+  shares: bigint,
+  minSharesOut = DEFAULT_MIGRATION_MIN_SHARES_OUT
+): Erc4626RouterMigrateArgs {
+  return [vaultFrom, vaultTo, shares, minSharesOut]
+}
+
+export function getYearnVeCrvZapArgs(
+  vaultFrom: Address,
+  vaultTo: Address,
+  shares: bigint,
+  recipient: Address,
+  minSharesOut = DEFAULT_MIGRATION_MIN_SHARES_OUT
+): YearnVeCrvZapArgs {
+  return [vaultFrom, vaultTo, shares, minSharesOut, recipient]
+}
+
+export function getMigrateArgs(
+  migratorConfig: Pick<MigratorConfig, 'argumentType'>,
+  vaultFrom: Address,
+  vaultTo: Address,
+  shares: bigint,
+  recipient: Address
+): MigrateArgs {
+  switch (migratorConfig.argumentType) {
+    case 'erc4626-router':
+      return getErc4626RouterMigrateArgs(vaultFrom, vaultTo, shares)
+    case 'yearn-vecrv-zap':
+      return getYearnVeCrvZapArgs(vaultFrom, vaultTo, shares, recipient)
+    default:
+      return getVaultMigratorArgs(vaultFrom, vaultTo, shares)
+  }
+}
 
 interface UseMigrateFlowProps {
   vaultFrom: Address
@@ -48,6 +94,7 @@ export const useMigrateFlow = ({
       return {
         abi: ERC_4626_ROUTER_ABI,
         functionName: isSourceV3 ? 'migrate' : 'migrateFromV2',
+        argumentType: 'erc4626-router',
         routerAddress: YEARN_4626_ROUTER
       }
     }
@@ -93,7 +140,7 @@ export const useMigrateFlow = ({
 
   // Only use permit flow for V3 vaults with EIP-2612 style permits
   // V2 vaults have a different permit signature (Bytes[65] instead of v,r,s) that's incompatible with selfPermit
-  const supportsPermit = permitType === 'eip2612' && !isV2Vault
+  const supportsPermit = migratorConfig.argumentType === 'erc4626-router' && permitType === 'eip2612' && !isV2Vault
 
   // Determine route type: permit (if V3 with EIP-2612) or approve (V2 or no permit)
   const routeType: MigrateRouteType = supportsPermit ? 'permit' : 'approve'
@@ -119,7 +166,7 @@ export const useMigrateFlow = ({
     abi: migratorConfig.abi,
     functionName: migratorConfig.functionName,
     address: effectiveRouter,
-    args: balance > 0n ? [vaultFrom, vaultTo, balance] : undefined,
+    args: balance > 0n && account ? getMigrateArgs(migratorConfig, vaultFrom, vaultTo, balance, account) : undefined,
     account,
     chainId,
     query: { enabled: prepareMigrateEnabled }
@@ -146,7 +193,7 @@ export const useMigrateFlow = ({
     const migrateData = encodeFunctionData({
       abi: migratorConfig.abi,
       functionName: migratorConfig.functionName,
-      args: [vaultFrom, vaultTo, balance, 0n]
+      args: getErc4626RouterMigrateArgs(vaultFrom, vaultTo, balance)
     })
 
     return [selfPermitData, migrateData]

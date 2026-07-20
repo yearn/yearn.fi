@@ -1,4 +1,3 @@
-import Link from '@components/Link'
 import { Dialog, Transition, TransitionChild } from '@headlessui/react'
 import { usePlausible } from '@hooks/usePlausible'
 import { SwipeableCompareCarousel } from '@pages/vaults/components/compare/SwipeableCompareCarousel'
@@ -27,7 +26,9 @@ import { IconLinkOut } from '@shared/icons/IconLinkOut'
 import { cl, formatPercent, formatTvlDisplay, toAddress } from '@shared/utils'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import { getNetwork } from '@shared/utils/wagmi'
+import Link from 'next/link'
 import { Fragment, type ReactElement, type ReactNode, useEffect, useState } from 'react'
+import { env } from '@/env'
 import { VaultForwardAPY } from '../table/VaultForwardAPY'
 
 type TVaultsCompareModalProps = {
@@ -126,7 +127,7 @@ function DesktopCompareGrid({
             const vaultSymbol = getVaultSymbol(vault)
             const vaultToken = getVaultToken(vault)
             const network = getNetwork(chainID)
-            const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${chainID}/logo-32.png`
+            const chainLogoSrc = `${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/chains/${chainID}/logo-32.png`
             const vaultKey = getVaultKey(vault)
             const vaultHref = `/vaults/${chainID}/${toAddress(vaultAddress)}`
             const isColumnActive = activeColumn === index
@@ -174,7 +175,7 @@ function DesktopCompareGrid({
                   <div className={'min-w-0'}>
                     <div className={'flex items-center gap-3'}>
                       <TokenLogo
-                        src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${chainID}/${vaultToken.address.toLowerCase()}/logo-128.png`}
+                        src={`${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${chainID}/${vaultToken.address.toLowerCase()}/logo-128.png`}
                         tokenSymbol={vaultToken.symbol}
                         width={28}
                         height={28}

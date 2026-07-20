@@ -4,6 +4,16 @@ export type SafeTransactionStatus = 'AWAITING_CONFIRMATIONS' | 'AWAITING_EXECUTI
 export const AUTO_CONTINUE_SUCCESS_DELAY_MS = 1600
 export const SAFE_AUTO_CONTINUE_CONFIRM_DELAY_MS = 700
 
+export function resolveTransactionReceiptOutcome(params: {
+  isSuccess: boolean
+  isError: boolean
+  status?: 'success' | 'reverted'
+}): 'pending' | 'success' | 'error' {
+  if (params.isError || (params.isSuccess && params.status === 'reverted')) return 'error'
+  if (params.isSuccess && params.status === 'success') return 'success'
+  return 'pending'
+}
+
 export function getInitialOverlayState(): OverlayState {
   return 'idle'
 }
@@ -102,6 +112,11 @@ export function resolveExecutionTrackingHash(params: {
   }
 
   return params.safeExecutionTxHash ?? params.callsReceiptTxHash
+}
+
+export function hasExecutableWalletConnector(connector: unknown): boolean {
+  const candidate = connector as { getAccounts?: unknown; getChainId?: unknown } | null | undefined
+  return typeof candidate?.getAccounts === 'function' && typeof candidate.getChainId === 'function'
 }
 
 export function shouldAutoContinuePermitSuccess(params: {

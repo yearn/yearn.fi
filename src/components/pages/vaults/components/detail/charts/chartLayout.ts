@@ -1,9 +1,15 @@
-export const CHART_RIGHT_GUTTER = 0
+export const CHART_RIGHT_GUTTER = 8
 export const CHART_WITH_AXES_MARGIN = {
   top: 20,
   right: CHART_RIGHT_GUTTER,
   left: 0,
   bottom: 20
+}
+export const CHART_COMPACT_MARGIN = {
+  top: 10,
+  right: CHART_RIGHT_GUTTER,
+  left: 0,
+  bottom: 0
 }
 
 export const CHART_Y_AXIS_TICK_MARGIN = 0

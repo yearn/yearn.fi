@@ -5,20 +5,28 @@ import { YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { ComponentProps } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { MemoryRouter } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { VaultsListRow } from './VaultsListRow'
 
-const { mockUseMediaQuery, mockUseYvUsdVaults, mockUseVaultSnapshot, mockVaultForwardAPY } = vi.hoisted(() => ({
-  mockUseMediaQuery: vi.fn(() => false),
-  mockUseYvUsdVaults: vi.fn((): any => ({
-    metrics: undefined,
-    unlockedVault: undefined,
-    lockedVault: undefined
-  })),
-  mockUseVaultSnapshot: vi.fn((): any => ({ data: undefined })),
-  mockVaultForwardAPY: vi.fn((_props?: unknown) => <div>{'APY'}</div>)
+const { mockRouterPush, mockUseMediaQuery, mockUseYvUsdVaults, mockUseVaultSnapshot, mockVaultForwardAPY } = vi.hoisted(
+  () => ({
+    mockRouterPush: vi.fn(),
+    mockUseMediaQuery: vi.fn(() => false),
+    mockUseYvUsdVaults: vi.fn((): any => ({
+      metrics: undefined,
+      unlockedVault: undefined,
+      lockedVault: undefined
+    })),
+    mockUseVaultSnapshot: vi.fn((): any => ({ data: undefined })),
+    mockVaultForwardAPY: vi.fn((_props?: unknown) => <div>{'APY'}</div>)
+  })
+)
+
+vi.mock('next/navigation', () => ({
+  useRouter: () => ({
+    push: mockRouterPush
+  })
 }))
 
 vi.mock('@react-hookz/web', () => ({
@@ -28,7 +36,19 @@ vi.mock('@react-hookz/web', () => ({
 vi.mock('@shared/contexts/useWallet', () => ({
   useWallet: () => ({
     getBalance: () => ({ raw: 0n, normalized: 0 }),
+    getToken: () => ({ value: 0 }),
+    getVaultHoldingsUsd: () => 0,
+    isLoading: false
+  }),
+  useWalletTokens: () => ({
+    getBalance: () => ({ raw: 0n, normalized: 0 }),
     getToken: () => ({ value: 0 })
+  }),
+  useWalletHoldings: () => ({
+    getVaultHoldingsUsd: () => 0
+  }),
+  useWalletStatus: () => ({
+    isLoading: false
   })
 }))
 
@@ -73,9 +93,7 @@ function renderRowHtml(vault: TKongVaultInput, props?: Partial<ComponentProps<ty
 
   return renderToStaticMarkup(
     <QueryClientProvider client={queryClient}>
-      <MemoryRouter>
-        <VaultsListRow currentVault={vault} {...props} />
-      </MemoryRouter>
+      <VaultsListRow currentVault={vault} yvUsdVaults={mockUseYvUsdVaults()} {...props} />
     </QueryClientProvider>
   )
 }
@@ -169,6 +187,50 @@ describe('VaultsListRow', () => {
     expect(html).toContain('inline-flex flex-col items-start')
     expect(html).toContain('style="width:40px;height:40px"')
     expect(html).not.toContain('style="width:48px;height:48px"')
+  })
+
+  it('shows a portfolio user weighted APY instead of the generic yvUSD up-to APY', () => {
+    const vault = {
+      version: '3.0.0',
+      chainID: 1,
+      address: YVUSD_UNLOCKED_ADDRESS,
+      name: 'yvUSD',
+      symbol: 'yvUSD',
+      category: 'Stablecoin',
+      kind: 'Multi Strategy',
+      token: {
+        address: '0x0000000000000000000000000000000000000002',
+        symbol: 'USDC',
+        decimals: 6
+      },
+      apr: {
+        forwardAPR: { netAPR: 0.05 },
+        netAPR: 0.05
+      },
+      tvl: {
+        tvl: 350,
+        totalAssets: 350_000_000
+      },
+      info: {
+        riskLevel: 2
+      },
+      staking: {
+        address: '0x0000000000000000000000000000000000000000'
+      }
+    } as unknown as TKongVaultInput
+
+    const html = renderRowHtml(vault, {
+      yvUsdPositionApy: {
+        blendedApy: 0.07,
+        locked: { apy: 0.09, value: 100, weight: 0.5 },
+        unlocked: { apy: 0.05, value: 100, weight: 0.5 }
+      }
+    })
+
+    expect(html).toContain('7.00%')
+    expect(html).toContain('aria-label="View your yvUSD APY breakdown"')
+    expect(html).toContain('decoration-dotted')
+    expect(html).not.toContain('Up to')
   })
 
   it('formats yvUSD locked APY with shared significant-digit rounding in the list row', () => {

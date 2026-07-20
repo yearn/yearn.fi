@@ -35,7 +35,6 @@ import {
   useDarkMode
 } from '@shared/components/AllocationChart'
 import { useYearn } from '@shared/contexts/useYearn'
-import { useYearnTokenPrice } from '@shared/hooks/useYearnTokenPrice'
 import { formatCounterValue, toAddress, toBigInt, toNormalizedBN } from '@shared/utils'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import type { TKongVaultSnapshot } from '@shared/utils/schemas/kongVaultSnapshotSchema'
@@ -270,10 +269,7 @@ function VaultStrategyAllocationPreview({
   const { vaults } = useYearn()
   const token = getVaultToken(currentVault, snapshotVault)
   const strategies = getVaultStrategies(currentVault, snapshotVault)
-  const tokenPrice = useYearnTokenPrice({
-    address: token.address,
-    chainID: getVaultChainID(currentVault)
-  })
+  const tokenPrice = getVaultTVL(currentVault, snapshotVault).price || 0
   const isDark = useDarkMode()
 
   const mergedList = useMemo(

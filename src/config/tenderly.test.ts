@@ -33,32 +33,32 @@ describe('parseTenderlyRuntime', () => {
   it('requires both chain id and rpc uri when a Tenderly chain is configured', () => {
     expect(() =>
       parseTenderlyRuntime({
-        VITE_TENDERLY_MODE: 'true',
-        VITE_TENDERLY_CHAIN_ID_FOR_1: '73571'
+        NEXT_PUBLIC_TENDERLY_MODE: 'true',
+        NEXT_PUBLIC_TENDERLY_CHAIN_ID_FOR_1: '73571'
       })
-    ).toThrow(/requires both VITE_TENDERLY_CHAIN_ID_FOR_1 and VITE_TENDERLY_RPC_URI_FOR_1/)
+    ).toThrow(/requires both NEXT_PUBLIC_TENDERLY_CHAIN_ID_FOR_1 and NEXT_PUBLIC_TENDERLY_RPC_URI_FOR_1/)
   })
 
   it('rejects duplicate Tenderly execution chain ids', () => {
     expect(() =>
       parseTenderlyRuntime({
-        VITE_TENDERLY_MODE: 'true',
-        VITE_TENDERLY_CHAIN_ID_FOR_1: '73571',
-        VITE_TENDERLY_RPC_URI_FOR_1: 'https://rpc.tenderly.ethereum.example',
-        VITE_TENDERLY_CHAIN_ID_FOR_10: '73571',
-        VITE_TENDERLY_RPC_URI_FOR_10: 'https://rpc.tenderly.optimism.example'
+        NEXT_PUBLIC_TENDERLY_MODE: 'true',
+        NEXT_PUBLIC_TENDERLY_CHAIN_ID_FOR_1: '73571',
+        NEXT_PUBLIC_TENDERLY_RPC_URI_FOR_1: 'https://rpc.tenderly.ethereum.example',
+        NEXT_PUBLIC_TENDERLY_CHAIN_ID_FOR_10: '73571',
+        NEXT_PUBLIC_TENDERLY_RPC_URI_FOR_10: 'https://rpc.tenderly.optimism.example'
       })
     ).toThrow(/Duplicate Tenderly execution chain ID 73571 configured for canonical chains 1 and 10/)
   })
 
   it('filters canonical chains and resolves execution chain ids from runtime config', () => {
     const runtime = parseTenderlyRuntime({
-      VITE_TENDERLY_MODE: 'true',
-      VITE_TENDERLY_CHAIN_ID_FOR_1: '73571',
-      VITE_TENDERLY_RPC_URI_FOR_1: 'https://rpc.tenderly.ethereum.example',
-      VITE_TENDERLY_EXPLORER_URI_FOR_1: 'https://explorer.tenderly.ethereum.example',
-      VITE_TENDERLY_CHAIN_ID_FOR_10: '73572',
-      VITE_TENDERLY_RPC_URI_FOR_10: 'https://rpc.tenderly.optimism.example'
+      NEXT_PUBLIC_TENDERLY_MODE: 'true',
+      NEXT_PUBLIC_TENDERLY_CHAIN_ID_FOR_1: '73571',
+      NEXT_PUBLIC_TENDERLY_RPC_URI_FOR_1: 'https://rpc.tenderly.ethereum.example',
+      NEXT_PUBLIC_TENDERLY_EXPLORER_URI_FOR_1: 'https://explorer.tenderly.ethereum.example',
+      NEXT_PUBLIC_TENDERLY_CHAIN_ID_FOR_10: '73572',
+      NEXT_PUBLIC_TENDERLY_RPC_URI_FOR_10: 'https://rpc.tenderly.optimism.example'
     })
 
     const supportedCanonicalChains = getSupportedCanonicalChainsForRuntime(runtime)
@@ -106,9 +106,9 @@ describe('parseTenderlyRuntime', () => {
 
   it('does not reuse canonical explorers for execution chains without explicit Tenderly explorer URIs', () => {
     const runtime = parseTenderlyRuntime({
-      VITE_TENDERLY_MODE: 'true',
-      VITE_TENDERLY_CHAIN_ID_FOR_1: '73571',
-      VITE_TENDERLY_RPC_URI_FOR_1: 'https://rpc.tenderly.ethereum.example'
+      NEXT_PUBLIC_TENDERLY_MODE: 'true',
+      NEXT_PUBLIC_TENDERLY_CHAIN_ID_FOR_1: '73571',
+      NEXT_PUBLIC_TENDERLY_RPC_URI_FOR_1: 'https://rpc.tenderly.ethereum.example'
     })
     const supportedCanonicalChains = getSupportedCanonicalChainsForRuntime(runtime)
     const supportedExecutionChains = getSupportedExecutionChainsForRuntime(runtime, supportedCanonicalChains)
@@ -163,9 +163,9 @@ describe('resolveInitialTenderlyModeEnabled', () => {
 
   it('identifies connected Tenderly execution chains that should be switched off before disabling', () => {
     const runtime = parseTenderlyRuntime({
-      VITE_TENDERLY_MODE: 'true',
-      VITE_TENDERLY_CHAIN_ID_FOR_1: '73571',
-      VITE_TENDERLY_RPC_URI_FOR_1: 'https://rpc.tenderly.ethereum.example'
+      NEXT_PUBLIC_TENDERLY_MODE: 'true',
+      NEXT_PUBLIC_TENDERLY_CHAIN_ID_FOR_1: '73571',
+      NEXT_PUBLIC_TENDERLY_RPC_URI_FOR_1: 'https://rpc.tenderly.ethereum.example'
     })
 
     expect(resolveConnectedTenderlyExecutionChainForRuntime(runtime, 73571)).toEqual({
@@ -177,9 +177,9 @@ describe('resolveInitialTenderlyModeEnabled', () => {
 
   it('does not flag canonical chains as Tenderly execution chains', () => {
     const runtime = parseTenderlyRuntime({
-      VITE_TENDERLY_MODE: 'true',
-      VITE_TENDERLY_CHAIN_ID_FOR_1: '73571',
-      VITE_TENDERLY_RPC_URI_FOR_1: 'https://rpc.tenderly.ethereum.example'
+      NEXT_PUBLIC_TENDERLY_MODE: 'true',
+      NEXT_PUBLIC_TENDERLY_CHAIN_ID_FOR_1: '73571',
+      NEXT_PUBLIC_TENDERLY_RPC_URI_FOR_1: 'https://rpc.tenderly.ethereum.example'
     })
 
     expect(resolveConnectedTenderlyExecutionChainForRuntime(runtime, 1)).toBeUndefined()

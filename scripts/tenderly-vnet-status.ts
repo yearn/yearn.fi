@@ -1,8 +1,7 @@
 /// <reference types="node" />
 
 import { resolve as resolvePath } from 'node:path'
-import { fileURLToPath } from 'node:url'
-import { parseTenderlyServerChains, type TTenderlyServerChainConfig } from '../api/tenderly.helpers'
+import { parseTenderlyServerChains, type TTenderlyServerChainConfig } from '../src/config/tenderlyServer'
 import { buildPredictablePublicRpcUrl, readEnvFile, sanitizeConsoleText } from './tenderly-vnet'
 
 type TParsedCliArgs = {
@@ -662,7 +661,8 @@ function buildChainReport(params: {
       }
   env: Record<string, string | undefined>
 }): TTenderlyStatusChainReport {
-  const explorerUri = params.env[`VITE_TENDERLY_EXPLORER_URI_FOR_${params.chain.canonicalChainId}`]?.trim() || undefined
+  const explorerUri =
+    params.env[`NEXT_PUBLIC_TENDERLY_EXPLORER_URI_FOR_${params.chain.canonicalChainId}`]?.trim() || undefined
   const forkNetworkId = parseNumericString(params.matchedVnet?.record.fork_config?.network_id)
   const forkBlockNumber = parseNumericString(params.matchedVnet?.record.fork_config?.block_number)
 
@@ -911,8 +911,7 @@ async function main(): Promise<void> {
     return
   }
 
-  const scriptDir = resolvePath(fileURLToPath(import.meta.url), '..')
-  const envFromFile = readEnvFile(resolvePath(scriptDir, '../.env'))
+  const envFromFile = readEnvFile(resolvePath(process.cwd(), '.env'))
   const env = { ...envFromFile, ...process.env }
   const report = await buildTenderlyStatusReport(flags, env)
 

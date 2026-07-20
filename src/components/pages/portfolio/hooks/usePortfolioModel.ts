@@ -20,18 +20,20 @@ import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import { usePersistedShowHiddenVaults } from '@pages/vaults/hooks/vaultsFiltersStorage'
 import { deriveListKind, isAllocatorVaultOverride } from '@pages/vaults/utils/vaultListFacets'
 import {
-  getWeightedYvUsdApy,
-  getYvUsdSharePrice,
+  getYvUsdPositionApyBreakdown,
+  getYvUsdPositionValues,
   isYvUsdAddress,
   isYvUsdVault,
-  YVUSD_CHAIN_ID,
+  type TYvUsdPositionApyBreakdown,
   YVUSD_LOCKED_ADDRESS,
   YVUSD_UNLOCKED_ADDRESS
 } from '@pages/vaults/utils/yvUsd'
-import { useWallet } from '@shared/contexts/useWallet'
+import { useWalletHoldings, useWalletStatus, useWalletTokens } from '@shared/contexts/useWallet'
+import { useWalletVaultTotals } from '@shared/contexts/useWalletVaultTotals'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import { getVaultKey, isV3Vault, type TVaultFlags } from '@shared/hooks/useVaultFilterUtils'
+import { useYearnSpotPrices } from '@shared/hooks/useYearnSpotPrices'
 import type { TSortDirection } from '@shared/types'
 import { isZeroAddress, toAddress } from '@shared/utils'
 import { ETH_TOKEN_ADDRESS } from '@shared/utils/constants'
@@ -45,6 +47,7 @@ type THoldingsRow = {
   key: string
   vault: TKongVaultInput
   hrefOverride?: string
+  yvUsdPositionApy?: TYvUsdPositionApyBreakdown
 }
 
 export type TSuggestedItem =
@@ -86,7 +89,7 @@ export type TPortfolioModel = {
 
 type TSortStateSetter<T> = (value: T | ((previous: T) => T)) => void
 type TYvUsdPortfolioPosition = {
-  blendedCurrentApy: number | null
+  currentApyBreakdown: TYvUsdPositionApyBreakdown
   blendedHistoricalApy: number | null
   combinedValue: number
   hasHoldings: boolean
@@ -147,7 +150,7 @@ function getPortfolioRowHref(vault: TKongVaultInput): string | undefined {
   return `/vaults/${getVaultChainID(vault)}/${toAddress(getVaultAddress(vault))}`
 }
 
-function getStablecoinHoldingMatch(balances: ReturnType<typeof useWallet>['balances']): TStablecoinHoldingMatch {
+function getStablecoinHoldingMatch(balances: ReturnType<typeof useWalletTokens>['balances']): TStablecoinHoldingMatch {
   return (
     Object.entries(balances ?? {})
       .flatMap(([chainIDKey, perChain]) =>
@@ -170,17 +173,13 @@ function getStablecoinHoldingMatch(balances: ReturnType<typeof useWallet>['balan
 }
 
 export function usePortfolioModel(): TPortfolioModel {
-  const {
-    cumulatedValueInV2Vaults,
-    cumulatedValueInV3Vaults,
-    isLoading: isWalletLoading,
-    hasCompletedBalanceLoad,
-    getBalance,
-    getVaultHoldingsUsd,
-    balances
-  } = useWallet()
+  const { getToken, getBalance, balances } = useWalletTokens()
+  const { getVaultHoldingsUsd } = useWalletHoldings()
+  const { isLoading: isWalletLoading, hasCompletedBalanceLoad } = useWalletStatus()
+  const { totalValue: totalPortfolioValue } = useWalletVaultTotals()
   const { isActive, openLoginModal, isUserConnecting, isIdentityLoading } = useWeb3()
-  const { vaults, allVaults, isLoadingVaultList, getPrice } = useYearn()
+  const { vaults, allVaults, isLoadingVaultList } = useYearn()
+  const { getPrice } = useYearnSpotPrices([{ address: ETH_TOKEN_ADDRESS, chainID: 1 }])
   const { listVault: yvUsdVault, unlockedVault: yvUsdUnlockedVault, lockedVault: yvUsdLockedVault } = useYvUsdVaults()
   const { apyData: yvUsdHistoricalApyData } = useYvUsdCharts()
   const { shouldHideDust } = useAppSettings()
@@ -189,28 +188,30 @@ export function usePortfolioModel(): TPortfolioModel {
   const [sortDirection, setSortDirection] = useState<TSortDirection>('desc')
 
   const yvUsdPosition = useMemo<TYvUsdPortfolioPosition>(() => {
-    const unlockedBalance = getBalance({ address: YVUSD_UNLOCKED_ADDRESS, chainID: YVUSD_CHAIN_ID })
-    const lockedBalance = getBalance({ address: YVUSD_LOCKED_ADDRESS, chainID: YVUSD_CHAIN_ID })
-    const unlockedValue = unlockedBalance.normalized * getYvUsdSharePrice(yvUsdUnlockedVault)
-    const lockedValue = lockedBalance.normalized * getYvUsdSharePrice(yvUsdLockedVault)
+    const { unlockedValue, lockedValue, combinedValue, hasHoldings } = getYvUsdPositionValues({
+      unlockedVault: yvUsdUnlockedVault,
+      lockedVault: yvUsdLockedVault,
+      getToken,
+      getBalance
+    })
 
     return {
-      blendedCurrentApy: getWeightedYvUsdApy({
+      currentApyBreakdown: getYvUsdPositionApyBreakdown({
         unlockedValue,
         lockedValue,
         unlockedApy: yvUsdUnlockedVault ? calculateVaultEstimatedAPY(yvUsdUnlockedVault) || null : null,
         lockedApy: yvUsdLockedVault ? calculateVaultEstimatedAPY(yvUsdLockedVault) || null : null
       }),
-      blendedHistoricalApy: getWeightedYvUsdApy({
+      blendedHistoricalApy: getYvUsdPositionApyBreakdown({
         unlockedValue,
         lockedValue,
         unlockedApy: getLatestYvUsdHistoricalApyValue(yvUsdHistoricalApyData, 'unlocked'),
         lockedApy: getLatestYvUsdHistoricalApyValue(yvUsdHistoricalApyData, 'locked')
-      }),
-      combinedValue: unlockedValue + lockedValue,
-      hasHoldings: unlockedBalance.raw > 0n || lockedBalance.raw > 0n
+      }).blendedApy,
+      combinedValue,
+      hasHoldings
     }
-  }, [getBalance, yvUsdHistoricalApyData, yvUsdLockedVault, yvUsdUnlockedVault])
+  }, [getBalance, getToken, yvUsdHistoricalApyData, yvUsdLockedVault, yvUsdUnlockedVault])
 
   const vaultLookup = useMemo(() => {
     const map = new Map<string, TKongVaultInput>()
@@ -286,14 +287,14 @@ export function usePortfolioModel(): TPortfolioModel {
   const getVaultEstimatedAPY = useCallback(
     (vault: (typeof holdingsVaults)[number]): number | null => {
       if (isYvUsdVault(vault)) {
-        return yvUsdPosition.blendedCurrentApy
+        return yvUsdPosition.currentApyBreakdown.blendedApy
       }
 
       const apy = calculateVaultEstimatedAPY(vault)
       const hasHistoricalNet = 'performance' in vault && Boolean(vault.performance?.historical?.net)
       return apy === 0 && !hasHistoricalNet ? null : apy
     },
-    [yvUsdPosition.blendedCurrentApy]
+    [yvUsdPosition.currentApyBreakdown.blendedApy]
   )
 
   const getVaultHistoricalAPY = useCallback(
@@ -365,7 +366,9 @@ export function usePortfolioModel(): TPortfolioModel {
     [vaults]
   )
 
-  const sortedHoldings = useSortVaults(visibleHoldingsVaults, sortBy, sortDirection)
+  const sortedHoldings = useSortVaults(visibleHoldingsVaults, sortBy, sortDirection, {
+    yvUsdApyOverride: yvUsdPosition.currentApyBreakdown.blendedApy
+  })
   const sortedCandidates = useSortVaults(suggestedVaultCandidates, 'tvl', 'desc')
 
   const holdingsKeySet = useMemo(() => new Set(sortedHoldings.map((vault) => getVaultKey(vault))), [sortedHoldings])
@@ -385,9 +388,10 @@ export function usePortfolioModel(): TPortfolioModel {
       sortedHoldings.map((vault) => ({
         key: getVaultKey(vault),
         vault,
-        hrefOverride: getPortfolioRowHref(vault)
+        hrefOverride: getPortfolioRowHref(vault),
+        yvUsdPositionApy: isYvUsdVault(vault) ? yvUsdPosition.currentApyBreakdown : undefined
       })),
-    [sortedHoldings]
+    [sortedHoldings, yvUsdPosition.currentApyBreakdown]
   )
 
   const suggestedRows = useMemo((): TSuggestedItem[] => {
@@ -477,7 +481,6 @@ export function usePortfolioModel(): TPortfolioModel {
     () => sortedHoldings.some((vault) => getVaultChainID(vault) === KATANA_CHAIN_ID),
     [sortedHoldings]
   )
-  const totalPortfolioValue = (cumulatedValueInV2Vaults || 0) + (cumulatedValueInV3Vaults || 0)
   const ethPrice = getPrice({ address: ETH_TOKEN_ADDRESS, chainID: 1 }).normalized
 
   const liveBalanceSnapshot = useMemo<TPortfolioLiveBalanceSnapshot | null>(() => {

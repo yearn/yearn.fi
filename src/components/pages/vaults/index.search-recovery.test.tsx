@@ -43,7 +43,8 @@ vi.mock('@pages/vaults/components/list/VaultsListHead', () => ({
 }))
 
 vi.mock('@pages/vaults/components/list/VaultsListRow', () => ({
-  VaultsListRow: () => <div>{'vault-row'}</div>
+  VaultsListRow: () => <div>{'vault-row'}</div>,
+  VaultsListRowPresentation: () => <div>{'vault-row'}</div>
 }))
 
 vi.mock('@pages/vaults/components/list/VaultsListRowSkeleton', () => ({
@@ -73,6 +74,7 @@ vi.mock('@pages/vaults/components/tour/VaultsWelcomeTour', () => ({
 }))
 
 vi.mock('@pages/vaults/domain/kongVaultSelectors', () => ({
+  getVaultAddress: () => '0x0000000000000000000000000000000000000001',
   getVaultChainID: (vault: typeof MOCK_VAULT) => vault.chainID
 }))
 
@@ -98,7 +100,8 @@ vi.mock('@shared/icons/IconGitCompare', () => ({
 }))
 
 vi.mock('@shared/utils', () => ({
-  cl: (...classes: Array<string | null | undefined | false>) => classes.filter(Boolean).join(' ')
+  cl: (...classes: Array<string | null | undefined | false>) => classes.filter(Boolean).join(' '),
+  toAddress: (value: string) => value
 }))
 
 vi.mock('@shared/utils/plausible', () => ({
@@ -146,7 +149,11 @@ describe('Vaults page search recovery row', () => {
           pinnedSections: [],
           pinnedVaults: [],
           mainVaults: [MOCK_VAULT],
+          yvUsdVaults: { metrics: undefined, unlockedVault: undefined, lockedVault: undefined },
           vaultFlags: { [MOCK_VAULT.key]: {} },
+          vaultHoldingsValues: {},
+          hasWalletAddress: false,
+          isWalletLoading: false,
           listChains: null,
           totalMatchingVaults: 1,
           hiddenByFiltersCount: 2,

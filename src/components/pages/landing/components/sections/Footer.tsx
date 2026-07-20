@@ -1,5 +1,5 @@
+import Link from 'next/link'
 import type { ReactElement } from 'react'
-import Link from '/src/components/Link'
 
 const footerLinks = [
   { path: 'https://docs.yearn.fi/', label: 'Docs' },
@@ -25,6 +25,7 @@ export function Footer(): ReactElement {
             key={link.path}
             href={link.path}
             target={'_blank'}
+            rel={'noopener noreferrer'}
             className={
               'flex min-h-[44px] items-center gap-1 px-1 text-neutral-900 transition-colors hover:text-white sm:min-h-0 sm:px-0'
             }

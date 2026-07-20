@@ -1,8 +1,8 @@
+import { YBOLD_VAULT_ADDRESS } from '@pages/vaults/domain/normalizeVault'
 import { YVBTC_LOCKED_ADDRESS, YVBTC_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvBtc'
 import { YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import type { ReactNode } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { MemoryRouter } from 'react-router'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const useVaultUserDataMock = vi.hoisted(() =>
@@ -42,6 +42,14 @@ vi.mock('@shared/contexts/useWeb3', () => ({
 
 vi.mock('@shared/contexts/useYearn', () => ({
   useYearn: () => ({
+    getPrice: () => ({
+      normalized: 1
+    })
+  })
+}))
+
+vi.mock('@shared/hooks/useYearnSpotPrices', () => ({
+  useYearnSpotPrices: () => ({
     getPrice: () => ({
       normalized: 1
     })
@@ -174,7 +182,12 @@ vi.mock('@pages/vaults/hooks/useYvBtcVaults', () => ({
 vi.mock('@shared/components/MetricsCard', () => ({
   METRIC_FOOTNOTE_CLASS: 'metric-footnote',
   METRIC_VALUE_CLASS: 'metric-value',
-  MetricHeader: ({ label }: { label: string }) => <span>{label}</span>,
+  MetricHeader: ({ label, tooltip }: { label: string; tooltip?: ReactNode }) => (
+    <span>
+      {label}
+      {tooltip}
+    </span>
+  ),
   MetricsCard: ({
     items,
     className
@@ -296,6 +309,19 @@ const YVBTC_VAULT = {
   }
 } as const
 
+const YBOLD_VAULT = {
+  ...YVUSD_VAULT,
+  address: YBOLD_VAULT_ADDRESS,
+  symbol: 'yBOLD',
+  name: 'yBOLD',
+  token: {
+    address: '0x6440F144b7e50D6a8439336510312d2F54beB01D',
+    symbol: 'BOLD',
+    name: 'BOLD',
+    decimals: 18
+  }
+} as const
+
 describe('VaultDetailsHeaderPresentation', () => {
   beforeEach(() => {
     useVaultUserDataMock.mockClear()
@@ -303,9 +329,7 @@ describe('VaultDetailsHeaderPresentation', () => {
 
   it('uses the standard compressed token logo size for yvUSD', () => {
     const html = renderToStaticMarkup(
-      <MemoryRouter>
-        <VaultDetailsHeaderPresentation currentVault={YVUSD_VAULT as never} depositedValue={0n} isCompressed={true} />
-      </MemoryRouter>
+      <VaultDetailsHeaderPresentation currentVault={YVUSD_VAULT as never} depositedValue={0n} isCompressed={true} />
     )
 
     expect(html).toContain('style="width:32px;height:32px"')
@@ -315,20 +339,38 @@ describe('VaultDetailsHeaderPresentation', () => {
 
   it('keeps the explorer link visible when header is compressed', () => {
     const html = renderToStaticMarkup(
-      <MemoryRouter>
-        <VaultDetailsHeaderPresentation currentVault={YVUSD_VAULT as never} depositedValue={0n} isCompressed={true} />
-      </MemoryRouter>
+      <VaultDetailsHeaderPresentation currentVault={YVUSD_VAULT as never} depositedValue={0n} isCompressed={true} />
     )
 
     expect(html).toContain('View vault on block explorer')
     expect(html).toContain('/address/')
   })
 
+  it('shows a strategy notification indicator when a tab has pending changes', () => {
+    const html = renderToStaticMarkup(
+      <VaultDetailsHeaderPresentation
+        currentVault={YVUSD_VAULT as never}
+        depositedValue={0n}
+        isCompressed={true}
+        sectionTabs={[
+          {
+            key: 'strategies',
+            label: 'Strategies',
+            supportsNotification: true,
+            notificationTooltip: 'One pending strategy change',
+            notificationAriaLabel: '1 pending timelocked strategy change'
+          }
+        ]}
+      />
+    )
+
+    expect(html).toContain('Strategies')
+    expect(html).toContain('aria-label="1 pending timelocked strategy change"')
+  })
+
   it('hides cooldown information when there is no locked yvUSD deposit', () => {
     const html = renderToStaticMarkup(
-      <MemoryRouter>
-        <VaultDetailsHeaderPresentation currentVault={YVUSD_VAULT as never} depositedValue={0n} isCompressed={false} />
-      </MemoryRouter>
+      <VaultDetailsHeaderPresentation currentVault={YVUSD_VAULT as never} depositedValue={0n} isCompressed={false} />
     )
 
     expect(html).toContain('Your Deposits')
@@ -339,9 +381,7 @@ describe('VaultDetailsHeaderPresentation', () => {
 
   it('does not enable locked yvBTC user-data reads while the locked address is a placeholder', () => {
     renderToStaticMarkup(
-      <MemoryRouter>
-        <VaultDetailsHeaderPresentation currentVault={YVBTC_VAULT as never} depositedValue={0n} isCompressed={false} />
-      </MemoryRouter>
+      <VaultDetailsHeaderPresentation currentVault={YVBTC_VAULT as never} depositedValue={0n} isCompressed={false} />
     )
 
     expect(useVaultUserDataMock).toHaveBeenCalledWith(
@@ -350,5 +390,22 @@ describe('VaultDetailsHeaderPresentation', () => {
         enabled: false
       })
     )
+  })
+
+  it('describes the 7 day historical basis for the yBOLD estimated APY', () => {
+    const html = renderToStaticMarkup(
+      <VaultDetailsHeaderPresentation currentVault={YBOLD_VAULT as never} depositedValue={0n} isCompressed={false} />
+    )
+
+    expect(html).toContain('Projected APY based on 7 day historical performance')
+    expect(html).not.toContain('Projected APY based on underlying markets')
+  })
+
+  it('keeps the underlying-markets tooltip for other vaults', () => {
+    const html = renderToStaticMarkup(
+      <VaultDetailsHeaderPresentation currentVault={YVBTC_VAULT as never} depositedValue={0n} isCompressed={false} />
+    )
+
+    expect(html).toContain('Projected APY based on underlying markets')
   })
 })

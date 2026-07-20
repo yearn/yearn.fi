@@ -1,6 +1,6 @@
 import { usePlausible } from '@hooks/usePlausible'
 import { useEnsoEnabled } from '@pages/vaults/hooks/useEnsoEnabled'
-import { useWallet } from '@shared/contexts/useWallet'
+import { useWalletActions, useWalletTokens } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import { useAccount } from 'wagmi'
@@ -13,11 +13,10 @@ type TUseWidgetContextParams = {
 type TWidgetContext = {
   account: `0x${string}` | undefined
   openLoginModal: (() => void) | undefined
-  refreshWalletBalances: ReturnType<typeof useWallet>['onRefresh']
-  getToken: ReturnType<typeof useWallet>['getToken']
+  refreshWalletBalances: ReturnType<typeof useWalletActions>['onRefresh']
+  getToken: ReturnType<typeof useWalletTokens>['getToken']
   zapSlippage: number
   isAutoStakingEnabled: boolean
-  getPrice: ReturnType<typeof useYearn>['getPrice']
   trackEvent: ReturnType<typeof usePlausible>
   ensoEnabled: boolean
   isWalletSafe: boolean
@@ -26,8 +25,9 @@ type TWidgetContext = {
 export function useWidgetContext({ chainId, vaultAddress }: TUseWidgetContextParams): TWidgetContext {
   const { address: account } = useAccount()
   const { openLoginModal, isWalletSafe } = useWeb3()
-  const { onRefresh: refreshWalletBalances, getToken } = useWallet()
-  const { zapSlippage, isAutoStakingEnabled, getPrice } = useYearn()
+  const { onRefresh: refreshWalletBalances } = useWalletActions()
+  const { getToken } = useWalletTokens()
+  const { zapSlippage, isAutoStakingEnabled } = useYearn()
   const trackEvent = usePlausible()
   const ensoEnabled = useEnsoEnabled({ chainId, vaultAddress })
 
@@ -38,7 +38,6 @@ export function useWidgetContext({ chainId, vaultAddress }: TUseWidgetContextPar
     getToken,
     zapSlippage,
     isAutoStakingEnabled,
-    getPrice,
     trackEvent,
     ensoEnabled,
     isWalletSafe

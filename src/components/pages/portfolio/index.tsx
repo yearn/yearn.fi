@@ -32,13 +32,11 @@ import {
   getVaultToken,
   type TKongVault
 } from '@pages/vaults/domain/kongVaultSelectors'
-import { useClaimMerkleRewards } from '@pages/vaults/hooks/rewards/useClaimMerkleRewards'
-import { buildMerkleRewardKey, useMerkleRewards } from '@pages/vaults/hooks/rewards/useMerkleRewards'
+import { useMerkleRewards } from '@pages/vaults/hooks/rewards/useMerkleRewards'
 import { useStakingRewards } from '@pages/vaults/hooks/rewards/useStakingRewards'
 import type { TPossibleSortBy } from '@pages/vaults/hooks/useSortVaults'
 import { resolveNextSingleChainSelection } from '@pages/vaults/utils/chainSelection'
 import { Breadcrumbs } from '@shared/components/Breadcrumbs'
-import { Button } from '@shared/components/Button'
 import { METRIC_VALUE_CLASS, MetricHeader, type TMetricBlock } from '@shared/components/MetricsCard'
 import { SearchBar } from '@shared/components/SearchBar'
 import { SwitchChainPrompt } from '@shared/components/SwitchChainPrompt'
@@ -46,7 +44,7 @@ import { TokenLogo } from '@shared/components/TokenLogo'
 import { Tooltip } from '@shared/components/Tooltip'
 import { YearnLogoSpinner } from '@shared/components/YearnLogoSpinner'
 import { useNotifications } from '@shared/contexts/useNotifications'
-import { useWallet } from '@shared/contexts/useWallet'
+import { useWalletActions } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import { useTokenList } from '@shared/contexts/WithTokenList'
@@ -74,20 +72,18 @@ import { formatUSD } from '@shared/utils/format'
 import { copyToClipboard } from '@shared/utils/helpers'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import { getNetwork } from '@shared/utils/wagmi'
+import Link from 'next/link'
+import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import type { CSSProperties, ReactElement } from 'react'
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { useSearchParams } from 'react-router'
-import { useWriteContract } from 'wagmi'
-import Link from '/src/components/Link'
+import { env } from '@/env'
+import Image from '/src/components/Image'
 import {
   doesActivityEntryMatchSearch,
   doesLocalActivityMatchFilters,
-  formatIndexedActivityDate,
-  getActivityChainName,
-  getActivityEntryTitle,
+  getNotificationActivityAction,
   isRecentLocalActivityEntry,
   isZapNotification,
-  type TActivityModalFilters,
   toLocalActivityEntry
 } from './activity.helpers'
 import type {
@@ -101,6 +97,10 @@ import {
   resolvePortfolioGrowthDisplayMode
 } from './components/PortfolioHistoryChart'
 import type { TPortfolioVaultGrowthChartMode } from './components/PortfolioVaultGrowthChart'
+import {
+  getReceiptValidatedLocalActivityNotifications,
+  useLocalActivityReceiptStatuses
+} from './hooks/useLocalActivityReceiptStatuses'
 import { usePortfolioActivity } from './hooks/usePortfolioActivity'
 import { usePortfolioHistory } from './hooks/usePortfolioHistory'
 import { usePortfolioProtocolReturnHistory } from './hooks/usePortfolioProtocolReturnHistory'
@@ -122,7 +122,6 @@ const headingTooltipClassName =
   'rounded-lg border border-border bg-surface-secondary px-2 py-1 text-xs text-text-primary'
 const metricTooltipContentClassName = 'flex max-w-[280px] flex-col gap-1 leading-relaxed'
 const metricCardClassName = 'bg-surface px-5 py-3 md:px-5 md:py-2.5'
-const portfolioRewardClaimButtonClassName = 'w-full md:w-[112px]'
 const PORTFOLIO_TABS = [
   { key: 'positions', label: 'Account Overview' },
   { key: 'activity', label: 'Activity' },
@@ -159,6 +158,14 @@ type TPortfolioActivityProps = Pick<TPortfolioModel, 'isActive' | 'openLoginModa
 
 type TPortfolioClaimRewardsProps = Pick<TPortfolioModel, 'isActive' | 'openLoginModal'>
 
+const ACTIVITY_ACTION_LABELS: Record<TPortfolioActivityEntry['action'], string> = {
+  deposit: 'Deposit',
+  withdraw: 'Withdraw',
+  stake: 'Stake',
+  unstake: 'Unstake',
+  transfer: 'Transfer',
+  swap: 'Swap'
+}
 const ACTIVITY_TYPE_FILTERS: Array<{ key: TPortfolioActivityTypeFilter; label: string }> = [
   { key: 'all', label: 'All' },
   { key: 'deposit', label: 'Deposit' },
@@ -168,7 +175,6 @@ const ACTIVITY_TYPE_FILTERS: Array<{ key: TPortfolioActivityTypeFilter; label: s
   { key: 'transfer', label: 'Transfer' },
   { key: 'swap', label: 'Swap' }
 ]
-const PORTFOLIO_ACTIVITY_PAGE_SIZE = 500
 const ACTIVITY_CALENDAR_DAY_LABELS = [
   { key: 'sunday', label: 'S' },
   { key: 'monday', label: 'M' },
@@ -179,6 +185,11 @@ const ACTIVITY_CALENDAR_DAY_LABELS = [
   { key: 'saturday', label: 'S' }
 ] as const
 
+type TActivityModalFilters = {
+  types: TPortfolioActivityEntry['action'][]
+  startDate: string
+  endDate: string
+}
 type TActivityDateField = 'startDate' | 'endDate'
 
 function getTodayDateInputValue(): string {
@@ -263,8 +274,20 @@ function getActivityExplorerUrl(chainId: number, txHash: string): string | null 
   return explorerBaseUrl ? `${explorerBaseUrl}/tx/${txHash}` : null
 }
 
+function getActivityChainName(chainId: number): string {
+  return SUPPORTED_NETWORKS.find((item) => item.id === chainId)?.name ?? `Chain ${chainId}`
+}
+
 function getActivityChainLogoUrl(chainId: number): string {
-  return `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${chainId}/logo.svg`
+  return `${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/chains/${chainId}/logo.svg`
+}
+
+function formatIndexedActivityDate(timestamp: number): string {
+  return new Date(timestamp * 1000).toLocaleDateString('en-US', {
+    year: 'numeric',
+    month: 'short',
+    day: 'numeric'
+  })
 }
 
 function formatIndexedActivityDateTime(timestamp: number): string {
@@ -380,6 +403,26 @@ function getEarlierActivityDate(firstDate: string, secondDate: string): string {
   return firstDate < secondDate ? firstDate : secondDate
 }
 
+function getActivityEntryTitle(entry: TPortfolioActivityEntry): string {
+  if (entry.displayType === 'reward_claim') {
+    return 'Reward Claim'
+  }
+
+  if (entry.action === 'transfer' && entry.inputTokenAddress && entry.outputTokenAddress) {
+    return 'Zap'
+  }
+
+  if (entry.action === 'transfer' && entry.transferDirection === 'in') {
+    return 'Transfer in'
+  }
+
+  if (entry.action === 'transfer' && entry.transferDirection === 'out') {
+    return 'Transfer out'
+  }
+
+  return ACTIVITY_ACTION_LABELS[entry.action]
+}
+
 function getActivityEntryKey(entry: TPortfolioActivityEntry, index: number): string {
   return [
     entry.chainId,
@@ -447,9 +490,11 @@ function ActivityDetailItem({ label, value }: { label: string; value: ReactEleme
 
 function ActivityTransactionHash({
   explorerUrl,
+  onOpen,
   txHash
 }: {
   explorerUrl: string | null
+  onOpen?: () => void
   txHash: string
 }): ReactElement {
   const displayHash = truncateActivityHash(txHash, 6)
@@ -465,6 +510,7 @@ function ActivityTransactionHash({
           className={
             'inline-flex min-w-0 items-center gap-1 text-text-primary transition-colors hover:text-text-secondary'
           }
+          onClick={onOpen}
         >
           <span className="truncate font-mono text-sm" title={txHash}>
             {displayHash}
@@ -1070,6 +1116,9 @@ function IndexedActivityRow({
   shareSymbol,
   onSelectChain,
   onOpenDateRange,
+  onOpenTransaction,
+  onOpenVault,
+  onRowExpand,
   onSelectZap,
   onSelectVault
 }: {
@@ -1085,6 +1134,9 @@ function IndexedActivityRow({
   shareSymbol: string | null
   onSelectChain: (chainId: number) => void
   onOpenDateRange: (startDate: string, endDate: string) => void
+  onOpenTransaction: (entry: TPortfolioActivityEntry) => void
+  onOpenVault: (entry: TPortfolioActivityEntry) => void
+  onRowExpand: (entry: TPortfolioActivityEntry) => void
   onSelectZap: () => void
   onSelectVault: (vaultName: string) => void
 }): ReactElement {
@@ -1169,8 +1221,15 @@ function IndexedActivityRow({
       : 'ASSET RECEIVED:'
     : 'VAULT SHARES RECEIVED:'
   const metadataStatus = entry.status === 'ok' ? 'Indexed' : 'Limited metadata'
+  const isFailedTransaction = entry.transactionStatus === 'failed'
   const hoverRoundedClass =
     isFirstRow && isLastRow ? 'rounded-lg' : isFirstRow ? 'rounded-t-lg' : isLastRow ? 'rounded-b-lg' : ''
+  const handleRowToggle = (): void => {
+    if (!isExpanded) {
+      onRowExpand(entry)
+    }
+    setIsExpanded((previous) => !previous)
+  }
 
   return (
     <div className={cl('relative z-0 w-full overflow-visible bg-surface transition-colors', hoverRoundedClass)}>
@@ -1178,7 +1237,7 @@ function IndexedActivityRow({
         type="button"
         aria-label={isExpanded ? 'Collapse row' : 'Expand row'}
         aria-expanded={isExpanded}
-        onClick={() => setIsExpanded((previous) => !previous)}
+        onClick={handleRowToggle}
         className={cl(
           'absolute right-5 top-6.5 z-20 hidden size-9 items-center justify-center rounded-full border border-white/30 bg-app text-text-secondary transition-colors duration-150 md:flex',
           'hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400'
@@ -1188,7 +1247,7 @@ function IndexedActivityRow({
       </button>
 
       <div
-        onClick={() => setIsExpanded((previous) => !previous)}
+        onClick={handleRowToggle}
         aria-expanded={isExpanded}
         className={cl(
           'group relative grid w-full cursor-pointer grid-cols-1 gap-1.5 bg-surface p-3 pb-5 text-left md:grid-cols-24 md:gap-0 md:px-6 md:py-4 md:pr-20',
@@ -1215,7 +1274,7 @@ function IndexedActivityRow({
             <div className="relative flex size-8 shrink-0 items-center justify-center rounded-full bg-surface-secondary text-neutral-700 md:size-10">
               <ActivityActionIcon action={entry.action} displayType={entry.displayType} />
               <div className="absolute -bottom-1 -left-1 flex size-4 items-center justify-center rounded-full border border-border bg-surface">
-                <img
+                <Image
                   src={getActivityChainLogoUrl(entry.chainId)}
                   alt={chainName}
                   className="size-3.5 rounded-full"
@@ -1256,6 +1315,7 @@ function IndexedActivityRow({
                   time={formattedTime}
                 />
                 {metadataStatus !== 'Indexed' ? <VaultsListChip label={metadataStatus} /> : null}
+                {isFailedTransaction ? <VaultsListChip label="Failed" /> : null}
                 {isZap ? (
                   <VaultsListChip
                     label="Zap"
@@ -1286,6 +1346,7 @@ function IndexedActivityRow({
             time={formattedTime}
           />
           {metadataStatus !== 'Indexed' ? <VaultsListChip label={metadataStatus} /> : null}
+          {isFailedTransaction ? <VaultsListChip label="Failed" /> : null}
           {isZap ? (
             <VaultsListChip
               label="Zap"
@@ -1322,8 +1383,8 @@ function IndexedActivityRow({
             )}
             {tokenAddress ? (
               <TokenLogo
-                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${entry.chainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
-                altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${entry.chainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
+                src={`${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${entry.chainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
+                altSrc={`${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${entry.chainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
                 tokenSymbol={summaryAssetSymbol ?? activityTitle}
                 width={32}
                 height={32}
@@ -1338,8 +1399,8 @@ function IndexedActivityRow({
           <div className="grid min-w-0 shrink-0 grid-cols-[24px_160px] items-center gap-2.5 text-right">
             {tokenAddress ? (
               <TokenLogo
-                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${entry.chainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
-                altSrc={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/tokens/${entry.chainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
+                src={`${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${entry.chainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
+                altSrc={`${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${entry.chainId}/${tokenAddress.toLowerCase()}/logo-32.png`}
                 tokenSymbol={summaryAssetSymbol ?? activityTitle}
                 width={24}
                 height={24}
@@ -1426,6 +1487,7 @@ function IndexedActivityRow({
                     href={vaultPageUrl}
                     aria-label={`Open vault ${preferredVaultAddress}`}
                     className={'underline hover:text-text-secondary'}
+                    onClick={() => onOpenVault(entry)}
                   >
                     {displayName}
                   </Link>
@@ -1438,7 +1500,7 @@ function IndexedActivityRow({
               label="CHAIN NAME:"
               value={
                 <span className="inline-flex items-center gap-2">
-                  <img
+                  <Image
                     src={getActivityChainLogoUrl(entry.chainId)}
                     alt={chainName}
                     className="size-4 rounded-full"
@@ -1451,7 +1513,13 @@ function IndexedActivityRow({
             />
             <ActivityDetailItem
               label="TRANSACTION HASH:"
-              value={<ActivityTransactionHash explorerUrl={explorerUrl} txHash={entry.txHash} />}
+              value={
+                <ActivityTransactionHash
+                  explorerUrl={explorerUrl}
+                  onOpen={() => onOpenTransaction(entry)}
+                  txHash={entry.txHash}
+                />
+              }
             />
           </div>
         </div>
@@ -1649,9 +1717,19 @@ function PortfolioTabSelector({
 }
 
 function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivityProps): ReactElement {
+  const trackEvent = usePlausible()
   const { allVaults } = useYearn()
   const { getToken } = useTokenList()
   const { cachedEntries, isLoading: notificationsLoading, error: notificationsError } = useNotifications()
+  const localActivityNotifications = useMemo(
+    () => cachedEntries.filter((entry) => Boolean(getNotificationActivityAction(entry))),
+    [cachedEntries]
+  )
+  const localActivityReceiptStatuses = useLocalActivityReceiptStatuses(localActivityNotifications, isActive)
+  const receiptValidatedCachedEntries = useMemo(
+    () => getReceiptValidatedLocalActivityNotifications(localActivityNotifications, localActivityReceiptStatuses),
+    [localActivityNotifications, localActivityReceiptStatuses]
+  )
   const [activityFilters, setActivityFilters] = useState<TActivityModalFilters>(DEFAULT_ACTIVITY_MODAL_FILTERS)
   const [activityDateRangeDraftFilters, setActivityDateRangeDraftFilters] =
     useState<TActivityModalFilters>(DEFAULT_ACTIVITY_MODAL_FILTERS)
@@ -1681,7 +1759,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
     hasMore: indexedHasMore,
     availableChainIds: activityAvailableChainIds,
     loadMore: loadMoreIndexedActivity
-  } = usePortfolioActivity(PORTFOLIO_ACTIVITY_PAGE_SIZE, isActive, {
+  } = usePortfolioActivity(10, isActive, {
     type: apiActivityType,
     chainId: activityChainId,
     startTimestamp: activityStartTimestamp,
@@ -1730,7 +1808,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
   )
   const unresolvedLocalActivityEntries = useMemo(
     () =>
-      cachedEntries
+      receiptValidatedCachedEntries
         .filter((entry) => entry.status !== 'success')
         .filter((entry) =>
           doesLocalActivityMatchFilters({
@@ -1752,7 +1830,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
       activitySearch,
       activityStartTimestamp,
       allVaults,
-      cachedEntries,
+      receiptValidatedCachedEntries,
       isActivityZapFilterActive
     ]
   )
@@ -1762,7 +1840,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
   )
   const recentLocalEntries = useMemo(
     () =>
-      cachedEntries
+      receiptValidatedCachedEntries
         .filter((entry) => isRecentLocalActivityEntry(entry, indexedTxHashes))
         .filter((entry) =>
           doesLocalActivityMatchFilters({
@@ -1780,7 +1858,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
       activityEndTimestamp,
       activityFilters,
       activityStartTimestamp,
-      cachedEntries,
+      receiptValidatedCachedEntries,
       indexedTxHashes,
       isActivityZapFilterActive
     ]
@@ -1825,16 +1903,62 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
     [recentLocalActivityEntries, unresolvedLocalActivityEntries, visibleIndexedEntries]
   )
 
+  const trackActivityInteraction = useCallback(
+    (action: string, props: Record<string, string> = {}) => {
+      trackEvent(PLAUSIBLE_EVENTS.PORTFOLIO_ACTIVITY_INTERACT, {
+        props: {
+          action,
+          ...props
+        }
+      })
+    },
+    [trackEvent]
+  )
+
   function handleActivityChainSelect(chainId: number): void {
-    setActivityChainId(resolveNextSingleChainSelection(selectedActivityChains, chainId)?.[0] ?? null)
+    const nextChainId = resolveNextSingleChainSelection(selectedActivityChains, chainId)?.[0] ?? null
+    trackActivityInteraction('chain_filter', {
+      chainID: String(chainId),
+      state: nextChainId === null ? 'cleared' : 'selected'
+    })
+    setActivityChainId(nextChainId)
+  }
+
+  function handleActivityAllChainsSelect(): void {
+    trackActivityInteraction('chain_filter', {
+      state: 'all'
+    })
+    setActivityChainId(null)
+  }
+
+  function handleActivityTypesChange(types: TPortfolioActivityEntry['action'][]): void {
+    trackActivityInteraction('type_filter', {
+      filterCount: String(types.length),
+      state: types.length > 0 ? 'selected' : 'cleared',
+      type: types.length === 1 ? types[0] : types.length > 1 ? 'multiple' : 'none'
+    })
+    setActivityFilters((previous) => ({ ...previous, types }))
+  }
+
+  function handleActivitySearch(nextSearch: string): void {
+    const wasActive = activitySearch.trim().length > 0
+    const isNextActive = nextSearch.trim().length > 0
+    if (!wasActive && isNextActive) {
+      trackActivityInteraction('search_start')
+    } else if (wasActive && !isNextActive) {
+      trackActivityInteraction('search_clear')
+    }
+    setActivitySearch(nextSearch)
   }
 
   function handleActivityDateRangeOpen(): void {
+    trackActivityInteraction('date_range_open', { source: 'toolbar' })
     setActivityDateRangeDraftFilters(activityFilters)
     setIsActivityDateRangeOpen(true)
   }
 
   function handleActivityDateChipOpen(startDate: string, endDate: string): void {
+    trackActivityInteraction('date_range_open', { source: 'activity_row' })
     setActivityDateRangeDraftFilters((previous) => ({
       ...previous,
       ...activityFilters,
@@ -1845,15 +1969,27 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
   }
 
   function handleActivityDateRangeModalApply(filters: TActivityModalFilters): void {
+    const hasDateRange = filters.startDate !== '' || filters.endDate !== DEFAULT_ACTIVITY_MODAL_FILTERS.endDate
+    trackActivityInteraction('date_range_apply', {
+      state: hasDateRange ? 'selected' : 'cleared'
+    })
     setActivityFilters(filters)
     setActivityDateRangeDraftFilters(filters)
   }
 
   function handleActivityVaultSelect(vaultName: string): void {
+    const willSelectVault = activitySearch !== vaultName
+    trackActivityInteraction('vault_filter', {
+      source: 'activity_row',
+      state: willSelectVault ? 'selected' : 'cleared'
+    })
     setActivitySearch((previous) => (previous === vaultName ? '' : vaultName))
   }
 
   function handleActivityZapSelect(): void {
+    trackActivityInteraction('zap_filter', {
+      state: isActivityZapFilterActive ? 'cleared' : 'selected'
+    })
     setIsActivityZapFilterActive((previous) => !previous)
   }
 
@@ -1862,8 +1998,48 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
       return
     }
 
+    trackActivityInteraction('load_more', { source: 'scroll' })
     void loadMoreIndexedActivity()
-  }, [indexedHasMore, indexedLoadingMore, loadMoreIndexedActivity])
+  }, [indexedHasMore, indexedLoadingMore, loadMoreIndexedActivity, trackActivityInteraction])
+
+  function handleActivityLoadMoreClick(): void {
+    trackActivityInteraction('load_more', { source: 'button' })
+    void loadMoreIndexedActivity()
+  }
+
+  function handleActivityMobileSearchOpen(): void {
+    trackActivityInteraction('search_open', { source: 'mobile' })
+    setIsActivityMobileSearchExpanded(true)
+  }
+
+  function handleActivityMobileSearchClose(): void {
+    trackActivityInteraction('search_close', { source: 'mobile' })
+    setIsActivityMobileSearchExpanded(false)
+  }
+
+  function handleActivityRowExpand(entry: TPortfolioActivityEntry): void {
+    trackActivityInteraction('row_expand', {
+      activityType: entry.action,
+      chainID: String(entry.chainId),
+      displayType: entry.displayType ?? 'standard'
+    })
+  }
+
+  function handleActivityTransactionOpen(entry: TPortfolioActivityEntry): void {
+    trackActivityInteraction('transaction_open', {
+      activityType: entry.action,
+      chainID: String(entry.chainId),
+      displayType: entry.displayType ?? 'standard'
+    })
+  }
+
+  function handleActivityVaultOpen(entry: TPortfolioActivityEntry): void {
+    trackActivityInteraction('vault_open', {
+      activityType: entry.action,
+      chainID: String(entry.chainId),
+      displayType: entry.displayType ?? 'standard'
+    })
+  }
 
   function renderActivityFilters(): ReactElement {
     return (
@@ -1874,7 +2050,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
               chainButtons={activityChainButtons}
               areAllChainsSelected={activityChainId === null}
               allChainsLabel="All Chains"
-              onSelectAllChains={() => setActivityChainId(null)}
+              onSelectAllChains={handleActivityAllChainsSelect}
               onSelectChain={handleActivityChainSelect}
             />
           </div>
@@ -1885,7 +2061,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
               allChainsLabel="All Chains"
               showMoreChainsButton={false}
               enableResponsiveLayout={true}
-              onSelectAllChains={() => setActivityChainId(null)}
+              onSelectAllChains={handleActivityAllChainsSelect}
               onSelectChain={handleActivityChainSelect}
               onOpenChainModal={() => undefined}
             />
@@ -1898,13 +2074,13 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
                   iconClassName="text-text-primary"
                   searchPlaceholder="Search activity"
                   searchValue={activitySearch}
-                  onSearch={setActivitySearch}
+                  onSearch={handleActivitySearch}
                   shouldDebounce={false}
                   highlightWhenActive={false}
                   autoFocus={true}
                   onKeyDown={(event): void => {
                     if (event.key === 'Escape') {
-                      setIsActivityMobileSearchExpanded(false)
+                      handleActivityMobileSearchClose()
                     }
                   }}
                 />
@@ -1912,7 +2088,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
               <button
                 type="button"
                 className="flex size-10 shrink-0 items-center justify-center rounded-lg border border-border bg-surface text-text-secondary transition-colors hover:border-hover hover:text-text-primary"
-                onClick={(): void => setIsActivityMobileSearchExpanded(false)}
+                onClick={handleActivityMobileSearchClose}
                 aria-label="Close activity search"
               >
                 <IconCross className="size-3" />
@@ -1920,10 +2096,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
             </div>
           ) : (
             <div className="grid w-full grid-cols-[minmax(0,1fr)_minmax(0,1fr)_40px] gap-1 md:contents md:gap-2">
-              <ActivityTypeDropdown
-                selectedTypes={activityFilters.types}
-                onChange={(types) => setActivityFilters((previous) => ({ ...previous, types }))}
-              />
+              <ActivityTypeDropdown selectedTypes={activityFilters.types} onChange={handleActivityTypesChange} />
               <ActivityDateRangeButton
                 startDate={activityFilters.startDate}
                 endDate={activityFilters.endDate}
@@ -1935,7 +2108,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
                   'flex size-10 shrink-0 items-center justify-center rounded-lg border border-border bg-surface text-text-secondary transition-colors hover:border-hover hover:text-text-primary md:hidden',
                   activitySearch ? 'text-text-primary' : ''
                 )}
-                onClick={(): void => setIsActivityMobileSearchExpanded(true)}
+                onClick={handleActivityMobileSearchOpen}
                 aria-label="Search activity"
               >
                 <IconSearch className="size-4" />
@@ -1948,7 +2121,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
               iconClassName="text-text-primary"
               searchPlaceholder="Search activity"
               searchValue={activitySearch}
-              onSearch={setActivitySearch}
+              onSearch={handleActivitySearch}
               shouldDebounce={false}
               highlightWhenActive={true}
             />
@@ -2021,6 +2194,9 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
         assetAddress={assetAddress}
         onSelectChain={handleActivityChainSelect}
         onOpenDateRange={handleActivityDateChipOpen}
+        onOpenTransaction={handleActivityTransactionOpen}
+        onOpenVault={handleActivityVaultOpen}
+        onRowExpand={handleActivityRowExpand}
         onSelectZap={handleActivityZapSelect}
         onSelectVault={handleActivityVaultSelect}
       />
@@ -2102,7 +2278,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
             <div className="flex justify-center">
               <button
                 type="button"
-                onClick={() => void loadMoreIndexedActivity()}
+                onClick={handleActivityLoadMoreClick}
                 disabled={indexedLoadingMore}
                 className={cl(
                   'rounded-lg border border-border bg-surface px-4 py-2 text-sm font-medium text-text-primary transition-colors',
@@ -2255,86 +2431,6 @@ function ChainMerkleRewardsFetcher({
   }, [chainId, rewardsKey, isLoading])
 
   return null
-}
-
-function getMerkleRewardKeys(groupedRewards: TGroupedMerkleReward[]): string[] {
-  return groupedRewards.flatMap((groupedReward) =>
-    groupedReward.rewards.map((reward) => buildMerkleRewardKey(reward.root, reward.token.address))
-  )
-}
-
-function getMerkleRewardTokenCount(groupedRewards: TGroupedMerkleReward[]): number {
-  return groupedRewards.filter((groupedReward) => groupedReward.totalUnclaimed > 0n).length
-}
-
-function MerkleClaimAllButton({
-  chainData,
-  userAddress,
-  onStartClaim,
-  onSwitchChain
-}: {
-  chainData: TChainRewardData
-  userAddress: `0x${string}`
-  onStartClaim: (step: TransactionStep, merkleRewardKeys: string[], chainId: number) => void
-  onSwitchChain: () => void
-}): ReactElement | null {
-  const currentChainId = useChainId()
-  const { isPending } = useWriteContract()
-  const merkleRewardTokenCount = getMerkleRewardTokenCount(chainData.merkleRewards)
-  const isWrongChain = currentChainId !== chainData.chainId
-
-  const { prepare } = useClaimMerkleRewards({
-    groupedRewards: chainData.merkleRewards,
-    userAddress,
-    chainId: chainData.chainId,
-    enabled: merkleRewardTokenCount > 1
-  })
-
-  const step = useMemo((): TransactionStep | undefined => {
-    if (!prepare.isSuccess || !prepare.data?.request) {
-      return undefined
-    }
-
-    return {
-      prepare,
-      label: 'Claim',
-      confirmMessage: 'Claim all Merkl rewards',
-      successTitle: 'Rewards Claimed',
-      successMessage: 'You claimed all Merkl rewards',
-      showConfetti: true
-    }
-  }, [prepare])
-
-  const handleClaimAll = useCallback(() => {
-    if (isWrongChain) {
-      onSwitchChain()
-      return
-    }
-    if (!step) return
-
-    onStartClaim(step, getMerkleRewardKeys(chainData.merkleRewards), chainData.chainId)
-  }, [chainData.chainId, chainData.merkleRewards, isWrongChain, onStartClaim, onSwitchChain, step])
-
-  if (merkleRewardTokenCount < 2) {
-    return null
-  }
-
-  return (
-    <div className="flex flex-col">
-      <div className="h-px w-full bg-border" />
-      <div className="mt-3 flex justify-end">
-        <Button
-          onClick={handleClaimAll}
-          isDisabled={!isWrongChain && !step}
-          isBusy={isPending}
-          variant={isWrongChain || !step ? 'light' : 'filled'}
-          classNameOverride={cl('yearn--button--nextgen min-h-[36px] px-3', portfolioRewardClaimButtonClassName)}
-        >
-          {isWrongChain ? 'Switch Chain' : 'Claim all'}
-        </Button>
-      </div>
-    </div>
-  )
 }
 
 function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioClaimRewardsProps): ReactElement {
@@ -2519,7 +2615,7 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
   }, [userAddress])
 
   function getChainLogoUrl(chainId: number): string {
-    return `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${chainId}/logo.svg`
+    return `${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/chains/${chainId}/logo.svg`
   }
 
   function renderRewardsContent(): ReactElement {
@@ -2545,7 +2641,7 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
           <div key={chainData.chainId}>
             {showChainHeader && (
               <div className="mb-2 flex items-center gap-2">
-                <img
+                <Image
                   src={getChainLogoUrl(chainData.chainId)}
                   alt={chainData.chainName}
                   className="size-5 rounded-full"
@@ -2567,7 +2663,6 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
                   isFirst={srIdx === 0 && rewardIdx === 0}
                   isAllChainsView={isAllChainsView}
                   onSwitchChain={() => switchChainAsync({ chainId: chainData.chainId })}
-                  claimButtonClassName={portfolioRewardClaimButtonClassName}
                 />
               ))
             )}
@@ -2581,15 +2676,8 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
                 isFirst={idx === 0 && chainData.stakingRewards.length === 0}
                 isAllChainsView={isAllChainsView}
                 onSwitchChain={() => switchChainAsync({ chainId: chainData.chainId })}
-                claimButtonClassName={portfolioRewardClaimButtonClassName}
               />
             ))}
-            <MerkleClaimAllButton
-              chainData={chainData}
-              userAddress={userAddress!}
-              onStartClaim={handleStartClaim}
-              onSwitchChain={() => switchChainAsync({ chainId: chainData.chainId })}
-            />
             {needsSwitchChain(chainData) && (
               <SwitchChainPrompt
                 chainId={chainData.chainId}
@@ -2691,7 +2779,7 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
                     )}
                   >
                     <div className="flex items-center gap-3">
-                      <img src={getChainLogoUrl(chainId)} alt={chainData.chainName} className="size-8 rounded-full" />
+                      <Image src={getChainLogoUrl(chainId)} alt={chainData.chainName} className="size-8 rounded-full" />
                       <span className="font-medium">{chainData.chainName}</span>
                       {isSelected && <span className="size-2 rounded-full bg-green-500" />}
                     </div>
@@ -2778,6 +2866,7 @@ function PortfolioHoldingsSection({
             currentVault={row.vault}
             flags={vaultFlags[row.key]}
             hrefOverride={row.hrefOverride}
+            yvUsdPositionApy={row.yvUsdPositionApy}
             showBoostDetails={false}
             activeProductType="all"
             showStrategies
@@ -2786,6 +2875,7 @@ function PortfolioHoldingsSection({
             showHoldingsChipOverride={false}
             mobileSecondaryMetric="holdings"
             expandedChartVariant="portfolio-user-tvl-overlay"
+            clickEventName={PLAUSIBLE_EVENTS.VAULT_CLICK_PORTFOLIO_LIST_ROW}
           />
         ))}
       </div>
@@ -2909,6 +2999,7 @@ function PortfolioSuggestedSection({
                 matchedSymbol={row.underlyingSymbol}
                 externalProtocol={row.externalProtocol}
                 matchedChainName={matchedChainName}
+                clickEventName={PLAUSIBLE_EVENTS.VAULT_CLICK_PORTFOLIO_SUGGESTED}
               />
             )
           }
@@ -2921,10 +3012,17 @@ function PortfolioSuggestedSection({
                 vault={row.vault}
                 matchedSymbol={row.matchedSymbol}
                 matchedChainName={matchedChainName}
+                clickEventName={PLAUSIBLE_EVENTS.VAULT_CLICK_PORTFOLIO_SUGGESTED}
               />
             )
           }
-          return <SuggestedVaultCard key={row.key} vault={row.vault} />
+          return (
+            <SuggestedVaultCard
+              key={row.key}
+              vault={row.vault}
+              clickEventName={PLAUSIBLE_EVENTS.VAULT_CLICK_PORTFOLIO_SUGGESTED}
+            />
+          )
         })}
       </div>
     </section>
@@ -2933,6 +3031,7 @@ function PortfolioSuggestedSection({
 
 function PortfolioPage(): ReactElement {
   const model = usePortfolioModel()
+  const trackEvent = usePlausible()
   const [historyDenomination, setHistoryDenomination] = useState<TPortfolioHistoryDenomination>('usd')
   const [historyTimeframe, setHistoryTimeframe] = useState<TPortfolioHistoryChartTimeframe>('1y')
   const [historyChartTab, setHistoryChartTab] = useState<TPortfolioHistoryChartTab>('balance')
@@ -2940,14 +3039,24 @@ function PortfolioPage(): ReactElement {
     null
   )
   const [historyVaultGrowthMode, setHistoryVaultGrowthMode] = useState<TPortfolioVaultGrowthChartMode>('position')
-  const [searchParams, setSearchParams] = useSearchParams()
+  const searchParams = useSearchParams()
+  const pathname = usePathname() || '/portfolio'
+  const router = useRouter()
   const varsRef = useRef<HTMLDivElement>(null)
   const breadcrumbsRef = useRef<HTMLDivElement>(null)
   const tabsRef = useRef<HTMLDivElement>(null)
   const historyFetchTimeframe: TPortfolioHistoryTimeframe = historyTimeframe === 'all' ? 'all' : '1y'
-  const { onRefresh } = useWallet()
+  const { onRefresh } = useWalletActions()
 
   usePortfolioEntryRefresh({ isActive: model.isActive, onRefresh })
+
+  const replaceSearchParams = useCallback(
+    (nextParams: URLSearchParams): void => {
+      const query = nextParams.toString()
+      router.replace(`${pathname}${query ? `?${query}` : ''}`, { scroll: false })
+    },
+    [pathname, router]
+  )
 
   const activeTab = useMemo((): TPortfolioTabKey => {
     const tabParam = searchParams.get('tab')
@@ -3013,15 +3122,25 @@ function PortfolioPage(): ReactElement {
 
   const handleTabSelect = useCallback(
     (tab: TPortfolioTabKey) => {
-      const nextParams = new URLSearchParams(searchParams)
+      if (tab !== activeTab) {
+        trackEvent(PLAUSIBLE_EVENTS.PORTFOLIO_TAB_SELECT, {
+          props: {
+            fromTab: activeTab,
+            hasHoldings: String(model.hasHoldings),
+            isWalletConnected: String(model.isActive),
+            tab
+          }
+        })
+      }
+      const nextParams = new URLSearchParams(searchParams.toString())
       if (tab === 'positions') {
         nextParams.delete('tab')
       } else {
         nextParams.set('tab', tab)
       }
-      setSearchParams(nextParams, { replace: true })
+      replaceSearchParams(nextParams)
     },
-    [searchParams, setSearchParams]
+    [activeTab, model.hasHoldings, model.isActive, replaceSearchParams, searchParams, trackEvent]
   )
 
   useEffect(() => {

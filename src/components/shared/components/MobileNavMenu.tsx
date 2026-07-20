@@ -2,7 +2,8 @@ import { Dialog, Transition, TransitionChild } from '@headlessui/react'
 import { setThemePreference, useThemePreference } from '@hooks/useThemePreference'
 import { BottomDrawer } from '@pages/vaults/components/detail/BottomDrawer'
 import { useAppSettings } from '@pages/vaults/contexts/useAppSettings'
-import { useWallet } from '@shared/contexts/useWallet'
+import { useWalletStatus } from '@shared/contexts/useWallet'
+import { useWalletVaultTotals } from '@shared/contexts/useWalletVaultTotals'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconClose } from '@shared/icons/IconClose'
@@ -10,6 +11,7 @@ import { IconDiscord } from '@shared/icons/IconDiscord'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
 import { IconMoon } from '@shared/icons/IconMoon'
 import { IconSettings } from '@shared/icons/IconSettings'
+import { IconStack } from '@shared/icons/IconStack'
 import { IconSun } from '@shared/icons/IconSun'
 import { IconTwitter } from '@shared/icons/IconTwitter'
 import { IconWallet } from '@shared/icons/IconWallet'
@@ -20,10 +22,12 @@ import { LogoYearnMark } from '@shared/icons/LogoYearnMark'
 import { TypeMarkYearn } from '@shared/icons/TypeMarkYearn'
 import { cl, formatUSD } from '@shared/utils'
 import { truncateHex } from '@shared/utils/tools.address'
+import Link from 'next/link'
+import { useRouter } from 'next/navigation'
 import type { ReactElement } from 'react'
 import { useEffect, useState } from 'react'
-import { useNavigate } from 'react-router'
-import Link from '/src/components/Link'
+import { env } from '@/env'
+import Image from '/src/components/Image'
 import { IconTelegram } from '../icons/IconTelegram'
 
 type TNavItem = {
@@ -37,7 +41,7 @@ type TNavTile = TNavItem & {
   iconWrapperClass?: string
 }
 
-const BASE_YEARN_ASSET_URI = import.meta.env?.VITE_BASE_YEARN_ASSETS_URI ?? ''
+const BASE_YEARN_ASSET_URI = env?.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI ?? ''
 
 function isExternalHref(href: string): boolean {
   return /^https?:\/\//i.test(href)
@@ -69,7 +73,14 @@ function MobileNavTile({
     item.iconWrapperClass ?? cl(isDark ? 'bg-[#0a0a0a] text-neutral-200' : 'bg-white text-neutral-700')
 
   return (
-    <Link href={item.href} onClick={onClick} className={'w-full'}>
+    <Link
+      href={item.href}
+      prefetch={isExternalHref(item.href) ? undefined : false}
+      onClick={onClick}
+      target={isExternalHref(item.href) ? '_blank' : undefined}
+      rel={isExternalHref(item.href) ? 'noopener noreferrer' : undefined}
+      className={'w-full'}
+    >
       <div
         className={cl(
           'group/nav-item flex items-center rounded-lg p-2 transition-colors',
@@ -103,6 +114,95 @@ function MobileNavTile({
   )
 }
 
+type TMobileWalletDrawerContentProps = {
+  displayName: string
+  isActive: boolean
+  onConnectWallet: () => void
+  onDisconnect: () => void
+  onViewPortfolio: () => void
+  onViewRecentActivity: () => void
+}
+
+function MobileWalletDrawerContent({
+  displayName,
+  isActive,
+  onConnectWallet,
+  onDisconnect,
+  onViewPortfolio,
+  onViewRecentActivity
+}: TMobileWalletDrawerContentProps): ReactElement {
+  const { isLoading: isWalletLoading } = useWalletStatus()
+  const { totalValue } = useWalletVaultTotals()
+
+  return (
+    <div className={'px-4 py-4'}>
+      <div className={'mb-4 flex items-start justify-between'}>
+        <div className={'flex flex-col'}>
+          <p className={'text-sm font-medium text-text-primary'}>{displayName}</p>
+          {!isActive ? (
+            <p className={'text-sm text-text-secondary'}>{'Not connected'}</p>
+          ) : isWalletLoading ? (
+            <div className={'mt-1 h-7 w-20 animate-pulse rounded bg-surface-tertiary'} />
+          ) : (
+            <p className={'text-2xl font-bold text-text-primary'}>
+              <span>{formatUSD(Math.floor(totalValue), 0, 0)}</span>
+              <span className={'text-text-secondary'}>
+                {totalValue > 0 ? `.${(totalValue % 1).toFixed(2).substring(2)}` : ''}
+              </span>
+            </p>
+          )}
+        </div>
+        {isActive && (
+          <button
+            onClick={onDisconnect}
+            className={cl(
+              'rounded-lg px-3 py-1.5 text-sm font-medium transition-colors',
+              'text-text-secondary hover:bg-surface-tertiary hover:text-text-primary'
+            )}
+          >
+            {'Disconnect'}
+          </button>
+        )}
+      </div>
+
+      {!isActive && (
+        <button
+          onClick={onConnectWallet}
+          className={cl(
+            'flex w-full items-center justify-center rounded-lg border py-2.5 text-sm font-medium transition-colors',
+            'border-border bg-surface text-text-primary hover:bg-surface-tertiary'
+          )}
+        >
+          {'Connect wallet'}
+        </button>
+      )}
+
+      {isActive && (
+        <div className={'flex flex-col gap-2'}>
+          <button
+            onClick={onViewPortfolio}
+            className={cl(
+              'flex w-full items-center justify-center rounded-lg border py-2.5 text-sm font-medium transition-colors',
+              'border-border bg-surface text-text-primary hover:bg-surface-tertiary'
+            )}
+          >
+            {'View portfolio'}
+          </button>
+          <button
+            onClick={onViewRecentActivity}
+            className={cl(
+              'flex w-full items-center justify-center rounded-lg border py-2.5 text-sm font-medium transition-colors',
+              'border-border bg-surface text-text-primary hover:bg-surface-tertiary'
+            )}
+          >
+            {'Recent activity'}
+          </button>
+        </div>
+      )}
+    </div>
+  )
+}
+
 export function MobileNavMenu({
   isOpen,
   onClose,
@@ -122,10 +222,9 @@ export function MobileNavMenu({
   const [isSettingsDrawerOpen, setIsSettingsDrawerOpen] = useState(false)
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false)
   const { isActive, openLoginModal, onDesactivate, address, ens, clusters } = useWeb3()
-  const { cumulatedValueInV2Vaults, cumulatedValueInV3Vaults, isLoading: isWalletLoading } = useWallet()
   const { shouldHideDust, onSwitchHideDust } = useAppSettings()
   const themePreference = useThemePreference()
-  const navigate = useNavigate()
+  const router = useRouter()
 
   useEffect(() => {
     if (!isOpen) {
@@ -186,7 +285,7 @@ export function MobileNavMenu({
       href: 'https://ycrv.yearn.fi',
       description: 'veCRV Liquid Locker',
       icon: (
-        <img
+        <Image
           alt={'yCRV'}
           className={'size-6'}
           src={`${BASE_YEARN_ASSET_URI}/tokens/1/0xfcc5c47be19d06bf83eb04298b026f81069ff65b/logo-128.png`}
@@ -199,13 +298,13 @@ export function MobileNavMenu({
       name: 'yYB',
       href: 'https://yyb.yearn.fi',
       description: 'veYB Liquid Locker',
-      icon: <img alt={'yYB'} className={'size-6'} src={'/yYB-logo.svg'} loading={'eager'} decoding={'async'} />
+      icon: <Image alt={'yYB'} className={'size-6'} src={'/yYB-logo.svg'} loading={'eager'} decoding={'async'} />
     },
     {
       name: 'stYFI',
       href: 'https://styfi.yearn.fi',
       description: 'YFI Staking',
-      icon: <img alt={'stYFI'} className={'size-6'} src={'/stYFI-logo.svg'} loading={'eager'} decoding={'async'} />
+      icon: <Image alt={'stYFI'} className={'size-6'} src={'/stYFI-logo.svg'} loading={'eager'} decoding={'async'} />
     }
   ]
 
@@ -215,7 +314,7 @@ export function MobileNavMenu({
       href: 'https://docs.yearn.fi/',
       description: 'Yearn Knowledge Base',
       icon: (
-        <img
+        <Image
           alt={'GitBook'}
           className={neutralImageClass}
           src={'/GitBook%20-%20Icon%20-%20Dark.svg'}
@@ -241,7 +340,7 @@ export function MobileNavMenu({
       href: 'https://blog.yearn.fi/',
       description: 'Articles about Yearn',
       icon: (
-        <img alt={'Blog'} className={neutralImageClass} src={'/paragraph.svg'} loading={'eager'} decoding={'async'} />
+        <Image alt={'Blog'} className={neutralImageClass} src={'/paragraph.svg'} loading={'eager'} decoding={'async'} />
       )
     },
     {
@@ -262,6 +361,12 @@ export function MobileNavMenu({
 
   const resourceCommunityItems: TNavTile[] = [
     {
+      name: 'Partners',
+      href: 'https://partners.yearn.fi/',
+      description: 'Build on Yearn',
+      icon: <IconStack className={cl('size-5', neutralIconForeground)} />
+    },
+    {
       name: 'Support',
       href: 'https://discord.gg/yearn',
       description: 'Get help on the Yearn Discord Server',
@@ -278,7 +383,7 @@ export function MobileNavMenu({
       href: 'https://gov.yearn.fi/',
       description: 'Yearn Discussion Forum',
       icon: (
-        <img
+        <Image
           alt={'Discourse'}
           className={neutralImageClass}
           src={'/discourse-icon.svg'}
@@ -298,7 +403,6 @@ export function MobileNavMenu({
   ]
 
   const displayName = walletIdentity || ens || clusters?.name || (address ? truncateHex(address, 4) : 'Wallet')
-  const totalValue = cumulatedValueInV2Vaults + cumulatedValueInV3Vaults
 
   const handleWalletClick = (): void => {
     onClose()
@@ -315,12 +419,12 @@ export function MobileNavMenu({
   }
 
   const handleViewPortfolio = (): void => {
-    navigate('/portfolio')
+    router.push('/portfolio')
     setIsWalletDrawerOpen(false)
   }
 
   const handleViewRecentActivity = (): void => {
-    navigate('/portfolio?tab=activity')
+    router.push('/portfolio?tab=activity')
     setIsWalletDrawerOpen(false)
   }
 
@@ -375,9 +479,9 @@ export function MobileNavMenu({
               className={cl('relative flex min-h-screen w-full flex-col', isDarkTheme ? 'bg-[#0a0a0a]' : 'bg-surface')}
             >
               <div className={'flex h-[var(--header-height)] items-center justify-between border-b border-border px-4'}>
-                <Link href={'/'} onClick={onClose} className={'flex items-center'}>
+                <a href={'/'} onClick={onClose} className={'flex items-center'}>
                   <TypeMarkYearn className={'h-8 w-auto'} color={isDarkTheme ? '#FFFFFF' : '#0657F9'} />
-                </Link>
+                </a>
                 <button
                   onClick={onClose}
                   className={
@@ -394,6 +498,7 @@ export function MobileNavMenu({
                   <div className={'flex flex-col gap-1'}>
                     <Link
                       href={'/vaults'}
+                      prefetch={false}
                       onClick={onClose}
                       className={navItemClass(pathname.startsWith('/vaults'), false)}
                     >
@@ -401,6 +506,7 @@ export function MobileNavMenu({
                     </Link>
                     <Link
                       href={'/portfolio'}
+                      prefetch={false}
                       onClick={onClose}
                       className={navItemClass(pathname.startsWith('/portfolio'), false)}
                     >
@@ -519,6 +625,7 @@ export function MobileNavMenu({
                     <Link
                       href={'https://discord.com/invite/yearn'}
                       target={'_blank'}
+                      rel={'noopener noreferrer'}
                       className={
                         'flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full bg-surface-secondary p-2.5 transition-colors hover:bg-surface-tertiary'
                       }
@@ -529,6 +636,7 @@ export function MobileNavMenu({
                     <Link
                       href={'https://github.com/yearn'}
                       target={'_blank'}
+                      rel={'noopener noreferrer'}
                       className={
                         'flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full bg-surface-secondary p-2.5 transition-colors hover:bg-surface-tertiary'
                       }
@@ -539,6 +647,7 @@ export function MobileNavMenu({
                     <Link
                       href={'https://x.com/yearnfi'}
                       target={'_blank'}
+                      rel={'noopener noreferrer'}
                       className={
                         'flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full bg-surface-secondary p-2.5 transition-colors hover:bg-surface-tertiary'
                       }
@@ -554,71 +663,16 @@ export function MobileNavMenu({
         </Dialog>
       </Transition>
       <BottomDrawer isOpen={isWalletDrawerOpen} onClose={() => setIsWalletDrawerOpen(false)} title={'Wallet'}>
-        <div className={'px-4 py-4'}>
-          <div className={'mb-4 flex items-start justify-between'}>
-            <div className={'flex flex-col'}>
-              <p className={'text-sm font-medium text-text-primary'}>{displayName}</p>
-              {!isActive ? (
-                <p className={'text-sm text-text-secondary'}>{'Not connected'}</p>
-              ) : isWalletLoading ? (
-                <div className={'mt-1 h-7 w-20 animate-pulse rounded bg-surface-tertiary'} />
-              ) : (
-                <p className={'text-2xl font-bold text-text-primary'}>
-                  <span>{formatUSD(Math.floor(totalValue), 0, 0)}</span>
-                  <span className={'text-text-secondary'}>
-                    {totalValue > 0 ? `.${(totalValue % 1).toFixed(2).substring(2)}` : ''}
-                  </span>
-                </p>
-              )}
-            </div>
-            {isActive && (
-              <button
-                onClick={handleDisconnect}
-                className={cl(
-                  'rounded-lg px-3 py-1.5 text-sm font-medium transition-colors',
-                  'text-text-secondary hover:bg-surface-tertiary hover:text-text-primary'
-                )}
-              >
-                {'Disconnect'}
-              </button>
-            )}
-          </div>
-
-          {!isActive && (
-            <button
-              onClick={handleConnectWallet}
-              className={cl(
-                'flex w-full items-center justify-center rounded-lg border py-2.5 text-sm font-medium transition-colors',
-                'border-border bg-surface text-text-primary hover:bg-surface-tertiary'
-              )}
-            >
-              {'Connect wallet'}
-            </button>
-          )}
-
-          {isActive && (
-            <div className={'flex flex-col gap-2'}>
-              <button
-                onClick={handleViewPortfolio}
-                className={cl(
-                  'flex w-full items-center justify-center rounded-lg border py-2.5 text-sm font-medium transition-colors',
-                  'border-border bg-surface text-text-primary hover:bg-surface-tertiary'
-                )}
-              >
-                {'View portfolio'}
-              </button>
-              <button
-                onClick={handleViewRecentActivity}
-                className={cl(
-                  'flex w-full items-center justify-center rounded-lg border py-2.5 text-sm font-medium transition-colors',
-                  'border-border bg-surface text-text-primary hover:bg-surface-tertiary'
-                )}
-              >
-                {'Recent activity'}
-              </button>
-            </div>
-          )}
-        </div>
+        {isWalletDrawerOpen ? (
+          <MobileWalletDrawerContent
+            displayName={displayName}
+            isActive={isActive}
+            onConnectWallet={handleConnectWallet}
+            onDisconnect={handleDisconnect}
+            onViewPortfolio={handleViewPortfolio}
+            onViewRecentActivity={handleViewRecentActivity}
+          />
+        ) : null}
       </BottomDrawer>
       <BottomDrawer isOpen={isSettingsDrawerOpen} onClose={() => setIsSettingsDrawerOpen(false)} title={'Settings'}>
         <div className={'px-4 py-4'}>

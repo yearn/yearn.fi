@@ -1,8 +1,10 @@
+'use client'
+
 import { setThemePreference, useThemePreference } from '@hooks/useThemePreference'
 import { toast } from '@shared/components/yToast'
 import { useNotifications } from '@shared/contexts/useNotifications'
 import { useTenderlyPanel } from '@shared/contexts/useTenderlyPanel'
-import useWallet from '@shared/contexts/useWallet'
+import { useWalletStatus } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { IconBurgerPlain } from '@shared/icons/IconBurgerPlain'
 import { IconMoon } from '@shared/icons/IconMoon'
@@ -13,9 +15,10 @@ import { TypeMarkYearn } from '@shared/icons/TypeMarkYearn'
 import { cl } from '@shared/utils'
 import { normalizePathname } from '@shared/utils/routes'
 import { truncateHex } from '@shared/utils/tools.address'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import type { KeyboardEvent, MouseEvent, ReactElement } from 'react'
 import { useMemo, useState } from 'react'
-import { useLocation } from 'react-router'
 import { useAccount, useSwitchChain } from 'wagmi'
 import {
   canToggleTenderlyMode,
@@ -25,7 +28,6 @@ import {
   resolveConnectedTenderlyExecutionChain,
   tenderlyConfiguredRuntime
 } from '@/config/tenderly'
-import Link from '/src/components/Link'
 import { AccountDropdown } from './AccountDropdown'
 import { HeaderNavMenu } from './HeaderNavMenu'
 import { MobileNavMenu } from './MobileNavMenu'
@@ -37,7 +39,7 @@ type TWalletSelectorProps = {
 
 function WalletSelector({ onAccountClick, notificationStatus }: TWalletSelectorProps): ReactElement {
   const { isActive, isUserConnecting, isIdentityLoading, address, ens, clusters, openLoginModal } = useWeb3()
-  const { isLoading: isWalletLoading } = useWallet()
+  const { isLoading: isWalletLoading } = useWalletStatus()
 
   const walletIdentity = useMemo((): string | undefined => {
     if (isUserConnecting) return 'Connecting...'
@@ -228,8 +230,7 @@ function TenderlyBadge(): ReactElement | null {
 }
 
 function AppHeader(): ReactElement {
-  const location = useLocation()
-  const pathname = location.pathname
+  const pathname = usePathname() || '/'
   const [isAccountSidebarOpen, setIsAccountSidebarOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const { notificationStatus } = useNotifications()
@@ -254,9 +255,9 @@ function AppHeader(): ReactElement {
       <div className={'mx-auto w-full max-w-[1232px] px-4'}>
         <header className={'flex h-[var(--header-height)] w-full items-center justify-between px-0'}>
           <div className={'flex items-center justify-start gap-x-6 px-1 py-2 md:py-1'} data-tour="vaults-header-nav">
-            <Link href={'/'} className={'flex items-center gap-1 transition-colors hover:opacity-80'}>
+            <a href={'/'} className={'flex items-center gap-1 transition-colors hover:opacity-80'}>
               <TypeMarkYearn className={'h-8 w-auto'} color={isHomePage || isDarkTheme ? '#FFFFFF' : '#0657F9'} />
-            </Link>
+            </a>
             <div className={'hidden items-center gap-3 pb-0.5 md:flex'}>
               <HeaderNavMenu isHomePage={isHomePage} isDarkTheme={isDarkTheme} />
             </div>
@@ -267,7 +268,7 @@ function AppHeader(): ReactElement {
                 <div className={'hidden items-center justify-end md:flex gap-2'} data-tour="vaults-header-user">
                   <TenderlyBadge />
                   <div className={'hidden md:flex gap-4'}>
-                    <Link href={'/vaults'}>
+                    <Link href={'/vaults'} prefetch={false}>
                       <span
                         className={
                           'text-base font-medium text-text-secondary transition-colors hover:text-text-primary'
@@ -277,7 +278,7 @@ function AppHeader(): ReactElement {
                       </span>
                     </Link>
 
-                    <Link href={'/portfolio'}>
+                    <Link href={'/portfolio'} prefetch={false}>
                       <span
                         className={
                           'text-base font-medium text-text-secondary transition-colors hover:text-text-primary'

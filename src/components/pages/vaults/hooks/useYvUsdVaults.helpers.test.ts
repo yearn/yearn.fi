@@ -40,6 +40,23 @@ const UNLOCKED_SNAPSHOT = {
     isHidden: true,
     isBoosted: false
   },
+  risk: {
+    riskLevel: 4,
+    riskScore: {
+      review: 1,
+      testing: 2,
+      complexity: 3,
+      riskExposure: 4,
+      protocolIntegration: 5,
+      centralizationRisk: 1,
+      externalProtocolAudit: 2,
+      externalProtocolCentralisation: 3,
+      externalProtocolTvl: 4,
+      externalProtocolLongevity: 5,
+      externalProtocolType: 1,
+      comment: 'Snapshot risk comment'
+    }
+  },
   composition: [
     {
       address: '0x5f9DBa2805411a8382FDb4E69d4f2Da8EFaF1F89',
@@ -204,6 +221,9 @@ describe('buildYvUsdVaultsModel', () => {
     expect(model.listVault.tvl.tvl).toBe(1000)
     expect(model.lockedVault.apr.forwardAPR.netAPR).toBe(0.11)
     expect(model.unlockedVault.strategies?.[0].name).toBe('Infinifi sIUSD Morpho Looper')
+    expect(model.listVault.info.riskLevel).toBe(4)
+    expect(model.listVault.info.riskScore).toEqual([1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1])
+    expect(model.listVault.info.riskScoreComment).toBe('Snapshot risk comment')
     expect(model.metrics.unlocked.hasInfinifiPoints).toBe(true)
     expect(model.metrics.locked.hasInfinifiPoints).toBe(false)
   })

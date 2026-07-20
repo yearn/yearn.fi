@@ -1,13 +1,13 @@
 import {
   getVaultAddress,
-  getVaultStaking,
+  getVaultStakingAddress,
   getVaultToken,
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
 import { YVUSD_LOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import type { TDict } from '@shared/types'
-import { isZeroAddress, toAddress } from '@shared/utils'
-import type { Address } from 'viem'
+import { toAddress } from '@shared/utils'
+import { type Address, zeroAddress } from 'viem'
 
 export function getStructurallyExcludedDepositTokenAddresses({
   allVaults,
@@ -31,8 +31,8 @@ export function getStructurallyExcludedDepositTokenAddresses({
     if (isHidden) {
       excluded.add(candidateVaultAddress)
 
-      const stakingAddress = toAddress(getVaultStaking(vault).address) as Address
-      if (!isZeroAddress(stakingAddress)) {
+      const stakingAddress = getVaultStakingAddress(vault) as Address
+      if (stakingAddress !== zeroAddress) {
         excluded.add(stakingAddress)
       }
     }

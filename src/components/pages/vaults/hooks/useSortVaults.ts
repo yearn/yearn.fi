@@ -10,14 +10,8 @@ import {
   type TKongVaultStrategy
 } from '@pages/vaults/domain/kongVaultSelectors'
 import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
-import {
-  getYvUsdSharePrice,
-  isYvUsdVault,
-  YVUSD_CHAIN_ID,
-  YVUSD_LOCKED_ADDRESS,
-  YVUSD_UNLOCKED_ADDRESS
-} from '@pages/vaults/utils/yvUsd'
-import { useWallet } from '@shared/contexts/useWallet'
+import { getYvUsdPositionValues, isYvUsdVault } from '@pages/vaults/utils/yvUsd'
+import { useWalletHoldings, useWalletTokens } from '@shared/contexts/useWallet'
 import type { TSortDirection } from '@shared/types'
 import { normalizeApyDisplayValue, toAddress, toNormalizedBN } from '@shared/utils'
 import { ETH_TOKEN_ADDRESS, WETH_TOKEN_ADDRESS, WFTM_TOKEN_ADDRESS } from '@shared/utils/constants'
@@ -40,25 +34,31 @@ export type TPossibleSortBy =
 export function useSortVaults<TVault extends TKongVaultInput & { details?: TKongVaultStrategy['details'] }>(
   vaultList: TVault[],
   sortBy: TPossibleSortBy,
-  sortDirection: TSortDirection
+  sortDirection: TSortDirection,
+  options?: { yvUsdApyOverride?: number | null }
 ): TVault[] {
-  const { getBalance, getVaultHoldingsUsd } = useWallet()
+  const { getToken, getBalance } = useWalletTokens()
+  const { getVaultHoldingsUsd } = useWalletHoldings()
   const { unlockedVault: yvUsdUnlockedVault, lockedVault: yvUsdLockedVault, metrics: yvUsdMetrics } = useYvUsdVaults()
   const yvUsdDepositedValue = useMemo((): number => {
-    const unlockedBalance = getBalance({ address: YVUSD_UNLOCKED_ADDRESS, chainID: YVUSD_CHAIN_ID }).normalized
-    const lockedBalance = getBalance({ address: YVUSD_LOCKED_ADDRESS, chainID: YVUSD_CHAIN_ID }).normalized
-    const unlockedSharePrice = getYvUsdSharePrice(yvUsdUnlockedVault)
-    const lockedSharePrice = getYvUsdSharePrice(yvUsdLockedVault)
-    return unlockedBalance * unlockedSharePrice + lockedBalance * lockedSharePrice
-  }, [getBalance, yvUsdLockedVault, yvUsdUnlockedVault])
+    return getYvUsdPositionValues({
+      unlockedVault: yvUsdUnlockedVault,
+      lockedVault: yvUsdLockedVault,
+      getToken,
+      getBalance
+    }).combinedValue
+  }, [getBalance, getToken, yvUsdLockedVault, yvUsdUnlockedVault])
 
   const yvUsdDisplayedApy = useMemo((): number => {
+    if (typeof options?.yvUsdApyOverride === 'number' && Number.isFinite(options.yvUsdApyOverride)) {
+      return options.yvUsdApyOverride
+    }
     const lockedApy = yvUsdMetrics.locked.apy
     if (lockedApy > 0 || yvUsdMetrics.unlocked.apy === 0) {
       return lockedApy
     }
     return yvUsdMetrics.unlocked.apy
-  }, [yvUsdMetrics.locked.apy, yvUsdMetrics.unlocked.apy])
+  }, [options?.yvUsdApyOverride, yvUsdMetrics.locked.apy, yvUsdMetrics.unlocked.apy])
   const isFeaturingScoreSortedDesc = useMemo((): boolean => {
     if (sortBy !== 'featuringScore' || sortDirection !== 'desc') {
       return false

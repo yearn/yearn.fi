@@ -2,19 +2,20 @@ import {
   getVaultAddress,
   getVaultChainID,
   getVaultInfo,
-  getVaultStaking
+  getVaultStakingAddress
 } from '@pages/vaults/domain/kongVaultSelectors'
 import { ImageWithFallback } from '@shared/components/ImageWithFallback'
-import { TokenLogo } from '@shared/components/TokenLogo'
-import { useWallet } from '@shared/contexts/useWallet'
+import { TokenLogoV2 } from '@shared/components/TokenLogoV2'
+import { useWalletStatus, useWalletTokens } from '@shared/contexts/useWallet'
 import { useYearn } from '@shared/contexts/useYearn'
 import { useTokenList } from '@shared/contexts/WithTokenList'
 import type { TToken } from '@shared/types'
-import { cl, formatTAmount, isZeroAddress, toAddress } from '@shared/utils'
+import { cl, formatTAmount, toAddress } from '@shared/utils'
 import { type FC, useCallback, useMemo, useState } from 'react'
-import { isAddress } from 'viem'
+import { isAddress, zeroAddress } from 'viem'
+import { env } from '@/env'
 import { CloseIcon } from './shared/Icons'
-import { getTokenLogoSources } from './tokenLogo.utils'
+import { getKnownVaultTokenLogoMetaByAddress, getTokenLogoSources, type TTokenLogoSourceToken } from './tokenLogo.utils'
 import {
   filterAndSortTokenSelectorTokens,
   getDepositMinValueExemptTokenAddresses,
@@ -63,7 +64,7 @@ const TokenTypeChip: FC<{ type: TTokenType }> = ({ type }) => {
   const config = {
     asset: { label: 'Asset', className: 'bg-blue-500/10 text-blue-600' },
     vault: { label: 'Vault', className: 'bg-green-500/10 text-green-600' },
-    staking: { label: 'Staking', className: 'bg-purple-500/10 text-purple-600' }
+    staking: { label: 'Gauge', className: 'bg-purple-500/10 text-purple-600' }
   }
 
   const { label, className } = config[type]
@@ -75,26 +76,25 @@ const TokenItem: FC<{
   selected: boolean
   onSelect: () => void
   tokenType?: TTokenType
-  logoToken?: Pick<TToken, 'address' | 'chainID' | 'logoURI'>
+  logoToken?: TTokenLogoSourceToken
 }> = ({ token, selected, onSelect, tokenType, logoToken }) => {
   const logoSources = getTokenLogoSources({
     address: logoToken?.address ?? token.address,
     chainId: logoToken?.chainID ?? token.chainID,
-    logoURI: logoToken?.logoURI ?? token.logoURI,
+    logoURI: logoToken ? logoToken.logoURI : token.logoURI,
     size: 32
   })
-
   return (
     <button
       type="button"
       onClick={onSelect}
       className={cl(
-        'flex items-center justify-between w-full px-3 py-2 rounded-lg transition-all active:scale-[0.98]',
+        'flex items-center justify-between w-full px-3 py-2 rounded-lg',
         selected ? 'bg-primary/10 hover:bg-primary/15' : 'hover:bg-surface-secondary'
       )}
     >
       <div className="flex items-center gap-2">
-        <TokenLogo
+        <TokenLogoV2
           src={logoSources.src}
           altSrc={logoSources.altSrc}
           tokenSymbol={token.symbol}
@@ -141,7 +141,8 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
 }) => {
   const [searchText, setSearchText] = useState('')
   const [selectedChainId, setSelectedChainId] = useState(chainId)
-  const { getToken, isLoading, balances } = useWallet()
+  const { getToken, balances } = useWalletTokens()
+  const { isLoading } = useWalletStatus()
   const { tokenLists } = useTokenList()
   const { allVaults, getPrice } = useYearn()
   const customAddress = useMemo(
@@ -173,9 +174,8 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
 
       hiddenAddresses.add(toAddress(getVaultAddress(vault)) as `0x${string}`)
 
-      const staking = getVaultStaking(vault)
-      const stakingAddress = toAddress(staking.address)
-      if (!isZeroAddress(stakingAddress)) {
+      const stakingAddress = getVaultStakingAddress(vault)
+      if (stakingAddress !== zeroAddress) {
         hiddenAddresses.add(stakingAddress as `0x${string}`)
       }
     })
@@ -203,13 +203,27 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
     ],
     [excludeTokens, hiddenVaultExemptAddresses, hiddenVaultTokenAddresses, selectedChainId]
   )
-  const assetLogoToken = useMemo(() => {
+  const assetLogoToken = useMemo<TTokenLogoSourceToken | undefined>(() => {
     if (selectedChainId !== assetChainId || !assetAddress) {
       return undefined
     }
 
-    return getToken({ address: toAddress(assetAddress), chainID: assetChainId })
+    const resolvedAssetToken = getToken({ address: toAddress(assetAddress), chainID: assetChainId })
+    const resolvedAssetLogoURI =
+      resolvedAssetToken.address && toAddress(resolvedAssetToken.address) === toAddress(assetAddress)
+        ? resolvedAssetToken.logoURI
+        : undefined
+
+    return {
+      address: toAddress(assetAddress),
+      chainID: assetChainId,
+      logoURI: resolvedAssetLogoURI
+    }
   }, [assetAddress, assetChainId, getToken, selectedChainId])
+  const knownVaultTokenMetaByAddress = useMemo(
+    () => getKnownVaultTokenLogoMetaByAddress({ allVaults, chainId: selectedChainId }),
+    [allVaults, selectedChainId]
+  )
 
   // Get all tokens with balances from wallet context
   const tokens = useMemo(() => {
@@ -398,9 +412,9 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
       if (stakingAddress && addr === stakingAddress.toLowerCase()) return 'staking'
       if (vaultAddress && addr === vaultAddress.toLowerCase()) return 'vault'
       if (assetAddress && addr === assetAddress.toLowerCase()) return 'asset'
-      return undefined
+      return knownVaultTokenMetaByAddress[toAddress(tokenAddress).toLowerCase()]?.tokenType
     },
-    [assetAddress, vaultAddress, stakingAddress]
+    [assetAddress, knownVaultTokenMetaByAddress, vaultAddress, stakingAddress]
   )
   return (
     <div
@@ -415,13 +429,13 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
               key={chain.id}
               onClick={() => setSelectedChainId(chain.id)}
               className={cl(
-                'size-9 flex items-center justify-center rounded-md transition-all',
+                'size-9 flex items-center justify-center rounded-md',
                 selectedChainId === chain.id ? 'bg-surface shadow-sm' : 'bg-transparent hover:bg-surface/50'
               )}
               type="button"
             >
               <ImageWithFallback
-                src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${chain.id}/logo.svg`}
+                src={`${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/chains/${chain.id}/logo.svg`}
                 alt={chain.name}
                 width={20}
                 height={20}
@@ -430,7 +444,7 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
             </button>
           ))}
         </div>
-        <button onClick={onClose} className="p-1 hover:bg-surface-secondary rounded-lg transition-colors" type="button">
+        <button onClick={onClose} className="p-1 hover:bg-surface-secondary rounded-lg" type="button">
           <CloseIcon className="w-5 h-5 text-text-secondary" />
         </button>
       </div>
@@ -458,20 +472,24 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
           </div>
         ) : (
           <div className="space-y-1">
-            {filteredTokens.map((token) => (
-              <TokenItem
-                key={token.address}
-                token={token}
-                selected={token.address === value}
-                onSelect={() => handleSelect(token.address as `0x${string}`)}
-                tokenType={getTokenType(token.address)}
-                logoToken={
-                  getTokenType(token.address) === 'vault' || getTokenType(token.address) === 'staking'
-                    ? assetLogoToken
-                    : undefined
-                }
-              />
-            ))}
+            {filteredTokens.map((token) => {
+              const knownVaultTokenMeta = knownVaultTokenMetaByAddress[toAddress(token.address).toLowerCase()]
+              const tokenType = getTokenType(token.address)
+              const shouldUseAssetLogoFallback = tokenType === 'vault' || tokenType === 'staking'
+
+              return (
+                <TokenItem
+                  key={token.address}
+                  token={token}
+                  selected={token.address === value}
+                  onSelect={() => handleSelect(token.address as `0x${string}`)}
+                  tokenType={tokenType}
+                  logoToken={
+                    knownVaultTokenMeta?.logoToken ?? (shouldUseAssetLogoFallback ? assetLogoToken : undefined)
+                  }
+                />
+              )
+            })}
           </div>
         )}
       </div>

@@ -1,7 +1,7 @@
 import { Button } from '@shared/components/Button'
 import { EmptyState } from '@shared/components/EmptyState'
+import Link from 'next/link'
 import type { ReactElement } from 'react'
-import { Link } from 'react-router'
 
 type TEmptySectionCardProps = {
   title: string
@@ -25,7 +25,7 @@ export function EmptySectionCard({
   href
 }: TEmptySectionCardProps): ReactElement {
   const actionButton = href ? (
-    <Link to={href} className={ctaClassName ?? 'yearn--button min-h-[44px] px-6'} data-variant="filled">
+    <Link href={href} className={ctaClassName ?? 'yearn--button min-h-[44px] px-6'} data-variant="filled">
       {ctaLabel}
     </Link>
   ) : (
@@ -36,7 +36,7 @@ export function EmptySectionCard({
   const secondaryActionButton =
     secondaryCtaHref && secondaryCtaLabel ? (
       <Link
-        to={secondaryCtaHref}
+        href={secondaryCtaHref}
         className={
           secondaryCtaClassName ??
           'flex min-h-[44px] items-center justify-center rounded-lg border border-text-primary bg-surface px-6 text-sm font-semibold text-text-primary transition-colors hover:bg-surface-secondary'

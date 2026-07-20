@@ -1,5 +1,6 @@
 import { cl } from '@shared/utils'
 import type { ReactElement } from 'react'
+import Image from '/src/components/Image'
 
 type TYearnLogoSpinnerProps = {
   className?: string
@@ -10,7 +11,7 @@ export function YearnLogoSpinner({ className, logoClassName }: TYearnLogoSpinner
   return (
     <div className={cl('relative flex h-12 w-12 items-center justify-center', className)}>
       <div className={'absolute inset-0 animate-spin rounded-full border-2 border-border border-t-primary'} />
-      <img
+      <Image
         src={'/logo.svg'}
         alt={''}
         width={32}

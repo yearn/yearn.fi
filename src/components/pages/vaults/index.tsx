@@ -6,7 +6,7 @@ import { VaultVersionToggle } from '@pages/vaults/components/filters/VaultVersio
 import { VaultsAuxiliaryList } from '@pages/vaults/components/list/VaultsAuxiliaryList'
 import { VaultsListEmpty } from '@pages/vaults/components/list/VaultsListEmpty'
 import { VaultsListHead } from '@pages/vaults/components/list/VaultsListHead'
-import { VaultsListRow } from '@pages/vaults/components/list/VaultsListRow'
+import { VaultsListRowPresentation } from '@pages/vaults/components/list/VaultsListRow'
 import { VaultsListRowSkeleton } from '@pages/vaults/components/list/VaultsListRowSkeleton'
 import { VaultsListSearchRecoveryRow } from '@pages/vaults/components/list/VaultsListSearchRecoveryRow'
 import { VirtualizedVaultsList } from '@pages/vaults/components/list/VirtualizedVaultsList'
@@ -14,7 +14,11 @@ import { VaultsWelcomeTour } from '@pages/vaults/components/tour/VaultsWelcomeTo
 import { TranchedProductsList } from '@pages/vaults/components/tranched/TranchedProductsList'
 import { getTranchedVaultRowByAddress } from '@pages/vaults/constants/tranchedProducts'
 import { getVaultAddress, getVaultChainID, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
+import type { TYvUsdListVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import { toggleInArray } from '@pages/vaults/utils/constants'
+import type { TVaultsInitialPayload } from '@pages/vaults/utils/vaultsInitialPayload'
+import type { TVaultsQuerySnapshot } from '@pages/vaults/utils/vaultsQueryState'
+import { isYvUsdAddress } from '@pages/vaults/utils/yvUsd'
 import { Breadcrumbs } from '@shared/components/Breadcrumbs'
 import { Button } from '@shared/components/Button'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
@@ -30,6 +34,15 @@ type TVaultsListSectionProps = {
   isUpdatingList: boolean
   listHead: ReactElement
   children: ReactNode
+}
+
+type TVaultsPageProps = {
+  initialQueryState?: TVaultsQuerySnapshot
+  initialVaults?: TVaultsInitialPayload
+}
+
+function getYvUsdVaultsForRow(vault: TKongVaultInput, yvUsdVaults?: TYvUsdListVaults): TYvUsdListVaults | undefined {
+  return isYvUsdAddress(getVaultAddress(vault)) ? yvUsdVaults : undefined
 }
 
 function VaultsListSection({
@@ -80,8 +93,8 @@ function VaultsListSection({
   )
 }
 
-export default function Index(): ReactElement {
-  const { refs, filtersBar, list } = useVaultsPageModel()
+export default function Index({ initialQueryState, initialVaults }: TVaultsPageProps): ReactElement {
+  const { refs, filtersBar, list } = useVaultsPageModel(initialQueryState, initialVaults)
   const trackEvent = usePlausible()
   const { varsRef, filtersRef } = refs
   const { search, filters, chains, shouldStackFilters, activeVaultType, onChangeVaultType } = filtersBar
@@ -101,7 +114,11 @@ export default function Index(): ReactElement {
     pinnedSections,
     pinnedVaults,
     mainVaults,
+    yvUsdVaults,
     vaultFlags,
+    vaultHoldingsValues,
+    hasWalletAddress,
+    isWalletLoading,
     listChains,
     totalMatchingVaults,
     hiddenByFiltersCount,
@@ -199,31 +216,27 @@ export default function Index(): ReactElement {
       if (!row) {
         return undefined
       }
-      if (row.product.kind === 'senior') {
-        return [
-          {
-            label: 'Target Rate',
-            tooltipDescription: 'This product is designed around a target coupon paid before junior upside.'
-          }
-        ]
-      }
-      return [
-        {
-          label: 'Junior',
-          tooltipDescription:
-            'Junior products receive excess yield after senior obligations and sit below senior in the waterfall.'
-        }
-      ]
+      return row.product.kind === 'senior'
+        ? [
+            {
+              label: 'Target Rate',
+              tooltipDescription: 'This product is designed around a target coupon paid before junior upside.'
+            }
+          ]
+        : [
+            {
+              label: 'Junior',
+              tooltipDescription:
+                'Junior products receive excess yield after senior obligations and sit below senior in the waterfall.'
+            }
+          ]
     },
     []
   )
 
   const resolveTranchedProductTypeChipOverride = useCallback((vault: TKongVaultInput): boolean | undefined => {
     const row = getTranchedVaultRowByAddress(getVaultAddress(vault))
-    if (!row) {
-      return undefined
-    }
-    return row.product.kind === 'junior' ? undefined : false
+    return row?.product.kind === 'senior' ? false : undefined
   }, [])
 
   const visibleVaults = useMemo(() => [...pinnedVaults, ...mainVaults], [pinnedVaults, mainVaults])
@@ -427,6 +440,10 @@ export default function Index(): ReactElement {
             showStrategies={displayedShowStrategies}
             expandedVaultKeys={expandedVaultKeys}
             onExpandedChange={handleExpandedChange}
+            yvUsdVaults={yvUsdVaults}
+            vaultHoldingsValues={vaultHoldingsValues}
+            hasWalletAddress={hasWalletAddress}
+            isWalletLoading={isWalletLoading}
           />
         ))}
         {mainVaults.length > 0 ? (
@@ -438,16 +455,18 @@ export default function Index(): ReactElement {
             renderItem={(vault): ReactElement => {
               const key = getVaultKey(vault)
               const rowApyDisplayVariant = resolveApyDisplayVariant(vault)
-              const tranchedHrefOverride = resolveTranchedHrefOverride(vault)
               return (
-                <VaultsListRow
+                <VaultsListRowPresentation
                   currentVault={vault}
                   flags={vaultFlags[key]}
-                  hrefOverride={tranchedHrefOverride}
+                  hrefOverride={resolveTranchedHrefOverride(vault)}
                   logoSrcOverride={resolveTranchedLogoSrcOverride(vault)}
                   extraChips={resolveTranchedExtraChips(vault)}
-                  apyDisplayVariant={rowApyDisplayVariant}
                   showProductTypeChipOverride={resolveTranchedProductTypeChipOverride(vault)}
+                  hasWalletAddress={hasWalletAddress}
+                  isWalletLoading={isWalletLoading}
+                  holdingsValue={vaultHoldingsValues[key] ?? 0}
+                  apyDisplayVariant={rowApyDisplayVariant}
                   compareVaultKeys={isCompareMode ? compareVaultKeys : undefined}
                   onToggleCompare={isCompareMode ? handleToggleCompare : undefined}
                   activeChains={activeChains}
@@ -463,6 +482,7 @@ export default function Index(): ReactElement {
                   showStrategies={displayedShowStrategies}
                   isExpanded={Boolean(expandedVaultKeys[key])}
                   onExpandedChange={handleExpandedChange}
+                  yvUsdVaults={getYvUsdVaultsForRow(vault, yvUsdVaults)}
                 />
               )
             }}
@@ -489,8 +509,10 @@ export default function Index(): ReactElement {
     handleExpandedChange,
     handleToggleCompare,
     hiddenByFiltersCount,
+    hasWalletAddress,
     isCompareMode,
     isLoading,
+    isWalletLoading,
     listChains,
     listVaultType,
     mainVaults,
@@ -509,7 +531,8 @@ export default function Index(): ReactElement {
     resolveTranchedProductTypeChipOverride,
     search.value,
     shouldCollapseChips,
-    vaultFlags
+    vaultFlags,
+    vaultHoldingsValues
   ])
 
   const compareCount = compareVaultKeys.length

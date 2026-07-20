@@ -4,6 +4,8 @@ import { SUPPORTED_NETWORKS } from '@shared/utils/constants'
 import type { Chain } from 'viem'
 import type { Connector } from 'wagmi'
 import { useConnect } from 'wagmi'
+import { env } from '@/env'
+import Image from '/src/components/Image'
 
 export function useChainOptions(chains: number[] | null): TMultiSelectOptionProps[] {
   const { connectors } = useConnect()
@@ -32,7 +34,7 @@ export function useChainOptions(chains: number[] | null): TMultiSelectOptionProp
         value: chain.id,
         isSelected: chains?.includes(chain.id) || false,
         icon: (
-          <img src={`${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${chain.id}/logo-128.png`} alt={chain.name} />
+          <Image src={`${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/chains/${chain.id}/logo-128.png`} alt={chain.name} />
         )
       })
     }

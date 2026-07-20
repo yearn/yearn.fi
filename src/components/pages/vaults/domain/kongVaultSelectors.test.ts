@@ -1,5 +1,6 @@
+import { calculateVaultEstimatedAPY } from '@shared/utils/vaultApy'
 import { describe, expect, it } from 'vitest'
-import { getVaultAPR, getVaultStaking, getVaultStrategies } from './kongVaultSelectors'
+import { getVaultAPR, getVaultStaking, getVaultStrategies, getVaultTVL } from './kongVaultSelectors'
 
 const LIST_REWARD = {
   address: '0x3333333333333333333333333333333333333333',
@@ -24,6 +25,114 @@ const SNAPSHOT_REWARD = {
   apr: 1.5,
   perWeek: 20
 }
+
+const BASE_LIST_VAULT = {
+  chainId: 747474,
+  address: '0x80c34BD3A3569E126e7055831036aa7b212cB159',
+  name: 'vbUSDC yVault',
+  symbol: 'yvvbUSDC',
+  decimals: 6,
+  asset: {
+    address: '0x203A662b0BD271A6ed5a60EdFbd04bFce608FD36',
+    name: 'Vault Bridge USDC',
+    symbol: 'vbUSDC',
+    decimals: 6
+  },
+  tvl: 12_592_341.595237955,
+  performance: null,
+  fees: null,
+  category: 'Stablecoin',
+  type: 'Yearn Vault',
+  kind: 'Multi Strategy',
+  v3: true,
+  yearn: true,
+  isRetired: false,
+  isHidden: false,
+  isBoosted: false,
+  isHighlighted: true,
+  strategiesCount: 7,
+  riskLevel: 1,
+  staking: null,
+  pricePerShare: '1020958'
+}
+
+describe('getVaultTVL', () => {
+  it('prefers list TVL over stale snapshot tvl.close while keeping snapshot totalAssets', () => {
+    const tvl = getVaultTVL(
+      BASE_LIST_VAULT as any,
+      {
+        totalAssets: '12593094416700',
+        tvl: {
+          close: 13_340_384.672131458
+        }
+      } as any
+    )
+
+    expect(tvl.totalAssets).toBe(12_593_094_416_700n)
+    expect(tvl.tvl).toBeCloseTo(12_592_341.595237955, 6)
+    expect(tvl.price).toBeCloseTo(0.9999402195014876, 12)
+  })
+
+  it('falls back to snapshot tvl.close when list TVL is missing', () => {
+    const tvl = getVaultTVL(
+      {
+        ...BASE_LIST_VAULT,
+        tvl: null
+      } as any,
+      {
+        totalAssets: '100000000',
+        tvl: {
+          close: 125
+        }
+      } as any
+    )
+
+    expect(tvl.tvl).toBe(125)
+    expect(tvl.price).toBe(1.25)
+  })
+
+  it('still prefers list TVL when snapshot totalAssets is missing', () => {
+    const tvl = getVaultTVL(
+      BASE_LIST_VAULT as any,
+      {
+        tvl: {
+          close: 500
+        }
+      } as any
+    )
+
+    expect(tvl.totalAssets).toBe(0n)
+    expect(tvl.tvl).toBe(12_592_341.595237955)
+    expect(tvl.price).toBe(0)
+  })
+
+  it('keeps list TVL when no snapshot is available', () => {
+    const tvl = getVaultTVL(BASE_LIST_VAULT as any)
+
+    expect(tvl.totalAssets).toBe(0n)
+    expect(tvl.tvl).toBe(12_592_341.595237955)
+    expect(tvl.price).toBe(0)
+  })
+
+  it('keeps an empty vault at zero when list TVL is zero', () => {
+    const tvl = getVaultTVL(
+      {
+        ...BASE_LIST_VAULT,
+        tvl: 0
+      } as any,
+      {
+        totalAssets: '0',
+        tvl: {
+          close: 100
+        }
+      } as any
+    )
+
+    expect(tvl.totalAssets).toBe(0n)
+    expect(tvl.tvl).toBe(0)
+    expect(tvl.price).toBe(0)
+  })
+})
 
 describe('getVaultStaking', () => {
   it('preserves list staking source and rewards when snapshot metadata is missing', () => {
@@ -164,6 +273,134 @@ describe('getVaultAPR', () => {
     } as any)
 
     expect(apr.forwardAPR.netAPR).toBe(0.03431466938555827)
+  })
+
+  it('prefers Katana estimated APY over oracle APY for vault forward APR values', () => {
+    const apr = getVaultAPR({
+      ...BASE_LIST_VAULT,
+      performance: {
+        estimated: {
+          apr: 0.049,
+          apy: 0.051,
+          type: 'katana-estimated-apr',
+          components: {}
+        },
+        oracle: {
+          apr: 0.029,
+          apy: 0.03,
+          netAPR: 0.028,
+          netAPY: 0.03
+        },
+        historical: {
+          net: 0.01,
+          weeklyNet: 0.01,
+          monthlyNet: 0.01,
+          inceptionNet: 0.01
+        }
+      }
+    } as any)
+
+    expect(apr.forwardAPR.netAPR).toBe(0.051)
+  })
+
+  it('uses Katana estimated APR before oracle values when estimated APY is absent', () => {
+    const apr = getVaultAPR({
+      ...BASE_LIST_VAULT,
+      performance: {
+        estimated: {
+          apr: 0.05,
+          type: 'katana-estimated-apr',
+          components: {}
+        },
+        oracle: {
+          apr: 0.029,
+          apy: 0.03,
+          netAPR: 0.028,
+          netAPY: 0.03
+        },
+        historical: {
+          net: 0.01,
+          weeklyNet: 0.01,
+          monthlyNet: 0.01,
+          inceptionNet: 0.01
+        }
+      }
+    } as any)
+
+    expect(apr.forwardAPR.netAPR).toBe(0.05)
+  })
+
+  it('prefers snapshot Katana estimated values over list estimated values', () => {
+    const apr = getVaultAPR(
+      {
+        ...BASE_LIST_VAULT,
+        performance: {
+          estimated: {
+            apr: 0.04,
+            apy: 0.045,
+            type: 'katana-estimated-apr',
+            components: {}
+          },
+          oracle: {
+            apr: 0.03,
+            apy: 0.031
+          },
+          historical: {
+            net: 0.01,
+            weeklyNet: 0.01,
+            monthlyNet: 0.01,
+            inceptionNet: 0.01
+          }
+        }
+      } as any,
+      {
+        performance: {
+          estimated: {
+            apr: 0.06,
+            apy: 0.07,
+            type: 'katana-estimated-apr',
+            components: {}
+          },
+          oracle: {
+            apr: 0.035,
+            apy: 0.036
+          }
+        }
+      } as any
+    )
+
+    expect(apr.forwardAPR.type).toBe('estimated')
+    expect(apr.forwardAPR.netAPR).toBe(0.07)
+  })
+
+  it('adds Katana app rewards on top of the selected estimated APY', () => {
+    const apy = calculateVaultEstimatedAPY({
+      ...BASE_LIST_VAULT,
+      performance: {
+        estimated: {
+          apr: 0.049,
+          apy: 0.051,
+          type: 'katana-estimated-apr',
+          components: {
+            katanaAppRewardsAPR: 0.02
+          }
+        },
+        oracle: {
+          apr: 0.029,
+          apy: 0.03,
+          netAPR: 0.028,
+          netAPY: 0.03
+        },
+        historical: {
+          net: 0.01,
+          weeklyNet: 0.01,
+          monthlyNet: 0.01,
+          inceptionNet: 0.01
+        }
+      }
+    } as any)
+
+    expect(apy).toBeCloseTo(0.071, 6)
   })
 })
 

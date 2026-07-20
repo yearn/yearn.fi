@@ -13,6 +13,7 @@ import { Area, CartesianGrid, ComposedChart, Line, LineChart, XAxis, YAxis } fro
 import type { ChartConfig } from './ChartPrimitives'
 import { ChartContainer, ChartTooltip } from './ChartPrimitives'
 import {
+  CHART_COMPACT_MARGIN,
   CHART_TOOLTIP_WRAPPER_STYLE,
   CHART_WITH_AXES_MARGIN,
   CHART_Y_AXIS_TICK_MARGIN,
@@ -253,15 +254,7 @@ export function PPSChart({ chartData, timeframe, hideTooltip, dataKey = 'PPS' }:
 
   return (
     <ChartContainer config={chartConfig} style={{ height: 'inherit' }}>
-      <ComposedChart
-        data={filteredData}
-        margin={{
-          top: 10,
-          right: 0,
-          left: 0,
-          bottom: 0
-        }}
-      >
+      <ComposedChart data={filteredData} margin={CHART_COMPACT_MARGIN}>
         <defs>
           <linearGradient id={`${gradientId}-pps`} x1="0" x2="0" y1="0" y2="1">
             <stop offset="5%" stopColor={seriesColor} stopOpacity={0.5} />

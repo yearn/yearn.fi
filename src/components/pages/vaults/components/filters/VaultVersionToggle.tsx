@@ -2,16 +2,10 @@ import { usePlausible } from '@hooks/usePlausible'
 import { TOOLTIP_DELAY_MS } from '@pages/vaults/utils/vaultTagCopy'
 import type { TVaultType } from '@pages/vaults/utils/vaultTypeCopy'
 import { getVaultTypeDescription, getVaultTypeLabel } from '@pages/vaults/utils/vaultTypeCopy'
-import {
-  getSupportedChainsForVaultType,
-  normalizeVaultTypeParam,
-  sanitizeChainsParam
-} from '@pages/vaults/utils/vaultTypeUtils'
 import { Tooltip } from '@shared/components/Tooltip'
 import { cl } from '@shared/utils'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import type { ReactElement } from 'react'
-import { useSearchParams } from 'react-router'
 
 type TVaultVersionToggleProps = {
   className?: string
@@ -23,15 +17,9 @@ type TVaultVersionToggleProps = {
 
 type TButtonConfig = {
   type: TVaultType
-  typeParam: string
 }
 
-const BUTTON_CONFIGS: TButtonConfig[] = [
-  { type: 'all', typeParam: 'all' },
-  { type: 'fixed', typeParam: 'fixed' },
-  { type: 'v3', typeParam: 'single' },
-  { type: 'factory', typeParam: 'lp' }
-]
+const BUTTON_CONFIGS: TButtonConfig[] = [{ type: 'all' }, { type: 'fixed' }, { type: 'v3' }, { type: 'factory' }]
 
 export function VaultVersionToggle({
   className,
@@ -40,25 +28,12 @@ export function VaultVersionToggle({
   onTypeChange,
   isPending
 }: TVaultVersionToggleProps): ReactElement {
-  const [searchParams, setSearchParams] = useSearchParams()
   const trackEvent = usePlausible()
-  const normalizedType = normalizeVaultTypeParam(searchParams.get('type'))
-  const resolvedType = activeType ?? normalizedType
+  const resolvedType = activeType ?? 'all'
 
   function handleClick(config: TButtonConfig): void {
     trackEvent(PLAUSIBLE_EVENTS.FILTER_VAULT_TYPE, { props: { value: config.type } })
-    if (onTypeChange) {
-      onTypeChange(config.type)
-      return
-    }
-    const nextParams = new URLSearchParams(searchParams)
-    if (config.typeParam === 'all') {
-      nextParams.delete('type')
-    } else {
-      nextParams.set('type', config.typeParam)
-    }
-    sanitizeChainsParam(nextParams, getSupportedChainsForVaultType(config.type))
-    setSearchParams(nextParams, { replace: true })
+    onTypeChange?.(config.type)
   }
 
   function isActive(type: TVaultType): boolean {

@@ -1,5 +1,6 @@
 import type { TKongVaultView } from '@pages/vaults/domain/kongVaultSelectors'
 import { toAddress } from '@shared/utils'
+import { env } from '@/env'
 
 export type TTranchedProductKind = 'senior' | 'junior'
 export type TTranchedAsset = 'USD' | 'ETH' | 'BTC'
@@ -85,8 +86,8 @@ const TOKEN_PRICE: Record<TTranchedAsset, number> = {
   BTC: 97_000
 }
 
-const getBaseUrl = (): string => import.meta.env.BASE_URL || '/'
-const getAssetsBaseUrl = (): string => import.meta.env.VITE_BASE_YEARN_ASSETS_URI || ''
+const getBaseUrl = (): string => env.BASE_URL || '/'
+const getAssetsBaseUrl = (): string => env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI || ''
 
 function getTokenConfig(asset: TTranchedAsset): {
   address: `0x${string}`

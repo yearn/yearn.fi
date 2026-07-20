@@ -7,6 +7,7 @@ type TProps = {
 
 export function IconLockOpen({ className, size = 16 }: TProps): ReactElement {
   return (
+    // biome-ignore lint/performance/noImgElement: icon component wraps a static SVG asset and must stay server-safe.
     <img
       src="/lock-open-white2.svg"
       alt=""

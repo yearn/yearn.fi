@@ -1,7 +1,7 @@
 import { SectionHeader } from '@shared/components/SectionHeader'
+import Link from 'next/link'
 import type { FC } from 'react'
 import Image from '/src/components/Image'
-import Link from '/src/components/Link'
 
 type TIntegration = {
   name: string
@@ -12,52 +12,52 @@ type TIntegration = {
 
 const integrations: TIntegration[] = [
   {
-    name: 'Cove',
-    imageSrc: '/landing/integrations/cove.png',
-    description: 'Earn the best yields on-chain without the hassle of managing a portfolio.',
-    href: 'https://cove.finance'
+    name: 'Curve',
+    imageSrc: '/landing/integrations/curve.png',
+    description: 'The platform for building deep, sustainable onchain liquidity',
+    href: 'https://www.curve.finance/'
   },
   {
-    name: '1UP',
-    imageSrc: '/landing/integrations/1up.png',
-    description: '1UP is a public good liquid locker for YFI.',
-    href: 'https://1up.tokyo/'
+    name: 'Alchemix',
+    imageSrc: '/landing/integrations/alchemix.png',
+    description: 'Self-Repaying DeFi Loans',
+    href: 'https://alchemix.fi/'
   },
   {
-    name: 'Stakedao',
-    imageSrc: '/landing/integrations/stakedao.png',
-    description: 'A non-custodial liquid staking platform focused on governance tokens.',
-    href: 'https://stakedao.org'
+    name: 'Origin',
+    imageSrc: '/landing/integrations/origin.png',
+    description: 'Building foundational infrastructure for onchain yield',
+    href: 'https://www.originprotocol.com/'
   },
   {
-    name: 'Sturdy',
-    imageSrc: '/landing/integrations/sturdy.png',
-    description: 'Isolated lending with shared liquidity.',
-    href: 'https://sturdy.finance'
+    name: 'Katana',
+    imageSrc: '/landing/integrations/katana.png',
+    description: 'A layer-2 blockchain built to generate real revenue and sustainable yield for users',
+    href: 'https://katana.network/'
   },
   {
-    name: 'PWN',
-    imageSrc: '/landing/integrations/pwn.png',
-    description: 'PWN is a hub for peer-to-peer (P2P) loans backed by digital assets.',
-    href: 'https://pwn.finance'
+    name: 'Trueo',
+    imageSrc: '/landing/integrations/trueo.png',
+    description: 'A fully onchain, yield-bearing prediction market protocol',
+    href: 'https://trueo.com/'
   },
   {
-    name: 'Superform',
-    imageSrc: '/landing/integrations/super.png',
-    description: 'Superform grows your onchain wealth. Earn the best returns on your crypto.',
-    href: 'https://superform.xyz'
+    name: 'Term',
+    imageSrc: '/landing/integrations/term.png',
+    description: 'Fixed-rate lending via onchain auctions',
+    href: 'https://www.term.finance/'
   },
   {
-    name: 'Resupply',
-    imageSrc: '/landing/integrations/resupply.png',
-    description: 'A decentralized stablecoin protocol.',
-    href: 'https://resupply.fi/'
+    name: 'Cap',
+    imageSrc: '/landing/integrations/cap.png',
+    description: 'A covered credit application consisting of a digital dollar and a credit platform',
+    href: 'https://www.cap.app/'
   }
 ]
 
 const IntegrationItem: FC<TIntegration & { index: number }> = ({ name, imageSrc, description, href, index }) => {
   return (
-    <Link href={href} className={'block cursor-pointer'}>
+    <Link href={href} target={'_blank'} rel={'noopener noreferrer'} className={'block cursor-pointer'}>
       <div
         className={`flex min-h-[56px] flex-row items-center p-3 transition-all duration-300 ease-in-out hover:scale-[1.005] hover:bg-black/60 hover:shadow-lg sm:min-h-[60px] sm:p-[14px] md:p-[16px] ${index % 2 === 0 ? 'bg-black/50' : 'bg-black/30'}`}
       >
@@ -95,7 +95,7 @@ export const Integrations: FC = () => (
         <SectionHeader
           tagline={'Partners'}
           title={'Integrations'}
-          description={'External Yearn vaults available through our partners'}
+          description={'Partners actively using Yearn vaults'}
         />
         <div className={'mt-6 grid overflow-hidden rounded-lg sm:mt-8'}>
           {integrations.map((integration, index) => (

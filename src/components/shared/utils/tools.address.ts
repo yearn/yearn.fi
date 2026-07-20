@@ -1,4 +1,5 @@
 import { getAddress, zeroAddress } from 'viem'
+import { env } from '@/env'
 import type { TAddress, TAddressLike, TAddressSmol, TDict } from '../types'
 import { isTAddress, isZeroAddress } from './tools.is'
 
@@ -113,7 +114,7 @@ export function toENS(address: string | null | undefined, format?: boolean, size
     return address || ''
   }
   const _address = toAddress(address)
-  const knownENS = import.meta.env.VITE_KNOWN_ENS as unknown as TDict<string>
+  const knownENS = env.NEXT_PUBLIC_KNOWN_ENS as unknown as TDict<string>
   if (knownENS?.[_address]) {
     return knownENS[_address]
   }

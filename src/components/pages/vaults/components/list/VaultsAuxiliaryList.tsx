@@ -1,7 +1,9 @@
-import { VaultsListRow } from '@pages/vaults/components/list/VaultsListRow'
+import { VaultsListRowPresentation } from '@pages/vaults/components/list/VaultsListRow'
 import { VirtualizedVaultsList } from '@pages/vaults/components/list/VirtualizedVaultsList'
 import type { TVaultForwardAPYVariant } from '@pages/vaults/components/table/VaultForwardAPY'
 import { getVaultAddress, getVaultChainID, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
+import type { TYvUsdListVaults } from '@pages/vaults/hooks/useYvUsdVaults'
+import { isYvUsdAddress } from '@pages/vaults/utils/yvUsd'
 import { cl, toAddress } from '@shared/utils'
 
 import type { ReactElement } from 'react'
@@ -40,10 +42,18 @@ type TVaultsAuxiliaryListProps = {
   shouldCollapseChips?: boolean
   expandedVaultKeys?: Record<string, boolean>
   onExpandedChange?: (vaultKey: string, next: boolean) => void
+  yvUsdVaults?: TYvUsdListVaults
+  vaultHoldingsValues?: Record<string, number>
+  hasWalletAddress?: boolean
+  isWalletLoading?: boolean
 }
 
 function getVaultListKey(vault: TKongVaultInput): string {
   return `${getVaultChainID(vault)}_${toAddress(getVaultAddress(vault))}`
+}
+
+function getYvUsdVaultsForRow(vault: TKongVaultInput, yvUsdVaults?: TYvUsdListVaults): TYvUsdListVaults | undefined {
+  return isYvUsdAddress(getVaultAddress(vault)) ? yvUsdVaults : undefined
 }
 
 // TODO: the contents of this component override the type filers. This should only happen for HOLDINGS and not AVAILABLE TO DEPOSIT
@@ -71,7 +81,11 @@ export function VaultsAuxiliaryList({
   showStrategies,
   shouldCollapseChips,
   expandedVaultKeys,
-  onExpandedChange
+  onExpandedChange,
+  yvUsdVaults,
+  vaultHoldingsValues,
+  hasWalletAddress = false,
+  isWalletLoading = false
 }: TVaultsAuxiliaryListProps): ReactElement | null {
   if (vaults.length === 0) {
     return null
@@ -91,16 +105,18 @@ export function VaultsAuxiliaryList({
           const key = getVaultListKey(vault)
           const rowApyDisplayVariant = resolveApyDisplayVariant?.(vault) ?? apyDisplayVariant
           const isExpanded = expandedVaultKeys ? Boolean(expandedVaultKeys[key]) : undefined
-          const hrefOverride = resolveHrefOverride?.(vault)
           return (
-            <VaultsListRow
+            <VaultsListRowPresentation
               currentVault={vault}
               flags={vaultFlags[key]}
-              hrefOverride={hrefOverride}
+              hrefOverride={resolveHrefOverride?.(vault)}
               logoSrcOverride={resolveLogoSrcOverride?.(vault)}
               extraChips={resolveExtraChips?.(vault)}
-              apyDisplayVariant={rowApyDisplayVariant}
               showProductTypeChipOverride={resolveShowProductTypeChipOverride?.(vault)}
+              hasWalletAddress={hasWalletAddress}
+              isWalletLoading={isWalletLoading}
+              holdingsValue={vaultHoldingsValues?.[key] ?? 0}
+              apyDisplayVariant={rowApyDisplayVariant}
               compareVaultKeys={compareVaultKeys}
               onToggleCompare={onToggleCompare}
               activeChains={activeChains}
@@ -116,6 +132,7 @@ export function VaultsAuxiliaryList({
               showStrategies={showStrategies}
               isExpanded={isExpanded}
               onExpandedChange={onExpandedChange}
+              yvUsdVaults={getYvUsdVaultsForRow(vault, yvUsdVaults)}
             />
           )
         }}

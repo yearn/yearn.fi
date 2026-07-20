@@ -67,6 +67,7 @@ export type UseWidgetDepositFlowReturn = T<
     allowance: bigint
     expectedOut: bigint
     minExpectedOut: bigint
+    priceImpact?: number | null
     isLoadingRoute: boolean
     isCrossChain: boolean
     routeHasSwap?: boolean
@@ -78,7 +79,10 @@ export type UseWidgetDepositFlowReturn = T<
     }
     gas?: string
     routerAddress?: TAddress
+    approvalSpenderAddress?: TAddress
+    approvalWarning?: string
     error?: string
+    refetchAllowance?: () => Promise<unknown>
   }
 >
 
@@ -96,6 +100,7 @@ export type UseWidgetWithdrawFlowReturn = T<
     shareAmount?: bigint
     expectedOut: bigint
     minExpectedOut: bigint
+    priceImpact?: number | null
     isLoadingRoute: boolean
     isCrossChain: boolean
     routeHasSwap?: boolean

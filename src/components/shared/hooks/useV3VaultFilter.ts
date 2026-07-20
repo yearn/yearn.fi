@@ -9,7 +9,7 @@ import {
   getVaultSymbol,
   getVaultToken,
   getVaultTVL,
-  type TKongVault
+  type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
 import { getHoldingsAliasVaultAddress } from '@pages/vaults/domain/normalizeVault'
 import { DEFAULT_MIN_TVL } from '@pages/vaults/utils/constants'
@@ -24,8 +24,9 @@ import {
   type TVaultAggressiveness
 } from '@pages/vaults/utils/vaultListFacets'
 import { useDeepCompareMemo } from '@react-hookz/web'
-import { useWallet } from '@shared/contexts/useWallet'
+import { useWalletStatus, useWalletTokens } from '@shared/contexts/useWallet'
 import { useYearn } from '@shared/contexts/useYearn'
+import type { TDict } from '@shared/types'
 import { isZeroAddress } from '@shared/utils'
 import { useMemo } from 'react'
 import {
@@ -39,7 +40,7 @@ import {
 
 type TVaultIndexEntry = {
   key: string
-  vault: TKongVault
+  vault: TKongVaultInput
   searchableText: string
   kind: ReturnType<typeof deriveListKind>
   category: string
@@ -59,18 +60,24 @@ type TVaultWalletFlags = {
 }
 
 type TV3VaultFilterResult = {
-  filteredVaults: TKongVault[]
-  holdingsVaults: TKongVault[]
-  availableVaults: TKongVault[]
+  filteredVaults: TKongVaultInput[]
+  holdingsVaults: TKongVaultInput[]
+  availableVaults: TKongVaultInput[]
   vaultFlags: Record<string, TVaultFlags>
   availableUnderlyingAssets: string[]
-  underlyingAssetVaults: Record<string, TKongVault>
+  underlyingAssetVaults: Record<string, TKongVaultInput>
   totalMatchingVaults: number
   totalHoldingsMatching: number
   totalAvailableMatching: number
   totalMigratableMatching: number
   totalRetiredMatching: number
   isLoading: boolean
+}
+
+type TVaultFilterSource = {
+  vaults: TDict<TKongVaultInput>
+  allVaults: TDict<TKongVaultInput>
+  isLoadingVaultList?: boolean
 }
 
 export function useV3VaultFilter(
@@ -83,10 +90,16 @@ export function useV3VaultFilter(
   minTvl?: number,
   showHiddenVaults?: boolean,
   feeStructureKey?: string | null,
-  enabled?: boolean
+  enabled?: boolean,
+  vaultSource?: TVaultFilterSource
 ): TV3VaultFilterResult {
-  const { vaults, allVaults, getPrice, isLoadingVaultList } = useYearn()
-  const { getBalance, isLoading: isWalletLoading } = useWallet()
+  const yearn = useYearn()
+  const { getPrice } = yearn
+  const vaults = vaultSource?.vaults ?? yearn.vaults
+  const allVaults = vaultSource?.allVaults ?? yearn.allVaults
+  const isLoadingVaultList = vaultSource?.isLoadingVaultList ?? yearn.isLoadingVaultList
+  const { getBalance } = useWalletTokens()
+  const { isLoading: isWalletLoading } = useWalletStatus()
   const { shouldHideDust } = useAppSettings()
   const isEnabled = enabled ?? true
   const searchValue = search ?? ''
@@ -127,7 +140,7 @@ export function useV3VaultFilter(
   const checkHasAvailableBalance = useMemo(() => createCheckHasAvailableBalance(getBalance), [getBalance])
   const checkHasRawHoldings = useMemo(
     () =>
-      (vault: TKongVault): boolean => {
+      (vault: TKongVaultInput): boolean => {
         if (isWalletLoading) {
           return false
         }
@@ -160,10 +173,10 @@ export function useV3VaultFilter(
     }
     const vaultMap = new Map<string, TVaultIndexEntry>()
 
-    const shouldIncludeVault = (vault: TKongVault): boolean => isV3Vault(vault, isAllocatorVaultOverride(vault))
+    const shouldIncludeVault = (vault: TKongVaultInput): boolean => isV3Vault(vault, isAllocatorVaultOverride(vault))
 
     const upsertVault = (
-      vault: TKongVault,
+      vault: TKongVaultInput,
       updates: Partial<Pick<TVaultIndexEntry, 'isActive' | 'isMigratable' | 'isRetired' | 'isBypassedHolding'>>
     ): void => {
       const key = getVaultKey(vault)
@@ -268,7 +281,7 @@ export function useV3VaultFilter(
   }, [vaultIndex, walletFlags])
 
   const filteredResults = useMemo(() => {
-    const filteredVaults: TKongVault[] = []
+    const filteredVaults: TKongVaultInput[] = []
     const vaultFlags: Record<string, TVaultFlags> = {}
 
     let totalMatchingVaults = 0
@@ -277,7 +290,7 @@ export function useV3VaultFilter(
     let totalMigratableMatching = 0
     let totalRetiredMatching = 0
     const availableUnderlyingAssets = new Set<string>()
-    const underlyingAssetVaults: Record<string, TKongVault> = {}
+    const underlyingAssetVaults: Record<string, TKongVaultInput> = {}
     const hasChainFilter = Boolean(chains?.length)
     const hasCategoryFilter = Boolean(categories?.length)
     const hasAggressivenessFilter = Boolean(aggressiveness?.length)

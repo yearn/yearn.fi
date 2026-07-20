@@ -1,0 +1,226 @@
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+
+const TEST_ADDRESS = '0x2222222222222222222222222222222222222222'
+
+const ensureHoldingsStorageInitializedMock = vi.fn()
+const getHoldingsActivityMock = vi.fn()
+
+vi.mock('../lib/holdings', () => ({
+  ensureHoldingsStorageInitialized: ensureHoldingsStorageInitializedMock,
+  getHoldingsActivity: getHoldingsActivityMock
+}))
+
+function createRequest(query: Record<string, string>): Request {
+  return new Request(`https://yearn.fi/api/holdings/activity?${new URLSearchParams(query)}`)
+}
+
+describe('holdings activity route', () => {
+  beforeEach(() => {
+    vi.resetModules()
+    vi.clearAllMocks()
+    ensureHoldingsStorageInitializedMock.mockResolvedValue(undefined)
+    process.env.ENVIO_GRAPHQL_URL = 'https://envio.example/graphql'
+  })
+
+  it('returns indexed activity entries for a wallet', async () => {
+    getHoldingsActivityMock.mockResolvedValue({
+      address: TEST_ADDRESS,
+      version: 'all',
+      limit: 10,
+      offset: 0,
+      pageInfo: {
+        hasMore: true,
+        nextOffset: 10
+      },
+      entries: [
+        {
+          chainId: 1,
+          txHash: '0xabc',
+          timestamp: 1776902400,
+          action: 'deposit',
+          transferDirection: null,
+          vaultAddress: '0xbe53a109b494e5c9f97b9cd39fe969be68bf6204',
+          familyVaultAddress: '0xbe53a109b494e5c9f97b9cd39fe969be68bf6204',
+          assetSymbol: 'USDC',
+          assetAmount: '1000000',
+          assetAmountFormatted: 1,
+          shareAmount: '1000000000000000000',
+          shareAmountFormatted: 1,
+          status: 'ok'
+        }
+      ]
+    })
+
+    const { default: handler } = await import('./activity')
+    const response = await handler(
+      createRequest({
+        address: TEST_ADDRESS,
+        limit: '10',
+        offset: '0'
+      })
+    )
+
+    expect(getHoldingsActivityMock).toHaveBeenCalledWith(TEST_ADDRESS, 'all', 10, 0, {
+      type: 'all',
+      chainId: null,
+      startTimestamp: null,
+      endTimestamp: null
+    })
+    expect(response.status).toBe(200)
+    expect(response.headers.get('Cache-Control')).toBe('private, no-store, max-age=0, must-revalidate')
+    await expect(response.json()).resolves.toEqual({
+      address: TEST_ADDRESS,
+      version: 'all',
+      limit: 10,
+      offset: 0,
+      pageInfo: {
+        hasMore: true,
+        nextOffset: 10
+      },
+      entries: [
+        {
+          chainId: 1,
+          txHash: '0xabc',
+          timestamp: 1776902400,
+          action: 'deposit',
+          transferDirection: null,
+          vaultAddress: '0xbe53a109b494e5c9f97b9cd39fe969be68bf6204',
+          familyVaultAddress: '0xbe53a109b494e5c9f97b9cd39fe969be68bf6204',
+          assetSymbol: 'USDC',
+          assetAmount: '1000000',
+          assetAmountFormatted: 1,
+          shareAmount: '1000000000000000000',
+          shareAmountFormatted: 1,
+          status: 'ok'
+        }
+      ]
+    })
+  })
+
+  it('returns an empty collection when no indexed activity exists', async () => {
+    getHoldingsActivityMock.mockResolvedValue({
+      address: TEST_ADDRESS,
+      version: 'all',
+      limit: 10,
+      offset: 0,
+      pageInfo: {
+        hasMore: false,
+        nextOffset: null
+      },
+      entries: []
+    })
+
+    const { default: handler } = await import('./activity')
+    const response = await handler(
+      createRequest({
+        address: TEST_ADDRESS
+      })
+    )
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toEqual({
+      address: TEST_ADDRESS,
+      version: 'all',
+      limit: 10,
+      offset: 0,
+      pageInfo: {
+        hasMore: false,
+        nextOffset: null
+      },
+      entries: []
+    })
+  })
+
+  it('passes through valid activity filters', async () => {
+    getHoldingsActivityMock.mockResolvedValue({
+      address: TEST_ADDRESS,
+      version: 'all',
+      limit: 10,
+      offset: 0,
+      pageInfo: {
+        hasMore: false,
+        nextOffset: null
+      },
+      entries: []
+    })
+
+    const { default: handler } = await import('./activity')
+    const response = await handler(
+      createRequest({
+        address: TEST_ADDRESS,
+        type: 'withdraw',
+        chainId: '137',
+        startTimestamp: '1776729600',
+        endTimestamp: '1777334399'
+      })
+    )
+
+    expect(getHoldingsActivityMock).toHaveBeenCalledWith(TEST_ADDRESS, 'all', 10, 0, {
+      type: 'withdraw',
+      chainId: 137,
+      startTimestamp: 1776729600,
+      endTimestamp: 1777334399
+    })
+    expect(response.status).toBe(200)
+  })
+
+  it('passes through the transfer activity filter', async () => {
+    getHoldingsActivityMock.mockResolvedValue({
+      address: TEST_ADDRESS,
+      version: 'all',
+      limit: 10,
+      offset: 0,
+      pageInfo: {
+        hasMore: false,
+        nextOffset: null
+      },
+      entries: []
+    })
+
+    const { default: handler } = await import('./activity')
+    const response = await handler(
+      createRequest({
+        address: TEST_ADDRESS,
+        type: 'transfer'
+      })
+    )
+
+    expect(getHoldingsActivityMock).toHaveBeenCalledWith(TEST_ADDRESS, 'all', 10, 0, {
+      type: 'transfer',
+      chainId: null,
+      startTimestamp: null,
+      endTimestamp: null
+    })
+    expect(response.status).toBe(200)
+  })
+
+  it('passes through the swap activity filter', async () => {
+    getHoldingsActivityMock.mockResolvedValue({
+      address: TEST_ADDRESS,
+      version: 'all',
+      limit: 10,
+      offset: 0,
+      pageInfo: {
+        hasMore: false,
+        nextOffset: null
+      },
+      entries: []
+    })
+
+    const { default: handler } = await import('./activity')
+    const response = await handler(
+      createRequest({
+        address: TEST_ADDRESS,
+        type: 'swap'
+      })
+    )
+
+    expect(getHoldingsActivityMock).toHaveBeenCalledWith(TEST_ADDRESS, 'all', 10, 0, {
+      type: 'swap',
+      chainId: null,
+      startTimestamp: null,
+      endTimestamp: null
+    })
+    expect(response.status).toBe(200)
+  })
+})

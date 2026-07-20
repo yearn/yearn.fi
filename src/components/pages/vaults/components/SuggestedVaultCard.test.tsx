@@ -2,13 +2,16 @@ import type { TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { useVaultApyData } from '@pages/vaults/hooks/useVaultApyData'
 import { YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import { renderToStaticMarkup } from 'react-dom/server'
-import { MemoryRouter } from 'react-router'
 import { describe, expect, it, vi } from 'vitest'
 
 import { SuggestedVaultCard } from './SuggestedVaultCard'
 
 vi.mock('@pages/vaults/hooks/useVaultApyData', () => ({
   useVaultApyData: vi.fn()
+}))
+
+vi.mock('@hooks/usePlausible', () => ({
+  usePlausible: () => vi.fn()
 }))
 
 vi.mock('@pages/vaults/hooks/useYvUsdVaults', () => ({
@@ -45,11 +48,7 @@ function renderCard(vault: TKongVaultInput): string {
   }
 
   try {
-    return renderToStaticMarkup(
-      <MemoryRouter>
-        <SuggestedVaultCard vault={vault} />
-      </MemoryRouter>
-    )
+    return renderToStaticMarkup(<SuggestedVaultCard vault={vault} />)
   } finally {
     ;(globalThis as unknown as { window: unknown }).window = originalWindow
   }

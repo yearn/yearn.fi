@@ -15,7 +15,7 @@ interface UseYBoldZapperDepositParams {
 }
 
 export function useYBoldZapperDeposit(params: UseYBoldZapperDepositParams): UseWidgetDepositFlowReturn {
-  const { allowance = 0n } = useTokenAllowance({
+  const { allowance = 0n, refetch: refetchAllowance } = useTokenAllowance({
     account: params.account,
     token: BOLD_ADDRESS,
     spender: YBOLD_ZAPPER_ADDRESS,
@@ -71,7 +71,8 @@ export function useYBoldZapperDeposit(params: UseYBoldZapperDepositParams): UseW
       isLoadingRoute: false,
       isCrossChain: false,
       routerAddress: YBOLD_ZAPPER_ADDRESS,
-      error: undefined
+      error: undefined,
+      refetchAllowance
     }
   }
 }

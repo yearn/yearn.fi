@@ -17,6 +17,7 @@ interface UseEnsoDepositParams {
   enabled: boolean
   slippage?: number
   routingStrategy?: EnsoRoutingStrategy
+  routeRefreshKey?: number
 }
 
 export function useEnsoDeposit(params: UseEnsoDepositParams): UseWidgetDepositFlowReturn {
@@ -29,7 +30,8 @@ export function useEnsoDeposit(params: UseEnsoDepositParams): UseWidgetDepositFl
         params.vaultAddress,
         params.account ?? 'no-account',
         params.slippage ?? 'default',
-        params.routingStrategy ?? 'default-strategy'
+        params.routingStrategy ?? 'default-strategy',
+        params.routeRefreshKey ?? 0
       ].join(':'),
     [
       params.chainId,
@@ -38,7 +40,8 @@ export function useEnsoDeposit(params: UseEnsoDepositParams): UseWidgetDepositFl
       params.vaultAddress,
       params.account,
       params.slippage,
-      params.routingStrategy
+      params.routingStrategy,
+      params.routeRefreshKey
     ]
   )
 
@@ -98,13 +101,17 @@ export function useEnsoDeposit(params: UseEnsoDepositParams): UseWidgetDepositFl
         allowance: ensoFlow.periphery.allowance,
         expectedOut: ensoFlow.periphery.expectedOut.raw,
         minExpectedOut: ensoFlow.periphery.minExpectedOut.raw,
+        priceImpact: ensoFlow.periphery.priceImpact,
         isLoadingRoute: ensoFlow.periphery.isLoadingRoute,
         isCrossChain: ensoFlow.periphery.isCrossChain,
         routeHasSwap: ensoFlow.periphery.routeHasSwap,
         routerAddress: ensoFlow.periphery.routerAddress,
+        approvalSpenderAddress: ensoFlow.periphery.approvalSpenderAddress,
+        approvalWarning: ensoFlow.periphery.approvalWarning,
         error: ensoFlow.periphery.error?.message,
         tx: ensoFlow.periphery.route?.tx,
-        gas: ensoFlow.periphery.route?.gas
+        gas: ensoFlow.periphery.route?.gas,
+        refetchAllowance: ensoFlow.periphery.refetchAllowance
       }
     }),
     [ensoFlow, prepareEnsoOrder, params.amount, isEnsoAllowanceSufficient]

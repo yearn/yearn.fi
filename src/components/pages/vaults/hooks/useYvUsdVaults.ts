@@ -1,5 +1,6 @@
 import { getVaultView, type TKongVaultInput, type TKongVaultView } from '@pages/vaults/domain/kongVaultSelectors'
 import { useYearn } from '@shared/contexts/useYearn'
+import type { TDict } from '@shared/types'
 import { toAddress } from '@shared/utils'
 import { useMemo } from 'react'
 import { YVUSD_CHAIN_ID, YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '../utils/yvUsd'
@@ -7,7 +8,7 @@ import { useVaultSnapshot } from './useVaultSnapshot'
 import { useYvUsdPoints } from './useYvUsdPoints'
 import { buildSyntheticBaseVault, buildYvUsdVaultsModel, type TYvUsdMetrics } from './useYvUsdVaults.helpers'
 
-type TYvUsdVaults = {
+export type TYvUsdVaults = {
   assetAddress: `0x${string}`
   baseVault: TKongVaultView
   listVault: TKongVaultView
@@ -20,8 +21,17 @@ type TYvUsdVaults = {
   isLoading: boolean
 }
 
-export function useYvUsdVaults(): TYvUsdVaults {
-  const { vaults, isLoadingVaultList } = useYearn()
+export type TYvUsdListVaults = Pick<TYvUsdVaults, 'metrics' | 'unlockedVault' | 'lockedVault'>
+
+type TYvUsdVaultsArgs = {
+  vaults?: TDict<TKongVaultInput>
+  isLoadingVaultList?: boolean
+}
+
+export function useYvUsdVaults(args?: TYvUsdVaultsArgs): TYvUsdVaults {
+  const yearn = useYearn()
+  const vaults = args?.vaults ?? yearn.vaults
+  const isLoadingVaultList = args?.isLoadingVaultList ?? yearn.isLoadingVaultList
   const {
     unlocked: unlockedHasInfinifiPoints,
     locked: lockedHasInfinifiPoints,

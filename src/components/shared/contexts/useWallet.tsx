@@ -1,20 +1,9 @@
-import { isPortfolioDustValueVisible } from '@pages/portfolio/hooks/portfolioVisibility'
-import { useAppSettings } from '@pages/vaults/contexts/useAppSettings'
-import {
-  getVaultAddress,
-  getVaultChainID,
-  getVaultStaking,
-  getVaultVersion,
-  type TKongVaultInput
-} from '@pages/vaults/domain/kongVaultSelectors'
-import { getCanonicalHoldingsVaultAddress } from '@pages/vaults/domain/normalizeVault'
-import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
-import { getYvUsdSharePrice, YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
-import { useDeepCompareMemo } from '@react-hookz/web'
+import type { TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import type { QueryKey } from '@tanstack/react-query'
 import { useQueryClient } from '@tanstack/react-query'
 import type { ReactElement } from 'react'
 import { createContext, memo, useCallback, useContext, useDeferredValue, useMemo, useRef } from 'react'
+import { env } from '@/env'
 import type { TUseBalancesTokens } from '../hooks/useBalances.multichains'
 import { useBalancesCombined } from '../hooks/useBalancesCombined'
 import { useBalancesWithQuery } from '../hooks/useBalancesWithQuery'
@@ -22,14 +11,19 @@ import type { TFetchQueryKey } from '../hooks/useFetch'
 import { useStakingAssetConversions } from '../hooks/useStakingAssetConversions'
 import { getVaultHoldingsUsdValue } from '../hooks/useVaultFilterUtils'
 import type { TAddress, TChainTokens, TDict, TNDict, TNormalizedBN, TToken, TYChainTokens } from '../types'
-import { DEFAULT_ERC20, isZeroAddress, toAddress, zeroNormalizedBN } from '../utils'
-import { hasWalletBalanceSnapshot, shouldExposeWalletLoading } from './useWallet.helpers'
+import { DEFAULT_ERC20, zeroNormalizedBN } from '../utils'
+import {
+  applyTokenListMetadataToBalances,
+  hasWalletBalanceSnapshot,
+  shouldExposeWalletLoading,
+  shouldUpdateVisibleBalanceSnapshot
+} from './useWallet.helpers'
 import { useWeb3 } from './useWeb3'
 import { useYearn } from './useYearn'
 import { useYearnTokens } from './useYearn.helper'
 import { useTokenList } from './WithTokenList'
 
-const USE_ENSO_BALANCES = import.meta.env.VITE_BALANCE_SOURCE !== 'multicall'
+const USE_ENSO_BALANCES = env.NEXT_PUBLIC_BALANCE_SOURCE !== 'multicall'
 
 type TTokenAndChain = { address: TAddress; chainID: number }
 
@@ -40,14 +34,17 @@ type TWalletContext = {
   balances: TChainTokens
   isLoading: boolean
   hasCompletedBalanceLoad: boolean
-  cumulatedValueInV2Vaults: number
-  cumulatedValueInV3Vaults: number
   onRefresh: (
     tokenList?: TUseBalancesTokens[],
     shouldSaveInStorage?: boolean,
     shouldForceFetch?: boolean
   ) => Promise<TChainTokens>
 }
+
+type TWalletTokensContext = Pick<TWalletContext, 'getToken' | 'getBalance' | 'balances'>
+type TWalletStatusContext = Pick<TWalletContext, 'isLoading' | 'hasCompletedBalanceLoad'>
+type TWalletHoldingsContext = Pick<TWalletContext, 'getVaultHoldingsUsd'>
+type TWalletActionsContext = Pick<TWalletContext, 'onRefresh'>
 
 const defaultProps = {
   getToken: (): TToken => DEFAULT_ERC20,
@@ -56,8 +53,6 @@ const defaultProps = {
   balances: {},
   isLoading: true,
   hasCompletedBalanceLoad: false,
-  cumulatedValueInV2Vaults: 0,
-  cumulatedValueInV3Vaults: 0,
   onRefresh: async (): Promise<TChainTokens> => ({})
 }
 
@@ -65,16 +60,17 @@ const defaultProps = {
  ** This context controls most of the user's wallet data we may need to
  ** interact with our app, aka mostly the balances and the token prices.
  ******************************************************************************/
-const WalletContext = createContext<TWalletContext>(defaultProps)
+const WalletTokensContext = createContext<TWalletTokensContext>(defaultProps)
+const WalletStatusContext = createContext<TWalletStatusContext>(defaultProps)
+const WalletHoldingsContext = createContext<TWalletHoldingsContext>(defaultProps)
+const WalletActionsContext = createContext<TWalletActionsContext>(defaultProps)
 export const WalletContextApp = memo(function WalletContextApp(props: {
   children: ReactElement
   shouldWorkOnTestnet?: boolean
 }): ReactElement {
   const queryClient = useQueryClient()
   const { vaults, allVaults, isLoadingVaultList, getPrice } = useYearn()
-  const { unlockedVault: yvUsdUnlockedVault, lockedVault: yvUsdLockedVault } = useYvUsdVaults()
   const { address: userAddress } = useWeb3()
-  const { shouldHideDust } = useAppSettings()
 
   const allTokens = useYearnTokens({
     vaults: allVaults,
@@ -82,7 +78,7 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
     isLoadingVaultList,
     isEnabled: Boolean(userAddress)
   })
-  const { getToken: getTokenListToken } = useTokenList()
+  const { getToken: getTokenListToken, tokenLists } = useTokenList()
   const useBalancesHook = USE_ENSO_BALANCES ? useBalancesCombined : useBalancesWithQuery
   const {
     data: tokensRaw, // Expected to be TDict<TNormalizedBN | undefined>
@@ -94,9 +90,7 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
     tokens: allTokens,
     priorityChainID: 1
   })
-  const stableTokensRaw = useDeepCompareMemo((): TYChainTokens => {
-    return { ...(tokensRaw as TYChainTokens) }
-  }, [tokensRaw])
+  const stableTokensRaw = useMemo((): TYChainTokens => (tokensRaw ? (tokensRaw as TYChainTokens) : {}), [tokensRaw])
   /**************************************************************************
    ** Balance queries stream updates across multiple chains. Hold the last
    ** deep-stable settled snapshot while the wallet is loading so list
@@ -111,16 +105,25 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
     settledTokensRawRef.current = {}
     hasCompletedInitialBalanceLoadRef.current = false
   }
-  if (!isLoading) {
+  if (
+    shouldUpdateVisibleBalanceSnapshot({
+      currentBalances: settledTokensRawRef.current,
+      nextBalances: stableTokensRaw,
+      isLoading
+    })
+  ) {
     settledTokensRawRef.current = stableTokensRaw
   }
-  const visibleTokensRaw = isLoading ? settledTokensRawRef.current : stableTokensRaw
+  const visibleTokensRaw = settledTokensRawRef.current
   const deferredTokensRaw = useDeferredValue(visibleTokensRaw)
-  const balances = useDeepCompareMemo((): TNDict<TDict<TToken>> => {
-    const _tokens = { ...deferredTokensRaw }
-
-    return _tokens as TYChainTokens
-  }, [deferredTokensRaw])
+  const balances = useMemo(
+    (): TNDict<TDict<TToken>> =>
+      applyTokenListMetadataToBalances({
+        balances: deferredTokensRaw as TYChainTokens,
+        tokenLists
+      }),
+    [deferredTokensRaw, tokenLists]
+  )
   const isBalancesPending = deferredTokensRaw !== visibleTokensRaw
   const hasVisibleBalances = hasWalletBalanceSnapshot(visibleTokensRaw)
   const isWalletLoading = shouldExposeWalletLoading({
@@ -135,10 +138,21 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
     hasCompletedInitialBalanceLoadRef.current = true
   }
   const hasCompletedBalanceLoad = !userAddress || hasCompletedInitialBalanceLoadRef.current
+  const refreshSourcesRef = useRef({
+    onUpdate,
+    onUpdateSome,
+    userAddress
+  })
+  refreshSourcesRef.current = {
+    onUpdate,
+    onUpdateSome,
+    userAddress
+  }
 
   const onRefresh = useCallback(
     async (tokenToUpdate?: TUseBalancesTokens[]): Promise<TYChainTokens> => {
       const invalidateHoldingsQueries = async (): Promise<void> => {
+        const { userAddress } = refreshSourcesRef.current
         if (!userAddress) {
           return
         }
@@ -167,15 +181,17 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
       }
 
       if (tokenToUpdate) {
+        const { onUpdateSome } = refreshSourcesRef.current
         const updatedBalances = await onUpdateSome(tokenToUpdate)
         await invalidateHoldingsQueries()
         return updatedBalances as TYChainTokens
       }
+      const { onUpdate } = refreshSourcesRef.current
       const updatedBalances = await onUpdate(true)
       await invalidateHoldingsQueries()
       return updatedBalances as TYChainTokens
     },
-    [onUpdate, onUpdateSome, queryClient, userAddress]
+    [queryClient]
   )
 
   /**************************************************************************
@@ -209,8 +225,6 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
     [balances]
   )
 
-  const yvUsdUnlockedSharePrice = getYvUsdSharePrice(yvUsdUnlockedVault)
-  const yvUsdLockedSharePrice = getYvUsdSharePrice(yvUsdLockedVault)
   const shouldResolveStakingConversions = Boolean(userAddress && !isLoading && !isBalancesPending)
 
   const stakingConvertedAssets = useStakingAssetConversions({
@@ -228,97 +242,66 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
     [allVaults, getBalance, getPrice, getToken, stakingConvertedAssets]
   )
 
-  const [cumulatedValueInV2Vaults, cumulatedValueInV3Vaults] = useMemo((): [number, number] => {
-    // Build staking address → vault address lookup
-    const stakingToVault = new Map<string, string>()
-    for (const [vaultAddress, vault] of Object.entries(allVaults)) {
-      const staking = getVaultStaking(vault)
-      if (!isZeroAddress(toAddress(staking.address))) {
-        stakingToVault.set(toAddress(staking.address), vaultAddress)
-      }
-    }
-
-    let cumulatedValueInV2Vaults = 0
-    let cumulatedValueInV3Vaults = 0
-    const countedVaults = new Set<string>()
-
-    for (const [_chainId, perChain] of Object.entries(balances)) {
-      for (const [tokenAddress, tokenData] of Object.entries(perChain)) {
-        const normalizedAddress = toAddress(tokenAddress)
-        const canonicalAddress = getCanonicalHoldingsVaultAddress(normalizedAddress)
-
-        if (normalizedAddress === YVUSD_UNLOCKED_ADDRESS || normalizedAddress === YVUSD_LOCKED_ADDRESS) {
-          const sharePrice =
-            normalizedAddress === YVUSD_UNLOCKED_ADDRESS ? yvUsdUnlockedSharePrice : yvUsdLockedSharePrice
-          const tokenValue = tokenData.value || tokenData.balance.normalized * sharePrice
-          if (!isPortfolioDustValueVisible(tokenValue, shouldHideDust)) {
-            continue
-          }
-          cumulatedValueInV3Vaults += tokenValue
-          continue
-        }
-
-        // Resolve vault details (direct vault or via staking lookup)
-        let vaultDetails = allVaults?.[canonicalAddress]
-        if (!vaultDetails && stakingToVault.has(canonicalAddress)) {
-          vaultDetails = allVaults?.[stakingToVault.get(canonicalAddress)!]
-        }
-        if (!vaultDetails && stakingToVault.has(normalizedAddress)) {
-          vaultDetails = allVaults?.[stakingToVault.get(normalizedAddress)!]
-        }
-
-        if (!vaultDetails) continue
-        const vaultKey = `${getVaultChainID(vaultDetails)}/${toAddress(getVaultAddress(vaultDetails))}`
-        if (countedVaults.has(vaultKey)) continue
-        countedVaults.add(vaultKey)
-
-        const tokenValue = getVaultHoldingsUsd(vaultDetails)
-        if (!isPortfolioDustValueVisible(tokenValue, shouldHideDust)) {
-          continue
-        }
-        const vaultVersion = getVaultVersion(vaultDetails)
-        const isV3 = vaultVersion.startsWith('3') || vaultVersion.startsWith('~3')
-
-        if (isV3) {
-          cumulatedValueInV3Vaults += tokenValue
-        } else {
-          cumulatedValueInV2Vaults += tokenValue
-        }
-      }
-    }
-    return [cumulatedValueInV2Vaults, cumulatedValueInV3Vaults]
-  }, [allVaults, balances, getVaultHoldingsUsd, shouldHideDust, yvUsdLockedSharePrice, yvUsdUnlockedSharePrice])
-
   /***************************************************************************
    **	Setup and render the Context provider to use in the app.
    ***************************************************************************/
-  const contextValue = useDeepCompareMemo(
-    (): TWalletContext => ({
+  const tokensValue = useMemo(
+    (): TWalletTokensContext => ({
       getToken,
       getBalance,
-      getVaultHoldingsUsd,
-      balances,
-      isLoading: isWalletLoading,
-      hasCompletedBalanceLoad,
-      onRefresh,
-      cumulatedValueInV2Vaults,
-      cumulatedValueInV3Vaults
+      balances
     }),
-    [
-      getToken,
-      getBalance,
-      getVaultHoldingsUsd,
-      balances,
-      isWalletLoading,
-      hasCompletedBalanceLoad,
-      onRefresh,
-      cumulatedValueInV2Vaults,
-      cumulatedValueInV3Vaults
-    ]
+    [getBalance, getToken, balances]
+  )
+  const statusValue = useMemo(
+    (): TWalletStatusContext => ({
+      isLoading: isWalletLoading,
+      hasCompletedBalanceLoad
+    }),
+    [hasCompletedBalanceLoad, isWalletLoading]
+  )
+  const holdingsValue = useMemo(
+    (): TWalletHoldingsContext => ({
+      getVaultHoldingsUsd
+    }),
+    [getVaultHoldingsUsd]
+  )
+  const actionsValue = useMemo(
+    (): TWalletActionsContext => ({
+      onRefresh
+    }),
+    [onRefresh]
   )
 
-  return <WalletContext.Provider value={contextValue}>{props.children}</WalletContext.Provider>
+  return (
+    <WalletActionsContext.Provider value={actionsValue}>
+      <WalletStatusContext.Provider value={statusValue}>
+        <WalletTokensContext.Provider value={tokensValue}>
+          <WalletHoldingsContext.Provider value={holdingsValue}>{props.children}</WalletHoldingsContext.Provider>
+        </WalletTokensContext.Provider>
+      </WalletStatusContext.Provider>
+    </WalletActionsContext.Provider>
+  )
 })
 
-export const useWallet = (): TWalletContext => useContext(WalletContext)
+export const useWalletTokens = (): TWalletTokensContext => useContext(WalletTokensContext)
+export const useWalletStatus = (): TWalletStatusContext => useContext(WalletStatusContext)
+export const useWalletHoldings = (): TWalletHoldingsContext => useContext(WalletHoldingsContext)
+export const useWalletActions = (): TWalletActionsContext => useContext(WalletActionsContext)
+export const useWallet = (): TWalletContext => {
+  const tokensValue = useWalletTokens()
+  const statusValue = useWalletStatus()
+  const holdingsValue = useWalletHoldings()
+  const actionsValue = useWalletActions()
+
+  return useMemo(
+    (): TWalletContext => ({
+      ...tokensValue,
+      ...holdingsValue,
+      ...statusValue,
+      ...actionsValue
+    }),
+    [actionsValue, holdingsValue, statusValue, tokensValue]
+  )
+}
 export default useWallet

@@ -12,6 +12,7 @@ import {
 import { YvUsdApyTooltipContent, YvUsdTvlTooltipContent } from '@pages/vaults/components/yvUSD/YvUsdBreakdown'
 import { YvUsdHeaderBanner } from '@pages/vaults/components/yvUSD/YvUsdHeaderBanner'
 import { getVaultView, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
+import { isYBoldProductAddress } from '@pages/vaults/domain/normalizeVault'
 import { useHeaderCompression } from '@pages/vaults/hooks/useHeaderCompression'
 import { useVaultUserData, type VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { useYvBtcVaults } from '@pages/vaults/hooks/useYvBtcVaults'
@@ -49,10 +50,11 @@ import { RenderAmount } from '@shared/components/RenderAmount'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { Tooltip } from '@shared/components/Tooltip'
 import { useWeb3 } from '@shared/contexts/useWeb3'
-import { useYearn } from '@shared/contexts/useYearn'
 import { yvUsdLockedVaultAbi } from '@shared/contracts/abi/yvUsdLockedVault.abi'
 import { useReadContract } from '@shared/hooks/useAppWagmi'
 import { useChainTimestamp } from '@shared/hooks/useChainTimestamp'
+import { useYearnSpotPrices } from '@shared/hooks/useYearnSpotPrices'
+import { IconAlertWarning } from '@shared/icons/IconAlertWarning'
 import { IconInfinifiPoints } from '@shared/icons/IconInfinifiPoints'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
 import { IconLock } from '@shared/icons/IconLock'
@@ -70,9 +72,10 @@ import {
 } from '@shared/utils'
 import { getVaultName } from '@shared/utils/helpers'
 import { getNetwork } from '@shared/utils/wagmi/utils'
+import Link from 'next/link'
 import type { ReactElement, Ref } from 'react'
 import { useEffect, useRef, useState } from 'react'
-import { Link } from 'react-router'
+import { env } from '@/env'
 
 type TVaultKindType = 'multi' | 'single' | undefined
 
@@ -184,7 +187,7 @@ function VaultHeaderIdentity({
   const currentVault = getVaultView(currentVaultInput)
   const chainName = getNetwork(currentVault.chainID).name
   const tokenLogoSrc = logoSrcOverride ?? getVaultPrimaryLogoSrc(currentVault)
-  const chainLogoSrc = `${import.meta.env.VITE_BASE_YEARN_ASSETS_URI}/chains/${currentVault.chainID}/logo-32.png`
+  const chainLogoSrc = `${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/chains/${currentVault.chainID}/logo-32.png`
   const explorerBase = getNetwork(currentVault.chainID).defaultBlockExplorer
   const explorerHref = explorerBase ? `${explorerBase}/address/${currentVault.address}` : ''
   const showChainChip = !isCompressed
@@ -431,7 +434,13 @@ function SectionSelectorBar({
   activeSectionKey?: string
   onSelectSection?: (key: string) => void
   sectionSelectorRef?: Ref<HTMLDivElement>
-  sectionTabs: { key: string; label: string }[]
+  sectionTabs: {
+    key: string
+    label: string
+    supportsNotification?: boolean
+    notificationTooltip?: string | ReactElement
+    notificationAriaLabel?: string
+  }[]
   isCompressed: boolean
   includeTourAttributes?: boolean
 }): ReactElement {
@@ -447,27 +456,59 @@ function SectionSelectorBar({
           isCompressed ? 'border-t' : 'border-x border-b'
         )}
       >
-        {sectionTabs.map((section) => (
-          <button
-            key={section.key}
-            type={'button'}
-            onClick={(): void => {
-              if (!isCompressed && section.key === 'charts') {
-                return
-              }
-              onSelectSection?.(section.key)
-            }}
-            className={cl(
-              'flex-1 rounded-md px-2 py-2 text-xs font-semibold transition-all md:px-4 md:py-2.5',
-              SELECTOR_BAR_STYLES.buttonBase,
-              'min-h-9 active:scale-[0.98] truncate',
-              activeSectionKey === section.key ? SELECTOR_BAR_STYLES.buttonActive : SELECTOR_BAR_STYLES.buttonInactive
-            )}
-            aria-disabled={!isCompressed && section.key === 'charts'}
-          >
-            {section.label}
-          </button>
-        ))}
+        {sectionTabs.map((section) => {
+          const button = (
+            <button
+              type={'button'}
+              onClick={(): void => {
+                if (!isCompressed && section.key === 'charts') {
+                  return
+                }
+                onSelectSection?.(section.key)
+              }}
+              className={cl(
+                'w-full rounded-md px-2 py-2 text-xs font-semibold transition-all md:px-4 md:py-2.5',
+                SELECTOR_BAR_STYLES.buttonBase,
+                'min-h-9 active:scale-[0.98]',
+                activeSectionKey === section.key ? SELECTOR_BAR_STYLES.buttonActive : SELECTOR_BAR_STYLES.buttonInactive
+              )}
+              aria-disabled={!isCompressed && section.key === 'charts'}
+            >
+              <span className={'flex min-w-0 items-center justify-center gap-1.5'}>
+                <span className={'truncate'}>{section.label}</span>
+                {section.supportsNotification ? (
+                  <IconAlertWarning
+                    aria-label={section.notificationAriaLabel}
+                    aria-hidden={section.notificationTooltip ? undefined : true}
+                    className={cl(
+                      'size-3.5 shrink-0 text-amber-600 dark:text-amber-400',
+                      section.notificationTooltip ? 'visible' : 'invisible'
+                    )}
+                  />
+                ) : null}
+              </span>
+            </button>
+          )
+
+          return (
+            <div key={section.key} className={'group relative min-w-0 flex-1'}>
+              {button}
+              {section.supportsNotification ? (
+                <div
+                  role={'tooltip'}
+                  className={cl(
+                    'pointer-events-none invisible absolute bottom-full left-[calc(50%+2rem)] z-50 mb-2 -translate-x-1/2 opacity-0 transition-opacity duration-150',
+                    section.notificationTooltip
+                      ? 'group-hover:visible group-hover:opacity-100 group-focus-within:visible group-focus-within:opacity-100'
+                      : ''
+                  )}
+                >
+                  {section.notificationTooltip ?? <span />}
+                </div>
+              ) : null}
+            </div>
+          )
+        })}
       </div>
     </div>
   )
@@ -487,6 +528,9 @@ function VaultOverviewCard({
   onYvUsdApyVariantChange?: (variant: TYvUsdVariant) => void
 }): ReactElement {
   const currentVault = getVaultView(currentVaultInput)
+  const estimatedApyTooltip = isYBoldProductAddress(currentVault.address)
+    ? 'Projected APY based on 7 day historical performance'
+    : 'Projected APY based on underlying markets'
   const totalAssets = toNormalizedBN(currentVault.tvl.totalAssets, currentVault.decimals).normalized
   const listKind = deriveListKind(currentVault)
   const isFactoryVault = listKind === 'factory'
@@ -577,7 +621,7 @@ function VaultOverviewCard({
   const metrics: TMetricBlock[] = [
     {
       key: 'est-apy',
-      header: <MetricHeader label={'Est. APY'} tooltip={'Projected APY based on underlying markets'} />,
+      header: <MetricHeader label={'Est. APY'} tooltip={estimatedApyTooltip} />,
       value: isDualVariantVault ? (
         <Tooltip
           className={'h-auto w-full gap-0'}
@@ -683,10 +727,10 @@ function YvUsdUserHoldingsCard({
   includeTourAttributes?: boolean
 }): ReactElement {
   const { address } = useWeb3()
-  const { getPrice } = useYearn()
   const { unlockedVault, lockedVault } = useYvUsdVaults()
   const account = address ? toAddress(address) : undefined
   const unlockedAssetAddress = toAddress(unlockedVault?.token.address ?? YVUSD_UNLOCKED_ADDRESS)
+  const { getPrice } = useYearnSpotPrices([{ address: unlockedAssetAddress, chainID: YVUSD_CHAIN_ID }])
 
   const unlockedUserData = useVaultUserData({
     vaultAddress: toAddress(unlockedVault?.address ?? YVUSD_UNLOCKED_ADDRESS),
@@ -814,11 +858,11 @@ function YvBtcUserHoldingsCard({
   includeTourAttributes?: boolean
 }): ReactElement {
   const { address } = useWeb3()
-  const { getPrice } = useYearn()
   const { unlockedVault, lockedVault } = useYvBtcVaults()
   const account = address ? toAddress(address) : undefined
   const unlockedAssetAddress = toAddress(unlockedVault?.token.address)
   const isLockedVaultLive = !isZeroAddress(toAddress(lockedVault?.address))
+  const { getPrice } = useYearnSpotPrices([{ address: unlockedAssetAddress, chainID: unlockedVault.chainID }])
 
   const unlockedUserData = useVaultUserData({
     vaultAddress: toAddress(unlockedVault?.address),
@@ -1070,7 +1114,13 @@ type TVaultDetailsHeaderBaseProps = {
   productTypeDescriptionOverride?: string
   extraMetadataChips?: Array<{ label: string; tooltipDescription?: string }>
   yvUsdApyVariant?: TYvUsdVariant
-  sectionTabs?: { key: string; label: string }[]
+  sectionTabs?: {
+    key: string
+    label: string
+    supportsNotification?: boolean
+    notificationTooltip?: string | ReactElement
+    notificationAriaLabel?: string
+  }[]
   activeSectionKey?: string
   onSelectSection?: (key: string) => void
   sectionSelectorRef?: Ref<HTMLDivElement>
@@ -1111,7 +1161,11 @@ export function VaultDetailsHeaderPresentation({
   includeTourAttributes = true
 }: TVaultDetailsHeaderPresentationProps): ReactElement {
   const currentVault = getVaultView(currentVaultInput)
-  const tokenPrice = currentVault.tvl.price || 0
+  const { getPrice } = useYearnSpotPrices([{ address: currentVault.token.address, chainID: currentVault.chainID }])
+  const tokenPrice =
+    getPrice({ address: currentVault.token.address, chainID: currentVault.chainID }).normalized ||
+    currentVault.tvl.price ||
+    0
   const isYvUsd = isYvUsdVault(currentVault)
   const handleSelectSection = onSelectSection ?? noopSelectSection
   const handleWidgetModeChange = onWidgetModeChange ?? noopWidgetModeChange
@@ -1123,11 +1177,11 @@ export function VaultDetailsHeaderPresentation({
       className={'grid w-full grid-cols-1 gap-y-0 gap-x-6 text-left md:auto-rows-min md:grid-cols-20 bg-app rounded-lg'}
     >
       <div className={'hidden md:flex items-center gap-2 text-sm text-text-secondary md:col-span-20 px-1'}>
-        <Link to={'/'} className={'transition-colors hover:text-text-primary'}>
+        <a href={'/'} className={'transition-colors hover:text-text-primary'}>
           {'Home'}
-        </Link>
+        </a>
         <span>{'>'}</span>
-        <Link to={'/vaults'} className={'transition-colors hover:text-text-primary'}>
+        <Link href={'/v3'} className={'transition-colors hover:text-text-primary'}>
           {'Vaults'}
         </Link>
         <span>{'>'}</span>
