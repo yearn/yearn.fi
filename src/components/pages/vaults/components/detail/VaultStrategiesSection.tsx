@@ -4,7 +4,6 @@ import {
 } from '@pages/vaults/components/detail/strategyDisplayFees'
 import { ALL_VAULTSV3_KINDS_KEYS } from '@pages/vaults/constants'
 import {
-  getVaultAddress,
   getVaultAPR,
   getVaultChainID,
   getVaultName,
@@ -15,19 +14,20 @@ import {
   type TKongVaultInput,
   type TKongVaultStrategy
 } from '@pages/vaults/domain/kongVaultSelectors'
-import { usePendingTimelockStrategies } from '@pages/vaults/hooks/usePendingTimelockStrategies'
 import { useQueryArguments } from '@pages/vaults/hooks/useVaultsQueryArgs'
 import type { TPendingTimelockStrategy } from '@pages/vaults/types/timelockStrategies'
 import type { TAllocationChartData } from '@shared/components/AllocationChart'
 import { DARK_MODE_COLORS, LIGHT_MODE_COLORS, useDarkMode } from '@shared/components/AllocationChart'
 import { useYearn } from '@shared/contexts/useYearn'
 import { useYearnTokenPrice } from '@shared/hooks/useYearnTokenPrice'
+import { IconChevron } from '@shared/icons/IconChevron'
 import type { TSortDirection } from '@shared/types'
 import { cl, formatTvlDisplay, toAddress, toBigInt, toNormalizedBN } from '@shared/utils'
 import type { ReactElement } from 'react'
-import { lazy, Suspense, useCallback, useMemo } from 'react'
+import { lazy, Suspense, useCallback, useMemo, useState } from 'react'
 import { PendingTimelockStrategiesTable } from './PendingTimelockStrategiesTable'
 import { formatStrategiesPercent } from './strategiesPercentFormat'
+import { isActiveStrategy } from './strategyActivity'
 import { VaultsListHead } from './VaultsListHead'
 import { VaultsListStrategy } from './VaultsListStrategy'
 
@@ -41,21 +41,23 @@ type TStrategyRow = TKongVaultStrategy & {
   fees: TStrategyDisplayFees
 }
 
-export function VaultStrategiesSection({ currentVault }: { currentVault: TKongVaultInput }): ReactElement {
+export function VaultStrategiesSection({
+  currentVault,
+  pendingTimelockStrategies = []
+}: {
+  currentVault: TKongVaultInput
+  pendingTimelockStrategies?: TPendingTimelockStrategy[]
+}): ReactElement {
   const { allVaults, vaults } = useYearn()
   const isDark = useDarkMode()
   const vaultVersion = getVaultVersion(currentVault)
   const vaultVariant = vaultVersion?.startsWith('3') || vaultVersion?.startsWith('~3') ? 'v3' : 'v2'
   const chainId = getVaultChainID(currentVault)
-  const vaultAddress = getVaultAddress(currentVault)
   const token = getVaultToken(currentVault)
   const fees = getVaultAPR(currentVault).fees
   const strategies = getVaultStrategies(currentVault)
   const totalAssets = getVaultTVL(currentVault).totalAssets
-  const pendingTimelockStrategies = usePendingTimelockStrategies({
-    chainId,
-    vaultAddress
-  })
+  const [areInactiveStrategiesOpen, setAreInactiveStrategiesOpen] = useState(false)
   const { sortDirection, sortBy, onChangeSortDirection, onChangeSortBy } = useQueryArguments({
     defaultSortBy: 'allocationPercentage',
     defaultTypes: ALL_VAULTSV3_KINDS_KEYS,
@@ -89,19 +91,15 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TKongVa
   const pendingRows = useMemo((): TPendingTimelockStrategy[] => {
     const currentStrategyAddresses = new Set(mergedList.map((strategy) => toAddress(strategy.address)))
 
-    return (pendingTimelockStrategies.data?.items ?? []).filter(
-      (item) => !currentStrategyAddresses.has(toAddress(item.strategyAddress))
-    )
-  }, [mergedList, pendingTimelockStrategies.data?.items])
+    return pendingTimelockStrategies.filter((item) => !currentStrategyAddresses.has(toAddress(item.strategyAddress)))
+  }, [mergedList, pendingTimelockStrategies])
 
   const allocatedRatio = mergedList.reduce((acc, strategy) => acc + (strategy.details?.debtRatio || 0), 0)
   const unallocatedPercentage = Math.max(0, 10000 - allocatedRatio)
   const allocatedDebt = mergedList.reduce((acc, strategy) => acc + toBigInt(strategy.details?.totalDebt || 0), 0n)
   const unallocatedValue = totalAssets > allocatedDebt ? totalAssets - allocatedDebt : 0n
 
-  const filteredVaultList = useMemo(() => {
-    return mergedList
-  }, [mergedList])
+  const filteredVaultList = mergedList
 
   const sortedVaultsToDisplay = useMemo(() => {
     const direction = sortDirection === 'asc' ? 1 : -1
@@ -120,6 +118,9 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TKongVa
     })
   }, [filteredVaultList, sortBy, sortDirection])
 
+  const activeStrategies = sortedVaultsToDisplay.filter(isActiveStrategy)
+  const inactiveStrategies = sortedVaultsToDisplay.filter((strategy) => !isActiveStrategy(strategy))
+
   const resolveStrategyUsdValue = useCallback(
     (totalDebt: string | undefined): number => {
       const normalized = toNormalizedBN(totalDebt || 0, token.decimals).normalized
@@ -134,18 +135,12 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TKongVa
   )
 
   const activeStrategyData = useMemo(() => {
-    return filteredVaultList
-      .filter((strategy) => {
-        const hasAllocation =
-          strategy.details?.totalDebt && strategy.details.totalDebt !== '0' && strategy.details?.debtRatio
-        return hasAllocation
-      })
-      .map((strategy) => ({
-        id: strategy.address,
-        name: strategy.name,
-        value: (strategy.details?.debtRatio || 0) / 100,
-        amount: formatAllocationAmount(strategy.details?.totalDebt)
-      }))
+    return filteredVaultList.filter(isActiveStrategy).map((strategy) => ({
+      id: strategy.address,
+      name: strategy.name,
+      value: (strategy.details?.debtRatio || 0) / 100,
+      amount: formatAllocationAmount(strategy.details?.totalDebt)
+    }))
   }, [filteredVaultList, formatAllocationAmount])
 
   const allocationChartData = useMemo(() => {
@@ -252,34 +247,25 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TKongVa
                     }
                   ]}
                 />
-                {sortedVaultsToDisplay
-                  .filter(
-                    (strategy) =>
-                      !(
-                        strategy.status === 'unallocated' ||
-                        strategy.details?.totalDebt === '0' ||
-                        !strategy.details?.debtRatio
-                      )
-                  )
-                  .map((strategy) => (
-                    <VaultsListStrategy
-                      key={strategy.address}
-                      details={strategy.details}
-                      status={strategy.status}
-                      chainId={chainId}
-                      allocation={formatAllocationAmount(strategy.details?.totalDebt)}
-                      totalValueUsd={resolveStrategyUsdValue(strategy.details?.totalDebt)}
-                      name={strategy.name}
-                      tokenAddress={token.address}
-                      address={strategy.address}
-                      isVault={strategy.isVault}
-                      variant={vaultVariant}
-                      apr={strategy.estimatedAPY}
-                      netApr={strategy.netAPR}
-                      katRewardsAPR={strategy.katRewardsAPR}
-                      fees={strategy.fees}
-                    />
-                  ))}
+                {activeStrategies.map((strategy) => (
+                  <VaultsListStrategy
+                    key={strategy.address}
+                    details={strategy.details}
+                    status={strategy.status}
+                    chainId={chainId}
+                    allocation={formatAllocationAmount(strategy.details?.totalDebt)}
+                    totalValueUsd={resolveStrategyUsdValue(strategy.details?.totalDebt)}
+                    name={strategy.name}
+                    tokenAddress={token.address}
+                    address={strategy.address}
+                    isVault={strategy.isVault}
+                    variant={vaultVariant}
+                    apr={strategy.estimatedAPY}
+                    netApr={strategy.netAPR}
+                    katRewardsAPR={strategy.katRewardsAPR}
+                    fees={strategy.fees}
+                  />
+                ))}
                 {unallocatedPercentage > 0 && unallocatedValue > 0n ? (
                   <div className={'w-full rounded-lg text-text-primary opacity-50'}>
                     <div className={'grid w-full grid-cols-1 items-center gap-4 px-4 py-3 md:grid-cols-24 md:px-8'}>
@@ -313,32 +299,50 @@ export function VaultStrategiesSection({ currentVault }: { currentVault: TKongVa
                     </div>
                   </div>
                 ) : null}
-                {sortedVaultsToDisplay
-                  .filter(
-                    (strategy) =>
-                      strategy.status === 'unallocated' ||
-                      strategy.details?.totalDebt === '0' ||
-                      !strategy.details?.debtRatio
-                  )
-                  .map((strategy) => (
-                    <VaultsListStrategy
-                      key={strategy.address}
-                      details={strategy.details}
-                      status={strategy.status}
-                      chainId={chainId}
-                      allocation={formatAllocationAmount(strategy.details?.totalDebt)}
-                      totalValueUsd={resolveStrategyUsdValue(strategy.details?.totalDebt)}
-                      name={strategy.name}
-                      tokenAddress={token.address}
-                      address={strategy.address}
-                      isVault={strategy.isVault}
-                      variant={vaultVariant}
-                      apr={strategy.estimatedAPY}
-                      netApr={strategy.netAPR}
-                      katRewardsAPR={strategy.katRewardsAPR}
-                      fees={strategy.fees}
-                    />
-                  ))}
+                {inactiveStrategies.length > 0 ? (
+                  <div className={'border-t border-border'}>
+                    <button
+                      type={'button'}
+                      className={
+                        'flex w-full items-center justify-between rounded-lg px-4 py-3 text-left text-base font-normal text-text-secondary transition-colors hover:bg-surface-secondary/50 hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary md:px-8'
+                      }
+                      aria-expanded={areInactiveStrategiesOpen}
+                      onClick={(): void => setAreInactiveStrategiesOpen((isOpen) => !isOpen)}
+                    >
+                      <span>
+                        {areInactiveStrategiesOpen ? 'Hide Inactive Strategies' : 'Show Inactive Strategies'}
+                        <span className={'ml-1 font-normal text-text-secondary'}>({inactiveStrategies.length})</span>
+                      </span>
+                      <IconChevron
+                        className={'size-4 transition-transform duration-200'}
+                        direction={areInactiveStrategiesOpen ? 'up' : 'down'}
+                      />
+                    </button>
+                    {areInactiveStrategiesOpen ? (
+                      <div className={'space-y-px'}>
+                        {inactiveStrategies.map((strategy) => (
+                          <VaultsListStrategy
+                            key={strategy.address}
+                            details={strategy.details}
+                            status={'not_active'}
+                            chainId={chainId}
+                            allocation={formatAllocationAmount(strategy.details?.totalDebt)}
+                            totalValueUsd={resolveStrategyUsdValue(strategy.details?.totalDebt)}
+                            name={strategy.name}
+                            tokenAddress={token.address}
+                            address={strategy.address}
+                            isVault={strategy.isVault}
+                            variant={vaultVariant}
+                            apr={strategy.estimatedAPY}
+                            netApr={strategy.netAPR}
+                            katRewardsAPR={strategy.katRewardsAPR}
+                            fees={strategy.fees}
+                          />
+                        ))}
+                      </div>
+                    ) : null}
+                  </div>
+                ) : null}
               </>
             ) : null}
             <PendingTimelockStrategiesTable
