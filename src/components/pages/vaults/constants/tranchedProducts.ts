@@ -9,6 +9,7 @@ export type TTranchedProduct = {
   id: string
   kind: TTranchedProductKind
   asset: TTranchedAsset
+  availability: 'live' | 'placeholder'
   name: string
   symbol: string
   shortName: string
@@ -61,36 +62,28 @@ const PRODUCT_ADDRESSES: Record<string, `0x${string}`> = {
   'yvusd-fixed': YVUSD_TRANCHE_DEPLOYMENT.tranches.fixed,
   'yveth-fixed': toAddress('0x0000000000000000000000000000000000000a02'),
   'yvbtc-fixed': toAddress('0x0000000000000000000000000000000000000a03'),
-  'yvusd-levered': YVUSD_TRANCHE_DEPLOYMENT.tranches.levered,
-  'yveth-levered': toAddress('0x0000000000000000000000000000000000000b02'),
-  'yvbtc-levered': toAddress('0x0000000000000000000000000000000000000b03')
+  'yvusd-levered': YVUSD_TRANCHE_DEPLOYMENT.tranches.levered
 }
 
 const PRODUCT_TVL: Record<string, number> = {
   'yvusd-fixed': 78_700_000,
-  'yveth-fixed': 25_200_000,
-  'yvbtc-fixed': 20_400_000,
-  'yvusd-levered': 22_500_000,
-  'yveth-levered': 4_200_000,
-  'yvbtc-levered': 6_500_000
+  'yveth-fixed': 0,
+  'yvbtc-fixed': 0,
+  'yvusd-levered': 22_500_000
 }
 
 const PRODUCT_APY: Record<string, number> = {
   'yvusd-fixed': 0.05,
   'yveth-fixed': 0.03,
   'yvbtc-fixed': 0.015,
-  'yvusd-levered': 0.0913,
-  'yveth-levered': 0.1335,
-  'yvbtc-levered': 0.102
+  'yvusd-levered': 0.0913
 }
 
 const PRODUCT_TOTAL_ASSETS: Record<string, string> = {
   'yvusd-fixed': '78700000000000',
-  'yveth-fixed': '8400000000000000000000',
-  'yvbtc-fixed': '210000000000',
-  'yvusd-levered': '22500000000000',
-  'yveth-levered': '1400000000000000000000',
-  'yvbtc-levered': '67000000000'
+  'yveth-fixed': '0',
+  'yvbtc-fixed': '0',
+  'yvusd-levered': '22500000000000'
 }
 
 const TOKEN_PRICE: Record<TTranchedAsset, number> = {
@@ -208,7 +201,7 @@ function buildTranchedVault(product: TTranchedProduct): TTranchedVaultRow {
         }
       }
     },
-    featuringScore: product.kind === 'senior' ? 1_000 : 900,
+    featuringScore: product.availability === 'placeholder' ? -1 : product.kind === 'senior' ? 1_000 : 900,
     strategies: [
       {
         address,
@@ -238,7 +231,7 @@ function buildTranchedVault(product: TTranchedProduct): TTranchedVaultRow {
       uiNotice: '',
       isRetired: false,
       isBoosted: false,
-      isHighlighted: product.kind === 'senior',
+      isHighlighted: product.availability === 'live' && product.kind === 'senior',
       isHidden: false
     }
   }
@@ -256,6 +249,7 @@ export const TRANCHED_PRODUCTS: TTranchedProduct[] = [
     id: 'yvusd-fixed',
     kind: 'senior',
     asset: 'USD',
+    availability: 'live',
     name: 'yvUSD Fixed Yield',
     symbol: 'yvUSD-A',
     shortName: 'USD Fixed',
@@ -287,15 +281,16 @@ export const TRANCHED_PRODUCTS: TTranchedProduct[] = [
     id: 'yveth-fixed',
     kind: 'senior',
     asset: 'ETH',
+    availability: 'placeholder',
     name: 'yvETH Fixed Yield',
     symbol: 'yvETH-A',
     shortName: 'ETH Fixed',
     intent: 'Steady ETH-denominated yield with reserve and junior protection beneath it.',
     apyLabel: '3.00%',
     apyCaption: 'target APY',
-    tvl: '$25.2M',
-    capacity: '62% capacity',
-    liquidity: 'Instant target liquidity',
+    tvl: 'Not live',
+    capacity: 'Coming soon',
+    liquidity: 'Not available',
     riskPosition: 'Senior: first paid, last loss',
     protection: 'Reserve plus junior buffer',
     underlying: 'WETH-denominated yvETH stack',
@@ -318,15 +313,16 @@ export const TRANCHED_PRODUCTS: TTranchedProduct[] = [
     id: 'yvbtc-fixed',
     kind: 'senior',
     asset: 'BTC',
+    availability: 'placeholder',
     name: 'yvBTC Fixed Yield',
     symbol: 'yvBTC-A',
     shortName: 'BTC Fixed',
     intent: 'Steady BTC-denominated yield for users who want the senior side of the stack.',
     apyLabel: '1.50%',
     apyCaption: 'target APY',
-    tvl: '$20.4M',
-    capacity: '48% capacity',
-    liquidity: 'Instant target liquidity',
+    tvl: 'Not live',
+    capacity: 'Coming soon',
+    liquidity: 'Not available',
     riskPosition: 'Senior: first paid, last loss',
     protection: 'Reserve plus junior buffer',
     underlying: 'WBTC-denominated yvBTC stack',
@@ -349,6 +345,7 @@ export const TRANCHED_PRODUCTS: TTranchedProduct[] = [
     id: 'yvusd-levered',
     kind: 'junior',
     asset: 'USD',
+    availability: 'live',
     name: 'yvUSD Levered Yield',
     symbol: 'yvUSD-B',
     shortName: 'USD Levered Yield',
@@ -374,68 +371,6 @@ export const TRANCHED_PRODUCTS: TTranchedProduct[] = [
       { label: 'Normal year', vaultReturn: '6.0%', productReturn: '16.25%' },
       { label: 'Great year', vaultReturn: '7.0%', productReturn: '25.25%' }
     ]
-  },
-  {
-    id: 'yveth-levered',
-    kind: 'junior',
-    asset: 'ETH',
-    name: 'yvETH Levered Yield',
-    symbol: 'yvETH-B',
-    shortName: 'ETH Levered Yield',
-    intent: 'Higher-upside ETH yield with cooldown and junior loss position.',
-    apyLabel: '13.35%',
-    apyCaption: 'above-threshold example',
-    tvl: '$4.2M',
-    capacity: 'Open',
-    liquidity: '14-day cooldown',
-    riskPosition: 'Junior: second paid, second loss',
-    protection: '90% excess-yield share',
-    underlying: 'WETH-denominated yvETH stack',
-    primaryAction: 'Deposit levered',
-    listPlacement: 'Floating Yield list',
-    detailLead:
-      'A junior ETH tranche for users who explicitly want risk-on ETH yield after senior fixed-yield obligations are met.',
-    mechanics: [
-      'Junior begins earning once the underlying yvETH stack clears the target threshold.',
-      'Returns scale steeply above threshold because junior is a smaller capital slice.',
-      'Cooldown makes the risk and liquidity tradeoff visible before deposit.'
-    ],
-    scenarios: [
-      { label: 'Below threshold', vaultReturn: '2.0%', productReturn: '0.00%' },
-      { label: 'Above threshold', vaultReturn: '4.0%', productReturn: '13.35%' },
-      { label: 'Strong year', vaultReturn: '5.0%', productReturn: '22.35%' }
-    ]
-  },
-  {
-    id: 'yvbtc-levered',
-    kind: 'junior',
-    asset: 'BTC',
-    name: 'yvBTC Levered Yield',
-    symbol: 'yvBTC-B',
-    shortName: 'BTC Levered Yield',
-    intent: 'Amplified BTC-denominated return for users willing to sit below senior.',
-    apyLabel: '10.20%',
-    apyCaption: 'projected APY range high',
-    tvl: '$6.5M',
-    capacity: 'Open',
-    liquidity: '21-day cooldown',
-    riskPosition: 'Junior: second paid, second loss',
-    protection: 'Excess-yield participation',
-    underlying: 'WBTC-denominated yvBTC stack',
-    primaryAction: 'Deposit levered',
-    listPlacement: 'Floating Yield list',
-    detailLead:
-      'A junior BTC tranche that should read as a distinct high-yield BTC product, not a hidden setting under fixed-yield BTC.',
-    mechanics: [
-      'Junior has higher upside because senior gives up excess yield.',
-      'Returns can be zero when the underlying stack misses the required threshold.',
-      'The product should be compared against other risk-on floating-yield vaults.'
-    ],
-    scenarios: [
-      { label: 'Low return', vaultReturn: '1.0%', productReturn: '0.00%' },
-      { label: 'Base case', vaultReturn: '3.0%', productReturn: '7.40%' },
-      { label: 'Strong year', vaultReturn: '4.0%', productReturn: '10.20%' }
-    ]
   }
 ]
 
@@ -455,5 +390,5 @@ export function getTranchedVaultRowByAddress(address: string): TTranchedVaultRow
 }
 
 export function getTranchedProductById(productId?: string): TTranchedProduct | undefined {
-  return TRANCHED_PRODUCTS.find((product) => product.id === productId)
+  return TRANCHED_PRODUCTS.find((product) => product.id === productId && product.availability === 'live')
 }

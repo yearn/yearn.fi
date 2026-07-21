@@ -37,7 +37,11 @@ import { useV3VaultFilter } from '@shared/hooks/useV3VaultFilter'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
 import type { TDict, TSortDirection } from '@shared/types'
 import { useMemo } from 'react'
-import { getProductPinnedSections, type TVaultsPinnedSection } from './useVaultsListModel.helpers'
+
+type TVaultsPinnedSection = {
+  key: string
+  vaults: TKongVaultInput[]
+}
 
 type TVaultsListModelArgs = {
   enabled?: boolean
@@ -168,7 +172,7 @@ function matchesTranchedVaultFilters({
   const matchesChain = !listChains?.length || listChains.includes(getVaultChainID(vault))
   const matchesCategory = listCategories.length === 0 || listCategories.includes(getVaultCategory(vault))
   const minTvlValue = Number.isFinite(listMinTvl) ? Math.max(0, listMinTvl || 0) : 0
-  const meetsMinTvl = (getVaultTVL(vault).tvl ?? 0) >= minTvlValue
+  const meetsMinTvl = product.availability === 'placeholder' || (getVaultTVL(vault).tvl ?? 0) >= minTvlValue
   const trimmedSearch = searchValue.trim().toLowerCase()
   const token = getVaultToken(vault)
   const matchesSearch =
@@ -492,8 +496,8 @@ export function useVaultsListModel({
   )
 
   const pinnedSections = useMemo(() => {
-    const sections: TVaultsPinnedSection[] = [...getProductPinnedSections({ shouldShowYvUsd, yvUsdVault })]
-    const seen = new Set(sections.flatMap((section) => section.vaults.map((vault) => getVaultKey(vault))))
+    const sections: TVaultsPinnedSection[] = []
+    const seen = new Set<string>()
     const takeUnseenVaults = (vaults: TKongVaultInput[]): TKongVaultInput[] =>
       vaults.filter((vault) => {
         const key = getVaultKey(vault)
@@ -533,10 +537,7 @@ export function useVaultsListModel({
     isHoldingsPinned,
     sortedHoldingsVaults,
     sortedHoldingsVaultsByDeposited,
-    sortedAvailableVaults,
-    sortedVaults,
-    shouldShowYvUsd,
-    yvUsdVault
+    sortedAvailableVaults
   ])
 
   const pinnedVaults = useMemo(() => pinnedSections.flatMap((section) => section.vaults), [pinnedSections])

@@ -224,6 +224,8 @@ describe('buildYvUsdVaultsModel', () => {
     expect(model.listVault.info.riskLevel).toBe(4)
     expect(model.listVault.info.riskScore).toEqual([1, 2, 3, 4, 5, 1, 2, 3, 4, 5, 1])
     expect(model.listVault.info.riskScoreComment).toBe('Snapshot risk comment')
+    expect(model.listVault.info.isHighlighted).toBe(false)
+    expect(model.listVault.featuringScore).toBe(0)
     expect(model.metrics.unlocked.hasInfinifiPoints).toBe(true)
     expect(model.metrics.locked.hasInfinifiPoints).toBe(false)
   })

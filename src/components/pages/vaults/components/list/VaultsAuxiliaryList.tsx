@@ -27,6 +27,8 @@ type TVaultsAuxiliaryListProps = {
   resolveLogoSrcOverride?: (vault: TKongVaultInput) => string | undefined
   resolveExtraChips?: (vault: TKongVaultInput) => TVaultsListExtraChip[] | undefined
   resolveShowProductTypeChipOverride?: (vault: TKongVaultInput) => boolean | undefined
+  resolveIsDisabled?: (vault: TKongVaultInput) => boolean
+  resolveDisabledLabel?: (vault: TKongVaultInput) => string | undefined
   compareVaultKeys?: string[]
   onToggleCompare?: (vault: TKongVaultInput) => void
   activeChains?: number[]
@@ -67,6 +69,8 @@ export function VaultsAuxiliaryList({
   resolveLogoSrcOverride,
   resolveExtraChips,
   resolveShowProductTypeChipOverride,
+  resolveIsDisabled,
+  resolveDisabledLabel,
   compareVaultKeys,
   onToggleCompare,
   activeChains,
@@ -113,6 +117,8 @@ export function VaultsAuxiliaryList({
               logoSrcOverride={resolveLogoSrcOverride?.(vault)}
               extraChips={resolveExtraChips?.(vault)}
               showProductTypeChipOverride={resolveShowProductTypeChipOverride?.(vault)}
+              isDisabled={resolveIsDisabled?.(vault)}
+              disabledLabel={resolveDisabledLabel?.(vault)}
               hasWalletAddress={hasWalletAddress}
               isWalletLoading={isWalletLoading}
               holdingsValue={vaultHoldingsValues?.[key] ?? 0}

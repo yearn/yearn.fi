@@ -17,15 +17,22 @@ describe('tranched product list copy', () => {
   })
 
   it('uses Levered Yield names for junior products', () => {
-    expect(getTranchedProductsByKind('junior').map((product) => product.name)).toEqual([
-      'yvUSD Levered Yield',
-      'yvETH Levered Yield',
-      'yvBTC Levered Yield'
-    ])
+    expect(getTranchedProductsByKind('junior').map((product) => product.name)).toEqual(['yvUSD Levered Yield'])
   })
 
   it('sets the yvBTC fixed target rate to 1.5%', () => {
-    expect(getTranchedProductById('yvbtc-fixed')?.apyLabel).toBe('1.50%')
+    expect(getTranchedProductsByKind('senior').find((product) => product.id === 'yvbtc-fixed')?.apyLabel).toBe('1.50%')
+  })
+
+  it('marks undeployed fixed products as placeholders without fake TVL', () => {
+    const placeholderRows = getTranchedVaultRowsByKind('senior').filter(
+      ({ product }) => product.availability === 'placeholder'
+    )
+
+    expect(placeholderRows.map(({ product }) => product.id)).toEqual(['yveth-fixed', 'yvbtc-fixed'])
+    expect(placeholderRows.every(({ vault }) => vault.tvl.tvl === 0 && vault.tvl.totalAssets === 0n)).toBe(true)
+    expect(getTranchedProductById('yveth-fixed')).toBeUndefined()
+    expect(getTranchedProductById('yvbtc-fixed')).toBeUndefined()
   })
 
   it('uses the deployed yvUSD tranche addresses and does not expose equity', () => {

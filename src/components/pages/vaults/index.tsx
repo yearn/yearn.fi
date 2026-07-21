@@ -221,6 +221,14 @@ export default function Index({ initialQueryState, initialVaults }: TVaultsPageP
   const resolveTranchedExtraChips = useCallback(
     (vault: TKongVaultInput): TVaultsListExtraChip[] => {
       const row = getTranchedVaultRowByAddress(getVaultAddress(vault))
+      if (row?.product.availability === 'placeholder') {
+        return [
+          {
+            label: 'Coming Soon',
+            tooltipDescription: 'Placeholder product. No contract has been deployed yet.'
+          }
+        ]
+      }
       if (row?.product.kind === 'senior') {
         return [
           {
@@ -267,6 +275,17 @@ export default function Index({ initialQueryState, initialVaults }: TVaultsPageP
     const row = getTranchedVaultRowByAddress(getVaultAddress(vault))
     return row?.product.kind === 'senior' ? false : undefined
   }, [])
+
+  const resolveTranchedIsDisabled = useCallback((vault: TKongVaultInput): boolean => {
+    return getTranchedVaultRowByAddress(getVaultAddress(vault))?.product.availability === 'placeholder'
+  }, [])
+
+  const resolveTranchedDisabledLabel = useCallback(
+    (vault: TKongVaultInput): string | undefined => {
+      return resolveTranchedIsDisabled(vault) ? 'coming soon placeholder, unavailable' : undefined
+    },
+    [resolveTranchedIsDisabled]
+  )
 
   const visibleVaults = useMemo(() => [...pinnedVaults, ...mainVaults], [pinnedVaults, mainVaults])
   const tourTargetVaultKey = useMemo(() => {
@@ -454,6 +473,8 @@ export default function Index({ initialQueryState, initialVaults }: TVaultsPageP
             resolveLogoSrcOverride={resolveTranchedLogoSrcOverride}
             resolveExtraChips={resolveTranchedExtraChips}
             resolveShowProductTypeChipOverride={resolveTranchedProductTypeChipOverride}
+            resolveIsDisabled={resolveTranchedIsDisabled}
+            resolveDisabledLabel={resolveTranchedDisabledLabel}
             compareVaultKeys={isCompareMode ? compareVaultKeys : undefined}
             onToggleCompare={isCompareMode ? handleToggleCompare : undefined}
             activeChains={activeChains}
@@ -492,6 +513,8 @@ export default function Index({ initialQueryState, initialVaults }: TVaultsPageP
                   logoSrcOverride={resolveTranchedLogoSrcOverride(vault)}
                   extraChips={resolveTranchedExtraChips(vault)}
                   showProductTypeChipOverride={resolveTranchedProductTypeChipOverride(vault)}
+                  isDisabled={resolveTranchedIsDisabled(vault)}
+                  disabledLabel={resolveTranchedDisabledLabel(vault)}
                   hasWalletAddress={hasWalletAddress}
                   isWalletLoading={isWalletLoading}
                   holdingsValue={vaultHoldingsValues[key] ?? 0}
@@ -558,6 +581,8 @@ export default function Index({ initialQueryState, initialVaults }: TVaultsPageP
     resolveTranchedHrefOverride,
     resolveTranchedLogoSrcOverride,
     resolveTranchedProductTypeChipOverride,
+    resolveTranchedIsDisabled,
+    resolveTranchedDisabledLabel,
     search.value,
     shouldCollapseChips,
     vaultFlags,

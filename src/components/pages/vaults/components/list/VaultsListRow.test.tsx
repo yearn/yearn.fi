@@ -182,6 +182,38 @@ describe('VaultsListRow', () => {
     expect(html.match(/data-active="true"/g)).toHaveLength(2)
   })
 
+  it('renders placeholder products as disabled and non-navigable', () => {
+    const vault = {
+      version: '3.0.0',
+      chainID: 1,
+      address: '0x0000000000000000000000000000000000000001',
+      name: 'yvETH Fixed Yield',
+      category: 'Volatile',
+      kind: 'Multi Strategy',
+      token: {
+        address: '0x0000000000000000000000000000000000000002',
+        symbol: 'WETH',
+        decimals: 18
+      },
+      tvl: { tvl: 0, totalAssets: 0n },
+      info: { riskLevel: 1 }
+    } as unknown as TKongVaultInput
+
+    const html = renderRowHtml(vault, {
+      hrefOverride: '/vaults/tranched/yveth-fixed',
+      isDisabled: true,
+      disabledLabel: 'coming soon placeholder, unavailable',
+      extraChips: [{ label: 'Coming Soon' }]
+    })
+
+    expect(html).toContain('href="#"')
+    expect(html).toContain('aria-disabled="true"')
+    expect(html).toContain('tabindex="-1"')
+    expect(html).toContain('yvETH Fixed Yield, coming soon placeholder, unavailable')
+    expect(html).toContain('Coming Soon')
+    expect(html).not.toContain('aria-label="Expand row"')
+  })
+
   it('stacks the yvUSD mobile up-to label above the APY value', () => {
     mockUseMediaQuery.mockReturnValue(true)
     mockUseYvUsdVaults.mockReturnValue({

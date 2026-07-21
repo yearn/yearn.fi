@@ -252,6 +252,8 @@ type TVaultsListRowProps = {
   yvUsdVaults?: TYvUsdListVaults
   yvUsdPositionApy?: TYvUsdPositionApyBreakdown
   clickEventName?: TPlausibleEventName
+  isDisabled?: boolean
+  disabledLabel?: string
 }
 
 type TVaultsListRowPresentationProps = TVaultsListRowProps & {
@@ -291,6 +293,8 @@ function VaultsListRowPresentationComponent({
   yvUsdVaults,
   yvUsdPositionApy,
   clickEventName = PLAUSIBLE_EVENTS.VAULT_CLICK_LIST_ROW,
+  isDisabled = false,
+  disabledLabel,
   hasWalletAddress = false,
   isWalletLoading = false,
   holdingsValue: resolvedHoldingsValue = 0
@@ -469,43 +473,54 @@ function VaultsListRowPresentationComponent({
         'w-full overflow-hidden transition-colors bg-surface relative max-md:border-b-1 max-md:border-border'
       )}
     >
-      <button
-        type={'button'}
-        aria-label={isExpanded ? 'Collapse row' : 'Expand row'}
-        aria-expanded={isExpanded}
-        data-tour="vaults-row-expand"
-        onClick={(event): void => {
-          event.stopPropagation()
-          if (!isExpanded) {
-            trackEvent(PLAUSIBLE_EVENTS.VAULT_EXPAND, {
-              props: {
-                vaultAddress: toAddress(vaultAddress),
-                vaultSymbol,
-                chainID: chainID.toString()
-              }
-            })
-          }
-          handleExpandedChange(!isExpanded)
-        }}
-        className={cl(
-          'absolute top-6.5 right-5 z-20 hidden md:flex size-9 items-center justify-center rounded-full border border-white/30 bg-app text-text-secondary transition-colors duration-150',
-          'hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400'
-        )}
-      >
-        <IconChevron className={'size-4'} direction={isExpanded ? 'up' : 'down'} />
-      </button>
+      {!isDisabled ? (
+        <button
+          type={'button'}
+          aria-label={isExpanded ? 'Collapse row' : 'Expand row'}
+          aria-expanded={isExpanded}
+          data-tour="vaults-row-expand"
+          onClick={(event): void => {
+            event.stopPropagation()
+            if (!isExpanded) {
+              trackEvent(PLAUSIBLE_EVENTS.VAULT_EXPAND, {
+                props: {
+                  vaultAddress: toAddress(vaultAddress),
+                  vaultSymbol,
+                  chainID: chainID.toString()
+                }
+              })
+            }
+            handleExpandedChange(!isExpanded)
+          }}
+          className={cl(
+            'absolute top-6.5 right-5 z-20 hidden md:flex size-9 items-center justify-center rounded-full border border-white/30 bg-app text-text-secondary transition-colors duration-150',
+            'hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400'
+          )}
+        >
+          <IconChevron className={'size-4'} direction={isExpanded ? 'up' : 'down'} />
+        </button>
+      ) : null}
       <Link
-        href={href}
+        href={isDisabled ? '#' : href}
         prefetch={false}
+        aria-disabled={isDisabled || undefined}
+        aria-label={isDisabled && disabledLabel ? `${vaultName}, ${disabledLabel}` : undefined}
+        tabIndex={isDisabled ? -1 : undefined}
+        data-placeholder={isDisabled || undefined}
         className={cl(
           'grid w-full grid-cols-1 md:grid-cols-24 bg-surface',
           'p-4 pb-4 md:p-6 md:pt-4 md:pb-4 md:pr-20',
-          'cursor-pointer relative group'
+          'relative group',
+          isDisabled ? 'pointer-events-none cursor-not-allowed select-none opacity-50 grayscale' : 'cursor-pointer'
         )}
         data-tour="vaults-row"
-        onMouseEnter={prefetchSnapshot}
-        onFocus={prefetchSnapshot}
+        onMouseEnter={isDisabled ? undefined : prefetchSnapshot}
+        onFocus={isDisabled ? undefined : prefetchSnapshot}
         onClickCapture={(event): void => {
+          if (isDisabled) {
+            event.preventDefault()
+            return
+          }
           const target = event.target as HTMLElement | null
           if (!target) return
           if (target.closest('button, input, select, textarea, [role="button"], [role="checkbox"]')) {
@@ -530,7 +545,7 @@ function VaultsListRowPresentationComponent({
           className={cl(
             'absolute inset-0',
             'opacity-0 transition-opacity duration-100 pointer-events-none',
-            !isHoveringInteractive ? 'group-hover:opacity-20 group-focus-visible:opacity-20' : '',
+            !isDisabled && !isHoveringInteractive ? 'group-hover:opacity-20 group-focus-visible:opacity-20' : '',
             'bg-[linear-gradient(80deg,#2C3DA6,#D21162)]'
           )}
         />
@@ -992,7 +1007,7 @@ function VaultsListRowPresentationComponent({
         </div>
       </Link>
 
-      {isExpanded ? (
+      {isExpanded && !isDisabled ? (
         <Suspense fallback={<ExpandedRowFallback />}>
           <VaultsListRowExpandedContent
             currentVault={currentVault}

@@ -309,11 +309,11 @@ export function buildYvUsdListVault({
     },
     info: {
       ...unlocked.info,
-      isHighlighted: true,
+      isHighlighted: false,
       uiNotice: YVUSD_DESCRIPTION
     },
     strategies: unlocked.strategies ?? baseView.strategies,
-    featuringScore: Math.max(baseView.featuringScore ?? 0, 9_999)
+    featuringScore: 0
   }
 }
 
