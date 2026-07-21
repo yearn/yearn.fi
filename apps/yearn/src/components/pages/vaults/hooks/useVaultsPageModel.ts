@@ -208,6 +208,7 @@ type TVaultsListModel = {
     activeChains: number[]
     activeCategories: string[]
     activeProductType: 'all' | 'fixed' | 'v3' | 'lp'
+    activeYieldRate: 'all' | 'fixed' | 'floating'
     activeFeeStructureKey: string | null
   }
   data: TVaultsListData
@@ -216,6 +217,8 @@ type TVaultsListModel = {
     onToggleCategory: (category: string) => void
     onToggleType: (type: string) => void
     onToggleVaultType: (type: 'v3' | 'lp') => void
+    onSelectYieldRate: (rate: 'fixed' | 'floating') => void
+    onSelectSeniority: (seniority: 'senior') => void
     onToggleFeeStructure: (feeStructureKey: string) => void
   }
   onResetFilters: () => void
@@ -323,6 +326,7 @@ export function useVaultsPageModel(
   const displayedShowHiddenVaults = false
   const [displayedShowStrategies, setOptimisticShowStrategies] = useOptimisticValue(showStrategies)
   const [activeFeeStructureKey, setActiveFeeStructureKey] = useState<string | null>(null)
+  const [yieldRateFilter, setYieldRateFilter] = useState<'all' | 'floating'>('all')
 
   const listChains = useDeferredValue(chains)
   const listTypes = useDeferredValue(types)
@@ -330,6 +334,7 @@ export function useVaultsPageModel(
   const listAggressiveness = useDeferredValue(aggressiveness)
   const listUnderlyingAssets = useDeferredValue(underlyingAssets)
   const listFeeStructureKey = useDeferredValue(activeFeeStructureKey)
+  const listYieldRate = useDeferredValue(yieldRateFilter)
   const listMinTvl = useDeferredValue(minTvl)
   const listShowLegacyVaults = useDeferredValue(showLegacyVaults)
   const listShowHiddenVaults = false
@@ -412,6 +417,7 @@ export function useVaultsPageModel(
   } = useVaultsListModel({
     vaultSource: activeVaultSource,
     listVaultType,
+    listYieldRate,
     listChains,
     listV3Types,
     listCategories,
@@ -452,6 +458,7 @@ export function useVaultsPageModel(
     enabled: shouldComputeBlockingInsights,
     vaultSource: activeVaultSource,
     listVaultType,
+    listYieldRate,
     listChains,
     listV3Types,
     listCategories,
@@ -471,6 +478,7 @@ export function useVaultsPageModel(
     {
       ...blockingProbeBaseArgs,
       listVaultType: 'all',
+      listYieldRate: 'all',
       listChains: null,
       listV3Types: DEFAULT_VAULT_TYPES,
       listCategories: null,
@@ -615,6 +623,7 @@ export function useVaultsPageModel(
     () => (displayedVaultType === 'factory' ? 'lp' : displayedVaultType),
     [displayedVaultType]
   )
+  const activeYieldRate: 'all' | 'fixed' | 'floating' = displayedVaultType === 'fixed' ? 'fixed' : yieldRateFilter
   const resolveApyDisplayVariant = useCallback((vault: TKongVaultInput): 'default' | 'factory-list' => {
     const listKind = deriveListKind(vault)
     return listKind === 'allocator' || listKind === 'strategy' ? 'default' : 'factory-list'
@@ -755,13 +764,27 @@ export function useVaultsPageModel(
 
   const handleVaultVersionToggle = useCallback(
     (nextType: TVaultType): void => {
-      if (nextType === displayedVaultType) {
+      if (nextType === displayedVaultType && yieldRateFilter === 'all') {
         return
       }
+      setYieldRateFilter('all')
       setOptimisticVaultType(nextType)
       onChangeVaultType(nextType)
     },
-    [displayedVaultType, onChangeVaultType]
+    [displayedVaultType, onChangeVaultType, yieldRateFilter]
+  )
+  const handleSelectYieldRate = useCallback(
+    (rate: 'fixed' | 'floating'): void => {
+      const nextVaultType: TVaultType = rate === 'fixed' ? 'fixed' : 'all'
+      setYieldRateFilter(rate === 'floating' ? 'floating' : 'all')
+      setOptimisticVaultType(nextVaultType)
+      onChangeVaultType(nextVaultType)
+    },
+    [onChangeVaultType]
+  )
+  const handleSelectSeniority = useCallback(
+    (_seniority: 'senior'): void => handleSelectYieldRate('fixed'),
+    [handleSelectYieldRate]
   )
   const handleToggleVaultType = useCallback(
     (nextType: 'v3' | 'lp'): void => {
@@ -782,6 +805,7 @@ export function useVaultsPageModel(
     setOptimisticAggressiveness([])
     setOptimisticUnderlyingAssets([])
     setActiveFeeStructureKey(null)
+    setYieldRateFilter('all')
     setOptimisticMinTvl(DEFAULT_MIN_TVL)
     setOptimisticTypes(DEFAULT_VAULT_TYPES)
     setOptimisticShowLegacyVaults(false)
@@ -1159,6 +1183,7 @@ export function useVaultsPageModel(
         activeChains,
         activeCategories,
         activeProductType,
+        activeYieldRate,
         activeFeeStructureKey
       },
       data: {
@@ -1181,6 +1206,8 @@ export function useVaultsPageModel(
         onToggleCategory: handleToggleCategory,
         onToggleType: handleToggleType,
         onToggleVaultType: handleToggleVaultType,
+        onSelectYieldRate: handleSelectYieldRate,
+        onSelectSeniority: handleSelectSeniority,
         onToggleFeeStructure: handleToggleFeeStructure
       },
       onResetFilters: handleResetFilters,

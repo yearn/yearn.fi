@@ -9,14 +9,14 @@ type TTranchedProductsListProps = {
 
 const KIND_COPY: Record<TTranchedProductKind, { title: string; eyebrow: string; body: string }> = {
   senior: {
-    eyebrow: 'Steady Yield',
+    eyebrow: 'Fixed Yield',
     title: 'Risk-remote vaults with targeted rates.',
-    body: 'Steady Yield products receive their target coupon first and losses are first marked from the junior and reserve vaults that sit below them.'
+    body: 'Fixed Yield products receive their target coupon first and losses are first marked from the junior and reserve vaults that sit below them.'
   },
   junior: {
-    eyebrow: 'Single Asset',
+    eyebrow: 'Floating Yield',
     title: 'Levered yield, junior position',
-    body: 'Levered products receive the excess return after steady-yield obligations are covered. Any losses are marked from these vaults before the steady yield products.'
+    body: 'Levered products receive the excess return after fixed-yield obligations are covered. Any losses are marked from these vaults before the fixed-yield products.'
   }
 }
 

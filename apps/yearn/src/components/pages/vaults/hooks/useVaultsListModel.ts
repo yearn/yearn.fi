@@ -21,6 +21,7 @@ import {
 import { getVaultFeeStructureKey } from '@pages/vaults/utils/vaultFees'
 import type { TVaultAggressiveness } from '@pages/vaults/utils/vaultListFacets'
 import type { TVaultType } from '@pages/vaults/utils/vaultTypeCopy'
+import { shouldIncludeFixedYieldVaults, type TYieldRateFilter } from '@pages/vaults/utils/yieldRateFilter'
 import { isYvBtcVault } from '@pages/vaults/utils/yvBtc'
 import {
   getYvUsdPositionValues,
@@ -41,6 +42,7 @@ type TVaultsListModelArgs = {
   enabled?: boolean
   vaultSource?: TVaultsListVaultSource
   listVaultType: TVaultType
+  listYieldRate?: TYieldRateFilter
   listChains: number[] | null
   listV3Types: string[]
   listCategories: string[] | null
@@ -197,6 +199,7 @@ export function useVaultsListModel({
   enabled = true,
   vaultSource,
   listVaultType,
+  listYieldRate = 'all',
   listChains,
   listV3Types,
   listCategories,
@@ -261,7 +264,7 @@ export function useVaultsListModel({
 
   const filteredSeniorTranchedVaults = useMemo(
     () =>
-      listVaultType === 'fixed' || isAllVaults
+      shouldIncludeFixedYieldVaults(listVaultType, listYieldRate)
         ? getFilteredTranchedVaults({
             kind: 'senior',
             listChains,
@@ -270,7 +273,7 @@ export function useVaultsListModel({
             searchValue
           })
         : [],
-    [isAllVaults, listVaultType, listChains, listCategoriesSanitized, listMinTvl, searchValue]
+    [listVaultType, listYieldRate, listChains, listCategoriesSanitized, listMinTvl, searchValue]
   )
 
   const filteredJuniorTranchedVaults = useMemo(

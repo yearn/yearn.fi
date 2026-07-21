@@ -1,4 +1,4 @@
-import { VaultsListRowPresentation } from '@pages/vaults/components/list/VaultsListRow'
+import { type TVaultsListExtraChip, VaultsListRowPresentation } from '@pages/vaults/components/list/VaultsListRow'
 import { VirtualizedVaultsList } from '@pages/vaults/components/list/VirtualizedVaultsList'
 import type { TVaultForwardAPYVariant } from '@pages/vaults/components/table/VaultForwardAPY'
 import { getVaultAddress, getVaultChainID, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
@@ -25,7 +25,7 @@ type TVaultsAuxiliaryListProps = {
   resolveApyDisplayVariant?: (vault: TKongVaultInput) => TVaultForwardAPYVariant
   resolveHrefOverride?: (vault: TKongVaultInput) => string | undefined
   resolveLogoSrcOverride?: (vault: TKongVaultInput) => string | undefined
-  resolveExtraChips?: (vault: TKongVaultInput) => Array<{ label: string; tooltipDescription?: string }> | undefined
+  resolveExtraChips?: (vault: TKongVaultInput) => TVaultsListExtraChip[] | undefined
   resolveShowProductTypeChipOverride?: (vault: TKongVaultInput) => boolean | undefined
   compareVaultKeys?: string[]
   onToggleCompare?: (vault: TKongVaultInput) => void
