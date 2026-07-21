@@ -213,12 +213,20 @@ function getYvUsdListMetrics({
   }
 }
 
+export type TVaultsListExtraChip = {
+  label: string
+  tooltipDescription?: string
+  isActive?: boolean
+  onClick?: () => void
+  ariaLabel?: string
+}
+
 type TVaultsListRowProps = {
   currentVault: TKongVaultInput
   flags?: TVaultRowFlags
   hrefOverride?: string
   logoSrcOverride?: string
-  extraChips?: Array<{ label: string; tooltipDescription?: string }>
+  extraChips?: TVaultsListExtraChip[]
   apyDisplayVariant?: TVaultForwardAPYVariant
   showBoostDetails?: boolean
   compareVaultKeys?: string[]
@@ -674,7 +682,10 @@ function VaultsListRowPresentationComponent({
                     isCollapsed={isChipsCompressed}
                     showCollapsedTooltip={showCollapsedTooltip}
                     tooltipDescription={chip.tooltipDescription}
+                    isActive={chip.isActive}
+                    onClick={chip.onClick}
                     onHoverChange={handleInteractiveHoverChange}
+                    ariaLabel={chip.ariaLabel}
                   />
                 ))}
                 {showFeesChip ? (

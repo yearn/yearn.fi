@@ -11,6 +11,7 @@ import { VaultRiskSection } from '@pages/vaults/components/detail/VaultRiskSecti
 import { VaultStrategiesSection } from '@pages/vaults/components/detail/VaultStrategiesSection'
 import { TranchedVaultChartsSection } from '@pages/vaults/components/tranched/TranchedVaultChartsSection'
 import { Widget } from '@pages/vaults/components/widget'
+import { LeveredTrancheWithdraw } from '@pages/vaults/components/widget/tranched/LeveredTrancheWithdraw'
 import {
   getTranchedProductById,
   getTranchedVaultRowsByKind,
@@ -24,12 +25,13 @@ import {
   getVaultToken,
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
-import type { VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
+import { useVaultUserData, type VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { WidgetActionType } from '@pages/vaults/types'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { cl, toNormalizedBN } from '@shared/utils'
 import type { ReactElement, ReactNode } from 'react'
 import { useCallback, useEffect, useLayoutEffect, useMemo, useRef, useState } from 'react'
+import { useAccount } from 'wagmi'
 
 type TSectionKey = 'charts' | 'about' | 'strategies' | 'risk' | 'info'
 
@@ -78,20 +80,20 @@ function resolveTranchedProduct(product: TTranchedProduct): TResolvedTranchedPro
 }
 
 function getProductTypeLabel(product: TTranchedProduct): string {
-  return product.kind === 'senior' ? 'Steady Yield' : 'Single Asset'
+  return product.kind === 'senior' ? 'Fixed Yield' : 'Floating Yield'
 }
 
 function getProductTypeDescription(product: TTranchedProduct): string {
   if (product.kind === 'senior') {
     return 'Senior tranche product designed around a target coupon paid before junior upside.'
   }
-  return 'Single asset vault with junior tranche exposure.'
+  return 'Floating-yield vault with junior tranche exposure.'
 }
 
 function getPositionChip(product: TTranchedProduct): { label: string; tooltipDescription: string } {
   if (product.kind === 'senior') {
     return {
-      label: 'Target Rate',
+      label: 'Senior',
       tooltipDescription: 'This product is designed around a target coupon paid before junior upside.'
     }
   }
@@ -203,15 +205,32 @@ function TranchedWidget({
   setWidgetMode: (mode: WidgetActionType) => void
   widgetMode: WidgetActionType
 }): ReactElement {
+  const { address: account } = useAccount()
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
-  const vaultUserData = useMemo(() => createMockVaultUserData(resolved.row.vault), [resolved.row.vault])
+  const isLiveYvUsdProduct = resolved.product.id === 'yvusd-fixed' || resolved.product.id === 'yvusd-levered'
+  const liveVaultUserData = useVaultUserData({
+    vaultAddress: getVaultAddress(resolved.row.vault),
+    assetAddress: getVaultToken(resolved.row.vault).address,
+    chainId: getVaultChainID(resolved.row.vault),
+    account,
+    enabled: isLiveYvUsdProduct
+  })
+  const mockVaultUserData = useMemo(() => createMockVaultUserData(resolved.row.vault), [resolved.row.vault])
+  const vaultUserData = isLiveYvUsdProduct ? liveVaultUserData : mockVaultUserData
 
-  return (
-    <div
-      className={
-        'flex w-full min-w-0 max-w-full flex-col overflow-hidden [&_*]:min-w-0 [&_.yearn--button--nextgen]:max-w-full'
-      }
-    >
+  const widget =
+    resolved.product.id === 'yvusd-levered' && widgetMode === WidgetActionType.Withdraw ? (
+      <LeveredTrancheWithdraw
+        vaultAddress={getVaultAddress(resolved.row.vault)}
+        assetAddress={getVaultToken(resolved.row.vault).address}
+        chainId={getVaultChainID(resolved.row.vault)}
+        vaultSymbol={getVaultSymbol(resolved.row.vault)}
+        vaultVersion={resolved.row.vault.version}
+        vaultUserData={vaultUserData}
+        onOpenSettings={(): void => setIsSettingsOpen((previous) => !previous)}
+        isSettingsOpen={isSettingsOpen}
+      />
+    ) : (
       <Widget
         currentVault={resolved.row.vault}
         vaultAddress={getVaultAddress(resolved.row.vault)}
@@ -225,6 +244,15 @@ function TranchedWidget({
         isSettingsOpen={isSettingsOpen}
         disableBorderRadius
       />
+    )
+
+  return (
+    <div
+      className={
+        'flex w-full min-w-0 max-w-full flex-col overflow-hidden [&_*]:min-w-0 [&_.yearn--button--nextgen]:max-w-full'
+      }
+    >
+      {widget}
     </div>
   )
 }

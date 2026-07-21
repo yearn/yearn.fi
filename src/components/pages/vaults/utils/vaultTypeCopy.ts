@@ -6,11 +6,11 @@ export const VAULT_TYPE_COPY: Record<TVaultType, { label: string; emoji: string 
     emoji: '🌐'
   },
   v3: {
-    label: 'Single Asset',
+    label: 'Floating Yield',
     emoji: '⚙️'
   },
   fixed: {
-    label: 'Steady Yield',
+    label: 'Fixed Yield',
     emoji: '🛡️'
   },
   factory: {
@@ -21,7 +21,7 @@ export const VAULT_TYPE_COPY: Record<TVaultType, { label: string; emoji: string 
 
 export const VAULT_TYPE_DESCRIPTION: Record<TVaultType, string | null> = {
   all: null,
-  v3: 'Deposits a single token; Yearn allocates it across strategies.',
+  v3: 'Floating-rate vaults whose yield changes with strategy performance.',
   fixed: 'Senior tranche products designed for predictable, reserve-backed yield.',
   factory: 'Deposits a DEX LP token; yield comes from fees and incentives, auto-compounded.'
 }

@@ -138,6 +138,50 @@ describe('VaultsListRow', () => {
     expect(html).toContain('tvl-subline-tooltip')
   })
 
+  it('renders interactive rate and seniority chips with their active state', () => {
+    const vault = {
+      version: '3.0.0',
+      chainID: 1,
+      address: '0x0000000000000000000000000000000000000001',
+      name: 'yvUSD Fixed Yield',
+      category: 'Stablecoin',
+      kind: 'Multi Strategy',
+      token: {
+        address: '0x0000000000000000000000000000000000000002',
+        symbol: 'USDC',
+        decimals: 6
+      },
+      tvl: {
+        tvl: 1234,
+        totalAssets: 1234567
+      },
+      info: {
+        riskLevel: 1
+      }
+    } as unknown as TKongVaultInput
+
+    const html = renderRowHtml(vault, {
+      extraChips: [
+        {
+          label: 'Fixed Rate',
+          isActive: true,
+          onClick: vi.fn(),
+          ariaLabel: 'Show Fixed Yield vaults'
+        },
+        {
+          label: 'Senior',
+          isActive: true,
+          onClick: vi.fn(),
+          ariaLabel: 'Filter by senior products'
+        }
+      ]
+    })
+
+    expect(html).toContain('aria-label="Show Fixed Yield vaults"')
+    expect(html).toContain('aria-label="Filter by senior products"')
+    expect(html.match(/data-active="true"/g)).toHaveLength(2)
+  })
+
   it('stacks the yvUSD mobile up-to label above the APY value', () => {
     mockUseMediaQuery.mockReturnValue(true)
     mockUseYvUsdVaults.mockReturnValue({
