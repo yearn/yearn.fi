@@ -3,6 +3,8 @@ import { useGovernancePositions } from '@pages/portfolio/governance/useGovernanc
 import { normalizeSymbol } from '@pages/portfolio/hooks/getEligibleVaults'
 import { useTokenSuggestions } from '@pages/portfolio/hooks/useTokenSuggestions'
 import { useVaultSuggestions } from '@pages/portfolio/hooks/useVaultSuggestions'
+import type { TYcrvPosition } from '@pages/portfolio/ycrv/types'
+import { useYcrvPosition } from '@pages/portfolio/ycrv/useYcrvPosition'
 import { KATANA_CHAIN_ID } from '@pages/vaults/constants/addresses'
 import { useAppSettings } from '@pages/vaults/contexts/useAppSettings'
 import {
@@ -60,6 +62,11 @@ type THoldingsRow =
       key: string
       position: TGovernancePosition
     }
+  | {
+      type: 'ycrv'
+      key: string
+      position: TYcrvPosition
+    }
 
 export type TSuggestedItem =
   | {
@@ -82,7 +89,6 @@ export type TPortfolioBlendedMetrics = {
 export type TPortfolioModel = {
   blendedMetrics: TPortfolioBlendedMetrics
   hasClaimableRewards: boolean
-  hasGovernancePositions: boolean
   hasHoldings: boolean
   holdingsRows: THoldingsRow[]
   isActive: boolean
@@ -200,6 +206,7 @@ export function usePortfolioModel(): TPortfolioModel {
   const [sortBy, setSortBy] = useState<TPossibleSortBy>('deposited')
   const [sortDirection, setSortDirection] = useState<TSortDirection>('desc')
   const governancePositions = useGovernancePositions(isActive)
+  const ycrvPosition = useYcrvPosition(isActive)
 
   const yvUsdPosition = useMemo<TYvUsdPortfolioPosition>(() => {
     const { unlockedValue, lockedValue, combinedValue, hasHoldings } = getYvUsdPositionValues({
@@ -362,7 +369,11 @@ export function usePortfolioModel(): TPortfolioModel {
   const isSearchingBalances =
     (isActive || isUserConnecting) && (isWalletLoading || isUserConnecting || isIdentityLoading)
   const isHoldingsLoading =
-    (isLoadingVaultList && isActive) || isSearchingBalances || !hasCompletedBalanceLoad || governancePositions.isLoading
+    (isLoadingVaultList && isActive) ||
+    isSearchingBalances ||
+    !hasCompletedBalanceLoad ||
+    governancePositions.isLoading ||
+    ycrvPosition.isLoading
 
   const suggestedVaultCandidates = useMemo(
     () =>
@@ -408,7 +419,10 @@ export function usePortfolioModel(): TPortfolioModel {
       key: position.id,
       position
     }))
-    const rows = [...vaultRows, ...governanceRows]
+    const ycrvRows: THoldingsRow[] = ycrvPosition.position
+      ? [{ type: 'ycrv', key: ycrvPosition.position.id, position: ycrvPosition.position }]
+      : []
+    const rows = [...vaultRows, ...governanceRows, ...ycrvRows]
 
     if (sortDirection === '') {
       return rows
@@ -434,7 +448,15 @@ export function usePortfolioModel(): TPortfolioModel {
       default:
         return rows
     }
-  }, [getVaultEstimatedAPY, getVaultValue, governancePositions.positions, sortBy, sortDirection, sortedHoldings])
+  }, [
+    getVaultEstimatedAPY,
+    getVaultValue,
+    governancePositions.positions,
+    sortBy,
+    sortDirection,
+    sortedHoldings,
+    ycrvPosition.position
+  ])
 
   const suggestedRows = useMemo((): TSuggestedItem[] => {
     const yvUsdSuggestedVaultKey = yvUsdSuggestedVault ? getVaultKey(yvUsdSuggestedVault) : null
@@ -588,8 +610,9 @@ export function usePortfolioModel(): TPortfolioModel {
 
   return {
     blendedMetrics,
-    hasClaimableRewards: hasClaimableRewardNotification(governancePositions.governanceReward?.usdValue ?? 0),
-    hasGovernancePositions: governancePositions.positions.length > 0,
+    hasClaimableRewards: hasClaimableRewardNotification(
+      (governancePositions.governanceReward?.usdValue ?? 0) + (ycrvPosition.reward?.usdValue ?? 0)
+    ),
     hasHoldings,
     holdingsRows,
     isActive,
