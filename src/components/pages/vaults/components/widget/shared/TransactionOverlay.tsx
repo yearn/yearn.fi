@@ -29,6 +29,7 @@ import {
   resolveExecutionTrackingHash,
   resolveOverlayConnectedChainId,
   resolvePendingSafeOverlayState,
+  resolveTransactionReceiptOutcome,
   shouldAutoContinueFromSuccessState,
   shouldAutoContinuePermitSuccess,
   shouldRefetchNextStepAfterReceipt,
@@ -252,6 +253,11 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     callsReceiptTxHash: safeCallsStatus.data?.receipts?.[0]?.transactionHash
   })
   const receipt = useWaitForTransactionReceipt({ hash: executionTrackingHash, chainId: explorerChainId, confirmations })
+  const receiptOutcome = resolveTransactionReceiptOutcome({
+    isSuccess: receipt.isSuccess,
+    isError: receipt.isError,
+    status: receipt.data?.status
+  })
   const blockExplorer = getNetwork(explorerChainId ?? currentChainId).defaultBlockExplorer
   const explorerTxUrl = executionTrackingHash && blockExplorer ? `${blockExplorer}/tx/${executionTrackingHash}` : ''
 
@@ -816,7 +822,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   const executedStepCompletesFlow = successStep?.completesFlow ?? wasLastStepRef.current
   const isTerminalSuccess = overlayState === 'success' && (hasCompletedFlow || executedStepCompletesFlow)
   const isPreparingNextStep =
-    overlayState === 'pending' && receipt.isSuccess && !wasLastStepRef.current && executedStepAutoContinues
+    overlayState === 'pending' && receiptOutcome === 'success' && !wasLastStepRef.current && executedStepAutoContinues
   const isSuccessButtonBusy = !isTerminalSuccess && (!isStepReady || isAutoContinuing)
   const successButtonLabel = getSuccessButtonLabel({
     isCrossChainNotification: successStep?.notification?.type === 'crosschain zap',
@@ -911,8 +917,8 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     const receiptHash = receipt.data?.transactionHash
     const isUnhandledReceipt = Boolean(receiptHash && handledSuccessReceiptRef.current !== receiptHash)
 
-    if (receipt.isSuccess && receiptHash && (overlayState === 'pending' || overlayState === 'submitted')) {
-      executedStepBlockRef.current = receipt.data.blockNumber
+    if (receiptOutcome === 'success' && receiptHash && (overlayState === 'pending' || overlayState === 'submitted')) {
+      executedStepBlockRef.current = receipt.data?.blockNumber
       const executedStepLabel = executedStepRef.current?.label
       if (!hasReportedStepSuccessRef.current && executedStepLabel) {
         hasReportedStepSuccessRef.current = true
@@ -923,7 +929,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     const isNextStepReady = step?.label !== executedStepRef.current?.label && isStepReady
     const canShowSuccess = wasLastStepRef.current || isNextStepReady
     if (
-      receipt.isSuccess &&
+      receiptOutcome === 'success' &&
       receiptHash &&
       isUnhandledReceipt &&
       (overlayState === 'pending' || overlayState === 'submitted') &&
@@ -1014,7 +1020,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       }
     }
   }, [
-    receipt.isSuccess,
+    receiptOutcome,
     receipt.data?.transactionHash,
     overlayState,
     requestConfetti,
@@ -1065,7 +1071,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
 
   // Handle transaction error
   useEffect(() => {
-    if (receipt.isError && receipt.error && (overlayState === 'pending' || overlayState === 'submitted')) {
+    if (receiptOutcome === 'error' && (overlayState === 'pending' || overlayState === 'submitted')) {
       setOverlayState('error')
       setErrorMessage('Transaction failed. Please try again.')
       resetTxState()
@@ -1074,7 +1080,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       handleUpdateNotification({ status: 'error' })
       setNotificationId(undefined)
     }
-  }, [receipt.isError, receipt.error, overlayState, handleUpdateNotification, resetTxState])
+  }, [receiptOutcome, overlayState, handleUpdateNotification, resetTxState])
 
   // When step 1 succeeds in a multi-step flow, the next step simulation may need a refetch
   // to pick up post-transaction state (e.g. unstake -> withdraw).
