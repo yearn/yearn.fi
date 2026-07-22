@@ -34,7 +34,7 @@ export const AnnualReturnOverlay: FC<AnnualReturnOverlayProps> = ({
               Your deposit: {depositAmount} {tokenSymbol}
             </li>
             <li>
-              Expected annual yield: ~{estimatedReturn} {tokenSymbol}
+              Expected annual yield: {estimatedReturn} {tokenSymbol}
             </li>
           </ul>
         </div>

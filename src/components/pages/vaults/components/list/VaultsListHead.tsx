@@ -10,6 +10,8 @@ type TSortableListHeadItem = {
   label: string | ReactElement
   value: string
   sortable?: boolean
+  allowUnsorted?: boolean
+  activeChevronClassName?: string
   disabled?: boolean
   className?: string
 }
@@ -39,6 +41,29 @@ function isToggleItem(item: TListHeadItem): item is TToggleListHeadItem {
   return item.type === 'toggle'
 }
 
+export function getNextSortDirection({
+  activeSortBy,
+  activeSortDirection,
+  nextSortBy,
+  allowUnsorted = false
+}: {
+  activeSortBy: string
+  activeSortDirection: TSortDirection
+  nextSortBy: string
+  allowUnsorted?: boolean
+}): TSortDirection {
+  if (activeSortBy !== nextSortBy) {
+    return 'desc'
+  }
+  if (activeSortDirection === 'desc') {
+    return 'asc'
+  }
+  if (activeSortDirection === 'asc' && allowUnsorted) {
+    return ''
+  }
+  return 'desc'
+}
+
 export function VaultsListHead({
   items,
   sortBy,
@@ -54,20 +79,20 @@ export function VaultsListHead({
   const rightColumnSpan = 'col-span-12'
   const rightGridColumns = 'md:grid-cols-12'
 
-  const toggleSortDirection = (newSortBy: string): TSortDirection => {
-    if (sortBy === newSortBy) {
-      return sortDirection === 'desc' ? 'asc' : 'desc'
-    }
-    return 'desc'
-  }
-
   const renderChevron = useCallback(
-    (shouldSortBy: boolean): ReactElement => {
+    (shouldSortBy: boolean, activeClassName?: string): ReactElement => {
       if (shouldSortBy && sortDirection === 'desc') {
-        return <IconChevron className={'size-4 min-w-[16px] cursor-pointer text-text-primary'} />
+        return (
+          <IconChevron className={cl('size-4 min-w-[16px] cursor-pointer', activeClassName ?? 'text-text-primary')} />
+        )
       }
       if (shouldSortBy && sortDirection === 'asc') {
-        return <IconChevron className={'size-4 min-w-[16px] cursor-pointer text-text-primary'} direction="up" />
+        return (
+          <IconChevron
+            className={cl('size-4 min-w-[16px] cursor-pointer', activeClassName ?? 'text-text-primary')}
+            direction="up"
+          />
+        )
       }
       return (
         <IconChevron
@@ -89,7 +114,17 @@ export function VaultsListHead({
     return (
       <button
         key={item.value}
-        onClick={(): void => onSort(item.value, toggleSortDirection(item.value))}
+        onClick={(): void =>
+          onSort(
+            item.value,
+            getNextSortDirection({
+              activeSortBy: sortBy,
+              activeSortDirection: sortDirection,
+              nextSortBy: item.value,
+              allowUnsorted: item.allowUnsorted
+            })
+          )
+        }
         disabled={!isSortable || item.disabled}
         className={cl('yearn--table-head-label-wrapper group', item.className)}
         datatype={'number'}
@@ -107,7 +142,7 @@ export function VaultsListHead({
         >
           {shouldIndent ? <>&nbsp;{item.label}</> : item.label}
         </p>
-        {isSortable ? renderChevron(shouldHighlight) : null}
+        {isSortable ? renderChevron(shouldHighlight, item.activeChevronClassName) : null}
       </button>
     )
   }

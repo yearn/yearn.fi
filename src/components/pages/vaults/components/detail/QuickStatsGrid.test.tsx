@@ -1,4 +1,3 @@
-import type { ReactNode } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { describe, expect, it, vi } from 'vitest'
 
@@ -22,16 +21,6 @@ vi.mock('@hooks/usePlausible', () => ({
 
 vi.mock('@pages/vaults/components/table/VaultForwardAPY', () => ({
   VaultForwardAPY: () => <div data-testid={'default-apy'}>{'Default APY'}</div>
-}))
-
-vi.mock('@pages/vaults/components/table/APYDetailsModal', () => ({
-  APYDetailsModal: ({ isOpen, title, children }: { isOpen: boolean; title: string; children: ReactNode }) =>
-    isOpen ? (
-      <div data-testid={'apy-modal'}>
-        <h1>{title}</h1>
-        {children}
-      </div>
-    ) : null
 }))
 
 const { MobileKeyMetrics, YvUsdApyStatBox } = await import('./QuickStatsGrid')
@@ -67,13 +56,13 @@ describe('MobileKeyMetrics', () => {
 })
 
 describe('YvUsdApyStatBox', () => {
-  it('renders the locked variant by default with the unlocked toggle affordance', () => {
+  it('renders the locked variant by default with the unlocked toggle affordance and no modal trigger', () => {
     const html = renderToStaticMarkup(<YvUsdApyStatBox lockedApy={0.09} unlockedApy={0.05} />)
 
     expect(html).toContain('Locked')
     expect(html).toContain('9.00%')
     expect(html).toContain('Switch to unlocked APY display')
-    expect(html).not.toContain('data-testid="apy-modal"')
+    expect(html).not.toContain('Open yvUSD APY details')
   })
 
   it('formats large APY values with the shared significant-digit rules', () => {

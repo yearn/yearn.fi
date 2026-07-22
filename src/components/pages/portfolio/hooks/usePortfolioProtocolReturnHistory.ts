@@ -42,7 +42,8 @@ export function usePortfolioProtocolReturnHistory(timeframe: TPortfolioHistoryTi
       cacheDuration: PORTFOLIO_HISTORY_CACHE_DURATION,
       gcTime: PORTFOLIO_HISTORY_CACHE_DURATION,
       keepPreviousData: false,
-      timeout: 2 * 60 * 1000
+      maxRetries: 0,
+      timeout: 5 * 60 * 1000 // Allow the first cold snapshot to finish and warm Redis.
     }
   })
 

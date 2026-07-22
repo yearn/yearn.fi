@@ -53,6 +53,7 @@ import { YVBTC_CHAIN_ID, YVBTC_LOCKED_ADDRESS, YVBTC_UNLOCKED_ADDRESS } from '@p
 import {
   getYvUsdInfinifiPointsNote,
   getYvUsdSharePrice,
+  hasYvUsdInfinifiPoints,
   type TYvUsdVariant,
   YVUSD_CHAIN_ID,
   YVUSD_LOCKED_ADDRESS,
@@ -509,6 +510,7 @@ function Index(): ReactElement | null {
     listVault: yvUsdVault,
     unlockedVault: yvUsdUnlockedVault,
     lockedVault: yvUsdLockedVault,
+    metrics: yvUsdMetrics,
     isLoading: isLoadingYvUsd
   } = useYvUsdVaults()
   const {
@@ -862,7 +864,9 @@ function Index(): ReactElement | null {
         lockedValue={lockedApy}
         unlockedValue={unlockedApy}
         infinifiPointsNote={
-          isYvUsd && (currentVault.address === YVUSD_UNLOCKED_ADDRESS || currentVault.address === YVUSD_LOCKED_ADDRESS)
+          isYvUsd &&
+          (currentVault.address === YVUSD_UNLOCKED_ADDRESS || currentVault.address === YVUSD_LOCKED_ADDRESS) &&
+          hasYvUsdInfinifiPoints(yvUsdMetrics)
             ? getYvUsdInfinifiPointsNote()
             : undefined
         }
@@ -896,6 +900,7 @@ function Index(): ReactElement | null {
     yvBtcUnlockedVault,
     yvUsdLockedVault?.apr.forwardAPR.netAPR,
     yvUsdLockedVault?.apr.netAPR,
+    yvUsdMetrics,
     yvUsdVault?.apr.forwardAPR.netAPR
   ])
   const widgetActions = useMemo(() => {
@@ -1629,7 +1634,6 @@ function Index(): ReactElement | null {
       unlockedApy={yvBtcMetrics.unlocked.apy}
       activeVariant={yvUsdApyVariant}
       onVariantChange={setYvUsdApyVariant}
-      title={'yvBTC APY'}
     />
   )
 
