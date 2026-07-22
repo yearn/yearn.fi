@@ -1,6 +1,7 @@
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { fetchWithSchema } from '@shared/hooks/useFetch'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
+import { useMemo } from 'react'
 import {
   portfolioActivityFacetsResponseSchema,
   portfolioActivityResponseSchema,
@@ -106,15 +107,23 @@ export function usePortfolioActivity(limit = 10, enabled = true, filters: TPortf
     retryDelay: getActivityRetryDelay
   })
 
-  const entries: TPortfolioActivityEntry[] = query.data?.pages.flatMap((page) => page.entries) ?? []
-  const facetChainIds = facetsQuery.data?.facets.chainIds ?? null
-  const availableChainIds =
-    facetChainIds ??
-    (shouldFetchFacets && query.data
+  const entries: TPortfolioActivityEntry[] = useMemo(
+    () => query.data?.pages.flatMap((page) => page.entries) ?? [],
+    [query.data]
+  )
+  const availableChainIds = useMemo(() => {
+    const facetChainIds = facetsQuery.data?.facets.chainIds
+
+    if (facetChainIds) {
+      return facetChainIds
+    }
+
+    return shouldFetchFacets && query.data
       ? Array.from(new Set(entries.map((entry) => entry.chainId))).sort(
           (firstChainId, secondChainId) => firstChainId - secondChainId
         )
-      : null)
+      : null
+  }, [entries, facetsQuery.data, query.data, shouldFetchFacets])
   const isInitialLoading = query.isLoading || (query.isFetching && entries.length === 0)
   const isEmpty = !isInitialLoading && !query.error && Boolean(address) && entries.length === 0
   const error = query.error instanceof Error ? query.error : query.error ? new Error('Failed to fetch activity') : null
