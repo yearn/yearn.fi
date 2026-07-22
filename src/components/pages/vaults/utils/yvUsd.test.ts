@@ -27,6 +27,10 @@ describe('yvUSD token metadata', () => {
 })
 
 describe('hasYvUsdInfinifiPoints', () => {
+  it('returns false while points metrics are unavailable', () => {
+    expect(hasYvUsdInfinifiPoints()).toBe(false)
+  })
+
   it('returns false when neither variant currently earns points', () => {
     expect(
       hasYvUsdInfinifiPoints({
