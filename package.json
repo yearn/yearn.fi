@@ -21,7 +21,7 @@
   },
   "dependencies": {
     "@headlessui/react": "2.2.10",
-    "@number-flow/react": "0.6.0",
+    "@number-flow/react": "0.6.1",
     "@plausible-analytics/tracker": "0.4.5",
     "@rainbow-me/rainbowkit": "2.2.11",
     "@react-hookz/web": "24.0.4",
