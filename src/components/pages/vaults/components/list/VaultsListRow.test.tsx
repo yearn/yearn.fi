@@ -191,6 +191,50 @@ describe('VaultsListRow', () => {
     expect(html).not.toContain('style="width:48px;height:48px"')
   })
 
+  it('shows a portfolio user weighted APY instead of the generic yvUSD up-to APY', () => {
+    const vault = {
+      version: '3.0.0',
+      chainID: 1,
+      address: YVUSD_UNLOCKED_ADDRESS,
+      name: 'yvUSD',
+      symbol: 'yvUSD',
+      category: 'Stablecoin',
+      kind: 'Multi Strategy',
+      token: {
+        address: '0x0000000000000000000000000000000000000002',
+        symbol: 'USDC',
+        decimals: 6
+      },
+      apr: {
+        forwardAPR: { netAPR: 0.05 },
+        netAPR: 0.05
+      },
+      tvl: {
+        tvl: 350,
+        totalAssets: 350_000_000
+      },
+      info: {
+        riskLevel: 2
+      },
+      staking: {
+        address: '0x0000000000000000000000000000000000000000'
+      }
+    } as unknown as TKongVaultInput
+
+    const html = renderRowHtml(vault, {
+      yvUsdPositionApy: {
+        blendedApy: 0.07,
+        locked: { apy: 0.09, value: 100, weight: 0.5 },
+        unlocked: { apy: 0.05, value: 100, weight: 0.5 }
+      }
+    })
+
+    expect(html).toContain('7.00%')
+    expect(html).toContain('aria-label="View your yvUSD APY breakdown"')
+    expect(html).toContain('decoration-dotted')
+    expect(html).not.toContain('Up to')
+  })
+
   it('formats yvUSD locked APY with shared significant-digit rounding in the list row', () => {
     mockUseMediaQuery.mockReturnValue(true)
     mockUseYvUsdVaults.mockReturnValue({

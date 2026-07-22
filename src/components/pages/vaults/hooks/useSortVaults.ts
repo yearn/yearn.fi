@@ -56,7 +56,8 @@ export function compareDepositedValues({
 export function useSortVaults<TVault extends TKongVaultInput & { details?: TKongVaultStrategy['details'] }>(
   vaultList: TVault[],
   sortBy: TPossibleSortBy,
-  sortDirection: TSortDirection
+  sortDirection: TSortDirection,
+  options?: { yvUsdApyOverride?: number | null }
 ): TVault[] {
   const { getToken, getBalance } = useWalletTokens()
   const { getVaultHoldingsUsd } = useWalletHoldings()
@@ -71,12 +72,15 @@ export function useSortVaults<TVault extends TKongVaultInput & { details?: TKong
   }, [getBalance, getToken, yvUsdLockedVault, yvUsdUnlockedVault])
 
   const yvUsdDisplayedApy = useMemo((): number => {
+    if (typeof options?.yvUsdApyOverride === 'number' && Number.isFinite(options.yvUsdApyOverride)) {
+      return options.yvUsdApyOverride
+    }
     const lockedApy = yvUsdMetrics.locked.apy
     if (lockedApy > 0 || yvUsdMetrics.unlocked.apy === 0) {
       return lockedApy
     }
     return yvUsdMetrics.unlocked.apy
-  }, [yvUsdMetrics.locked.apy, yvUsdMetrics.unlocked.apy])
+  }, [options?.yvUsdApyOverride, yvUsdMetrics.locked.apy, yvUsdMetrics.unlocked.apy])
   const isFeaturingScoreSortedDesc = useMemo((): boolean => {
     if (sortBy !== 'featuringScore' || sortDirection !== 'desc') {
       return false

@@ -314,6 +314,55 @@ export function getWeightedYvUsdApy({
   return weightedApy / totalValue
 }
 
+export type TYvUsdPositionApyBreakdown = {
+  blendedApy: number | null
+  unlocked: {
+    apy: number | null
+    value: number
+    weight: number
+  }
+  locked: {
+    apy: number | null
+    value: number
+    weight: number
+  }
+}
+
+export function getYvUsdPositionApyBreakdown({
+  unlockedValue,
+  lockedValue,
+  unlockedApy,
+  lockedApy
+}: {
+  unlockedValue?: number | null
+  lockedValue?: number | null
+  unlockedApy?: number | null
+  lockedApy?: number | null
+}): TYvUsdPositionApyBreakdown {
+  const normalizedUnlockedValue = normalizeWeightedValue(unlockedValue)
+  const normalizedLockedValue = normalizeWeightedValue(lockedValue)
+  const totalValue = normalizedUnlockedValue + normalizedLockedValue
+
+  return {
+    blendedApy: getWeightedYvUsdApy({
+      unlockedValue: normalizedUnlockedValue,
+      lockedValue: normalizedLockedValue,
+      unlockedApy,
+      lockedApy
+    }),
+    unlocked: {
+      apy: isFiniteApy(unlockedApy) ? unlockedApy : null,
+      value: normalizedUnlockedValue,
+      weight: totalValue > 0 ? normalizedUnlockedValue / totalValue : 0
+    },
+    locked: {
+      apy: isFiniteApy(lockedApy) ? lockedApy : null,
+      value: normalizedLockedValue,
+      weight: totalValue > 0 ? normalizedLockedValue / totalValue : 0
+    }
+  }
+}
+
 export function convertYvUsdVariantRawAmount({
   amount,
   fromVariant,

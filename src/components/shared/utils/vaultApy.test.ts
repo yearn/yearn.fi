@@ -1,10 +1,12 @@
 import type { TKongVault, TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
+import { YBOLD_STAKING_ADDRESS, YBOLD_VAULT_ADDRESS } from '@pages/vaults/domain/normalizeVault'
 import { describe, expect, it } from 'vitest'
 import {
   calculateKatanaThirtyDayAPY,
   calculateVaultEstimatedAPY,
   calculateVaultHistoricalAPY,
-  getKatanaAprData
+  getKatanaAprData,
+  getVaultForwardAPY
 } from './vaultApy'
 
 const BASE_VAULT: TKongVault = {
@@ -127,7 +129,7 @@ describe('vaultApy Katana calculations', () => {
 
   it('calculates Katana estimated APY from list data using native plus app rewards', () => {
     const apy = calculateVaultEstimatedAPY(withComponents(BASE_VAULT))
-    expect(apy).toBeCloseTo(0.1316, 6)
+    expect(apy).toBeCloseTo(0.1596, 6)
   })
 
   it('calculates full Katana estimate on snapshot-backed vault details', () => {
@@ -135,9 +137,9 @@ describe('vaultApy Katana calculations', () => {
     expect(apy).toBeCloseTo(0.1596, 6)
   })
 
-  it('falls back to Kong forward APY when list-level Katana components are absent', () => {
+  it('uses Kong estimated APY when list-level Katana components are absent', () => {
     const apy = calculateVaultEstimatedAPY(BASE_VAULT)
-    expect(apy).toBeCloseTo(0.04, 6)
+    expect(apy).toBeCloseTo(0.068, 6)
   })
 
   it('calculates Katana 30 day APY from historical base + app rewards', () => {
@@ -148,5 +150,43 @@ describe('vaultApy Katana calculations', () => {
   it('falls back to monthly historical APY for Katana vaults when components are absent', () => {
     const apy = calculateVaultHistoricalAPY(BASE_VAULT)
     expect(apy).toBeCloseTo(0.02, 6)
+  })
+})
+
+describe('yBOLD estimated APY override', () => {
+  const createYBoldVault = (address: string): TKongVault =>
+    ({
+      ...BASE_VAULT,
+      chainId: 1,
+      address,
+      performance: {
+        ...BASE_VAULT.performance,
+        oracle: {
+          apr: 0.12,
+          apy: 0.13,
+          netAPR: 0.11,
+          netAPY: 0.115
+        },
+        historical: {
+          net: 0.08,
+          weeklyNet: 0.0725,
+          monthlyNet: 0.081,
+          inceptionNet: 0.09
+        }
+      }
+    }) as TKongVault
+
+  it.each([
+    YBOLD_VAULT_ADDRESS,
+    YBOLD_STAKING_ADDRESS
+  ])('uses 7 day historical net APY as the estimated APY for %s', (address) => {
+    const vault = createYBoldVault(address)
+
+    expect(getVaultForwardAPY(vault)).toBe(0.0725)
+    expect(calculateVaultEstimatedAPY(vault)).toBe(0.0725)
+  })
+
+  it('keeps the forward APY for other vaults', () => {
+    expect(getVaultForwardAPY(BASE_VAULT)).toBe(0.068)
   })
 })

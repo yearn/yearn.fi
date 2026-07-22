@@ -81,6 +81,7 @@ import Image from '/src/components/Image'
 import {
   doesActivityEntryMatchSearch,
   doesLocalActivityMatchFilters,
+  getNotificationActivityAction,
   isRecentLocalActivityEntry,
   isZapNotification,
   toLocalActivityEntry
@@ -99,6 +100,10 @@ import type {
   TPortfolioVaultGrowthChartMode,
   TPortfolioVaultGrowthChartSortDirection
 } from './components/PortfolioVaultGrowthChart'
+import {
+  getReceiptValidatedLocalActivityNotifications,
+  useLocalActivityReceiptStatuses
+} from './hooks/useLocalActivityReceiptStatuses'
 import { usePortfolioActivity } from './hooks/usePortfolioActivity'
 import { usePortfolioHistory } from './hooks/usePortfolioHistory'
 import { usePortfolioProtocolReturnHistory } from './hooks/usePortfolioProtocolReturnHistory'
@@ -1219,6 +1224,7 @@ function IndexedActivityRow({
       : 'ASSET RECEIVED:'
     : 'VAULT SHARES RECEIVED:'
   const metadataStatus = entry.status === 'ok' ? 'Indexed' : 'Limited metadata'
+  const isFailedTransaction = entry.transactionStatus === 'failed'
   const hoverRoundedClass =
     isFirstRow && isLastRow ? 'rounded-lg' : isFirstRow ? 'rounded-t-lg' : isLastRow ? 'rounded-b-lg' : ''
   const handleRowToggle = (): void => {
@@ -1312,6 +1318,7 @@ function IndexedActivityRow({
                   time={formattedTime}
                 />
                 {metadataStatus !== 'Indexed' ? <VaultsListChip label={metadataStatus} /> : null}
+                {isFailedTransaction ? <VaultsListChip label="Failed" /> : null}
                 {isZap ? (
                   <VaultsListChip
                     label="Zap"
@@ -1342,6 +1349,7 @@ function IndexedActivityRow({
             time={formattedTime}
           />
           {metadataStatus !== 'Indexed' ? <VaultsListChip label={metadataStatus} /> : null}
+          {isFailedTransaction ? <VaultsListChip label="Failed" /> : null}
           {isZap ? (
             <VaultsListChip
               label="Zap"
@@ -1716,6 +1724,15 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
   const { allVaults } = useYearn()
   const { getToken } = useTokenList()
   const { cachedEntries, isLoading: notificationsLoading, error: notificationsError } = useNotifications()
+  const localActivityNotifications = useMemo(
+    () => cachedEntries.filter((entry) => Boolean(getNotificationActivityAction(entry))),
+    [cachedEntries]
+  )
+  const localActivityReceiptStatuses = useLocalActivityReceiptStatuses(localActivityNotifications, isActive)
+  const receiptValidatedCachedEntries = useMemo(
+    () => getReceiptValidatedLocalActivityNotifications(localActivityNotifications, localActivityReceiptStatuses),
+    [localActivityNotifications, localActivityReceiptStatuses]
+  )
   const [activityFilters, setActivityFilters] = useState<TActivityModalFilters>(DEFAULT_ACTIVITY_MODAL_FILTERS)
   const [activityDateRangeDraftFilters, setActivityDateRangeDraftFilters] =
     useState<TActivityModalFilters>(DEFAULT_ACTIVITY_MODAL_FILTERS)
@@ -1794,7 +1811,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
   )
   const unresolvedLocalActivityEntries = useMemo(
     () =>
-      cachedEntries
+      receiptValidatedCachedEntries
         .filter((entry) => entry.status !== 'success')
         .filter((entry) =>
           doesLocalActivityMatchFilters({
@@ -1816,7 +1833,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
       activitySearch,
       activityStartTimestamp,
       allVaults,
-      cachedEntries,
+      receiptValidatedCachedEntries,
       isActivityZapFilterActive
     ]
   )
@@ -1826,7 +1843,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
   )
   const recentLocalEntries = useMemo(
     () =>
-      cachedEntries
+      receiptValidatedCachedEntries
         .filter((entry) => isRecentLocalActivityEntry(entry, indexedTxHashes))
         .filter((entry) =>
           doesLocalActivityMatchFilters({
@@ -1844,7 +1861,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
       activityEndTimestamp,
       activityFilters,
       activityStartTimestamp,
-      cachedEntries,
+      receiptValidatedCachedEntries,
       indexedTxHashes,
       isActivityZapFilterActive
     ]
@@ -2852,6 +2869,7 @@ function PortfolioHoldingsSection({
             currentVault={row.vault}
             flags={vaultFlags[row.key]}
             hrefOverride={row.hrefOverride}
+            yvUsdPositionApy={row.yvUsdPositionApy}
             showBoostDetails={false}
             activeProductType="all"
             showStrategies

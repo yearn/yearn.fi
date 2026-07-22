@@ -39,12 +39,15 @@ import {
 } from '@pages/vaults/domain/normalizeVault'
 import { isNonYearnErc4626Vault, NON_YEARN_ERC4626_WARNING_MESSAGE } from '@pages/vaults/domain/vaultWarnings'
 import { useEnsureVaultListFetch } from '@pages/vaults/hooks/useEnsureVaultListFetch'
+import { usePendingTimelockStrategies } from '@pages/vaults/hooks/usePendingTimelockStrategies'
 import { useVaultApyData } from '@pages/vaults/hooks/useVaultApyData'
 import { useVaultSnapshot } from '@pages/vaults/hooks/useVaultSnapshot'
 import { useVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { useYvBtcVaults } from '@pages/vaults/hooks/useYvBtcVaults'
 import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import { WidgetActionType } from '@pages/vaults/types'
+import type { TPendingTimelockStrategy } from '@pages/vaults/types/timelockStrategies'
+import { formatTimelockEta, getTimelockBadgeLabel } from '@pages/vaults/utils/timelockStrategyDisplay'
 import { getVaultUserHistoryVaults } from '@pages/vaults/utils/vaultUserHistoryVaults'
 import { YVBTC_CHAIN_ID, YVBTC_LOCKED_ADDRESS, YVBTC_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvBtc'
 import {
@@ -81,7 +84,7 @@ import {
   useRef,
   useState
 } from 'react'
-import { formatUnits, isAddressEqual } from 'viem'
+import { formatUnits, isAddressEqual, zeroAddress } from 'viem'
 import { VaultsListChip } from '@/components/pages/vaults/components/list/VaultsListChip'
 import { isRouteChainAddressMatch, resolveRouteVaultFromMap } from '@/components/pages/vaults/utils/routeVault'
 import { deriveListKind } from '@/components/pages/vaults/utils/vaultListFacets'
@@ -110,6 +113,32 @@ const resolveHeaderOffset = (): number => {
 }
 
 const desktopWidgetHeightClassNames = getDesktopWidgetHeightClassNames()
+
+function PendingStrategyChangesTooltip({ items }: { items: TPendingTimelockStrategy[] }): ReactElement {
+  const visibleItems = items.slice(0, 3)
+  const remainingCount = items.length - visibleItems.length
+
+  return (
+    <div
+      className={
+        'flex w-[320px] max-w-[calc(100vw-2rem)] flex-col gap-2 rounded-lg border border-border bg-surface p-3 text-left text-xs text-text-secondary shadow-lg'
+      }
+    >
+      <p className={'font-semibold text-text-primary'}>
+        {`${items.length} pending timelocked strategy ${items.length === 1 ? 'change' : 'changes'}`}
+      </p>
+      {visibleItems.map((item) => (
+        <div key={item.operationId} className={'flex flex-col gap-0.5'}>
+          <span className={'font-medium text-text-primary'}>
+            {item.strategyName ?? `Strategy ${item.strategyAddress.slice(0, 8)}…`}
+          </span>
+          <span>{`${getTimelockBadgeLabel(item.status)}, ${formatTimelockEta(item.eta)}`}</span>
+        </div>
+      ))}
+      {remainingCount > 0 ? <span>{`+${remainingCount} more in Strategies`}</span> : null}
+    </div>
+  )
+}
 
 const EMPTY_VAULT_FOR_APY_DATA: TKongVaultView = {
   address: '0x0000000000000000000000000000000000000000',
@@ -701,6 +730,15 @@ function Index(): ReactElement | null {
     vaultViewInput,
     mergedSnapshot
   ])
+  const pendingTimelockStrategies = usePendingTimelockStrategies({
+    chainId,
+    vaultAddress: toAddress(currentVault?.address ?? params.address ?? zeroAddress),
+    enabled: Boolean(currentVault)
+  })
+  const pendingTimelockItems = useMemo(
+    () => pendingTimelockStrategies.data?.items ?? [],
+    [pendingTimelockStrategies.data?.items]
+  )
 
   const shouldBootstrapYvUsdVaultList = isYvUsd && !hasVaultList && !hasTriggeredVaultListFetch
   const shouldBootstrapYvBtcVaultList = isYvBtc && !hasVaultList && !hasTriggeredVaultListFetch
@@ -1164,9 +1202,9 @@ function Index(): ReactElement | null {
       },
       {
         key: 'strategies' as const,
-        shouldRender: Number(currentVault.strategies?.length || 0) > 0,
+        shouldRender: Number(currentVault.strategies?.length || 0) > 0 || pendingTimelockItems.length > 0,
         ref: sectionRefs.strategies,
-        content: <VaultStrategiesSection currentVault={currentVault} />
+        content: <VaultStrategiesSection currentVault={currentVault} pendingTimelockStrategies={pendingTimelockItems} />
       },
       {
         key: 'risk' as const,
@@ -1187,6 +1225,7 @@ function Index(): ReactElement | null {
     chainId,
     currentVault,
     isYvUsd,
+    pendingTimelockItems,
     sectionRefs,
     shouldRenderDesktopCharts,
     snapshotVault?.inceptTime,
@@ -1197,7 +1236,18 @@ function Index(): ReactElement | null {
   const renderableSections = useMemo(() => sections.filter((section) => section.shouldRender), [sections])
   const sectionTabs = renderableSections.map((section) => ({
     key: section.key,
-    label: collapsibleTitles[section.key]
+    label: collapsibleTitles[section.key],
+    supportsNotification: section.key === 'strategies',
+    notificationTooltip:
+      section.key === 'strategies' && pendingTimelockItems.length > 0 ? (
+        <PendingStrategyChangesTooltip items={pendingTimelockItems} />
+      ) : undefined,
+    notificationAriaLabel:
+      section.key === 'strategies' && pendingTimelockItems.length > 0
+        ? `${pendingTimelockItems.length} pending timelocked strategy ${
+            pendingTimelockItems.length === 1 ? 'change' : 'changes'
+          }`
+        : undefined
   }))
   const sectionTourTargets: Partial<Record<SectionKey, string>> = {
     charts: 'vault-detail-section-charts',

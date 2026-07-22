@@ -53,8 +53,8 @@ const vaultsRows = [
   {
     symbol: 'ETH',
     icon: '/landing/vaults/eth.png',
-    href: '/vaults/1/0xAc37729B76db6438CE62042AE1270ee574CA7571',
-    address: '0xAc37729B76db6438CE62042AE1270ee574CA7571'
+    href: '/vaults/1/0xc56413869c6CDf96496f2b1eF801fEDBdFA7dDB0',
+    address: '0xc56413869c6CDf96496f2b1eF801fEDBdFA7dDB0'
   },
   {
     symbol: 'USDS',

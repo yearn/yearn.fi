@@ -9,7 +9,7 @@ import { useAccount, useCallsStatus, useWriteContract } from 'wagmi'
 import { isConnectedToExecutionChain, resolveExecutionChainId } from '@/config/tenderly'
 import { InfoOverlay } from '../shared/InfoOverlay'
 import { AnimatedCheckmark, ErrorIcon, Spinner } from '../shared/TransactionStateIndicators'
-import { resolveExecutionTrackingHash } from '../shared/transactionOverlay.helpers'
+import { resolveExecutionTrackingHash, resolveTransactionReceiptOutcome } from '../shared/transactionOverlay.helpers'
 import {
   resolveApprovalOverlayActionDisabledState,
   resolveApprovalOverlayConnectedChainId,
@@ -84,6 +84,11 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
     callsReceiptTxHash: safeCallsStatus.data?.receipts?.[0]?.transactionHash
   })
   const receipt = useWaitForTransactionReceipt({ hash: executionTrackingHash, chainId })
+  const receiptOutcome = resolveTransactionReceiptOutcome({
+    isSuccess: receipt.isSuccess,
+    isError: receipt.isError,
+    status: receipt.data?.status
+  })
 
   // Reset state when overlay closes
   useEffect(() => {
@@ -97,11 +102,11 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
 
   // Handle transaction success
   useEffect(() => {
-    if (receipt.isSuccess && (txState === 'pending' || txState === 'submitted')) {
+    if (receiptOutcome === 'success' && (txState === 'pending' || txState === 'submitted')) {
       setTxState('success')
       reset()
     }
-  }, [receipt.isSuccess, txState, reset])
+  }, [receiptOutcome, txState, reset])
 
   useEffect(() => {
     const nextTxState = resolveApprovalOverlayPendingSafeState({
@@ -133,12 +138,12 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
 
   // Handle transaction error
   useEffect(() => {
-    if (receipt.isError && (txState === 'pending' || txState === 'submitted')) {
+    if (receiptOutcome === 'error' && (txState === 'pending' || txState === 'submitted')) {
       setTxState('error')
       setErrorMessage('Transaction failed')
       reset()
     }
-  }, [receipt.isError, txState, reset])
+  }, [receiptOutcome, txState, reset])
 
   const handleDone = useCallback(async () => {
     if (isDoneRefreshing) return

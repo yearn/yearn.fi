@@ -142,7 +142,8 @@ const portfolioActivityEntrySchema = z.object({
   outputTokenAmountFormatted: z.number().nullable().optional().default(null),
   shareAmount: z.string(),
   shareAmountFormatted: z.number().nullable(),
-  status: z.enum(['ok', 'missing_metadata'])
+  status: z.enum(['ok', 'missing_metadata']),
+  transactionStatus: z.literal('failed').optional()
 })
 
 export const portfolioActivityResponseSchema = z.object({
