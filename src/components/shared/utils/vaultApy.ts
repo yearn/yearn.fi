@@ -1,4 +1,10 @@
-import { getVaultAPR, getVaultChainID, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
+import {
+  getVaultAddress,
+  getVaultAPR,
+  getVaultChainID,
+  type TKongVaultInput
+} from '@pages/vaults/domain/kongVaultSelectors'
+import { isYBoldProductAddress } from '@pages/vaults/domain/normalizeVault'
 import { isZero } from '@shared/utils'
 
 const KATANA_CHAIN_ID = 747474
@@ -58,17 +64,32 @@ export function getKatanaAprData(vault: TKongVaultInput): TKatanaAprData | undef
   }
 }
 
+export function getVaultForwardAPY(vault: TKongVaultInput): number {
+  const apr = getVaultAPR(vault)
+
+  if (isYBoldProductAddress(getVaultAddress(vault))) {
+    return apr.points.weekAgo
+  }
+
+  return apr.forwardAPR?.netAPR || 0
+}
+
 export function calculateVaultEstimatedAPY(vault: TKongVaultInput): number {
   const apr = getVaultAPR(vault)
   const chainID = getVaultChainID(vault)
+  const forwardAPY = getVaultForwardAPY(vault)
+
+  if (isYBoldProductAddress(getVaultAddress(vault))) {
+    return forwardAPY
+  }
 
   if (chainID === KATANA_CHAIN_ID) {
     const katanaAprData = getKatanaAprData(vault)
     if (katanaAprData) {
-      const katanaEstimatedApr = calculateKatanaTotalApr(katanaAprData, apr.forwardAPR?.netAPR || 0)
-      return katanaEstimatedApr ?? (apr.forwardAPR?.netAPR || 0)
+      const katanaEstimatedApr = calculateKatanaTotalApr(katanaAprData, forwardAPY)
+      return katanaEstimatedApr ?? forwardAPY
     }
-    return apr.forwardAPR?.netAPR || 0
+    return forwardAPY
   }
 
   if (apr.forwardAPR?.type === '') {
@@ -76,17 +97,17 @@ export function calculateVaultEstimatedAPY(vault: TKongVaultInput): number {
   }
 
   if (chainID === 1 && apr.forwardAPR?.composite?.boost > 0 && !apr.extra?.stakingRewardsAPR) {
-    return apr.forwardAPR?.netAPR || 0
+    return forwardAPY
   }
 
   const sumOfRewardsAPY = (apr.extra?.stakingRewardsAPR || 0) + (apr.extra?.gammaRewardAPR || 0)
-  const hasCurrentAPY = !isZero(apr.forwardAPR?.netAPR || 0)
+  const hasCurrentAPY = !isZero(forwardAPY)
 
   if (sumOfRewardsAPY > 0) {
-    return sumOfRewardsAPY + (apr.forwardAPR?.netAPR || 0)
+    return sumOfRewardsAPY + forwardAPY
   }
   if (hasCurrentAPY) {
-    return apr.forwardAPR?.netAPR || 0
+    return forwardAPY
   }
   return apr?.netAPR || 0
 }

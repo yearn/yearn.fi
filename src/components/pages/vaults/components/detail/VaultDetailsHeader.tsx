@@ -12,6 +12,7 @@ import {
 import { YvUsdApyTooltipContent, YvUsdTvlTooltipContent } from '@pages/vaults/components/yvUSD/YvUsdBreakdown'
 import { YvUsdHeaderBanner } from '@pages/vaults/components/yvUSD/YvUsdHeaderBanner'
 import { getVaultView, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
+import { isYBoldProductAddress } from '@pages/vaults/domain/normalizeVault'
 import { useHeaderCompression } from '@pages/vaults/hooks/useHeaderCompression'
 import { useVaultUserData, type VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { useYvBtcVaults } from '@pages/vaults/hooks/useYvBtcVaults'
@@ -510,6 +511,9 @@ function VaultOverviewCard({
   onYvUsdApyVariantChange?: (variant: TYvUsdVariant) => void
 }): ReactElement {
   const currentVault = getVaultView(currentVaultInput)
+  const estimatedApyTooltip = isYBoldProductAddress(currentVault.address)
+    ? 'Projected APY based on 7 day historical performance'
+    : 'Projected APY based on underlying markets'
   const totalAssets = toNormalizedBN(currentVault.tvl.totalAssets, currentVault.decimals).normalized
   const listKind = deriveListKind(currentVault)
   const isFactoryVault = listKind === 'factory'
@@ -600,7 +604,7 @@ function VaultOverviewCard({
   const metrics: TMetricBlock[] = [
     {
       key: 'est-apy',
-      header: <MetricHeader label={'Est. APY'} tooltip={'Projected APY based on underlying markets'} />,
+      header: <MetricHeader label={'Est. APY'} tooltip={estimatedApyTooltip} />,
       value: isDualVariantVault ? (
         <Tooltip
           className={'h-auto w-full gap-0'}
