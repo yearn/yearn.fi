@@ -53,4 +53,20 @@ describe('holdings protocol return history route', () => {
     expect(response.status).toBe(200)
     expect(response.headers.get('Cache-Control')).toBe('private, no-store, max-age=0, must-revalidate')
   })
+
+  it('treats an empty vaults query as an unfiltered request', async () => {
+    const { default: handler } = await import('./history')
+
+    const response = await handler(createRequest({ address: TEST_ADDRESS, vaults: '' }))
+
+    expect(response.status).toBe(200)
+    expect(getHoldingsProtocolReturnHistoryMock).toHaveBeenCalledWith(
+      TEST_ADDRESS,
+      'all',
+      'seq',
+      'paged',
+      '1y',
+      undefined
+    )
+  })
 })

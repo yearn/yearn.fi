@@ -15,14 +15,25 @@ import {
   getChartWeeklyTicks,
   getTimeframeLimit
 } from '@pages/vaults/utils/charts'
+import { IconChevron } from '@shared/icons/IconChevron'
 import { cl, formatUSD, SELECTOR_BAR_STYLES } from '@shared/utils'
+import {
+  rankPortfolioVaultGrowthChartSeries,
+  type TPortfolioVaultGrowthChartMode,
+  type TPortfolioVaultGrowthChartSortDirection,
+  type TPortfolioVaultGrowthRankableSeries
+} from '@shared/utils/portfolioVaultGrowth'
 import type { ReactElement } from 'react'
 import { useMemo, useState } from 'react'
 import { CartesianGrid, ComposedChart, Line, XAxis, YAxis } from 'recharts'
 import type { AxisDomain } from 'recharts/types/util/types'
 
-export type TPortfolioVaultGrowthChartMode = 'position' | 'index'
 export type TPortfolioVaultGrowthChartTimeframe = '30d' | '90d' | '1y' | 'all'
+export type {
+  TPortfolioVaultGrowthChartMode,
+  TPortfolioVaultGrowthChartSortDirection,
+  TPortfolioVaultGrowthRankableSeries
+}
 
 const NON_NEGATIVE_AUTO_DOMAIN: AxisDomain = [
   (dataMin: number) => (Number.isFinite(dataMin) && dataMin < 0 ? dataMin : 0),
@@ -77,6 +88,7 @@ export type TPortfolioVaultGrowthChartSeriesPoint = {
 }
 
 export type TPortfolioVaultGrowthChartSeries = {
+  chainId?: number
   vaultAddress: string
   vaultName: string
   symbol?: string | null
@@ -89,6 +101,9 @@ export type TPortfolioVaultGrowthChartProps = {
   mode?: TPortfolioVaultGrowthChartMode
   initialMode?: TPortfolioVaultGrowthChartMode
   onModeChange?: (mode: TPortfolioVaultGrowthChartMode) => void
+  sortDirection?: TPortfolioVaultGrowthChartSortDirection
+  initialSortDirection?: TPortfolioVaultGrowthChartSortDirection
+  onSortDirectionChange?: (direction: TPortfolioVaultGrowthChartSortDirection) => void
   timeframe?: TPortfolioVaultGrowthChartTimeframe
   vaultOrder?: string[]
   maxVaults?: number
@@ -97,6 +112,7 @@ export type TPortfolioVaultGrowthChartProps = {
   title?: string
   height?: number | string
   showModeToggle?: boolean
+  showSortToggle?: boolean
   className?: string
   emptyMessage?: string
 }
@@ -140,15 +156,48 @@ const PORTFOLIO_VAULT_GROWTH_CHART_MARGIN = {
   ...CHART_WITH_AXES_MARGIN,
   bottom: 4
 }
-const MIN_RELEVANCE_SCORE = 0.000001
 
 const MODE_COPY: Record<TPortfolioVaultGrowthChartMode, string> = {
   position: 'Shows actual protocol gain from your deposited positions during the selected timeframe.',
   index: 'Shows vault performance normalized to 100, ignoring position size.'
 }
 
+const SORT_LABELS: Record<TPortfolioVaultGrowthChartMode, Record<TPortfolioVaultGrowthChartSortDirection, string>> = {
+  position: {
+    desc: 'Top contributors',
+    asc: 'Bottom contributors'
+  },
+  index: {
+    desc: 'Best performance',
+    asc: 'Worst performance'
+  }
+}
+
+export function getPortfolioVaultGrowthSortLabel(
+  mode: TPortfolioVaultGrowthChartMode,
+  direction: TPortfolioVaultGrowthChartSortDirection
+): string {
+  return SORT_LABELS[mode][direction]
+}
+
+export function getPortfolioVaultGrowthSortOptions(
+  mode: TPortfolioVaultGrowthChartMode
+): Array<{ id: TPortfolioVaultGrowthChartSortDirection; label: string }> {
+  return (['desc', 'asc'] as const).map((direction) => ({
+    id: direction,
+    label: getPortfolioVaultGrowthSortLabel(mode, direction)
+  }))
+}
+
 function getVaultKey(address: string): string {
   return address.toLowerCase()
+}
+
+export function getPortfolioVaultGrowthSeriesKey(
+  vaultSeries: Pick<TPortfolioVaultGrowthChartSeries, 'chainId' | 'vaultAddress'>
+): string {
+  const address = getVaultKey(vaultSeries.vaultAddress)
+  return vaultSeries.chainId === undefined ? address : `${vaultSeries.chainId}:${address}`
 }
 
 function normalizeTimestamp(timestamp: number): number {
@@ -241,79 +290,7 @@ function buildIndexPoints(points: TPortfolioVaultGrowthChartPoint[], indexBase: 
   })
 }
 
-function getFiniteValues(points: TTransformedPoint[]): number[] {
-  return points.flatMap((point) => (isFiniteNumber(point.value) ? [point.value] : []))
-}
-
-function getPositionRelevance(points: TTransformedPoint[]): number {
-  return Math.max(0, ...getFiniteValues(points).map((value) => Math.abs(value)))
-}
-
-function getIndexRelevance(points: TTransformedPoint[], indexBase: number): number {
-  return Math.max(0, ...getFiniteValues(points).map((value) => Math.abs(value - indexBase)))
-}
-
-function selectRelevantSeries(args: {
-  series: TTransformedSeries[]
-  maxVaults?: number
-  indexBase: number
-}): TTransformedSeries[] {
-  const scoredSeries = args.series.map((vaultSeries) => {
-    const positionScore = getPositionRelevance(vaultSeries.positionPoints)
-    const indexScore = getIndexRelevance(vaultSeries.indexPoints, args.indexBase)
-    return {
-      vaultSeries,
-      positionScore,
-      indexScore,
-      combinedScore: positionScore + indexScore
-    }
-  })
-  const hasRelevantSeries = scoredSeries.some(
-    (series) => series.positionScore > MIN_RELEVANCE_SCORE || series.indexScore > MIN_RELEVANCE_SCORE
-  )
-  const candidates = hasRelevantSeries
-    ? scoredSeries.filter(
-        (series) => series.positionScore > MIN_RELEVANCE_SCORE || series.indexScore > MIN_RELEVANCE_SCORE
-      )
-    : scoredSeries
-
-  if (typeof args.maxVaults !== 'number' || candidates.length <= args.maxVaults) {
-    return candidates.map((series) => series.vaultSeries)
-  }
-
-  const maxVaults = args.maxVaults
-  const selectedKeys = new Set<string>()
-  const selectedSeries: TTransformedSeries[] = []
-  const addSeries = (vaultSeries: TTransformedSeries): void => {
-    if (selectedSeries.length >= maxVaults || selectedKeys.has(vaultSeries.vaultAddress.toLowerCase())) {
-      return
-    }
-    selectedKeys.add(vaultSeries.vaultAddress.toLowerCase())
-    selectedSeries.push(vaultSeries)
-  }
-  const positionTarget = Math.ceil(maxVaults / 2)
-
-  candidates
-    .toSorted((left, right) => right.positionScore - left.positionScore || right.combinedScore - left.combinedScore)
-    .slice(0, positionTarget)
-    .forEach((series) => {
-      addSeries(series.vaultSeries)
-    })
-
-  candidates
-    .toSorted((left, right) => right.indexScore - left.indexScore || right.combinedScore - left.combinedScore)
-    .forEach((series) => {
-      addSeries(series.vaultSeries)
-    })
-
-  candidates
-    .toSorted((left, right) => right.combinedScore - left.combinedScore)
-    .forEach((series) => {
-      addSeries(series.vaultSeries)
-    })
-
-  return selectedSeries
-}
+export { rankPortfolioVaultGrowthChartSeries }
 
 function applySeriesPresentation(series: TTransformedSeries[], colors: string[]): TTransformedSeries[] {
   return series.map((vaultSeries, index) => ({
@@ -337,7 +314,6 @@ function buildSeries(args: {
   points: TPortfolioVaultGrowthChartPoint[]
   timeframe: TPortfolioVaultGrowthChartTimeframe
   vaultOrder?: string[]
-  maxVaults?: number
   indexBase: number
   colors: string[]
 }): TTransformedSeries[] {
@@ -373,10 +349,7 @@ function buildSeries(args: {
     ]
   })
 
-  return applySeriesPresentation(
-    selectRelevantSeries({ series: transformedSeries, maxVaults: args.maxVaults, indexBase: args.indexBase }),
-    args.colors
-  )
+  return transformedSeries
 }
 
 function buildPrecomputedIndexPoints(
@@ -428,16 +401,19 @@ function buildSeriesFromPrecomputed(args: {
   series: TPortfolioVaultGrowthChartSeries[]
   timeframe: TPortfolioVaultGrowthChartTimeframe
   vaultOrder?: string[]
-  maxVaults?: number
   indexBase: number
   colors: string[]
 }): TTransformedSeries[] {
   const seriesByVaultKey = new Map(
-    args.series.map((vaultSeries) => [getVaultKey(vaultSeries.vaultAddress), vaultSeries])
+    args.series.map((vaultSeries) => [getPortfolioVaultGrowthSeriesKey(vaultSeries), vaultSeries])
   )
+  const availableKeys = Array.from(seriesByVaultKey.keys())
   const orderedKeys = args.vaultOrder?.length
-    ? args.vaultOrder.map(getVaultKey).filter((key) => seriesByVaultKey.has(key))
-    : Array.from(seriesByVaultKey.keys())
+    ? args.vaultOrder.flatMap((orderedVault) => {
+        const orderedKey = getVaultKey(orderedVault)
+        return availableKeys.filter((key) => key === orderedKey || key.endsWith(`:${orderedKey}`))
+      })
+    : availableKeys
   const limit = getTimeframeLimit(args.timeframe)
 
   const transformedSeries = orderedKeys.flatMap((vaultKey) => {
@@ -466,10 +442,7 @@ function buildSeriesFromPrecomputed(args: {
     ]
   })
 
-  return applySeriesPresentation(
-    selectRelevantSeries({ series: transformedSeries, maxVaults: args.maxVaults, indexBase: args.indexBase }),
-    args.colors
-  )
+  return transformedSeries
 }
 
 function buildChartData(series: TTransformedSeries[], mode: TPortfolioVaultGrowthChartMode): TChartPoint[] {
@@ -537,9 +510,11 @@ function PortfolioVaultGrowthTooltip({
   active,
   payload,
   mode,
+  sortDirection,
   seriesLabels
 }: TTooltipProps & {
   mode: TPortfolioVaultGrowthChartMode
+  sortDirection: TPortfolioVaultGrowthChartSortDirection
   seriesLabels: Record<string, string>
 }): ReactElement | null {
   if (!active || !payload?.length) {
@@ -569,7 +544,7 @@ function PortfolioVaultGrowthTooltip({
         }
       ]
     })
-    .toSorted((left, right) => right.value - left.value)
+    .toSorted((left, right) => (sortDirection === 'desc' ? right.value - left.value : left.value - right.value))
 
   return (
     <div
@@ -603,6 +578,9 @@ export function PortfolioVaultGrowthChart({
   mode,
   initialMode = 'position',
   onModeChange,
+  sortDirection,
+  initialSortDirection = 'desc',
+  onSortDirectionChange,
   timeframe = 'all',
   vaultOrder,
   maxVaults,
@@ -611,46 +589,74 @@ export function PortfolioVaultGrowthChart({
   title = 'Vault Growth',
   height = 300,
   showModeToggle = true,
+  showSortToggle = showModeToggle,
   className,
   emptyMessage = 'No vault growth history available'
 }: TPortfolioVaultGrowthChartProps): ReactElement {
   const [uncontrolledMode, setUncontrolledMode] = useState<TPortfolioVaultGrowthChartMode>(initialMode)
+  const [uncontrolledSortDirection, setUncontrolledSortDirection] =
+    useState<TPortfolioVaultGrowthChartSortDirection>(initialSortDirection)
   const activeMode = mode ?? uncontrolledMode
-  const series = useMemo(() => {
+  const activeSortDirection = sortDirection ?? uncontrolledSortDirection
+  const unrankedSeries = useMemo(() => {
     if (precomputedSeries) {
       return buildSeriesFromPrecomputed({
         series: precomputedSeries,
         timeframe,
         vaultOrder,
-        maxVaults,
         indexBase,
         colors
       })
     }
 
-    return buildSeries({ points, timeframe, vaultOrder, maxVaults, indexBase, colors })
-  }, [colors, indexBase, maxVaults, points, precomputedSeries, timeframe, vaultOrder])
+    return buildSeries({ points, timeframe, vaultOrder, indexBase, colors })
+  }, [colors, indexBase, points, precomputedSeries, timeframe, vaultOrder])
+  const series = useMemo(
+    () =>
+      applySeriesPresentation(
+        rankPortfolioVaultGrowthChartSeries({
+          series: unrankedSeries,
+          mode: activeMode,
+          sortDirection: activeSortDirection,
+          maxVaults
+        }),
+        colors
+      ),
+    [activeMode, activeSortDirection, colors, maxVaults, unrankedSeries]
+  )
   const chartData = useMemo(() => buildChartData(series, activeMode), [activeMode, series])
-  const yAxisFloor = activeMode === 'index' ? 100 : 0
   const yAxisTicks = useMemo(
     () =>
-      buildNonNegativeEvenTicks(
-        chartData.flatMap((point) =>
-          Object.entries(point).flatMap(([key, value]) => {
-            if (key === 'timestamp' || key === 'date') {
-              return []
-            }
-            return typeof value === 'number' ? [value] : []
-          })
-        ),
-        yAxisFloor
-      ),
-    [chartData, yAxisFloor]
+      activeMode === 'position'
+        ? buildNonNegativeEvenTicks(
+            chartData.flatMap((point) =>
+              Object.entries(point).flatMap(([key, value]) => {
+                if (key === 'timestamp' || key === 'date') {
+                  return []
+                }
+                return typeof value === 'number' ? [value] : []
+              })
+            )
+          )
+        : undefined,
+    [activeMode, chartData]
   )
-  const yAxisDomain = useMemo<AxisDomain>(
-    () => (yAxisTicks ? [yAxisFloor, yAxisTicks.at(-1) ?? yAxisFloor] : NON_NEGATIVE_AUTO_DOMAIN),
-    [yAxisFloor, yAxisTicks]
-  )
+  const yAxisDomain = useMemo<AxisDomain>(() => {
+    if (activeMode === 'index') {
+      return [
+        (dataMin: number) => {
+          const minValue = Number.isFinite(dataMin) ? Math.min(indexBase, dataMin) : indexBase
+          return indexBase - (indexBase - minValue) * Y_AXIS_HEADROOM_MULTIPLIER
+        },
+        (dataMax: number) => {
+          const maxValue = Number.isFinite(dataMax) ? Math.max(indexBase, dataMax) : indexBase
+          return indexBase + (maxValue - indexBase) * Y_AXIS_HEADROOM_MULTIPLIER
+        }
+      ]
+    }
+
+    return yAxisTicks ? [0, yAxisTicks.at(-1) ?? 0] : NON_NEGATIVE_AUTO_DOMAIN
+  }, [activeMode, indexBase, yAxisTicks])
   const chartConfig = useMemo<ChartConfig>(() => {
     return Object.fromEntries(
       series.map((vaultSeries) => [vaultSeries.key, { label: vaultSeries.label, color: vaultSeries.color }])
@@ -673,29 +679,75 @@ export function PortfolioVaultGrowthChart({
     onModeChange?.(nextMode)
   }
 
+  const handleSortDirectionChange = (nextDirection: TPortfolioVaultGrowthChartSortDirection): void => {
+    if (!sortDirection) {
+      setUncontrolledSortDirection(nextDirection)
+    }
+    onSortDirectionChange?.(nextDirection)
+  }
+
   return (
     <section className={cl('flex flex-col gap-3', className)}>
-      {title || showModeToggle ? (
+      {title || showModeToggle || showSortToggle ? (
         <div className={'flex flex-col gap-2'}>
           <div className={'flex flex-col gap-2 md:flex-row md:items-center md:justify-between'}>
             {title ? <h3 className={'text-base font-semibold text-text-primary'}>{title}</h3> : null}
-            {showModeToggle ? (
-              <div className={cl('flex w-full items-center gap-0.5 md:w-auto md:gap-1', SELECTOR_BAR_STYLES.container)}>
-                {(['position', 'index'] as const).map((nextMode) => (
-                  <button
-                    key={nextMode}
-                    type={'button'}
-                    onClick={() => handleModeChange(nextMode)}
+            {showModeToggle || showSortToggle ? (
+              <div className={'flex w-full items-center gap-2 md:ml-auto md:w-auto'}>
+                {showModeToggle ? (
+                  <div
                     className={cl(
-                      'min-h-[36px] flex-1 rounded-sm px-3 py-2 text-xs font-semibold transition-all md:min-h-0 md:flex-initial md:py-1',
-                      'active:scale-[0.98]',
-                      SELECTOR_BAR_STYLES.buttonBase,
-                      activeMode === nextMode ? SELECTOR_BAR_STYLES.buttonActive : SELECTOR_BAR_STYLES.buttonInactive
+                      'flex flex-1 items-center gap-0.5 md:w-auto md:flex-initial md:gap-1',
+                      SELECTOR_BAR_STYLES.container
                     )}
                   >
-                    {nextMode === 'position' ? 'Position' : 'Index'}
-                  </button>
-                ))}
+                    {(['position', 'index'] as const).map((nextMode) => (
+                      <button
+                        key={nextMode}
+                        type={'button'}
+                        onClick={() => handleModeChange(nextMode)}
+                        className={cl(
+                          'min-h-[36px] flex-1 rounded-sm px-3 py-2 text-xs font-semibold transition-all md:min-h-0 md:flex-initial md:py-1',
+                          'active:scale-[0.98]',
+                          SELECTOR_BAR_STYLES.buttonBase,
+                          activeMode === nextMode
+                            ? SELECTOR_BAR_STYLES.buttonActive
+                            : SELECTOR_BAR_STYLES.buttonInactive
+                        )}
+                      >
+                        {nextMode === 'position' ? 'Position' : 'Index'}
+                      </button>
+                    ))}
+                  </div>
+                ) : null}
+                {showSortToggle ? (
+                  <label className={'relative min-w-[150px] flex-1 md:flex-initial'}>
+                    <span className={'sr-only'}>{'Vault ranking'}</span>
+                    <select
+                      value={activeSortDirection}
+                      onChange={(event) =>
+                        handleSortDirectionChange(event.target.value as TPortfolioVaultGrowthChartSortDirection)
+                      }
+                      className={cl(
+                        'h-10 w-full appearance-none rounded-lg border border-border bg-surface-secondary py-2 pr-8 pl-3 md:h-8 md:py-1',
+                        'text-xs font-semibold text-text-primary shadow-inner transition-colors',
+                        'hover:border-text-tertiary focus:border-primary focus:outline-none'
+                      )}
+                      aria-label={'Vault ranking'}
+                    >
+                      {getPortfolioVaultGrowthSortOptions(activeMode).map((option) => (
+                        <option key={option.id} value={option.id}>
+                          {option.label}
+                        </option>
+                      ))}
+                    </select>
+                    <IconChevron
+                      className={
+                        'pointer-events-none absolute top-1/2 right-2 size-4 -translate-y-1/2 text-text-secondary'
+                      }
+                    />
+                  </label>
+                ) : null}
               </div>
             ) : null}
           </div>
@@ -741,7 +793,12 @@ export function PortfolioVaultGrowthChart({
               <ChartTooltip
                 cursor={{ stroke: 'var(--chart-cursor-line)', strokeWidth: 1 }}
                 content={(props) => (
-                  <PortfolioVaultGrowthTooltip {...props} mode={activeMode} seriesLabels={seriesLabels} />
+                  <PortfolioVaultGrowthTooltip
+                    {...props}
+                    mode={activeMode}
+                    sortDirection={activeSortDirection}
+                    seriesLabels={seriesLabels}
+                  />
                 )}
               />
               {series.map((vaultSeries) => (
@@ -755,7 +812,6 @@ export function PortfolioVaultGrowthChart({
                   strokeOpacity={0.9}
                   dot={false}
                   activeDot={{ r: 4, strokeWidth: 0, fill: vaultSeries.color }}
-                  connectNulls
                   isAnimationActive={false}
                 />
               ))}

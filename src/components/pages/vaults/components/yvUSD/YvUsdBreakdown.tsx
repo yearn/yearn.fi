@@ -1,14 +1,9 @@
-import {
-  type TYvUsdPositionApyBreakdown,
-  YVUSD_DESCRIPTION,
-  YVUSD_LOCKED_COOLDOWN_DAYS,
-  YVUSD_WITHDRAW_WINDOW_DAYS
-} from '@pages/vaults/utils/yvUsd'
+import { type TYvUsdPositionApyBreakdown, YVUSD_LOCKED_COOLDOWN_DAYS } from '@pages/vaults/utils/yvUsd'
 import { RenderAmount } from '@shared/components/RenderAmount'
 import { IconInfinifiPoints } from '@shared/icons/IconInfinifiPoints'
 import { IconLock } from '@shared/icons/IconLock'
 import { IconLockOpen } from '@shared/icons/IconLockOpen'
-import { cl, formatAmount, formatApyDisplay, formatUSD } from '@shared/utils'
+import { cl, formatApyDisplay, formatUSD } from '@shared/utils'
 import type { ReactElement } from 'react'
 
 type TYvUsdTooltipProps = {
@@ -25,12 +20,14 @@ const YvUsdTooltipRow = ({
   label,
   value,
   symbol,
-  options
+  options,
+  iconGapClassName = 'gap-2'
 }: {
   icon: ReactElement
   label: string
   value: number
   symbol: 'percent' | 'USD'
+  iconGapClassName?: string
   options?: {
     maximumFractionDigits?: number
     minimumFractionDigits?: number
@@ -40,7 +37,7 @@ const YvUsdTooltipRow = ({
   const decimals = symbol === 'percent' ? 6 : 0
   return (
     <div className="flex items-center justify-between gap-4">
-      <span className="inline-flex items-center gap-2 text-text-secondary">
+      <span className={cl('inline-flex items-center text-text-secondary', iconGapClassName)}>
         {icon}
         {label}
       </span>
@@ -75,8 +72,19 @@ export function YvUsdApyTooltipContent({
           label="Unlocked APY"
           value={unlockedValue}
           symbol="percent"
+          iconGapClassName="gap-1"
           options={{ maximumFractionDigits: 2, minimumFractionDigits: 2 }}
         />
+        <div className="space-y-1 border-t border-border pt-2 text-text-secondary">
+          <p>
+            <span className="font-semibold text-text-primary">{'Locked:'}</span>{' '}
+            {`Shares require a ${YVUSD_LOCKED_COOLDOWN_DAYS}-day cooldown before withdrawal.`}
+          </p>
+          <p>
+            <span className="font-semibold text-text-primary">{'Unlocked:'}</span>{' '}
+            {'Shares can be withdrawn without a cooldown.'}
+          </p>
+        </div>
         {infinifiPointsNote ? (
           <div className="border-t border-border pt-2">
             <p className="flex items-start gap-2 text-text-secondary">
@@ -172,38 +180,6 @@ export function YvUsdTvlTooltipContent({
           options={{ shouldCompactValue: true, maximumFractionDigits: 2, minimumFractionDigits: 0 }}
         />
       </div>
-    </div>
-  )
-}
-
-export function YvUsdApyDetailsContent({
-  lockedValue,
-  unlockedValue,
-  infinifiPointsNote
-}: {
-  lockedValue: number
-  unlockedValue: number
-  infinifiPointsNote?: string
-}): ReactElement {
-  const upliftPercent = formatAmount(Math.max(0, (lockedValue - unlockedValue) * 100), 0, 2)
-
-  return (
-    <div className="space-y-4">
-      <p>{YVUSD_DESCRIPTION}</p>
-      <div className="rounded-lg border border-border bg-surface-secondary p-3">
-        <p className="text-xs font-semibold uppercase tracking-wide text-text-secondary">{'Current estimates'}</p>
-        <div className="mt-2">
-          <YvUsdApyTooltipContent
-            lockedValue={lockedValue}
-            unlockedValue={unlockedValue}
-            className="border-0 bg-transparent p-0"
-            infinifiPointsNote={infinifiPointsNote}
-          />
-        </div>
-      </div>
-      <p className="text-xs text-text-secondary">
-        {`Locked deposits currently show about ${upliftPercent}% APY uplift and require a ${YVUSD_LOCKED_COOLDOWN_DAYS}-day cooldown. Withdrawals are open for ${YVUSD_WITHDRAW_WINDOW_DAYS} days once the cooldown ends.`}
-      </p>
     </div>
   )
 }

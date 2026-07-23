@@ -83,9 +83,9 @@ function ExpandableInfoItem({
       }}
     >
       <summary
-        className={cl(
-          'w-full cursor-pointer list-none rounded-lg text-left transition-colors py-2 hover:bg-surface-secondary/80 [&::-webkit-details-marker]:hidden'
-        )}
+        className={
+          '-ml-2 w-[calc(100%+0.5rem)] cursor-pointer list-none rounded-lg px-2 py-2 text-left transition-colors hover:bg-surface-secondary/80 [&::-webkit-details-marker]:hidden'
+        }
       >
         <InlineHeading
           label={label}
@@ -222,7 +222,14 @@ export function VaultAboutSection({
   const vaultKindDescription = shouldShowKind ? getKindDescription(kindType, kindLabel) : null
   const managementFee = formatPercent((apr.fees.management || 0) * 100, 0, 2)
   const performanceFee = formatPercent((apr.fees.performance || 0) * 100, 0, 2)
-  const feesSummary = `${managementFee} Management Fee | ${performanceFee} Performance Fee`
+  const feesSummary = (
+    <>
+      <strong className={'font-bold'}>{managementFee}</strong>
+      {' Management Fee | '}
+      <strong className={'font-bold'}>{performanceFee}</strong>
+      {' Performance Fee'}
+    </>
+  )
   const chainIcon = <TokenLogo src={chainLogoSrc} tokenSymbol={chainName} width={16} height={16} />
   const explorerBase = getNetwork(chainID).defaultBlockExplorer
   const explorerHref = explorerBase ? `${explorerBase}/address/${vaultAddress}` : ''

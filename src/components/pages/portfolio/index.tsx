@@ -96,7 +96,10 @@ import {
   PortfolioHistoryChartControls,
   resolvePortfolioGrowthDisplayMode
 } from './components/PortfolioHistoryChart'
-import type { TPortfolioVaultGrowthChartMode } from './components/PortfolioVaultGrowthChart'
+import type {
+  TPortfolioVaultGrowthChartMode,
+  TPortfolioVaultGrowthChartSortDirection
+} from './components/PortfolioVaultGrowthChart'
 import {
   getReceiptValidatedLocalActivityNotifications,
   useLocalActivityReceiptStatuses
@@ -640,7 +643,7 @@ function ActivityTypeDropdown({
                     <span
                       className={cl(
                         'inline-flex size-4 items-center justify-center rounded-full border bg-surface',
-                        selected ? 'border-primary text-primary' : 'border-border text-transparent'
+                        selected ? 'border-transparent text-primary' : 'border-border text-transparent'
                       )}
                     >
                       <IconCheck className="size-3" />
@@ -724,7 +727,7 @@ function ActivityCalendarMonth({
           </span>
         ))}
       </div>
-      <div className="mt-1 grid grid-cols-7 gap-y-1">
+      <div className="mt-1 grid grid-cols-7 justify-items-center gap-1">
         {emptyCalendarDays.map((emptyDay) => (
           <span key={emptyDay} className="size-8" />
         ))}
@@ -3039,6 +3042,8 @@ function PortfolioPage(): ReactElement {
     null
   )
   const [historyVaultGrowthMode, setHistoryVaultGrowthMode] = useState<TPortfolioVaultGrowthChartMode>('position')
+  const [historyVaultGrowthSortDirection, setHistoryVaultGrowthSortDirection] =
+    useState<TPortfolioVaultGrowthChartSortDirection>('desc')
   const searchParams = useSearchParams()
   const pathname = usePathname() || '/portfolio'
   const router = useRouter()
@@ -3108,6 +3113,8 @@ function PortfolioPage(): ReactElement {
       onGrowthDisplayModeOverrideChange={setHistoryGrowthDisplayModeOverride}
       vaultGrowthMode={historyVaultGrowthMode}
       onVaultGrowthModeChange={setHistoryVaultGrowthMode}
+      vaultGrowthSortDirection={historyVaultGrowthSortDirection}
+      onVaultGrowthSortDirectionChange={setHistoryVaultGrowthSortDirection}
       balanceIsLoading={model.isHoldingsLoading || historyLoading}
       balanceIsEmpty={historyEmpty}
       balanceError={historyError}

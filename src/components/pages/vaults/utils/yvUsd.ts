@@ -30,6 +30,15 @@ export const YVUSD_DESCRIPTION =
 export type TYvUsdVariant = 'locked' | 'unlocked'
 export type TYvUsdLockedWithdrawDisplayMode = 'underlying' | 'shares'
 
+type TYvUsdPointsMetrics = {
+  unlocked: { hasInfinifiPoints: boolean }
+  locked: { hasInfinifiPoints: boolean }
+}
+
+export function hasYvUsdInfinifiPoints(metrics?: TYvUsdPointsMetrics): boolean {
+  return Boolean(metrics?.unlocked.hasInfinifiPoints || metrics?.locked.hasInfinifiPoints)
+}
+
 export function getYvUsdInfinifiPointsNote(variant?: TYvUsdVariant): string {
   if (!variant) {
     return 'This vault earns Infinifi points through the sIUSD looper strategy.'

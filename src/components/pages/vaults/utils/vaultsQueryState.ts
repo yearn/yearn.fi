@@ -32,7 +32,7 @@ export type TVaultsQueryDefaults = {
 type TNormalizedSortDirection = 'asc' | 'desc'
 
 export const DEFAULT_VAULT_QUERY_TYPES = ['multi', 'single']
-export const DEFAULT_VAULT_QUERY_SORT_BY: TPossibleSortBy = 'tvl'
+export const DEFAULT_VAULT_QUERY_SORT_BY: TPossibleSortBy = 'none'
 export const DEFAULT_VAULT_QUERY_DEFAULTS: TVaultsQueryDefaults = {
   defaultTypes: DEFAULT_VAULT_QUERY_TYPES,
   defaultCategories: [],
@@ -149,6 +149,16 @@ export function parseSortDirection(raw: string | null): TNormalizedSortDirection
   return raw === 'asc' || raw === 'desc' ? raw : DEFAULT_SORT_DIRECTION
 }
 
+export function sanitizeInactiveSortParams(params: URLSearchParams): URLSearchParams {
+  const nextParams = new URLSearchParams(params)
+  const sortBy = nextParams.get('sortBy')
+  if (!sortBy || sortBy === 'none') {
+    nextParams.delete('sortBy')
+    nextParams.delete('sortDirection')
+  }
+  return nextParams
+}
+
 export function areQuerySnapshotsEqual(left: TVaultsQuerySnapshot, right: TVaultsQuerySnapshot): boolean {
   return (
     left.vaultType === right.vaultType &&
@@ -196,11 +206,13 @@ export function buildSnapshotFromParams(
   defaults: TVaultsQueryDefaults = DEFAULT_VAULT_QUERY_DEFAULTS
 ): TVaultsQuerySnapshot {
   const vaultType = normalizeVaultTypeParam(params.get('type'))
+  const rawSortBy = params.get('sortBy')
   const rawTypes = parseStringList(params.get('types'))
   const hasTypesParam = params.has('types')
   const normalizedTypes = normalizeV3Types(rawTypes)
   const showLegacyParam = params.get('showLegacy')
   const showLegacyFromParam = showLegacyParam !== null ? readBooleanParam(params, 'showLegacy') : false
+  const sortBy = rawSortBy && rawSortBy !== 'none' ? (rawSortBy as TPossibleSortBy) : defaults.defaultSortBy
 
   return {
     vaultType,
@@ -214,8 +226,8 @@ export function buildSnapshotFromParams(
     showLegacyVaults: showLegacyParam !== null ? showLegacyFromParam : rawTypes.includes('legacy'),
     showHiddenVaults: false,
     showStrategies: readBooleanParam(params, 'showStrategies'),
-    sortBy: (params.get('sortBy') as TPossibleSortBy) || defaults.defaultSortBy,
-    sortDirection: parseSortDirection(params.get('sortDirection'))
+    sortBy,
+    sortDirection: sortBy === 'none' ? DEFAULT_SORT_DIRECTION : parseSortDirection(params.get('sortDirection'))
   }
 }
 
@@ -275,11 +287,11 @@ export function buildUrlParamsFromSnapshot(
     params.set('showStrategies', '1')
   }
 
-  if (snap.sortBy !== defaults.defaultSortBy) {
+  if (snap.sortBy !== 'none') {
     params.set('sortBy', snap.sortBy)
   }
 
-  if (normalizedSortDirection !== DEFAULT_SORT_DIRECTION) {
+  if (snap.sortBy !== 'none' && normalizedSortDirection !== DEFAULT_SORT_DIRECTION) {
     params.set('sortDirection', normalizedSortDirection)
   }
 

@@ -14,6 +14,11 @@ type TVaultIdentifier = {
   vaultAddress: string
 }
 
+type TFetchVaultMetadata = (
+  vaults: TVaultIdentifier[],
+  options: { skipSnapshotFallback: boolean }
+) => Promise<Map<string, VaultMetadata>>
+
 const DEFAULT_MAX_NESTED_VAULT_DEPTH = 4
 
 function priceMapKey(chainId: number, tokenAddress: string): string {
@@ -84,7 +89,8 @@ export function getAssetVaultMetadataLookupIdentifiers(vaultMetadata: Map<string
 
 export async function resolveNestedVaultAssetMetadata(
   vaultMetadata: Map<string, VaultMetadata>,
-  maxDepth = DEFAULT_MAX_NESTED_VAULT_DEPTH
+  maxDepth = DEFAULT_MAX_NESTED_VAULT_DEPTH,
+  fetchVaultMetadata?: TFetchVaultMetadata
 ): Promise<Map<string, VaultMetadata>> {
   if (maxDepth <= 0) {
     return vaultMetadata
@@ -98,17 +104,27 @@ export async function resolveNestedVaultAssetMetadata(
     return vaultMetadata
   }
 
-  const { fetchMultipleVaultsMetadata } = await import('./vaults')
-  const assetVaultMetadata = await fetchMultipleVaultsMetadata(missingAssetVaultIdentifiers, {
+  const {
+    fetchMultipleVaultsMetadata: defaultFetchVaultMetadata,
+    getVaultMetadataFetchFailedVaults,
+    markVaultMetadataFetchFailures
+  } = await import('./vaults')
+  const assetVaultMetadata = await (fetchVaultMetadata ?? defaultFetchVaultMetadata)(missingAssetVaultIdentifiers, {
     skipSnapshotFallback: true
   })
+  const failedVaults =
+    getVaultMetadataFetchFailedVaults(vaultMetadata) + getVaultMetadataFetchFailedVaults(assetVaultMetadata)
   const newEntries = Array.from(assetVaultMetadata.entries()).filter(([key]) => !vaultMetadata.has(key))
 
   if (newEntries.length === 0) {
-    return vaultMetadata
+    return markVaultMetadataFetchFailures(vaultMetadata, failedVaults)
   }
 
-  return resolveNestedVaultAssetMetadata(new Map([...vaultMetadata, ...newEntries]), maxDepth - 1)
+  return resolveNestedVaultAssetMetadata(
+    markVaultMetadataFetchFailures(new Map([...vaultMetadata, ...newEntries]), failedVaults),
+    maxDepth - 1,
+    fetchVaultMetadata ?? defaultFetchVaultMetadata
+  )
 }
 
 function getNestedVaultPpsIdentifiersForRequest(

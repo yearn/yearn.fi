@@ -1,16 +1,14 @@
-import { APYDetailsModal } from '@pages/vaults/components/table/APYDetailsModal'
 import type { TVaultForwardAPYHandle } from '@pages/vaults/components/table/VaultForwardAPY'
 import { VaultForwardAPY } from '@pages/vaults/components/table/VaultForwardAPY'
-import { YvUsdApyDetailsContent } from '@pages/vaults/components/yvUSD/YvUsdBreakdown'
 import { getVaultAPR, getVaultToken, getVaultTVL, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { useVaultApyData } from '@pages/vaults/hooks/useVaultApyData'
-import { getYvUsdInfinifiPointsNote, type TYvUsdVariant } from '@pages/vaults/utils/yvUsd'
+import type { TYvUsdVariant } from '@pages/vaults/utils/yvUsd'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { IconInfinifiPoints } from '@shared/icons/IconInfinifiPoints'
 import { IconLock } from '@shared/icons/IconLock'
 import { IconLockOpen } from '@shared/icons/IconLockOpen'
 import { cl, formatApyDisplay, toNormalizedBN } from '@shared/utils'
-import type { KeyboardEvent, MouseEvent, ReactElement, ReactNode } from 'react'
+import type { KeyboardEvent, ReactElement, ReactNode } from 'react'
 import { useRef, useState } from 'react'
 
 interface StatCardProps {
@@ -210,8 +208,7 @@ export function YvUsdApyStatBox({
   activeVariant,
   onVariantChange,
   lockedHasInfinifiPoints = false,
-  unlockedHasInfinifiPoints = false,
-  title = 'yvUSD APY'
+  unlockedHasInfinifiPoints = false
 }: {
   lockedApy: number
   unlockedApy: number
@@ -219,10 +216,8 @@ export function YvUsdApyStatBox({
   onVariantChange?: (variant: TYvUsdVariant) => void
   lockedHasInfinifiPoints?: boolean
   unlockedHasInfinifiPoints?: boolean
-  title?: string
 }): ReactElement {
   const [internalVariant, setInternalVariant] = useState<TYvUsdVariant>('locked')
-  const [isModalOpen, setIsModalOpen] = useState(false)
   const isControlledVariant = activeVariant !== undefined
   const apyVariant = isControlledVariant ? activeVariant : internalVariant
   const isLockedVariant = apyVariant === 'locked'
@@ -230,11 +225,8 @@ export function YvUsdApyStatBox({
   const selectedLabel = isLockedVariant ? 'Locked' : 'Unlocked'
   const toggleLabel = isLockedVariant ? 'Switch to unlocked APY display' : 'Switch to locked APY display'
   const hasInfinifiPoints = lockedHasInfinifiPoints || unlockedHasInfinifiPoints
-  const infinifiPointsNote = hasInfinifiPoints ? getYvUsdInfinifiPointsNote() : undefined
 
-  const handleToggle = (event: MouseEvent<HTMLButtonElement>): void => {
-    event.preventDefault()
-    event.stopPropagation()
+  const handleToggle = (): void => {
     const nextVariant = apyVariant === 'locked' ? 'unlocked' : 'locked'
     if (isControlledVariant) {
       onVariantChange?.(nextVariant)
@@ -243,60 +235,34 @@ export function YvUsdApyStatBox({
     setInternalVariant(nextVariant)
   }
 
-  const handleCardKeyDown = (event: KeyboardEvent<HTMLDivElement>): void => {
-    if (event.target !== event.currentTarget) {
-      return
-    }
-    if (event.key !== 'Enter' && event.key !== ' ') {
-      return
-    }
-    event.preventDefault()
-    setIsModalOpen(true)
-  }
-
   return (
-    <>
-      {/* biome-ignore lint/a11y/useSemanticElements: this card opens a modal while containing a nested variant toggle button */}
-      <div
-        className={
-          'flex min-w-0 flex-1 cursor-pointer flex-col rounded-lg border border-border bg-surface-secondary px-2 py-1.5 min-[375px]:px-3 min-[375px]:py-2'
-        }
-        role={'button'}
-        tabIndex={0}
-        aria-label={`Open ${title} details`}
-        onClick={() => setIsModalOpen(true)}
-        onKeyDown={handleCardKeyDown}
-      >
-        <p className={'text-[10px] min-[375px]:text-xs text-text-secondary truncate'}>{'Est. APY'}</p>
-        <div className={'mt-0.5 flex w-full items-center gap-2'}>
-          <div className={'flex min-w-0 flex-col'}>
-            <span
-              className={'inline-flex items-center gap-1.5 text-xs min-[375px]:text-sm font-semibold text-text-primary'}
-            >
-              {hasInfinifiPoints ? (
-                <IconInfinifiPoints className={'size-3.5 shrink-0'} aria-label={'Infinifi points'} />
-              ) : null}
-              {formatApyDisplay(selectedApy)}
-            </span>
-            <span className={'text-[10px] min-[375px]:text-xs text-text-secondary'}>{selectedLabel}</span>
-          </div>
-          <button
-            type={'button'}
-            onClick={handleToggle}
-            aria-label={toggleLabel}
-            className={'ml-auto inline-flex size-5 items-center justify-center rounded-sm text-text-secondary'}
+    <div
+      className={
+        'flex min-w-0 flex-1 flex-col rounded-lg border border-border bg-surface-secondary px-2 py-1.5 min-[375px]:px-3 min-[375px]:py-2'
+      }
+    >
+      <p className={'text-[10px] min-[375px]:text-xs text-text-secondary truncate'}>{'Est. APY'}</p>
+      <div className={'mt-0.5 flex w-full items-center gap-2'}>
+        <div className={'flex min-w-0 flex-col'}>
+          <span
+            className={'inline-flex items-center gap-1.5 text-xs min-[375px]:text-sm font-semibold text-text-primary'}
           >
-            {isLockedVariant ? <IconLock className={'size-3.5'} /> : <IconLockOpen className={'h-3.5 w-4'} />}
-          </button>
+            {hasInfinifiPoints ? (
+              <IconInfinifiPoints className={'size-3.5 shrink-0'} aria-label={'Infinifi points'} />
+            ) : null}
+            {formatApyDisplay(selectedApy)}
+          </span>
+          <span className={'text-[10px] min-[375px]:text-xs text-text-secondary'}>{selectedLabel}</span>
         </div>
+        <button
+          type={'button'}
+          onClick={handleToggle}
+          aria-label={toggleLabel}
+          className={'ml-auto inline-flex size-5 items-center justify-center rounded-sm text-text-secondary'}
+        >
+          {isLockedVariant ? <IconLock className={'size-3.5'} /> : <IconLockOpen className={'h-3.5 w-4'} />}
+        </button>
       </div>
-      <APYDetailsModal isOpen={isModalOpen} onClose={() => setIsModalOpen(false)} title={title}>
-        <YvUsdApyDetailsContent
-          lockedValue={lockedApy}
-          unlockedValue={unlockedApy}
-          infinifiPointsNote={infinifiPointsNote}
-        />
-      </APYDetailsModal>
-    </>
+    </div>
   )
 }

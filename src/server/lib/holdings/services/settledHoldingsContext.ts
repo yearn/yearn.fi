@@ -18,7 +18,7 @@ import {
 import { buildAddressScopedRawPnlEvents } from './pnlEvents'
 import { lowerCaseAddress, toVaultKey } from './pnlShared'
 import type { TRawPnlEvent } from './pnlTypes'
-import { fetchMultipleVaultsMetadata } from './vaults'
+import { fetchMultipleVaultsMetadata, getVaultMetadataFetchFailedVaults } from './vaults'
 
 type TVaultIdentifier = {
   chainId: number
@@ -42,6 +42,7 @@ export interface TSettledAddressScopedContext {
   rawEvents: TRawPnlEvent[]
   rawVaultIdentifiers: TVaultIdentifier[]
   vaultMetadata: Map<string, VaultMetadata>
+  metadataFetchFailedVaults: number
 }
 
 export interface TSettledVersionedSelection {
@@ -211,6 +212,7 @@ export async function getSettledAddressScopedContext(args: {
     const baseVaultMetadata =
       rawVaultIdentifiers.length > 0 ? await fetchMultipleVaultsMetadata(rawVaultIdentifiers) : new Map()
     const vaultMetadata = await resolveNestedVaultAssetMetadata(baseVaultMetadata)
+    const metadataFetchFailedVaults = getVaultMetadataFetchFailedVaults(vaultMetadata)
 
     return {
       address: lowerCaseAddress(args.userAddress),
@@ -221,7 +223,8 @@ export async function getSettledAddressScopedContext(args: {
       hasActivity: timeline.length > 0,
       rawEvents,
       rawVaultIdentifiers,
-      vaultMetadata
+      vaultMetadata,
+      metadataFetchFailedVaults
     }
   })().finally(() => {
     inFlightSettledAddressScopedContexts.delete(key)

@@ -480,7 +480,7 @@ async function fetchUserCounts(userAddress: string, maxTimestamp?: number): Prom
   } catch (error) {
     debugError(
       'graphql',
-      'aggregate user event counts fetch failed, falling back to sequential event pagination',
+      'aggregate user event counts fetch failed, falling back to count-free bulk event pagination',
       error,
       {
         address: addressLower,
@@ -915,6 +915,53 @@ function getSequentialAddressEventFetches(addressLower: string, maxTimestamp?: n
   ]
 }
 
+async function fetchSingleQueryPage<T>(
+  query: string,
+  variableKey: string,
+  address: string,
+  resultKey: string,
+  offset: number,
+  maxTimestamp?: number
+): Promise<T[]> {
+  const ts = maxTimestamp ?? DEFAULT_MAX_TIMESTAMP
+  const startedAt = Date.now()
+  const variables: Record<string, unknown> = {
+    [variableKey]: address,
+    limit: SINGLE_QUERY_LIMIT,
+    offset,
+    maxTimestamp: ts
+  }
+
+  try {
+    const data = await executeQuery<Record<string, T[]>>(query, variables)
+    const results = data[resultKey] || []
+
+    debugLog('graphql', 'fetched single-query event page', {
+      resultKey,
+      variableKey,
+      address,
+      count: results.length,
+      durationMs: Date.now() - startedAt,
+      maxTimestamp: ts,
+      limit: SINGLE_QUERY_LIMIT,
+      offset,
+      hasMore: results.length === SINGLE_QUERY_LIMIT
+    })
+
+    return results
+  } catch (error) {
+    debugError('graphql', 'single-query event page fetch failed', error, {
+      resultKey,
+      variableKey,
+      address,
+      maxTimestamp: ts,
+      limit: SINGLE_QUERY_LIMIT,
+      offset
+    })
+    throw error
+  }
+}
+
 async function fetchAllSingleQuery<T>(
   query: string,
   variableKey: string,
@@ -924,16 +971,19 @@ async function fetchAllSingleQuery<T>(
 ): Promise<T[]> {
   const ts = maxTimestamp ?? DEFAULT_MAX_TIMESTAMP
   const startedAt = Date.now()
-  const variables: Record<string, unknown> = {
-    [variableKey]: address,
-    limit: SINGLE_QUERY_LIMIT,
-    offset: 0,
-    maxTimestamp: ts
+  const fetchFromOffset = async (offset: number): Promise<T[]> => {
+    const page = await fetchSingleQueryPage<T>(query, variableKey, address, resultKey, offset, maxTimestamp)
+
+    if (page.length < SINGLE_QUERY_LIMIT) {
+      return page
+    }
+
+    const remaining = await fetchFromOffset(offset + SINGLE_QUERY_LIMIT)
+    return [...page, ...remaining]
   }
 
   try {
-    const data = await executeQuery<Record<string, T[]>>(query, variables)
-    const results = data[resultKey] || []
+    const results = await fetchFromOffset(0)
 
     debugLog('graphql', 'fetched single-query event set', {
       resultKey,
@@ -943,7 +993,7 @@ async function fetchAllSingleQuery<T>(
       durationMs: Date.now() - startedAt,
       maxTimestamp: ts,
       limit: SINGLE_QUERY_LIMIT,
-      possibleTruncation: results.length === SINGLE_QUERY_LIMIT
+      pages: Math.ceil((results.length + 1) / SINGLE_QUERY_LIMIT)
     })
 
     return results
@@ -957,6 +1007,17 @@ async function fetchAllSingleQuery<T>(
     })
     throw error
   }
+}
+
+function getSingleQueryAddressEventFetches(addressLower: string, maxTimestamp?: number): AddressEventFetches {
+  return [
+    fetchAllSingleQuery<DepositEvent>(DEPOSITS_QUERY, 'owner', addressLower, 'Deposit', maxTimestamp),
+    fetchAllSingleQuery<WithdrawEvent>(WITHDRAWALS_QUERY, 'owner', addressLower, 'Withdraw', maxTimestamp),
+    fetchAllSingleQuery<V2DepositEvent>(V2_DEPOSITS_QUERY, 'recipient', addressLower, 'V2Deposit', maxTimestamp),
+    fetchAllSingleQuery<V2WithdrawEvent>(V2_WITHDRAWALS_QUERY, 'recipient', addressLower, 'V2Withdraw', maxTimestamp),
+    fetchAllSingleQuery<TransferEvent>(TRANSFERS_IN_QUERY, 'receiver', addressLower, 'Transfer', maxTimestamp),
+    fetchAllSingleQuery<TransferEvent>(TRANSFERS_OUT_QUERY, 'sender', addressLower, 'Transfer', maxTimestamp)
+  ]
 }
 
 async function fetchRecentLimited<T>(
@@ -1072,14 +1133,7 @@ async function fetchAddressScopedEventsUncached(
   paginationMode: HoldingsEventPaginationMode
 ): Promise<AddressEventResults> {
   if (paginationMode === 'all') {
-    return Promise.all([
-      fetchAllSingleQuery<DepositEvent>(DEPOSITS_QUERY, 'owner', addressLower, 'Deposit', maxTimestamp),
-      fetchAllSingleQuery<WithdrawEvent>(WITHDRAWALS_QUERY, 'owner', addressLower, 'Withdraw', maxTimestamp),
-      fetchAllSingleQuery<V2DepositEvent>(V2_DEPOSITS_QUERY, 'recipient', addressLower, 'V2Deposit', maxTimestamp),
-      fetchAllSingleQuery<V2WithdrawEvent>(V2_WITHDRAWALS_QUERY, 'recipient', addressLower, 'V2Withdraw', maxTimestamp),
-      fetchAllSingleQuery<TransferEvent>(TRANSFERS_IN_QUERY, 'receiver', addressLower, 'Transfer', maxTimestamp),
-      fetchAllSingleQuery<TransferEvent>(TRANSFERS_OUT_QUERY, 'sender', addressLower, 'Transfer', maxTimestamp)
-    ]) as Promise<AddressEventResults>
+    return Promise.all(getSingleQueryAddressEventFetches(addressLower, maxTimestamp)) as Promise<AddressEventResults>
   }
 
   if (fetchType === 'seq') {
@@ -1089,7 +1143,7 @@ async function fetchAddressScopedEventsUncached(
   const counts = await fetchUserCounts(addressLower, maxTimestamp)
   const fetches =
     counts === null
-      ? getSequentialAddressEventFetches(addressLower, maxTimestamp)
+      ? getSingleQueryAddressEventFetches(addressLower, maxTimestamp)
       : getParallelAddressEventFetches(addressLower, counts, maxTimestamp)
 
   return Promise.all(fetches) as Promise<AddressEventResults>

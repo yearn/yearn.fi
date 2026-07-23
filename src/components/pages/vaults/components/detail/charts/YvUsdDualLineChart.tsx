@@ -133,6 +133,9 @@ export function YvUsdDualLineChart({
               return [formatValue(numericValue), getSeriesLabel(name)]
             }}
             labelFormatter={formatChartTooltipDate}
+            itemSorter={(item) => (item.dataKey === 'locked' ? 0 : 1)}
+            labelStyle={{ marginBottom: 8 }}
+            itemStyle={{ color: 'var(--color-unlocked)', paddingTop: 0, paddingBottom: 2 }}
             contentStyle={{
               backgroundColor: 'var(--chart-tooltip-bg)',
               borderRadius: 'var(--chart-tooltip-radius)',
