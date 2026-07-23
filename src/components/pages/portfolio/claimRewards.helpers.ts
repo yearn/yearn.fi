@@ -17,6 +17,10 @@ function merkleRewardsEqual(a: TGroupedMerkleReward[], b: TGroupedMerkleReward[]
   })
 }
 
+export function hasClaimableRewardNotification(totalUsd: number): boolean {
+  return Number.isFinite(totalUsd) && totalUsd > 1
+}
+
 export function mergeChainMerkleData(
   prev: TChainMerkleData,
   chainId: number,
