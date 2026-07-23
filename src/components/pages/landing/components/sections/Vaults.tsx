@@ -35,17 +35,17 @@ const slides: TVault[] = [
     image: '/landing/safe.png',
     size: 250,
     tagline: 'Growing every day',
-    title: 'Compounding Vaults',
+    title: 'Compounding vaults',
     description: 'Vaults utilize DeFi opportunities to give you the best risk-adjusted yields',
-    cta: { label: 'View All', href: 'https://yearn.fi/v3' }
+    cta: { label: 'View all', href: 'https://yearn.fi/v3' }
   },
   {
     background: '/landing/vault-background-y.png',
     image: '/landing/apps.png',
     size: 300,
     tagline: 'Growing every day',
-    title: 'App Ecosystem',
-    description: 'Apps built on Yearn vaults by contributors and the wider community'
+    title: 'App ecosystem',
+    description: 'Apps built on Yearn Vaults by contributors and the wider community'
   }
 ]
 
@@ -85,8 +85,8 @@ const appRows: TRow[] = [
   },
   {
     icon: '/landing/apps/factory.png',
-    text: 'LP Token Vaults',
-    description: 'Permissionless Curve Autocompounders',
+    text: 'LP token vaults',
+    description: 'Permissionless Curve autocompounders',
     href: 'https://yearn.fi/vaults?type=lp'
   },
   {

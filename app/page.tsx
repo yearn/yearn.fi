@@ -1,8 +1,7 @@
 import { JsonLd } from '@shared/components/JsonLd'
-import { HydrationBoundary } from '@tanstack/react-query'
 import type { ReactElement } from 'react'
 import PublicApp from '@/PublicApp'
-import { getLandingPageDehydratedState } from '@/server/ssr/publicDataHydration'
+import { getLifetimeEarningsHeadlineOrNull } from '@/server/earnings/headline'
 import { landingMetadata, yearnOrganizationJsonLd } from './metadata'
 import HomePageClient from './page-client'
 
@@ -51,17 +50,25 @@ const faqJsonLd = {
     },
     {
       '@type': 'Question',
-      name: 'Are there Developer Docs?',
+      name: 'Are there developer docs?',
       acceptedAnswer: {
         '@type': 'Answer',
         text: 'Yes. Yearn has documentation for developers building on top of the protocol at https://docs.yearn.fi.'
+      }
+    },
+    {
+      '@type': 'Question',
+      name: 'What are Yearn Lifetime Earnings?',
+      acceptedAnswer: {
+        '@type': 'Answer',
+        text: 'Lifetime Earnings measures the cumulative gross profit and loss reported by Yearn vault strategies in USD. Learn how it is calculated at https://docs.yearn.fi/developers/data-services/yearn-data/metrics/lifetime-earnings.'
       }
     }
   ]
 }
 
 export default async function Page(): Promise<ReactElement> {
-  const dehydratedState = await getLandingPageDehydratedState()
+  const earningsHeadline = await getLifetimeEarningsHeadlineOrNull()
 
   return (
     <>
@@ -69,9 +76,7 @@ export default async function Page(): Promise<ReactElement> {
       <JsonLd schema={websiteJsonLd} />
       <JsonLd schema={faqJsonLd} />
       <PublicApp>
-        <HydrationBoundary state={dehydratedState}>
-          <HomePageClient />
-        </HydrationBoundary>
+        <HomePageClient earningsHeadline={earningsHeadline} />
       </PublicApp>
     </>
   )

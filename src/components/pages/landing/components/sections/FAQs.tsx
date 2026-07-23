@@ -68,7 +68,7 @@ const faqData = [
     )
   },
   {
-    title: 'Are there Developer Docs?',
+    title: 'Are there developer docs?',
     content: (
       <p>
         {'Yes! Yearn has extensive documentation for developers looking to build on top of our protocol. Visit our'}{' '}
@@ -76,6 +76,22 @@ const faqData = [
           {'docs'}
         </a>{' '}
         {'to learn more.'}
+      </p>
+    )
+  },
+  {
+    title: 'What are Yearn Lifetime Earnings?',
+    content: (
+      <p>
+        {'Lifetime Earnings measures the cumulative gross profit and loss reported by Yearn vault strategies in USD. '}
+        <a
+          href={'https://docs.yearn.fi/developers/data-services/yearn-data/metrics/lifetime-earnings'}
+          target={'_blank'}
+          rel={'noopener noreferrer'}
+          className={'text-blue-400 underline'}
+        >
+          {'Learn how it is calculated.'}
+        </a>
       </p>
     )
   }

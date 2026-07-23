@@ -1,7 +1,8 @@
+import type { TLifetimeEarningsHeadline } from '@shared/utils/schemas/lifetimeEarningsSchema'
 import type { ReactElement } from 'react'
 import { FAQs, Footer, Hero, Integrations, Partners, Security, Vaults } from './components/sections'
 
-function Index(): ReactElement {
+function Index({ earningsHeadline }: { earningsHeadline: TLifetimeEarningsHeadline | null }): ReactElement {
   return (
     <div
       data-theme={'midnight'}
@@ -11,7 +12,7 @@ function Index(): ReactElement {
     >
       <main className={'flex w-full flex-col items-center'}>
         <div className={'flex w-full flex-col items-center'}>
-          <Hero />
+          <Hero earningsHeadline={earningsHeadline} />
           <Vaults />
           <Security />
           <Partners />
