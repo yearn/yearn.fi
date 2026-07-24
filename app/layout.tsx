@@ -4,6 +4,7 @@ import Script from 'next/script'
 import type { ReactNode } from 'react'
 import { Suspense } from 'react'
 import '../style.css'
+import '@yearn/vault-widget/styles.css'
 
 const aeonik = localFont({
   src: [

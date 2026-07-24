@@ -1,0 +1,70 @@
+{
+  "name": "@yearn/vault-widget",
+  "version": "0.1.0",
+  "description": "Reusable styled and headless Yearn vault transaction widget",
+  "license": "MIT",
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/yearn/yearn.fi.git",
+    "directory": "packages/vault-widget"
+  },
+  "private": false,
+  "type": "module",
+  "sideEffects": [
+    "./dist/styles.css"
+  ],
+  "files": [
+    "dist",
+    "README.md",
+    "PARITY.md"
+  ],
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    },
+    "./headless": {
+      "types": "./dist/headless/index.d.ts",
+      "import": "./dist/headless/index.js"
+    },
+    "./services": {
+      "types": "./dist/services/index.d.ts",
+      "import": "./dist/services/index.js"
+    },
+    "./server": {
+      "types": "./dist/server/index.d.ts",
+      "import": "./dist/server/index.js"
+    },
+    "./styles.css": "./dist/styles.css"
+  },
+  "scripts": {
+    "build": "tsc -p tsconfig.build.json && cp src/styles.css dist/styles.css",
+    "clean": "rm -rf dist",
+    "prepack": "bun run build",
+    "test": "vitest run",
+    "tslint": "tsc -p tsconfig.json --noEmit"
+  },
+  "publishConfig": {
+    "access": "restricted",
+    "provenance": true,
+    "registry": "https://registry.npmjs.org"
+  },
+  "peerDependencies": {
+    "@tanstack/react-query": "^5.90.0",
+    "react": "^19.0.0",
+    "react-dom": "^19.0.0",
+    "viem": "^2.46.0",
+    "wagmi": "^2.18.0"
+  },
+  "devDependencies": {
+    "@tanstack/react-query": "5.90.21",
+    "@types/react": "19.2.15",
+    "@types/react-dom": "19.2.3",
+    "react": "19.2.6",
+    "react-dom": "19.2.6",
+    "typescript": "5.9.3",
+    "viem": "2.46.1",
+    "vitest": "4.1.8",
+    "wagmi": "2.18.2"
+  }
+}

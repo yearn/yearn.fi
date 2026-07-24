@@ -21,6 +21,7 @@ const securityHeaders = [
 ]
 
 const nextConfig: NextConfig = {
+  allowedDevOrigins: ['dev-vm.tail197cc7.ts.net'],
   reactStrictMode: true,
   poweredByHeader: false,
   turbopack: {

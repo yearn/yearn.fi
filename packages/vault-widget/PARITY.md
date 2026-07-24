@@ -1,0 +1,33 @@
+# Vault widget parity gate
+
+The package must not replace the complete yearn.fi widget surface or be
+published as the production dependency until every row below is complete.
+
+| Area | Status | Evidence |
+| --- | --- | --- |
+| Direct ERC-4626 deposit/withdraw | Complete | `headless/adapters.ts`, package tests |
+| yBOLD direct zap in/out | Complete | `presets/yBold.ts`, yearn-bold build |
+| Enso same-chain yBOLD routes | Complete | trusted-route validation and package tests |
+| Allowance reset and approval planning | Complete | `transactionPlan.test.ts` |
+| Legacy yearn.fi settings and activity storage | Complete | `storage.test.ts` |
+| Package artifact isolation | Complete | npm pack dry run and import scan |
+| Direct Yearn V2 deposit/withdraw | Pending | Adapter and characterization fixtures required |
+| Stake, unstake, and combined routes | Pending | Controller plans and Safe batches required |
+| Generic same-chain and cross-chain Enso | Pending | Completion polling and route matrix required |
+| Safe proposal and delayed execution | Pending | Safe execution service required |
+| yvUSD locked/unlocked and cooldown | Pending | Product preset and controller required |
+| yvBTC locked/unlocked | Pending | Product preset and controller required |
+| Permit and approval migration | Pending | Migration controller and UI required |
+| Merkle and staking rewards | Pending | Reward services, plans, and UI required |
+| Full styled My Info/settings/activity parity | Pending | Component parity and accessibility suite required |
+| Tenderly transaction-family QA | Pending | Requires full route matrix and funded VNet |
+
+Current rollout state:
+
+- yearn.fi remains on the complete legacy widget. `/dev/vault-widget` is the
+  development-only side-by-side harness.
+- yearn-bold keeps its legacy card by default. Setting
+  `NEXT_PUBLIC_VAULT_WIDGET_ENABLED=true` switches its entire card to the
+  package for parity testing.
+- The npm publish workflow requires the protected `npm` environment and an
+  authorized `NPM_TOKEN`; package ownership has not been verified locally.
