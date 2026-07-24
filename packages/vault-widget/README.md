@@ -87,12 +87,20 @@ cooldown plans. Headless consumers can use `readVaultWidgetCooldownState`,
 `createStartCooldownTransaction`, and `createCancelCooldownTransaction`
 directly.
 
-Migration and reward transaction builders are available from the headless
-entry point. `createMigrationQuote` preserves the legacy migrator registry,
-V2/V3 router selectors, veCRV zap arguments, and V3 EIP-2612 multicalls.
+Vaults whose Kong metadata exposes a migration target or reward sources gain
+styled migration and rewards workflows automatically. Migration resolves the
+destination vault, uses EIP-2612 when the source supports it, and falls back to
+an approval plan. Reward discovery combines allowlisted Merkl claims with
+source-aware staking reads, then persists each claim through the same activity
+and transaction state machine as deposits and withdrawals.
+
+The corresponding builders remain available from the headless entry point.
+`createMigrationQuote` preserves the legacy migrator registry, V2/V3 router
+selectors, veCRV zap arguments, and V3 EIP-2612 multicalls.
 `createMerkleClaimQuote` and `createStakingClaimQuote` produce claim quotes
 that can be passed to `buildTransactionPlan` with the `migrate` or `rewards`
-mode, including Safe batching and chain switching.
+mode, including Safe batching and chain switching. Hosts may override reward
+discovery by supplying a `rewards` service through `VaultWidgetProvider`.
 
 ## Development
 

@@ -5,6 +5,8 @@ export {
   createWagmiExecutionService,
   createWagmiSafeExecutionService
 } from './execution'
+export type { CreateHttpRewardDiscoveryServiceOptions, VaultWidgetDiscoveredReward } from './rewards'
+export { createHttpRewardDiscoveryService } from './rewards'
 export {
   createBrowserSettingsStore,
   createMemoryActivityStore,
@@ -16,6 +18,7 @@ export type {
   VaultWidgetConfigResolver,
   VaultWidgetExecutionContext,
   VaultWidgetExecutionService,
+  VaultWidgetRewardDiscoveryService,
   VaultWidgetSafeProposalContext,
   VaultWidgetServices,
   VaultWidgetSettings,

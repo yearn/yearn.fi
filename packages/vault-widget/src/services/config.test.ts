@@ -96,6 +96,7 @@ describe('createKongVaultConfigResolver', () => {
     const vaultToken = config.withdrawTokens[1]
 
     expect(config.positionSources?.map(({ id }) => id)).toEqual(['vault', 'staked'])
+    expect(stakedSource?.withdrawLabel).toBe('You will unstake and redeem')
     expect(config.depositTokens.map(({ address }) => address)).toEqual([assetAddress, vaultAddress])
     expect(config.adapters.map(({ id }) => id)).toEqual(['erc4626', 'staking-veyfi', 'unstake-and-withdraw'])
     expect(
@@ -128,6 +129,64 @@ describe('createKongVaultConfigResolver', () => {
           selectedToken: asset!
         })
     ).toBe(true)
+  })
+
+  it('preserves migration and staking reward metadata for built-in workflow panels', async () => {
+    const targetVault = '0x4444444444444444444444444444444444444444'
+    const migrator = '0x5555555555555555555555555555555555555555'
+    const rewardToken = '0x6666666666666666666666666666666666666666'
+    const fetcher = vi.fn(async () =>
+      Response.json({
+        address: vaultAddress,
+        apiVersion: '3.0.4',
+        asset: {
+          address: assetAddress,
+          decimals: 6,
+          name: 'USD Coin',
+          symbol: 'USDC'
+        },
+        chainId: 1,
+        decimals: 18,
+        meta: {
+          migration: {
+            available: true,
+            contract: migrator,
+            target: targetVault
+          }
+        },
+        name: 'Yearn USDC',
+        staking: {
+          address: stakingAddress,
+          available: true,
+          rewards: [
+            {
+              address: rewardToken,
+              decimals: 18,
+              name: 'Discount YFI',
+              price: 2,
+              symbol: 'dYFI'
+            }
+          ],
+          source: 'VeYFI'
+        },
+        symbol: 'yvUSDC'
+      })
+    )
+
+    const config = await createKongVaultConfigResolver({ fetcher }).resolve(1, vaultAddress)
+
+    expect(config.modes).toEqual(['migrate', 'withdraw', 'rewards', 'info'])
+    expect(config.defaultMode).toBe('migrate')
+    expect(config.migration).toEqual({
+      migratorAddress: migrator,
+      sourceVersion: '3.0.4',
+      targetVault
+    })
+    expect(config.rewards).toMatchObject({
+      stakingAddress,
+      stakingSource: 'VeYFI',
+      tokens: [{ address: rewardToken, decimals: 18, priceUsd: 2, symbol: 'dYFI' }]
+    })
   })
 
   it('resolves the package-owned yBOLD preset without a metadata request', async () => {

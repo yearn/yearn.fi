@@ -31,13 +31,48 @@ type KongVault = {
   staking?: {
     address?: Address | null
     available?: boolean | null
+    rewards?:
+      | readonly {
+          address: Address
+          decimals?: number | string | null
+          isFinished?: boolean | null
+          name?: string | null
+          price?: number | null
+          symbol: string
+        }[]
+      | null
     source?: string | null
+  } | null
+  migration?: {
+    address?: Address | null
+    available?: boolean | null
+    contract?: Address | null
+    target?: Address | null
+  } | null
+  isRetired?: boolean | null
+  meta?: {
+    isRetired?: boolean | null
+    migration?: {
+      address?: Address | null
+      available?: boolean | null
+      contract?: Address | null
+      target?: Address | null
+    } | null
   } | null
 }
 
 type KongConfigResolverOptions = {
   baseUrl?: string
   fetcher?: typeof fetch
+}
+
+const MERKLE_TOKEN_ALLOWLIST_BY_CHAIN: Partial<Record<number, readonly Address[]>> = {
+  747474: [
+    '0x6E9C1F88a960fE63387eb4b71BC525a9313d8461',
+    '0x3ba1fbC4c3aEA775d335b31fb53778f46FD3a330',
+    '0x7F1f4b4b29f5058fA32CC7a97141b8D7e5ABDC2d',
+    '0x0161A31702d6CF715aaa912d64c6A190FD0093aa'
+  ]
 }
 
 function isKongVault(value: unknown): value is KongVault {
@@ -63,6 +98,10 @@ function tokenLogo(chainId: number, address: Address): string {
 function normalizeDecimals(value: number | string | null | undefined): number {
   const decimals = typeof value === 'string' && /^\d+$/.test(value) ? Number(value) : value
   return typeof decimals === 'number' && Number.isInteger(decimals) && decimals >= 0 && decimals <= 255 ? decimals : 18
+}
+
+function getMigration(vault: KongVault): KongVault['migration'] {
+  return vault.migration ?? vault.meta?.migration
 }
 
 function createConfig(vault: KongVault): VaultWidgetConfig {
@@ -91,6 +130,50 @@ function createConfig(vault: KongVault): VaultWidgetConfig {
       ? vault.staking.address
       : undefined
   const positionSourceId = stakingAddress ? 'vault' : undefined
+  const migration = getMigration(vault)
+  const migrationTarget = migration?.target ?? migration?.address
+  const migrationConfig =
+    migration?.available &&
+    migrationTarget &&
+    migration.contract &&
+    isAddress(migrationTarget) &&
+    isAddress(migration.contract)
+      ? {
+          migratorAddress: migration.contract,
+          sourceVersion: vault.apiVersion ?? undefined,
+          targetVault: migrationTarget
+        }
+      : undefined
+  const rewardTokens =
+    vault.staking?.rewards
+      ?.filter(({ address }) => isAddress(address))
+      .map((reward): VaultWidgetToken & { isFinished?: boolean } => ({
+        address: reward.address,
+        chainId: vault.chainId,
+        decimals: normalizeDecimals(reward.decimals),
+        isFinished: reward.isFinished ?? undefined,
+        logoURI: tokenLogo(vault.chainId, reward.address),
+        name: reward.name ?? undefined,
+        priceUsd: reward.price ?? undefined,
+        symbol: reward.symbol
+      })) ?? []
+  const merkleTokenAllowlist = MERKLE_TOKEN_ALLOWLIST_BY_CHAIN[vault.chainId]
+  const rewardsConfig =
+    rewardTokens.length > 0 || merkleTokenAllowlist
+      ? {
+          merkleTokenAllowlist,
+          stakingAddress,
+          stakingSource: vault.staking?.source ?? undefined,
+          tokens: rewardTokens
+        }
+      : undefined
+  const isRetired = vault.isRetired === true || vault.meta?.isRetired === true
+  const modes = [
+    ...(migrationConfig ? (['migrate'] as const) : isRetired ? [] : (['deposit'] as const)),
+    'withdraw',
+    ...(rewardsConfig ? (['rewards'] as const) : []),
+    'info'
+  ] as const
   const adapter = isYearnV2
     ? createYearnV2Adapter({ asset, positionSourceId, positionToken, vaultAddress: vault.address })
     : createErc4626Adapter({ asset, positionSourceId, vaultAddress: vault.address })
@@ -137,6 +220,7 @@ function createConfig(vault: KongVault): VaultWidgetConfig {
           id: 'staked',
           label: 'Staked shares',
           token: stakingToken,
+          withdrawLabel: 'You will unstake and redeem',
           readValue: async (publicClient, balance) =>
             readPositionValue(publicClient, await readStakingValue(publicClient, balance))
         }
@@ -154,8 +238,11 @@ function createConfig(vault: KongVault): VaultWidgetConfig {
           vaultToken: positionToken
         })
       ],
-      modes: ['deposit', 'withdraw', 'info'],
+      modes,
+      defaultMode: migrationConfig ? 'migrate' : isRetired ? 'withdraw' : undefined,
+      migration: migrationConfig,
       readPositionValue,
+      rewards: rewardsConfig,
       display: {
         approvalSpenderName: { deposit: positionToken.symbol },
         positionLabel: 'Vault shares'
@@ -172,8 +259,11 @@ function createConfig(vault: KongVault): VaultWidgetConfig {
     depositTokens: [asset],
     withdrawTokens: [asset],
     adapters: [adapter],
-    modes: ['deposit', 'withdraw', 'info'],
+    modes,
+    defaultMode: migrationConfig ? 'migrate' : isRetired ? 'withdraw' : undefined,
+    migration: migrationConfig,
     readPositionValue,
+    rewards: rewardsConfig,
     display: {
       approvalSpenderName: { deposit: positionToken.symbol },
       positionLabel: 'Vault shares'

@@ -1,4 +1,13 @@
-import { type Address, encodeFunctionData, formatUnits, type Hex, isAddressEqual } from 'viem'
+import {
+  type Address,
+  encodeFunctionData,
+  formatUnits,
+  type Hex,
+  hexToNumber,
+  isAddressEqual,
+  type PublicClient,
+  slice
+} from 'viem'
 import type { VaultWidgetQuote, VaultWidgetToken } from '../types'
 
 export const YEARN_4626_ROUTER_ADDRESS = '0x1112dbCF805682e828606f74AB717abf4b4FD8DE' as Address
@@ -108,6 +117,163 @@ function isV3(version?: string): boolean {
   return version?.startsWith('3') === true || version?.startsWith('~3') === true
 }
 
+export function supportsMigrationPermit(params: { migratorAddress: Address; sourceVersion?: string }): boolean {
+  const usesKnownMigrator = YEARN_VAULT_MIGRATOR_ADDRESSES.some((address) =>
+    isAddressEqual(address, params.migratorAddress)
+  )
+  return (
+    isV3(params.sourceVersion) && !usesKnownMigrator && !isAddressEqual(params.migratorAddress, YEARN_VECRV_ZAP_ADDRESS)
+  )
+}
+
+const PERMIT_METADATA_ABI = [
+  {
+    inputs: [],
+    name: 'DOMAIN_SEPARATOR',
+    outputs: [{ name: '', type: 'bytes32' }],
+    stateMutability: 'view',
+    type: 'function'
+  },
+  {
+    inputs: [],
+    name: 'PERMIT_TYPEHASH',
+    outputs: [{ name: '', type: 'bytes32' }],
+    stateMutability: 'view',
+    type: 'function'
+  },
+  {
+    inputs: [{ name: 'owner', type: 'address' }],
+    name: 'nonces',
+    outputs: [{ name: '', type: 'uint256' }],
+    stateMutability: 'view',
+    type: 'function'
+  },
+  {
+    inputs: [],
+    name: 'name',
+    outputs: [{ name: '', type: 'string' }],
+    stateMutability: 'view',
+    type: 'function'
+  },
+  {
+    inputs: [],
+    name: 'version',
+    outputs: [{ name: '', type: 'string' }],
+    stateMutability: 'view',
+    type: 'function'
+  },
+  {
+    inputs: [],
+    name: 'apiVersion',
+    outputs: [{ name: '', type: 'string' }],
+    stateMutability: 'view',
+    type: 'function'
+  }
+] as const
+
+const EIP2612_PERMIT_TYPEHASH = '0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9'
+
+export async function detectMigrationPermitSupport(
+  publicClient: PublicClient,
+  tokenAddress: Address
+): Promise<boolean> {
+  try {
+    await publicClient.readContract({
+      address: tokenAddress,
+      abi: PERMIT_METADATA_ABI,
+      functionName: 'DOMAIN_SEPARATOR'
+    })
+    try {
+      const typehash = await publicClient.readContract({
+        address: tokenAddress,
+        abi: PERMIT_METADATA_ABI,
+        functionName: 'PERMIT_TYPEHASH'
+      })
+      return typehash === EIP2612_PERMIT_TYPEHASH
+    } catch {
+      return true
+    }
+  } catch {
+    return false
+  }
+}
+
+export async function readMigrationPermitTypedData(params: {
+  account: Address
+  chainId: number
+  deadline: bigint
+  publicClient: PublicClient
+  spender: Address
+  tokenAddress: Address
+  value: bigint
+}): Promise<{
+  domain: { chainId: number; name: string; verifyingContract: Address; version: string }
+  message: { deadline: bigint; nonce: bigint; owner: Address; spender: Address; value: bigint }
+  primaryType: 'Permit'
+  types: { Permit: readonly { name: string; type: string }[] }
+}> {
+  const [nonceResult, versionResult, apiVersionResult] = await Promise.allSettled([
+    params.publicClient.readContract({
+      address: params.tokenAddress,
+      abi: PERMIT_METADATA_ABI,
+      functionName: 'nonces',
+      args: [params.account]
+    }),
+    params.publicClient.readContract({
+      address: params.tokenAddress,
+      abi: PERMIT_METADATA_ABI,
+      functionName: 'version'
+    }),
+    params.publicClient.readContract({
+      address: params.tokenAddress,
+      abi: PERMIT_METADATA_ABI,
+      functionName: 'apiVersion'
+    })
+  ])
+  const nonce = nonceResult.status === 'fulfilled' ? nonceResult.value : 0n
+  const version =
+    apiVersionResult.status === 'fulfilled' && apiVersionResult.value
+      ? apiVersionResult.value
+      : versionResult.status === 'fulfilled' && versionResult.value
+        ? versionResult.value
+        : '1'
+
+  return {
+    domain: {
+      chainId: params.chainId,
+      name: 'Yearn Vault',
+      verifyingContract: params.tokenAddress,
+      version
+    },
+    message: {
+      deadline: params.deadline,
+      nonce,
+      owner: params.account,
+      spender: params.spender,
+      value: params.value
+    },
+    primaryType: 'Permit',
+    types: {
+      Permit: [
+        { name: 'owner', type: 'address' },
+        { name: 'spender', type: 'address' },
+        { name: 'value', type: 'uint256' },
+        { name: 'nonce', type: 'uint256' },
+        { name: 'deadline', type: 'uint256' }
+      ]
+    }
+  }
+}
+
+export function splitMigrationPermitSignature(signature: Hex, deadline: bigint): VaultWidgetPermitSignature {
+  return {
+    deadline,
+    r: slice(signature, 0, 32),
+    s: slice(signature, 32, 64),
+    v: hexToNumber(slice(signature, 64, 65))
+  }
+}
+
 export function createMigrationQuote(params: CreateMigrationQuoteParams): VaultWidgetQuote {
   if (params.shares <= 0n) throw new Error('Migration shares must be greater than zero')
   const knownVaultMigrator = YEARN_VAULT_MIGRATOR_ADDRESSES.find((address) =>
@@ -133,7 +299,7 @@ export function createMigrationQuote(params: CreateMigrationQuoteParams): VaultW
           functionName,
           args: [params.fromToken.address, params.toVault, params.shares, 0n]
         })
-  const supportsPermit = !knownVaultMigrator && !usesVeCrvZap && isV3(params.sourceVersion)
+  const supportsPermit = supportsMigrationPermit(params)
   const usesPermit = supportsPermit && !!params.permit
   const transactionData =
     usesPermit && params.permit

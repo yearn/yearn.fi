@@ -4,6 +4,7 @@ import { createContext, type ReactElement, type ReactNode, useContext, useMemo }
 import {
   createBrowserSettingsStore,
   createHttpEnsoBridgeStatusProvider,
+  createHttpRewardDiscoveryService,
   createKongVaultConfigResolver,
   createMemoryActivityStore,
   createWagmiSafeExecutionService,
@@ -15,6 +16,7 @@ const defaultServices: VaultWidgetServices = {
   configResolver: createKongVaultConfigResolver(),
   ensoBridge: createHttpEnsoBridgeStatusProvider(),
   execution: createWagmiSafeExecutionService(),
+  rewards: createHttpRewardDiscoveryService(),
   settings: createBrowserSettingsStore()
 }
 
@@ -34,6 +36,7 @@ export function VaultWidgetProvider({ children, services }: VaultWidgetProviderP
       enso: services?.enso ?? parent.enso,
       ensoBridge: services?.ensoBridge ?? parent.ensoBridge,
       execution: services?.execution ?? parent.execution,
+      rewards: services?.rewards ?? parent.rewards,
       settings: services?.settings ?? parent.settings
     }),
     [parent, services]

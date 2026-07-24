@@ -41,6 +41,12 @@ const VAULT_FIXTURES = [
     vaultAddress: '0x27B5739e22ad9033bcBf192059122d163b60349D' as Address
   },
   {
+    id: 'v2-migration',
+    label: 'V2 · USDC migration',
+    chainId: 1,
+    vaultAddress: '0xa354F35829Ae975e850e23e9615b11Da1B3dC4DE' as Address
+  },
+  {
     id: 'v3-staking',
     label: 'V3 · USDC + staking',
     chainId: 1,
@@ -70,7 +76,7 @@ function synchronizeLegacyWidget(
 ): void {
   const document = iframe?.contentDocument
   if (!document) return
-  const modeLabel = mode === 'info' ? 'my info' : mode
+  const modeLabel = mode === 'info' ? 'my info' : mode === 'rewards' ? 'view rewards' : mode
 
   const candidates = Array.from(document.querySelectorAll<HTMLElement>('button, [role="tab"]')).filter(
     (element) => getButtonLabel(element) === modeLabel && isVisible(element)
@@ -231,6 +237,25 @@ export function VaultWidgetParityPage(): ReactElement {
     []
   )
   const vaultFixture = VAULT_FIXTURES.find((fixture) => fixture.id === vaultId) ?? VAULT_FIXTURES[0]
+  const availableModes: readonly { label: string; value: VaultWidgetMode }[] =
+    vaultId === 'v2-migration'
+      ? [
+          { label: 'Migrate', value: 'migrate' },
+          { label: 'Withdraw', value: 'withdraw' },
+          { label: 'My Info', value: 'info' }
+        ]
+      : vaultId === 'v3-staking'
+        ? [
+            { label: 'Deposit', value: 'deposit' },
+            { label: 'Withdraw', value: 'withdraw' },
+            { label: 'Rewards', value: 'rewards' },
+            { label: 'My Info', value: 'info' }
+          ]
+        : [
+            { label: 'Deposit', value: 'deposit' },
+            { label: 'Withdraw', value: 'withdraw' },
+            { label: 'My Info', value: 'info' }
+          ]
   const legacyVaultPath = `/vaults/${vaultFixture.chainId}/${vaultFixture.vaultAddress}`
   const comparisonWidth = viewport === 'desktop' ? DESKTOP_WIDGET_CROP.width : MOBILE_VIEWPORT.width
 
@@ -269,7 +294,7 @@ export function VaultWidgetParityPage(): ReactElement {
               value={vaultId}
               onChange={(nextVaultId) => {
                 setVaultId(nextVaultId)
-                setMode('deposit')
+                setMode(nextVaultId === 'v2-migration' ? 'migrate' : 'deposit')
                 if (nextVaultId === 'yvusd') setVariant('locked')
               }}
             />
@@ -287,18 +312,7 @@ export function VaultWidgetParityPage(): ReactElement {
             />
             <SegmentedControl
               label="Widget state"
-              options={
-                viewport === 'desktop'
-                  ? [
-                      { label: 'Deposit', value: 'deposit' },
-                      { label: 'Withdraw', value: 'withdraw' },
-                      { label: 'My Info', value: 'info' }
-                    ]
-                  : [
-                      { label: 'Deposit', value: 'deposit' },
-                      { label: 'Withdraw', value: 'withdraw' }
-                    ]
-              }
+              options={viewport === 'desktop' ? availableModes : availableModes.filter(({ value }) => value !== 'info')}
               value={mode}
               onChange={setMode}
             />

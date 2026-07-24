@@ -23,6 +23,7 @@ import type {
 } from '../types'
 import { executeVaultWidgetPlan } from './executeTransactionPlan'
 import {
+  getAvailableVaultWidgetModes,
   getDefaultPositionSource,
   getPositionSources,
   readPositionSourceState,
@@ -74,6 +75,7 @@ type VaultWidgetController = {
   setSettings: (settings: VaultWidgetSettings) => void
   submit: () => Promise<void>
   reset: () => void
+  refresh: () => Promise<void>
 }
 
 function getDefaultToken(config: VaultWidgetConfig, mode: VaultWidgetMode): VaultWidgetToken {
@@ -118,64 +120,14 @@ export function useVaultWidgetController({
   const wagmiConfig = useConfig()
   const services = useVaultWidgetServices()
   const { address: account, chainId: connectedChainId, connector } = useAccount()
-  const modes = config.modes ?? ['deposit', 'withdraw']
-  const initialMode = defaultMode ?? config.defaultMode ?? modes[0] ?? 'deposit'
+  const configuredModes = config.modes ?? ['deposit', 'withdraw']
+  const initialMode = defaultMode ?? config.defaultMode ?? configuredModes[0] ?? 'deposit'
   const [internalMode, setInternalMode] = useState<VaultWidgetMode>(initialMode)
-  const mode = controlledMode ?? internalMode
-  const transactionMode = mode === 'withdraw' ? 'withdraw' : 'deposit'
   const positionSources = useMemo(() => getPositionSources(config), [config])
   const defaultPositionSource = getDefaultPositionSource(positionSources, config.defaultPositionSource)
   const [selectedPositionSourceId, setSelectedPositionSourceId] = useState(defaultPositionSource.id)
   const selectedPositionSource =
     positionSources.find(({ id }) => id === selectedPositionSourceId) ?? defaultPositionSource
-  const availableTokens =
-    transactionMode === 'withdraw'
-      ? config.withdrawTokens.filter((token) =>
-          config.adapters.some((candidate) =>
-            candidate.supports({
-              chainId: selectedPositionSource.token.chainId,
-              mode: transactionMode,
-              positionSource: selectedPositionSource,
-              selectedToken: token
-            })
-          )
-        )
-      : config.depositTokens
-  const [selectedTokenAddress, setSelectedTokenAddress] = useState<Address>(
-    getDefaultToken(config, initialMode).address
-  )
-  const selectedToken =
-    availableTokens.find((token) => isAddressEqual(token.address, selectedTokenAddress)) ??
-    availableTokens[0] ??
-    getDefaultToken(config, mode)
-  const [amount, setAmountValue] = useState('')
-  const [execution, setExecution] = useState<VaultWidgetExecutionState>({ status: 'idle' })
-  const [settings, setSettingsState] = useState<VaultWidgetSettings>(() => services.settings.read())
-  const parsedAmount = parseAmount(amount, selectedToken.decimals)
-
-  // Settings are an external browser store, so a subscription is the appropriate synchronization boundary.
-  useEffect(() => services.settings.subscribe?.(() => setSettingsState(services.settings.read())), [services.settings])
-
-  const balanceClient = usePublicClient({ chainId: selectedToken.chainId })
-  const quoteChainId = transactionMode === 'deposit' ? selectedToken.chainId : selectedPositionSource.token.chainId
-  const quoteClient = usePublicClient({ chainId: quoteChainId })
-
-  const balanceQuery = useQuery({
-    queryKey: ['vault-widget', config.id, 'balance', account, selectedToken.chainId, selectedToken.address],
-    queryFn: async (): Promise<bigint> => {
-      if (!account || !balanceClient) return 0n
-      if (selectedToken.isNative) return balanceClient.getBalance({ address: account })
-      return balanceClient.readContract({
-        address: selectedToken.address,
-        abi: erc20Abi,
-        functionName: 'balanceOf',
-        args: [account]
-      })
-    },
-    enabled: !!account && !!balanceClient,
-    refetchInterval: 15_000
-  })
-
   const positionSourcesQuery = useQuery({
     queryKey: [
       'vault-widget',
@@ -212,6 +164,60 @@ export function useVaultWidgetController({
       balance: 0n,
       value: 0n
     }
+  const migrationBalance =
+    positionSourceStates.find(({ token }) => isAddressEqual(token.address, config.positionToken.address))?.balance ?? 0n
+  const modes = getAvailableVaultWidgetModes(configuredModes, migrationBalance)
+  const requestedMode = controlledMode ?? internalMode
+  const mode = modes.includes(requestedMode) ? requestedMode : (modes[0] ?? 'withdraw')
+  const transactionMode = mode === 'withdraw' ? 'withdraw' : 'deposit'
+  const availableTokens =
+    transactionMode === 'withdraw'
+      ? config.withdrawTokens.filter((token) =>
+          config.adapters.some((candidate) =>
+            candidate.supports({
+              chainId: selectedPositionSource.token.chainId,
+              mode: transactionMode,
+              positionSource: selectedPositionSource,
+              selectedToken: token
+            })
+          )
+        )
+      : config.depositTokens
+  const [selectedTokenAddress, setSelectedTokenAddress] = useState<Address>(getDefaultToken(config, mode).address)
+  const selectedToken =
+    availableTokens.find((token) => isAddressEqual(token.address, selectedTokenAddress)) ??
+    availableTokens[0] ??
+    getDefaultToken(config, mode)
+  const [amount, setAmountValue] = useState('')
+  const [execution, setExecution] = useState<VaultWidgetExecutionState>({ status: 'idle' })
+  const [settings, setSettingsState] = useState<VaultWidgetSettings>(() => services.settings.read())
+  const parsedAmount = parseAmount(amount, selectedToken.decimals)
+
+  // Settings are an external browser store, so a subscription is the appropriate synchronization boundary.
+  useEffect(() => services.settings.subscribe?.(() => setSettingsState(services.settings.read())), [services.settings])
+  useEffect(() => {
+    if (controlledMode !== undefined && controlledMode !== mode) onModeChange?.(mode)
+  }, [controlledMode, mode, onModeChange])
+
+  const balanceClient = usePublicClient({ chainId: selectedToken.chainId })
+  const quoteChainId = transactionMode === 'deposit' ? selectedToken.chainId : selectedPositionSource.token.chainId
+  const quoteClient = usePublicClient({ chainId: quoteChainId })
+
+  const balanceQuery = useQuery({
+    queryKey: ['vault-widget', config.id, 'balance', account, selectedToken.chainId, selectedToken.address],
+    queryFn: async (): Promise<bigint> => {
+      if (!account || !balanceClient) return 0n
+      if (selectedToken.isNative) return balanceClient.getBalance({ address: account })
+      return balanceClient.readContract({
+        address: selectedToken.address,
+        abi: erc20Abi,
+        functionName: 'balanceOf',
+        args: [account]
+      })
+    },
+    enabled: !!account && !!balanceClient,
+    refetchInterval: 15_000
+  })
 
   const adapter = config.adapters.find((candidate) =>
     candidate.supports({
@@ -543,6 +549,7 @@ export function useVaultWidgetController({
     setSelectedToken,
     setSettings,
     submit,
-    reset
+    reset,
+    refresh
   }
 }

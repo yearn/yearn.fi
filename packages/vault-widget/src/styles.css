@@ -991,6 +991,122 @@
   margin-top: 1rem;
 }
 
+.yv-widget__workflow {
+  display: grid;
+  gap: 1.25rem;
+  border: 1px solid var(--yv-widget-border);
+  border-radius: var(--yv-widget-radius);
+  background: var(--yv-widget-surface);
+  padding: 1.5rem;
+}
+
+.yv-widget__workflow--empty {
+  min-height: 14rem;
+  align-content: center;
+  text-align: center;
+}
+
+.yv-widget__workflow--empty p {
+  margin: 0;
+  color: var(--yv-widget-text-secondary);
+  font-size: 0.875rem;
+}
+
+.yv-widget__workflow-balance,
+.yv-widget__workflow-destination {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.yv-widget__workflow-balance > span,
+.yv-widget__workflow-destination > span {
+  color: var(--yv-widget-text-secondary);
+  font-size: 0.75rem;
+}
+
+.yv-widget__workflow-balance strong {
+  font-size: 1.25rem;
+  font-weight: 600;
+}
+
+.yv-widget__workflow-balance small,
+.yv-widget__workflow-destination small {
+  color: var(--yv-widget-text-secondary);
+  font-size: 0.75rem;
+}
+
+.yv-widget__workflow-destination > div {
+  align-items: center;
+  display: flex;
+  gap: 0.75rem;
+  border-radius: var(--yv-widget-radius);
+  background: var(--yv-widget-surface-secondary);
+  padding: 0.75rem;
+}
+
+.yv-widget__workflow-destination > div > span:last-child {
+  display: grid;
+  gap: 0.125rem;
+}
+
+.yv-widget__reward-list {
+  display: grid;
+  gap: 0;
+  margin: 0;
+  padding: 0;
+  list-style: none;
+}
+
+.yv-widget__reward-row {
+  display: grid;
+  grid-template-columns: 2rem minmax(0, 1fr) auto auto;
+  align-items: center;
+  gap: 0.75rem;
+  border-top: 1px solid var(--yv-widget-border);
+  padding: 0.875rem 0;
+}
+
+.yv-widget__reward-row > span {
+  display: grid;
+  gap: 0.125rem;
+}
+
+.yv-widget__reward-row > span:nth-of-type(2) {
+  text-align: right;
+}
+
+.yv-widget__reward-row strong {
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.yv-widget__reward-row small {
+  color: var(--yv-widget-text-secondary);
+  font-size: 0.6875rem;
+}
+
+.yv-widget__reward-row > button {
+  min-height: 2rem;
+  border: 1px solid var(--yv-widget-border);
+  border-radius: calc(var(--yv-widget-radius) * 0.75);
+  background: var(--yv-widget-surface);
+  color: var(--yv-widget-text);
+  cursor: pointer;
+  font: inherit;
+  font-size: 0.75rem;
+  font-weight: 600;
+  padding: 0.375rem 0.75rem;
+}
+
+.yv-widget__reward-row > button:disabled {
+  cursor: not-allowed;
+  opacity: 0.45;
+}
+
+.yv-widget__reward-row > .yv-widget__notice {
+  grid-column: 1 / -1;
+}
+
 .yv-widget__wallet-header {
   display: flex;
   min-height: 3.75rem;

@@ -1,4 +1,4 @@
-import type { Address, Hash, Hex } from 'viem'
+import type { Address, Hash, Hex, PublicClient } from 'viem'
 import type { Config } from 'wagmi'
 import type {
   EnsoBridgeStatusProvider,
@@ -9,6 +9,7 @@ import type {
   VaultWidgetTransactionRequest,
   VaultWidgetWalletType
 } from '../types'
+import type { VaultWidgetDiscoveredReward } from './rewards'
 
 export type VaultWidgetSettings = {
   autoStake: boolean
@@ -32,6 +33,15 @@ export type VaultWidgetActivityStore = {
 
 export type VaultWidgetConfigResolver = {
   resolve: (chainId: number, vaultAddress: Address, signal?: AbortSignal) => Promise<VaultWidgetConfig>
+}
+
+export type VaultWidgetRewardDiscoveryService = {
+  discover: (params: {
+    account: Address
+    config: VaultWidgetConfig
+    publicClient: PublicClient
+    signal?: AbortSignal
+  }) => Promise<readonly VaultWidgetDiscoveredReward[]>
 }
 
 export type VaultWidgetExecutionContext = {
@@ -66,5 +76,6 @@ export type VaultWidgetServices = {
   enso?: EnsoQuoteProvider
   ensoBridge?: EnsoBridgeStatusProvider
   execution: VaultWidgetExecutionService
+  rewards: VaultWidgetRewardDiscoveryService
   settings: VaultWidgetSettingsStore
 }

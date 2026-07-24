@@ -1,5 +1,17 @@
 import { erc20Abi, type PublicClient } from 'viem'
-import type { VaultWidgetConfig, VaultWidgetPositionSource, VaultWidgetPositionSourceState } from '../types'
+import type {
+  VaultWidgetConfig,
+  VaultWidgetMode,
+  VaultWidgetPositionSource,
+  VaultWidgetPositionSourceState
+} from '../types'
+
+export function getAvailableVaultWidgetModes(
+  configuredModes: readonly VaultWidgetMode[],
+  migrationBalance: bigint
+): readonly VaultWidgetMode[] {
+  return configuredModes.filter((mode) => mode !== 'migrate' || migrationBalance > 0n)
+}
 
 export function getPositionSources(config: VaultWidgetConfig): readonly VaultWidgetPositionSource[] {
   if (config.positionSources?.length) return config.positionSources

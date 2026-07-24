@@ -29,12 +29,17 @@ export {
 export type { CreateMigrationQuoteParams, VaultWidgetPermitSignature } from './migration'
 export {
   createMigrationQuote,
+  detectMigrationPermitSupport,
   MIGRATION_ROUTER_ABI,
+  readMigrationPermitTypedData,
+  splitMigrationPermitSignature,
+  supportsMigrationPermit,
   YEARN_4626_ROUTER_ADDRESS,
   YEARN_VAULT_MIGRATOR_ADDRESSES,
   YEARN_VECRV_ZAP_ADDRESS
 } from './migration'
 export {
+  getAvailableVaultWidgetModes,
   getDefaultPositionSource,
   getPositionSources,
   readPositionSourceState,
@@ -69,4 +74,10 @@ export {
 } from './staking'
 export { getTokenReferenceKey, getTokenSelectorChainIds, getTokenSelectorTokens } from './tokenSelector'
 export { buildTransactionPlan } from './transactionPlan'
+export type {
+  UseVaultWidgetActionControllerParams,
+  VaultWidgetActionActivity,
+  VaultWidgetActionController
+} from './useVaultWidgetActionController'
+export { useVaultWidgetActionController } from './useVaultWidgetActionController'
 export { useVaultWidgetController } from './useVaultWidgetController'

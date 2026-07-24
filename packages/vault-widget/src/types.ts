@@ -22,6 +22,7 @@ export type VaultWidgetPositionSource = {
   id: string
   label: string
   token: VaultWidgetToken
+  withdrawLabel?: string
   readValue?: (publicClient: PublicClient, balance: bigint) => Promise<bigint>
 }
 
@@ -127,6 +128,8 @@ export type VaultWidgetConfig = {
   defaultMaxLossBps?: number
   tokenSelector?: VaultWidgetTokenSelectorConfig
   readPositionValue?: (publicClient: PublicClient, shares: bigint) => Promise<bigint>
+  migration?: VaultWidgetMigrationConfig
+  rewards?: VaultWidgetRewardsConfig
   solvers?: readonly string[]
   copy?: Partial<VaultWidgetCopy>
   display?: {
@@ -136,6 +139,24 @@ export type VaultWidgetConfig = {
     modeLabels?: Partial<Record<VaultWidgetMode, string>>
     positionLabel?: string
   }
+}
+
+export type VaultWidgetMigrationConfig = {
+  migratorAddress: Address
+  sourceVersion?: string
+  targetToken?: VaultWidgetToken
+  targetVault: Address
+}
+
+export type VaultWidgetRewardToken = VaultWidgetToken & {
+  isFinished?: boolean
+}
+
+export type VaultWidgetRewardsConfig = {
+  merkleTokenAllowlist?: readonly Address[]
+  stakingAddress?: Address
+  stakingSource?: string
+  tokens: readonly VaultWidgetRewardToken[]
 }
 
 export type VaultWidgetVariant = {

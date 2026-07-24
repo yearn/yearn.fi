@@ -8,8 +8,11 @@ import { useVaultWidgetController } from '../headless'
 import type { VaultWidgetConfig, VaultWidgetCopy, VaultWidgetMode, VaultWidgetProps, VaultWidgetToken } from '../types'
 import { formatWalletBalance, formatWidgetAllowance, formatWidgetValue } from '../valueDisplay'
 import { ActivityPanel } from './ActivityPanel'
+import { MigrationPanel } from './MigrationPanel'
+import { RewardsPanel } from './RewardsPanel'
 import { SettingsPanel } from './SettingsPanel'
 import { TokenSelectorOverlay } from './TokenSelectorOverlay'
+import { TransactionStatus } from './TransactionStatus'
 
 const DEFAULT_COPY: VaultWidgetCopy = {
   connect: 'Connect Wallet',
@@ -32,7 +35,7 @@ const DEFAULT_COPY: VaultWidgetCopy = {
   vaultShareValue: 'Vault share value',
   estimatedAnnualReturn: 'Est. Annual Return',
   existingApproval: 'Existing Approval',
-  unstakeAndRedeem: 'You will unstake and redeem'
+  unstakeAndRedeem: 'You will redeem'
 }
 
 function DefaultConnectButton({ onClick, label }: { onClick: () => void; label: string }): ReactElement {
@@ -123,58 +126,6 @@ function formatUsd(value: number): string {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2
   })
-}
-
-function TransactionStatus({
-  execution
-}: {
-  execution: ReturnType<typeof useVaultWidgetController>['execution']
-}): ReactElement | null {
-  if (execution.status === 'idle') return null
-  if (execution.status === 'success') {
-    return (
-      <div className="yv-widget__notice yv-widget__notice--success" role="status">
-        Transaction complete.
-      </div>
-    )
-  }
-  if (execution.status === 'error') {
-    return (
-      <div className="yv-widget__notice yv-widget__notice--error" role="alert">
-        {execution.error.message}
-      </div>
-    )
-  }
-  if (execution.status === 'submitted') {
-    return (
-      <div className="yv-widget__notice" role="status" aria-live="polite">
-        <span className="yv-widget__spinner" aria-hidden="true" />
-        <span>
-          Cross-chain transaction submitted
-          <small>Waiting for destination-chain completion</small>
-        </span>
-      </div>
-    )
-  }
-  return (
-    <div className="yv-widget__notice" role="status" aria-live="polite">
-      <span className="yv-widget__spinner" aria-hidden="true" />
-      <span>
-        {execution.status === 'confirming'
-          ? execution.step.kind === 'refresh'
-            ? 'Refreshing balances'
-            : execution.step.kind === 'safe-proposal'
-              ? 'Confirm the proposal in Safe'
-              : 'Confirm in your wallet'
-          : execution.proposalId
-            ? 'Safe proposal pending'
-            : 'Transaction pending'}
-        <small>
-          {execution.step.label} ({execution.stepIndex + 1}/{execution.stepCount})
-        </small>
-      </span>
-    </div>
-  )
 }
 
 type ConfiguredVaultWidgetProps = VaultWidgetProps & {
@@ -359,9 +310,37 @@ function ConfiguredVaultWidget({
           />
         </div>
       ) : null}
-      {!settingsOpen && (controller.mode === 'migrate' || controller.mode === 'rewards')
-        ? renderPanel?.(controller.mode)
-        : null}
+      {!settingsOpen && controller.mode === 'migrate' ? (
+        <div className="yv-widget__panel">
+          {renderPanel?.(controller.mode) ?? (
+            <MigrationPanel
+              account={controller.account}
+              config={config}
+              onConnectWallet={onConnectWallet}
+              onError={onError}
+              onEvent={onEvent}
+              onRefresh={controller.refresh}
+              onSuccess={onSuccess}
+              positionBalance={controller.positionBalance}
+            />
+          )}
+        </div>
+      ) : null}
+      {!settingsOpen && controller.mode === 'rewards' ? (
+        <div className="yv-widget__panel">
+          {renderPanel?.(controller.mode) ?? (
+            <RewardsPanel
+              config={config}
+              onConnectWallet={onConnectWallet}
+              onError={onError}
+              onEvent={onEvent}
+              onRefresh={controller.refresh}
+              onSuccess={onSuccess}
+              TokenIcon={TokenIcon}
+            />
+          )}
+        </div>
+      ) : null}
 
       {!settingsOpen && isTransactionMode ? (
         <div className="yv-widget__body" data-token-selector-open={tokenSelectorOpen}>
@@ -511,7 +490,9 @@ function ConfiguredVaultWidget({
               ) : (
                 <>
                   <div>
-                    <dt className="yv-widget__detail-link">{copy.unstakeAndRedeem}</dt>
+                    <dt className="yv-widget__detail-link">
+                      {controller.selectedPositionSource.withdrawLabel ?? copy.unstakeAndRedeem}
+                    </dt>
                     <dd>
                       <DetailValue
                         amount={formatWidgetValue(positionAmount, controller.selectedPositionSource.token.decimals)}
@@ -530,18 +511,20 @@ function ConfiguredVaultWidget({
                   </div>
                 </>
               )}
-              <div>
-                <dt className="yv-widget__detail-link">
-                  {copy.existingApproval}
-                  {approvalSpenderName ? ` (${approvalSpenderName})` : ''}
-                </dt>
-                <dd>
-                  <DetailValue
-                    amount={allowanceFormatted}
-                    unit={allowanceFormatted === 'Unlimited' ? undefined : approvalToken.symbol}
-                  />
-                </dd>
-              </div>
+              {quote?.approval || controller.approvalTarget ? (
+                <div>
+                  <dt className="yv-widget__detail-link">
+                    {copy.existingApproval}
+                    {approvalSpenderName ? ` (${approvalSpenderName})` : ''}
+                  </dt>
+                  <dd>
+                    <DetailValue
+                      amount={allowanceFormatted}
+                      unit={allowanceFormatted === 'Unlimited' ? undefined : approvalToken.symbol}
+                    />
+                  </dd>
+                </div>
+              ) : null}
               {quote?.priceImpactPercent !== undefined ? (
                 <div>
                   <dt>Est. price impact</dt>

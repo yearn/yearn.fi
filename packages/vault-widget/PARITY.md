@@ -17,8 +17,8 @@ published as the production dependency until every row below is complete.
 | Safe proposal and delayed execution | In progress | Atomic plan batching, connector detection, proposal submission, and execution polling complete; live Safe QA pending |
 | yvUSD locked/unlocked and cooldown | In progress | Live family presets, nested share valuation, zap deposit, two-vault withdrawal, cooldown reads, and styled start/cancel plans complete; wallet-connected and Tenderly QA pending |
 | yvBTC locked/unlocked | Complete for current production behavior | Unlocked ERC-4626 preset and family selector complete; locked remains an explicit unavailable state while its address is the legacy zero-address placeholder |
-| Permit and approval migration | In progress | Registry-compatible migrator/router/zap selectors, V2/V3 argument selection, EIP-2612 multicall quotes, approval plans, and tests complete; metadata discovery and styled execution panel pending |
-| Merkle and staking rewards | In progress | Batched Merkle and source-compatible staking claim quotes feed the shared chain-switch/Safe transaction planner; discovery service and styled claim panel pending |
+| Permit and approval migration | In progress | Kong target discovery, destination metadata, full-balance panel, registry-compatible migrator/router/zap selectors, permit detection/signing, V2/V3 calls, shared execution, activity persistence, and tests complete; wallet-connected and Tenderly QA pending |
+| Merkle and staking rewards | In progress | Allowlisted Merkl and source-compatible staking discovery, claimed accounting, styled claim rows, shared execution/activity persistence, chain-switch/Safe plans, and tests complete; live wallet and visual parity QA pending |
 | Full styled My Info/settings/activity parity | Pending | Component parity and accessibility suite required |
 | Tenderly transaction-family QA | Pending | Requires full route matrix and funded VNet |
 
@@ -27,7 +27,8 @@ Current rollout state:
 - yearn.fi can mount the package for the complete yBOLD surface with
   `NEXT_PUBLIC_VAULT_WIDGET_ENABLED=true`. `/dev/vault-widget` remains the
   development-only side-by-side harness, with package fixtures for yBOLD and
-  direct Yearn V2 vaults, a V3 vault with staking, and locked/unlocked yvUSD.
+  direct Yearn V2 vaults, a real retired V2 migration, a V3 vault with staking
+  and rewards, and locked/unlocked yvUSD.
   Other product families stay on their legacy implementations until their
   parity gates pass.
 - yearn-bold keeps its legacy card by default. Setting

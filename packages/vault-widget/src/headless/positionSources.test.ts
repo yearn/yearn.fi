@@ -1,6 +1,11 @@
 import { describe, expect, it } from 'vitest'
 import type { VaultWidgetConfig, VaultWidgetPositionSourceState, VaultWidgetToken } from '../types'
-import { getDefaultPositionSource, getPositionSources, sumPositionValues } from './positionSources'
+import {
+  getAvailableVaultWidgetModes,
+  getDefaultPositionSource,
+  getPositionSources,
+  sumPositionValues
+} from './positionSources'
 
 const token: VaultWidgetToken = {
   address: '0x1111111111111111111111111111111111111111',
@@ -24,6 +29,13 @@ function createConfig(): VaultWidgetConfig {
 }
 
 describe('position sources', () => {
+  it('only exposes migration when the account owns migratable shares', () => {
+    const modes = ['migrate', 'withdraw', 'info'] as const
+
+    expect(getAvailableVaultWidgetModes(modes, 0n)).toEqual(['withdraw', 'info'])
+    expect(getAvailableVaultWidgetModes(modes, 1n)).toEqual(modes)
+  })
+
   it('creates a backward-compatible source from the legacy position token', () => {
     const readPositionValue = async (_client: never, balance: bigint): Promise<bigint> => balance * 2n
     const config = { ...createConfig(), readPositionValue } as VaultWidgetConfig

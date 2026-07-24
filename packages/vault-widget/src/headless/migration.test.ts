@@ -1,9 +1,13 @@
 import { decodeFunctionData, erc20Abi, toFunctionSelector } from 'viem'
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import type { VaultWidgetToken } from '../types'
 import {
   createMigrationQuote,
+  detectMigrationPermitSupport,
   MIGRATION_ROUTER_ABI,
+  readMigrationPermitTypedData,
+  splitMigrationPermitSignature,
+  supportsMigrationPermit,
   YEARN_4626_ROUTER_ADDRESS,
   YEARN_VAULT_MIGRATOR_ADDRESSES
 } from './migration'
@@ -80,5 +84,61 @@ describe('migration plans', () => {
 
     expect(quote.transaction.to).toBe(YEARN_VAULT_MIGRATOR_ADDRESSES[0])
     expect(quote.transaction.data.slice(0, 10)).toBe(toFunctionSelector('migrateShares(address,address,uint256)'))
+  })
+
+  it('detects permit-capable V3 router migrations and builds the Yearn Vault typed data', async () => {
+    expect(
+      supportsMigrationPermit({
+        migratorAddress: YEARN_4626_ROUTER_ADDRESS,
+        sourceVersion: '3.0.4'
+      })
+    ).toBe(true)
+    const readContract = vi
+      .fn()
+      .mockResolvedValueOnce(`0x${'11'.repeat(32)}`)
+      .mockRejectedValueOnce(new Error('PERMIT_TYPEHASH is not exposed'))
+      .mockResolvedValueOnce(7n)
+      .mockResolvedValueOnce('3.0.4')
+      .mockResolvedValueOnce('3.0.4')
+    const publicClient = { readContract } as never
+
+    await expect(detectMigrationPermitSupport(publicClient, token.address)).resolves.toBe(true)
+    await expect(
+      readMigrationPermitTypedData({
+        account,
+        chainId: 1,
+        deadline: 1_000n,
+        publicClient,
+        spender: YEARN_4626_ROUTER_ADDRESS,
+        tokenAddress: token.address,
+        value: 12n
+      })
+    ).resolves.toMatchObject({
+      domain: {
+        chainId: 1,
+        name: 'Yearn Vault',
+        verifyingContract: token.address,
+        version: '3.0.4'
+      },
+      message: {
+        deadline: 1_000n,
+        nonce: 7n,
+        owner: account,
+        spender: YEARN_4626_ROUTER_ADDRESS,
+        value: 12n
+      },
+      primaryType: 'Permit'
+    })
+  })
+
+  it('splits an EIP-2612 signature into router arguments', () => {
+    const signature = `0x${'11'.repeat(32)}${'22'.repeat(32)}1b` as const
+
+    expect(splitMigrationPermitSignature(signature, 1_000n)).toEqual({
+      deadline: 1_000n,
+      r: `0x${'11'.repeat(32)}`,
+      s: `0x${'22'.repeat(32)}`,
+      v: 27
+    })
   })
 })

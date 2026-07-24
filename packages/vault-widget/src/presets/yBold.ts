@@ -253,6 +253,9 @@ export function createYBoldPreset(options: CreateYBoldPresetOptions = {}): Vault
     defaultWithdrawToken: BOLD_ADDRESS,
     defaultSlippagePercent: (options.slippageBps ?? 50) / 100,
     defaultMaxLossBps: 50,
+    copy: {
+      unstakeAndRedeem: 'You will unstake and redeem'
+    },
     tokenSelector: {
       chains: yBoldSelectorChains,
       defaultTokens: {
