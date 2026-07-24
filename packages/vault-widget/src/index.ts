@@ -12,6 +12,7 @@ export type {
   VaultWidgetConfig,
   VaultWidgetCopy,
   VaultWidgetEvent,
+  VaultWidgetExecutionCall,
   VaultWidgetExecutionState,
   VaultWidgetExecutionStep,
   VaultWidgetExecutionStepKind,

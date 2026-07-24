@@ -1,3 +1,5 @@
+export type { CreateStakingPresetOptions } from './staking'
+export { createStakingPreset } from './staking'
 export type { CreateYBoldPresetOptions } from './yBold'
 export {
   BOLD_ADDRESS,

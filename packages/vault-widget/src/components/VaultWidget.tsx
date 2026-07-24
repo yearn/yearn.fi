@@ -104,7 +104,9 @@ function ChevronDownIcon(): ReactElement {
   )
 }
 
-function getModeLabel(mode: VaultWidgetMode): string {
+function getModeLabel(mode: VaultWidgetMode, labels?: Partial<Record<VaultWidgetMode, string>>): string {
+  const customLabel = labels?.[mode]
+  if (customLabel) return customLabel
   if (mode === 'info') return 'My Info'
   return mode.slice(0, 1).toUpperCase() + mode.slice(1)
 }
@@ -184,7 +186,7 @@ function ConfiguredVaultWidget({
     throw new Error('VaultWidget configuration does not match the requested vault')
   }
 
-  const copy = { ...DEFAULT_COPY, ...copyOverrides }
+  const copy = { ...DEFAULT_COPY, ...config.copy, ...copyOverrides }
   const controller = useVaultWidgetController({
     config,
     mode,
@@ -307,7 +309,7 @@ function ConfiguredVaultWidget({
                 aria-selected={controller.mode === availableMode}
                 onClick={() => setMode(availableMode)}
               >
-                {getModeLabel(availableMode)}
+                {getModeLabel(availableMode, config.display?.modeLabels)}
               </button>
             ))}
           </div>
@@ -341,7 +343,7 @@ function ConfiguredVaultWidget({
 
       {!settingsOpen && isTransactionMode ? (
         <div className="yv-widget__body" data-token-selector-open={tokenSelectorOpen}>
-          <h3 className="yv-widget__body-title">{getModeLabel(controller.mode)}</h3>
+          <h3 className="yv-widget__body-title">{getModeLabel(controller.mode, config.display?.modeLabels)}</h3>
 
           <div className="yv-widget__amount-panel">
             <div className="yv-widget__amount-meta">

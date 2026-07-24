@@ -53,6 +53,55 @@ function buildApprovalSteps(quote: VaultWidgetQuote, allowance: bigint): VaultWi
   ]
 }
 
+function buildExecutionSteps(quote: VaultWidgetQuote, mode: 'deposit' | 'withdraw'): VaultWidgetExecutionStep[] {
+  const calls = quote.transactions ?? [
+    {
+      id: mode,
+      label: mode === 'deposit' ? 'Deposit' : 'Withdraw',
+      transaction: quote.transaction
+    }
+  ]
+
+  return calls.map((call) => ({
+    id: call.id,
+    kind: 'execute',
+    label: call.label,
+    chainId: call.transaction.chainId,
+    request: call.transaction
+  }))
+}
+
+function addChainSwitchSteps(
+  steps: readonly VaultWidgetExecutionStep[],
+  connectedChainId?: number
+): VaultWidgetExecutionStep[] {
+  return steps.reduce<{ chainId?: number; steps: VaultWidgetExecutionStep[] }>(
+    (state, step) => {
+      if (step.chainId === undefined || step.chainId === state.chainId) {
+        return {
+          chainId: step.chainId ?? state.chainId,
+          steps: [...state.steps, step]
+        }
+      }
+
+      return {
+        chainId: step.chainId,
+        steps: [
+          ...state.steps,
+          {
+            id: `switch-chain-${step.chainId}`,
+            kind: 'switch-chain',
+            label: `Switch to chain ${step.chainId}`,
+            chainId: step.chainId
+          },
+          step
+        ]
+      }
+    },
+    { chainId: connectedChainId, steps: [] }
+  ).steps
+}
+
 export function buildTransactionPlan({
   allowance,
   connectedChainId,
@@ -60,36 +109,14 @@ export function buildTransactionPlan({
   quote
 }: BuildTransactionPlanParams): VaultWidgetTransactionPlan {
   const approvalSteps = buildApprovalSteps(quote, allowance)
-  const requiredChainIds = [...approvalSteps.map((step) => step.chainId), quote.transaction.chainId].filter(
-    (chainId): chainId is number => chainId !== undefined
-  )
-  const firstChainId = requiredChainIds[0]
-  const switchStep: VaultWidgetExecutionStep[] =
-    firstChainId !== undefined && connectedChainId !== firstChainId
-      ? [
-          {
-            id: `switch-chain-${firstChainId}`,
-            kind: 'switch-chain',
-            label: `Switch to chain ${firstChainId}`,
-            chainId: firstChainId
-          }
-        ]
-      : []
+  const executionSteps = buildExecutionSteps(quote, mode)
 
   return {
     id: `${mode}:${quote.adapterId}:${quote.transaction.chainId}:${quote.amountIn.toString()}`,
     mode,
     quote,
     steps: [
-      ...switchStep,
-      ...approvalSteps,
-      {
-        id: mode,
-        kind: 'execute',
-        label: mode === 'deposit' ? 'Deposit' : 'Withdraw',
-        chainId: quote.transaction.chainId,
-        request: quote.transaction
-      },
+      ...addChainSwitchSteps([...approvalSteps, ...executionSteps], connectedChainId),
       {
         id: 'refresh',
         kind: 'refresh',

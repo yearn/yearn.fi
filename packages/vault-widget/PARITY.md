@@ -12,7 +12,7 @@ published as the production dependency until every row below is complete.
 | Allowance reset and approval planning | Complete | `transactionPlan.test.ts` |
 | Legacy yearn.fi settings and activity storage | Complete | `storage.test.ts` |
 | Package artifact isolation | Complete | npm pack dry run and import scan |
-| Stake, unstake, and combined routes | Pending | Controller plans and Safe batches required |
+| Stake, unstake, and combined routes | In progress | Source-specific adapters, staking preset, and ordered EOA plans complete; multi-position UI and Safe batches pending |
 | Generic same-chain and cross-chain Enso | Pending | Completion polling and route matrix required |
 | Safe proposal and delayed execution | Pending | Safe execution service required |
 | yvUSD locked/unlocked and cooldown | Pending | Product preset and controller required |

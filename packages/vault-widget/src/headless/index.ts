@@ -16,6 +16,17 @@ export {
   SLIPPAGE_RISK_ACKNOWLEDGEMENT_TEXT,
   SLIPPAGE_RISK_ACKNOWLEDGEMENT_THRESHOLD
 } from './settings'
+export type { VaultWidgetStakingSource } from './staking'
+export {
+  createStakingAdapter,
+  createStakingPositionValueReader,
+  createUnstakeAndWithdrawAdapter,
+  DEFAULT_STAKING_ABI,
+  normalizeStakingSource,
+  STAKING_PREVIEW_ABI,
+  TOKENIZED_STAKING_ABI,
+  VEYFI_STAKING_ABI
+} from './staking'
 export { getTokenReferenceKey, getTokenSelectorChainIds, getTokenSelectorTokens } from './tokenSelector'
 export { buildTransactionPlan } from './transactionPlan'
 export { useVaultWidgetController } from './useVaultWidgetController'

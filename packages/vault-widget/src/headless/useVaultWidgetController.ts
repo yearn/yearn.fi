@@ -8,6 +8,7 @@ import { switchChain } from 'wagmi/actions'
 import { useVaultWidgetServices } from '../context'
 import type { VaultWidgetSettings } from '../services'
 import type {
+  VaultWidgetActivity,
   VaultWidgetApprovalTarget,
   VaultWidgetConfig,
   VaultWidgetEvent,
@@ -80,10 +81,8 @@ function parseAmount(value: string, decimals: number): bigint {
   }
 }
 
-function getActivityType(
-  mode: 'deposit' | 'withdraw',
-  quote: VaultWidgetQuote
-): 'deposit' | 'withdraw' | 'zap' | 'crosschain zap' | 'withdraw zap' | 'crosschain withdraw zap' {
+function getActivityType(mode: 'deposit' | 'withdraw', quote: VaultWidgetQuote): VaultWidgetActivity['type'] {
+  if (quote.activityType) return quote.activityType
   if (quote.adapterId !== 'enso') return mode
   if (mode === 'deposit') return quote.isCrossChain ? 'crosschain zap' : 'zap'
   return quote.isCrossChain ? 'crosschain withdraw zap' : 'withdraw zap'

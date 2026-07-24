@@ -58,8 +58,15 @@ export type VaultWidgetApproval = {
 
 export type VaultWidgetApprovalTarget = Pick<VaultWidgetApproval, 'spender' | 'token'>
 
+export type VaultWidgetExecutionCall = {
+  id: string
+  label: string
+  transaction: VaultWidgetTransactionRequest
+}
+
 export type VaultWidgetQuote = {
   adapterId: string
+  activityType?: VaultWidgetActivity['type']
   amountIn: bigint
   assetValue?: bigint
   expectedOut: bigint
@@ -67,6 +74,7 @@ export type VaultWidgetQuote = {
   positionAmount: bigint
   expiresAt?: number
   transaction: VaultWidgetTransactionRequest
+  transactions?: readonly VaultWidgetExecutionCall[]
   approval?: VaultWidgetApproval
   priceImpactPercent?: number | null
   isCrossChain?: boolean
@@ -99,10 +107,12 @@ export type VaultWidgetConfig = {
   tokenSelector?: VaultWidgetTokenSelectorConfig
   readPositionValue?: (publicClient: PublicClient, shares: bigint) => Promise<bigint>
   solvers?: readonly string[]
+  copy?: Partial<VaultWidgetCopy>
   display?: {
     approvalSpenderName?: Partial<Record<'deposit' | 'withdraw', string>>
     assetPriceUsd?: number
     estimatedApr?: number
+    modeLabels?: Partial<Record<VaultWidgetMode, string>>
     positionLabel?: string
   }
 }

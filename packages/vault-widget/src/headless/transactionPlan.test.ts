@@ -51,4 +51,39 @@ describe('buildTransactionPlan', () => {
       }).steps.map((step) => step.kind)
     ).toEqual(['execute', 'refresh'])
   })
+
+  it('preserves ordered execution calls and switches chains between them', () => {
+    const plan = buildTransactionPlan({
+      allowance: 0n,
+      connectedChainId: 10,
+      mode: 'withdraw',
+      quote: {
+        ...quote,
+        approval: undefined,
+        transactions: [
+          {
+            id: 'unstake',
+            label: 'Unstake',
+            transaction: {
+              chainId: 10,
+              data: '0x1234',
+              to: '0x4444444444444444444444444444444444444444'
+            }
+          },
+          {
+            id: 'withdraw',
+            label: 'Withdraw',
+            transaction: quote.transaction
+          }
+        ]
+      }
+    })
+
+    expect(plan.steps.map((step) => [step.kind, step.label])).toEqual([
+      ['execute', 'Unstake'],
+      ['switch-chain', 'Switch to chain 1'],
+      ['execute', 'Withdraw'],
+      ['refresh', 'Refresh balances']
+    ])
+  })
 })
