@@ -58,6 +58,13 @@ same-chain approval and execution calls into an atomic wallet-call proposal,
 and tracks it until execution. Hosts with another Safe transport can inject
 `createSafeAwareExecutionService` through `VaultWidgetProvider`.
 
+Cross-chain Enso routes retain a submitted state after the source receipt and
+are promoted to success only after the selected Stargate, CCIP, or Relay
+status endpoint reports destination delivery. The default provider polls
+`/api/enso/bridge-status` at Enso's ten-second minimum interval; hosts may
+override `ensoBridge` through `VaultWidgetProvider`. Route quotes are
+automatically repeated with only the slippage remaining after price impact.
+
 ## Development
 
 ```bash

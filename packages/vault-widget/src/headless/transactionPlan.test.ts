@@ -134,4 +134,28 @@ describe('buildTransactionPlan', () => {
       ['refresh', undefined]
     ])
   })
+
+  it('tracks destination completion after a cross-chain route executes', () => {
+    const plan = buildTransactionPlan({
+      allowance: 10n,
+      connectedChainId: 1,
+      mode: 'deposit',
+      quote: {
+        ...quote,
+        bridge: {
+          destinationChainId: 8453,
+          protocol: 'stargate',
+          sourceChainId: 1
+        },
+        isCrossChain: true
+      }
+    })
+
+    expect(plan.steps.map((step) => step.kind)).toEqual(['execute', 'wait-cross-chain', 'refresh'])
+    expect(plan.steps[1]?.bridge).toEqual({
+      destinationChainId: 8453,
+      protocol: 'stargate',
+      sourceChainId: 1
+    })
+  })
 })

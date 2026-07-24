@@ -76,6 +76,64 @@ describe('adapter approval targets', () => {
   })
 })
 
+describe('Enso adapter', () => {
+  const crossChainToken: VaultWidgetToken = { ...routeToken, chainId: 10 }
+  const request: VaultWidgetRequest = {
+    account: '0x7777777777777777777777777777777777777777',
+    amount: 1_000_000n,
+    chainId: 10,
+    maxLossBps: 100,
+    mode: 'deposit',
+    positionBalance: 0n,
+    selectedToken: crossChainToken,
+    signal: new AbortController().signal,
+    slippageBps: 100
+  }
+  const route = {
+    amountOut: 90n,
+    minAmountOut: 88n,
+    transaction: {
+      chainId: 10,
+      data: '0x1234' as const,
+      from: request.account,
+      to: router,
+      value: 0n
+    }
+  } as const
+
+  it('requires verifiable bridge tracking for cross-chain routes', async () => {
+    const adapter = createEnsoAdapter({
+      asset,
+      destinationChainId: 1,
+      positionToken,
+      provider: { getRoute: async () => route },
+      routerByChain: { 10: router }
+    })
+
+    await expect(adapter.quote(request, {} as PublicClient)).rejects.toThrow('bridge tracking')
+  })
+
+  it('preserves validated bridge metadata in the transaction quote', async () => {
+    const bridge = {
+      destinationChainId: 1,
+      protocol: 'relay' as const,
+      sourceChainId: 10
+    }
+    const adapter = createEnsoAdapter({
+      asset,
+      destinationChainId: 1,
+      positionToken,
+      provider: { getRoute: async () => ({ ...route, bridge }) },
+      routerByChain: { 10: router }
+    })
+
+    await expect(adapter.quote(request, {} as PublicClient)).resolves.toMatchObject({
+      bridge,
+      isCrossChain: true
+    })
+  })
+})
+
 describe('ERC-4626 position value', () => {
   it('previews the asset value of vault shares', async () => {
     const readContract = vi.fn().mockResolvedValue(125n)

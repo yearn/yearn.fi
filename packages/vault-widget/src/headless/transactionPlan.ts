@@ -154,6 +154,16 @@ export function buildTransactionPlan({
     walletType === 'safe'
       ? buildSafeProposalSteps([...approvalSteps, ...executionSteps])
       : addChainSwitchSteps([...approvalSteps, ...executionSteps], connectedChainId)
+  const crossChainSteps: VaultWidgetExecutionStep[] = quote.bridge
+    ? [
+        {
+          id: 'wait-cross-chain',
+          kind: 'wait-cross-chain',
+          label: `Complete bridge to chain ${quote.bridge.destinationChainId}`,
+          bridge: quote.bridge
+        }
+      ]
+    : []
 
   return {
     id: `${mode}:${quote.adapterId}:${quote.transaction.chainId}:${quote.amountIn.toString()}`,
@@ -162,6 +172,7 @@ export function buildTransactionPlan({
     walletType,
     steps: [
       ...transactionSteps,
+      ...crossChainSteps,
       {
         id: 'refresh',
         kind: 'refresh',

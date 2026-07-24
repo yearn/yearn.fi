@@ -3,6 +3,12 @@ export type { VaultWidgetProviderProps } from './context'
 export { useVaultWidgetServices, VaultWidgetProvider } from './context'
 export * from './presets'
 export type {
+  EnsoBridgeDetails,
+  EnsoBridgeProtocol,
+  EnsoBridgeStatus,
+  EnsoBridgeStatusName,
+  EnsoBridgeStatusProvider,
+  EnsoBridgeStatusRequest,
   EnsoQuoteProvider,
   EnsoRoute,
   EnsoRouteRequest,

@@ -3,6 +3,7 @@
 import { createContext, type ReactElement, type ReactNode, useContext, useMemo } from 'react'
 import {
   createBrowserSettingsStore,
+  createHttpEnsoBridgeStatusProvider,
   createKongVaultConfigResolver,
   createMemoryActivityStore,
   createWagmiSafeExecutionService,
@@ -12,6 +13,7 @@ import {
 const defaultServices: VaultWidgetServices = {
   activityStore: createMemoryActivityStore(),
   configResolver: createKongVaultConfigResolver(),
+  ensoBridge: createHttpEnsoBridgeStatusProvider(),
   execution: createWagmiSafeExecutionService(),
   settings: createBrowserSettingsStore()
 }
@@ -30,6 +32,7 @@ export function VaultWidgetProvider({ children, services }: VaultWidgetProviderP
       activityStore: services?.activityStore ?? parent.activityStore,
       configResolver: services?.configResolver ?? parent.configResolver,
       enso: services?.enso ?? parent.enso,
+      ensoBridge: services?.ensoBridge ?? parent.ensoBridge,
       execution: services?.execution ?? parent.execution,
       settings: services?.settings ?? parent.settings
     }),

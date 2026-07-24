@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { clampSlippage, getSlippageSaveState, SLIPPAGE_RISK_ACKNOWLEDGEMENT_TEXT } from './settings'
+import {
+  clampSlippage,
+  getRemainingEnsoSlippageBps,
+  getSlippageSaveState,
+  SLIPPAGE_RISK_ACKNOWLEDGEMENT_TEXT
+} from './settings'
 
 describe('transaction settings', () => {
   it('clamps slippage to the legacy zero-to-five-percent range', () => {
@@ -32,5 +37,10 @@ describe('transaction settings', () => {
         riskAcknowledgement: 'I understand'
       }).hasValidRiskAcknowledgement
     ).toBe(false)
+  })
+
+  it('reserves only the tolerance remaining after Enso route impact', () => {
+    expect(getRemainingEnsoSlippageBps({ quoteImpactPercent: 0.5, userToleranceBps: 100 })).toBe(50)
+    expect(getRemainingEnsoSlippageBps({ quoteImpactPercent: 1.2, userToleranceBps: 100 })).toBe(0)
   })
 })

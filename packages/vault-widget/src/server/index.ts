@@ -14,6 +14,8 @@ type EnsoServerOptions = {
   fallbackUrl?: string
 }
 
+const ENSO_BRIDGE_PROTOCOLS = ['stargate', 'ccip', 'relay'] as const
+
 export type EnsoRoutePolicy = {
   allowedChainIds?: readonly number[]
   isTokenPairAllowed?: (params: {
@@ -142,6 +144,30 @@ export function createEnsoBalancesHandler(options: EnsoServerOptions) {
 export function createEnsoStatusHandler(options: EnsoServerOptions) {
   return async function GET(): Promise<Response> {
     const upstream = new URL('/api/v1/status', options.apiBaseUrl ?? DEFAULT_ENSO_API_BASE)
+    return proxyEnso(upstream, options.apiKey, options.fallbackUrl)
+  }
+}
+
+export function createEnsoBridgeStatusHandler(options: EnsoServerOptions) {
+  return async function GET(request: Request): Promise<Response> {
+    const parameters = new URL(request.url).searchParams
+    const protocol = parameters.get('protocol')
+    const chainId = Number(parameters.get('chainId'))
+    const txHash = parameters.get('txHash')
+
+    if (!ENSO_BRIDGE_PROTOCOLS.some((candidate) => candidate === protocol)) {
+      return jsonError('Missing or unsupported bridge protocol', 400)
+    }
+    if (!Number.isInteger(chainId) || chainId <= 0) {
+      return jsonError('Missing or invalid chainId', 400)
+    }
+    if (!txHash || !/^0x[0-9a-fA-F]{64}$/.test(txHash)) {
+      return jsonError('Missing or invalid txHash', 400)
+    }
+
+    const upstream = new URL(`/api/v1/${protocol}/bridge/check`, options.apiBaseUrl ?? DEFAULT_ENSO_API_BASE)
+    upstream.searchParams.set('chainId', chainId.toString())
+    upstream.searchParams.set('txHash', txHash)
     return proxyEnso(upstream, options.apiKey, options.fallbackUrl)
   }
 }

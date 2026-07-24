@@ -145,14 +145,27 @@ function TransactionStatus({
       </div>
     )
   }
+  if (execution.status === 'submitted') {
+    return (
+      <div className="yv-widget__notice" role="status" aria-live="polite">
+        <span className="yv-widget__spinner" aria-hidden="true" />
+        <span>
+          Cross-chain transaction submitted
+          <small>Waiting for destination-chain completion</small>
+        </span>
+      </div>
+    )
+  }
   return (
     <div className="yv-widget__notice" role="status" aria-live="polite">
       <span className="yv-widget__spinner" aria-hidden="true" />
       <span>
         {execution.status === 'confirming'
-          ? execution.step.kind === 'safe-proposal'
-            ? 'Confirm the proposal in Safe'
-            : 'Confirm in your wallet'
+          ? execution.step.kind === 'refresh'
+            ? 'Refreshing balances'
+            : execution.step.kind === 'safe-proposal'
+              ? 'Confirm the proposal in Safe'
+              : 'Confirm in your wallet'
           : execution.proposalId
             ? 'Safe proposal pending'
             : 'Transaction pending'}

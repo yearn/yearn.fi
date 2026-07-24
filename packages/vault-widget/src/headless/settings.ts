@@ -7,6 +7,19 @@ export function clampSlippage(value: number): number {
   return Math.min(SLIPPAGE_HARD_CAP, Math.max(0, sanitized))
 }
 
+export function getRemainingEnsoSlippageBps({
+  quoteImpactPercent,
+  userToleranceBps
+}: {
+  quoteImpactPercent: number
+  userToleranceBps: number
+}): number {
+  const tolerancePercent = Math.max(0, userToleranceBps) / 100
+  const impactPercent = Math.min(100, Math.max(0, Number.isFinite(quoteImpactPercent) ? quoteImpactPercent : 0))
+  if (tolerancePercent <= 0 || impactPercent >= tolerancePercent || impactPercent >= 100) return 0
+  return Math.floor(((tolerancePercent - impactPercent) / (100 - impactPercent)) * 10_000)
+}
+
 export function getSlippageSaveState({
   localSlippage,
   currentSlippage,

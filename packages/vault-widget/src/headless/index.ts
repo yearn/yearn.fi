@@ -17,6 +17,7 @@ export {
 } from './positionSources'
 export {
   clampSlippage,
+  getRemainingEnsoSlippageBps,
   getSlippageSaveState,
   SLIPPAGE_HARD_CAP,
   SLIPPAGE_RISK_ACKNOWLEDGEMENT_TEXT,

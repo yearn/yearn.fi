@@ -1,4 +1,5 @@
 export { createKongVaultConfigResolver } from './config'
+export { createHttpEnsoBridgeStatusProvider, normalizeEnsoBridgeStatus } from './ensoBridge'
 export {
   createSafeAwareExecutionService,
   createWagmiExecutionService,

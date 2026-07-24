@@ -13,7 +13,7 @@ published as the production dependency until every row below is complete.
 | Legacy yearn.fi settings and activity storage | Complete | `storage.test.ts` |
 | Package artifact isolation | Complete | npm pack dry run and import scan |
 | Stake, unstake, and combined routes | Complete | Kong staking metadata, selectable vault/staked positions, source-aware adapters, composed valuation, and ordered plans |
-| Generic same-chain and cross-chain Enso | Pending | Completion polling and route matrix required |
+| Generic same-chain and cross-chain Enso | Complete | Trusted route validation, protected re-quotes, bridge protocol discovery, submitted state, and destination completion polling |
 | Safe proposal and delayed execution | In progress | Atomic plan batching, connector detection, proposal submission, and execution polling complete; live Safe QA pending |
 | yvUSD locked/unlocked and cooldown | Pending | Product preset and controller required |
 | yvBTC locked/unlocked | Pending | Product preset and controller required |

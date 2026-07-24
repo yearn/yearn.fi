@@ -429,6 +429,15 @@ export function createEnsoAdapter(options: EnsoAdapterOptions): VaultWidgetRoute
         tokenOut,
         signal: request.signal
       })
+      const isCrossChain = sourceChainId !== destinationChainId
+      if (
+        isCrossChain &&
+        (!route.bridge ||
+          route.bridge.sourceChainId !== sourceChainId ||
+          route.bridge.destinationChainId !== destinationChainId)
+      ) {
+        throw new Error('Cross-chain Enso route is missing verifiable bridge tracking')
+      }
       const approvalToken = request.mode === 'deposit' ? request.selectedToken : options.positionToken
       const router = options.routerByChain[sourceChainId]
       if (!router) throw new Error(`No trusted Enso router is configured for chain ${sourceChainId}`)
@@ -455,7 +464,8 @@ export function createEnsoAdapter(options: EnsoAdapterOptions): VaultWidgetRoute
             },
         transaction: route.transaction,
         priceImpactPercent: route.priceImpactPercent,
-        isCrossChain: sourceChainId !== destinationChainId
+        isCrossChain,
+        bridge: route.bridge
       }
     }
   }

@@ -91,6 +91,7 @@ export type VaultWidgetQuote = {
   approval?: VaultWidgetApproval
   priceImpactPercent?: number | null
   isCrossChain?: boolean
+  bridge?: EnsoBridgeDetails
 }
 
 export type VaultWidgetRouteAdapter = {
@@ -139,6 +140,7 @@ export type VaultWidgetExecutionStepKind =
   | 'permit'
   | 'safe-proposal'
   | 'execute'
+  | 'wait-cross-chain'
   | 'refresh'
 
 export type VaultWidgetExecutionStep = {
@@ -148,6 +150,7 @@ export type VaultWidgetExecutionStep = {
   chainId?: number
   request?: VaultWidgetTransactionRequest
   requests?: readonly VaultWidgetTransactionRequest[]
+  bridge?: EnsoBridgeDetails
 }
 
 export type VaultWidgetWalletType = 'eoa' | 'safe'
@@ -171,8 +174,16 @@ export type VaultWidgetExecutionState =
       hash?: Hash
       proposalId?: Hex
     }
-  | { status: 'success'; hash?: Hash; proposalId?: Hex }
-  | { status: 'error'; error: Error; hash?: Hash; proposalId?: Hex }
+  | {
+      status: 'submitted'
+      step: VaultWidgetExecutionStep
+      stepIndex: number
+      stepCount: number
+      hash: Hash
+      proposalId?: Hex
+    }
+  | { status: 'success'; destinationHash?: Hash; hash?: Hash; proposalId?: Hex }
+  | { status: 'error'; destinationHash?: Hash; error: Error; hash?: Hash; proposalId?: Hex }
 
 export type VaultWidgetEvent =
   | { type: 'mode_changed'; mode: VaultWidgetMode }
@@ -181,7 +192,20 @@ export type VaultWidgetEvent =
   | { type: 'quote_received'; quote: VaultWidgetQuote }
   | { type: 'transaction_started'; plan: VaultWidgetTransactionPlan }
   | { type: 'transaction_step'; step: VaultWidgetExecutionStep; hash?: Hash; proposalId?: Hex }
-  | { type: 'transaction_succeeded'; plan: VaultWidgetTransactionPlan; hash?: Hash; proposalId?: Hex }
+  | {
+      type: 'transaction_submitted'
+      plan: VaultWidgetTransactionPlan
+      hash: Hash
+      proposalId?: Hex
+    }
+  | { type: 'bridge_status'; status: EnsoBridgeStatus }
+  | {
+      type: 'transaction_succeeded'
+      plan: VaultWidgetTransactionPlan
+      destinationHash?: Hash
+      hash?: Hash
+      proposalId?: Hex
+    }
   | {
       type: 'transaction_failed'
       plan: VaultWidgetTransactionPlan
@@ -261,9 +285,42 @@ export type EnsoRoute = {
   minAmountOut: bigint
   priceImpactPercent?: number | null
   routeHasSwap?: boolean
+  bridge?: EnsoBridgeDetails
   transaction: VaultWidgetTransactionRequest & {
     from: Address
   }
+}
+
+export type EnsoBridgeProtocol = 'stargate' | 'ccip' | 'relay'
+
+export type EnsoBridgeDetails = {
+  destinationChainId: number
+  estimatedSeconds?: number
+  protocol: EnsoBridgeProtocol
+  sourceChainId: number
+}
+
+export type EnsoBridgeStatusName = 'pending' | 'inflight' | 'delivered' | 'failed' | 'unknown'
+
+export type EnsoBridgeStatus = {
+  destinationChainId?: number
+  destinationTxHash?: Hash
+  error?: string
+  sourceChainId: number
+  sourceTxHash: Hash
+  status: EnsoBridgeStatusName
+}
+
+export type EnsoBridgeStatusRequest = EnsoBridgeDetails & {
+  signal?: AbortSignal
+  sourceTxHash: Hash
+}
+
+export type EnsoBridgeStatusProvider = {
+  waitForCompletion: (
+    request: EnsoBridgeStatusRequest,
+    onStatus?: (status: EnsoBridgeStatus) => void
+  ) => Promise<EnsoBridgeStatus>
 }
 
 export type EnsoQuoteProvider = {
@@ -278,6 +335,7 @@ export type VaultWidgetActivity = {
   amount: string
   chainId: number
   destinationChainId?: number
+  destinationHash?: Hash
   hash?: Hash
   status: VaultWidgetActivityStatus
   timestamp: number

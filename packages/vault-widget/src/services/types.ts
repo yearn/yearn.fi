@@ -1,6 +1,7 @@
 import type { Address, Hash, Hex } from 'viem'
 import type { Config } from 'wagmi'
 import type {
+  EnsoBridgeStatusProvider,
   EnsoQuoteProvider,
   VaultWidgetActivity,
   VaultWidgetConfig,
@@ -63,6 +64,7 @@ export type VaultWidgetServices = {
   activityStore: VaultWidgetActivityStore
   configResolver: VaultWidgetConfigResolver
   enso?: EnsoQuoteProvider
+  ensoBridge?: EnsoBridgeStatusProvider
   execution: VaultWidgetExecutionService
   settings: VaultWidgetSettingsStore
 }

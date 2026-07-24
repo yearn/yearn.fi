@@ -1067,6 +1067,10 @@
   color: var(--yv-widget-success);
 }
 
+.yv-widget__status--submitted {
+  color: var(--yv-widget-primary);
+}
+
 .yv-widget__status--error {
   color: var(--yv-widget-error);
 }
