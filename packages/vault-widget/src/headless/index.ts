@@ -24,12 +24,28 @@ export {
   YVUSD_LOCKED_VAULT_ABI,
   YVUSD_LOCKED_ZAP_ABI
 } from './lockedVault'
+export type { CreateMigrationQuoteParams, VaultWidgetPermitSignature } from './migration'
+export {
+  createMigrationQuote,
+  MIGRATION_ROUTER_ABI,
+  YEARN_4626_ROUTER_ADDRESS,
+  YEARN_VAULT_MIGRATOR_ADDRESSES,
+  YEARN_VECRV_ZAP_ADDRESS
+} from './migration'
 export {
   getDefaultPositionSource,
   getPositionSources,
   readPositionSourceState,
   sumPositionValues
 } from './positionSources'
+export type { VaultWidgetMerkleReward } from './rewards'
+export {
+  createMerkleClaimQuote,
+  createStakingClaimQuote,
+  MERKLE_DISTRIBUTOR_ABI,
+  MERKLE_DISTRIBUTOR_ADDRESS,
+  STAKING_CLAIM_ABI
+} from './rewards'
 export {
   clampSlippage,
   getRemainingEnsoSlippageBps,

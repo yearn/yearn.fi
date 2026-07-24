@@ -9,7 +9,7 @@ import type {
 type BuildTransactionPlanParams = {
   allowance: bigint
   connectedChainId?: number
-  mode: 'deposit' | 'withdraw'
+  mode: VaultWidgetTransactionPlan['mode']
   quote: VaultWidgetQuote
   walletType?: VaultWidgetWalletType
 }
@@ -59,11 +59,21 @@ function buildApprovalSteps(quote: VaultWidgetQuote, allowance: bigint): VaultWi
   ]
 }
 
-function buildExecutionSteps(quote: VaultWidgetQuote, mode: 'deposit' | 'withdraw'): VaultWidgetExecutionStep[] {
+function getExecutionLabel(mode: VaultWidgetTransactionPlan['mode']): string {
+  if (mode === 'deposit') return 'Deposit'
+  if (mode === 'withdraw') return 'Withdraw'
+  if (mode === 'migrate') return 'Migrate'
+  return 'Claim rewards'
+}
+
+function buildExecutionSteps(
+  quote: VaultWidgetQuote,
+  mode: VaultWidgetTransactionPlan['mode']
+): VaultWidgetExecutionStep[] {
   const calls = quote.transactions ?? [
     {
       id: mode,
-      label: mode === 'deposit' ? 'Deposit' : 'Withdraw',
+      label: getExecutionLabel(mode),
       transaction: quote.transaction
     }
   ]

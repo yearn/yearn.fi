@@ -17,8 +17,8 @@ published as the production dependency until every row below is complete.
 | Safe proposal and delayed execution | In progress | Atomic plan batching, connector detection, proposal submission, and execution polling complete; live Safe QA pending |
 | yvUSD locked/unlocked and cooldown | In progress | Live family presets, nested share valuation, zap deposit, two-vault withdrawal, cooldown reads, and styled start/cancel plans complete; wallet-connected and Tenderly QA pending |
 | yvBTC locked/unlocked | Complete for current production behavior | Unlocked ERC-4626 preset and family selector complete; locked remains an explicit unavailable state while its address is the legacy zero-address placeholder |
-| Permit and approval migration | Pending | Migration controller and UI required |
-| Merkle and staking rewards | Pending | Reward services, plans, and UI required |
+| Permit and approval migration | In progress | Registry-compatible migrator/router/zap selectors, V2/V3 argument selection, EIP-2612 multicall quotes, approval plans, and tests complete; metadata discovery and styled execution panel pending |
+| Merkle and staking rewards | In progress | Batched Merkle and source-compatible staking claim quotes feed the shared chain-switch/Safe transaction planner; discovery service and styled claim panel pending |
 | Full styled My Info/settings/activity parity | Pending | Component parity and accessibility suite required |
 | Tenderly transaction-family QA | Pending | Requires full route matrix and funded VNet |
 

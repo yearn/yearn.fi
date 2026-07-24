@@ -37,6 +37,7 @@ export type {
   VaultWidgetTokenReference,
   VaultWidgetTokenSelectorChain,
   VaultWidgetTokenSelectorConfig,
+  VaultWidgetTransactionMode,
   VaultWidgetTransactionPlan,
   VaultWidgetTransactionRequest,
   VaultWidgetVariant,

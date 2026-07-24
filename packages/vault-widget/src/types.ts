@@ -2,6 +2,7 @@ import type { ComponentType, CSSProperties, ReactNode } from 'react'
 import type { Address, Hash, Hex, PublicClient } from 'viem'
 
 export type VaultWidgetMode = 'deposit' | 'withdraw' | 'migrate' | 'rewards' | 'info'
+export type VaultWidgetTransactionMode = Exclude<VaultWidgetMode, 'info'>
 
 export type VaultWidgetToken = {
   address: Address
@@ -177,7 +178,7 @@ export type VaultWidgetWalletType = 'eoa' | 'safe'
 
 export type VaultWidgetTransactionPlan = {
   id: string
-  mode: 'deposit' | 'withdraw'
+  mode: VaultWidgetTransactionMode
   quote: VaultWidgetQuote
   steps: readonly VaultWidgetExecutionStep[]
   walletType: VaultWidgetWalletType

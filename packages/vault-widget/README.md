@@ -87,6 +87,13 @@ cooldown plans. Headless consumers can use `readVaultWidgetCooldownState`,
 `createStartCooldownTransaction`, and `createCancelCooldownTransaction`
 directly.
 
+Migration and reward transaction builders are available from the headless
+entry point. `createMigrationQuote` preserves the legacy migrator registry,
+V2/V3 router selectors, veCRV zap arguments, and V3 EIP-2612 multicalls.
+`createMerkleClaimQuote` and `createStakingClaimQuote` produce claim quotes
+that can be passed to `buildTransactionPlan` with the `migrate` or `rewards`
+mode, including Safe batching and chain switching.
+
 ## Development
 
 ```bash
