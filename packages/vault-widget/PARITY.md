@@ -24,8 +24,10 @@ published as the production dependency until every row below is complete.
 
 Current rollout state:
 
-- yearn.fi remains on the complete legacy widget. `/dev/vault-widget` is the
-  development-only side-by-side harness.
+- yearn.fi can mount the package for the complete yBOLD surface with
+  `NEXT_PUBLIC_VAULT_WIDGET_ENABLED=true`. `/dev/vault-widget` remains the
+  development-only side-by-side harness; other product families stay on their
+  legacy implementations until their parity gates pass.
 - yearn-bold keeps its legacy card by default. Setting
   `NEXT_PUBLIC_VAULT_WIDGET_ENABLED=true` switches its entire card to the
   package for parity testing.

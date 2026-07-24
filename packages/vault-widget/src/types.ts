@@ -201,6 +201,7 @@ export type VaultWidgetProps = {
   slots?: VaultWidgetSlots
   className?: string
   style?: CSSProperties
+  showNavigation?: boolean
   viewport?: 'auto' | 'desktop' | 'mobile'
   renderPanel?: (mode: Exclude<VaultWidgetMode, 'deposit' | 'withdraw'>) => ReactNode
 }

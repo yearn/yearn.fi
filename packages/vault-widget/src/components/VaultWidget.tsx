@@ -176,6 +176,7 @@ function ConfiguredVaultWidget({
   slots,
   className,
   style,
+  showNavigation = true,
   viewport = 'auto',
   renderPanel
 }: ConfiguredVaultWidgetProps): ReactElement {
@@ -246,7 +247,7 @@ function ConfiguredVaultWidget({
   }, [])
 
   const settingsButton = (placement: 'header' | 'action'): ReactElement | null =>
-    placement === 'header' || controller.account ? (
+    placement === 'header' || controller.account || !showNavigation ? (
       <button
         className={`yv-widget__settings-button yv-widget__settings-button--${placement}`}
         type="button"
@@ -266,49 +267,52 @@ function ConfiguredVaultWidget({
     <section
       className={['yv-widget', className].filter(Boolean).join(' ')}
       style={style}
+      data-navigation={showNavigation ? 'full' : 'none'}
       data-viewport={viewport}
       aria-label={`${config.name} vault actions`}
     >
-      <div className="yv-widget__navigation">
-        {Header ? (
-          <Header mode={controller.mode} name={config.name} />
-        ) : (
-          <div className="yv-widget__summary">
-            <div className="yv-widget__summary-desktop">
-              <p>Your deposits</p>
-              <strong>{formatUsd(positionUsd)}</strong>
+      {showNavigation ? (
+        <div className="yv-widget__navigation">
+          {Header ? (
+            <Header mode={controller.mode} name={config.name} />
+          ) : (
+            <div className="yv-widget__summary">
+              <div className="yv-widget__summary-desktop">
+                <p>Your deposits</p>
+                <strong>{formatUsd(positionUsd)}</strong>
+              </div>
+              <div className="yv-widget__summary-mobile">
+                <h2>{config.name}</h2>
+              </div>
+              <div className="yv-widget__summary-actions">
+                {settingsButton('header')}
+                {onClose ? (
+                  <button className="yv-widget__close-button" type="button" aria-label="Close" onClick={onClose}>
+                    <CloseIcon />
+                  </button>
+                ) : null}
+              </div>
             </div>
-            <div className="yv-widget__summary-mobile">
-              <h2>{config.name}</h2>
-            </div>
-            <div className="yv-widget__summary-actions">
-              {settingsButton('header')}
-              {onClose ? (
-                <button className="yv-widget__close-button" type="button" aria-label="Close" onClick={onClose}>
-                  <CloseIcon />
-                </button>
-              ) : null}
-            </div>
-          </div>
-        )}
+          )}
 
-        <div className="yv-widget__tabs" role="tablist" aria-label="Vault action">
-          {controller.modes.map((availableMode) => (
-            <button
-              className="yv-widget__tab"
-              data-active={controller.mode === availableMode}
-              data-mode={availableMode}
-              key={availableMode}
-              type="button"
-              role="tab"
-              aria-selected={controller.mode === availableMode}
-              onClick={() => setMode(availableMode)}
-            >
-              {getModeLabel(availableMode)}
-            </button>
-          ))}
+          <div className="yv-widget__tabs" role="tablist" aria-label="Vault action">
+            {controller.modes.map((availableMode) => (
+              <button
+                className="yv-widget__tab"
+                data-active={controller.mode === availableMode}
+                data-mode={availableMode}
+                key={availableMode}
+                type="button"
+                role="tab"
+                aria-selected={controller.mode === availableMode}
+                onClick={() => setMode(availableMode)}
+              >
+                {getModeLabel(availableMode)}
+              </button>
+            ))}
+          </div>
         </div>
-      </div>
+      ) : null}
 
       {settingsOpen ? (
         <SettingsPanel

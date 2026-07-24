@@ -16,9 +16,9 @@ import { VaultStrategiesSection } from '@pages/vaults/components/detail/VaultStr
 import { YvUsdChartsSection } from '@pages/vaults/components/detail/YvUsdChartsSection'
 import { resolveForwardApyDisplayConfig } from '@pages/vaults/components/table/apyDisplayConfig'
 import { VaultDetailsWelcomeTour } from '@pages/vaults/components/tour/VaultDetailsWelcomeTour'
-import type { TWidgetRef } from '@pages/vaults/components/widget'
-import { Widget } from '@pages/vaults/components/widget'
+import { type TWidgetRef, Widget, WidgetTabs } from '@pages/vaults/components/widget'
 import { MobileDrawerSettingsButton } from '@pages/vaults/components/widget/MobileDrawerSettingsButton'
+import { PackagedYBoldWidget } from '@pages/vaults/components/widget/PackagedYBoldWidget'
 import { WidgetRewards } from '@pages/vaults/components/widget/rewards'
 import { WalletPanel } from '@pages/vaults/components/widget/WalletPanel'
 import { YvBtcWidget } from '@pages/vaults/components/widget/yvBTC/YvBtcWidget'
@@ -92,6 +92,7 @@ import { deriveListKind } from '@/components/pages/vaults/utils/vaultListFacets'
 import { getVaultPrimaryLogoSrc } from '@/components/pages/vaults/utils/vaultLogo'
 import { getCategoryDescription, getProductTypeDescription } from '@/components/pages/vaults/utils/vaultTagCopy'
 import { useWeb3 } from '@/components/shared/contexts/useWeb3'
+import { isVaultWidgetCutoverEnabled } from '@/config/vaultWidget'
 import { useDevFlags } from '@/contexts/useDevFlags'
 
 const resolveHeaderOffset = (): number => {
@@ -504,7 +505,7 @@ function Index(): ReactElement | null {
   const { getBalance } = useWalletTokens()
   const { onRefresh } = useWalletActions()
   const { isLoading: isWalletLoading } = useWalletStatus()
-  const { address } = useWeb3()
+  const { address, openLoginModal } = useWeb3()
   const { vaults, allVaults, isLoadingVaultList, enableVaultListFetch } = useYearn()
   const {
     listVault: yvUsdVault,
@@ -652,6 +653,7 @@ function Index(): ReactElement | null {
       expectedAddress: YBOLD_VAULT_ADDRESS
     })
   }, [isDualVariantVault, baseVault?.address, params.address, chainId])
+  const shouldUsePackagedYBoldWidget = isYBold && isVaultWidgetCutoverEnabled()
 
   const yBoldStakingVault = useMemo(() => {
     if (!isYBold) return undefined
@@ -1061,7 +1063,7 @@ function Index(): ReactElement | null {
     setWidgetMode(mode)
   }
 
-  const isWidgetPanelActive = !isWidgetWalletOpen
+  const isWidgetPanelActive = shouldUsePackagedYBoldWidget || !isWidgetWalletOpen
 
   const openWidgetRewards = (): void => {
     setIsYBoldStakePrefillActive(false)
@@ -1611,6 +1613,17 @@ function Index(): ReactElement | null {
       { address: YBOLD_STAKING_ADDRESS, chainID: resolvedCurrentVault.chainID }
     ])
   }
+  const handlePackagedYBoldSuccess = (): void => {
+    setIsYBoldStakePrefillActive(false)
+    setYBoldStakePrefillAmountSnapshot(null)
+    refetchSnapshot()
+    refetchYBoldSnapshot()
+    onRefresh([
+      { address: resolvedCurrentVault.address, chainID: resolvedCurrentVault.chainID },
+      { address: resolvedCurrentVault.token.address, chainID: resolvedCurrentVault.chainID },
+      { address: YBOLD_STAKING_ADDRESS, chainID: resolvedCurrentVault.chainID }
+    ])
+  }
   const handleDepositUserTokenSelectionChange = (nextAddress: `0x${string}`, nextChainId: number): void => {
     if (!shouldForceYBoldStakeDeposit) {
       return
@@ -1662,6 +1675,20 @@ function Index(): ReactElement | null {
   }
 
   function renderDesktopWidget(): ReactElement {
+    if (shouldUsePackagedYBoldWidget) {
+      return (
+        <PackagedYBoldWidget
+          assetPriceUsd={resolvedCurrentVault.tvl.price || 1}
+          estimatedApr={resolvedCurrentVault.apr.forwardAPR.netAPR || resolvedCurrentVault.apr.netAPR || 0}
+          mode={resolvedWidgetMode}
+          onConnectWallet={openLoginModal}
+          onModeChange={handleWidgetModeChange}
+          onSuccess={handlePackagedYBoldSuccess}
+          showInfo={isWidgetWalletOpen}
+          viewport="desktop"
+        />
+      )
+    }
     if (isYvUsd) {
       return (
         <YvUsdWidget
@@ -1718,6 +1745,27 @@ function Index(): ReactElement | null {
   }
 
   function renderMobileWidget(): ReactElement {
+    if (shouldUsePackagedYBoldWidget) {
+      return (
+        <div className="flex h-full w-full flex-col">
+          <WidgetTabs
+            actions={widgetActions}
+            activeAction={mobileDrawerAction}
+            onActionChange={handleMobileWidgetModeChange}
+            disableBorderRadius
+          />
+          <PackagedYBoldWidget
+            assetPriceUsd={resolvedCurrentVault.tvl.price || 1}
+            estimatedApr={resolvedCurrentVault.apr.forwardAPR.netAPR || resolvedCurrentVault.apr.netAPR || 0}
+            mode={mobileDrawerAction}
+            onConnectWallet={openLoginModal}
+            onModeChange={handleMobileWidgetModeChange}
+            onSuccess={handlePackagedYBoldSuccess}
+            viewport="mobile"
+          />
+        </div>
+      )
+    }
     if (isYvUsd) {
       return (
         <YvUsdWidget
@@ -2001,14 +2049,16 @@ function Index(): ReactElement | null {
                     {renderDesktopWidget()}
                   </div>
                 )}
-                <WalletPanel
-                  isActive={isWidgetWalletOpen && !isWidgetRewardsOpen}
-                  currentVault={currentVault}
-                  vaultAddress={toAddress(currentVault.address)}
-                  stakingAddress={stakingAddress}
-                  chainId={chainId}
-                  vaultUserData={vaultUserData}
-                />
+                {!shouldUsePackagedYBoldWidget ? (
+                  <WalletPanel
+                    isActive={isWidgetWalletOpen && !isWidgetRewardsOpen}
+                    currentVault={currentVault}
+                    vaultAddress={toAddress(currentVault.address)}
+                    stakingAddress={stakingAddress}
+                    chainId={chainId}
+                    vaultUserData={vaultUserData}
+                  />
+                ) : null}
               </div>
               {shouldShowWidgetRewards ? (
                 <div ref={widgetRewardsRef} className={cl('w-full min-w-0', isWidgetRewardsOpen ? 'flex min-h-0' : '')}>

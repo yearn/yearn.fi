@@ -132,6 +132,12 @@
   padding: 1.25rem 1.5rem 1.5rem;
 }
 
+.yv-widget[data-navigation="none"] .yv-widget__body,
+.yv-widget[data-navigation="none"] .yv-widget__panel,
+.yv-widget[data-navigation="none"] .yv-widget__settings {
+  margin-top: 0;
+}
+
 .yv-widget__body[data-token-selector-open="true"] > :not(.yv-widget__token-overlay) {
   visibility: hidden;
 }
