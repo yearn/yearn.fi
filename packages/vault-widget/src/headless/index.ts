@@ -9,6 +9,8 @@ export {
   YEARN_V2_VAULT_ABI
 } from './adapters'
 export { createHttpEnsoQuoteProvider, normalizeEnsoRoute } from './enso'
+export type { ExecuteVaultWidgetPlanParams, VaultWidgetPlanOutcome } from './executeTransactionPlan'
+export { executeVaultWidgetPlan } from './executeTransactionPlan'
 export type {
   VaultWidgetCooldownState,
   VaultWidgetCooldownStateName,

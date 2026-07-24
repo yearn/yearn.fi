@@ -2,9 +2,9 @@
 
 import { useQuery } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { type Address, erc20Abi, formatUnits, type Hash, type Hex, isAddressEqual, parseUnits } from 'viem'
+import { type Address, erc20Abi, formatUnits, isAddressEqual, parseUnits } from 'viem'
 import { useAccount, useConfig, usePublicClient } from 'wagmi'
-import { getPublicClient, switchChain } from 'wagmi/actions'
+import { getPublicClient } from 'wagmi/actions'
 import { useVaultWidgetServices } from '../context'
 import type { VaultWidgetSettings } from '../services'
 import type {
@@ -13,7 +13,6 @@ import type {
   VaultWidgetConfig,
   VaultWidgetEvent,
   VaultWidgetExecutionState,
-  VaultWidgetExecutionStep,
   VaultWidgetMode,
   VaultWidgetPositionSource,
   VaultWidgetPositionSourceState,
@@ -22,6 +21,7 @@ import type {
   VaultWidgetTransactionPlan,
   VaultWidgetWalletType
 } from '../types'
+import { executeVaultWidgetPlan } from './executeTransactionPlan'
 import {
   getDefaultPositionSource,
   getPositionSources,
@@ -332,127 +332,6 @@ export function useVaultWidgetController({
     await Promise.allSettled([balanceQuery.refetch(), positionSourcesQuery.refetch(), allowanceQuery.refetch()])
   }, [allowanceQuery, balanceQuery, positionSourcesQuery])
 
-  const executeSteps = useCallback(
-    async (
-      transactionPlan: VaultWidgetTransactionPlan,
-      steps: readonly VaultWidgetExecutionStep[],
-      index = 0,
-      outcome: { destinationHash?: Hash; hash?: Hash; proposalId?: Hex } = {},
-      onSubmitted?: (hash: Hash) => Promise<void>
-    ): Promise<{ destinationHash?: Hash; hash?: Hash; proposalId?: Hex }> => {
-      const step = steps[index]
-      if (!step) return outcome
-
-      setExecution({
-        status: 'confirming',
-        step,
-        stepIndex: index,
-        stepCount: steps.length
-      })
-      onEvent?.({ type: 'transaction_step', step })
-
-      if (step.kind === 'switch-chain' && step.chainId) {
-        await switchChain(wagmiConfig, { chainId: step.chainId })
-        return executeSteps(transactionPlan, steps, index + 1, outcome, onSubmitted)
-      }
-      if (step.kind === 'refresh') {
-        await refresh()
-        return executeSteps(transactionPlan, steps, index + 1, outcome, onSubmitted)
-      }
-      if (step.kind === 'safe-proposal') {
-        if (!account || !step.chainId || !step.requests?.length || !services.execution.proposeSafeBatch) {
-          throw new Error('Safe batch execution is not configured')
-        }
-        const proposalId = await services.execution.proposeSafeBatch({
-          account,
-          chainId: step.chainId,
-          config: wagmiConfig,
-          requests: step.requests,
-          step
-        })
-        setExecution({
-          status: 'pending',
-          step,
-          stepIndex: index,
-          stepCount: steps.length,
-          proposalId
-        })
-        onEvent?.({ type: 'transaction_step', step, proposalId })
-        const hash = services.execution.waitForSafeExecution
-          ? await services.execution.waitForSafeExecution(wagmiConfig, step.chainId, proposalId)
-          : undefined
-        return executeSteps(
-          transactionPlan,
-          steps,
-          index + 1,
-          {
-            hash: hash ?? outcome.hash,
-            proposalId
-          },
-          onSubmitted
-        )
-      }
-      if (step.kind === 'wait-cross-chain') {
-        if (!step.bridge || !outcome.hash || !services.ensoBridge) {
-          throw new Error('Cross-chain completion tracking is not configured')
-        }
-        setExecution({
-          status: 'submitted',
-          step,
-          stepIndex: index,
-          stepCount: steps.length,
-          hash: outcome.hash,
-          proposalId: outcome.proposalId
-        })
-        onEvent?.({
-          type: 'transaction_submitted',
-          plan: transactionPlan,
-          hash: outcome.hash,
-          proposalId: outcome.proposalId
-        })
-        await onSubmitted?.(outcome.hash)
-        const bridgeStatus = await services.ensoBridge.waitForCompletion(
-          {
-            ...step.bridge,
-            sourceTxHash: outcome.hash
-          },
-          (status) => onEvent?.({ type: 'bridge_status', status })
-        )
-        return executeSteps(
-          transactionPlan,
-          steps,
-          index + 1,
-          {
-            ...outcome,
-            destinationHash: bridgeStatus.destinationTxHash
-          },
-          onSubmitted
-        )
-      }
-      if (!step.request || !account) {
-        return executeSteps(transactionPlan, steps, index + 1, outcome, onSubmitted)
-      }
-
-      const hash = await services.execution.execute({
-        account,
-        config: wagmiConfig,
-        request: step.request,
-        step
-      })
-      setExecution({
-        status: 'pending',
-        step,
-        stepIndex: index,
-        stepCount: steps.length,
-        hash
-      })
-      onEvent?.({ type: 'transaction_step', step, hash })
-      await services.execution.waitForReceipt(wagmiConfig, step.request.chainId, hash)
-      return executeSteps(transactionPlan, steps, index + 1, { ...outcome, hash }, onSubmitted)
-    },
-    [account, onEvent, refresh, services.ensoBridge, services.execution, wagmiConfig]
-  )
-
   const resolveFreshPlan = useCallback(async (): Promise<VaultWidgetTransactionPlan> => {
     if (!plan) throw new Error('No transaction plan is available')
     if (!plan.quote.expiresAt || plan.quote.expiresAt > Date.now()) return plan
@@ -490,19 +369,23 @@ export function useVaultWidgetController({
     })
 
     try {
-      const { destinationHash, hash, proposalId } = await executeSteps(
-        transactionPlan,
-        transactionPlan.steps,
-        0,
-        {},
-        async (sourceHash) => {
+      const { destinationHash, hash, proposalId } = await executeVaultWidgetPlan({
+        account,
+        config: wagmiConfig,
+        ensoBridge: services.ensoBridge,
+        execution: services.execution,
+        onEvent,
+        onExecution: setExecution,
+        onRefresh: refresh,
+        onSubmitted: async (sourceHash) => {
           await services.activityStore.update(activityId, {
             hash: sourceHash,
             status: 'submitted',
             timestamp: Date.now()
           })
-        }
-      )
+        },
+        plan: transactionPlan
+      })
       await services.activityStore.update(activityId, {
         destinationHash,
         hash,
@@ -536,7 +419,6 @@ export function useVaultWidgetController({
     account,
     amount,
     canSubmit,
-    executeSteps,
     onError,
     onEvent,
     onSuccess,
@@ -546,7 +428,11 @@ export function useVaultWidgetController({
     selectedToken.chainId,
     selectedPositionSource.token.address,
     services.activityStore,
-    transactionMode
+    services.ensoBridge,
+    services.execution,
+    transactionMode,
+    wagmiConfig,
+    refresh
   ])
 
   const setMode = useCallback(
