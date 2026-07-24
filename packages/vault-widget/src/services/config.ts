@@ -11,6 +11,7 @@ import {
   createUnstakeAndWithdrawAdapter
 } from '../headless/staking'
 import { createYBoldPreset, YBOLD_VAULT_ADDRESS } from '../presets/yBold'
+import { createYvUsdPreset, YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '../presets/yvUsd'
 import type { VaultWidgetConfig, VaultWidgetToken } from '../types'
 import type { VaultWidgetConfigResolver } from './types'
 
@@ -188,6 +189,12 @@ export function createKongVaultConfigResolver(options: KongConfigResolverOptions
     async resolve(chainId, vaultAddress, signal): Promise<VaultWidgetConfig> {
       if (chainId === 1 && isAddressEqual(vaultAddress, YBOLD_VAULT_ADDRESS)) {
         return createYBoldPreset()
+      }
+      if (chainId === 1 && isAddressEqual(vaultAddress, YVUSD_LOCKED_ADDRESS)) {
+        return createYvUsdPreset({ variant: 'locked' })
+      }
+      if (chainId === 1 && isAddressEqual(vaultAddress, YVUSD_UNLOCKED_ADDRESS)) {
+        return createYvUsdPreset({ variant: 'unlocked' })
       }
 
       const response = await fetcher(`${baseUrl}/snapshot/${chainId}/${vaultAddress}`, {

@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { YBOLD_VAULT_ADDRESS } from '../presets/yBold'
+import { YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '../presets/yvUsd'
 import { createKongVaultConfigResolver } from './config'
 
 const vaultAddress = '0x1111111111111111111111111111111111111111'
@@ -135,6 +136,19 @@ describe('createKongVaultConfigResolver', () => {
     const config = await createKongVaultConfigResolver({ fetcher }).resolve(1, YBOLD_VAULT_ADDRESS)
 
     expect(config.id).toBe('ybold-mainnet')
+    expect(fetcher).not.toHaveBeenCalled()
+  })
+
+  it.each([
+    { address: YVUSD_LOCKED_ADDRESS, adapter: 'yvUSD-locked', variant: 'locked' },
+    { address: YVUSD_UNLOCKED_ADDRESS, adapter: 'erc4626', variant: 'unlocked' }
+  ])('resolves the package-owned yvUSD $variant preset', async ({ adapter, address, variant }) => {
+    const fetcher = vi.fn()
+
+    const config = await createKongVaultConfigResolver({ fetcher }).resolve(1, address)
+
+    expect(config.id).toBe(`yvUSD:${variant}`)
+    expect(config.adapters[0]?.id).toBe(adapter)
     expect(fetcher).not.toHaveBeenCalled()
   })
 })

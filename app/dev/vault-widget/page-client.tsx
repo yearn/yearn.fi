@@ -1,7 +1,15 @@
 'use client'
 
 import { useAccountModal, useConnectModal } from '@rainbow-me/rainbowkit'
-import { createYBoldPreset, VaultWidget, type VaultWidgetMode, VaultWidgetProvider } from '@yearn/vault-widget'
+import {
+  createYBoldPreset,
+  createYvUsdFamilyPreset,
+  VaultFamilyWidget,
+  VaultWidget,
+  type VaultWidgetMode,
+  VaultWidgetProvider,
+  YVUSD_UNLOCKED_ADDRESS
+} from '@yearn/vault-widget'
 import { createYearnFiActivityStore, createYearnFiSettingsStore } from '@yearn/vault-widget/services'
 import type { ReactElement, RefObject } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -11,8 +19,15 @@ import { useAccount } from 'wagmi'
 const yBoldConfig = createYBoldPreset({
   ensoEndpoint: '/api/enso/route'
 })
+const yvUsdFamily = createYvUsdFamilyPreset()
 
 const VAULT_FIXTURES = [
+  {
+    id: 'yvusd',
+    label: 'yvUSD',
+    chainId: 1,
+    vaultAddress: YVUSD_UNLOCKED_ADDRESS
+  },
   {
     id: 'ybold',
     label: 'yBOLD',
@@ -50,7 +65,8 @@ function isVisible(element: HTMLElement): boolean {
 function synchronizeLegacyWidget(
   iframe: HTMLIFrameElement | null,
   viewport: TestViewport,
-  mode: VaultWidgetMode
+  mode: VaultWidgetMode,
+  variant?: string
 ): void {
   const document = iframe?.contentDocument
   if (!document) return
@@ -67,6 +83,11 @@ function synchronizeLegacyWidget(
       return rect.left > DESKTOP_WIDGET_CROP.left && rect.top > DESKTOP_WIDGET_CROP.top
     })
     widgetTab?.click()
+    if (variant) {
+      Array.from(document.querySelectorAll<HTMLElement>('button'))
+        .find((element) => getButtonLabel(element) === variant && isVisible(element))
+        ?.click()
+    }
     return
   }
 
@@ -77,6 +98,11 @@ function synchronizeLegacyWidget(
     candidate.getBoundingClientRect().top > lowest.getBoundingClientRect().top ? candidate : lowest
   )
   lowestButton.click()
+  if (variant) {
+    Array.from(document.querySelectorAll<HTMLElement>('button'))
+      .find((element) => getButtonLabel(element) === variant && isVisible(element))
+      ?.click()
+  }
 }
 
 function SegmentedControl<T extends string>({
@@ -195,6 +221,7 @@ export function VaultWidgetParityPage(): ReactElement {
   const [vaultId, setVaultId] = useState<TestVaultId>('ybold')
   const [viewport, setViewport] = useState<TestViewport>('desktop')
   const [mode, setMode] = useState<VaultWidgetMode>('deposit')
+  const [variant, setVariant] = useState('locked')
   const [legacyLoadCount, setLegacyLoadCount] = useState(0)
   const services = useMemo(
     () => ({
@@ -208,8 +235,8 @@ export function VaultWidgetParityPage(): ReactElement {
   const comparisonWidth = viewport === 'desktop' ? DESKTOP_WIDGET_CROP.width : MOBILE_VIEWPORT.width
 
   const synchronizeLegacy = useCallback(() => {
-    synchronizeLegacyWidget(iframeRef.current, viewport, mode)
-  }, [mode, viewport])
+    synchronizeLegacyWidget(iframeRef.current, viewport, mode, vaultId === 'yvusd' ? variant : undefined)
+  }, [mode, variant, vaultId, viewport])
 
   // The parity harness is intentionally allowed to drive its same-origin
   // legacy iframe so both implementations stay on the selected test state.
@@ -243,6 +270,7 @@ export function VaultWidgetParityPage(): ReactElement {
               onChange={(nextVaultId) => {
                 setVaultId(nextVaultId)
                 setMode('deposit')
+                if (nextVaultId === 'yvusd') setVariant('locked')
               }}
             />
             <SegmentedControl
@@ -274,6 +302,17 @@ export function VaultWidgetParityPage(): ReactElement {
               value={mode}
               onChange={setMode}
             />
+            {vaultId === 'yvusd' ? (
+              <SegmentedControl
+                label="Vault variant"
+                options={[
+                  { label: 'Locked', value: 'locked' },
+                  { label: 'Unlocked', value: 'unlocked' }
+                ]}
+                value={variant}
+                onChange={setVariant}
+              />
+            ) : null}
             <fieldset className="min-w-0">
               <legend className="mb-2 text-[0.6875rem] font-bold uppercase tracking-[0.14em] text-text-secondary">
                 Wallet session
@@ -326,17 +365,31 @@ export function VaultWidgetParityPage(): ReactElement {
                 style={{ height: viewport === 'desktop' ? DESKTOP_WIDGET_CROP.height : MOBILE_VIEWPORT.height }}
               >
                 <VaultWidgetProvider services={services}>
-                  <VaultWidget
-                    key={`${vaultFixture.id}:${viewport}`}
-                    chainId={vaultFixture.chainId}
-                    vaultAddress={vaultFixture.vaultAddress}
-                    mode={mode}
-                    style={viewport === 'mobile' && mode === 'deposit' ? { minHeight: 780 } : undefined}
-                    viewport={viewport}
-                    onModeChange={setMode}
-                    onConnectWallet={() => openConnectModal?.()}
-                    onClose={() => undefined}
-                  />
+                  {vaultId === 'yvusd' ? (
+                    <VaultFamilyWidget
+                      key={`${vaultFixture.id}:${viewport}`}
+                      family={yvUsdFamily}
+                      mode={mode}
+                      variant={variant}
+                      viewport={viewport}
+                      onVariantChange={setVariant}
+                      onModeChange={setMode}
+                      onConnectWallet={() => openConnectModal?.()}
+                      onClose={() => undefined}
+                    />
+                  ) : (
+                    <VaultWidget
+                      key={`${vaultFixture.id}:${viewport}`}
+                      chainId={vaultFixture.chainId}
+                      vaultAddress={vaultFixture.vaultAddress}
+                      mode={mode}
+                      style={viewport === 'mobile' && mode === 'deposit' ? { minHeight: 780 } : undefined}
+                      viewport={viewport}
+                      onModeChange={setMode}
+                      onConnectWallet={() => openConnectModal?.()}
+                      onClose={() => undefined}
+                    />
+                  )}
                 </VaultWidgetProvider>
               </div>
             </ComparisonFrame>

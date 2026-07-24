@@ -9,6 +9,22 @@ export {
   YEARN_V2_VAULT_ABI
 } from './adapters'
 export { createHttpEnsoQuoteProvider, normalizeEnsoRoute } from './enso'
+export type {
+  VaultWidgetCooldownState,
+  VaultWidgetCooldownStateName,
+  VaultWidgetCooldownStatus
+} from './lockedVault'
+export {
+  createCancelCooldownTransaction,
+  createLockedVaultAdapter,
+  createLockedVaultPositionValueReader,
+  createStartCooldownTransaction,
+  readVaultWidgetCooldownState,
+  resolveVaultWidgetCooldownState,
+  VaultWidgetCooldownRequiredError,
+  YVUSD_LOCKED_VAULT_ABI,
+  YVUSD_LOCKED_ZAP_ABI
+} from './lockedVault'
 export {
   getDefaultPositionSource,
   getPositionSources,

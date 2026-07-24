@@ -1,3 +1,4 @@
+export { VaultFamilyWidget } from './components/VaultFamilyWidget'
 export { VaultWidget } from './components/VaultWidget'
 export type { VaultWidgetProviderProps } from './context'
 export { useVaultWidgetServices, VaultWidgetProvider } from './context'
@@ -12,6 +13,7 @@ export type {
   EnsoQuoteProvider,
   EnsoRoute,
   EnsoRouteRequest,
+  VaultFamilyWidgetProps,
   VaultWidgetActivity,
   VaultWidgetActivityStatus,
   VaultWidgetApproval,
@@ -22,6 +24,7 @@ export type {
   VaultWidgetExecutionState,
   VaultWidgetExecutionStep,
   VaultWidgetExecutionStepKind,
+  VaultWidgetFamilyPreset,
   VaultWidgetMode,
   VaultWidgetPositionSource,
   VaultWidgetPositionSourceState,
@@ -36,5 +39,6 @@ export type {
   VaultWidgetTokenSelectorConfig,
   VaultWidgetTransactionPlan,
   VaultWidgetTransactionRequest,
+  VaultWidgetVariant,
   VaultWidgetWalletType
 } from './types'

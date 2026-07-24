@@ -65,6 +65,28 @@ status endpoint reports destination delivery. The default provider polls
 override `ensoBridge` through `VaultWidgetProvider`. Route quotes are
 automatically repeated with only the slippage remaining after price impact.
 
+Vault families with product variants use `VaultFamilyWidget`. The package
+ships a live locked/unlocked yvUSD family and an unlocked yvBTC family whose
+locked variant remains visibly unavailable until its contract launches:
+
+```tsx
+import {
+  createYvUsdFamilyPreset,
+  VaultFamilyWidget
+} from '@yearn/vault-widget'
+
+<VaultFamilyWidget
+  family={createYvUsdFamilyPreset()}
+  onConnectWallet={openConnectModal}
+/>
+```
+
+The locked yvUSD preset owns nested share valuation, USDC zap deposits, and
+the ordered locked-yvUSD-to-USDC withdrawal calls. Cooldown consumers can use
+the headless `readVaultWidgetCooldownState`,
+`createStartCooldownTransaction`, and `createCancelCooldownTransaction`
+exports while the styled cooldown controls complete parity review.
+
 ## Development
 
 ```bash

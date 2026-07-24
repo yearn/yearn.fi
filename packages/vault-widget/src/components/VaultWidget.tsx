@@ -199,6 +199,7 @@ function ConfiguredVaultWidget({
   style,
   showNavigation = true,
   viewport = 'auto',
+  headerActions,
   renderPanel
 }: ConfiguredVaultWidgetProps): ReactElement {
   if (chainId !== config.chainId || vaultAddress.toLowerCase() !== config.vaultAddress.toLowerCase()) {
@@ -362,7 +363,10 @@ function ConfiguredVaultWidget({
 
       {!settingsOpen && isTransactionMode ? (
         <div className="yv-widget__body" data-token-selector-open={tokenSelectorOpen}>
-          <h3 className="yv-widget__body-title">{getModeLabel(controller.mode, config.display?.modeLabels)}</h3>
+          <div className="yv-widget__body-heading">
+            <h3 className="yv-widget__body-title">{getModeLabel(controller.mode, config.display?.modeLabels)}</h3>
+            {headerActions}
+          </div>
 
           {transactionMode === 'withdraw' && controller.positionSources.length > 1 ? (
             <fieldset className="yv-widget__position-sources">

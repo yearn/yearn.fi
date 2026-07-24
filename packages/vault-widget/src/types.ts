@@ -133,6 +133,22 @@ export type VaultWidgetConfig = {
   }
 }
 
+export type VaultWidgetVariant = {
+  id: string
+  label: string
+  description?: string
+  available: boolean
+  config?: VaultWidgetConfig
+  unavailableMessage?: string
+}
+
+export type VaultWidgetFamilyPreset = {
+  id: string
+  name: string
+  defaultVariant: string
+  variants: readonly VaultWidgetVariant[]
+}
+
 export type VaultWidgetExecutionStepKind =
   | 'switch-chain'
   | 'reset-approval'
@@ -264,7 +280,15 @@ export type VaultWidgetProps = {
   style?: CSSProperties
   showNavigation?: boolean
   viewport?: 'auto' | 'desktop' | 'mobile'
+  headerActions?: ReactNode
   renderPanel?: (mode: Exclude<VaultWidgetMode, 'deposit' | 'withdraw'>) => ReactNode
+}
+
+export type VaultFamilyWidgetProps = Omit<VaultWidgetProps, 'chainId' | 'config' | 'vaultAddress'> & {
+  family: VaultWidgetFamilyPreset
+  variant?: string
+  defaultVariant?: string
+  onVariantChange?: (variant: string) => void
 }
 
 export type EnsoRouteRequest = {
