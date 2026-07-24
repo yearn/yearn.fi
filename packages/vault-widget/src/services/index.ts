@@ -1,3 +1,9 @@
+export type { VaultWidgetActivityReconciliation } from './activity'
+export {
+  filterVaultWidgetActivities,
+  getVaultWidgetRelatedAddresses,
+  reconcileVaultWidgetActivity
+} from './activity'
 export { createKongVaultConfigResolver } from './config'
 export { createHttpEnsoBridgeStatusProvider, normalizeEnsoBridgeStatus } from './ensoBridge'
 export {

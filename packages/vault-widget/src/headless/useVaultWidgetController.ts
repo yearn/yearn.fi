@@ -52,6 +52,7 @@ type VaultWidgetController = {
   execution: VaultWidgetExecutionState
   isLoading: boolean
   isQuoteLoading: boolean
+  infoPositionSources: readonly VaultWidgetPositionSourceState[]
   mode: VaultWidgetMode
   modes: readonly VaultWidgetMode[]
   overBalance: boolean
@@ -124,6 +125,18 @@ export function useVaultWidgetController({
   const initialMode = defaultMode ?? config.defaultMode ?? configuredModes[0] ?? 'deposit'
   const [internalMode, setInternalMode] = useState<VaultWidgetMode>(initialMode)
   const positionSources = useMemo(() => getPositionSources(config), [config])
+  const infoPositionSources = useMemo(
+    () => config.infoPositionSources ?? positionSources,
+    [config.infoPositionSources, positionSources]
+  )
+  const balanceSources = useMemo(
+    () =>
+      [...positionSources, ...infoPositionSources].filter(
+        (source, index, sources) =>
+          sources.findIndex(({ token }) => isAddressEqual(token.address, source.token.address)) === index
+      ),
+    [infoPositionSources, positionSources]
+  )
   const defaultPositionSource = getDefaultPositionSource(positionSources, config.defaultPositionSource)
   const [selectedPositionSourceId, setSelectedPositionSourceId] = useState(defaultPositionSource.id)
   const selectedPositionSource =
@@ -134,12 +147,12 @@ export function useVaultWidgetController({
       config.id,
       'position-sources',
       account,
-      positionSources.map(({ id, token }) => `${id}:${token.chainId}:${token.address}`).join(',')
+      balanceSources.map(({ id, token }) => `${id}:${token.chainId}:${token.address}`).join(',')
     ],
     queryFn: async (): Promise<readonly VaultWidgetPositionSourceState[]> => {
       if (!account) return []
       return Promise.all(
-        positionSources.map(async (source) => {
+        balanceSources.map(async (source) => {
           const publicClient = getPublicClient(wagmiConfig, { chainId: source.token.chainId })
           if (!publicClient) throw new Error(`No public client is configured for chain ${source.token.chainId}`)
           return readPositionSourceState(publicClient, account, source)
@@ -149,15 +162,16 @@ export function useVaultWidgetController({
     enabled: !!account,
     refetchInterval: 15_000
   })
-  const positionSourceStates = positionSources.map((source) => {
-    return (
-      positionSourcesQuery.data?.find(({ id }) => id === source.id) ?? {
-        ...source,
-        balance: 0n,
-        value: 0n
-      }
-    )
-  })
+  const getPositionSourceState = (source: VaultWidgetPositionSource): VaultWidgetPositionSourceState => {
+    const state = positionSourcesQuery.data?.find(({ token }) => isAddressEqual(token.address, source.token.address))
+    return {
+      ...source,
+      balance: state?.balance ?? 0n,
+      value: state?.value ?? 0n
+    }
+  }
+  const positionSourceStates = positionSources.map(getPositionSourceState)
+  const infoPositionSourceStates = infoPositionSources.map(getPositionSourceState)
   const activePositionSource = positionSourceStates.find(({ id }) => id === selectedPositionSource.id) ??
     positionSourceStates[0] ?? {
       ...selectedPositionSource,
@@ -295,7 +309,7 @@ export function useVaultWidgetController({
 
   const balance = transactionMode === 'deposit' ? (balanceQuery.data ?? 0n) : activePositionSource.value
   const positionBalance = activePositionSource.balance
-  const positionValue = sumPositionValues(positionSourceStates)
+  const positionValue = sumPositionValues(infoPositionSourceStates)
   const positionValueDecimals = config.withdrawTokens[0]?.decimals ?? config.positionToken.decimals
   const overBalance =
     transactionMode === 'deposit' ? parsedAmount > balance : (quoteQuery.data?.positionAmount ?? 0n) > positionBalance
@@ -365,6 +379,7 @@ export function useVaultWidgetController({
     const activityId = await services.activityStore.add({
       account,
       amount: transactionPlan.quote.activityAmount ?? amount,
+      bridge: transactionPlan.quote.bridge,
       chainId: transactionPlan.quote.transaction.chainId,
       destinationChainId: selectedToken.chainId,
       status: 'pending',
@@ -382,6 +397,15 @@ export function useVaultWidgetController({
         execution: services.execution,
         onEvent,
         onExecution: setExecution,
+        onProgress: async ({ hash, isFinalTransaction, proposalId }) => {
+          await services.activityStore.update(activityId, {
+            hash,
+            isFinalTransaction,
+            proposalId,
+            status: 'submitted',
+            timestamp: Date.now()
+          })
+        },
         onRefresh: refresh,
         onSubmitted: async (sourceHash) => {
           await services.activityStore.update(activityId, {
@@ -527,6 +551,7 @@ export function useVaultWidgetController({
     execution,
     isLoading: balanceQuery.isLoading || positionSourcesQuery.isLoading,
     isQuoteLoading: quoteQuery.isLoading || quoteQuery.isFetching,
+    infoPositionSources: infoPositionSourceStates,
     mode,
     modes,
     overBalance,

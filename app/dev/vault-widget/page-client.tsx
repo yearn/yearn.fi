@@ -59,6 +59,7 @@ const DESKTOP_WIDGET_CROP = { left: 916, top: 190, width: 406, height: 570 }
 
 type TestViewport = 'desktop' | 'mobile'
 type TestVaultId = (typeof VAULT_FIXTURES)[number]['id']
+type TestWidgetState = VaultWidgetMode | 'settings'
 function getButtonLabel(element: Element): string {
   return element.textContent?.replace(/\s+/g, ' ').trim().toLowerCase() ?? ''
 }
@@ -71,11 +72,34 @@ function isVisible(element: HTMLElement): boolean {
 function synchronizeLegacyWidget(
   iframe: HTMLIFrameElement | null,
   viewport: TestViewport,
-  mode: VaultWidgetMode,
+  state: TestWidgetState,
   variant?: string
 ): void {
   const document = iframe?.contentDocument
   if (!document) return
+  if (state === 'settings') {
+    const settingsPanelIsOpen = Array.from(document.querySelectorAll<HTMLElement>('h1, h2, h3, h4, h5, h6')).some(
+      (element) => getButtonLabel(element) === 'transaction settings' && isVisible(element)
+    )
+    if (settingsPanelIsOpen) return
+    const settingsButton = Array.from(
+      document.querySelectorAll<HTMLElement>(
+        'button[aria-label="Transaction Settings"], button[aria-label="Open settings"]'
+      )
+    ).find(isVisible)
+    if (settingsButton) {
+      settingsButton.click()
+      return
+    }
+    if (viewport === 'mobile') {
+      Array.from(document.querySelectorAll<HTMLElement>('button'))
+        .filter((element) => getButtonLabel(element) === 'deposit' && isVisible(element))
+        .toSorted((left, right) => right.getBoundingClientRect().top - left.getBoundingClientRect().top)[0]
+        ?.click()
+    }
+    return
+  }
+  const mode = state
   const modeLabel = mode === 'info' ? 'my info' : mode === 'rewards' ? 'view rewards' : mode
 
   const candidates = Array.from(document.querySelectorAll<HTMLElement>('button, [role="tab"]')).filter(
@@ -226,7 +250,8 @@ export function VaultWidgetParityPage(): ReactElement {
   const iframeRef = useRef<HTMLIFrameElement>(null)
   const [vaultId, setVaultId] = useState<TestVaultId>('ybold')
   const [viewport, setViewport] = useState<TestViewport>('desktop')
-  const [mode, setMode] = useState<VaultWidgetMode>('deposit')
+  const [widgetState, setWidgetState] = useState<TestWidgetState>('deposit')
+  const lastModeRef = useRef<VaultWidgetMode>('deposit')
   const [variant, setVariant] = useState('locked')
   const [legacyLoadCount, setLegacyLoadCount] = useState(0)
   const services = useMemo(
@@ -237,31 +262,39 @@ export function VaultWidgetParityPage(): ReactElement {
     []
   )
   const vaultFixture = VAULT_FIXTURES.find((fixture) => fixture.id === vaultId) ?? VAULT_FIXTURES[0]
-  const availableModes: readonly { label: string; value: VaultWidgetMode }[] =
+  const availableModes: readonly { label: string; value: TestWidgetState }[] =
     vaultId === 'v2-migration'
       ? [
           { label: 'Migrate', value: 'migrate' },
           { label: 'Withdraw', value: 'withdraw' },
-          { label: 'My Info', value: 'info' }
+          { label: 'My Info', value: 'info' },
+          { label: 'Settings', value: 'settings' }
         ]
       : vaultId === 'v3-staking'
         ? [
             { label: 'Deposit', value: 'deposit' },
             { label: 'Withdraw', value: 'withdraw' },
             { label: 'Rewards', value: 'rewards' },
-            { label: 'My Info', value: 'info' }
+            { label: 'My Info', value: 'info' },
+            { label: 'Settings', value: 'settings' }
           ]
         : [
             { label: 'Deposit', value: 'deposit' },
             { label: 'Withdraw', value: 'withdraw' },
-            { label: 'My Info', value: 'info' }
+            { label: 'My Info', value: 'info' },
+            { label: 'Settings', value: 'settings' }
           ]
+  const mode: VaultWidgetMode = widgetState === 'settings' ? lastModeRef.current : widgetState
+  const changeWidgetState = (nextState: TestWidgetState): void => {
+    if (nextState !== 'settings') lastModeRef.current = nextState
+    setWidgetState(nextState)
+  }
   const legacyVaultPath = `/vaults/${vaultFixture.chainId}/${vaultFixture.vaultAddress}`
   const comparisonWidth = viewport === 'desktop' ? DESKTOP_WIDGET_CROP.width : MOBILE_VIEWPORT.width
 
   const synchronizeLegacy = useCallback(() => {
-    synchronizeLegacyWidget(iframeRef.current, viewport, mode, vaultId === 'yvusd' ? variant : undefined)
-  }, [mode, variant, vaultId, viewport])
+    synchronizeLegacyWidget(iframeRef.current, viewport, widgetState, vaultId === 'yvusd' ? variant : undefined)
+  }, [variant, vaultId, viewport, widgetState])
 
   // The parity harness is intentionally allowed to drive its same-origin
   // legacy iframe so both implementations stay on the selected test state.
@@ -294,7 +327,7 @@ export function VaultWidgetParityPage(): ReactElement {
               value={vaultId}
               onChange={(nextVaultId) => {
                 setVaultId(nextVaultId)
-                setMode(nextVaultId === 'v2-migration' ? 'migrate' : 'deposit')
+                changeWidgetState(nextVaultId === 'v2-migration' ? 'migrate' : 'deposit')
                 if (nextVaultId === 'yvusd') setVariant('locked')
               }}
             />
@@ -307,14 +340,14 @@ export function VaultWidgetParityPage(): ReactElement {
               value={viewport}
               onChange={(nextViewport) => {
                 setViewport(nextViewport)
-                if (nextViewport === 'mobile' && mode === 'info') setMode('deposit')
+                if (nextViewport === 'mobile' && widgetState === 'info') changeWidgetState('deposit')
               }}
             />
             <SegmentedControl
               label="Widget state"
               options={viewport === 'desktop' ? availableModes : availableModes.filter(({ value }) => value !== 'info')}
-              value={mode}
-              onChange={setMode}
+              value={widgetState}
+              onChange={changeWidgetState}
             />
             {vaultId === 'yvusd' ? (
               <SegmentedControl
@@ -384,10 +417,14 @@ export function VaultWidgetParityPage(): ReactElement {
                       key={`${vaultFixture.id}:${viewport}`}
                       family={yvUsdFamily}
                       mode={mode}
+                      settingsOpen={widgetState === 'settings'}
                       variant={variant}
                       viewport={viewport}
                       onVariantChange={setVariant}
-                      onModeChange={setMode}
+                      onModeChange={changeWidgetState}
+                      onSettingsOpenChange={(open) => {
+                        changeWidgetState(open ? 'settings' : mode)
+                      }}
                       onConnectWallet={() => openConnectModal?.()}
                       onClose={() => undefined}
                     />
@@ -397,9 +434,13 @@ export function VaultWidgetParityPage(): ReactElement {
                       chainId={vaultFixture.chainId}
                       vaultAddress={vaultFixture.vaultAddress}
                       mode={mode}
+                      settingsOpen={widgetState === 'settings'}
                       style={viewport === 'mobile' && mode === 'deposit' ? { minHeight: 780 } : undefined}
                       viewport={viewport}
-                      onModeChange={setMode}
+                      onModeChange={changeWidgetState}
+                      onSettingsOpenChange={(open) => {
+                        changeWidgetState(open ? 'settings' : mode)
+                      }}
                       onConnectWallet={() => openConnectModal?.()}
                       onClose={() => undefined}
                     />

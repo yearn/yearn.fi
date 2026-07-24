@@ -19,8 +19,15 @@ describe('product family presets', () => {
     expect(family.defaultVariant).toBe('locked')
     expect(locked).toMatchObject({ available: true, config: { vaultAddress: YVUSD_LOCKED_ADDRESS } })
     expect(locked?.config?.adapters[0]?.id).toBe('yvUSD-locked')
+    expect(locked?.config?.infoPositionSources?.map(({ id }) => id)).toEqual(['yvUSD-unlocked', 'yvUSD-locked'])
+    expect(locked?.config?.info).toMatchObject({
+      cooldownVaultAddress: YVUSD_LOCKED_ADDRESS,
+      showAllPositionSources: true,
+      showTotalShares: false
+    })
     expect(unlocked).toMatchObject({ available: true, config: { vaultAddress: YVUSD_UNLOCKED_ADDRESS } })
     expect(unlocked?.config?.adapters[0]?.id).toBe('erc4626')
+    expect(unlocked?.config?.infoPositionSources?.map(({ id }) => id)).toEqual(['yvUSD-unlocked', 'yvUSD-locked'])
   })
 
   it('keeps locked yvBTC explicitly unavailable until its contract launches', () => {

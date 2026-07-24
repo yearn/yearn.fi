@@ -94,6 +94,19 @@ an approval plan. Reward discovery combines allowlisted Merkl claims with
 source-aware staking reads, then persists each claim through the same activity
 and transaction state machine as deposits and withdrawals.
 
+`My Info` combines the configured direct, staked, and family position sources,
+filters recent activity to the active account, chain, and related vault
+addresses, and resumes final EOA, Safe, and cross-chain transactions after a
+reload. Use `infoPositionSources` and `info` to describe product-specific
+positions, `onViewAllActivity` to route into a host activity page, and the
+`TransactionLink` slot to supply host-specific explorer links.
+
+Transaction settings support controlled and uncontrolled presentation through
+`settingsOpen`, `defaultSettingsOpen`, and `onSettingsOpenChange`. The desktop
+surface replaces the action panel while settings are open; compact containers
+use a widget-constrained popover and restore focus to the opening gear when
+closed.
+
 The corresponding builders remain available from the headless entry point.
 `createMigrationQuote` preserves the legacy migrator registry, V2/V3 router
 selectors, veCRV zap arguments, and V3 EIP-2612 multicalls.

@@ -19,7 +19,7 @@ published as the production dependency until every row below is complete.
 | yvBTC locked/unlocked | Complete for current production behavior | Unlocked ERC-4626 preset and family selector complete; locked remains an explicit unavailable state while its address is the legacy zero-address placeholder |
 | Permit and approval migration | In progress | Kong target discovery, destination metadata, full-balance panel, registry-compatible migrator/router/zap selectors, permit detection/signing, V2/V3 calls, shared execution, activity persistence, and tests complete; wallet-connected and Tenderly QA pending |
 | Merkle and staking rewards | In progress | Allowlisted Merkl and source-compatible staking discovery, claimed accounting, styled claim rows, shared execution/activity persistence, chain-switch/Safe plans, and tests complete; live wallet and visual parity QA pending |
-| Full styled My Info/settings/activity parity | Pending | Component parity and accessibility suite required |
+| Full styled My Info/settings/activity parity | In progress | Combined family positions, vault-filtered recent activity, reload reconciliation for EOA/Safe/cross-chain execution, controlled settings, mobile settings popover, keyboard tabs, Escape/focus restoration, and component/service tests complete; connected-wallet visual QA remains |
 | Tenderly transaction-family QA | Pending | Requires full route matrix and funded VNet |
 
 Current rollout state:

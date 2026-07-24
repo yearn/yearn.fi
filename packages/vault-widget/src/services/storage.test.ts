@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createYearnFiSettingsStore } from './storage'
+import { createMemoryActivityStore, createYearnFiSettingsStore } from './storage'
 
 const originalWindow = globalThis.window
 
@@ -63,5 +63,35 @@ describe('createYearnFiSettingsStore', () => {
     })
 
     expect(localStorage.getItem('yearn.fi/max-loss')).toBe(JSON.stringify({ __type: 'bigint', value: '3' }))
+  })
+})
+
+describe('createMemoryActivityStore', () => {
+  it('preserves Safe and bridge progress metadata needed after a reload', async () => {
+    const store = createMemoryActivityStore()
+    const id = await store.add({
+      account: '0x1111111111111111111111111111111111111111',
+      amount: '1',
+      bridge: {
+        destinationChainId: 10,
+        protocol: 'relay',
+        sourceChainId: 1
+      },
+      chainId: 1,
+      isFinalTransaction: true,
+      proposalId: '0x1234',
+      status: 'submitted',
+      timestamp: 1,
+      type: 'crosschain zap'
+    })
+
+    expect(await store.list()).toEqual([
+      expect.objectContaining({
+        id,
+        isFinalTransaction: true,
+        proposalId: '0x1234',
+        bridge: expect.objectContaining({ destinationChainId: 10, protocol: 'relay' })
+      })
+    ])
   })
 })

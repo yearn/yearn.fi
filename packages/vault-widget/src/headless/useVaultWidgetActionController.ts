@@ -122,6 +122,7 @@ export function useVaultWidgetActionController({
     const activityId = await services.activityStore.add({
       account,
       amount: plan.quote.activityAmount ?? '0',
+      bridge: plan.quote.bridge,
       chainId: activity.chainId,
       destinationChainId: activity.destinationChainId,
       status: 'pending',
@@ -139,6 +140,15 @@ export function useVaultWidgetActionController({
         execution: services.execution,
         onEvent,
         onExecution: setExecution,
+        onProgress: async ({ hash, isFinalTransaction, proposalId }) => {
+          await services.activityStore.update(activityId, {
+            hash,
+            isFinalTransaction,
+            proposalId,
+            status: 'submitted',
+            timestamp: Date.now()
+          })
+        },
         onRefresh: async () => {
           await Promise.allSettled([refetchAllowance(), onRefresh?.()])
         },

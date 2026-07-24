@@ -226,6 +226,15 @@ export function createYBoldPreset(options: CreateYBoldPresetOptions = {}): Vault
     chainId: 1,
     vaultAddress: YBOLD_VAULT_ADDRESS,
     positionToken: yBoldPositionToken,
+    infoPositionSources: [
+      {
+        balanceLabel: 'Staked shares',
+        id: 'staked',
+        label: 'Staked shares',
+        token: yBoldPositionToken,
+        readValue: readPositionValue
+      }
+    ],
     depositTokens: tokens,
     withdrawTokens: tokens,
     adapters: [

@@ -1,6 +1,6 @@
 'use client'
 
-import { type ReactElement, useId, useState } from 'react'
+import { type ReactElement, useCallback, useEffect, useId, useState } from 'react'
 import {
   clampSlippage,
   getSlippageSaveState,
@@ -10,6 +10,7 @@ import {
 import type { VaultWidgetSettings } from '../services'
 
 type SettingsPanelProps = {
+  id?: string
   onChange: (settings: VaultWidgetSettings) => void
   onClose: () => void
   settings: VaultWidgetSettings
@@ -24,7 +25,7 @@ function CloseIcon(): ReactElement {
   )
 }
 
-export function SettingsPanel({ onChange, onClose, settings, title }: SettingsPanelProps): ReactElement {
+export function SettingsPanel({ id, onChange, onClose, settings, title }: SettingsPanelProps): ReactElement {
   const [localSlippage, setLocalSlippage] = useState(settings.slippagePercent)
   const [riskAcknowledgement, setRiskAcknowledgement] = useState('')
   const slippageId = useId()
@@ -37,15 +38,25 @@ export function SettingsPanel({ onChange, onClose, settings, title }: SettingsPa
       riskAcknowledgement
     })
 
-  const close = (): void => {
+  const close = useCallback((): void => {
     if (isSlippageDirty && hasValidRiskAcknowledgement) {
       onChange({ ...settings, slippagePercent: sanitizedSlippage })
     }
     onClose()
-  }
+  }, [hasValidRiskAcknowledgement, isSlippageDirty, onChange, onClose, sanitizedSlippage, settings])
+
+  useEffect(() => {
+    const handleKeyDown = (event: globalThis.KeyboardEvent): void => {
+      if (event.key !== 'Escape') return
+      event.preventDefault()
+      close()
+    }
+    document.addEventListener('keydown', handleKeyDown)
+    return () => document.removeEventListener('keydown', handleKeyDown)
+  }, [close])
 
   return (
-    <div className="yv-widget__settings" id="yv-widget-settings">
+    <div className="yv-widget__settings" id={id}>
       <div className="yv-widget__settings-header">
         <div>
           <h3>{title}</h3>

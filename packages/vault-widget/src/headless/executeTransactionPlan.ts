@@ -15,6 +15,12 @@ export type VaultWidgetPlanOutcome = {
   proposalId?: Hex
 }
 
+export type VaultWidgetPlanProgress = VaultWidgetPlanOutcome & {
+  isFinalTransaction: boolean
+  step: VaultWidgetTransactionPlan['steps'][number]
+  stepIndex: number
+}
+
 export type ExecuteVaultWidgetPlanParams = {
   account: `0x${string}`
   config: Config
@@ -22,6 +28,7 @@ export type ExecuteVaultWidgetPlanParams = {
   execution: VaultWidgetExecutionService
   onEvent?: (event: VaultWidgetEvent) => void
   onExecution: (state: VaultWidgetExecutionState) => void
+  onProgress?: (progress: VaultWidgetPlanProgress) => Promise<void>
   onRefresh: () => Promise<void>
   onSubmitted?: (hash: Hash) => Promise<void>
   plan: VaultWidgetTransactionPlan
@@ -42,6 +49,9 @@ export async function executeVaultWidgetPlan(
     stepCount: params.plan.steps.length
   })
   params.onEvent?.({ type: 'transaction_step', step })
+  const isFinalTransaction = !params.plan.steps
+    .slice(index + 1)
+    .some((candidate) => candidate.kind === 'execute' || candidate.kind === 'safe-proposal')
 
   if (step.kind === 'switch-chain' && step.chainId) {
     await switchChain(params.config, { chainId: step.chainId })
@@ -70,6 +80,7 @@ export async function executeVaultWidgetPlan(
       proposalId
     })
     params.onEvent?.({ type: 'transaction_step', step, proposalId })
+    await params.onProgress?.({ isFinalTransaction, proposalId, step, stepIndex: index })
     const hash = params.execution.waitForSafeExecution
       ? await params.execution.waitForSafeExecution(params.config, step.chainId, proposalId)
       : undefined
@@ -127,6 +138,7 @@ export async function executeVaultWidgetPlan(
     hash
   })
   params.onEvent?.({ type: 'transaction_step', step, hash })
+  await params.onProgress?.({ ...outcome, hash, isFinalTransaction, step, stepIndex: index })
   await params.execution.waitForReceipt(params.config, step.request.chainId, hash)
   return executeVaultWidgetPlan(params, index + 1, { ...outcome, hash })
 }

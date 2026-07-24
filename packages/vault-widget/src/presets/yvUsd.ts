@@ -59,12 +59,14 @@ export function createYvUsdPreset(options: CreateYvUsdPresetOptions = {}): Vault
         zapAddress: YVUSD_LOCKED_ZAP_ADDRESS
       })
     : createErc4626Adapter({ asset: yvUsdAssetToken, vaultAddress })
-  const readPositionValue = isLocked
-    ? createLockedVaultPositionValueReader({
-        lockedVaultAddress: YVUSD_LOCKED_ADDRESS,
-        unlockedVaultAddress: YVUSD_UNLOCKED_ADDRESS
-      })
-    : createErc4626PositionValueReader({ vaultAddress })
+  const readUnlockedPositionValue = createErc4626PositionValueReader({
+    vaultAddress: YVUSD_UNLOCKED_ADDRESS
+  })
+  const readLockedPositionValue = createLockedVaultPositionValueReader({
+    lockedVaultAddress: YVUSD_LOCKED_ADDRESS,
+    unlockedVaultAddress: YVUSD_UNLOCKED_ADDRESS
+  })
+  const readPositionValue = isLocked ? readLockedPositionValue : readUnlockedPositionValue
 
   return {
     id: `yvUSD:${variant}`,
@@ -72,11 +74,33 @@ export function createYvUsdPreset(options: CreateYvUsdPresetOptions = {}): Vault
     chainId: YVUSD_CHAIN_ID,
     vaultAddress,
     positionToken,
+    infoPositionSources: [
+      {
+        balanceLabel: 'Unlocked position',
+        id: 'yvUSD-unlocked',
+        label: 'Unlocked shares',
+        readValue: readUnlockedPositionValue,
+        token: yvUsdUnlockedToken
+      },
+      {
+        balanceLabel: 'Locked position',
+        id: 'yvUSD-locked',
+        label: 'Locked shares',
+        readValue: readLockedPositionValue,
+        token: yvUsdLockedToken
+      }
+    ],
     depositTokens: [yvUsdAssetToken],
     withdrawTokens: [yvUsdAssetToken],
     adapters: [adapter],
     modes: ['deposit', 'withdraw', 'info'],
     readPositionValue,
+    info: {
+      cooldownVaultAddress: YVUSD_LOCKED_ADDRESS,
+      relatedAddresses: [YVUSD_UNLOCKED_ADDRESS, YVUSD_LOCKED_ADDRESS],
+      showAllPositionSources: true,
+      showTotalShares: false
+    },
     display: {
       approvalSpenderName: { deposit: isLocked ? 'yvUSD Locked Zap' : 'yvUSD' },
       assetPriceUsd: options.assetPriceUsd ?? 1,

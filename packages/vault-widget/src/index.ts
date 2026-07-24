@@ -25,6 +25,7 @@ export type {
   VaultWidgetExecutionStep,
   VaultWidgetExecutionStepKind,
   VaultWidgetFamilyPreset,
+  VaultWidgetInfoConfig,
   VaultWidgetMigrationConfig,
   VaultWidgetMode,
   VaultWidgetPositionSource,

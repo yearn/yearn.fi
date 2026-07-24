@@ -129,9 +129,12 @@ type LegacyNotification = {
   amount: string
   chainId: number
   destinationTxHash?: `0x${string}`
+  bridge?: VaultWidgetActivity['bridge']
+  isFinalTransaction?: boolean
   executionChainId?: number
   fromAddress?: Address
   status: VaultWidgetActivityStatus
+  proposalId?: `0x${string}`
   timeFinished?: number
   toAddress?: Address
   toChainId?: number
@@ -195,7 +198,10 @@ function toActivity(notification: LegacyNotification): VaultWidgetActivity {
     chainId: notification.chainId,
     destinationChainId: notification.toChainId,
     destinationHash: notification.destinationTxHash,
+    bridge: notification.bridge,
+    isFinalTransaction: notification.isFinalTransaction,
     hash: notification.txHash,
+    proposalId: notification.proposalId,
     status: notification.status,
     timestamp: notification.timeFinished ?? 0,
     tokenIn: notification.fromAddress,
@@ -211,8 +217,11 @@ function toLegacyNotification(activity: VaultWidgetActivity): LegacyNotification
     amount: activity.amount,
     chainId: activity.chainId,
     destinationTxHash: activity.destinationHash,
+    bridge: activity.bridge,
+    isFinalTransaction: activity.isFinalTransaction,
     executionChainId: activity.chainId,
     fromAddress: activity.tokenIn,
+    proposalId: activity.proposalId,
     status: activity.status,
     timeFinished: activity.timestamp,
     toAddress: activity.tokenOut,

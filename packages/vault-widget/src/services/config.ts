@@ -211,12 +211,14 @@ function createConfig(vault: KongVault): VaultWidgetConfig {
       positionToken,
       positionSources: [
         {
+          balanceLabel: 'Deposited shares',
           id: 'vault',
           label: 'Vault shares',
           token: positionToken,
           readValue: readPositionValue
         },
         {
+          balanceLabel: 'Staked shares',
           id: 'staked',
           label: 'Staked shares',
           token: stakingToken,

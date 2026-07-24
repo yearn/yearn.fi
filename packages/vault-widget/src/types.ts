@@ -19,6 +19,7 @@ export type VaultWidgetToken = {
 export type VaultWidgetTokenReference = Pick<VaultWidgetToken, 'address' | 'chainId'>
 
 export type VaultWidgetPositionSource = {
+  balanceLabel?: string
   id: string
   label: string
   token: VaultWidgetToken
@@ -116,6 +117,7 @@ export type VaultWidgetConfig = {
   vaultAddress: Address
   positionToken: VaultWidgetToken
   positionSources?: readonly VaultWidgetPositionSource[]
+  infoPositionSources?: readonly VaultWidgetPositionSource[]
   depositTokens: readonly VaultWidgetToken[]
   withdrawTokens: readonly VaultWidgetToken[]
   adapters: readonly VaultWidgetRouteAdapter[]
@@ -130,6 +132,7 @@ export type VaultWidgetConfig = {
   readPositionValue?: (publicClient: PublicClient, shares: bigint) => Promise<bigint>
   migration?: VaultWidgetMigrationConfig
   rewards?: VaultWidgetRewardsConfig
+  info?: VaultWidgetInfoConfig
   solvers?: readonly string[]
   copy?: Partial<VaultWidgetCopy>
   display?: {
@@ -139,6 +142,13 @@ export type VaultWidgetConfig = {
     modeLabels?: Partial<Record<VaultWidgetMode, string>>
     positionLabel?: string
   }
+}
+
+export type VaultWidgetInfoConfig = {
+  cooldownVaultAddress?: Address
+  relatedAddresses?: readonly Address[]
+  showAllPositionSources?: boolean
+  showTotalShares?: boolean
 }
 
 export type VaultWidgetMigrationConfig = {
@@ -297,11 +307,15 @@ export type VaultWidgetProps = {
   onModeChange?: (mode: VaultWidgetMode) => void
   onConnectWallet?: () => void
   onClose?: () => void
+  onViewAllActivity?: () => void
   onEvent?: (event: VaultWidgetEvent) => void
   onSuccess?: (event: Extract<VaultWidgetEvent, { type: 'transaction_succeeded' }>) => void
   onError?: (event: Extract<VaultWidgetEvent, { type: 'transaction_failed' }>) => void
   copy?: Partial<VaultWidgetCopy>
   slots?: VaultWidgetSlots
+  settingsOpen?: boolean
+  defaultSettingsOpen?: boolean
+  onSettingsOpenChange?: (open: boolean) => void
   className?: string
   style?: CSSProperties
   showNavigation?: boolean
@@ -387,6 +401,9 @@ export type VaultWidgetActivity = {
   destinationChainId?: number
   destinationHash?: Hash
   hash?: Hash
+  proposalId?: Hex
+  bridge?: EnsoBridgeDetails
+  isFinalTransaction?: boolean
   status: VaultWidgetActivityStatus
   timestamp: number
   tokenIn?: Address

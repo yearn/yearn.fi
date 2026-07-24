@@ -14,6 +14,9 @@ describe('createYBoldPreset token selector', () => {
       )
     )
     expect(config.withdrawTokens).toContain(yBoldVaultToken)
+    expect(config.infoPositionSources).toEqual([
+      expect.objectContaining({ balanceLabel: 'Staked shares', id: 'staked', token: config.positionToken })
+    ])
   })
 
   it('allows consumers to choose the assets shown before search', () => {

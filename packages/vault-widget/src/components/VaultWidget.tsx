@@ -1,7 +1,7 @@
 'use client'
 
 import { useQuery } from '@tanstack/react-query'
-import { type ReactElement, useCallback, useRef, useState } from 'react'
+import { type ReactElement, useCallback, useId, useRef, useState } from 'react'
 import { formatUnits } from 'viem'
 import { useVaultWidgetServices } from '../context'
 import { useVaultWidgetController } from '../headless'
@@ -141,6 +141,7 @@ function ConfiguredVaultWidget({
   onModeChange,
   onConnectWallet,
   onClose,
+  onViewAllActivity,
   onEvent,
   onSuccess,
   onError,
@@ -151,7 +152,10 @@ function ConfiguredVaultWidget({
   showNavigation = true,
   viewport = 'auto',
   headerActions,
-  renderPanel
+  renderPanel,
+  settingsOpen: controlledSettingsOpen,
+  defaultSettingsOpen = false,
+  onSettingsOpenChange
 }: ConfiguredVaultWidgetProps): ReactElement {
   if (chainId !== config.chainId || vaultAddress.toLowerCase() !== config.vaultAddress.toLowerCase()) {
     throw new Error('VaultWidget configuration does not match the requested vault')
@@ -167,7 +171,10 @@ function ConfiguredVaultWidget({
     onSuccess,
     onError
   })
-  const [settingsOpen, setSettingsOpen] = useState(false)
+  const [internalSettingsOpen, setInternalSettingsOpen] = useState(defaultSettingsOpen)
+  const settingsOpen = controlledSettingsOpen ?? internalSettingsOpen
+  const settingsId = useId()
+  const settingsTriggerRef = useRef<HTMLButtonElement>(null)
   const [tokenSelectorOpen, setTokenSelectorOpen] = useState(false)
   const [selectedPercentage, setSelectedPercentage] = useState<number | null>(null)
   const tokenSelectorButtonRef = useRef<HTMLButtonElement>(null)
@@ -213,6 +220,8 @@ function ConfiguredVaultWidget({
   const setMode = (nextMode: VaultWidgetMode): void => {
     setSelectedPercentage(null)
     setTokenSelectorOpen(false)
+    if (controlledSettingsOpen === undefined) setInternalSettingsOpen(false)
+    onSettingsOpenChange?.(false)
     controller.setMode(nextMode)
   }
 
@@ -221,28 +230,38 @@ function ConfiguredVaultWidget({
     window.requestAnimationFrame(() => tokenSelectorButtonRef.current?.focus())
   }, [])
 
-  const settingsButton = (placement: 'header' | 'action'): ReactElement | null =>
-    placement === 'header' || controller.account || !showNavigation ? (
-      <button
-        className={`yv-widget__settings-button yv-widget__settings-button--${placement}`}
-        type="button"
-        aria-label={copy.settings}
-        aria-expanded={settingsOpen}
-        aria-controls="yv-widget-settings"
-        onClick={() => {
-          setTokenSelectorOpen(false)
-          setSettingsOpen(true)
-        }}
-      >
-        <SettingsIcon />
-      </button>
-    ) : null
+  const openSettings = (trigger: HTMLButtonElement): void => {
+    settingsTriggerRef.current = trigger
+    setTokenSelectorOpen(false)
+    if (controlledSettingsOpen === undefined) setInternalSettingsOpen(true)
+    onSettingsOpenChange?.(true)
+  }
+
+  const closeSettings = useCallback((): void => {
+    if (controlledSettingsOpen === undefined) setInternalSettingsOpen(false)
+    onSettingsOpenChange?.(false)
+    window.requestAnimationFrame(() => settingsTriggerRef.current?.focus())
+  }, [controlledSettingsOpen, onSettingsOpenChange])
+
+  const settingsButton = (placement: 'header' | 'action'): ReactElement => (
+    <button
+      className={`yv-widget__settings-button yv-widget__settings-button--${placement}`}
+      type="button"
+      aria-label={copy.settings}
+      aria-expanded={settingsOpen}
+      aria-controls={settingsId}
+      onClick={(event) => openSettings(event.currentTarget)}
+    >
+      <SettingsIcon />
+    </button>
+  )
 
   return (
     <section
       className={['yv-widget', className].filter(Boolean).join(' ')}
       style={style}
       data-navigation={showNavigation ? 'full' : 'none'}
+      data-settings-open={settingsOpen}
       data-viewport={viewport}
       aria-label={`${config.name} vault actions`}
     >
@@ -291,27 +310,32 @@ function ConfiguredVaultWidget({
 
       {settingsOpen ? (
         <SettingsPanel
+          id={settingsId}
           settings={controller.settings}
           title={copy.settings}
           onChange={controller.setSettings}
-          onClose={() => setSettingsOpen(false)}
+          onClose={closeSettings}
         />
       ) : null}
 
-      {!settingsOpen && controller.mode === 'info' ? (
-        <div className="yv-widget__panel">
+      {controller.mode === 'info' ? (
+        <div className="yv-widget__panel" aria-hidden={settingsOpen || undefined} inert={settingsOpen || undefined}>
           <ActivityPanel
             availableBalance={controller.balance}
             availableToken={controller.selectedToken}
+            config={config}
+            depositedValue={controller.positionValue}
+            depositedValueDecimals={controller.positionValueDecimals}
             depositedValueUsd={formatUsd(positionUsd)}
             onConnectWallet={onConnectWallet}
-            positionBalance={controller.positionBalance}
-            positionToken={controller.selectedPositionSource.token}
+            onViewAllActivity={onViewAllActivity}
+            positionSources={controller.infoPositionSources}
+            TransactionLink={slots?.TransactionLink}
           />
         </div>
       ) : null}
-      {!settingsOpen && controller.mode === 'migrate' ? (
-        <div className="yv-widget__panel">
+      {controller.mode === 'migrate' ? (
+        <div className="yv-widget__panel" aria-hidden={settingsOpen || undefined} inert={settingsOpen || undefined}>
           {renderPanel?.(controller.mode) ?? (
             <MigrationPanel
               account={controller.account}
@@ -326,8 +350,8 @@ function ConfiguredVaultWidget({
           )}
         </div>
       ) : null}
-      {!settingsOpen && controller.mode === 'rewards' ? (
-        <div className="yv-widget__panel">
+      {controller.mode === 'rewards' ? (
+        <div className="yv-widget__panel" aria-hidden={settingsOpen || undefined} inert={settingsOpen || undefined}>
           {renderPanel?.(controller.mode) ?? (
             <RewardsPanel
               config={config}
@@ -342,8 +366,13 @@ function ConfiguredVaultWidget({
         </div>
       ) : null}
 
-      {!settingsOpen && isTransactionMode ? (
-        <div className="yv-widget__body" data-token-selector-open={tokenSelectorOpen}>
+      {isTransactionMode ? (
+        <div
+          className="yv-widget__body"
+          data-token-selector-open={tokenSelectorOpen}
+          aria-hidden={settingsOpen || undefined}
+          inert={settingsOpen || undefined}
+        >
           <div className="yv-widget__body-heading">
             <h3 className="yv-widget__body-title">{getModeLabel(controller.mode, config.display?.modeLabels)}</h3>
             {headerActions}
@@ -415,7 +444,8 @@ function ConfiguredVaultWidget({
                 aria-haspopup="dialog"
                 aria-expanded={tokenSelectorOpen}
                 onClick={() => {
-                  setSettingsOpen(false)
+                  if (controlledSettingsOpen === undefined) setInternalSettingsOpen(false)
+                  onSettingsOpenChange?.(false)
                   setTokenSelectorOpen(true)
                 }}
               >
