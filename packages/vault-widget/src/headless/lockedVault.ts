@@ -1,4 +1,4 @@
-import { type Address, encodeFunctionData, erc4626Abi, isAddressEqual, type PublicClient } from 'viem'
+import { type Address, encodeFunctionData, erc4626Abi, formatUnits, isAddressEqual, type PublicClient } from 'viem'
 import type {
   VaultWidgetQuote,
   VaultWidgetRouteAdapter,
@@ -90,22 +90,6 @@ export type VaultWidgetCooldownState = VaultWidgetCooldownStatus & {
   now: number
   state: VaultWidgetCooldownStateName
   withdrawalWindow: number
-}
-
-export class VaultWidgetCooldownRequiredError extends Error {
-  readonly cooldown: VaultWidgetCooldownState
-
-  constructor(cooldown: VaultWidgetCooldownState) {
-    super(
-      cooldown.state === 'cooling'
-        ? 'Locked shares are cooling down and cannot be withdrawn yet.'
-        : cooldown.state === 'expired'
-          ? 'The withdrawal window expired. Start a new cooldown to withdraw.'
-          : 'Start a cooldown before withdrawing locked shares.'
-    )
-    this.name = 'VaultWidgetCooldownRequiredError'
-    this.cooldown = cooldown
-  }
 }
 
 function toTimestamp(value: bigint): number {
@@ -228,6 +212,7 @@ export function createCancelCooldownTransaction(params: {
 
 type LockedVaultAdapterOptions = {
   asset: VaultWidgetToken
+  positionToken: VaultWidgetToken
   lockedVaultAddress: Address
   unlockedVaultAddress: Address
   zapAddress: Address
@@ -278,7 +263,36 @@ async function quoteLockedWithdrawal(
   })
 
   if (unlockedShares > cooldown.availableWithdrawLimit || lockedShares > cooldown.maxRedeem) {
-    throw new VaultWidgetCooldownRequiredError(cooldown)
+    const shouldStartCooldown = cooldown.state === 'none' || cooldown.state === 'expired'
+    const transaction = shouldStartCooldown
+      ? createStartCooldownTransaction({
+          chainId: request.chainId,
+          shares: lockedShares,
+          vaultAddress: options.lockedVaultAddress
+        })
+      : createCancelCooldownTransaction({
+          chainId: request.chainId,
+          vaultAddress: options.lockedVaultAddress
+        })
+
+    return {
+      actionLabel: shouldStartCooldown ? 'Start Cooldown' : 'Cancel Cooldown',
+      activityAmount: formatUnits(shouldStartCooldown ? lockedShares : cooldown.shares, options.positionToken.decimals),
+      adapterId: 'yvUSD-cooldown',
+      activityType: shouldStartCooldown ? 'start cooldown' : 'cancel cooldown',
+      amountIn: shouldStartCooldown ? lockedShares : cooldown.shares,
+      assetValue: request.amount,
+      expectedOut: 0n,
+      hideDetails: true,
+      minExpectedOut: 0n,
+      notice: shouldStartCooldown
+        ? `Start the cooldown for these shares. Withdrawals become available in ${cooldown.cooldownDuration / 86_400} days.`
+        : cooldown.state === 'cooling'
+          ? 'These shares are cooling down. Cancel the active cooldown before choosing a different amount.'
+          : 'Only the cooled-down amount can be withdrawn. Cancel and restart to include more shares.',
+      positionAmount: shouldStartCooldown ? lockedShares : cooldown.shares,
+      transaction
+    }
   }
 
   const unlockTransaction: VaultWidgetTransactionRequest = {

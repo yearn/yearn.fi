@@ -54,6 +54,7 @@ export function createYvUsdPreset(options: CreateYvUsdPresetOptions = {}): Vault
     ? createLockedVaultAdapter({
         asset: yvUsdAssetToken,
         lockedVaultAddress: YVUSD_LOCKED_ADDRESS,
+        positionToken: yvUsdLockedToken,
         unlockedVaultAddress: YVUSD_UNLOCKED_ADDRESS,
         zapAddress: YVUSD_LOCKED_ZAP_ADDRESS
       })

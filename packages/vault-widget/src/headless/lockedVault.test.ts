@@ -7,7 +7,6 @@ import {
   createLockedVaultPositionValueReader,
   createStartCooldownTransaction,
   resolveVaultWidgetCooldownState,
-  VaultWidgetCooldownRequiredError,
   YVUSD_LOCKED_VAULT_ABI,
   YVUSD_LOCKED_ZAP_ABI
 } from './lockedVault'
@@ -74,6 +73,12 @@ describe('locked vault adapter', () => {
   const adapter = createLockedVaultAdapter({
     asset,
     lockedVaultAddress: lockedVault,
+    positionToken: {
+      address: lockedVault,
+      chainId: 1,
+      decimals: 18,
+      symbol: 'yvUSD (Locked)'
+    },
     unlockedVaultAddress: unlockedVault,
     zapAddress
   })
@@ -119,7 +124,7 @@ describe('locked vault adapter', () => {
     })
   })
 
-  it('blocks withdrawal when the requested assets are outside the open window limit', async () => {
+  it('offers cooldown cancellation while shares are already cooling', async () => {
     const readContract = vi
       .fn()
       .mockResolvedValueOnce(1_000n)
@@ -134,9 +139,47 @@ describe('locked vault adapter', () => {
       getBlock: vi.fn().mockResolvedValue({ timestamp: 50n })
     } as unknown as PublicClient
 
-    await expect(adapter.quote(createRequest('withdraw', 25n), client)).rejects.toBeInstanceOf(
-      VaultWidgetCooldownRequiredError
-    )
+    const quote = await adapter.quote(createRequest('withdraw', 25n), client)
+
+    expect(quote).toMatchObject({
+      actionLabel: 'Cancel Cooldown',
+      activityType: 'cancel cooldown',
+      hideDetails: true,
+      positionAmount: 80n
+    })
+    expect(decodeFunctionData({ abi: YVUSD_LOCKED_VAULT_ABI, data: quote.transaction.data })).toEqual({
+      functionName: 'cancelCooldown'
+    })
+  })
+
+  it('turns a locked withdrawal into a start-cooldown plan when no cooldown exists', async () => {
+    const readContract = vi
+      .fn()
+      .mockResolvedValueOnce(1_209_600n)
+      .mockResolvedValueOnce(432_000n)
+      .mockResolvedValueOnce([0n, 0n, 0n])
+      .mockResolvedValueOnce(0n)
+      .mockResolvedValueOnce(0n)
+      .mockResolvedValueOnce(40n)
+      .mockResolvedValueOnce(50n)
+    const client = {
+      readContract,
+      getBlock: vi.fn().mockResolvedValue({ timestamp: 50n })
+    } as unknown as PublicClient
+
+    const quote = await adapter.quote(createRequest('withdraw', 25n), client)
+
+    expect(quote).toMatchObject({
+      actionLabel: 'Start Cooldown',
+      activityType: 'start cooldown',
+      hideDetails: true,
+      notice: 'Start the cooldown for these shares. Withdrawals become available in 14 days.',
+      positionAmount: 50n
+    })
+    expect(decodeFunctionData({ abi: YVUSD_LOCKED_VAULT_ABI, data: quote.transaction.data })).toEqual({
+      functionName: 'startCooldown',
+      args: [50n]
+    })
   })
 
   it('values locked shares through both ERC-4626 vaults', async () => {

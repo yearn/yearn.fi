@@ -21,7 +21,6 @@ export {
   createStartCooldownTransaction,
   readVaultWidgetCooldownState,
   resolveVaultWidgetCooldownState,
-  VaultWidgetCooldownRequiredError,
   YVUSD_LOCKED_VAULT_ABI,
   YVUSD_LOCKED_ZAP_ABI
 } from './lockedVault'

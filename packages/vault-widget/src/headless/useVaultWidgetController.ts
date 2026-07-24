@@ -479,7 +479,7 @@ export function useVaultWidgetController({
     onEvent?.({ type: 'transaction_started', plan: transactionPlan })
     const activityId = await services.activityStore.add({
       account,
-      amount,
+      amount: transactionPlan.quote.activityAmount ?? amount,
       chainId: transactionPlan.quote.transaction.chainId,
       destinationChainId: selectedToken.chainId,
       status: 'pending',

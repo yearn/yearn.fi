@@ -228,15 +228,17 @@ function ConfiguredVaultWidget({
   const transactionMode = controller.mode === 'withdraw' ? 'withdraw' : 'deposit'
   const quote = controller.quote
   const needsApproval = !!quote?.approval && controller.allowance < quote.approval.amount
-  const actionLabel = controller.isQuoteLoading
-    ? copy.findingRoute
-    : controller.mode === 'withdraw'
-      ? needsApproval
-        ? copy.approveAndWithdraw
-        : copy.submitWithdraw
-      : needsApproval
-        ? copy.approveAndDeposit
-        : copy.submitDeposit
+  const actionLabel =
+    quote?.actionLabel ??
+    (controller.isQuoteLoading
+      ? copy.findingRoute
+      : controller.mode === 'withdraw'
+        ? needsApproval
+          ? copy.approveAndWithdraw
+          : copy.submitWithdraw
+        : needsApproval
+          ? copy.approveAndDeposit
+          : copy.submitDeposit)
   const inputAmount = Number(controller.amount || '0')
   const inputPriceUsd = controller.selectedToken.priceUsd ?? 0
   const inputUsd = inputAmount * inputPriceUsd
@@ -458,7 +460,13 @@ function ConfiguredVaultWidget({
             </div>
           </div>
 
-          {Details ? (
+          {quote?.notice ? (
+            <div className="yv-widget__notice yv-widget__notice--cooldown" role="status">
+              {quote.notice}
+            </div>
+          ) : null}
+
+          {quote?.hideDetails ? null : Details ? (
             <Details quote={quote} mode={transactionMode} />
           ) : (
             <dl className="yv-widget__details">

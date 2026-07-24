@@ -78,6 +78,8 @@ export type VaultWidgetExecutionCall = {
 }
 
 export type VaultWidgetQuote = {
+  actionLabel?: string
+  activityAmount?: string
   adapterId: string
   activityType?: VaultWidgetActivity['type']
   amountIn: bigint
@@ -92,6 +94,8 @@ export type VaultWidgetQuote = {
   priceImpactPercent?: number | null
   isCrossChain?: boolean
   bridge?: EnsoBridgeDetails
+  hideDetails?: boolean
+  notice?: string
 }
 
 export type VaultWidgetRouteAdapter = {

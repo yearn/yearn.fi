@@ -81,11 +81,11 @@ import {
 />
 ```
 
-The locked yvUSD preset owns nested share valuation, USDC zap deposits, and
-the ordered locked-yvUSD-to-USDC withdrawal calls. Cooldown consumers can use
-the headless `readVaultWidgetCooldownState`,
+The locked yvUSD preset owns nested share valuation, USDC zap deposits, the
+ordered locked-yvUSD-to-USDC withdrawal calls, and contextual start/cancel
+cooldown plans. Headless consumers can use `readVaultWidgetCooldownState`,
 `createStartCooldownTransaction`, and `createCancelCooldownTransaction`
-exports while the styled cooldown controls complete parity review.
+directly.
 
 ## Development
 
