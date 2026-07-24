@@ -94,6 +94,7 @@ async function readYearnV2PricePerShare(publicClient: PublicClient, vaultAddress
 
 type Erc4626AdapterOptions = {
   asset: VaultWidgetToken
+  positionSourceId?: string
   vaultAddress: Address
 }
 
@@ -117,6 +118,9 @@ export function createErc4626Adapter(options: Erc4626AdapterOptions): VaultWidge
     supports(request): boolean {
       return (
         request.chainId === options.asset.chainId &&
+        (!options.positionSourceId ||
+          request.mode === 'deposit' ||
+          request.positionSource?.id === options.positionSourceId) &&
         isAddressEqual(request.selectedToken.address, options.asset.address)
       )
     },
@@ -188,6 +192,7 @@ export function createErc4626Adapter(options: Erc4626AdapterOptions): VaultWidge
 
 type YearnV2AdapterOptions = {
   asset: VaultWidgetToken
+  positionSourceId?: string
   positionToken: VaultWidgetToken
   vaultAddress: Address
 }
@@ -208,6 +213,9 @@ export function createYearnV2Adapter(options: YearnV2AdapterOptions): VaultWidge
     supports(request): boolean {
       return (
         request.chainId === options.asset.chainId &&
+        (!options.positionSourceId ||
+          request.mode === 'deposit' ||
+          request.positionSource?.id === options.positionSourceId) &&
         isAddressEqual(request.selectedToken.address, options.asset.address)
       )
     },

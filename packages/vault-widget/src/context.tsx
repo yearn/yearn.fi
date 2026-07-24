@@ -5,14 +5,14 @@ import {
   createBrowserSettingsStore,
   createKongVaultConfigResolver,
   createMemoryActivityStore,
-  createWagmiExecutionService,
+  createWagmiSafeExecutionService,
   type VaultWidgetServices
 } from './services'
 
 const defaultServices: VaultWidgetServices = {
   activityStore: createMemoryActivityStore(),
   configResolver: createKongVaultConfigResolver(),
-  execution: createWagmiExecutionService(),
+  execution: createWagmiSafeExecutionService(),
   settings: createBrowserSettingsStore()
 }
 

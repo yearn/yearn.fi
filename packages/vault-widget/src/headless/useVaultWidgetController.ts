@@ -2,9 +2,9 @@
 
 import { useQuery } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import { type Address, erc20Abi, formatUnits, type Hash, isAddressEqual, parseUnits } from 'viem'
+import { type Address, erc20Abi, formatUnits, type Hash, type Hex, isAddressEqual, parseUnits } from 'viem'
 import { useAccount, useConfig, usePublicClient } from 'wagmi'
-import { switchChain } from 'wagmi/actions'
+import { getPublicClient, switchChain } from 'wagmi/actions'
 import { useVaultWidgetServices } from '../context'
 import type { VaultWidgetSettings } from '../services'
 import type {
@@ -15,10 +15,19 @@ import type {
   VaultWidgetExecutionState,
   VaultWidgetExecutionStep,
   VaultWidgetMode,
+  VaultWidgetPositionSource,
+  VaultWidgetPositionSourceState,
   VaultWidgetQuote,
   VaultWidgetToken,
-  VaultWidgetTransactionPlan
+  VaultWidgetTransactionPlan,
+  VaultWidgetWalletType
 } from '../types'
+import {
+  getDefaultPositionSource,
+  getPositionSources,
+  readPositionSourceState,
+  sumPositionValues
+} from './positionSources'
 import { buildTransactionPlan } from './transactionPlan'
 
 type UseVaultWidgetControllerParams = {
@@ -48,14 +57,19 @@ type VaultWidgetController = {
   plan?: VaultWidgetTransactionPlan
   approvalTarget?: VaultWidgetApprovalTarget
   positionBalance: bigint
+  positionSources: readonly VaultWidgetPositionSourceState[]
+  selectedPositionSource: VaultWidgetPositionSourceState
   positionValue: bigint
+  positionValueDecimals: number
   quote?: VaultWidgetQuote
   selectedToken: VaultWidgetToken
   settings: VaultWidgetSettings
   tokens: readonly VaultWidgetToken[]
+  walletType: VaultWidgetWalletType
   setAmount: (amount: string) => void
   setMode: (mode: VaultWidgetMode) => void
   setPercentage: (percentage: number) => void
+  setSelectedPositionSource: (source: VaultWidgetPositionSource) => void
   setSelectedToken: (token: VaultWidgetToken) => void
   setSettings: (settings: VaultWidgetSettings) => void
   submit: () => Promise<void>
@@ -103,18 +117,36 @@ export function useVaultWidgetController({
 }: UseVaultWidgetControllerParams): VaultWidgetController {
   const wagmiConfig = useConfig()
   const services = useVaultWidgetServices()
-  const { address: account, chainId: connectedChainId } = useAccount()
+  const { address: account, chainId: connectedChainId, connector } = useAccount()
   const modes = config.modes ?? ['deposit', 'withdraw']
   const initialMode = defaultMode ?? config.defaultMode ?? modes[0] ?? 'deposit'
   const [internalMode, setInternalMode] = useState<VaultWidgetMode>(initialMode)
   const mode = controlledMode ?? internalMode
   const transactionMode = mode === 'withdraw' ? 'withdraw' : 'deposit'
-  const availableTokens = transactionMode === 'withdraw' ? config.withdrawTokens : config.depositTokens
+  const positionSources = useMemo(() => getPositionSources(config), [config])
+  const defaultPositionSource = getDefaultPositionSource(positionSources, config.defaultPositionSource)
+  const [selectedPositionSourceId, setSelectedPositionSourceId] = useState(defaultPositionSource.id)
+  const selectedPositionSource =
+    positionSources.find(({ id }) => id === selectedPositionSourceId) ?? defaultPositionSource
+  const availableTokens =
+    transactionMode === 'withdraw'
+      ? config.withdrawTokens.filter((token) =>
+          config.adapters.some((candidate) =>
+            candidate.supports({
+              chainId: selectedPositionSource.token.chainId,
+              mode: transactionMode,
+              positionSource: selectedPositionSource,
+              selectedToken: token
+            })
+          )
+        )
+      : config.depositTokens
   const [selectedTokenAddress, setSelectedTokenAddress] = useState<Address>(
     getDefaultToken(config, initialMode).address
   )
   const selectedToken =
     availableTokens.find((token) => isAddressEqual(token.address, selectedTokenAddress)) ??
+    availableTokens[0] ??
     getDefaultToken(config, mode)
   const [amount, setAmountValue] = useState('')
   const [execution, setExecution] = useState<VaultWidgetExecutionState>({ status: 'idle' })
@@ -125,8 +157,7 @@ export function useVaultWidgetController({
   useEffect(() => services.settings.subscribe?.(() => setSettingsState(services.settings.read())), [services.settings])
 
   const balanceClient = usePublicClient({ chainId: selectedToken.chainId })
-  const positionClient = usePublicClient({ chainId: config.positionToken.chainId })
-  const quoteChainId = transactionMode === 'deposit' ? selectedToken.chainId : config.positionToken.chainId
+  const quoteChainId = transactionMode === 'deposit' ? selectedToken.chainId : selectedPositionSource.token.chainId
   const quoteClient = usePublicClient({ chainId: quoteChainId })
 
   const balanceQuery = useQuery({
@@ -145,35 +176,48 @@ export function useVaultWidgetController({
     refetchInterval: 15_000
   })
 
-  const positionBalanceQuery = useQuery({
-    queryKey: ['vault-widget', config.id, 'position-balance', account, config.positionToken.address],
-    queryFn: async (): Promise<bigint> => {
-      if (!account || !positionClient) return 0n
-      return positionClient.readContract({
-        address: config.positionToken.address,
-        abi: erc20Abi,
-        functionName: 'balanceOf',
-        args: [account]
-      })
+  const positionSourcesQuery = useQuery({
+    queryKey: [
+      'vault-widget',
+      config.id,
+      'position-sources',
+      account,
+      positionSources.map(({ id, token }) => `${id}:${token.chainId}:${token.address}`).join(',')
+    ],
+    queryFn: async (): Promise<readonly VaultWidgetPositionSourceState[]> => {
+      if (!account) return []
+      return Promise.all(
+        positionSources.map(async (source) => {
+          const publicClient = getPublicClient(wagmiConfig, { chainId: source.token.chainId })
+          if (!publicClient) throw new Error(`No public client is configured for chain ${source.token.chainId}`)
+          return readPositionSourceState(publicClient, account, source)
+        })
+      )
     },
-    enabled: !!account && !!positionClient,
+    enabled: !!account,
     refetchInterval: 15_000
   })
-
-  const positionValueQuery = useQuery({
-    queryKey: ['vault-widget', config.id, 'position-value', positionBalanceQuery.data?.toString() ?? '0'],
-    queryFn: async (): Promise<bigint> => {
-      const shares = positionBalanceQuery.data ?? 0n
-      if (!positionClient || !config.readPositionValue || shares === 0n) return shares
-      return config.readPositionValue(positionClient, shares)
-    },
-    enabled: !!positionClient && (positionBalanceQuery.data ?? 0n) > 0n
+  const positionSourceStates = positionSources.map((source) => {
+    return (
+      positionSourcesQuery.data?.find(({ id }) => id === source.id) ?? {
+        ...source,
+        balance: 0n,
+        value: 0n
+      }
+    )
   })
+  const activePositionSource = positionSourceStates.find(({ id }) => id === selectedPositionSource.id) ??
+    positionSourceStates[0] ?? {
+      ...selectedPositionSource,
+      balance: 0n,
+      value: 0n
+    }
 
   const adapter = config.adapters.find((candidate) =>
     candidate.supports({
       chainId: quoteChainId,
       mode: transactionMode,
+      positionSource: selectedPositionSource,
       selectedToken
     })
   )
@@ -187,6 +231,8 @@ export function useVaultWidgetController({
       transactionMode,
       selectedToken.chainId,
       selectedToken.address,
+      selectedPositionSource.id,
+      activePositionSource.balance.toString(),
       parsedAmount.toString(),
       settings.maxLossBps,
       settings.slippagePercent
@@ -200,7 +246,8 @@ export function useVaultWidgetController({
           chainId: quoteChainId,
           maxLossBps: settings.maxLossBps,
           mode: transactionMode,
-          positionBalance: positionBalanceQuery.data ?? 0n,
+          positionBalance: activePositionSource.balance,
+          positionSource: selectedPositionSource,
           selectedToken,
           signal,
           slippageBps: Math.round(settings.slippagePercent * 100)
@@ -221,6 +268,7 @@ export function useVaultWidgetController({
     adapter?.getApprovalTarget?.({
       chainId: quoteChainId,
       mode: transactionMode,
+      positionSource: selectedPositionSource,
       selectedToken
     })
   const allowanceClient = usePublicClient({ chainId: approvalTarget?.token.chainId ?? config.chainId })
@@ -239,11 +287,23 @@ export function useVaultWidgetController({
     refetchInterval: 15_000
   })
 
-  const balance = transactionMode === 'deposit' ? (balanceQuery.data ?? 0n) : (positionValueQuery.data ?? 0n)
-  const positionBalance = positionBalanceQuery.data ?? 0n
+  const balance = transactionMode === 'deposit' ? (balanceQuery.data ?? 0n) : activePositionSource.value
+  const positionBalance = activePositionSource.balance
+  const positionValue = sumPositionValues(positionSourceStates)
+  const positionValueDecimals = config.withdrawTokens[0]?.decimals ?? config.positionToken.decimals
   const overBalance =
     transactionMode === 'deposit' ? parsedAmount > balance : (quoteQuery.data?.positionAmount ?? 0n) > positionBalance
   const allowance = allowanceQuery.data ?? 0n
+  const walletTypeQuery = useQuery({
+    queryKey: ['vault-widget', config.id, 'wallet-type', account, connector?.id],
+    queryFn: async (): Promise<VaultWidgetWalletType> => {
+      if (!account || !services.execution.getWalletType) return 'eoa'
+      return services.execution.getWalletType({ account, config: wagmiConfig })
+    },
+    enabled: !!account && !!services.execution.getWalletType,
+    staleTime: Number.POSITIVE_INFINITY
+  })
+  const walletType = walletTypeQuery.data ?? 'eoa'
   const plan = useMemo(
     () =>
       quoteQuery.data
@@ -251,33 +311,35 @@ export function useVaultWidgetController({
             allowance,
             connectedChainId,
             mode: transactionMode,
-            quote: quoteQuery.data
+            quote: quoteQuery.data,
+            walletType
           })
         : undefined,
-    [allowance, connectedChainId, quoteQuery.data, transactionMode]
+    [allowance, connectedChainId, quoteQuery.data, transactionMode, walletType]
   )
   const error = quoteQuery.error ? getError(quoteQuery.error) : undefined
   const isExecuting = execution.status === 'confirming' || execution.status === 'pending'
-  const canSubmit = !!account && !!plan && parsedAmount > 0n && !overBalance && !isExecuting
+  const canSubmit =
+    !!account &&
+    !!plan &&
+    parsedAmount > 0n &&
+    !overBalance &&
+    !isExecuting &&
+    !(services.execution.getWalletType && walletTypeQuery.isLoading)
 
   const refresh = useCallback(async (): Promise<void> => {
-    await Promise.allSettled([
-      balanceQuery.refetch(),
-      positionBalanceQuery.refetch(),
-      positionValueQuery.refetch(),
-      allowanceQuery.refetch()
-    ])
-  }, [allowanceQuery, balanceQuery, positionBalanceQuery, positionValueQuery])
+    await Promise.allSettled([balanceQuery.refetch(), positionSourcesQuery.refetch(), allowanceQuery.refetch()])
+  }, [allowanceQuery, balanceQuery, positionSourcesQuery])
 
   const executeSteps = useCallback(
     async (
       transactionPlan: VaultWidgetTransactionPlan,
       steps: readonly VaultWidgetExecutionStep[],
       index = 0,
-      lastHash?: Hash
-    ): Promise<Hash | undefined> => {
+      outcome: { hash?: Hash; proposalId?: Hex } = {}
+    ): Promise<{ hash?: Hash; proposalId?: Hex }> => {
       const step = steps[index]
-      if (!step) return lastHash
+      if (!step) return outcome
 
       setExecution({
         status: 'confirming',
@@ -289,14 +351,41 @@ export function useVaultWidgetController({
 
       if (step.kind === 'switch-chain' && step.chainId) {
         await switchChain(wagmiConfig, { chainId: step.chainId })
-        return executeSteps(transactionPlan, steps, index + 1, lastHash)
+        return executeSteps(transactionPlan, steps, index + 1, outcome)
       }
       if (step.kind === 'refresh') {
         await refresh()
-        return executeSteps(transactionPlan, steps, index + 1, lastHash)
+        return executeSteps(transactionPlan, steps, index + 1, outcome)
+      }
+      if (step.kind === 'safe-proposal') {
+        if (!account || !step.chainId || !step.requests?.length || !services.execution.proposeSafeBatch) {
+          throw new Error('Safe batch execution is not configured')
+        }
+        const proposalId = await services.execution.proposeSafeBatch({
+          account,
+          chainId: step.chainId,
+          config: wagmiConfig,
+          requests: step.requests,
+          step
+        })
+        setExecution({
+          status: 'pending',
+          step,
+          stepIndex: index,
+          stepCount: steps.length,
+          proposalId
+        })
+        onEvent?.({ type: 'transaction_step', step, proposalId })
+        const hash = services.execution.waitForSafeExecution
+          ? await services.execution.waitForSafeExecution(wagmiConfig, step.chainId, proposalId)
+          : undefined
+        return executeSteps(transactionPlan, steps, index + 1, {
+          hash: hash ?? outcome.hash,
+          proposalId
+        })
       }
       if (!step.request || !account) {
-        return executeSteps(transactionPlan, steps, index + 1, lastHash)
+        return executeSteps(transactionPlan, steps, index + 1, outcome)
       }
 
       const hash = await services.execution.execute({
@@ -314,7 +403,7 @@ export function useVaultWidgetController({
       })
       onEvent?.({ type: 'transaction_step', step, hash })
       await services.execution.waitForReceipt(wagmiConfig, step.request.chainId, hash)
-      return executeSteps(transactionPlan, steps, index + 1, hash)
+      return executeSteps(transactionPlan, steps, index + 1, { ...outcome, hash })
     },
     [account, onEvent, refresh, services.execution, wagmiConfig]
   )
@@ -329,9 +418,10 @@ export function useVaultWidgetController({
       allowance,
       connectedChainId,
       mode: transactionMode,
-      quote: refreshedQuote
+      quote: refreshedQuote,
+      walletType
     })
-  }, [allowance, connectedChainId, plan, refetchQuote, transactionMode])
+  }, [allowance, connectedChainId, plan, refetchQuote, transactionMode, walletType])
 
   const submit = useCallback(async (): Promise<void> => {
     if (!account || !plan || !canSubmit) return
@@ -349,20 +439,21 @@ export function useVaultWidgetController({
       destinationChainId: selectedToken.chainId,
       status: 'pending',
       timestamp: Date.now(),
-      tokenIn: transactionMode === 'deposit' ? selectedToken.address : config.positionToken.address,
+      tokenIn: transactionMode === 'deposit' ? selectedToken.address : selectedPositionSource.token.address,
       tokenOut: transactionMode === 'deposit' ? config.positionToken.address : selectedToken.address,
       type: getActivityType(transactionMode, transactionPlan.quote)
     })
 
     try {
-      const hash = await executeSteps(transactionPlan, transactionPlan.steps)
+      const { hash, proposalId } = await executeSteps(transactionPlan, transactionPlan.steps)
       await services.activityStore.update(activityId, { hash, status: 'success', timestamp: Date.now() })
       const event: Extract<VaultWidgetEvent, { type: 'transaction_succeeded' }> = {
         type: 'transaction_succeeded',
         plan: transactionPlan,
-        hash
+        hash,
+        proposalId
       }
-      setExecution({ status: 'success', hash })
+      setExecution({ status: 'success', hash, proposalId })
       setAmountValue('')
       onEvent?.(event)
       onSuccess?.(event)
@@ -382,7 +473,6 @@ export function useVaultWidgetController({
     account,
     amount,
     canSubmit,
-    config.positionToken.address,
     executeSteps,
     onError,
     onEvent,
@@ -391,6 +481,7 @@ export function useVaultWidgetController({
     resolveFreshPlan,
     selectedToken.address,
     selectedToken.chainId,
+    selectedPositionSource.token.address,
     services.activityStore,
     transactionMode
   ])
@@ -418,6 +509,28 @@ export function useVaultWidgetController({
     [onEvent, transactionMode]
   )
 
+  const setSelectedPositionSource = useCallback(
+    (source: VaultWidgetPositionSource): void => {
+      if (!positionSources.some(({ id }) => id === source.id)) return
+      const nextToken = config.withdrawTokens.find((token) =>
+        config.adapters.some((candidate) =>
+          candidate.supports({
+            chainId: source.token.chainId,
+            mode: 'withdraw',
+            positionSource: source,
+            selectedToken: token
+          })
+        )
+      )
+      setSelectedPositionSourceId(source.id)
+      if (nextToken) setSelectedTokenAddress(nextToken.address)
+      setAmountValue('')
+      setExecution({ status: 'idle' })
+      onEvent?.({ type: 'position_source_changed', source })
+    },
+    [config.adapters, config.withdrawTokens, onEvent, positionSources]
+  )
+
   const setAmount = useCallback((nextAmount: string): void => {
     if (/^\d*\.?\d*$/.test(nextAmount)) {
       setAmountValue(nextAmount)
@@ -427,12 +540,12 @@ export function useVaultWidgetController({
 
   const setPercentage = useCallback(
     (percentage: number): void => {
-      const available = transactionMode === 'deposit' ? (balanceQuery.data ?? 0n) : (positionValueQuery.data ?? 0n)
+      const available = transactionMode === 'deposit' ? (balanceQuery.data ?? 0n) : activePositionSource.value
       const amountAtPercentage = (available * BigInt(percentage)) / 100n
       setAmountValue(formatUnits(amountAtPercentage, selectedToken.decimals))
       setExecution({ status: 'idle' })
     },
-    [balanceQuery.data, positionValueQuery.data, selectedToken.decimals, transactionMode]
+    [activePositionSource.value, balanceQuery.data, selectedToken.decimals, transactionMode]
   )
 
   const setSettings = useCallback(
@@ -457,7 +570,7 @@ export function useVaultWidgetController({
     canSubmit,
     error,
     execution,
-    isLoading: balanceQuery.isLoading || positionBalanceQuery.isLoading || positionValueQuery.isLoading,
+    isLoading: balanceQuery.isLoading || positionSourcesQuery.isLoading,
     isQuoteLoading: quoteQuery.isLoading || quoteQuery.isFetching,
     mode,
     modes,
@@ -465,14 +578,19 @@ export function useVaultWidgetController({
     plan,
     approvalTarget,
     positionBalance,
-    positionValue: positionValueQuery.data ?? 0n,
+    positionSources: positionSourceStates,
+    selectedPositionSource: activePositionSource,
+    positionValue,
+    positionValueDecimals,
     quote: quoteQuery.data,
     selectedToken,
     settings,
     tokens: availableTokens,
+    walletType,
     setAmount,
     setMode,
     setPercentage,
+    setSelectedPositionSource,
     setSelectedToken,
     setSettings,
     submit,

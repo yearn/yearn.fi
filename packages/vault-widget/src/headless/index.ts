@@ -10,6 +10,12 @@ export {
 } from './adapters'
 export { createHttpEnsoQuoteProvider, normalizeEnsoRoute } from './enso'
 export {
+  getDefaultPositionSource,
+  getPositionSources,
+  readPositionSourceState,
+  sumPositionValues
+} from './positionSources'
+export {
   clampSlippage,
   getSlippageSaveState,
   SLIPPAGE_HARD_CAP,

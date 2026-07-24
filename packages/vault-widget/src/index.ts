@@ -17,6 +17,8 @@ export type {
   VaultWidgetExecutionStep,
   VaultWidgetExecutionStepKind,
   VaultWidgetMode,
+  VaultWidgetPositionSource,
+  VaultWidgetPositionSourceState,
   VaultWidgetProps,
   VaultWidgetQuote,
   VaultWidgetRequest,
@@ -27,5 +29,6 @@ export type {
   VaultWidgetTokenSelectorChain,
   VaultWidgetTokenSelectorConfig,
   VaultWidgetTransactionPlan,
-  VaultWidgetTransactionRequest
+  VaultWidgetTransactionRequest,
+  VaultWidgetWalletType
 } from './types'

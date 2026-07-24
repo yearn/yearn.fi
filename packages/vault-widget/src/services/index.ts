@@ -1,5 +1,9 @@
 export { createKongVaultConfigResolver } from './config'
-export { createWagmiExecutionService } from './execution'
+export {
+  createSafeAwareExecutionService,
+  createWagmiExecutionService,
+  createWagmiSafeExecutionService
+} from './execution'
 export {
   createBrowserSettingsStore,
   createMemoryActivityStore,
@@ -11,7 +15,9 @@ export type {
   VaultWidgetConfigResolver,
   VaultWidgetExecutionContext,
   VaultWidgetExecutionService,
+  VaultWidgetSafeProposalContext,
   VaultWidgetServices,
   VaultWidgetSettings,
-  VaultWidgetSettingsStore
+  VaultWidgetSettingsStore,
+  VaultWidgetWalletContext
 } from './types'

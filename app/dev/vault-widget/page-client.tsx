@@ -24,6 +24,12 @@ const VAULT_FIXTURES = [
     label: 'V2 · yCRV',
     chainId: 1,
     vaultAddress: '0x27B5739e22ad9033bcBf192059122d163b60349D' as Address
+  },
+  {
+    id: 'v3-staking',
+    label: 'V3 · USDC + staking',
+    chainId: 1,
+    vaultAddress: '0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204' as Address
   }
 ] as const
 const DESKTOP_VIEWPORT = { width: 1440, height: 900 }

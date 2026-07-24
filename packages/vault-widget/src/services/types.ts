@@ -1,11 +1,12 @@
-import type { Address, Hash } from 'viem'
+import type { Address, Hash, Hex } from 'viem'
 import type { Config } from 'wagmi'
 import type {
   EnsoQuoteProvider,
   VaultWidgetActivity,
   VaultWidgetConfig,
   VaultWidgetExecutionStep,
-  VaultWidgetTransactionRequest
+  VaultWidgetTransactionRequest,
+  VaultWidgetWalletType
 } from '../types'
 
 export type VaultWidgetSettings = {
@@ -39,9 +40,23 @@ export type VaultWidgetExecutionContext = {
   step: VaultWidgetExecutionStep
 }
 
+export type VaultWidgetWalletContext = {
+  account: Address
+  config: Config
+}
+
+export type VaultWidgetSafeProposalContext = VaultWidgetWalletContext & {
+  chainId: number
+  requests: readonly VaultWidgetTransactionRequest[]
+  step: VaultWidgetExecutionStep
+}
+
 export type VaultWidgetExecutionService = {
+  getWalletType?: (context: VaultWidgetWalletContext) => Promise<VaultWidgetWalletType>
   execute: (context: VaultWidgetExecutionContext) => Promise<Hash>
   waitForReceipt: (config: Config, chainId: number, hash: Hash) => Promise<void>
+  proposeSafeBatch?: (context: VaultWidgetSafeProposalContext) => Promise<Hex>
+  waitForSafeExecution?: (config: Config, chainId: number, proposalId: Hex) => Promise<Hash | undefined>
 }
 
 export type VaultWidgetServices = {

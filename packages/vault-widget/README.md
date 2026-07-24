@@ -47,6 +47,17 @@ Use `defaultDepositAssetTokens` or `defaultWithdrawAssetTokens` when the two
 menus should feature different assets. Tokens omitted from these defaults
 remain available through search as long as they are present in `routeTokens`.
 
+Vaults with Kong staking metadata automatically expose separate direct-vault
+and staked position sources. The selected source controls the available output
+assets and selects direct withdraw, unstake, or combined unstake-and-withdraw
+routing. Custom integrations can define the same behavior with
+`positionSources` and source-aware route adapters.
+
+The default execution service detects the Wagmi Safe connector, combines
+same-chain approval and execution calls into an atomic wallet-call proposal,
+and tracks it until execution. Hosts with another Safe transport can inject
+`createSafeAwareExecutionService` through `VaultWidgetProvider`.
+
 ## Development
 
 ```bash

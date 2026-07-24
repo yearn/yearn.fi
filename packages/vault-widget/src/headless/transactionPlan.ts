@@ -1,11 +1,17 @@
 import { encodeFunctionData, erc20Abi } from 'viem'
-import type { VaultWidgetExecutionStep, VaultWidgetQuote, VaultWidgetTransactionPlan } from '../types'
+import type {
+  VaultWidgetExecutionStep,
+  VaultWidgetQuote,
+  VaultWidgetTransactionPlan,
+  VaultWidgetWalletType
+} from '../types'
 
 type BuildTransactionPlanParams = {
   allowance: bigint
   connectedChainId?: number
   mode: 'deposit' | 'withdraw'
   quote: VaultWidgetQuote
+  walletType?: VaultWidgetWalletType
 }
 
 function buildApprovalSteps(quote: VaultWidgetQuote, allowance: bigint): VaultWidgetExecutionStep[] {
@@ -102,21 +108,60 @@ function addChainSwitchSteps(
   ).steps
 }
 
+function buildSafeProposalSteps(steps: readonly VaultWidgetExecutionStep[]): VaultWidgetExecutionStep[] {
+  const executableSteps = steps.filter(
+    (
+      step
+    ): step is VaultWidgetExecutionStep & {
+      chainId: number
+      request: NonNullable<VaultWidgetExecutionStep['request']>
+    } => step.request !== undefined && step.chainId !== undefined
+  )
+
+  function groupByChain(remaining: typeof executableSteps, index = 0): VaultWidgetExecutionStep[] {
+    const first = remaining[0]
+    if (!first) return []
+    const boundary = remaining.slice(1).findIndex(({ chainId }) => chainId !== first.chainId)
+    const groupLength = boundary === -1 ? remaining.length : boundary + 1
+    const group = remaining.slice(0, groupLength)
+    const requests = group.map(({ request }) => request)
+
+    return [
+      {
+        id: `safe-proposal-${first.chainId}-${index}`,
+        kind: 'safe-proposal',
+        label: requests.length === 1 ? 'Propose transaction' : `Propose ${requests.length} transactions`,
+        chainId: first.chainId,
+        requests
+      },
+      ...groupByChain(remaining.slice(groupLength), index + 1)
+    ]
+  }
+
+  return groupByChain(executableSteps)
+}
+
 export function buildTransactionPlan({
   allowance,
   connectedChainId,
   mode,
-  quote
+  quote,
+  walletType = 'eoa'
 }: BuildTransactionPlanParams): VaultWidgetTransactionPlan {
   const approvalSteps = buildApprovalSteps(quote, allowance)
   const executionSteps = buildExecutionSteps(quote, mode)
+  const transactionSteps =
+    walletType === 'safe'
+      ? buildSafeProposalSteps([...approvalSteps, ...executionSteps])
+      : addChainSwitchSteps([...approvalSteps, ...executionSteps], connectedChainId)
 
   return {
     id: `${mode}:${quote.adapterId}:${quote.transaction.chainId}:${quote.amountIn.toString()}`,
     mode,
     quote,
+    walletType,
     steps: [
-      ...addChainSwitchSteps([...approvalSteps, ...executionSteps], connectedChainId),
+      ...transactionSteps,
       {
         id: 'refresh',
         kind: 'refresh',

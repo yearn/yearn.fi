@@ -17,6 +17,18 @@ export type VaultWidgetToken = {
 
 export type VaultWidgetTokenReference = Pick<VaultWidgetToken, 'address' | 'chainId'>
 
+export type VaultWidgetPositionSource = {
+  id: string
+  label: string
+  token: VaultWidgetToken
+  readValue?: (publicClient: PublicClient, balance: bigint) => Promise<bigint>
+}
+
+export type VaultWidgetPositionSourceState = VaultWidgetPositionSource & {
+  balance: bigint
+  value: bigint
+}
+
 export type VaultWidgetTokenSelectorChain = {
   id: number
   name: string
@@ -37,6 +49,7 @@ export type VaultWidgetRequest = {
   maxLossBps: number
   mode: 'deposit' | 'withdraw'
   positionBalance: bigint
+  positionSource?: VaultWidgetPositionSource
   selectedToken: VaultWidgetToken
   signal: AbortSignal
   slippageBps: number
@@ -82,9 +95,9 @@ export type VaultWidgetQuote = {
 
 export type VaultWidgetRouteAdapter = {
   id: string
-  supports: (request: Pick<VaultWidgetRequest, 'chainId' | 'mode' | 'selectedToken'>) => boolean
+  supports: (request: Pick<VaultWidgetRequest, 'chainId' | 'mode' | 'positionSource' | 'selectedToken'>) => boolean
   getApprovalTarget?: (
-    request: Pick<VaultWidgetRequest, 'chainId' | 'mode' | 'selectedToken'>
+    request: Pick<VaultWidgetRequest, 'chainId' | 'mode' | 'positionSource' | 'selectedToken'>
   ) => VaultWidgetApprovalTarget | undefined
   quote: (request: VaultWidgetRequest, publicClient: PublicClient) => Promise<VaultWidgetQuote>
 }
@@ -95,6 +108,7 @@ export type VaultWidgetConfig = {
   chainId: number
   vaultAddress: Address
   positionToken: VaultWidgetToken
+  positionSources?: readonly VaultWidgetPositionSource[]
   depositTokens: readonly VaultWidgetToken[]
   withdrawTokens: readonly VaultWidgetToken[]
   adapters: readonly VaultWidgetRouteAdapter[]
@@ -102,6 +116,7 @@ export type VaultWidgetConfig = {
   defaultMode?: VaultWidgetMode
   defaultDepositToken?: Address
   defaultWithdrawToken?: Address
+  defaultPositionSource?: string
   defaultSlippagePercent?: number
   defaultMaxLossBps?: number
   tokenSelector?: VaultWidgetTokenSelectorConfig
@@ -132,13 +147,17 @@ export type VaultWidgetExecutionStep = {
   label: string
   chainId?: number
   request?: VaultWidgetTransactionRequest
+  requests?: readonly VaultWidgetTransactionRequest[]
 }
+
+export type VaultWidgetWalletType = 'eoa' | 'safe'
 
 export type VaultWidgetTransactionPlan = {
   id: string
   mode: 'deposit' | 'withdraw'
   quote: VaultWidgetQuote
   steps: readonly VaultWidgetExecutionStep[]
+  walletType: VaultWidgetWalletType
 }
 
 export type VaultWidgetExecutionState =
@@ -149,19 +168,27 @@ export type VaultWidgetExecutionState =
       step: VaultWidgetExecutionStep
       stepIndex: number
       stepCount: number
-      hash: Hash
+      hash?: Hash
+      proposalId?: Hex
     }
-  | { status: 'success'; hash?: Hash }
-  | { status: 'error'; error: Error; hash?: Hash }
+  | { status: 'success'; hash?: Hash; proposalId?: Hex }
+  | { status: 'error'; error: Error; hash?: Hash; proposalId?: Hex }
 
 export type VaultWidgetEvent =
   | { type: 'mode_changed'; mode: VaultWidgetMode }
   | { type: 'token_changed'; mode: 'deposit' | 'withdraw'; token: VaultWidgetToken }
+  | { type: 'position_source_changed'; source: VaultWidgetPositionSource }
   | { type: 'quote_received'; quote: VaultWidgetQuote }
   | { type: 'transaction_started'; plan: VaultWidgetTransactionPlan }
-  | { type: 'transaction_step'; step: VaultWidgetExecutionStep; hash?: Hash }
-  | { type: 'transaction_succeeded'; plan: VaultWidgetTransactionPlan; hash?: Hash }
-  | { type: 'transaction_failed'; plan: VaultWidgetTransactionPlan; error: Error; hash?: Hash }
+  | { type: 'transaction_step'; step: VaultWidgetExecutionStep; hash?: Hash; proposalId?: Hex }
+  | { type: 'transaction_succeeded'; plan: VaultWidgetTransactionPlan; hash?: Hash; proposalId?: Hex }
+  | {
+      type: 'transaction_failed'
+      plan: VaultWidgetTransactionPlan
+      error: Error
+      hash?: Hash
+      proposalId?: Hex
+    }
 
 export type VaultWidgetCopy = {
   connect: string

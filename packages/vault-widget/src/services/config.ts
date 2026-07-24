@@ -5,6 +5,11 @@ import {
   createYearnV2Adapter,
   createYearnV2PositionValueReader
 } from '../headless/adapters'
+import {
+  createStakingAdapter,
+  createStakingPositionValueReader,
+  createUnstakeAndWithdrawAdapter
+} from '../headless/staking'
 import { createYBoldPreset, YBOLD_VAULT_ADDRESS } from '../presets/yBold'
 import type { VaultWidgetConfig, VaultWidgetToken } from '../types'
 import type { VaultWidgetConfigResolver } from './types'
@@ -21,6 +26,11 @@ type KongVault = {
     decimals?: number | string | null
     name: string
     symbol: string
+  } | null
+  staking?: {
+    address?: Address | null
+    available?: boolean | null
+    source?: string | null
   } | null
 }
 
@@ -75,9 +85,82 @@ function createConfig(vault: KongVault): VaultWidgetConfig {
   }
 
   const isYearnV2 = Boolean(vault.apiVersion && !vault.apiVersion.startsWith('3') && !vault.apiVersion.startsWith('~3'))
+  const stakingAddress =
+    vault.staking?.available && vault.staking.address && isAddress(vault.staking.address)
+      ? vault.staking.address
+      : undefined
+  const positionSourceId = stakingAddress ? 'vault' : undefined
   const adapter = isYearnV2
-    ? createYearnV2Adapter({ asset, positionToken, vaultAddress: vault.address })
-    : createErc4626Adapter({ asset, vaultAddress: vault.address })
+    ? createYearnV2Adapter({ asset, positionSourceId, positionToken, vaultAddress: vault.address })
+    : createErc4626Adapter({ asset, positionSourceId, vaultAddress: vault.address })
+  const readPositionValue = isYearnV2
+    ? createYearnV2PositionValueReader({ positionToken, vaultAddress: vault.address })
+    : createErc4626PositionValueReader({ vaultAddress: vault.address })
+
+  if (stakingAddress) {
+    const stakingToken: VaultWidgetToken = {
+      address: stakingAddress,
+      chainId: vault.chainId,
+      decimals: positionToken.decimals,
+      logoURI: tokenLogo(vault.chainId, stakingAddress),
+      name: `Staked ${positionToken.name}`,
+      symbol: `st${positionToken.symbol}`
+    }
+    const stakingAdapter = createStakingAdapter({
+      chainId: vault.chainId,
+      positionSourceId: 'staked',
+      source: vault.staking?.source ?? undefined,
+      stakingAddress,
+      stakingToken,
+      vaultToken: positionToken
+    })
+    const readStakingValue = createStakingPositionValueReader({
+      source: vault.staking?.source ?? undefined,
+      stakingAddress
+    })
+
+    return {
+      id: `${vault.chainId}:${vault.address.toLowerCase()}`,
+      name: vault.name,
+      chainId: vault.chainId,
+      vaultAddress: vault.address,
+      positionToken,
+      positionSources: [
+        {
+          id: 'vault',
+          label: 'Vault shares',
+          token: positionToken,
+          readValue: readPositionValue
+        },
+        {
+          id: 'staked',
+          label: 'Staked shares',
+          token: stakingToken,
+          readValue: async (publicClient, balance) =>
+            readPositionValue(publicClient, await readStakingValue(publicClient, balance))
+        }
+      ],
+      depositTokens: [asset, positionToken],
+      withdrawTokens: [asset, positionToken],
+      adapters: [
+        adapter,
+        stakingAdapter,
+        createUnstakeAndWithdrawAdapter({
+          assetToken: asset,
+          positionSourceId: 'staked',
+          stakingAdapter,
+          vaultAdapter: adapter,
+          vaultToken: positionToken
+        })
+      ],
+      modes: ['deposit', 'withdraw', 'info'],
+      readPositionValue,
+      display: {
+        approvalSpenderName: { deposit: positionToken.symbol },
+        positionLabel: 'Vault shares'
+      }
+    }
+  }
 
   return {
     id: `${vault.chainId}:${vault.address.toLowerCase()}`,
@@ -89,9 +172,7 @@ function createConfig(vault: KongVault): VaultWidgetConfig {
     withdrawTokens: [asset],
     adapters: [adapter],
     modes: ['deposit', 'withdraw', 'info'],
-    readPositionValue: isYearnV2
-      ? createYearnV2PositionValueReader({ positionToken, vaultAddress: vault.address })
-      : createErc4626PositionValueReader({ vaultAddress: vault.address }),
+    readPositionValue,
     display: {
       approvalSpenderName: { deposit: positionToken.symbol },
       positionLabel: 'Vault shares'

@@ -12,9 +12,9 @@ published as the production dependency until every row below is complete.
 | Allowance reset and approval planning | Complete | `transactionPlan.test.ts` |
 | Legacy yearn.fi settings and activity storage | Complete | `storage.test.ts` |
 | Package artifact isolation | Complete | npm pack dry run and import scan |
-| Stake, unstake, and combined routes | In progress | Source-specific adapters, staking preset, and ordered EOA plans complete; multi-position UI and Safe batches pending |
+| Stake, unstake, and combined routes | Complete | Kong staking metadata, selectable vault/staked positions, source-aware adapters, composed valuation, and ordered plans |
 | Generic same-chain and cross-chain Enso | Pending | Completion polling and route matrix required |
-| Safe proposal and delayed execution | Pending | Safe execution service required |
+| Safe proposal and delayed execution | In progress | Atomic plan batching, connector detection, proposal submission, and execution polling complete; live Safe QA pending |
 | yvUSD locked/unlocked and cooldown | Pending | Product preset and controller required |
 | yvBTC locked/unlocked | Pending | Product preset and controller required |
 | Permit and approval migration | Pending | Migration controller and UI required |
@@ -27,8 +27,8 @@ Current rollout state:
 - yearn.fi can mount the package for the complete yBOLD surface with
   `NEXT_PUBLIC_VAULT_WIDGET_ENABLED=true`. `/dev/vault-widget` remains the
   development-only side-by-side harness, with package fixtures for yBOLD and
-  direct Yearn V2 vaults. Other product families stay on their legacy
-  implementations until their parity gates pass.
+  direct Yearn V2 vaults, and a V3 vault with staking. Other product families
+  stay on their legacy implementations until their parity gates pass.
 - yearn-bold keeps its legacy card by default. Setting
   `NEXT_PUBLIC_VAULT_WIDGET_ENABLED=true` switches its entire card to the
   package for parity testing.

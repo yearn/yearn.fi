@@ -86,4 +86,52 @@ describe('buildTransactionPlan', () => {
       ['refresh', 'Refresh balances']
     ])
   })
+
+  it('batches same-chain approvals and execution into one Safe proposal', () => {
+    const plan = buildTransactionPlan({
+      allowance: 1n,
+      connectedChainId: 10,
+      mode: 'deposit',
+      quote,
+      walletType: 'safe'
+    })
+
+    expect(plan.walletType).toBe('safe')
+    expect(plan.steps.map((step) => step.kind)).toEqual(['safe-proposal', 'refresh'])
+    expect(plan.steps[0]?.requests).toHaveLength(3)
+  })
+
+  it('creates one Safe proposal per contiguous execution chain', () => {
+    const plan = buildTransactionPlan({
+      allowance: 0n,
+      mode: 'withdraw',
+      quote: {
+        ...quote,
+        approval: undefined,
+        transactions: [
+          {
+            id: 'unstake',
+            label: 'Unstake',
+            transaction: {
+              chainId: 10,
+              data: '0x1234',
+              to: '0x4444444444444444444444444444444444444444'
+            }
+          },
+          {
+            id: 'withdraw',
+            label: 'Withdraw',
+            transaction: quote.transaction
+          }
+        ]
+      },
+      walletType: 'safe'
+    })
+
+    expect(plan.steps.map((step) => [step.kind, step.chainId])).toEqual([
+      ['safe-proposal', 10],
+      ['safe-proposal', 1],
+      ['refresh', undefined]
+    ])
+  })
 })

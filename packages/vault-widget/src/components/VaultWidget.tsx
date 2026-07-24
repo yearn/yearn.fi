@@ -149,7 +149,13 @@ function TransactionStatus({
     <div className="yv-widget__notice" role="status" aria-live="polite">
       <span className="yv-widget__spinner" aria-hidden="true" />
       <span>
-        {execution.status === 'confirming' ? 'Confirm in your wallet' : 'Transaction pending'}
+        {execution.status === 'confirming'
+          ? execution.step.kind === 'safe-proposal'
+            ? 'Confirm the proposal in Safe'
+            : 'Confirm in your wallet'
+          : execution.proposalId
+            ? 'Safe proposal pending'
+            : 'Transaction pending'}
         <small>
           {execution.step.label} ({execution.stepIndex + 1}/{execution.stepCount})
         </small>
@@ -220,7 +226,7 @@ function ConfiguredVaultWidget({
   const inputAmount = Number(controller.amount || '0')
   const inputPriceUsd = controller.selectedToken.priceUsd ?? 0
   const inputUsd = inputAmount * inputPriceUsd
-  const positionValue = Number(formatUnits(controller.positionValue, config.positionToken.decimals))
+  const positionValue = Number(formatUnits(controller.positionValue, controller.positionValueDecimals))
   const positionUsd = positionValue * (config.display?.assetPriceUsd ?? 0)
   const positionAmount = quote?.positionAmount ?? 0n
   const expectedOut = quote?.expectedOut ?? 0n
@@ -233,7 +239,7 @@ function ConfiguredVaultWidget({
   const approvalToken =
     quote?.approval?.token ??
     controller.approvalTarget?.token ??
-    (transactionMode === 'withdraw' ? config.positionToken : controller.selectedToken)
+    (transactionMode === 'withdraw' ? controller.selectedPositionSource.token : controller.selectedToken)
   const approvalSpenderName = config.display?.approvalSpenderName?.[transactionMode]
   const allowanceFormatted = formatWidgetAllowance(controller.allowance, approvalToken.decimals)
 
@@ -333,7 +339,7 @@ function ConfiguredVaultWidget({
             depositedValueUsd={formatUsd(positionUsd)}
             onConnectWallet={onConnectWallet}
             positionBalance={controller.positionBalance}
-            positionToken={config.positionToken}
+            positionToken={controller.selectedPositionSource.token}
           />
         </div>
       ) : null}
@@ -344,6 +350,32 @@ function ConfiguredVaultWidget({
       {!settingsOpen && isTransactionMode ? (
         <div className="yv-widget__body" data-token-selector-open={tokenSelectorOpen}>
           <h3 className="yv-widget__body-title">{getModeLabel(controller.mode, config.display?.modeLabels)}</h3>
+
+          {transactionMode === 'withdraw' && controller.positionSources.length > 1 ? (
+            <fieldset className="yv-widget__position-sources">
+              <legend>Withdraw from</legend>
+              <div className="yv-widget__position-source-options">
+                {controller.positionSources.map((source) => (
+                  <button
+                    aria-pressed={controller.selectedPositionSource.id === source.id}
+                    data-active={controller.selectedPositionSource.id === source.id}
+                    key={source.id}
+                    onClick={() => {
+                      setSelectedPercentage(null)
+                      setTokenSelectorOpen(false)
+                      controller.setSelectedPositionSource(source)
+                    }}
+                    type="button"
+                  >
+                    <span>{source.label}</span>
+                    <small>
+                      {formatWalletBalance(source.balance, source.token.decimals)} {source.token.symbol}
+                    </small>
+                  </button>
+                ))}
+              </div>
+            </fieldset>
+          ) : null}
 
           <div className="yv-widget__amount-panel">
             <div className="yv-widget__amount-meta">
@@ -457,7 +489,7 @@ function ConfiguredVaultWidget({
                     <dt className="yv-widget__detail-link">{copy.unstakeAndRedeem}</dt>
                     <dd>
                       <DetailValue
-                        amount={formatWidgetValue(positionAmount, config.positionToken.decimals)}
+                        amount={formatWidgetValue(positionAmount, controller.selectedPositionSource.token.decimals)}
                         unit="Vault shares"
                       />
                     </dd>
@@ -584,5 +616,5 @@ export function VaultWidget(props: VaultWidgetProps): ReactElement {
     )
   }
 
-  return <ConfiguredVaultWidget {...props} config={config} />
+  return <ConfiguredVaultWidget key={config.id} {...props} config={config} />
 }

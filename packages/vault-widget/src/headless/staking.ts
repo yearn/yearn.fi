@@ -91,6 +91,7 @@ const TOKENIZED_STAKING_ABI = [
 
 type StakingAdapterOptions = {
   chainId: number
+  positionSourceId?: string
   source?: string
   stakingAddress: Address
   stakingToken: VaultWidgetToken
@@ -99,6 +100,7 @@ type StakingAdapterOptions = {
 
 type UnstakeAndWithdrawAdapterOptions = {
   assetToken: VaultWidgetToken
+  positionSourceId?: string
   stakingAdapter: VaultWidgetRouteAdapter
   vaultAdapter: VaultWidgetRouteAdapter
   vaultToken: VaultWidgetToken
@@ -178,7 +180,11 @@ export function createStakingAdapter(options: StakingAdapterOptions): VaultWidge
     id: `staking-${source.toLowerCase()}`,
     supports(request): boolean {
       return (
-        request.chainId === options.chainId && isAddressEqual(request.selectedToken.address, options.vaultToken.address)
+        request.chainId === options.chainId &&
+        (!options.positionSourceId ||
+          request.mode === 'deposit' ||
+          request.positionSource?.id === options.positionSourceId) &&
+        isAddressEqual(request.selectedToken.address, options.vaultToken.address)
       )
     },
     getApprovalTarget(request) {
@@ -246,6 +252,7 @@ export function createUnstakeAndWithdrawAdapter(options: UnstakeAndWithdrawAdapt
       return (
         request.mode === 'withdraw' &&
         request.chainId === options.assetToken.chainId &&
+        (!options.positionSourceId || request.positionSource?.id === options.positionSourceId) &&
         isAddressEqual(request.selectedToken.address, options.assetToken.address)
       )
     },
