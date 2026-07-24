@@ -1,4 +1,13 @@
-export { createEnsoAdapter, createErc4626Adapter, createYBoldAdapter, ERC4626_ABI } from './adapters'
+export {
+  createEnsoAdapter,
+  createErc4626Adapter,
+  createErc4626PositionValueReader,
+  createYBoldAdapter,
+  createYearnV2Adapter,
+  createYearnV2PositionValueReader,
+  ERC4626_ABI,
+  YEARN_V2_VAULT_ABI
+} from './adapters'
 export { createHttpEnsoQuoteProvider, normalizeEnsoRoute } from './enso'
 export {
   clampSlippage,

@@ -5,18 +5,33 @@ import { createYBoldPreset, VaultWidget, type VaultWidgetMode, VaultWidgetProvid
 import { createYearnFiActivityStore, createYearnFiSettingsStore } from '@yearn/vault-widget/services'
 import type { ReactElement, RefObject } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { Address } from 'viem'
 import { useAccount } from 'wagmi'
 
 const yBoldConfig = createYBoldPreset({
   ensoEndpoint: '/api/enso/route'
 })
 
-const legacyVaultPath = `/vaults/${yBoldConfig.chainId}/${yBoldConfig.vaultAddress}`
+const VAULT_FIXTURES = [
+  {
+    id: 'ybold',
+    label: 'yBOLD',
+    chainId: yBoldConfig.chainId,
+    vaultAddress: yBoldConfig.vaultAddress
+  },
+  {
+    id: 'v2-ycrv',
+    label: 'V2 · yCRV',
+    chainId: 1,
+    vaultAddress: '0x27B5739e22ad9033bcBf192059122d163b60349D' as Address
+  }
+] as const
 const DESKTOP_VIEWPORT = { width: 1440, height: 900 }
 const MOBILE_VIEWPORT = { width: 390, height: 844 }
 const DESKTOP_WIDGET_CROP = { left: 916, top: 190, width: 406, height: 570 }
 
 type TestViewport = 'desktop' | 'mobile'
+type TestVaultId = (typeof VAULT_FIXTURES)[number]['id']
 function getButtonLabel(element: Element): string {
   return element.textContent?.replace(/\s+/g, ' ').trim().toLowerCase() ?? ''
 }
@@ -123,11 +138,15 @@ function ComparisonFrame({
 function LegacyFrame({
   iframeRef,
   viewport,
+  vaultLabel,
+  vaultPath,
   sessionKey,
   onLoad
 }: {
   iframeRef: RefObject<HTMLIFrameElement | null>
   viewport: TestViewport
+  vaultLabel: string
+  vaultPath: string
   sessionKey: string
   onLoad: () => void
 }): ReactElement {
@@ -146,8 +165,8 @@ function LegacyFrame({
         className="absolute max-w-none border-0 bg-app"
         key={`${viewport}:${sessionKey}`}
         ref={iframeRef}
-        src={legacyVaultPath}
-        title={`Legacy yBOLD vault widget at ${viewport} viewport`}
+        src={vaultPath}
+        title={`Legacy ${vaultLabel} vault widget at ${viewport} viewport`}
         width={iframeWidth}
         height={iframeHeight}
         onLoad={onLoad}
@@ -167,6 +186,7 @@ export function VaultWidgetParityPage(): ReactElement {
   const { openAccountModal } = useAccountModal()
   const { address, isConnected } = useAccount()
   const iframeRef = useRef<HTMLIFrameElement>(null)
+  const [vaultId, setVaultId] = useState<TestVaultId>('ybold')
   const [viewport, setViewport] = useState<TestViewport>('desktop')
   const [mode, setMode] = useState<VaultWidgetMode>('deposit')
   const [legacyLoadCount, setLegacyLoadCount] = useState(0)
@@ -177,6 +197,8 @@ export function VaultWidgetParityPage(): ReactElement {
     }),
     []
   )
+  const vaultFixture = VAULT_FIXTURES.find((fixture) => fixture.id === vaultId) ?? VAULT_FIXTURES[0]
+  const legacyVaultPath = `/vaults/${vaultFixture.chainId}/${vaultFixture.vaultAddress}`
   const comparisonWidth = viewport === 'desktop' ? DESKTOP_WIDGET_CROP.width : MOBILE_VIEWPORT.width
 
   const synchronizeLegacy = useCallback(() => {
@@ -199,15 +221,24 @@ export function VaultWidgetParityPage(): ReactElement {
         <p className="mb-2 text-xs font-bold uppercase tracking-[0.18em] text-text-secondary">Development only</p>
         <h1 className="text-3xl font-black">Vault widget parity harness</h1>
         <p className="mt-2 max-w-3xl text-sm leading-6 text-text-secondary">
-          Compare the legacy yBOLD widget and <code>@yearn/vault-widget</code> at the same explicit viewport and
-          transaction state. Desktop isolates the widget from a 1440 × 900 page; mobile renders the complete 390 × 844
-          experience.
+          Compare the legacy vault widget and <code>@yearn/vault-widget</code> across package-owned vault fixtures,
+          using the same explicit viewport and transaction state. Desktop isolates the widget from a 1440 × 900 page;
+          mobile renders the complete 390 × 844 experience.
         </p>
       </header>
 
       <main className="mx-auto mt-6 max-w-[1120px]">
         <div className="flex flex-wrap items-end justify-between gap-5 rounded-lg border border-border bg-surface p-4">
           <div className="flex flex-wrap gap-6">
+            <SegmentedControl
+              label="Vault family"
+              options={VAULT_FIXTURES.map((fixture) => ({ label: fixture.label, value: fixture.id }))}
+              value={vaultId}
+              onChange={(nextVaultId) => {
+                setVaultId(nextVaultId)
+                setMode('deposit')
+              }}
+            />
             <SegmentedControl
               label="Viewport"
               options={[
@@ -270,7 +301,9 @@ export function VaultWidgetParityPage(): ReactElement {
               <LegacyFrame
                 iframeRef={iframeRef}
                 viewport={viewport}
-                sessionKey={address ?? 'disconnected'}
+                vaultLabel={vaultFixture.label}
+                vaultPath={legacyVaultPath}
+                sessionKey={`${vaultFixture.id}:${address ?? 'disconnected'}`}
                 onLoad={() => setLegacyLoadCount((count) => count + 1)}
               />
             </ComparisonFrame>
@@ -288,9 +321,9 @@ export function VaultWidgetParityPage(): ReactElement {
               >
                 <VaultWidgetProvider services={services}>
                   <VaultWidget
-                    chainId={yBoldConfig.chainId}
-                    vaultAddress={yBoldConfig.vaultAddress}
-                    config={yBoldConfig}
+                    key={`${vaultFixture.id}:${viewport}`}
+                    chainId={vaultFixture.chainId}
+                    vaultAddress={vaultFixture.vaultAddress}
                     mode={mode}
                     style={viewport === 'mobile' && mode === 'deposit' ? { minHeight: 780 } : undefined}
                     viewport={viewport}
