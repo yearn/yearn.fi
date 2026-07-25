@@ -654,7 +654,9 @@ function Index(): ReactElement | null {
       expectedAddress: YBOLD_VAULT_ADDRESS
     })
   }, [isDualVariantVault, baseVault?.address, params.address, chainId])
-  const shouldUsePackagedVaultWidget = isVaultWidgetCutoverEnabled()
+  const shouldUsePackagedVaultWidget =
+    isVaultWidgetCutoverEnabled() &&
+    !(process.env.NODE_ENV === 'development' && searchParams.get('vaultWidget') === 'legacy')
 
   const yBoldStakingVault = useMemo(() => {
     if (!isYBold) return undefined

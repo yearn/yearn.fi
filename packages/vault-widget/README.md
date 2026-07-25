@@ -110,6 +110,19 @@ surface replaces the action panel while settings are open; compact containers
 use a widget-constrained popover and restore focus to the opening gear when
 closed.
 
+External applications can persist activity and settings without sharing
+yearn.fi's compatibility keys:
+
+```tsx
+const services = {
+  activityStore: createBrowserActivityStore({ namespace: 'my-app/vault-widget' }),
+  settings: createBrowserSettingsStore({ namespace: 'my-app/vault-widget' })
+}
+```
+
+Use `createYearnFiActivityStore` and `createYearnFiSettingsStore` only inside
+yearn.fi, where they preserve its existing IndexedDB and local-storage schema.
+
 The corresponding builders remain available from the headless entry point.
 `createMigrationQuote` preserves the legacy migrator registry, V2/V3 router
 selectors, veCRV zap arguments, and V3 EIP-2612 multicalls.

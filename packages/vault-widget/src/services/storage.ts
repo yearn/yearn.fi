@@ -1,4 +1,4 @@
-import type { Address } from 'viem'
+import { type Address, isAddress } from 'viem'
 import type { VaultWidgetActivity, VaultWidgetActivityStatus } from '../types'
 import type { VaultWidgetActivityStore, VaultWidgetSettings, VaultWidgetSettingsStore } from './types'
 
@@ -13,6 +13,11 @@ type BrowserSettingsOptions = {
   namespace?: string
   keys?: Partial<Record<keyof VaultWidgetSettings, string>>
   defaults?: Partial<VaultWidgetSettings>
+}
+
+export type BrowserActivityStoreOptions = {
+  namespace?: string
+  maxEntries?: number
 }
 
 function readStoredValue<T>(key: string, fallback: T): T {
@@ -253,6 +258,81 @@ export function createYearnFiActivityStore(): VaultWidgetActivityStore {
     },
     async remove(id): Promise<void> {
       await runStoreRequest<undefined>('readwrite', (store) => store.delete(id))
+    }
+  }
+}
+
+export function createBrowserActivityStore(options: BrowserActivityStoreOptions = {}): VaultWidgetActivityStore {
+  const namespace = options.namespace ?? 'yearn-widget'
+  const storageKey = `${namespace}/activity`
+  const requestedMaxEntries = options.maxEntries ?? 250
+  const maxEntries =
+    Number.isFinite(requestedMaxEntries) && requestedMaxEntries > 0 ? Math.floor(requestedMaxEntries) : 250
+
+  const read = (): VaultWidgetActivity[] => {
+    if (typeof window === 'undefined') return []
+
+    try {
+      const value: unknown = JSON.parse(window.localStorage.getItem(storageKey) ?? '[]')
+      return Array.isArray(value)
+        ? value.filter(
+            (activity): activity is VaultWidgetActivity =>
+              !!activity &&
+              typeof activity === 'object' &&
+              'account' in activity &&
+              typeof activity.account === 'string' &&
+              isAddress(activity.account) &&
+              'amount' in activity &&
+              typeof activity.amount === 'string' &&
+              'chainId' in activity &&
+              typeof activity.chainId === 'number' &&
+              'status' in activity &&
+              (activity.status === 'pending' ||
+                activity.status === 'submitted' ||
+                activity.status === 'success' ||
+                activity.status === 'error') &&
+              'timestamp' in activity &&
+              typeof activity.timestamp === 'number' &&
+              'type' in activity &&
+              typeof activity.type === 'string'
+          )
+        : []
+    } catch {
+      return []
+    }
+  }
+  const write = (activities: readonly VaultWidgetActivity[]): void => {
+    if (typeof window === 'undefined') return
+    try {
+      window.localStorage.setItem(storageKey, JSON.stringify(activities))
+    } catch {
+      // Activity persistence must never prevent the underlying transaction.
+    }
+  }
+
+  return {
+    async list(account): Promise<readonly VaultWidgetActivity[]> {
+      const normalizedAccount = account?.toLowerCase()
+      return read()
+        .filter((activity) => !normalizedAccount || activity.account.toLowerCase() === normalizedAccount)
+        .toSorted((a, b) => b.timestamp - a.timestamp)
+    },
+    async add(activity): Promise<number> {
+      const activities = read()
+      const id = activities.reduce((largest, candidate) => Math.max(largest, candidate.id ?? 0), 0) + 1
+      write(
+        activities
+          .concat({ ...activity, id })
+          .toSorted((a, b) => b.timestamp - a.timestamp)
+          .slice(0, maxEntries)
+      )
+      return id
+    },
+    async update(id, activity): Promise<void> {
+      write(read().map((candidate) => (candidate.id === id ? { ...candidate, ...activity, id } : candidate)))
+    },
+    async remove(id): Promise<void> {
+      write(read().filter((activity) => activity.id !== id))
     }
   }
 }

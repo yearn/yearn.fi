@@ -289,7 +289,7 @@ export function VaultWidgetParityPage(): ReactElement {
     if (nextState !== 'settings') lastModeRef.current = nextState
     setWidgetState(nextState)
   }
-  const legacyVaultPath = `/vaults/${vaultFixture.chainId}/${vaultFixture.vaultAddress}`
+  const legacyVaultPath = `/vaults/${vaultFixture.chainId}/${vaultFixture.vaultAddress}?vaultWidget=legacy`
   const comparisonWidth = viewport === 'desktop' ? DESKTOP_WIDGET_CROP.width : MOBILE_VIEWPORT.width
 
   const synchronizeLegacy = useCallback(() => {

@@ -5,6 +5,7 @@ import { useCallback, useMemo, useState } from 'react'
 import { erc20Abi } from 'viem'
 import { useAccount, useConfig, usePublicClient } from 'wagmi'
 import { useVaultWidgetServices } from '../context'
+import { addVaultWidgetActivitySafely, updateVaultWidgetActivitySafely } from '../services/activity'
 import type {
   VaultWidgetEvent,
   VaultWidgetExecutionState,
@@ -119,7 +120,7 @@ export function useVaultWidgetActionController({
   const submit = useCallback(async (): Promise<void> => {
     if (!account || !plan || !canSubmit) return
     onEvent?.({ type: 'transaction_started', plan })
-    const activityId = await services.activityStore.add({
+    const activityId = await addVaultWidgetActivitySafely(services.activityStore, {
       account,
       amount: plan.quote.activityAmount ?? '0',
       bridge: plan.quote.bridge,
@@ -141,7 +142,7 @@ export function useVaultWidgetActionController({
         onEvent,
         onExecution: setExecution,
         onProgress: async ({ hash, isFinalTransaction, proposalId }) => {
-          await services.activityStore.update(activityId, {
+          await updateVaultWidgetActivitySafely(services.activityStore, activityId, {
             hash,
             isFinalTransaction,
             proposalId,
@@ -153,7 +154,7 @@ export function useVaultWidgetActionController({
           await Promise.allSettled([refetchAllowance(), onRefresh?.()])
         },
         onSubmitted: async (hash) => {
-          await services.activityStore.update(activityId, {
+          await updateVaultWidgetActivitySafely(services.activityStore, activityId, {
             hash,
             status: 'submitted',
             timestamp: Date.now()
@@ -161,7 +162,7 @@ export function useVaultWidgetActionController({
         },
         plan
       })
-      await services.activityStore.update(activityId, {
+      await updateVaultWidgetActivitySafely(services.activityStore, activityId, {
         destinationHash: outcome.destinationHash,
         hash: outcome.hash,
         status: 'success',
@@ -177,7 +178,10 @@ export function useVaultWidgetActionController({
       onSuccess?.(event)
     } catch (value) {
       const error = getError(value)
-      await services.activityStore.update(activityId, { status: 'error', timestamp: Date.now() })
+      await updateVaultWidgetActivitySafely(services.activityStore, activityId, {
+        status: 'error',
+        timestamp: Date.now()
+      })
       const event: Extract<VaultWidgetEvent, { type: 'transaction_failed' }> = {
         type: 'transaction_failed',
         plan,

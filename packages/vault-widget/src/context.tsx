@@ -2,17 +2,17 @@
 
 import { createContext, type ReactElement, type ReactNode, useContext, useMemo } from 'react'
 import {
+  createBrowserActivityStore,
   createBrowserSettingsStore,
   createEnsoVaultConfigResolver,
   createHttpEnsoBridgeStatusProvider,
   createHttpRewardDiscoveryService,
-  createMemoryActivityStore,
   createWagmiSafeExecutionService,
   type VaultWidgetServices
 } from './services'
 
 const defaultServices: VaultWidgetServices = {
-  activityStore: createMemoryActivityStore(),
+  activityStore: createBrowserActivityStore(),
   configResolver: createEnsoVaultConfigResolver(),
   ensoBridge: createHttpEnsoBridgeStatusProvider(),
   execution: createWagmiSafeExecutionService(),

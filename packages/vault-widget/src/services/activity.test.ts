@@ -1,7 +1,13 @@
 import { describe, expect, it, vi } from 'vitest'
 import type { Config } from 'wagmi'
 import type { VaultWidgetActivity, VaultWidgetConfig } from '../types'
-import { filterVaultWidgetActivities, getVaultWidgetRelatedAddresses, reconcileVaultWidgetActivity } from './activity'
+import {
+  addVaultWidgetActivitySafely,
+  filterVaultWidgetActivities,
+  getVaultWidgetRelatedAddresses,
+  reconcileVaultWidgetActivity,
+  updateVaultWidgetActivitySafely
+} from './activity'
 
 const account = '0x1111111111111111111111111111111111111111'
 const vaultAddress = '0x2222222222222222222222222222222222222222'
@@ -23,6 +29,20 @@ function activity(overrides: Partial<VaultWidgetActivity> = {}): VaultWidgetActi
 }
 
 describe('vault widget activity helpers', () => {
+  it('does not let unavailable persistence prevent transaction execution', async () => {
+    const store = {
+      add: vi.fn().mockRejectedValue(new Error('storage unavailable')),
+      list: vi.fn(),
+      remove: vi.fn(),
+      update: vi.fn().mockRejectedValue(new Error('storage unavailable'))
+    }
+
+    await expect(addVaultWidgetActivitySafely(store, activity())).resolves.toBeUndefined()
+    await expect(updateVaultWidgetActivitySafely(store, 1, { status: 'success' })).resolves.toBeUndefined()
+    await expect(updateVaultWidgetActivitySafely(store, undefined, { status: 'success' })).resolves.toBeUndefined()
+    expect(store.update).toHaveBeenCalledTimes(1)
+  })
+
   it('filters and sorts activity for the current account, chain, and vault addresses', () => {
     const activities = [
       activity({ timestamp: 100 }),

@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createMemoryActivityStore, createYearnFiSettingsStore } from './storage'
+import { createBrowserActivityStore, createMemoryActivityStore, createYearnFiSettingsStore } from './storage'
 
 const originalWindow = globalThis.window
 
@@ -93,5 +93,88 @@ describe('createMemoryActivityStore', () => {
         bridge: expect.objectContaining({ destinationChainId: 10, protocol: 'relay' })
       })
     ])
+  })
+})
+
+describe('createBrowserActivityStore', () => {
+  afterEach(() => {
+    if (originalWindow) {
+      Object.defineProperty(globalThis, 'window', { configurable: true, value: originalWindow })
+      return
+    }
+    Reflect.deleteProperty(globalThis, 'window')
+  })
+
+  it('persists activity in an isolated namespace with execution metadata', async () => {
+    const localStorage = createLocalStorage()
+    Object.defineProperty(globalThis, 'window', {
+      configurable: true,
+      value: { localStorage }
+    })
+    const store = createBrowserActivityStore({ namespace: 'yearn-bold/vault-widget' })
+    const id = await store.add({
+      account: '0x1111111111111111111111111111111111111111',
+      amount: '1',
+      bridge: {
+        destinationChainId: 10,
+        protocol: 'relay',
+        sourceChainId: 1
+      },
+      chainId: 1,
+      isFinalTransaction: true,
+      proposalId: '0x1234',
+      status: 'submitted',
+      timestamp: 1,
+      type: 'crosschain zap'
+    })
+
+    await store.update(id, { destinationHash: '0xabcd', status: 'success' })
+
+    expect(await store.list('0x1111111111111111111111111111111111111111')).toEqual([
+      expect.objectContaining({
+        bridge: expect.objectContaining({ destinationChainId: 10, protocol: 'relay' }),
+        destinationHash: '0xabcd',
+        id,
+        proposalId: '0x1234',
+        status: 'success'
+      })
+    ])
+    expect(localStorage.getItem('yearn-notifications')).toBeNull()
+    expect(localStorage.getItem('yearn-bold/vault-widget/activity')).not.toBeNull()
+  })
+
+  it('limits retained history without dropping the newest activity', async () => {
+    const localStorage = createLocalStorage()
+    Object.defineProperty(globalThis, 'window', {
+      configurable: true,
+      value: { localStorage }
+    })
+    const store = createBrowserActivityStore({ maxEntries: 2, namespace: 'test-widget' })
+    await store.add({
+      account: '0x1111111111111111111111111111111111111111',
+      amount: '1',
+      chainId: 1,
+      status: 'success',
+      timestamp: 1,
+      type: 'deposit'
+    })
+    await store.add({
+      account: '0x1111111111111111111111111111111111111111',
+      amount: '2',
+      chainId: 1,
+      status: 'success',
+      timestamp: 2,
+      type: 'deposit'
+    })
+    const newestId = await store.add({
+      account: '0x1111111111111111111111111111111111111111',
+      amount: '3',
+      chainId: 1,
+      status: 'success',
+      timestamp: 3,
+      type: 'deposit'
+    })
+
+    expect((await store.list()).map(({ id }) => id)).toEqual([newestId, newestId - 1])
   })
 })

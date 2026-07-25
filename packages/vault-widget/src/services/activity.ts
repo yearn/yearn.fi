@@ -1,7 +1,31 @@
 import { type Hash, isAddressEqual } from 'viem'
 import type { Config } from 'wagmi'
 import type { EnsoBridgeStatusProvider, VaultWidgetActivity, VaultWidgetConfig } from '../types'
-import type { VaultWidgetExecutionService } from './types'
+import type { VaultWidgetActivityStore, VaultWidgetExecutionService } from './types'
+
+export async function addVaultWidgetActivitySafely(
+  store: VaultWidgetActivityStore,
+  activity: VaultWidgetActivity
+): Promise<number | undefined> {
+  try {
+    return await store.add(activity)
+  } catch {
+    return undefined
+  }
+}
+
+export async function updateVaultWidgetActivitySafely(
+  store: VaultWidgetActivityStore,
+  id: number | undefined,
+  activity: Partial<VaultWidgetActivity>
+): Promise<void> {
+  if (id === undefined) return
+  try {
+    await store.update(id, activity)
+  } catch {
+    // Activity history is best-effort and must never block transaction execution.
+  }
+}
 
 export function getVaultWidgetRelatedAddresses(config: VaultWidgetConfig): readonly `0x${string}`[] {
   const addresses = [

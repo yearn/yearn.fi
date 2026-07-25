@@ -10,7 +10,7 @@ published as the production dependency until every row below is complete.
 | yBOLD direct zap in/out | Complete | `presets/yBold.ts`, yearn-bold build |
 | Enso same-chain yBOLD routes | Complete | trusted-route validation and package tests |
 | Allowance reset and approval planning | Complete | `transactionPlan.test.ts` |
-| Legacy yearn.fi settings and activity storage | Complete | `storage.test.ts` |
+| Compatibility and namespaced browser storage | Complete | Existing yearn.fi keys/IndexedDB plus isolated external-app settings/activity stores, failure-safe transaction recording, and service tests |
 | Package artifact isolation | Complete | npm pack dry run and import scan |
 | Stake, unstake, and combined routes | Complete | Kong staking metadata, selectable vault/staked positions, source-aware adapters, composed valuation, and ordered plans |
 | Generic same-chain and cross-chain Enso | Complete | Trusted route validation, protected re-quotes, bridge protocol discovery, submitted state, and destination completion polling |
@@ -31,6 +31,8 @@ Current rollout state:
 - `/dev/vault-widget` remains the development-only side-by-side harness, with
   package fixtures for yBOLD and direct Yearn V2 vaults, a real retired V2
   migration, a V3 vault with staking and rewards, and locked/unlocked yvUSD.
+  Its comparison frame explicitly retains the legacy surface even when the
+  package cutover flag is enabled.
 - The flag remains a QA/rollback gate until connected-wallet and Tenderly
   validation is complete. The legacy surface is not removed before that gate.
 - yearn-bold keeps its legacy card by default. Setting

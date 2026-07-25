@@ -18,7 +18,8 @@ import { readVaultWidgetCooldownState, type VaultWidgetCooldownState } from '../
 import {
   filterVaultWidgetActivities,
   getVaultWidgetRelatedAddresses,
-  reconcileVaultWidgetActivity
+  reconcileVaultWidgetActivity,
+  updateVaultWidgetActivitySafely
 } from '../services/activity'
 import type { VaultWidgetActivity, VaultWidgetConfig, VaultWidgetPositionSourceState, VaultWidgetToken } from '../types'
 import { formatWidgetValue } from '../valueDisplay'
@@ -252,7 +253,7 @@ export function ActivityPanel({
             ensoBridge: services.ensoBridge,
             execution: services.execution
           })
-          if (update) await services.activityStore.update(activity.id, update)
+          if (update) await updateVaultWidgetActivitySafely(services.activityStore, activity.id, update)
         })
       )
       await activityQuery.refetch()

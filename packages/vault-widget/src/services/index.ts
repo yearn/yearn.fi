@@ -1,8 +1,10 @@
 export type { VaultWidgetActivityReconciliation } from './activity'
 export {
+  addVaultWidgetActivitySafely,
   filterVaultWidgetActivities,
   getVaultWidgetRelatedAddresses,
-  reconcileVaultWidgetActivity
+  reconcileVaultWidgetActivity,
+  updateVaultWidgetActivitySafely
 } from './activity'
 export { createKongVaultConfigResolver } from './config'
 export { createHttpEnsoBridgeStatusProvider, normalizeEnsoBridgeStatus } from './ensoBridge'
@@ -13,7 +15,9 @@ export {
 } from './execution'
 export type { CreateHttpRewardDiscoveryServiceOptions, VaultWidgetDiscoveredReward } from './rewards'
 export { createHttpRewardDiscoveryService } from './rewards'
+export type { BrowserActivityStoreOptions } from './storage'
 export {
+  createBrowserActivityStore,
   createBrowserSettingsStore,
   createMemoryActivityStore,
   createYearnFiActivityStore,
