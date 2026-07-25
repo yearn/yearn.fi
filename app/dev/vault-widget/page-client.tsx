@@ -147,15 +147,15 @@ function SegmentedControl<T extends string>({
   onChange: (value: T) => void
 }): ReactElement {
   return (
-    <fieldset className="min-w-0">
+    <fieldset className="w-full min-w-0 sm:w-auto">
       <legend className="mb-2 text-[0.6875rem] font-bold uppercase tracking-[0.14em] text-text-secondary">
         {label}
       </legend>
-      <div className="inline-flex rounded-lg border border-border bg-surface-secondary p-1">
+      <div className="grid w-full grid-cols-2 rounded-lg border border-border bg-surface-secondary p-1 sm:inline-flex sm:w-auto">
         {options.map((option) => (
           <button
             className={[
-              'min-h-9 rounded-md px-4 text-sm font-medium transition-colors',
+              'min-h-9 min-w-0 rounded-md px-3 text-sm font-medium transition-colors sm:px-4',
               value === option.value
                 ? 'border border-border bg-surface text-text-primary shadow-sm'
                 : 'border border-transparent text-text-secondary hover:text-text-primary'
@@ -320,7 +320,7 @@ export function VaultWidgetParityPage(): ReactElement {
 
       <main className="mx-auto mt-6 max-w-[1120px]">
         <div className="flex flex-wrap items-end justify-between gap-5 rounded-lg border border-border bg-surface p-4">
-          <div className="flex flex-wrap gap-6">
+          <div className="flex w-full flex-wrap gap-6 sm:w-auto">
             <SegmentedControl
               label="Vault family"
               options={VAULT_FIXTURES.map((fixture) => ({ label: fixture.label, value: fixture.id }))}
@@ -360,12 +360,12 @@ export function VaultWidgetParityPage(): ReactElement {
                 onChange={setVariant}
               />
             ) : null}
-            <fieldset className="min-w-0">
+            <fieldset className="w-full min-w-0 sm:w-auto">
               <legend className="mb-2 text-[0.6875rem] font-bold uppercase tracking-[0.14em] text-text-secondary">
                 Wallet session
               </legend>
               <button
-                className="min-h-11 rounded-lg border border-border bg-surface-secondary px-4 text-sm font-medium text-text-primary"
+                className="min-h-11 w-full rounded-lg border border-border bg-surface-secondary px-4 text-sm font-medium text-text-primary sm:w-auto"
                 type="button"
                 onClick={() => (isConnected ? openAccountModal?.() : openConnectModal?.())}
               >
@@ -373,7 +373,7 @@ export function VaultWidgetParityPage(): ReactElement {
               </button>
             </fieldset>
           </div>
-          <div className="max-w-64 text-right">
+          <div className="max-w-64 text-left sm:text-right">
             <a className="text-sm text-text-secondary underline underline-offset-4" href={legacyVaultPath}>
               Open legacy vault page
             </a>
