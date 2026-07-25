@@ -16,6 +16,16 @@ type TShouldUpdateVisibleBalanceSnapshotParams = {
   isLoading: boolean
 }
 
+export function shouldUseEnsoWalletBalances({
+  isTenderlyMode,
+  prefersEnso
+}: {
+  isTenderlyMode: boolean
+  prefersEnso: boolean
+}): boolean {
+  return isTenderlyMode || prefersEnso
+}
+
 export function hasWalletBalanceSnapshot(balances: TChainTokens): boolean {
   return Object.values(balances).some((tokensByChain) => Object.keys(tokensByChain || {}).length > 0)
 }

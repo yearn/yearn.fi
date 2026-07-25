@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useCallback, useMemo } from 'react'
-import { resolveExecutionChainId } from '@/config/tenderly'
+import { isTenderlyModeEnabled, resolveExecutionChainId } from '@/config/tenderly'
 import { useWeb3 } from '../contexts/useWeb3'
 import type { TChainTokens, TDict, TNDict, TToken } from '../types/mixed'
 import { toAddress } from '../utils/tools.address'
@@ -38,7 +38,9 @@ function mergeBalanceToken(existing: TToken | undefined, incoming: TToken): TTok
 
   const incomingValue = Number.isFinite(incoming.value) ? incoming.value : 0
   const existingValue = Number.isFinite(existing.value) ? existing.value : 0
-  const fallbackValue = incoming.balance.raw > 0n ? existingValue : 0
+  const existingUnitPrice =
+    existing.balance.normalized > 0 && existingValue > 0 ? existingValue / existing.balance.normalized : 0
+  const fallbackValue = incoming.balance.raw > 0n ? incoming.balance.normalized * existingUnitPrice : 0
 
   return {
     ...existing,
@@ -102,6 +104,10 @@ export function getCombinedBalanceUnsupportedNetworkIds(): number[] {
   return [...ENSO_UNSUPPORTED_NETWORKS]
 }
 
+export function areCombinedBalanceMulticallFallbacksEnabled(isTenderlyMode: boolean): boolean {
+  return !isTenderlyMode
+}
+
 /*******************************************************************************
  ** Combined balance hook that uses Enso API for supported chains
  ** and falls back to multicall (RPC) for unsupported chains like Fantom
@@ -115,14 +121,18 @@ export function getCombinedBalanceUnsupportedNetworkIds(): number[] {
 export function useBalancesCombined(props?: TUseBalancesReq): TUseBalancesRes {
   const { address: userAddress } = useWeb3()
   const queryClient = useQueryClient()
+  const isTenderlyMode = isTenderlyModeEnabled()
+  const multicallFallbacksEnabled = areCombinedBalanceMulticallFallbacksEnabled(isTenderlyMode)
   const ensoUnsupportedNetworks = useMemo(getCombinedBalanceUnsupportedNetworkIds, [])
 
   const tokens = useMemo(() => (userAddress ? props?.tokens || [] : []), [props?.tokens, userAddress])
 
   // Split tokens into Enso-supported and multicall-required groups
   const { ensoTokens, multicallTokens } = useMemo(() => {
-    return partitionTokensByBalanceSource(tokens, ensoUnsupportedNetworks)
-  }, [ensoUnsupportedNetworks, tokens])
+    return partitionTokensByBalanceSource(tokens, ensoUnsupportedNetworks, {
+      multicallFallbacksEnabled
+    })
+  }, [ensoUnsupportedNetworks, multicallFallbacksEnabled, tokens])
   const hasDisabledVeyfiGaugeMulticallTokens = useMemo(
     () => multicallTokens.some(isDisabledVeyfiGaugeBalanceToken),
     [multicallTokens]
@@ -154,6 +164,9 @@ export function useBalancesCombined(props?: TUseBalancesReq): TUseBalancesRes {
   }, [ensoBalances, ensoError, ensoSuccess, multicallTokens])
 
   const discoveryFallbackTokens = useMemo((): TUseBalancesTokens[] => {
+    if (!multicallFallbacksEnabled) {
+      return []
+    }
     if (ensoTokens.length === 0) {
       return []
     }
@@ -176,7 +189,7 @@ export function useBalancesCombined(props?: TUseBalancesReq): TUseBalancesRes {
         hasPositiveBalanceCache: hasPositiveCachedBalance(token.chainID, tokenAddress, userAddress)
       })
     })
-  }, [ensoBalances, ensoError, ensoSuccess, ensoTokens, userAddress])
+  }, [ensoBalances, ensoError, ensoSuccess, ensoTokens, multicallFallbacksEnabled, userAddress])
 
   const {
     data: requiredMulticallBalances,
@@ -304,6 +317,10 @@ export function useBalancesCombined(props?: TUseBalancesReq): TUseBalancesRes {
 
   const onUpdateSome = useCallback(
     async (tokenList: TUseBalancesTokens[]): Promise<TChainTokens> => {
+      if (!multicallFallbacksEnabled) {
+        return {}
+      }
+
       const validTokens = tokenList.filter(({ address }) => !isZeroAddress(address))
       if (validTokens.length === 0) return {}
 
@@ -353,7 +370,7 @@ export function useBalancesCombined(props?: TUseBalancesReq): TUseBalancesRes {
 
       return updatedBalances
     },
-    [ensoUnsupportedNetworks, queryClient, userAddress]
+    [ensoUnsupportedNetworks, multicallFallbacksEnabled, queryClient, userAddress]
   )
 
   const status = useMemo((): 'error' | 'loading' | 'success' | 'unknown' => {

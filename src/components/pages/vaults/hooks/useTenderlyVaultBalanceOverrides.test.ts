@@ -1,8 +1,14 @@
 import { YVBTC_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvBtc'
 import { YVUSD_CHAIN_ID, YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
+import type { fetchTokenBalances } from '@shared/hooks/useBalancesQueries'
 import { toAddress } from '@shared/utils'
-import { describe, expect, it } from 'vitest'
-import { getTenderlyVaultOverrideRefreshKey, getVaultTenderlyOverrideTokens } from './useTenderlyVaultBalanceOverrides'
+import { describe, expect, it, vi } from 'vitest'
+import {
+  fetchTenderlyVaultBalanceOverrides,
+  getTenderlyVaultBalanceOverrideScopeId,
+  getTenderlyVaultOverrideRefreshKey,
+  getVaultTenderlyOverrideTokens
+} from './useTenderlyVaultBalanceOverrides'
 
 const ACCOUNT = toAddress('0x9999999999999999999999999999999999999999')
 const ASSET_ADDRESS = toAddress('0x1111111111111111111111111111111111111111')
@@ -108,5 +114,77 @@ describe('getVaultTenderlyOverrideTokens', () => {
     })
 
     expect(nextKey).not.toBe(firstKey)
+  })
+
+  it('uses a stable route scope that does not include the refresh revision', () => {
+    const currentVault = {
+      address: YVUSD_UNLOCKED_ADDRESS,
+      chainID: YVUSD_CHAIN_ID,
+      decimals: 6,
+      name: 'yvUSD',
+      symbol: 'yvUSD',
+      token: {
+        address: ASSET_ADDRESS,
+        decimals: 6,
+        name: 'USDC',
+        symbol: 'USDC'
+      }
+    }
+
+    expect(
+      getTenderlyVaultBalanceOverrideScopeId({
+        account: ACCOUNT,
+        currentVault
+      })
+    ).toBe(`tenderly-vault:${ACCOUNT}:${YVUSD_CHAIN_ID}:${YVUSD_UNLOCKED_ADDRESS}:`)
+  })
+
+  it('fetches only the explicitly selected override tokens', async () => {
+    const selectedTokens = getVaultTenderlyOverrideTokens({
+      currentVault: {
+        address: YVUSD_UNLOCKED_ADDRESS,
+        chainID: YVUSD_CHAIN_ID,
+        decimals: 6,
+        name: 'yvUSD',
+        symbol: 'yvUSD',
+        token: {
+          address: ASSET_ADDRESS,
+          decimals: 6,
+          name: 'USDC',
+          symbol: 'USDC'
+        }
+      }
+    })
+    const fetchBalances = vi.fn<typeof fetchTokenBalances>(async (chainId, _account, tokens) =>
+      Object.fromEntries(
+        tokens.map((token) => [
+          token.address,
+          {
+            address: token.address,
+            balance: {
+              raw: 1n,
+              normalized: 1,
+              display: '1',
+              decimals: token.decimals ?? 18
+            },
+            chainID: chainId,
+            decimals: token.decimals ?? 18,
+            name: token.name ?? '',
+            symbol: token.symbol ?? '',
+            value: 0
+          }
+        ])
+      )
+    )
+
+    const balances = await fetchTenderlyVaultBalanceOverrides({
+      account: ACCOUNT,
+      fetchBalances,
+      tokens: selectedTokens
+    })
+
+    expect(fetchBalances).toHaveBeenCalledOnce()
+    expect(fetchBalances).toHaveBeenCalledWith(YVUSD_CHAIN_ID, ACCOUNT, selectedTokens, true)
+    expect(Object.keys(balances[YVUSD_CHAIN_ID])).toEqual(selectedTokens.map((token) => token.address))
   })
 })

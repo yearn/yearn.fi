@@ -6,10 +6,12 @@ import {
   YVUSD_LOCKED_ADDRESS,
   YVUSD_UNLOCKED_ADDRESS
 } from '@pages/vaults/utils/yvUsd'
+import { useWalletActions } from '@shared/contexts/useWallet'
 import type { TUseBalancesTokens } from '@shared/hooks/useBalances.multichains'
-import type { TAddress } from '@shared/types'
+import { fetchTokenBalances } from '@shared/hooks/useBalancesQueries'
+import type { TAddress, TChainTokens } from '@shared/types'
 import { isZeroAddress, toAddress } from '@shared/utils'
-import { useEffect, useRef } from 'react'
+import { useCallback, useEffect, useMemo, useRef } from 'react'
 import { isTenderlyModeEnabled } from '@/config/tenderly'
 import type { TKongVaultView } from '../domain/kongVaultSelectors'
 
@@ -23,10 +25,15 @@ type TTenderlyVaultBalanceOverrideVault = Pick<
 type TUseTenderlyVaultBalanceOverridesProps = {
   account?: TAddress
   currentVault?: TTenderlyVaultBalanceOverrideVault
-  onRefresh: (tokens: TUseBalancesTokens[]) => Promise<unknown>
   refreshRevision?: number
   stakingAddress?: TAddress
 }
+
+type TUseTenderlyVaultBalanceOverridesResult = {
+  refresh: () => Promise<TChainTokens>
+}
+
+type TFetchTokenBalances = typeof fetchTokenBalances
 
 function addTenderlyOverrideToken(
   tokens: Map<string, TUseBalancesTokens>,
@@ -127,17 +134,108 @@ export function getTenderlyVaultOverrideRefreshKey({
   ].join(':')
 }
 
+export function getTenderlyVaultBalanceOverrideScopeId({
+  account,
+  currentVault,
+  stakingAddress
+}: {
+  account: TAddress
+  currentVault: TTenderlyVaultBalanceOverrideVault
+  stakingAddress?: TAddress
+}): string {
+  return ['tenderly-vault', account, currentVault.chainID, currentVault.address, stakingAddress ?? ''].join(':')
+}
+
+export async function fetchTenderlyVaultBalanceOverrides({
+  account,
+  fetchBalances = fetchTokenBalances,
+  tokens
+}: {
+  account: TAddress
+  fetchBalances?: TFetchTokenBalances
+  tokens: TUseBalancesTokens[]
+}): Promise<TChainTokens> {
+  const chainIds = [...new Set(tokens.map((token) => token.chainID))]
+  const tokensByChain = Object.fromEntries(
+    chainIds.map((chainId) => [chainId, tokens.filter((token) => token.chainID === chainId)])
+  )
+  const balancesByChain = await Promise.all(
+    Object.entries(tokensByChain).map(
+      async ([chainId, chainTokens]) =>
+        [Number(chainId), await fetchBalances(Number(chainId), account, chainTokens, true)] as const
+    )
+  )
+
+  return Object.fromEntries(balancesByChain)
+}
+
 export function useTenderlyVaultBalanceOverrides({
   account,
   currentVault,
-  onRefresh,
   refreshRevision = 0,
   stakingAddress
-}: TUseTenderlyVaultBalanceOverridesProps): void {
+}: TUseTenderlyVaultBalanceOverridesProps): TUseTenderlyVaultBalanceOverridesResult {
+  const { clearBalanceOverride, registerBalanceOverrideRefresher, setBalanceOverride } = useWalletActions()
+  const activeScopeIdRef = useRef<string | null>(null)
   const refreshKeyRef = useRef<string | null>(null)
+  const registeredRefreshRef = useRef<() => Promise<TChainTokens>>(async () => ({}))
+  const isTenderlyMode = isTenderlyModeEnabled()
+  const tokensToRefresh = useMemo(
+    () =>
+      currentVault
+        ? getVaultTenderlyOverrideTokens({
+            currentVault,
+            stakingAddress
+          })
+        : [],
+    [currentVault, stakingAddress]
+  )
+  const scopeId = useMemo(
+    () =>
+      isTenderlyMode && account && currentVault
+        ? getTenderlyVaultBalanceOverrideScopeId({
+            account,
+            currentVault,
+            stakingAddress
+          })
+        : undefined,
+    [account, currentVault, isTenderlyMode, stakingAddress]
+  )
+  const refresh = useCallback(async (): Promise<TChainTokens> => {
+    if (!account || !scopeId || tokensToRefresh.length === 0) {
+      return {}
+    }
+
+    const nextBalances = await fetchTenderlyVaultBalanceOverrides({
+      account,
+      tokens: tokensToRefresh
+    })
+    if (activeScopeIdRef.current === scopeId) {
+      setBalanceOverride(scopeId, nextBalances)
+    }
+    return nextBalances
+  }, [account, scopeId, setBalanceOverride, tokensToRefresh])
+  registeredRefreshRef.current = refresh
+  const registeredRefresh = useCallback(async (): Promise<TChainTokens> => await registeredRefreshRef.current(), [])
 
   useEffect(() => {
-    if (!isTenderlyModeEnabled() || !account || !currentVault) {
+    if (!scopeId) {
+      return
+    }
+
+    activeScopeIdRef.current = scopeId
+    registerBalanceOverrideRefresher(scopeId, registeredRefresh)
+
+    return () => {
+      if (activeScopeIdRef.current === scopeId) {
+        activeScopeIdRef.current = null
+      }
+      clearBalanceOverride(scopeId)
+    }
+  }, [clearBalanceOverride, registerBalanceOverrideRefresher, registeredRefresh, scopeId])
+
+  useEffect(() => {
+    if (!scopeId || !account || !currentVault) {
       return
     }
 
@@ -152,18 +250,12 @@ export function useTenderlyVaultBalanceOverrides({
     }
     refreshKeyRef.current = refreshKey
 
-    const tokensToRefresh = getVaultTenderlyOverrideTokens({
-      currentVault,
-      stakingAddress
-    })
-    if (tokensToRefresh.length === 0) {
-      return
-    }
-
     // Tenderly mutations are external to TanStack Query, so the active workflow needs an imperative VNet refresh.
-    void onRefresh(tokensToRefresh).catch((error) => {
+    void refresh().catch((error) => {
       console.error('Failed to refresh Tenderly vault override balances:', error)
       refreshKeyRef.current = null
     })
-  }, [account, currentVault, onRefresh, refreshRevision, stakingAddress])
+  }, [account, currentVault, refresh, refreshRevision, scopeId, stakingAddress])
+
+  return { refresh }
 }

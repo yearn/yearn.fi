@@ -771,7 +771,6 @@ function Index(): ReactElement | null {
   useTenderlyVaultBalanceOverrides({
     account: address,
     currentVault,
-    onRefresh,
     refreshRevision: tenderlyStateRevision,
     stakingAddress
   })

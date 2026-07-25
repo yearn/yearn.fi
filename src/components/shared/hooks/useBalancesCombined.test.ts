@@ -3,6 +3,7 @@ import type { TChainTokens, TToken } from '../types/mixed'
 import { shouldUseDiscoveryFallbackToken } from './balanceDiscoveryFallback'
 import type { TUseBalancesTokens } from './useBalances.multichains'
 import {
+  areCombinedBalanceMulticallFallbacksEnabled,
   getCombinedBalanceUnsupportedNetworkIds,
   getRequiredMulticallTokens,
   mergeBalanceSources
@@ -78,10 +79,15 @@ describe('getCombinedBalanceUnsupportedNetworkIds', () => {
     expect(unsupportedNetworkIds).not.toContain(8453)
     expect(unsupportedNetworkIds).not.toContain(42161)
   })
+
+  it('disables multicall fallbacks entirely in Tenderly mode', () => {
+    expect(areCombinedBalanceMulticallFallbacksEnabled(true)).toBe(false)
+    expect(areCombinedBalanceMulticallFallbacksEnabled(false)).toBe(true)
+  })
 })
 
 describe('mergeBalanceSources', () => {
-  it('keeps an earlier non-zero USD value when multicall refreshes the same token balance without a price', () => {
+  it('applies the earlier Enso unit price to an updated raw balance', () => {
     const ensoBalances: TChainTokens = {
       1: {
         [TOKEN_ADDRESS]: token({
@@ -111,7 +117,7 @@ describe('mergeBalanceSources', () => {
 
     const merged = mergeBalanceSources(ensoBalances, multicallBalances)
 
-    expect(merged[1][TOKEN_ADDRESS].value).toBe(42)
+    expect(merged[1][TOKEN_ADDRESS].value).toBe(84)
     expect(merged[1][TOKEN_ADDRESS].balance.raw).toBe(2n)
   })
 
