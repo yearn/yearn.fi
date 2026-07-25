@@ -50,6 +50,8 @@ Current rollout state:
   package for parity testing.
 - The npm publish workflow requires the protected `npm` environment and an
   authorized `NPM_TOKEN`; package ownership has not been verified locally.
+  Before checking npm access, it builds the exact package tarball and requires
+  both yearn.fi and a selectable yearn-bold ref to pass their consumer gates.
 - `bun run qa:vault-widget:tenderly` snapshots configured mainnet and Optimism
   VNets, funds isolated QA accounts, exercises package-generated plans, reports
   stateful versus environment-limited coverage, and always reverts both

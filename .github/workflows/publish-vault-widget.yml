@@ -2,6 +2,11 @@ name: Publish vault widget
 
 on:
   workflow_dispatch:
+    inputs:
+      yearn_bold_ref:
+        description: yearn-bold ref to verify against the package artifact
+        required: true
+        default: main
   push:
     tags:
       - vault-widget-v*
@@ -47,6 +52,27 @@ jobs:
           bun run tslint
           bun run test
           bun run build
+
+      - name: Pack exact consumer artifact
+        run: |
+          TARBALL_NAME="$(npm pack --workspace @yearn/vault-widget --pack-destination "$RUNNER_TEMP" | tail -n 1)"
+          echo "WIDGET_TARBALL=$RUNNER_TEMP/$TARBALL_NAME" >> "$GITHUB_ENV"
+
+      - name: Checkout yearn-bold consumer
+        uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
+        with:
+          repository: yearn/yearn-bold
+          ref: ${{ inputs.yearn_bold_ref || 'main' }}
+          path: yearn-bold
+
+      - name: Verify yearn-bold consumer
+        working-directory: yearn-bold
+        env:
+          NEXT_PUBLIC_VAULT_WIDGET_ENABLED: "true"
+        run: |
+          npm install --save-exact "$WIDGET_TARBALL"
+          npm run lint
+          npm run build
 
       - name: Verify npm access
         env:
