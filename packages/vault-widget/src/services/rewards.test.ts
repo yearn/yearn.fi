@@ -51,37 +51,41 @@ function config(rewards: VaultWidgetConfig['rewards']): VaultWidgetConfig {
   }
 }
 
+function merklResponse(): unknown {
+  return [
+    {
+      chain: { id: 1 },
+      rewards: [
+        {
+          amount: '100000000',
+          claimed: '25000000',
+          proofs: [`0x${'11'.repeat(32)}`],
+          token: {
+            address: rewardAddress,
+            decimals: 6,
+            price: 2,
+            symbol: 'RWD'
+          }
+        },
+        {
+          amount: '50000000',
+          claimed: '0',
+          proofs: [`0x${'22'.repeat(32)}`],
+          token: {
+            address: otherRewardAddress,
+            decimals: 6,
+            price: 1,
+            symbol: 'OTHER'
+          }
+        }
+      ]
+    }
+  ]
+}
+
 describe('createHttpRewardDiscoveryService', () => {
   it('filters Merkl rewards, subtracts claimed amounts, and preserves accumulated claim calldata', async () => {
-    const fetcher = vi.fn(async () =>
-      Response.json([
-        {
-          chain: { id: 1 },
-          rewards: [
-            {
-              amount: '100000000',
-              proofs: [`0x${'11'.repeat(32)}`],
-              token: {
-                address: rewardAddress,
-                decimals: 6,
-                price: 2,
-                symbol: 'RWD'
-              }
-            },
-            {
-              amount: '50000000',
-              proofs: [`0x${'22'.repeat(32)}`],
-              token: {
-                address: otherRewardAddress,
-                decimals: 6,
-                price: 1,
-                symbol: 'OTHER'
-              }
-            }
-          ]
-        }
-      ])
-    )
+    const fetcher = vi.fn(async () => Response.json(merklResponse()))
     const readContract = vi.fn(async () => 25_000_000n)
     const publicClient = { readContract } as unknown as PublicClient
     const rewards = await createHttpRewardDiscoveryService({ fetcher }).discover({
@@ -122,6 +126,46 @@ describe('createHttpRewardDiscoveryService', () => {
         data: rewards[0]!.quote.transaction.data
       }).args?.[2]
     ).toEqual([100_000_000n])
+  })
+
+  it('uses the validated Merkl claimed total when the onchain read is unavailable', async () => {
+    const rewards = await createHttpRewardDiscoveryService({
+      fetcher: vi.fn(async () => Response.json(merklResponse()))
+    }).discover({
+      account,
+      config: config({
+        merkleTokenAllowlist: [rewardAddress],
+        tokens: [rewardToken()]
+      }),
+      publicClient: {
+        readContract: vi.fn().mockRejectedValue(new Error('RPC unavailable'))
+      } as unknown as PublicClient
+    })
+
+    expect(rewards[0]).toMatchObject({
+      amount: 75_000_000n,
+      quote: { activityAmount: '75', expectedOut: 75_000_000n }
+    })
+  })
+
+  it('rejects a malformed API claimed total when the onchain read is unavailable', async () => {
+    const payload = merklResponse() as Array<{ rewards: Array<{ claimed: string }> }>
+    payload[0]!.rewards[0]!.claimed = '-1'
+
+    await expect(
+      createHttpRewardDiscoveryService({
+        fetcher: vi.fn(async () => Response.json(payload))
+      }).discover({
+        account,
+        config: config({
+          merkleTokenAllowlist: [rewardAddress],
+          tokens: [rewardToken()]
+        }),
+        publicClient: {
+          readContract: vi.fn().mockRejectedValue(new Error('RPC unavailable'))
+        } as unknown as PublicClient
+      })
+    ).rejects.toThrow('invalid claimed')
   })
 
   it('discovers V3 multi-token staking rewards and creates one getReward transaction', async () => {

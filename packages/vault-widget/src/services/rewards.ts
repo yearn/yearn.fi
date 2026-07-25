@@ -51,6 +51,7 @@ const JUICED_EARNED_ABI = [
 
 type MerklReward = {
   amount: string
+  claimed: string
   proofs: string[]
   token: {
     address: string
@@ -104,6 +105,18 @@ function groupMerklRewards(rewards: readonly MerklReward[]): Record<string, Merk
   )
 }
 
+function parseMerklAmount(value: string, field: 'amount' | 'claimed'): bigint {
+  if (!/^\d+$/.test(value)) throw new Error(`Merkl returned an invalid ${field}`)
+  return BigInt(value)
+}
+
+function getApiClaimedAmount(group: readonly MerklReward[]): bigint {
+  return group.reduce((maximum, reward) => {
+    const claimed = parseMerklAmount(reward.claimed, 'claimed')
+    return claimed > maximum ? claimed : maximum
+  }, 0n)
+}
+
 async function discoverMerkleRewards(params: {
   account: Address
   config: VaultWidgetConfig
@@ -132,14 +145,16 @@ async function discoverMerkleRewards(params: {
       const first = group[0]
       if (!first) throw new Error('Merkle reward group is empty')
       const address = first.token.address as Address
-      const claimed = await params.publicClient.readContract({
-        address: MERKLE_DISTRIBUTOR_ADDRESS,
-        abi: CLAIMED_ABI,
-        functionName: 'claimed',
-        args: [params.account, address]
-      })
+      const claimed = await params.publicClient
+        .readContract({
+          address: MERKLE_DISTRIBUTOR_ADDRESS,
+          abi: CLAIMED_ABI,
+          functionName: 'claimed',
+          args: [params.account, address]
+        })
+        .catch(() => getApiClaimedAmount(group))
       const claimable = group
-        .map((reward) => ({ accumulated: BigInt(reward.amount), reward }))
+        .map((reward) => ({ accumulated: parseMerklAmount(reward.amount, 'amount'), reward }))
         .filter(({ accumulated }) => accumulated > claimed)
       if (claimable.length === 0) return undefined
       const amount = claimable.reduce((total, { accumulated }) => total + (accumulated - claimed), 0n)
