@@ -2,7 +2,11 @@ import { describe, expect, it } from 'vitest'
 import type { TChainTokens, TToken } from '../types/mixed'
 import { shouldUseDiscoveryFallbackToken } from './balanceDiscoveryFallback'
 import type { TUseBalancesTokens } from './useBalances.multichains'
-import { getRequiredMulticallTokens, mergeBalanceSources } from './useBalancesCombined'
+import {
+  getCombinedBalanceUnsupportedNetworkIds,
+  getRequiredMulticallTokens,
+  mergeBalanceSources
+} from './useBalancesCombined'
 
 const TOKEN_ADDRESS = '0x1111111111111111111111111111111111111111' as const
 const STAKING_ADDRESS = '0x2222222222222222222222222222222222222222' as const
@@ -62,6 +66,17 @@ describe('shouldUseDiscoveryFallbackToken', () => {
         hasPositiveBalanceCache: false
       })
     ).toBe(false)
+  })
+})
+
+describe('getCombinedBalanceUnsupportedNetworkIds', () => {
+  it('does not force Enso-supported Tenderly canonical chains through the VNet', () => {
+    const unsupportedNetworkIds = getCombinedBalanceUnsupportedNetworkIds()
+
+    expect(unsupportedNetworkIds).not.toContain(1)
+    expect(unsupportedNetworkIds).not.toContain(10)
+    expect(unsupportedNetworkIds).not.toContain(8453)
+    expect(unsupportedNetworkIds).not.toContain(42161)
   })
 })
 

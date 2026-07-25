@@ -14,6 +14,8 @@
     "preview": "next start --hostname 127.0.0.1 --port 3000",
     "preview:client": "next start --hostname 127.0.0.1 --port 3000",
     "qa:vault-widget:tenderly": "bun scripts/vault-widget-tenderly-qa.ts",
+    "qa:vault-widget:tenderly:full": "bun scripts/vault-widget-tenderly-qa.ts --suite full",
+    "qa:vault-widget:tenderly:smoke": "bun scripts/vault-widget-tenderly-qa.ts --suite smoke",
     "qa:vault-widget:parity": "bun scripts/vault-widget-parity-qa.ts",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",

@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useCallback, useMemo } from 'react'
-import { getTenderlyBackedCanonicalChainIds, resolveExecutionChainId } from '@/config/tenderly'
+import { resolveExecutionChainId } from '@/config/tenderly'
 import { useWeb3 } from '../contexts/useWeb3'
 import type { TChainTokens, TDict, TNDict, TToken } from '../types/mixed'
 import { toAddress } from '../utils/tools.address'
@@ -98,6 +98,10 @@ export function getRequiredMulticallTokens(params: {
   })
 }
 
+export function getCombinedBalanceUnsupportedNetworkIds(): number[] {
+  return [...ENSO_UNSUPPORTED_NETWORKS]
+}
+
 /*******************************************************************************
  ** Combined balance hook that uses Enso API for supported chains
  ** and falls back to multicall (RPC) for unsupported chains like Fantom
@@ -111,10 +115,7 @@ export function getRequiredMulticallTokens(params: {
 export function useBalancesCombined(props?: TUseBalancesReq): TUseBalancesRes {
   const { address: userAddress } = useWeb3()
   const queryClient = useQueryClient()
-  const ensoUnsupportedNetworks = useMemo(
-    () => [...new Set([...ENSO_UNSUPPORTED_NETWORKS, ...getTenderlyBackedCanonicalChainIds()])],
-    []
-  )
+  const ensoUnsupportedNetworks = useMemo(getCombinedBalanceUnsupportedNetworkIds, [])
 
   const tokens = useMemo(() => (userAddress ? props?.tokens || [] : []), [props?.tokens, userAddress])
 
@@ -343,16 +344,10 @@ export function useBalancesCombined(props?: TUseBalancesReq): TUseBalancesRes {
       const currentEnsoData = queryClient.getQueryData<TChainTokens>(ensoQueryKey)
 
       if (currentEnsoData) {
-        const mergedEnsoData = { ...currentEnsoData }
-        for (const [chainIdStr, tokens] of Object.entries(updatedBalances)) {
-          const chainId = Number(chainIdStr)
-          if (!ensoUnsupportedNetworks.includes(chainId)) {
-            if (!mergedEnsoData[chainId]) {
-              mergedEnsoData[chainId] = {}
-            }
-            mergedEnsoData[chainId] = { ...mergedEnsoData[chainId], ...tokens }
-          }
-        }
+        const ensoEligibleUpdates = Object.fromEntries(
+          Object.entries(updatedBalances).filter(([chainId]) => !ensoUnsupportedNetworks.includes(Number(chainId)))
+        )
+        const mergedEnsoData = mergeBalanceSources(currentEnsoData, ensoEligibleUpdates)
         queryClient.setQueryData(ensoQueryKey, mergedEnsoData)
       }
 

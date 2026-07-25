@@ -1,6 +1,7 @@
 /// <reference types="node" />
 
 import { resolve as resolvePath } from 'node:path'
+import { fileURLToPath } from 'node:url'
 import { parseTenderlyServerChains, type TTenderlyServerChainConfig } from '../src/config/tenderlyServer'
 import { buildPredictablePublicRpcUrl, readEnvFile, sanitizeConsoleText } from './tenderly-vnet'
 
@@ -45,6 +46,7 @@ type TTenderlyVnetRecord = {
 }
 
 type TTenderlyStatusMatchReason = 'admin-rpc' | 'public-rpc' | 'execution-chain-id' | 'single-vnet-fallback'
+export type TTenderlyTransactionMode = 'full' | 'none' | 'recent'
 
 type TTenderlyMatchedVnet = {
   record: TTenderlyVnetRecord
@@ -130,7 +132,17 @@ type TTenderlyStatusReport = {
   restMetadataAvailable: boolean
   restMetadataNote?: string
   recentTransactionCount: number
+  transactionMode: TTenderlyTransactionMode
   chainReports: TTenderlyStatusChainReport[]
+}
+
+type TTenderlyTransactionResult = {
+  recentTransactionsAvailable: boolean
+  totalTransactionsAvailable: boolean
+  totalTransactionsCount?: number
+  totalTransactionsNote?: string
+  recentTransactions: TTenderlyRecentTransaction[]
+  recentTransactionsNote?: string
 }
 
 const DEFAULT_ACCOUNT_SLUG = 'me'
@@ -169,6 +181,8 @@ Options:
   --project-env <name>  Env var name to read the project slug from
   --rpc-name <name>     Stable public RPC name override
   --recent-tx-count <n> Number of recent transactions to include per chain (default: 5)
+  --transaction-mode <mode>
+                        Transaction lookup: none, recent, or full (default: recent)
   --json                Print a sanitized JSON report instead of Markdown
   --help                Show this help text
 
@@ -176,6 +190,8 @@ Notes:
   - Reads the active Tenderly mapping from repo .env and process.env.
   - Uses Admin RPC for live chain state.
   - Uses the Tenderly REST API for VNet metadata when credentials are available.
+  - Recent mode makes at most one transaction-history request per configured chain.
+  - Full mode scans up to 100 transaction-history pages and must be selected explicitly.
   - Never prints API keys or admin RPC URLs.
 `
 
@@ -258,6 +274,14 @@ function parseRecentTransactionCount(flags: Record<string, string>): number {
     DEFAULT_RECENT_TRANSACTION_COUNT
 
   return Math.min(Math.max(parsedValue, 1), 20)
+}
+
+export function parseTenderlyTransactionMode(flags: Record<string, string>): TTenderlyTransactionMode {
+  const mode = getArg(flags, 'transaction-mode')?.toLowerCase() || 'recent'
+  if (mode === 'none' || mode === 'recent' || mode === 'full') {
+    return mode
+  }
+  throw new Error(`Invalid transaction mode: ${mode}. Expected none, recent, or full.`)
 }
 
 export function resolveTenderlyStatusIdentity(
@@ -545,30 +569,44 @@ async function fetchTenderlyVnets(identity: TTenderlyStatusIdentity): Promise<TT
   return normalizeTenderlyVnetListResponse(await response.json())
 }
 
-async function fetchTenderlyRecentTransactions(params: {
+export async function fetchTenderlyRecentTransactions(params: {
   identity: TTenderlyStatusIdentity
+  mode: TTenderlyTransactionMode
   vnetId?: string
   recentCount: number
-}): Promise<{
-  recentTransactions: TTenderlyRecentTransaction[]
-  totalTransactionsCount: number
-  totalTransactionsNote?: string
-}> {
-  if (!params.identity.apiKey || !params.identity.projectSlug || !params.vnetId) {
+  fetchFn?: typeof fetch
+}): Promise<TTenderlyTransactionResult> {
+  if (params.mode === 'none') {
     return {
+      recentTransactionsAvailable: false,
+      totalTransactionsAvailable: false,
+      totalTransactionsNote: 'skipped (--transaction-mode none)',
       recentTransactions: [],
-      totalTransactionsCount: 0
+      recentTransactionsNote: 'skipped (--transaction-mode none)'
     }
   }
 
+  if (!params.identity.apiKey || !params.identity.projectSlug || !params.vnetId) {
+    return {
+      recentTransactionsAvailable: false,
+      totalTransactionsAvailable: false,
+      totalTransactionsNote: 'credentials or VNet metadata unavailable',
+      recentTransactions: [],
+      recentTransactionsNote: 'credentials or VNet metadata unavailable'
+    }
+  }
+
+  const fetchFn = params.fetchFn || fetch
+  const maxPages = params.mode === 'full' ? TENDERLY_TRANSACTION_MAX_PAGES : 1
+  const pageSize = params.mode === 'full' ? TENDERLY_TRANSACTION_PAGE_SIZE : params.recentCount
   const recentTransactions: TTenderlyRecentTransaction[] = []
   let totalTransactionsCount = 0
 
-  for (let page = 1; page <= TENDERLY_TRANSACTION_MAX_PAGES; page += 1) {
-    const response = await fetch(
+  for (let page = 1; page <= maxPages; page += 1) {
+    const response = await fetchFn(
       `${TENDERLY_API_URL}/${encodeURIComponent(params.identity.accountSlug)}/project/${encodeURIComponent(
         params.identity.projectSlug
-      )}/vnets/${encodeURIComponent(params.vnetId)}/transactions?page=${page}&per_page=${TENDERLY_TRANSACTION_PAGE_SIZE}`,
+      )}/vnets/${encodeURIComponent(params.vnetId)}/transactions?page=${page}&per_page=${pageSize}`,
       {
         headers: {
           Accept: 'application/json',
@@ -602,10 +640,23 @@ async function fetchTenderlyRecentTransactions(params: {
       recentTransactions.push(...pageTransactions.slice(0, params.recentCount))
     }
 
-    if (pageTransactions.length < TENDERLY_TRANSACTION_PAGE_SIZE) {
+    if (params.mode === 'recent') {
       return {
+        recentTransactionsAvailable: true,
+        totalTransactionsAvailable: false,
+        totalTransactionsNote: 'not scanned (use --transaction-mode full)',
         recentTransactions,
-        totalTransactionsCount
+        recentTransactionsNote: recentTransactions.length > 0 ? undefined : 'none'
+      }
+    }
+
+    if (pageTransactions.length < pageSize) {
+      return {
+        recentTransactionsAvailable: true,
+        totalTransactionsAvailable: true,
+        recentTransactions,
+        totalTransactionsCount,
+        recentTransactionsNote: recentTransactions.length > 0 ? undefined : 'none'
       }
     }
   }
@@ -615,9 +666,12 @@ async function fetchTenderlyRecentTransactions(params: {
   ).toLocaleString('en-US')} transactions`
 
   return {
+    recentTransactionsAvailable: true,
+    totalTransactionsAvailable: true,
     recentTransactions,
     totalTransactionsCount,
-    totalTransactionsNote
+    totalTransactionsNote,
+    recentTransactionsNote: recentTransactions.length > 0 ? undefined : 'none'
   }
 }
 
@@ -644,21 +698,7 @@ function buildChainReport(params: {
   chain: TTenderlyServerChainConfig
   liveState: TTenderlyChainLiveState
   matchedVnet?: TTenderlyMatchedVnet
-  recentTransactionsResult:
-    | {
-        recentTransactionsAvailable: true
-        totalTransactionsCount: number
-        totalTransactionsNote?: string
-        recentTransactions: TTenderlyRecentTransaction[]
-        recentTransactionsNote?: string
-      }
-    | {
-        recentTransactionsAvailable: false
-        totalTransactionsCount?: number
-        totalTransactionsNote?: string
-        recentTransactions: TTenderlyRecentTransaction[]
-        recentTransactionsNote?: string
-      }
+  recentTransactionsResult: TTenderlyTransactionResult
   env: Record<string, string | undefined>
 }): TTenderlyStatusChainReport {
   const explorerUri =
@@ -691,7 +731,7 @@ function buildChainReport(params: {
     hasAdminRpc: Boolean(params.chain.adminRpcUri),
     explorerEnabled: Boolean(params.matchedVnet?.record.explorer_page_config?.enabled || explorerUri),
     explorerUri,
-    totalTransactionsAvailable: params.recentTransactionsResult.recentTransactionsAvailable,
+    totalTransactionsAvailable: params.recentTransactionsResult.totalTransactionsAvailable,
     totalTransactionsCount: params.recentTransactionsResult.totalTransactionsCount,
     totalTransactionsNote: params.recentTransactionsResult.totalTransactionsNote,
     recentTransactionsAvailable: params.recentTransactionsResult.recentTransactionsAvailable,
@@ -717,7 +757,8 @@ export function buildTenderlyStatusMarkdown(report: TTenderlyStatusReport): stri
     '',
     `Profile: ${report.profile}`,
     `Account / Project: ${report.accountSlug} / ${report.projectSlug || '[unset]'}`,
-    `Metadata: ${report.restMetadataAvailable ? 'available' : report.restMetadataNote || 'unavailable'}`
+    `Metadata: ${report.restMetadataAvailable ? 'available' : report.restMetadataNote || 'unavailable'}`,
+    `Transaction Mode: ${report.transactionMode}`
   ]
 
   const chainSections = report.chainReports.flatMap((chainReport) => {
@@ -787,6 +828,7 @@ export function buildTenderlyStatusJson(report: TTenderlyStatusReport): Record<s
     restMetadataAvailable: report.restMetadataAvailable,
     restMetadataNote: report.restMetadataNote || null,
     recentTransactionCount: report.recentTransactionCount,
+    transactionMode: report.transactionMode,
     chains: report.chainReports.map((chainReport) => ({
       canonicalChainId: chainReport.canonicalChainId,
       canonicalChainName: chainReport.canonicalChainName,
@@ -820,6 +862,7 @@ async function buildTenderlyStatusReport(
 ): Promise<TTenderlyStatusReport> {
   const identity = resolveTenderlyStatusIdentity(flags, env)
   const recentTransactionCount = parseRecentTransactionCount(flags)
+  const transactionMode = parseTenderlyTransactionMode(flags)
   if (!identity.projectSlug) {
     throw new Error(`Missing required value: ${identity.profile} project slug`)
   }
@@ -861,23 +904,17 @@ async function buildTenderlyStatusReport(
         fetchTenderlyChainLiveState(chain),
         fetchTenderlyRecentTransactions({
           identity,
+          mode: transactionMode,
           vnetId: matchedVnet?.record.id,
           recentCount: recentTransactionCount
-        })
-          .then(({ recentTransactions, totalTransactionsCount, totalTransactionsNote }) => ({
-            recentTransactionsAvailable: true as const,
-            totalTransactionsCount,
-            totalTransactionsNote,
-            recentTransactions,
-            recentTransactionsNote: recentTransactions.length > 0 ? undefined : 'none'
-          }))
-          .catch((error) => ({
-            recentTransactionsAvailable: false as const,
-            totalTransactionsCount: undefined,
-            totalTransactionsNote: sanitizeConsoleText(error instanceof Error ? error.message : String(error)),
-            recentTransactions: [] as TTenderlyRecentTransaction[],
-            recentTransactionsNote: sanitizeConsoleText(error instanceof Error ? error.message : String(error))
-          }))
+        }).catch((error) => ({
+          recentTransactionsAvailable: false,
+          totalTransactionsAvailable: false,
+          totalTransactionsCount: undefined,
+          totalTransactionsNote: sanitizeConsoleText(error instanceof Error ? error.message : String(error)),
+          recentTransactions: [] as TTenderlyRecentTransaction[],
+          recentTransactionsNote: sanitizeConsoleText(error instanceof Error ? error.message : String(error))
+        }))
       ])
 
       return buildChainReport({
@@ -898,6 +935,7 @@ async function buildTenderlyStatusReport(
     restMetadataAvailable: vnetResult.restMetadataAvailable,
     restMetadataNote: vnetResult.restMetadataNote,
     recentTransactionCount,
+    transactionMode,
     chainReports
   }
 }
@@ -923,7 +961,9 @@ async function main(): Promise<void> {
   console.log(buildTenderlyStatusMarkdown(report))
 }
 
-main().catch((error) => {
-  console.error(error instanceof Error ? sanitizeConsoleText(error.message) : sanitizeConsoleText(String(error)))
-  process.exitCode = 1
-})
+if (fileURLToPath(import.meta.url) === process.argv[1]) {
+  void main().catch((error) => {
+    console.error(error instanceof Error ? sanitizeConsoleText(error.message) : sanitizeConsoleText(String(error)))
+    process.exitCode = 1
+  })
+}
