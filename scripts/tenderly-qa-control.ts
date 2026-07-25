@@ -91,6 +91,8 @@ export type TTenderlyRpcBudget = {
   summary: () => TTenderlyRpcBudgetSummary
 }
 
+type TTenderlyRpcRequest = (method: string, params?: readonly unknown[]) => Promise<unknown>
+
 function parseTenderlyQaFlags(argv: readonly string[]): TTenderlyQaParsedFlags {
   const recurse = (index: number, flags: TTenderlyQaParsedFlags): TTenderlyQaParsedFlags => {
     if (index >= argv.length) {
@@ -215,6 +217,21 @@ export function shouldRunTenderlyQaFlow(
   flowId: TTenderlyQaFlowId
 ): boolean {
   return selection.flowIds.includes(flowId)
+}
+
+export async function revertTenderlySnapshot({
+  chain,
+  rpcRequest,
+  snapshotId
+}: {
+  chain: string
+  rpcRequest: TTenderlyRpcRequest
+  snapshotId: string
+}): Promise<void> {
+  const reverted = await rpcRequest('evm_revert', [snapshotId])
+  if (reverted !== true) {
+    throw new Error(`Unable to revert the ${chain} Tenderly QA snapshot`)
+  }
 }
 
 export function extractJsonRpcMethods(body: BodyInit | null | undefined): string[] {

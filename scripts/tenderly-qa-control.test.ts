@@ -4,6 +4,7 @@ import {
   createTenderlyRpcBudget,
   extractJsonRpcMethods,
   parseTenderlyQaSelection,
+  revertTenderlySnapshot,
   shouldRunTenderlyQaFlow
 } from './tenderly-qa-control'
 
@@ -49,6 +50,19 @@ describe('Tenderly QA selection', () => {
 })
 
 describe('Tenderly RPC budget', () => {
+  it('fails cleanup when Tenderly rejects a snapshot revert', async () => {
+    const rpcRequest = vi.fn(async () => false)
+
+    await expect(
+      revertTenderlySnapshot({
+        chain: 'optimism',
+        rpcRequest,
+        snapshotId: '0x1'
+      })
+    ).rejects.toThrow('Unable to revert the optimism Tenderly QA snapshot')
+    expect(rpcRequest).toHaveBeenCalledWith('evm_revert', ['0x1'])
+  })
+
   it('extracts single and batched JSON-RPC methods', () => {
     expect(extractJsonRpcMethods(JSON.stringify({ method: 'eth_chainId' }))).toEqual(['eth_chainId'])
     expect(

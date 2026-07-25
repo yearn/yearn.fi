@@ -46,6 +46,7 @@ import {
   createBudgetedTenderlyFetch,
   createTenderlyRpcBudget,
   parseTenderlyQaSelection,
+  revertTenderlySnapshot,
   shouldRunTenderlyQaFlow,
   type TTenderlyQaFlowId
 } from './tenderly-qa-control'
@@ -326,7 +327,11 @@ async function main(argv: readonly string[] = process.argv.slice(2)): Promise<vo
     try {
       await runFlow(flowId, flow, execute)
     } finally {
-      await rpcRequest('evm_revert', [isolatedSnapshotId])
+      await revertTenderlySnapshot({
+        chain,
+        rpcRequest,
+        snapshotId: isolatedSnapshotId
+      })
     }
   }
   const needsEnso =
@@ -878,8 +883,11 @@ async function main(argv: readonly string[] = process.argv.slice(2)): Promise<vo
       )
     }
   } finally {
-    const reverted = await rpc<boolean>('evm_revert', [snapshotId])
-    invariant(reverted, 'Unable to revert the Tenderly QA snapshot')
+    await revertTenderlySnapshot({
+      chain: 'ethereum',
+      rpcRequest: rpc,
+      snapshotId
+    })
   }
   budget.assertAllCleanupsConsumed()
 

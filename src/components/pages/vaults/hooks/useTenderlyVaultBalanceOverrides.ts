@@ -230,6 +230,7 @@ export function useTenderlyVaultBalanceOverrides({
       if (activeScopeIdRef.current === scopeId) {
         activeScopeIdRef.current = null
       }
+      refreshKeyRef.current = null
       clearBalanceOverride(scopeId)
     }
   }, [clearBalanceOverride, registerBalanceOverrideRefresher, registeredRefresh, scopeId])
