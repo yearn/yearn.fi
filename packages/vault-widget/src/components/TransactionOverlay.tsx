@@ -73,35 +73,51 @@ type TransactionOverlayContent = {
   title: string
 }
 
-type DisabledSibling = {
+type DisabledSiblingState = {
   ariaHidden: string | null
-  element: HTMLElement
   hadInert: boolean
+}
+
+type OverlayPathEntry = {
+  activeElement: HTMLElement
+  parent: HTMLElement
+}
+
+function getOverlayPath(activeElement: HTMLElement, widget: HTMLElement): readonly OverlayPathEntry[] {
+  if (activeElement === widget) return []
+  const parent = activeElement.parentElement
+  if (!parent) return []
+  return [{ activeElement, parent }, ...getOverlayPath(parent, widget)]
 }
 
 function disableOverlaySiblings(dialog: HTMLElement): () => void {
   const widget = dialog.closest<HTMLElement>('.yv-widget')
-  const disabledSiblings: DisabledSibling[] = []
-  let activePathElement: HTMLElement | null = dialog
-
-  while (activePathElement && activePathElement !== widget) {
-    const parent: HTMLElement | null = activePathElement.parentElement
-    if (!parent) break
+  if (!widget) return () => undefined
+  const disabledSiblings = new Map<HTMLElement, DisabledSiblingState>()
+  const overlayPath = getOverlayPath(dialog, widget)
+  const isolateSiblings = ({ activeElement, parent }: OverlayPathEntry): void => {
     Array.from(parent.children).forEach((child) => {
-      if (!(child instanceof HTMLElement) || child === activePathElement) return
-      disabledSiblings.push({
+      if (!(child instanceof HTMLElement) || child === activeElement || disabledSiblings.has(child)) return
+      disabledSiblings.set(child, {
         ariaHidden: child.getAttribute('aria-hidden'),
-        element: child,
         hadInert: child.hasAttribute('inert')
       })
       child.setAttribute('inert', '')
       child.setAttribute('aria-hidden', 'true')
     })
-    activePathElement = parent
   }
+  overlayPath.forEach(isolateSiblings)
+  const observers = overlayPath.map((entry) => {
+    const observer = new MutationObserver(() => isolateSiblings(entry))
+    observer.observe(entry.parent, { childList: true })
+    return observer
+  })
 
   return () => {
-    disabledSiblings.forEach(({ ariaHidden, element, hadInert }) => {
+    observers.forEach((observer) => {
+      observer.disconnect()
+    })
+    disabledSiblings.forEach(({ ariaHidden, hadInert }, element) => {
       element.toggleAttribute('inert', hadInert)
       if (ariaHidden === null) {
         element.removeAttribute('aria-hidden')

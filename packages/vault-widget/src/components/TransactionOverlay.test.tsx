@@ -1,6 +1,6 @@
 // @vitest-environment jsdom
 
-import { fireEvent, render, screen } from '@testing-library/react'
+import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { VaultWidgetCopy, VaultWidgetExecutionState } from '../types'
@@ -139,6 +139,28 @@ describe('TransactionOverlay', () => {
     })
   })
 
+  it.each([
+    ['switch-chain', 'Switch to destination chain'],
+    ['reset-approval', 'Reset token approval'],
+    ['approve', 'Approve token'],
+    ['permit', 'Sign migration permit']
+  ] as const)('presents the %s plan step as an explicit wallet action', (kind, label) => {
+    expect(
+      getTransactionOverlayContent(
+        {
+          status: 'confirming',
+          step: { ...step, kind, label },
+          stepCount: 5,
+          stepIndex: 1
+        },
+        copy
+      )
+    ).toEqual({
+      description: `${label} (2/5)`,
+      title: 'Confirm in your wallet'
+    })
+  })
+
   it('traps focus while wallet confirmation cannot be dismissed', () => {
     renderOverlay({ status: 'confirming', step, stepCount: 1, stepIndex: 0 })
 
@@ -149,6 +171,28 @@ describe('TransactionOverlay', () => {
     expect(document.activeElement).toBe(dialog)
     fireEvent.keyDown(dialog, { key: 'Escape' })
     expect(screen.getByRole('dialog')).toBeTruthy()
+  })
+
+  it('keeps replacement background content isolated while the overlay is visible', async () => {
+    const execution = { status: 'confirming', step, stepCount: 1, stepIndex: 0 } as const
+    const view = render(
+      <div className="yv-widget">
+        <button type="button">Initial background</button>
+        <TransactionOverlay chainId={1} copy={copy} execution={execution} onReset={vi.fn()} />
+      </div>
+    )
+
+    view.rerender(
+      <div className="yv-widget">
+        <section data-testid="replacement-background">Replacement background</section>
+        <TransactionOverlay chainId={1} copy={copy} execution={execution} onReset={vi.fn()} />
+      </div>
+    )
+
+    await waitFor(() => {
+      expect(screen.getByTestId('replacement-background').hasAttribute('inert')).toBe(true)
+      expect(screen.getByTestId('replacement-background').getAttribute('aria-hidden')).toBe('true')
+    })
   })
 
   it('provides default copy when composed as a standalone primitive', () => {

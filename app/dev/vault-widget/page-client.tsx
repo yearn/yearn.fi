@@ -86,6 +86,11 @@ type TestWidgetState = VaultWidgetMode | 'settings'
 type TestExecutionPreview =
   | 'none'
   | 'wallet'
+  | 'chain-switch'
+  | 'reset-approval'
+  | 'approval'
+  | 'permit'
+  | 'refresh'
   | 'safe-confirm'
   | 'pending'
   | 'safe-pending'
@@ -99,6 +104,11 @@ const TEST_VARIANTS = ['locked', 'unlocked'] as const
 const TEST_EXECUTION_PREVIEWS: readonly TestExecutionPreview[] = [
   'none',
   'wallet',
+  'chain-switch',
+  'reset-approval',
+  'approval',
+  'permit',
+  'refresh',
   'safe-confirm',
   'pending',
   'safe-pending',
@@ -176,6 +186,46 @@ function createExecutionPreview(
   } as const
   if (preview === 'wallet') {
     return { status: 'confirming', step: executeStep, stepCount: 2, stepIndex: 0 }
+  }
+  if (preview === 'chain-switch') {
+    return {
+      status: 'confirming',
+      step: { ...executeStep, id: 'preview-switch-chain', kind: 'switch-chain', label: 'Switch to destination chain' },
+      stepCount: 5,
+      stepIndex: 0
+    }
+  }
+  if (preview === 'reset-approval') {
+    return {
+      status: 'confirming',
+      step: { ...executeStep, id: 'preview-reset-approval', kind: 'reset-approval', label: 'Reset token approval' },
+      stepCount: 5,
+      stepIndex: 1
+    }
+  }
+  if (preview === 'approval') {
+    return {
+      status: 'confirming',
+      step: { ...executeStep, id: 'preview-approval', kind: 'approve', label: 'Approve token' },
+      stepCount: 5,
+      stepIndex: 2
+    }
+  }
+  if (preview === 'permit') {
+    return {
+      status: 'confirming',
+      step: { ...executeStep, id: 'preview-permit', kind: 'permit', label: 'Sign migration permit' },
+      stepCount: 4,
+      stepIndex: 1
+    }
+  }
+  if (preview === 'refresh') {
+    return {
+      status: 'confirming',
+      step: { ...executeStep, id: 'preview-refresh', kind: 'refresh', label: 'Refresh balances' },
+      stepCount: 4,
+      stepIndex: 3
+    }
   }
   if (preview === 'safe-confirm') {
     return {
@@ -580,8 +630,13 @@ export function VaultWidgetParityPage(): ReactElement {
               label="Execution preview"
               options={[
                 { label: 'Off · live controller', value: 'none' },
-                { label: 'Confirm in wallet', value: 'wallet' },
-                { label: 'Confirm in Safe', value: 'safe-confirm' },
+                { label: 'Execute · wallet confirmation', value: 'wallet' },
+                { label: 'Switch chain · wallet confirmation', value: 'chain-switch' },
+                { label: 'Reset approval · wallet confirmation', value: 'reset-approval' },
+                { label: 'Approve · wallet confirmation', value: 'approval' },
+                { label: 'Permit · wallet signature', value: 'permit' },
+                { label: 'Refresh confirmed balances', value: 'refresh' },
+                { label: 'Safe proposal confirmation', value: 'safe-confirm' },
                 { label: 'Transaction pending', value: 'pending' },
                 { label: 'Safe proposal queued', value: 'safe-pending' },
                 { label: 'Bridge delivery', value: 'bridge' },

@@ -1,13 +1,29 @@
 import { chromium, type Page } from 'playwright'
 
-type ExecutionPreview = 'wallet' | 'safe-confirm' | 'pending' | 'safe-pending' | 'bridge' | 'success' | 'error'
+type ExecutionPreview =
+  | 'wallet'
+  | 'chain-switch'
+  | 'reset-approval'
+  | 'approval'
+  | 'permit'
+  | 'refresh'
+  | 'safe-confirm'
+  | 'pending'
+  | 'safe-pending'
+  | 'bridge'
+  | 'success'
+  | 'error'
 
 type PreviewCase = {
+  description: string
   dismissible: boolean
   id: string
   preview: ExecutionPreview
+  state: 'deposit' | 'withdraw' | 'migrate' | 'rewards'
   status: 'confirming' | 'pending' | 'submitted' | 'success' | 'error'
   title: string
+  variant?: 'locked' | 'unlocked'
+  vault: 'ybold' | 'yvusd' | 'v2-migration' | 'v3-staking' | 'juiced-rewards' | 'merkl-rewards'
   viewport: 'desktop' | 'mobile'
 }
 
@@ -21,13 +37,115 @@ type PreviewResult = {
 const BASE_URL = process.env.VAULT_WIDGET_QA_URL ?? 'http://127.0.0.1:4246/dev/vault-widget'
 const CASE_FILTER = process.env.VAULT_WIDGET_QA_CASE?.trim()
 const PREVIEWS = [
-  { dismissible: false, preview: 'wallet', status: 'confirming', title: 'Confirm in your wallet' },
-  { dismissible: false, preview: 'safe-confirm', status: 'confirming', title: 'Confirm the proposal in Safe' },
-  { dismissible: false, preview: 'pending', status: 'pending', title: 'Transaction pending' },
-  { dismissible: true, preview: 'safe-pending', status: 'pending', title: 'Transaction submitted' },
-  { dismissible: true, preview: 'bridge', status: 'submitted', title: 'Cross-chain transaction submitted' },
-  { dismissible: true, preview: 'success', status: 'success', title: 'Transaction complete' },
-  { dismissible: true, preview: 'error', status: 'error', title: 'Transaction failed' }
+  {
+    description: 'Deposit assets (1/2)',
+    dismissible: false,
+    preview: 'wallet',
+    state: 'deposit',
+    status: 'confirming',
+    title: 'Confirm in your wallet',
+    vault: 'ybold'
+  },
+  {
+    description: 'Switch to destination chain (1/5)',
+    dismissible: false,
+    preview: 'chain-switch',
+    state: 'rewards',
+    status: 'confirming',
+    title: 'Confirm in your wallet',
+    vault: 'merkl-rewards'
+  },
+  {
+    description: 'Reset token approval (2/5)',
+    dismissible: false,
+    preview: 'reset-approval',
+    state: 'deposit',
+    status: 'confirming',
+    title: 'Confirm in your wallet',
+    vault: 'ybold'
+  },
+  {
+    description: 'Approve token (3/5)',
+    dismissible: false,
+    preview: 'approval',
+    state: 'deposit',
+    status: 'confirming',
+    title: 'Confirm in your wallet',
+    vault: 'v3-staking'
+  },
+  {
+    description: 'Sign migration permit (2/4)',
+    dismissible: false,
+    preview: 'permit',
+    state: 'migrate',
+    status: 'confirming',
+    title: 'Confirm in your wallet',
+    vault: 'v2-migration'
+  },
+  {
+    description: 'Updating balances…',
+    dismissible: false,
+    preview: 'refresh',
+    state: 'withdraw',
+    status: 'confirming',
+    title: 'Your transaction was confirmed.',
+    variant: 'locked',
+    vault: 'yvusd'
+  },
+  {
+    description: 'Propose deposit (1/1)',
+    dismissible: false,
+    preview: 'safe-confirm',
+    state: 'deposit',
+    status: 'confirming',
+    title: 'Confirm the proposal in Safe',
+    vault: 'ybold'
+  },
+  {
+    description: 'Waiting for confirmation. Deposit assets (1/2)',
+    dismissible: false,
+    preview: 'pending',
+    state: 'deposit',
+    status: 'pending',
+    title: 'Transaction pending',
+    vault: 'ybold'
+  },
+  {
+    description: 'Execution may happen separately after the required Safe confirmations are collected.',
+    dismissible: true,
+    preview: 'safe-pending',
+    state: 'deposit',
+    status: 'pending',
+    title: 'Transaction submitted',
+    vault: 'ybold'
+  },
+  {
+    description: 'Waiting for destination-chain completion.',
+    dismissible: true,
+    preview: 'bridge',
+    state: 'withdraw',
+    status: 'submitted',
+    title: 'Cross-chain transaction submitted',
+    vault: 'ybold'
+  },
+  {
+    description: 'Your transaction was confirmed.',
+    dismissible: true,
+    preview: 'success',
+    state: 'deposit',
+    status: 'success',
+    title: 'Transaction complete',
+    vault: 'v3-staking'
+  },
+  {
+    description: 'Transaction reverted during simulation.',
+    dismissible: true,
+    preview: 'error',
+    state: 'rewards',
+    status: 'error',
+    title: 'Transaction failed',
+    vault: 'juiced-rewards'
+  }
 ] as const
 const CASES: readonly PreviewCase[] = (['desktop', 'mobile'] as const).flatMap((viewport) =>
   PREVIEWS.map((preview) => ({
@@ -45,9 +163,10 @@ function invariant(condition: unknown, message: string): asserts condition {
 function createCaseUrl(qaCase: PreviewCase): string {
   const url = new URL(BASE_URL)
   url.searchParams.set('execution', qaCase.preview)
-  url.searchParams.set('state', 'deposit')
-  url.searchParams.set('vault', 'ybold')
+  url.searchParams.set('state', qaCase.state)
+  url.searchParams.set('vault', qaCase.vault)
   url.searchParams.set('viewport', qaCase.viewport)
+  if (qaCase.variant) url.searchParams.set('variant', qaCase.variant)
   return url.toString()
 }
 
@@ -58,6 +177,10 @@ async function verifyCase(page: Page, qaCase: PreviewCase): Promise<PreviewResul
   await dialog.waitFor({ state: 'visible' })
 
   invariant((await dialog.getAttribute('data-status')) === qaCase.status, `${qaCase.id}: incorrect execution status`)
+  invariant(
+    (await dialog.locator('p').textContent()) === qaCase.description,
+    `${qaCase.id}: incorrect execution description`
+  )
   const [rootBox, dialogBox] = await Promise.all([previewRoot.boundingBox(), dialog.boundingBox()])
   invariant(rootBox && dialogBox, `${qaCase.id}: preview geometry is unavailable`)
   const constrained =
@@ -66,12 +189,18 @@ async function verifyCase(page: Page, qaCase: PreviewCase): Promise<PreviewResul
     Math.abs(rootBox.width - dialogBox.width) <= 1 &&
     Math.abs(rootBox.height - dialogBox.height) <= 1
   invariant(constrained, `${qaCase.id}: transaction overlay escaped the widget bounds`)
+  const backgroundSurface = previewRoot.locator(':scope > :not(.yv-widget__transaction-overlay)')
+  invariant((await backgroundSurface.count()) === 1, `${qaCase.id}: package background surface is ambiguous`)
+  const isolatedBackground = previewRoot.locator(
+    ':scope > [aria-hidden="true"][inert]:not(.yv-widget__transaction-overlay)'
+  )
+  await isolatedBackground.waitFor({ state: 'attached' })
   invariant(
-    (await previewRoot.locator(':scope > .yv-widget').getAttribute('aria-hidden')) === 'true',
+    (await backgroundSurface.getAttribute('aria-hidden')) === 'true',
     `${qaCase.id}: background widget remained visible to assistive technology`
   )
   invariant(
-    (await previewRoot.locator(':scope > .yv-widget').getAttribute('inert')) !== null,
+    (await backgroundSurface.getAttribute('inert')) !== null,
     `${qaCase.id}: background widget remained interactive`
   )
 

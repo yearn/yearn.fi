@@ -171,10 +171,14 @@ npm pack --dry-run --workspace @yearn/vault-widget
 bun run --cwd packages/vault-widget verify:artifact
 ```
 
-`qa:vault-widget:execution-states` renders seven deterministic execution
-states at desktop and mobile widget sizes. It validates overlay bounds,
-background isolation, dismissal/reopen behavior, and terminal reset behavior
-without connecting a wallet or submitting a transaction.
+`qa:vault-widget:execution-states` renders twelve deterministic execution
+states at desktop and mobile widget sizes. The 24-case matrix covers chain
+switching, allowance reset, approval, permit, execution, refresh, Safe
+proposal, transaction pending, Safe pending, cross-chain delivery, success,
+and failure across representative deposit, withdrawal, migration, rewards,
+yvUSD, yBOLD, and staking surfaces. It validates exact step copy, overlay
+bounds, background isolation, dismissal/reopen behavior, and terminal reset
+behavior without connecting a wallet or submitting a transaction.
 
 Tenderly QA never selects a flow implicitly. Use an explicit `--flow` or
 `--suite` together with a hard `--max-rpc-methods` limit. The full 11-flow
