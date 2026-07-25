@@ -1,3 +1,8 @@
+export {
+  TransactionOverlay,
+  type VaultWidgetTransactionOverlayCopy,
+  type VaultWidgetTransactionOverlayProps
+} from './components/TransactionOverlay'
 export { VaultFamilyWidget } from './components/VaultFamilyWidget'
 export { VaultWidget } from './components/VaultWidget'
 export type { VaultWidgetProviderProps } from './context'

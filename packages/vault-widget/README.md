@@ -118,6 +118,12 @@ cross-chain overlay does not stop background execution tracking or enable a
 duplicate submission; it leaves a compact status control that reopens the
 overlay.
 
+Headless or externally orchestrated integrations can compose the same styled
+surface with the public `TransactionOverlay` primitive. Pass a
+`VaultWidgetExecutionState`, optional copy overrides, and the same
+`TransactionLink` slot; the package supplies the default copy and accessibility
+behavior.
+
 Transaction settings support controlled and uncontrolled presentation through
 `settingsOpen`, `defaultSettingsOpen`, and `onSettingsOpenChange`. The desktop
 surface replaces the action panel while settings are open; compact containers
@@ -159,9 +165,15 @@ bun run --cwd packages/vault-widget build
 bun run qa:vault-widget:tenderly --list
 bun run qa:vault-widget:tenderly --flow yvusd-direct --max-rpc-methods 30
 bun run qa:vault-widget:parity
+bun run qa:vault-widget:execution-states
 npm pack --dry-run --workspace @yearn/vault-widget
 bun run --cwd packages/vault-widget verify:artifact
 ```
+
+`qa:vault-widget:execution-states` renders seven deterministic execution
+states at desktop and mobile widget sizes. It validates overlay bounds,
+background isolation, dismissal/reopen behavior, and terminal reset behavior
+without connecting a wallet or submitting a transaction.
 
 Tenderly QA never selects a flow implicitly. Use an explicit `--flow` or
 `--suite` together with a hard `--max-rpc-methods` limit. The full 11-flow

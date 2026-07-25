@@ -5,8 +5,10 @@ import {
   createYBoldPreset,
   createYvBtcFamilyPreset,
   createYvUsdFamilyPreset,
+  TransactionOverlay,
   VaultFamilyWidget,
   VaultWidget,
+  type VaultWidgetExecutionState,
   type VaultWidgetMode,
   VaultWidgetProvider,
   YVBTC_UNLOCKED_ADDRESS,
@@ -15,7 +17,7 @@ import {
 import { createYearnFiActivityStore, createYearnFiSettingsStore } from '@yearn/vault-widget/services'
 import type { ReactElement, RefObject } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import type { Address } from 'viem'
+import type { Address, Hash } from 'viem'
 import { useAccount } from 'wagmi'
 
 const yBoldConfig = createYBoldPreset({
@@ -81,16 +83,37 @@ const DESKTOP_WIDGET_CROP = { left: 916, top: 190, width: 406, height: 570 }
 type TestViewport = 'desktop' | 'mobile'
 type TestVaultId = (typeof VAULT_FIXTURES)[number]['id']
 type TestWidgetState = VaultWidgetMode | 'settings'
+type TestExecutionPreview =
+  | 'none'
+  | 'wallet'
+  | 'safe-confirm'
+  | 'pending'
+  | 'safe-pending'
+  | 'bridge'
+  | 'success'
+  | 'error'
 
 const TEST_VIEWPORTS: readonly TestViewport[] = ['desktop', 'mobile']
 const TEST_WIDGET_STATES: readonly TestWidgetState[] = ['deposit', 'withdraw', 'migrate', 'rewards', 'info', 'settings']
 const TEST_VARIANTS = ['locked', 'unlocked'] as const
+const TEST_EXECUTION_PREVIEWS: readonly TestExecutionPreview[] = [
+  'none',
+  'wallet',
+  'safe-confirm',
+  'pending',
+  'safe-pending',
+  'bridge',
+  'success',
+  'error'
+]
+const PREVIEW_TRANSACTION_HASH = `0x${'11'.repeat(32)}` as Hash
 
 function includesValue<T extends string>(values: readonly T[], value: string | null): value is T {
   return value !== null && values.some((candidate) => candidate === value)
 }
 
 function readHarnessQuery(): {
+  executionPreview?: TestExecutionPreview
   state?: TestWidgetState
   variant?: (typeof TEST_VARIANTS)[number]
   vaultId?: TestVaultId
@@ -101,8 +124,10 @@ function readHarnessQuery(): {
   const viewport = searchParams.get('viewport')
   const state = searchParams.get('state')
   const variant = searchParams.get('variant')
+  const executionPreview = searchParams.get('execution')
 
   return {
+    executionPreview: includesValue(TEST_EXECUTION_PREVIEWS, executionPreview) ? executionPreview : undefined,
     state: includesValue(TEST_WIDGET_STATES, state) ? state : undefined,
     variant: includesValue(TEST_VARIANTS, variant) ? variant : undefined,
     vaultId: includesValue(
@@ -119,18 +144,83 @@ function writeHarnessQuery(
   vaultId: TestVaultId,
   viewport: TestViewport,
   state: TestWidgetState,
-  variant: string
+  variant: string,
+  executionPreview: TestExecutionPreview
 ): void {
   const url = new URL(window.location.href)
   url.searchParams.set('vault', vaultId)
   url.searchParams.set('viewport', viewport)
   url.searchParams.set('state', state)
+  if (executionPreview === 'none') {
+    url.searchParams.delete('execution')
+  } else {
+    url.searchParams.set('execution', executionPreview)
+  }
   if (vaultId === 'yvusd') {
     url.searchParams.set('variant', variant)
   } else {
     url.searchParams.delete('variant')
   }
   window.history.replaceState(window.history.state, '', url)
+}
+
+function createExecutionPreview(
+  preview: Exclude<TestExecutionPreview, 'none'>,
+  chainId: number
+): VaultWidgetExecutionState {
+  const executeStep = {
+    id: 'preview-execute',
+    kind: 'execute',
+    label: 'Deposit assets',
+    chainId
+  } as const
+  if (preview === 'wallet') {
+    return { status: 'confirming', step: executeStep, stepCount: 2, stepIndex: 0 }
+  }
+  if (preview === 'safe-confirm') {
+    return {
+      status: 'confirming',
+      step: { ...executeStep, id: 'preview-safe', kind: 'safe-proposal', label: 'Propose deposit' },
+      stepCount: 1,
+      stepIndex: 0
+    }
+  }
+  if (preview === 'pending') {
+    return {
+      status: 'pending',
+      step: executeStep,
+      stepCount: 2,
+      stepIndex: 0,
+      hash: PREVIEW_TRANSACTION_HASH
+    }
+  }
+  if (preview === 'safe-pending') {
+    return {
+      status: 'pending',
+      step: { ...executeStep, id: 'preview-safe', kind: 'safe-proposal', label: 'Propose deposit' },
+      stepCount: 1,
+      stepIndex: 0,
+      proposalId: '0x1234'
+    }
+  }
+  if (preview === 'bridge') {
+    return {
+      status: 'submitted',
+      step: {
+        ...executeStep,
+        id: 'preview-bridge',
+        kind: 'wait-cross-chain',
+        label: 'Complete destination delivery'
+      },
+      stepCount: 2,
+      stepIndex: 1,
+      hash: PREVIEW_TRANSACTION_HASH
+    }
+  }
+  if (preview === 'success') {
+    return { status: 'success', hash: PREVIEW_TRANSACTION_HASH }
+  }
+  return { status: 'error', error: new Error('Transaction reverted during simulation.') }
 }
 
 function getButtonLabel(element: Element): string {
@@ -250,6 +340,37 @@ function SegmentedControl<T extends string>({
   )
 }
 
+function SelectControl<T extends string>({
+  label,
+  options,
+  value,
+  onChange
+}: {
+  label: string
+  options: readonly { label: string; value: T }[]
+  value: T
+  onChange: (value: T) => void
+}): ReactElement {
+  return (
+    <label className="block w-full min-w-0 sm:w-auto">
+      <span className="mb-2 block text-[0.6875rem] font-bold uppercase tracking-[0.14em] text-text-secondary">
+        {label}
+      </span>
+      <select
+        className="min-h-11 w-full rounded-lg border border-border bg-surface-secondary px-3 text-sm font-medium text-text-primary sm:min-w-52"
+        value={value}
+        onChange={(event) => onChange(event.target.value as T)}
+      >
+        {options.map((option) => (
+          <option key={option.value} value={option.value}>
+            {option.label}
+          </option>
+        ))}
+      </select>
+    </label>
+  )
+}
+
 function ComparisonFrame({
   title,
   eyebrow,
@@ -328,6 +449,7 @@ export function VaultWidgetParityPage(): ReactElement {
   const [vaultId, setVaultId] = useState<TestVaultId>('ybold')
   const [viewport, setViewport] = useState<TestViewport>('desktop')
   const [widgetState, setWidgetState] = useState<TestWidgetState>('deposit')
+  const [executionPreview, setExecutionPreview] = useState<TestExecutionPreview>('none')
   const lastModeRef = useRef<VaultWidgetMode>('deposit')
   const [variant, setVariant] = useState('locked')
   const [queryReady, setQueryReady] = useState(false)
@@ -371,6 +493,8 @@ export function VaultWidgetParityPage(): ReactElement {
   if (address) legacyVaultQuery.set('agentWalletAddress', address)
   const legacyVaultPath = `/vaults/${vaultFixture.chainId}/${vaultFixture.vaultAddress}?${legacyVaultQuery}`
   const comparisonWidth = viewport === 'desktop' ? DESKTOP_WIDGET_CROP.width : MOBILE_VIEWPORT.width
+  const previewExecution =
+    executionPreview === 'none' ? undefined : createExecutionPreview(executionPreview, vaultFixture.chainId)
 
   useEffect(() => {
     const query = readHarnessQuery()
@@ -384,13 +508,14 @@ export function VaultWidgetParityPage(): ReactElement {
       setWidgetState(nextState)
     }
     if (query.variant) setVariant(query.variant)
+    if (query.executionPreview) setExecutionPreview(query.executionPreview)
     setQueryReady(true)
   }, [])
 
   useEffect(() => {
     if (!queryReady) return
-    writeHarnessQuery(vaultId, viewport, widgetState, variant)
-  }, [queryReady, variant, vaultId, viewport, widgetState])
+    writeHarnessQuery(vaultId, viewport, widgetState, variant, executionPreview)
+  }, [executionPreview, queryReady, variant, vaultId, viewport, widgetState])
 
   const synchronizeLegacy = useCallback(() => {
     synchronizeLegacyWidget(iframeRef.current, viewport, widgetState, vaultId === 'yvusd' ? variant : undefined)
@@ -451,6 +576,21 @@ export function VaultWidgetParityPage(): ReactElement {
               value={widgetState}
               onChange={changeWidgetState}
             />
+            <SelectControl
+              label="Execution preview"
+              options={[
+                { label: 'Off · live controller', value: 'none' },
+                { label: 'Confirm in wallet', value: 'wallet' },
+                { label: 'Confirm in Safe', value: 'safe-confirm' },
+                { label: 'Transaction pending', value: 'pending' },
+                { label: 'Safe proposal queued', value: 'safe-pending' },
+                { label: 'Bridge delivery', value: 'bridge' },
+                { label: 'Transaction complete', value: 'success' },
+                { label: 'Transaction failed', value: 'error' }
+              ]}
+              value={executionPreview}
+              onChange={setExecutionPreview}
+            />
             {vaultId === 'yvusd' ? (
               <SegmentedControl
                 label="Vault variant"
@@ -483,6 +623,12 @@ export function VaultWidgetParityPage(): ReactElement {
               Connect here once. The legacy frame reloads into the same yearn.fi wallet session.
             </p>
           </div>
+          {executionPreview !== 'none' ? (
+            <p className="w-full border-t border-border pt-3 text-xs leading-5 text-text-secondary" role="status">
+              Deterministic package preview. It does not submit a transaction; legacy wallet prompts remain part of
+              live-wallet QA.
+            </p>
+          ) : null}
         </div>
 
         <div className="mt-8 overflow-x-auto pb-8">
@@ -513,41 +659,53 @@ export function VaultWidgetParityPage(): ReactElement {
                 )}
                 style={{ height: viewport === 'desktop' ? DESKTOP_WIDGET_CROP.height : MOBILE_VIEWPORT.height }}
               >
-                <VaultWidgetProvider services={services}>
-                  {vaultId === 'yvusd' || vaultId === 'yvbtc' ? (
-                    <VaultFamilyWidget
-                      key={`${vaultFixture.id}:${viewport}`}
-                      family={vaultId === 'yvbtc' ? yvBtcFamily : yvUsdFamily}
-                      mode={mode}
-                      settingsOpen={widgetState === 'settings'}
-                      variant={vaultId === 'yvbtc' ? 'unlocked' : variant}
-                      viewport={viewport}
-                      onVariantChange={setVariant}
-                      onModeChange={changeWidgetState}
-                      onSettingsOpenChange={(open) => {
-                        changeWidgetState(open ? 'settings' : mode)
-                      }}
-                      onConnectWallet={() => openConnectModal?.()}
-                      onClose={() => undefined}
-                    />
-                  ) : (
-                    <VaultWidget
-                      key={`${vaultFixture.id}:${viewport}`}
+                <div
+                  className={previewExecution ? 'yv-widget h-full' : undefined}
+                  data-execution-preview={executionPreview}
+                >
+                  <VaultWidgetProvider services={services}>
+                    {vaultId === 'yvusd' || vaultId === 'yvbtc' ? (
+                      <VaultFamilyWidget
+                        key={`${vaultFixture.id}:${viewport}`}
+                        family={vaultId === 'yvbtc' ? yvBtcFamily : yvUsdFamily}
+                        mode={mode}
+                        settingsOpen={widgetState === 'settings'}
+                        variant={vaultId === 'yvbtc' ? 'unlocked' : variant}
+                        viewport={viewport}
+                        onVariantChange={setVariant}
+                        onModeChange={changeWidgetState}
+                        onSettingsOpenChange={(open) => {
+                          changeWidgetState(open ? 'settings' : mode)
+                        }}
+                        onConnectWallet={() => openConnectModal?.()}
+                        onClose={() => undefined}
+                      />
+                    ) : (
+                      <VaultWidget
+                        key={`${vaultFixture.id}:${viewport}`}
+                        chainId={vaultFixture.chainId}
+                        vaultAddress={vaultFixture.vaultAddress}
+                        mode={mode}
+                        settingsOpen={widgetState === 'settings'}
+                        style={viewport === 'mobile' && mode === 'deposit' ? { minHeight: 780 } : undefined}
+                        viewport={viewport}
+                        onModeChange={changeWidgetState}
+                        onSettingsOpenChange={(open) => {
+                          changeWidgetState(open ? 'settings' : mode)
+                        }}
+                        onConnectWallet={() => openConnectModal?.()}
+                        onClose={() => undefined}
+                      />
+                    )}
+                  </VaultWidgetProvider>
+                  {previewExecution ? (
+                    <TransactionOverlay
                       chainId={vaultFixture.chainId}
-                      vaultAddress={vaultFixture.vaultAddress}
-                      mode={mode}
-                      settingsOpen={widgetState === 'settings'}
-                      style={viewport === 'mobile' && mode === 'deposit' ? { minHeight: 780 } : undefined}
-                      viewport={viewport}
-                      onModeChange={changeWidgetState}
-                      onSettingsOpenChange={(open) => {
-                        changeWidgetState(open ? 'settings' : mode)
-                      }}
-                      onConnectWallet={() => openConnectModal?.()}
-                      onClose={() => undefined}
+                      execution={previewExecution}
+                      onReset={() => setExecutionPreview('none')}
                     />
-                  )}
-                </VaultWidgetProvider>
+                  ) : null}
+                </div>
               </div>
             </ComparisonFrame>
           </div>

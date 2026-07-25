@@ -151,6 +151,18 @@ describe('TransactionOverlay', () => {
     expect(screen.getByRole('dialog')).toBeTruthy()
   })
 
+  it('provides default copy when composed as a standalone primitive', () => {
+    render(
+      <div className="yv-widget">
+        <TransactionOverlay chainId={1} execution={{ status: 'success', hash: undefined }} onReset={vi.fn()} />
+      </div>
+    )
+
+    expect(screen.getByRole('dialog', { name: 'Transaction complete' }).textContent).toContain(
+      'Your transaction was confirmed.'
+    )
+  })
+
   it('lets a Safe proposal continue tracking after its overlay is dismissed', () => {
     const onReset = vi.fn()
     renderOverlay(

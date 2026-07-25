@@ -13,7 +13,7 @@ import {
 import type { Hash } from 'viem'
 import type { VaultWidgetCopy, VaultWidgetExecutionState } from '../types'
 
-type TransactionOverlayCopy = Pick<
+export type VaultWidgetTransactionOverlayCopy = Pick<
   VaultWidgetCopy,
   | 'confirmInWallet'
   | 'confirmInSafe'
@@ -34,15 +34,35 @@ type TransactionOverlayCopy = Pick<
   | 'closeTransactionStatus'
 >
 
+export const DEFAULT_TRANSACTION_OVERLAY_COPY: VaultWidgetTransactionOverlayCopy = {
+  confirmInWallet: 'Confirm in your wallet',
+  confirmInSafe: 'Confirm the proposal in Safe',
+  transactionConfirmed: 'Your transaction was confirmed.',
+  transactionPending: 'Transaction pending',
+  safeProposalPending: 'Transaction submitted',
+  safeProposalDescription: 'Execution may happen separately after the required Safe confirmations are collected.',
+  crossChainSubmitted: 'Cross-chain transaction submitted',
+  waitingForConfirmation: 'Waiting for confirmation.',
+  waitingForDestination: 'Waiting for destination-chain completion.',
+  updatingBalances: 'Updating balances…',
+  transactionComplete: 'Transaction complete',
+  transactionFailed: 'Transaction failed',
+  done: 'Done',
+  tryAgain: 'Try again',
+  viewTransactionStatus: 'View transaction status',
+  viewOnBlockExplorer: 'View on block explorer',
+  closeTransactionStatus: 'Close transaction status'
+}
+
 type TransactionLinkComponent = ComponentType<{
   chainId: number
   hash: Hash
   children: ReactNode
 }>
 
-type TransactionOverlayProps = {
+export type VaultWidgetTransactionOverlayProps = {
   chainId: number
-  copy: TransactionOverlayCopy
+  copy?: Partial<VaultWidgetTransactionOverlayCopy>
   execution: VaultWidgetExecutionState
   onReset: () => void
   TransactionLink?: TransactionLinkComponent
@@ -98,7 +118,7 @@ function getStepProgress(execution: Extract<VaultWidgetExecutionState, { step: u
 
 export function getTransactionOverlayContent(
   execution: VaultWidgetExecutionState,
-  copy: TransactionOverlayCopy
+  copy: VaultWidgetTransactionOverlayCopy
 ): TransactionOverlayContent | undefined {
   if (execution.status === 'idle') return undefined
   if (execution.status === 'success') {
@@ -190,7 +210,7 @@ export function TransactionOverlay({
   execution,
   onReset,
   TransactionLink
-}: TransactionOverlayProps): ReactElement | null {
+}: VaultWidgetTransactionOverlayProps): ReactElement | null {
   const [dismissed, setDismissed] = useState(false)
   const dialogRef = useRef<HTMLDivElement>(null)
   const previousFocusRef = useRef<HTMLElement | null>(null)
@@ -217,20 +237,21 @@ export function TransactionOverlay({
     }
   }, [visible])
 
-  const content = getTransactionOverlayContent(execution, copy)
+  const resolvedCopy = { ...DEFAULT_TRANSACTION_OVERLAY_COPY, ...copy }
+  const content = getTransactionOverlayContent(execution, resolvedCopy)
   if (!content) return null
   if (!visible) {
     return (
       <button
         className="yv-widget__transaction-resume"
         type="button"
-        aria-label={`${copy.viewTransactionStatus}: ${content.title}`}
+        aria-label={`${resolvedCopy.viewTransactionStatus}: ${content.title}`}
         onClick={() => setDismissed(false)}
       >
         <span className="yv-widget__transaction-resume-indicator" aria-hidden="true" />
         <span>
           <strong>{content.title}</strong>
-          <small>{copy.viewTransactionStatus}</small>
+          <small>{resolvedCopy.viewTransactionStatus}</small>
         </span>
       </button>
     )
@@ -284,7 +305,7 @@ export function TransactionOverlay({
         <button
           className="yv-widget__transaction-close"
           type="button"
-          aria-label={copy.closeTransactionStatus}
+          aria-label={resolvedCopy.closeTransactionStatus}
           onClick={close}
         >
           <CloseIcon />
@@ -303,7 +324,7 @@ export function TransactionOverlay({
         {hash ? (
           TransactionLink ? (
             <TransactionLink chainId={chainId} hash={hash}>
-              {copy.viewOnBlockExplorer}
+              {resolvedCopy.viewOnBlockExplorer}
             </TransactionLink>
           ) : (
             <span className="yv-widget__transaction-hash">
@@ -313,7 +334,7 @@ export function TransactionOverlay({
         ) : null}
         {execution.status === 'success' || execution.status === 'error' ? (
           <button className="yv-widget__button yv-widget__button--primary" type="button" onClick={close}>
-            {execution.status === 'success' ? copy.done : copy.tryAgain}
+            {execution.status === 'success' ? resolvedCopy.done : resolvedCopy.tryAgain}
           </button>
         ) : null}
       </div>
