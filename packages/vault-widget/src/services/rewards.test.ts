@@ -102,6 +102,11 @@ describe('createHttpRewardDiscoveryService', () => {
       amount: 75_000_000n,
       id: `merkle:${rewardAddress}`,
       kind: 'merkle',
+      quote: {
+        activityAmount: '75',
+        expectedOut: 75_000_000n,
+        minExpectedOut: 75_000_000n
+      },
       usdValue: 150
     })
     expect(readContract).toHaveBeenCalledWith(
@@ -175,5 +180,7 @@ describe('createHttpRewardDiscoveryService', () => {
       expect.objectContaining({ functionName: 'earned', args: [account, second.address] })
     )
     expect(rewards.map(({ amount }) => amount)).toEqual([2_000_000n, 3_000_000n])
+    expect(rewards.map(({ quote }) => quote.activityAmount)).toEqual(['2', '3'])
+    expect(rewards.map(({ quote }) => quote.expectedOut)).toEqual([2_000_000n, 3_000_000n])
   })
 })

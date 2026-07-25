@@ -1,4 +1,4 @@
-import { type Address, encodeFunctionData, type Hex } from 'viem'
+import { type Address, encodeFunctionData, formatUnits, type Hex, isAddressEqual } from 'viem'
 import type { VaultWidgetQuote, VaultWidgetToken } from '../types'
 
 export const MERKLE_DISTRIBUTOR_ADDRESS = '0x3Ef3D8bA38EBe18DB133cEc108f4D14CE00Dd9Ae' as Address
@@ -30,6 +30,7 @@ export const STAKING_CLAIM_ABI = [
 
 export type VaultWidgetMerkleReward = {
   accumulated: bigint
+  claimable?: bigint
   proof: readonly Hex[]
   token: VaultWidgetToken
 }
@@ -40,10 +41,14 @@ export function createMerkleClaimQuote(params: {
   rewards: readonly VaultWidgetMerkleReward[]
 }): VaultWidgetQuote {
   if (params.rewards.length === 0) throw new Error('No Merkle rewards are claimable')
-  const amount = params.rewards.reduce((total, reward) => total + reward.accumulated, 0n)
+  const amount = params.rewards.reduce((total, reward) => total + (reward.claimable ?? reward.accumulated), 0n)
+  const firstToken = params.rewards[0]!.token
+  const hasSingleToken = params.rewards.every(
+    ({ token }) => token.chainId === firstToken.chainId && isAddressEqual(token.address, firstToken.address)
+  )
   return {
     actionLabel: 'Claim',
-    activityAmount: amount.toString(),
+    activityAmount: hasSingleToken ? formatUnits(amount, firstToken.decimals) : undefined,
     activityType: 'claim',
     adapterId: 'merkle-rewards',
     amountIn: 0n,
@@ -74,9 +79,13 @@ export function createStakingClaimQuote(params: {
 }): VaultWidgetQuote {
   if (params.rewards.length === 0) throw new Error('No staking rewards are claimable')
   const amount = params.rewards.reduce((total, reward) => total + reward.amount, 0n)
+  const firstToken = params.rewards[0]!.token
+  const hasSingleToken = params.rewards.every(
+    ({ token }) => token.chainId === firstToken.chainId && isAddressEqual(token.address, firstToken.address)
+  )
   return {
     actionLabel: 'Claim',
-    activityAmount: amount.toString(),
+    activityAmount: hasSingleToken ? formatUnits(amount, firstToken.decimals) : undefined,
     activityType: 'claim',
     adapterId: 'staking-rewards',
     amountIn: 0n,

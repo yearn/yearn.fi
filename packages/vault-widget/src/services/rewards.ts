@@ -157,6 +157,7 @@ async function discoverMerkleRewards(params: {
           chainId: params.config.chainId,
           rewards: claimable.map(({ accumulated, reward }) => ({
             accumulated,
+            claimable: accumulated - claimed,
             proof: reward.proofs as Hex[],
             token
           }))
@@ -217,16 +218,15 @@ async function discoverStakingRewards(params: {
     .map((token, index) => ({ amount: amounts[index] ?? 0n, token }))
     .filter(({ amount, token }) => amount > 0n && !token.isFinished)
   if (claimable.length === 0) return []
-  const quote = createStakingClaimQuote({
-    chainId: params.config.chainId,
-    rewards: claimable,
-    stakingAddress: rewards.stakingAddress
-  })
   return claimable.map(({ amount, token }) => ({
     amount,
     id: `staking:${rewards.stakingAddress}:${token.address}`,
     kind: 'staking',
-    quote,
+    quote: createStakingClaimQuote({
+      chainId: params.config.chainId,
+      rewards: [{ amount, token }],
+      stakingAddress: rewards.stakingAddress!
+    }),
     token,
     usdValue: rewardUsdValue(amount, token)
   }))

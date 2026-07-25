@@ -25,15 +25,17 @@ describe('reward plans', () => {
     const quote = createMerkleClaimQuote({
       account,
       chainId: 1,
-      rewards: [{ accumulated: 15n, proof: [proof], token }]
+      rewards: [{ accumulated: 15n * 10n ** 18n, claimable: 9n * 10n ** 18n, proof: [proof], token }]
     })
     const decoded = decodeFunctionData({ abi: MERKLE_DISTRIBUTOR_ABI, data: quote.transaction.data })
 
     expect(quote.transaction.to).toBe(MERKLE_DISTRIBUTOR_ADDRESS)
     expect(quote.activityType).toBe('claim')
+    expect(quote.activityAmount).toBe('9')
+    expect(quote.expectedOut).toBe(9n * 10n ** 18n)
     expect(decoded).toEqual({
       functionName: 'claim',
-      args: [[account], [token.address], [15n], [[proof]]]
+      args: [[account], [token.address], [15n * 10n ** 18n], [[proof]]]
     })
   })
 
@@ -50,5 +52,6 @@ describe('reward plans', () => {
     })
     expect(plan.mode).toBe('rewards')
     expect(plan.steps.find(({ id }) => id === 'rewards')?.label).toBe('Claim rewards')
+    expect(quote.activityAmount).toBe('0.000000000000000009')
   })
 })
