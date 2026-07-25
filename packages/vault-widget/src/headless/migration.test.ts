@@ -4,6 +4,7 @@ import type { VaultWidgetToken } from '../types'
 import {
   createMigrationQuote,
   detectMigrationPermitSupport,
+  getMigrationAuthorizationMode,
   MIGRATION_ROUTER_ABI,
   readMigrationPermitTypedData,
   splitMigrationPermitSignature,
@@ -23,6 +24,12 @@ const token: VaultWidgetToken = {
 }
 
 describe('migration plans', () => {
+  it('uses permits only for EOA owners and keeps Safe migrations on approvals', () => {
+    expect(getMigrationAuthorizationMode({ permitSupported: true, walletType: 'eoa' })).toBe('permit')
+    expect(getMigrationAuthorizationMode({ permitSupported: true, walletType: 'safe' })).toBe('approval')
+    expect(getMigrationAuthorizationMode({ permitSupported: false, walletType: 'eoa' })).toBe('approval')
+  })
+
   it('uses approval and the four-argument V2 router migration', () => {
     const quote = createMigrationQuote({
       account,

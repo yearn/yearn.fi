@@ -32,6 +32,7 @@ export type { CreateMigrationQuoteParams, VaultWidgetPermitSignature } from './m
 export {
   createMigrationQuote,
   detectMigrationPermitSupport,
+  getMigrationAuthorizationMode,
   MIGRATION_ROUTER_ABI,
   readMigrationPermitTypedData,
   splitMigrationPermitSignature,

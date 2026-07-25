@@ -188,4 +188,17 @@ describe('VaultWidget', () => {
     expect(onSettingsOpenChange).toHaveBeenCalledWith(false)
     expect(document.activeElement).toBe(settingsButton)
   })
+
+  it('contains token selection in the widget and restores focus after closing', () => {
+    renderWidget(<VaultWidget chainId={1} config={config} vaultAddress={config.vaultAddress} />)
+    const tokenButton = screen.getByRole('button', { name: 'ASSET' })
+
+    fireEvent.click(tokenButton)
+    expect(screen.getByRole('dialog', { name: 'Select deposit token' })).toBeTruthy()
+    expect(document.activeElement).toBe(screen.getByRole('textbox', { name: 'Search tokens' }))
+
+    fireEvent.click(screen.getByRole('button', { name: 'Close token selector' }))
+    expect(screen.queryByRole('dialog', { name: 'Select deposit token' })).toBeNull()
+    expect(document.activeElement).toBe(tokenButton)
+  })
 })

@@ -8,6 +8,7 @@ import {
   createYBoldAdapter,
   createYearnV2Adapter,
   createYearnV2PositionValueReader,
+  ERC4626_ABI,
   YEARN_V2_VAULT_ABI
 } from './adapters'
 
@@ -32,6 +33,21 @@ const routeToken: VaultWidgetToken = {
 const vault = '0x4444444444444444444444444444444444444444'
 const zapper = '0x5555555555555555555555555555555555555555'
 const router = '0x6666666666666666666666666666666666666666'
+const account = '0x7777777777777777777777777777777777777777'
+
+function createRequest(mode: 'deposit' | 'withdraw', amount: bigint, token = asset): VaultWidgetRequest {
+  return {
+    account,
+    amount,
+    chainId: token.chainId,
+    maxLossBps: 75,
+    mode,
+    positionBalance: 100n * 10n ** 18n,
+    selectedToken: token,
+    signal: new AbortController().signal,
+    slippageBps: 50
+  }
+}
 
 describe('adapter approval targets', () => {
   it('resolves ERC-4626 deposit approval without a quote', () => {
@@ -72,6 +88,123 @@ describe('adapter approval targets', () => {
     expect(adapter.getApprovalTarget?.({ chainId: 1, mode: 'deposit', selectedToken: routeToken })).toEqual({
       spender: router,
       token: routeToken
+    })
+  })
+})
+
+describe('ERC-4626 adapter', () => {
+  it('characterizes direct deposit and withdrawal targets, calldata, and approvals', async () => {
+    const adapter = createErc4626Adapter({ asset, vaultAddress: vault })
+    const readContract = vi.fn().mockResolvedValueOnce(8n).mockResolvedValueOnce(6n)
+    const client = { readContract } as unknown as PublicClient
+
+    const deposit = await adapter.quote(createRequest('deposit', 5n), client)
+    const withdraw = await adapter.quote(createRequest('withdraw', 5n), client)
+
+    expect(deposit).toMatchObject({
+      adapterId: 'erc4626',
+      amountIn: 5n,
+      expectedOut: 8n,
+      positionAmount: 8n,
+      approval: { amount: 5n, spender: vault, token: asset },
+      transaction: { chainId: 1, to: vault }
+    })
+    expect(decodeFunctionData({ abi: ERC4626_ABI, data: deposit.transaction.data })).toEqual({
+      functionName: 'deposit',
+      args: [5n, account]
+    })
+    expect(withdraw).toMatchObject({
+      adapterId: 'erc4626',
+      amountIn: 6n,
+      expectedOut: 5n,
+      positionAmount: 6n,
+      transaction: { chainId: 1, to: vault }
+    })
+    expect(withdraw.approval).toBeUndefined()
+    expect(decodeFunctionData({ abi: ERC4626_ABI, data: withdraw.transaction.data })).toEqual({
+      functionName: 'withdraw',
+      args: [5n, account, account]
+    })
+  })
+})
+
+describe('yBOLD adapter', () => {
+  const stakingAbi = [
+    {
+      type: 'function',
+      name: 'previewWithdraw',
+      stateMutability: 'view',
+      inputs: [{ name: 'assets', type: 'uint256' }],
+      outputs: [{ name: 'shares', type: 'uint256' }]
+    }
+  ] as const
+  const zapperAbi = [
+    {
+      type: 'function',
+      name: 'previewDeposit',
+      stateMutability: 'view',
+      inputs: [{ name: 'assets', type: 'uint256' }],
+      outputs: [{ name: 'shares', type: 'uint256' }]
+    },
+    {
+      type: 'function',
+      name: 'previewRedeem',
+      stateMutability: 'view',
+      inputs: [{ name: 'shares', type: 'uint256' }],
+      outputs: [{ name: 'assets', type: 'uint256' }]
+    },
+    {
+      type: 'function',
+      name: 'zapIn',
+      stateMutability: 'nonpayable',
+      inputs: [
+        { name: 'assets', type: 'uint256' },
+        { name: 'receiver', type: 'address' }
+      ],
+      outputs: [{ name: 'shares', type: 'uint256' }]
+    },
+    {
+      type: 'function',
+      name: 'zapOut',
+      stateMutability: 'nonpayable',
+      inputs: [
+        { name: 'shares', type: 'uint256' },
+        { name: 'receiver', type: 'address' },
+        { name: 'maxLoss', type: 'uint256' }
+      ],
+      outputs: [{ name: 'assets', type: 'uint256' }]
+    }
+  ] as const
+
+  it('characterizes direct zap-in and zap-out calldata and approval spenders', async () => {
+    const adapter = createYBoldAdapter({
+      asset,
+      positionToken,
+      stakingAbi,
+      zapperAbi,
+      zapperAddress: zapper
+    })
+    const readContract = vi.fn().mockResolvedValueOnce(9n).mockResolvedValueOnce(7n).mockResolvedValueOnce(6n)
+    const client = { readContract } as unknown as PublicClient
+
+    const deposit = await adapter.quote(createRequest('deposit', 5n), client)
+    const withdraw = await adapter.quote(createRequest('withdraw', 5n), client)
+
+    expect(deposit.approval).toEqual({ amount: 5n, spender: zapper, token: asset })
+    expect(decodeFunctionData({ abi: zapperAbi, data: deposit.transaction.data })).toEqual({
+      functionName: 'zapIn',
+      args: [5n, account]
+    })
+    expect(withdraw).toMatchObject({
+      amountIn: 7n,
+      assetValue: 6n,
+      expectedOut: 6n,
+      positionAmount: 7n,
+      approval: { amount: 7n, spender: zapper, token: positionToken }
+    })
+    expect(decodeFunctionData({ abi: zapperAbi, data: withdraw.transaction.data })).toEqual({
+      functionName: 'zapOut',
+      args: [7n, account, 75n]
     })
   })
 })

@@ -1,6 +1,21 @@
-import { describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Config } from 'wagmi'
-import { createSafeAwareExecutionService } from './execution'
+import { createSafeAwareExecutionService, createWagmiExecutionService } from './execution'
+
+const wagmiActions = vi.hoisted(() => ({
+  getAccount: vi.fn(),
+  getCallsStatus: vi.fn(),
+  getPublicClient: vi.fn(),
+  sendCalls: vi.fn(),
+  sendTransaction: vi.fn(),
+  waitForTransactionReceipt: vi.fn()
+}))
+
+vi.mock('wagmi/actions', () => wagmiActions)
+
+beforeEach(() => {
+  vi.clearAllMocks()
+})
 
 const account = '0x1111111111111111111111111111111111111111'
 const config = {} as Config
@@ -40,5 +55,56 @@ describe('createSafeAwareExecutionService', () => {
     await expect(service.waitForSafeExecution?.(config, 1, '0x1234')).resolves.toBe('0xabcd')
     expect(propose).toHaveBeenCalledOnce()
     expect(waitForExecution).toHaveBeenCalledOnce()
+  })
+})
+
+describe('createWagmiExecutionService', () => {
+  it('simulates each request before asking the wallet to send it', async () => {
+    const call = vi.fn().mockResolvedValue({ data: '0x' })
+    wagmiActions.getPublicClient.mockReturnValue({ call })
+    wagmiActions.sendTransaction.mockResolvedValue('0x1234')
+    const service = createWagmiExecutionService()
+
+    await expect(
+      service.execute({
+        account,
+        config,
+        request,
+        step: { id: 'deposit', kind: 'execute', label: 'Deposit', request }
+      })
+    ).resolves.toBe('0x1234')
+
+    expect(call).toHaveBeenCalledWith({
+      account,
+      data: request.data,
+      to: request.to,
+      value: 0n
+    })
+    expect(call.mock.invocationCallOrder[0]).toBeLessThan(wagmiActions.sendTransaction.mock.invocationCallOrder[0]!)
+  })
+
+  it('does not invoke the wallet when simulation fails', async () => {
+    const simulationError = new Error('execution reverted')
+    wagmiActions.getPublicClient.mockReturnValue({
+      call: vi.fn().mockRejectedValue(simulationError)
+    })
+    const service = createWagmiExecutionService()
+
+    await expect(
+      service.execute({
+        account,
+        config,
+        request,
+        step: { id: 'withdraw', kind: 'execute', label: 'Withdraw', request }
+      })
+    ).rejects.toBe(simulationError)
+    expect(wagmiActions.sendTransaction).not.toHaveBeenCalled()
+  })
+
+  it('turns a reverted receipt into an execution error', async () => {
+    wagmiActions.waitForTransactionReceipt.mockResolvedValue({ status: 'reverted' })
+    const service = createWagmiExecutionService()
+
+    await expect(service.waitForReceipt(config, 1, '0x1234')).rejects.toThrow('Transaction reverted')
   })
 })

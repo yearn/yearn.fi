@@ -8,6 +8,7 @@ import { useVaultWidgetServices } from '../context'
 import {
   createMigrationQuote,
   detectMigrationPermitSupport,
+  getMigrationAuthorizationMode,
   readMigrationPermitTypedData,
   splitMigrationPermitSignature,
   supportsMigrationPermit,
@@ -71,7 +72,7 @@ export function MigrationPanel({
     staleTime: 3_600_000
   })
   const targetToken = migration?.targetToken ?? targetConfigQuery.data?.positionToken
-  const supportsPermit = permitEligible && permitSupportQuery.data === true
+  const permitSupported = permitEligible && permitSupportQuery.data === true
   const quote = useMemo(
     () =>
       account && migration && positionBalance > 0n
@@ -102,6 +103,17 @@ export function MigrationPanel({
     onSuccess,
     quote
   })
+  const supportsPermit =
+    getMigrationAuthorizationMode({
+      permitSupported,
+      walletType: action.walletType
+    }) === 'permit'
+  const hasIncompatiblePermit = action.walletType === 'safe' && !!permit
+  useEffect(() => {
+    if (!hasIncompatiblePermit) return
+    setPermit(undefined)
+    setSubmitAfterPermit(false)
+  }, [hasIncompatiblePermit])
   const needsApproval = !!quote?.approval && action.allowance < quote.approval.amount
   const signPermit = async (): Promise<void> => {
     if (!account || !publicClient || positionBalance <= 0n) return
@@ -181,7 +193,7 @@ export function MigrationPanel({
       ) : (
         <button
           className="yv-widget__button yv-widget__button--primary"
-          disabled={!action.canSubmit || positionBalance === 0n}
+          disabled={!action.canSubmit || positionBalance === 0n || hasIncompatiblePermit}
           type="button"
           onClick={() => (supportsPermit && !permit ? void signPermit() : void action.submit())}
         >

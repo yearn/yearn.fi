@@ -41,6 +41,7 @@ export type VaultWidgetActionController = {
   isLoading: boolean
   plan?: VaultWidgetTransactionPlan
   submit: () => Promise<void>
+  walletType: VaultWidgetWalletType
 }
 
 function getError(value: unknown): Error {
@@ -214,6 +215,7 @@ export function useVaultWidgetActionController({
     execution,
     isLoading: allowanceQuery.isLoading || walletTypeQuery.isLoading,
     plan,
-    submit
+    submit,
+    walletType
   }
 }

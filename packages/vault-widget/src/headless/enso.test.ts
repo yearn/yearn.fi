@@ -161,6 +161,7 @@ describe('normalizeEnsoRoute', () => {
 
 describe('createHttpEnsoQuoteProvider', () => {
   it('requotes with only the slippage remaining after route impact', async () => {
+    const abortController = new AbortController()
     const payload = {
       amountOut: '90',
       minAmountOut: '88',
@@ -181,9 +182,10 @@ describe('createHttpEnsoQuoteProvider', () => {
       trustedRouters: { 1: [router] }
     })
 
-    await provider.getRoute({ ...request, slippageBps: 100 })
+    await provider.getRoute({ ...request, signal: abortController.signal, slippageBps: 100 })
 
     expect(fetcher).toHaveBeenCalledTimes(2)
+    expect(fetcher.mock.calls.every(([, init]) => init?.signal === abortController.signal)).toBe(true)
     expect(new URL(fetcher.mock.calls[0]![0].toString(), 'https://yearn.test').searchParams.get('slippage')).toBe('0')
     expect(new URL(fetcher.mock.calls[1]![0].toString(), 'https://yearn.test').searchParams.get('slippage')).toBe('50')
   })

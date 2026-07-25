@@ -8,7 +8,7 @@ import {
   type PublicClient,
   slice
 } from 'viem'
-import type { VaultWidgetQuote, VaultWidgetToken } from '../types'
+import type { VaultWidgetQuote, VaultWidgetToken, VaultWidgetWalletType } from '../types'
 
 export const YEARN_4626_ROUTER_ADDRESS = '0x1112dbCF805682e828606f74AB717abf4b4FD8DE' as Address
 export const YEARN_VAULT_MIGRATOR_ADDRESSES = [
@@ -124,6 +124,13 @@ export function supportsMigrationPermit(params: { migratorAddress: Address; sour
   return (
     isV3(params.sourceVersion) && !usesKnownMigrator && !isAddressEqual(params.migratorAddress, YEARN_VECRV_ZAP_ADDRESS)
   )
+}
+
+export function getMigrationAuthorizationMode(params: {
+  permitSupported: boolean
+  walletType: VaultWidgetWalletType
+}): 'approval' | 'permit' {
+  return params.permitSupported && params.walletType === 'eoa' ? 'permit' : 'approval'
 }
 
 const PERMIT_METADATA_ABI = [

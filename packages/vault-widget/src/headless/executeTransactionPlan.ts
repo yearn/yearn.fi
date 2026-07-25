@@ -62,8 +62,13 @@ export async function executeVaultWidgetPlan(
     return executeVaultWidgetPlan(params, index + 1, outcome)
   }
   if (step.kind === 'safe-proposal') {
-    if (!step.chainId || !step.requests?.length || !params.execution.proposeSafeBatch) {
-      throw new Error('Safe batch execution is not configured')
+    if (
+      !step.chainId ||
+      !step.requests?.length ||
+      !params.execution.proposeSafeBatch ||
+      !params.execution.waitForSafeExecution
+    ) {
+      throw new Error('Safe batch execution and tracking are not configured')
     }
     const proposalId = await params.execution.proposeSafeBatch({
       account: params.account,
@@ -81,9 +86,7 @@ export async function executeVaultWidgetPlan(
     })
     params.onEvent?.({ type: 'transaction_step', step, proposalId })
     await params.onProgress?.({ isFinalTransaction, proposalId, step, stepIndex: index })
-    const hash = params.execution.waitForSafeExecution
-      ? await params.execution.waitForSafeExecution(params.config, step.chainId, proposalId)
-      : undefined
+    const hash = await params.execution.waitForSafeExecution(params.config, step.chainId, proposalId)
     return executeVaultWidgetPlan(params, index + 1, {
       hash: hash ?? outcome.hash,
       proposalId

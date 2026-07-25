@@ -14,12 +14,12 @@ published as the production dependency until every row below is complete.
 | Package artifact isolation | Complete | npm pack dry run and import scan |
 | Stake, unstake, and combined routes | Complete | Kong staking metadata, selectable vault/staked positions, source-aware adapters, composed valuation, and ordered plans |
 | Generic same-chain and cross-chain Enso | Complete | Trusted route validation, protected re-quotes, bridge protocol discovery, submitted state, and destination completion polling |
-| Safe proposal and delayed execution | In progress | Atomic plan batching, connector detection, proposal submission, and execution polling complete; live Safe QA pending |
+| Safe proposal and delayed execution | In progress | Atomic plan batching, connector detection, mandatory execution tracking, rejection/revert transitions, delayed Safe and cross-chain completion tests complete; live Safe QA pending |
 | yvUSD locked/unlocked and cooldown | In progress | Live family presets, nested share valuation, zap deposit, two-vault withdrawal, cooldown reads, and styled start/cancel plans complete; wallet-connected and Tenderly QA pending |
 | yvBTC locked/unlocked | Complete for current production behavior | Unlocked ERC-4626 preset and family selector complete; locked remains an explicit unavailable state while its address is the legacy zero-address placeholder |
-| Permit and approval migration | In progress | Kong target discovery, destination metadata, full-balance panel, registry-compatible migrator/router/zap selectors, permit detection/signing, V2/V3 calls, shared execution, activity persistence, and tests complete; wallet-connected and Tenderly QA pending |
+| Permit and approval migration | In progress | Kong target discovery, destination metadata, full-balance panel, registry-compatible migrator/router/zap selectors, EOA permit detection/signing, Safe approval batching, V2/V3 calls, shared execution, activity persistence, and tests complete; wallet-connected and Tenderly QA pending |
 | Merkle and staking rewards | In progress | Allowlisted Merkl and source-compatible staking discovery, claimed accounting, styled claim rows, shared execution/activity persistence, chain-switch/Safe plans, and tests complete; live wallet and visual parity QA pending |
-| Full styled My Info/settings/activity parity | In progress | Combined family positions, vault-filtered recent activity, reload reconciliation for EOA/Safe/cross-chain execution, controlled settings, mobile settings popover, keyboard tabs, Escape/focus restoration, and component/service tests complete; connected-wallet visual QA remains |
+| Full styled My Info/settings/activity parity | In progress | Combined family positions, vault-filtered recent activity, reload reconciliation for EOA/Safe/cross-chain execution, controlled settings, mobile settings popover, keyboard tabs, widget-constrained token dialog with focus containment/restoration, and component/service tests complete; connected-wallet visual QA remains |
 | Tenderly transaction-family QA | Pending | Requires full route matrix and funded VNet |
 
 Current rollout state:
