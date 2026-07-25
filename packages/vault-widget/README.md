@@ -147,11 +147,17 @@ the handler policy.
 bun run --cwd packages/vault-widget tslint
 bun run --cwd packages/vault-widget test
 bun run --cwd packages/vault-widget build
-bun run qa:vault-widget:tenderly
+bun run qa:vault-widget:tenderly --list
+bun run qa:vault-widget:tenderly --flow yvusd-direct --max-rpc-methods 30
 bun run qa:vault-widget:parity
 npm pack --dry-run --workspace @yearn/vault-widget
 bun run --cwd packages/vault-widget verify:artifact
 ```
+
+Tenderly QA never selects a flow implicitly. Use an explicit `--flow` or
+`--suite` together with a hard `--max-rpc-methods` limit. The full 11-flow
+suite remains available through `qa:vault-widget:tenderly:full`, but it should
+only be run intentionally with an appropriately reviewed RPC budget.
 
 Publishing requires membership in the private `yearn` npm organization and an
 `NPM_TOKEN` in the protected `npm` GitHub environment. Consumer verification

@@ -6,6 +6,10 @@ type TBalanceSourcePartition = {
   multicallTokens: TUseBalancesTokens[]
 }
 
+type TBalanceSourcePartitionOptions = {
+  multicallFallbacksEnabled?: boolean
+}
+
 function normalizeBalanceToken(token: TUseBalancesTokens): TUseBalancesTokens {
   return {
     ...token,
@@ -76,14 +80,15 @@ function shouldUseMulticall(token: TUseBalancesTokens, unsupportedChains: Set<nu
 
 export function partitionTokensByBalanceSource(
   tokens: TUseBalancesTokens[],
-  unsupportedNetworkIds: number[]
+  unsupportedNetworkIds: number[],
+  options?: TBalanceSourcePartitionOptions
 ): TBalanceSourcePartition {
   const unsupportedChains = new Set(unsupportedNetworkIds)
   const ensoTokens: TUseBalancesTokens[] = []
   const multicallTokens: TUseBalancesTokens[] = []
 
   for (const token of dedupeBalanceTokens(tokens)) {
-    if (shouldUseMulticall(token, unsupportedChains)) {
+    if (options?.multicallFallbacksEnabled !== false && shouldUseMulticall(token, unsupportedChains)) {
       multicallTokens.push(token)
     } else {
       ensoTokens.push(token)

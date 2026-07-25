@@ -1,6 +1,5 @@
 import { useLocalStorageValue } from '@react-hookz/web'
 import { toast } from '@shared/components/yToast'
-import { useWalletActions } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import { useTokenList } from '@shared/contexts/WithTokenList'
@@ -52,6 +51,7 @@ type TTenderlyPanelContext = {
   fundableAssets: TTenderlyFundableAsset[]
   connectedWalletAddress?: `0x${string}`
   pendingAction: string | null
+  stateRevision: number
   openPanel: () => void
   closePanel: () => void
   togglePanel: () => void
@@ -73,6 +73,7 @@ const TenderlyPanelContext = createContext<TTenderlyPanelContext>({
   snapshotRecords: [],
   fundableAssets: [],
   pendingAction: null,
+  stateRevision: 0,
   openPanel: (): void => undefined,
   closePanel: (): void => undefined,
   togglePanel: (): void => undefined,
@@ -111,7 +112,6 @@ export function TenderlyPanelProvider({ children }: { children: ReactNode }): Re
   const queryClient = useQueryClient()
   const { chainIdIntent } = useChains()
   const { chainID, address } = useWeb3()
-  const { onRefresh } = useWalletActions()
   const { allVaults, enableVaultListFetch } = useYearn()
   const { tokenLists } = useTokenList()
   const [status, setStatus] = useState<TTenderlyPanelStatus | undefined>(undefined)
@@ -119,6 +119,7 @@ export function TenderlyPanelProvider({ children }: { children: ReactNode }): Re
   const [isOpen, setIsOpen] = useState(false)
   const [selectedCanonicalChainId, setSelectedCanonicalChainIdState] = useState<number | undefined>(undefined)
   const [pendingAction, setPendingAction] = useState<string | null>(null)
+  const [stateRevision, setStateRevision] = useState(0)
   const { value: snapshotStorageValue, set: setSnapshotStorage } = useLocalStorageValue<TTenderlySnapshotStorage>(
     TENDERLY_SNAPSHOT_STORAGE_KEY,
     {
@@ -206,12 +207,8 @@ export function TenderlyPanelProvider({ children }: { children: ReactNode }): Re
 
   const refreshTenderlyDependentState = useCallback(async (): Promise<void> => {
     await queryClient.invalidateQueries()
-    if (address) {
-      await onRefresh().catch((error) => {
-        console.error('Failed to refresh wallet balances after Tenderly action:', error)
-      })
-    }
-  }, [address, onRefresh, queryClient])
+    setStateRevision((currentRevision) => currentRevision + 1)
+  }, [queryClient])
 
   const updateSnapshotStorage = useCallback(
     (updater: (snapshotStorage: TTenderlySnapshotStorage) => TTenderlySnapshotStorage): void => {
@@ -471,6 +468,7 @@ export function TenderlyPanelProvider({ children }: { children: ReactNode }): Re
       fundableAssets,
       connectedWalletAddress: address,
       pendingAction,
+      stateRevision,
       openPanel: (): void => setIsOpen(true),
       closePanel: (): void => setIsOpen(false),
       togglePanel: (): void => setIsOpen((current) => !current),
@@ -496,6 +494,7 @@ export function TenderlyPanelProvider({ children }: { children: ReactNode }): Re
       fundableAssets,
       address,
       pendingAction,
+      stateRevision,
       refetchStatus,
       createBaselineSnapshot,
       createSnapshot,
