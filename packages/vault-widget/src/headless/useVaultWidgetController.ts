@@ -26,6 +26,7 @@ import type {
   VaultWidgetTransactionPlan,
   VaultWidgetWalletType
 } from '../types'
+import { getQuoteApprovalTargets, matchApprovalAllowances } from './approvals'
 import { executeVaultWidgetPlan } from './executeTransactionPlan'
 import {
   getAvailableVaultWidgetModes,
@@ -116,30 +117,6 @@ function getActivityType(mode: 'deposit' | 'withdraw', quote: VaultWidgetQuote):
 
 function getError(value: unknown): Error {
   return value instanceof Error ? value : new Error(String(value))
-}
-
-function getQuoteApprovalTargets(quote?: VaultWidgetQuote): readonly VaultWidgetApprovalTarget[] {
-  if (quote?.approvals?.length) return quote.approvals
-  return quote?.approval ? [quote.approval] : []
-}
-
-function isSameApprovalTarget(left: VaultWidgetApprovalTarget, right: VaultWidgetApprovalTarget): boolean {
-  return (
-    left.token.chainId === right.token.chainId &&
-    isAddressEqual(left.token.address, right.token.address) &&
-    isAddressEqual(left.spender, right.spender)
-  )
-}
-
-function matchApprovalAllowances(
-  quote: VaultWidgetQuote,
-  currentTargets: readonly VaultWidgetApprovalTarget[],
-  currentAllowances: readonly bigint[]
-): readonly bigint[] {
-  return getQuoteApprovalTargets(quote).map((target) => {
-    const index = currentTargets.findIndex((candidate) => isSameApprovalTarget(candidate, target))
-    return index === -1 ? 0n : (currentAllowances[index] ?? 0n)
-  })
 }
 
 export function useVaultWidgetController({

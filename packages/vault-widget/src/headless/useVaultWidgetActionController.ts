@@ -1,9 +1,10 @@
 'use client'
 
-import { useQuery } from '@tanstack/react-query'
+import { useQueries, useQuery } from '@tanstack/react-query'
 import { useCallback, useMemo, useState } from 'react'
 import { erc20Abi } from 'viem'
-import { useAccount, useConfig, usePublicClient } from 'wagmi'
+import { useAccount, useConfig } from 'wagmi'
+import { getPublicClient } from 'wagmi/actions'
 import { useVaultWidgetServices } from '../context'
 import { addVaultWidgetActivitySafely, updateVaultWidgetActivitySafely } from '../services/activity'
 import type {
@@ -14,6 +15,7 @@ import type {
   VaultWidgetTransactionPlan,
   VaultWidgetWalletType
 } from '../types'
+import { getQuoteApprovalTargets } from './approvals'
 import { executeVaultWidgetPlan } from './executeTransactionPlan'
 import { buildTransactionPlan } from './transactionPlan'
 
@@ -62,29 +64,33 @@ export function useVaultWidgetActionController({
   const wagmiConfig = useConfig()
   const services = useVaultWidgetServices()
   const [execution, setExecution] = useState<VaultWidgetExecutionState>({ status: 'idle' })
-  const approvalClient = usePublicClient({ chainId: quote?.approval?.token.chainId ?? activity.chainId })
-  const allowanceQuery = useQuery({
-    queryKey: [
-      'vault-widget',
-      mode,
-      'action-allowance',
-      account,
-      quote?.approval?.token.address,
-      quote?.approval?.spender
-    ],
-    queryFn: async (): Promise<bigint> => {
-      if (!account || !quote?.approval || !approvalClient) return 0n
-      return approvalClient.readContract({
-        address: quote.approval.token.address,
-        abi: erc20Abi,
-        functionName: 'allowance',
-        args: [account, quote.approval.spender]
-      })
-    },
-    enabled: !!account && !!quote?.approval && !!approvalClient,
-    refetchInterval: 15_000
+  const approvalTargets = getQuoteApprovalTargets(quote)
+  const allowanceQueries = useQueries({
+    queries: approvalTargets.map((target) => ({
+      queryKey: [
+        'vault-widget',
+        mode,
+        'action-allowance',
+        account,
+        target.token.chainId,
+        target.token.address,
+        target.spender
+      ],
+      queryFn: async (): Promise<bigint> => {
+        if (!account) return 0n
+        const approvalClient = getPublicClient(wagmiConfig, { chainId: target.token.chainId })
+        if (!approvalClient) return 0n
+        return approvalClient.readContract({
+          address: target.token.address,
+          abi: erc20Abi,
+          functionName: 'allowance',
+          args: [account, target.spender]
+        })
+      },
+      enabled: !!account,
+      refetchInterval: 15_000
+    }))
   })
-  const refetchAllowance = allowanceQuery.refetch
   const walletTypeQuery = useQuery({
     queryKey: ['vault-widget', mode, 'action-wallet-type', account, accountState.connector?.id],
     queryFn: async (): Promise<VaultWidgetWalletType> => {
@@ -94,20 +100,22 @@ export function useVaultWidgetActionController({
     enabled: !!account && !!services.execution.getWalletType,
     staleTime: Number.POSITIVE_INFINITY
   })
-  const allowance = allowanceQuery.data ?? 0n
+  const allowances = allowanceQueries.map(({ data }) => data ?? 0n)
+  const allowance = allowances[0] ?? 0n
   const walletType = walletTypeQuery.data ?? 'eoa'
   const plan = useMemo(
     () =>
       quote
         ? buildTransactionPlan({
             allowance,
+            allowances,
             connectedChainId: accountState.chainId,
             mode,
             quote,
             walletType
           })
         : undefined,
-    [accountState.chainId, allowance, mode, quote, walletType]
+    [accountState.chainId, allowance, allowances, mode, quote, walletType]
   )
   const isExecuting =
     execution.status === 'confirming' || execution.status === 'pending' || execution.status === 'submitted'
@@ -116,7 +124,7 @@ export function useVaultWidgetActionController({
     !!plan &&
     !isExecuting &&
     !(services.execution.getWalletType && walletTypeQuery.isLoading) &&
-    !allowanceQuery.isLoading
+    !allowanceQueries.some(({ isLoading }) => isLoading)
 
   const submit = useCallback(async (): Promise<void> => {
     if (!account || !plan || !canSubmit) return
@@ -152,7 +160,7 @@ export function useVaultWidgetActionController({
           })
         },
         onRefresh: async () => {
-          await Promise.allSettled([refetchAllowance(), onRefresh?.()])
+          await Promise.allSettled([...allowanceQueries.map((query) => query.refetch()), onRefresh?.()])
         },
         onSubmitted: async (hash) => {
           await updateVaultWidgetActivitySafely(services.activityStore, activityId, {
@@ -202,7 +210,7 @@ export function useVaultWidgetActionController({
     onRefresh,
     onSuccess,
     plan,
-    refetchAllowance,
+    allowanceQueries,
     services.activityStore,
     services.ensoBridge,
     services.execution,
@@ -213,7 +221,7 @@ export function useVaultWidgetActionController({
     allowance,
     canSubmit,
     execution,
-    isLoading: allowanceQuery.isLoading || walletTypeQuery.isLoading,
+    isLoading: allowanceQueries.some(({ isLoading }) => isLoading) || walletTypeQuery.isLoading,
     plan,
     submit,
     walletType
