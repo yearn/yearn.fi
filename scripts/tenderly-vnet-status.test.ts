@@ -1,10 +1,12 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   buildTenderlyStatusJson,
   buildTenderlyStatusMarkdown,
   classifyPublicRpcMode,
+  fetchTenderlyRecentTransactions,
   normalizeTenderlyTransactionListResponse,
   normalizeTenderlyVnetListResponse,
+  parseTenderlyTransactionMode,
   resolveStableNamedPublicRpcName,
   resolveTenderlyStatusIdentity,
   selectMatchingTenderlyVnet
@@ -53,6 +55,85 @@ describe('tenderly-vnet-status', () => {
     expect(normalizeTenderlyTransactionListResponse([{ tx_hash: '0xabc' }])).toHaveLength(1)
     expect(normalizeTenderlyTransactionListResponse({ transactions: [{ tx_hash: '0xdef' }] })).toHaveLength(1)
     expect(normalizeTenderlyTransactionListResponse({ data: [{ tx_hash: '0xghi' }] })).toHaveLength(1)
+  })
+
+  it('defaults to a bounded recent transaction lookup', () => {
+    expect(parseTenderlyTransactionMode({})).toBe('recent')
+    expect(parseTenderlyTransactionMode({ 'transaction-mode': 'none' })).toBe('none')
+    expect(parseTenderlyTransactionMode({ 'transaction-mode': 'full' })).toBe('full')
+    expect(() => parseTenderlyTransactionMode({ 'transaction-mode': 'everything' })).toThrow('Invalid transaction mode')
+  })
+
+  it('makes one transaction request in recent mode and skips all requests in none mode', async () => {
+    const fetchFn = vi.fn<typeof fetch>().mockResolvedValue(
+      new Response(JSON.stringify([{ tx_hash: '0xabc', status: 'success' }]), {
+        headers: { 'content-type': 'application/json' }
+      })
+    )
+    const identity = {
+      profile: 'webops' as const,
+      accountSlug: 'yearn',
+      projectSlug: 'frontend',
+      apiKey: 'test-key'
+    }
+
+    const recent = await fetchTenderlyRecentTransactions({
+      identity,
+      mode: 'recent',
+      recentCount: 5,
+      vnetId: 'vnet-1',
+      fetchFn
+    })
+    const none = await fetchTenderlyRecentTransactions({
+      identity,
+      mode: 'none',
+      recentCount: 5,
+      vnetId: 'vnet-1',
+      fetchFn
+    })
+
+    expect(fetchFn).toHaveBeenCalledTimes(1)
+    expect(recent).toMatchObject({
+      recentTransactionsAvailable: true,
+      totalTransactionsAvailable: false,
+      totalTransactionsNote: 'not scanned (use --transaction-mode full)'
+    })
+    expect(none).toMatchObject({
+      recentTransactionsAvailable: false,
+      totalTransactionsAvailable: false
+    })
+  })
+
+  it('paginates only when full mode is explicit', async () => {
+    const firstPage = Array.from({ length: 100 }, (_, index) => ({
+      id: `tx-${index}`,
+      status: 'success'
+    }))
+    const fetchFn = vi
+      .fn<typeof fetch>()
+      .mockResolvedValueOnce(new Response(JSON.stringify(firstPage)))
+      .mockResolvedValueOnce(new Response(JSON.stringify([])))
+
+    const result = await fetchTenderlyRecentTransactions({
+      identity: {
+        profile: 'webops',
+        accountSlug: 'yearn',
+        projectSlug: 'frontend',
+        apiKey: 'test-key'
+      },
+      mode: 'full',
+      recentCount: 5,
+      vnetId: 'vnet-1',
+      fetchFn
+    })
+
+    expect(fetchFn).toHaveBeenCalledTimes(2)
+    expect(result).toMatchObject({
+      recentTransactionsAvailable: true,
+      totalTransactionsAvailable: true,
+      totalTransactionsCount: 100
+    })
+    expect(result.recentTransactions).toHaveLength(5)
   })
 
   it('matches the active vnet by admin rpc before any weaker fallback', () => {
@@ -112,6 +193,7 @@ describe('tenderly-vnet-status', () => {
       projectSlug: 'frontend',
       restMetadataAvailable: true,
       recentTransactionCount: 5,
+      transactionMode: 'recent' as const,
       chainReports: [
         {
           canonicalChainId: 1,
