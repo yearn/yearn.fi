@@ -96,6 +96,7 @@ export async function reconcileVaultWidgetActivity(params: {
   try {
     if (activity.proposalId && params.execution.waitForSafeExecution) {
       hash = await params.execution.waitForSafeExecution(params.config, activity.chainId, activity.proposalId)
+      if (!hash) throw new Error('Safe execution completed without a transaction receipt')
     }
     if (!hash) return undefined
 

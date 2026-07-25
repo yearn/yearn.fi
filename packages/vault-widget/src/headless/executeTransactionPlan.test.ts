@@ -134,7 +134,7 @@ describe('executeVaultWidgetPlan', () => {
     )
   })
 
-  it('does not associate a prior transaction hash with a later Safe proposal', async () => {
+  it('rejects receiptless Safe completion without associating a prior transaction hash', async () => {
     const proposalId = '0x1234' as const
     const onProgress = vi.fn().mockResolvedValue(undefined)
     const safePlan: VaultWidgetTransactionPlan = {
@@ -146,20 +146,22 @@ describe('executeVaultWidgetPlan', () => {
       ]
     }
 
-    await executeVaultWidgetPlan({
-      account,
-      config: {} as Config,
-      execution: {
-        execute: vi.fn().mockResolvedValue(hash),
-        proposeSafeBatch: vi.fn().mockResolvedValue(proposalId),
-        waitForReceipt: vi.fn().mockResolvedValue(undefined),
-        waitForSafeExecution: vi.fn().mockResolvedValue(undefined)
-      },
-      onExecution: vi.fn(),
-      onProgress,
-      onRefresh: vi.fn().mockResolvedValue(undefined),
-      plan: safePlan
-    })
+    await expect(
+      executeVaultWidgetPlan({
+        account,
+        config: {} as Config,
+        execution: {
+          execute: vi.fn().mockResolvedValue(hash),
+          proposeSafeBatch: vi.fn().mockResolvedValue(proposalId),
+          waitForReceipt: vi.fn().mockResolvedValue(undefined),
+          waitForSafeExecution: vi.fn().mockResolvedValue(undefined)
+        },
+        onExecution: vi.fn(),
+        onProgress,
+        onRefresh: vi.fn().mockResolvedValue(undefined),
+        plan: safePlan
+      })
+    ).rejects.toThrow('without a transaction receipt')
 
     const safeProgress = onProgress.mock.calls[1]?.[0]
     expect(safeProgress).toMatchObject({ isFinalTransaction: true, proposalId })

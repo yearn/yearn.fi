@@ -23,6 +23,7 @@ beforeEach(() => {
 })
 
 const account = '0x1111111111111111111111111111111111111111'
+const safeHash = `0x${'33'.repeat(32)}` as const
 const config = {} as Config
 const request = {
   chainId: 1,
@@ -234,12 +235,12 @@ describe('createWagmiSafeExecutionService', () => {
 
   it('tracks a pending Safe call batch through its mined receipt', async () => {
     wagmiActions.getCallsStatus.mockResolvedValueOnce({ status: 'pending' }).mockResolvedValueOnce({
-      receipts: [{ transactionHash: '0xabcd' }],
+      receipts: [{ transactionHash: safeHash }],
       status: 'success'
     })
     const service = createWagmiSafeExecutionService({ pollIntervalMs: 0 })
 
-    await expect(service.waitForSafeExecution?.(config, 1, '0x1234')).resolves.toBe('0xabcd')
+    await expect(service.waitForSafeExecution?.(config, 1, '0x1234')).resolves.toBe(safeHash)
     expect(wagmiActions.getCallsStatus).toHaveBeenCalledTimes(2)
     expect(wagmiActions.getCallsStatus).toHaveBeenNthCalledWith(1, config, { id: '0x1234' })
     expect(wagmiActions.getCallsStatus).toHaveBeenNthCalledWith(2, config, { id: '0x1234' })
@@ -250,5 +251,17 @@ describe('createWagmiSafeExecutionService', () => {
     const service = createWagmiSafeExecutionService({ pollIntervalMs: 0 })
 
     await expect(service.waitForSafeExecution?.(config, 1, '0x1234')).rejects.toThrow('Safe transaction failed')
+  })
+
+  it.each([
+    { receipts: undefined, source: 'missing' },
+    { receipts: [{ transactionHash: '0xabcd' }], source: 'malformed' }
+  ])('rejects a successful Safe status with a $source transaction receipt', async ({ receipts }) => {
+    wagmiActions.getCallsStatus.mockResolvedValue({ receipts, status: 'success' })
+    const service = createWagmiSafeExecutionService({ pollIntervalMs: 0 })
+
+    await expect(service.waitForSafeExecution?.(config, 1, '0x1234')).rejects.toThrow(
+      'without a valid transaction receipt'
+    )
   })
 })

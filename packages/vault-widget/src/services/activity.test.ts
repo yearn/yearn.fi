@@ -9,6 +9,7 @@ import {
   resolveVaultWidgetActivityDestinationChainId,
   updateVaultWidgetActivitySafely
 } from './activity'
+import type { VaultWidgetExecutionService } from './types'
 
 const account = '0x1111111111111111111111111111111111111111'
 const vaultAddress = '0x2222222222222222222222222222222222222222'
@@ -148,6 +149,22 @@ describe('vault widget activity helpers', () => {
       expect.objectContaining({ sourceTxHash: hash, destinationChainId: 10 })
     )
     expect(result).toMatchObject({ destinationHash, hash, status: 'success' })
+  })
+
+  it('marks a receiptless Safe completion as an activity error', async () => {
+    const execution = {
+      execute: vi.fn(),
+      waitForReceipt: vi.fn(),
+      waitForSafeExecution: vi.fn().mockResolvedValue(undefined)
+    } as unknown as VaultWidgetExecutionService
+    const result = await reconcileVaultWidgetActivity({
+      activity: activity({ isFinalTransaction: true, proposalId: '0x1234' }),
+      config: {} as Config,
+      execution
+    })
+
+    expect(result).toMatchObject({ status: 'error' })
+    expect(execution.waitForReceipt).not.toHaveBeenCalled()
   })
 
   it('does not mistake an intermediate approval receipt for workflow completion', async () => {

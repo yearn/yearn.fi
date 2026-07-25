@@ -87,8 +87,9 @@ export async function executeVaultWidgetPlan(
     params.onEvent?.({ type: 'transaction_step', step, proposalId })
     await params.onProgress?.({ isFinalTransaction, proposalId, step, stepIndex: index })
     const hash = await params.execution.waitForSafeExecution(params.config, step.chainId, proposalId)
+    if (!hash) throw new Error('Safe execution completed without a transaction receipt')
     return executeVaultWidgetPlan(params, index + 1, {
-      hash: hash ?? outcome.hash,
+      hash,
       proposalId
     })
   }

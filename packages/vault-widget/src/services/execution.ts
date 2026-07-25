@@ -1,4 +1,4 @@
-import { MethodNotFoundRpcError, MethodNotSupportedRpcError } from 'viem'
+import { type Hash, MethodNotFoundRpcError, MethodNotSupportedRpcError } from 'viem'
 import {
   getAccount,
   getCallsStatus,
@@ -27,6 +27,10 @@ function wait(milliseconds: number): Promise<void> {
 
 function isAtomicSimulationUnavailable(error: unknown): boolean {
   return error instanceof MethodNotFoundRpcError || error instanceof MethodNotSupportedRpcError
+}
+
+function isTransactionHash(value: unknown): value is Hash {
+  return typeof value === 'string' && /^0x[0-9a-fA-F]{64}$/.test(value)
 }
 
 async function simulateSafeBatch({
@@ -116,10 +120,14 @@ export function createWagmiSafeExecutionService(options: WagmiSafeExecutionOptio
     config: Parameters<NonNullable<VaultWidgetExecutionService['waitForSafeExecution']>>[0],
     chainId: number,
     proposalId: `0x${string}`
-  ): Promise<`0x${string}` | undefined> {
+  ): Promise<Hash> {
     const status = await getCallsStatus(config, { id: proposalId })
     if (status.status === 'failure') throw new Error('Safe transaction failed')
-    if (status.status === 'success') return status.receipts?.[0]?.transactionHash
+    if (status.status === 'success') {
+      const hash = status.receipts?.at(-1)?.transactionHash
+      if (!isTransactionHash(hash)) throw new Error('Safe execution completed without a valid transaction receipt')
+      return hash
+    }
     await wait(pollIntervalMs)
     return waitForSafeExecution(config, chainId, proposalId)
   }

@@ -68,7 +68,7 @@ export type VaultWidgetExecutionService = {
   execute: (context: VaultWidgetExecutionContext) => Promise<Hash>
   waitForReceipt: (config: Config, chainId: number, hash: Hash) => Promise<void>
   proposeSafeBatch?: (context: VaultWidgetSafeProposalContext) => Promise<Hex>
-  waitForSafeExecution?: (config: Config, chainId: number, proposalId: Hex) => Promise<Hash | undefined>
+  waitForSafeExecution?: (config: Config, chainId: number, proposalId: Hex) => Promise<Hash>
 }
 
 export type VaultWidgetServices = {
