@@ -85,6 +85,7 @@ type VaultWidgetController = {
   setSelectedToken: (token: VaultWidgetToken) => void
   setSettings: (settings: VaultWidgetSettings) => void
   submit: () => Promise<void>
+  resetExecution: () => void
   reset: () => void
   refresh: () => Promise<void>
 }
@@ -630,6 +631,9 @@ export function useVaultWidgetController({
     setAmountValue('')
     setExecution({ status: 'idle' })
   }, [])
+  const resetExecution = useCallback((): void => {
+    setExecution({ status: 'idle' })
+  }, [])
 
   return {
     account,
@@ -667,6 +671,7 @@ export function useVaultWidgetController({
     setSelectedToken,
     setSettings,
     submit,
+    resetExecution,
     reset,
     refresh
   }

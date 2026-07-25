@@ -4,11 +4,12 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { PublicClient } from 'viem'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { VaultWidgetConfig, VaultWidgetToken } from '../types'
+import type { VaultWidgetConfig, VaultWidgetCopy, VaultWidgetToken } from '../types'
 import { MigrationPanel } from './MigrationPanel'
 
 const mocks = vi.hoisted(() => ({
   action: vi.fn(),
+  isSigning: vi.fn(),
   signTypedDataAsync: vi.fn(),
   submit: vi.fn(),
   usePublicClient: vi.fn()
@@ -17,7 +18,7 @@ const mocks = vi.hoisted(() => ({
 vi.mock('wagmi', () => ({
   usePublicClient: mocks.usePublicClient,
   useSignTypedData: () => ({
-    isPending: false,
+    isPending: mocks.isSigning(),
     signTypedDataAsync: mocks.signTypedDataAsync
   })
 }))
@@ -59,6 +60,7 @@ const config: VaultWidgetConfig = {
 }
 const signature = `0x${'11'.repeat(32)}${'22'.repeat(32)}1b` as const
 const permitTypehash = '0x6e71edae12b1b97f4d1f60370fef10105fa2faae0126114a169c64845d6126c9'
+const copy = { confirmInWallet: 'Confirm in your wallet' } as VaultWidgetCopy
 
 function createPublicClient(nonces: readonly bigint[]): PublicClient {
   const nonceResults = [...nonces]
@@ -96,6 +98,7 @@ function renderPanel(panelAccount: typeof account | typeof nextAccount): ReturnT
       <MigrationPanel
         account={panelAccount}
         config={config}
+        copy={copy}
         onRefresh={vi.fn().mockResolvedValue(undefined)}
         positionBalance={12n}
       />
@@ -110,12 +113,14 @@ async function getPermitButton(): Promise<HTMLButtonElement> {
 describe('MigrationPanel permit lifecycle', () => {
   beforeEach(() => {
     vi.clearAllMocks()
+    mocks.isSigning.mockReturnValue(false)
     mocks.action.mockReturnValue({
       allowance: 0n,
       canSubmit: true,
       execution: { status: 'idle' },
       isLoading: false,
       plan: undefined,
+      resetExecution: vi.fn(),
       submit: mocks.submit,
       walletType: 'eoa'
     })
@@ -145,6 +150,7 @@ describe('MigrationPanel permit lifecycle', () => {
         <MigrationPanel
           account={nextAccount}
           config={config}
+          copy={copy}
           onRefresh={vi.fn().mockResolvedValue(undefined)}
           positionBalance={12n}
         />
@@ -154,5 +160,15 @@ describe('MigrationPanel permit lifecycle', () => {
 
     await waitFor(() => expect(publicClient.getBlock).toHaveBeenCalledTimes(2))
     expect(mocks.submit).not.toHaveBeenCalled()
+  })
+
+  it('covers the widget with a wallet-confirmation dialog while the permit signature is pending', async () => {
+    mocks.isSigning.mockReturnValue(true)
+    mocks.usePublicClient.mockReturnValue(createPublicClient([7n, 7n]))
+    renderPanel(account)
+
+    expect((await screen.findByRole('dialog', { name: 'Confirm in your wallet' })).textContent).toContain(
+      'Sign migration permit (1/1)'
+    )
   })
 })

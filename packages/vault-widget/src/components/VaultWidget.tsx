@@ -12,7 +12,7 @@ import { MigrationPanel } from './MigrationPanel'
 import { RewardsPanel } from './RewardsPanel'
 import { SettingsPanel } from './SettingsPanel'
 import { TokenSelectorOverlay } from './TokenSelectorOverlay'
-import { TransactionStatus } from './TransactionStatus'
+import { TransactionOverlay } from './TransactionOverlay'
 
 const DEFAULT_COPY: VaultWidgetCopy = {
   connect: 'Connect Wallet',
@@ -35,7 +35,24 @@ const DEFAULT_COPY: VaultWidgetCopy = {
   vaultShareValue: 'Vault share value',
   estimatedAnnualReturn: 'Est. Annual Return',
   existingApproval: 'Existing Approval',
-  unstakeAndRedeem: 'You will redeem'
+  unstakeAndRedeem: 'You will redeem',
+  confirmInWallet: 'Confirm in your wallet',
+  confirmInSafe: 'Confirm the proposal in Safe',
+  transactionConfirmed: 'Your transaction was confirmed.',
+  transactionPending: 'Transaction pending',
+  safeProposalPending: 'Transaction submitted',
+  safeProposalDescription: 'Execution may happen separately after the required Safe confirmations are collected.',
+  crossChainSubmitted: 'Cross-chain transaction submitted',
+  waitingForConfirmation: 'Waiting for confirmation.',
+  waitingForDestination: 'Waiting for destination-chain completion.',
+  updatingBalances: 'Updating balances…',
+  transactionComplete: 'Transaction complete',
+  transactionFailed: 'Transaction failed',
+  done: 'Done',
+  tryAgain: 'Try again',
+  viewTransactionStatus: 'View transaction status',
+  viewOnBlockExplorer: 'View on block explorer',
+  closeTransactionStatus: 'Close transaction status'
 }
 
 function DefaultConnectButton({ onClick, label }: { onClick: () => void; label: string }): ReactElement {
@@ -389,12 +406,14 @@ function ConfiguredVaultWidget({
             <MigrationPanel
               account={controller.account}
               config={config}
+              copy={copy}
               onConnectWallet={onConnectWallet}
               onError={onError}
               onEvent={onEvent}
               onRefresh={controller.refresh}
               onSuccess={onSuccess}
               positionBalance={controller.positionBalance}
+              TransactionLink={slots?.TransactionLink}
             />
           )}
         </div>
@@ -412,12 +431,14 @@ function ConfiguredVaultWidget({
           {renderPanel?.(controller.mode) ?? (
             <RewardsPanel
               config={config}
+              copy={copy}
               onConnectWallet={onConnectWallet}
               onError={onError}
               onEvent={onEvent}
               onRefresh={controller.refresh}
               onSuccess={onSuccess}
               TokenIcon={TokenIcon}
+              TransactionLink={slots?.TransactionLink}
             />
           )}
         </div>
@@ -636,8 +657,6 @@ function ConfiguredVaultWidget({
               {controller.error.message || copy.noRoute}
             </div>
           ) : null}
-          <TransactionStatus execution={controller.execution} />
-
           <div className="yv-widget__action-row">
             <div className="yv-widget__action-primary">
               {controller.account ? (
@@ -681,6 +700,13 @@ function ConfiguredVaultWidget({
           ) : null}
         </div>
       ) : null}
+      <TransactionOverlay
+        chainId={config.chainId}
+        copy={copy}
+        execution={controller.execution}
+        onReset={controller.resetExecution}
+        TransactionLink={slots?.TransactionLink}
+      />
     </section>
   )
 }

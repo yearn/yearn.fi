@@ -1,8 +1,8 @@
 'use client'
 
 import { useQuery } from '@tanstack/react-query'
-import { type ReactElement, useEffect, useMemo, useState } from 'react'
-import { formatUnits } from 'viem'
+import { type ComponentType, type ReactElement, type ReactNode, useEffect, useMemo, useState } from 'react'
+import { formatUnits, type Hash } from 'viem'
 import { usePublicClient, useSignTypedData } from 'wagmi'
 import { useVaultWidgetServices } from '../context'
 import {
@@ -17,19 +17,21 @@ import {
   YEARN_4626_ROUTER_ADDRESS
 } from '../headless/migration'
 import { useVaultWidgetActionController } from '../headless/useVaultWidgetActionController'
-import type { VaultWidgetConfig, VaultWidgetEvent } from '../types'
+import type { VaultWidgetConfig, VaultWidgetCopy, VaultWidgetEvent, VaultWidgetExecutionState } from '../types'
 import { formatWalletBalance } from '../valueDisplay'
-import { TransactionStatus } from './TransactionStatus'
+import { TransactionOverlay } from './TransactionOverlay'
 
 type MigrationPanelProps = {
   account?: `0x${string}`
   config: VaultWidgetConfig
+  copy: VaultWidgetCopy
   onConnectWallet?: () => void
   onEvent?: (event: VaultWidgetEvent) => void
   onError?: (event: Extract<VaultWidgetEvent, { type: 'transaction_failed' }>) => void
   onRefresh: () => Promise<void>
   onSuccess?: (event: Extract<VaultWidgetEvent, { type: 'transaction_succeeded' }>) => void
   positionBalance: bigint
+  TransactionLink?: ComponentType<{ chainId: number; hash: Hash; children: ReactNode }>
 }
 
 function shortAddress(address: `0x${string}`): string {
@@ -39,12 +41,14 @@ function shortAddress(address: `0x${string}`): string {
 export function MigrationPanel({
   account,
   config,
+  copy,
   onConnectWallet,
   onEvent,
   onError,
   onRefresh,
   onSuccess,
-  positionBalance
+  positionBalance,
+  TransactionLink
 }: MigrationPanelProps): ReactElement {
   const migration = config.migration
   const services = useVaultWidgetServices()
@@ -215,6 +219,19 @@ export function MigrationPanel({
   if (!migration) {
     return <p className="yv-widget__empty">Migration is not configured for this vault.</p>
   }
+  const displayedExecution: VaultWidgetExecutionState = isSigning
+    ? {
+        status: 'confirming',
+        step: {
+          id: 'migration-permit',
+          kind: 'permit',
+          label: 'Sign migration permit',
+          chainId: config.chainId
+        },
+        stepCount: 1,
+        stepIndex: 0
+      }
+    : action.execution
 
   return (
     <div className="yv-widget__workflow">
@@ -243,7 +260,6 @@ export function MigrationPanel({
         </div>
       </div>
 
-      <TransactionStatus execution={action.execution} />
       {permitError ? (
         <div className="yv-widget__notice yv-widget__notice--error" role="alert">
           {permitError}
@@ -278,6 +294,13 @@ export function MigrationPanel({
                   : 'Migrate All'}
         </button>
       )}
+      <TransactionOverlay
+        chainId={config.chainId}
+        copy={copy}
+        execution={displayedExecution}
+        onReset={action.resetExecution}
+        TransactionLink={TransactionLink}
+      />
     </div>
   )
 }

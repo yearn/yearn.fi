@@ -992,6 +992,154 @@
   animation: yv-widget-spin 700ms linear infinite;
 }
 
+.yv-widget__transaction-overlay {
+  position: absolute;
+  z-index: 50;
+  inset: 0;
+  display: grid;
+  min-height: 18rem;
+  overflow: hidden;
+  place-items: center;
+  border: 1px solid var(--yv-widget-border);
+  border-radius: var(--yv-widget-radius);
+  background: var(--yv-widget-surface);
+  padding: 1.5rem;
+  text-align: center;
+}
+
+.yv-widget__transaction-overlay:focus {
+  outline: none;
+}
+
+.yv-widget__transaction-close {
+  position: absolute;
+  z-index: 1;
+  top: 1rem;
+  right: 1rem;
+  display: grid;
+  width: 2rem;
+  height: 2rem;
+  place-items: center;
+  border: 0;
+  border-radius: calc(var(--yv-widget-radius) * 0.75);
+  background: transparent;
+  color: var(--yv-widget-text-secondary);
+  cursor: pointer;
+}
+
+.yv-widget__transaction-close:hover {
+  background: var(--yv-widget-surface-secondary);
+}
+
+.yv-widget__transaction-close svg {
+  width: 1.25rem;
+  height: 1.25rem;
+}
+
+.yv-widget__transaction-content {
+  display: flex;
+  width: min(100%, 22rem);
+  flex-direction: column;
+  align-items: center;
+}
+
+.yv-widget__transaction-content h3 {
+  margin: 1.5rem 0 0.5rem;
+  font-size: 1.125rem;
+  font-weight: 600;
+  line-height: 1.4;
+}
+
+.yv-widget__transaction-content p {
+  margin: 0;
+  color: var(--yv-widget-text-secondary);
+  font-size: 0.875rem;
+  line-height: 1.4;
+  white-space: pre-line;
+}
+
+.yv-widget__transaction-content > a,
+.yv-widget__transaction-hash {
+  margin-top: 0.75rem;
+  color: var(--yv-widget-text);
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.yv-widget__transaction-content > a {
+  text-decoration: underline;
+  text-underline-offset: 0.2rem;
+}
+
+.yv-widget__transaction-content > .yv-widget__button {
+  max-width: 20rem;
+  margin-top: 1.5rem;
+}
+
+.yv-widget__transaction-resume {
+  display: flex;
+  width: 100%;
+  align-items: center;
+  gap: 0.75rem;
+  margin-top: 0.75rem;
+  border: 1px solid var(--yv-widget-border);
+  border-radius: var(--yv-widget-radius);
+  background: var(--yv-widget-surface-secondary);
+  color: var(--yv-widget-text);
+  cursor: pointer;
+  font: inherit;
+  padding: 0.75rem 1rem;
+  text-align: left;
+}
+
+.yv-widget__transaction-resume:hover {
+  background: color-mix(in oklch, var(--yv-widget-surface-secondary) 82%, var(--yv-widget-primary));
+}
+
+.yv-widget__transaction-resume-indicator {
+  width: 0.625rem;
+  height: 0.625rem;
+  flex: 0 0 0.625rem;
+  border: 2px solid var(--yv-widget-primary);
+  border-top-color: transparent;
+  border-radius: 999px;
+  animation: yv-widget-spin 1.4s linear infinite;
+}
+
+.yv-widget__transaction-resume > span:last-child {
+  display: grid;
+  gap: 0.125rem;
+}
+
+.yv-widget__transaction-resume strong {
+  font-size: 0.8125rem;
+  font-weight: 600;
+}
+
+.yv-widget__transaction-resume small {
+  color: var(--yv-widget-text-secondary);
+  font-size: 0.6875rem;
+}
+
+.yv-widget__transaction-spinner {
+  width: 2.5rem;
+  height: 2.5rem;
+  border: 3px solid var(--yv-widget-border);
+  border-top-color: var(--yv-widget-primary);
+  border-radius: 999px;
+  animation: yv-widget-spin 700ms linear infinite;
+}
+
+.yv-widget__transaction-icon {
+  width: 3rem;
+  height: 3rem;
+  color: var(--yv-widget-success);
+}
+
+.yv-widget__transaction-overlay[data-status="error"] .yv-widget__transaction-icon {
+  color: var(--yv-widget-error);
+}
+
 .yv-widget__panel {
   margin-top: 1rem;
 }
@@ -1442,6 +1590,13 @@
 @keyframes yv-widget-pulse {
   50% {
     opacity: 0.55;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .yv-widget__transaction-spinner,
+  .yv-widget__transaction-resume-indicator {
+    animation: none;
   }
 }
 

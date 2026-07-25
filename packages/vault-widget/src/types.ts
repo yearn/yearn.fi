@@ -301,6 +301,23 @@ export type VaultWidgetCopy = {
   estimatedAnnualReturn: string
   existingApproval: string
   unstakeAndRedeem: string
+  confirmInWallet: string
+  confirmInSafe: string
+  transactionConfirmed: string
+  transactionPending: string
+  safeProposalPending: string
+  safeProposalDescription: string
+  crossChainSubmitted: string
+  waitingForConfirmation: string
+  waitingForDestination: string
+  updatingBalances: string
+  transactionComplete: string
+  transactionFailed: string
+  done: string
+  tryAgain: string
+  viewTransactionStatus: string
+  viewOnBlockExplorer: string
+  closeTransactionStatus: string
 }
 
 export type VaultWidgetSlots = {

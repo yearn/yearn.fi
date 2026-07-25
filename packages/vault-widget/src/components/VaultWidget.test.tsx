@@ -4,7 +4,7 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { fireEvent, render, screen } from '@testing-library/react'
 import type { CSSProperties, ReactElement } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import type { VaultWidgetConfig, VaultWidgetToken } from '../types'
+import type { VaultWidgetConfig, VaultWidgetExecutionState, VaultWidgetToken } from '../types'
 import { getNextVaultActionTabIndex, VaultWidget } from './VaultWidget'
 
 const { useController } = vi.hoisted(() => ({
@@ -73,6 +73,7 @@ function createController(overrides: Record<string, unknown> = {}): Record<strin
     quote: undefined,
     refresh: vi.fn().mockResolvedValue(undefined),
     reset: vi.fn(),
+    resetExecution: vi.fn(),
     selectedPositionSource: positionSource,
     selectedToken: asset,
     setAmount: vi.fn(),
@@ -267,6 +268,59 @@ describe('VaultWidget', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Close token selector' }))
     expect(screen.queryByRole('dialog', { name: 'Select deposit token' })).toBeNull()
     expect(document.activeElement).toBe(tokenButton)
+  })
+
+  it.each<{
+    description: string
+    execution: VaultWidgetExecutionState
+    title: string
+  }>([
+    {
+      description: 'Deposit assets (1/2)',
+      execution: {
+        status: 'confirming',
+        step: { id: 'deposit', kind: 'execute', label: 'Deposit assets' },
+        stepCount: 2,
+        stepIndex: 0
+      },
+      title: 'Confirm in your wallet'
+    },
+    {
+      description: 'Execution may happen separately after the required Safe confirmations are collected.',
+      execution: {
+        status: 'pending',
+        step: { id: 'safe', kind: 'safe-proposal', label: 'Propose deposit' },
+        stepCount: 1,
+        stepIndex: 0,
+        proposalId: '0x1234'
+      },
+      title: 'Transaction submitted'
+    },
+    {
+      description: 'Waiting for destination-chain completion.',
+      execution: {
+        status: 'submitted',
+        step: { id: 'bridge', kind: 'wait-cross-chain', label: 'Complete bridge' },
+        stepCount: 2,
+        stepIndex: 1,
+        hash: '0x1111111111111111111111111111111111111111111111111111111111111111'
+      },
+      title: 'Cross-chain transaction submitted'
+    }
+  ])('renders the $title execution state as a widget-bounded dialog', ({ description, execution, title }) => {
+    useController.mockReturnValue(
+      createController({
+        account: '0x3333333333333333333333333333333333333333',
+        execution
+      })
+    )
+
+    renderWidget(<VaultWidget chainId={1} config={config} vaultAddress={config.vaultAddress} />)
+
+    const dialog = screen.getByRole('dialog', { name: title })
+    expect(dialog.closest('.yv-widget')).toBe(screen.getByRole('region'))
+    expect(dialog.textContent).toContain(description)
+    expect(screen.getByRole('button', { hidden: true, name: 'Deposit' }).hasAttribute('disabled')).toBe(true)
   })
 })
 

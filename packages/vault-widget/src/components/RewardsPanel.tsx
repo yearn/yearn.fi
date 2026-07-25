@@ -1,23 +1,26 @@
 'use client'
 
 import { useQuery } from '@tanstack/react-query'
-import type { ComponentType, ReactElement } from 'react'
+import type { ComponentType, ReactElement, ReactNode } from 'react'
+import type { Hash } from 'viem'
 import { useAccount, usePublicClient } from 'wagmi'
 import { useVaultWidgetServices } from '../context'
 import { useVaultWidgetActionController } from '../headless/useVaultWidgetActionController'
 import type { VaultWidgetDiscoveredReward } from '../services/rewards'
-import type { VaultWidgetConfig, VaultWidgetEvent, VaultWidgetToken } from '../types'
+import type { VaultWidgetConfig, VaultWidgetCopy, VaultWidgetEvent, VaultWidgetToken } from '../types'
 import { formatRewardAmount } from '../valueDisplay'
-import { TransactionStatus } from './TransactionStatus'
+import { TransactionOverlay } from './TransactionOverlay'
 
 type RewardRowProps = {
   config: VaultWidgetConfig
+  copy: VaultWidgetCopy
   onEvent?: (event: VaultWidgetEvent) => void
   onError?: (event: Extract<VaultWidgetEvent, { type: 'transaction_failed' }>) => void
   onRefresh: () => Promise<void>
   onSuccess?: (event: Extract<VaultWidgetEvent, { type: 'transaction_succeeded' }>) => void
   reward: VaultWidgetDiscoveredReward
   TokenIcon: ComponentType<{ token: VaultWidgetToken; size: number }>
+  TransactionLink?: ComponentType<{ chainId: number; hash: Hash; children: ReactNode }>
 }
 
 function DefaultTokenIcon({ token, size }: { token: VaultWidgetToken; size: number }): ReactElement {
@@ -32,12 +35,14 @@ function DefaultTokenIcon({ token, size }: { token: VaultWidgetToken; size: numb
 
 function RewardRow({
   config,
+  copy,
   onError,
   onEvent,
   onRefresh,
   onSuccess,
   reward,
-  TokenIcon
+  TokenIcon,
+  TransactionLink
 }: RewardRowProps): ReactElement {
   const action = useVaultWidgetActionController({
     activity: {
@@ -73,27 +78,37 @@ function RewardRow({
       <button type="button" disabled={!action.canSubmit} onClick={() => void action.submit()}>
         Claim
       </button>
-      <TransactionStatus execution={action.execution} />
+      <TransactionOverlay
+        chainId={config.chainId}
+        copy={copy}
+        execution={action.execution}
+        onReset={action.resetExecution}
+        TransactionLink={TransactionLink}
+      />
     </li>
   )
 }
 
 export function RewardsPanel({
   config,
+  copy,
   onConnectWallet,
   onError,
   onEvent,
   onRefresh,
   onSuccess,
-  TokenIcon = DefaultTokenIcon
+  TokenIcon = DefaultTokenIcon,
+  TransactionLink
 }: {
   config: VaultWidgetConfig
+  copy: VaultWidgetCopy
   onConnectWallet?: () => void
   onError?: (event: Extract<VaultWidgetEvent, { type: 'transaction_failed' }>) => void
   onEvent?: (event: VaultWidgetEvent) => void
   onRefresh: () => Promise<void>
   onSuccess?: (event: Extract<VaultWidgetEvent, { type: 'transaction_succeeded' }>) => void
   TokenIcon?: ComponentType<{ token: VaultWidgetToken; size: number }>
+  TransactionLink?: ComponentType<{ chainId: number; hash: Hash; children: ReactNode }>
 }): ReactElement {
   const { address: account } = useAccount()
   const publicClient = usePublicClient({ chainId: config.chainId })
@@ -156,12 +171,14 @@ export function RewardsPanel({
           <RewardRow
             key={reward.id}
             config={config}
+            copy={copy}
             onError={onError}
             onEvent={onEvent}
             onRefresh={refresh}
             onSuccess={onSuccess}
             reward={reward}
             TokenIcon={TokenIcon}
+            TransactionLink={TransactionLink}
           />
         ))}
       </ul>

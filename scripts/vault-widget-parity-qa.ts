@@ -165,12 +165,10 @@ async function waitForPackage(page: Page, qaCase: ParityCase): Promise<boolean> 
 async function waitForLegacyFrame(page: Page, qaCase: ParityCase, walletLabel: string): Promise<Frame> {
   const iframe = page.locator('iframe[title^="Legacy "]')
   await iframe.waitFor({ state: 'visible' })
-  await page.waitForFunction(() => {
-    const element = document.querySelector<HTMLIFrameElement>('iframe[title^="Legacy "]')
-    return element?.contentDocument?.readyState === 'complete'
-  })
-  const frame = page.frames().find((candidate) => candidate.url().includes('vaultWidget=legacy'))
+  const iframeHandle = await iframe.elementHandle()
+  const frame = await iframeHandle?.contentFrame()
   invariant(frame, `${qaCase.id}: legacy frame is unavailable`)
+  await frame.waitForURL((url) => url.searchParams.get('vaultWidget') === 'legacy')
   await frame.locator('body').waitFor({ state: 'visible' })
   await page.waitForTimeout(1_500)
 

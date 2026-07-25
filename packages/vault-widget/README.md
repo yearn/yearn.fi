@@ -109,6 +109,15 @@ reload. Use `infoPositionSources` and `info` to describe product-specific
 positions, `onViewAllActivity` to route into a host activity page, and the
 `TransactionLink` slot to supply host-specific explorer links.
 
+Every styled workflow uses the same widget-bounded transaction overlay for
+wallet confirmation, Safe proposal tracking, receipt confirmation,
+cross-chain delivery, success, and retryable errors. The overlay traps focus,
+restores it when closed, uses the host `TransactionLink` slot, and can be
+reworded through the widget `copy` overrides. Dismissing a queued Safe or
+cross-chain overlay does not stop background execution tracking or enable a
+duplicate submission; it leaves a compact status control that reopens the
+overlay.
+
 Transaction settings support controlled and uncontrolled presentation through
 `settingsOpen`, `defaultSettingsOpen`, and `onSettingsOpenChange`. The desktop
 surface replaces the action panel while settings are open; compact containers
@@ -159,8 +168,7 @@ Tenderly QA never selects a flow implicitly. Use an explicit `--flow` or
 suite remains available through `qa:vault-widget:tenderly:full`, but it should
 only be run intentionally with an appropriately reviewed RPC budget.
 
-Publishing requires membership in the private `yearn` npm organization and an
-`NPM_TOKEN` in the protected `npm` GitHub environment. Consumer verification
-runs without publishing credentials; a fresh protected runner rebuilds and
-publishes only the trusted package source.
+Publication, registry access, provenance, and release automation are outside
+the extraction and yearn.fi cutover goal. The pack and isolated-consumer
+commands above validate the local package artifact without publishing it.
 See [PARITY.md](./PARITY.md) for the production cutover gate.

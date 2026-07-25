@@ -42,6 +42,7 @@ export type VaultWidgetActionController = {
   execution: VaultWidgetExecutionState
   isLoading: boolean
   plan?: VaultWidgetTransactionPlan
+  resetExecution: () => void
   submit: () => Promise<void>
   walletType: VaultWidgetWalletType
 }
@@ -216,6 +217,9 @@ export function useVaultWidgetActionController({
     services.execution,
     wagmiConfig
   ])
+  const resetExecution = useCallback((): void => {
+    setExecution({ status: 'idle' })
+  }, [])
 
   return {
     allowance,
@@ -223,6 +227,7 @@ export function useVaultWidgetActionController({
     execution,
     isLoading: allowanceQueries.some(({ isLoading }) => isLoading) || walletTypeQuery.isLoading,
     plan,
+    resetExecution,
     submit,
     walletType
   }
