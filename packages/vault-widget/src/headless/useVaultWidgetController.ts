@@ -421,8 +421,12 @@ export function useVaultWidgetController({
     if (!plan) throw new Error('No transaction plan is available')
     if (!plan.quote.expiresAt || plan.quote.expiresAt > Date.now()) return plan
 
-    const refreshedQuote = (await refetchQuote()).data
-    if (!refreshedQuote) throw new Error('The route quote expired and could not be refreshed')
+    const refreshResult = await refetchQuote()
+    if (refreshResult.error) throw getError(refreshResult.error)
+    const refreshedQuote = refreshResult.data
+    if (!refreshedQuote || (refreshedQuote.expiresAt !== undefined && refreshedQuote.expiresAt <= Date.now())) {
+      throw new Error('The route quote expired and could not be refreshed')
+    }
     return buildTransactionPlan({
       allowance,
       allowances,
