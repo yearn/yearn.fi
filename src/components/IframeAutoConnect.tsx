@@ -2,6 +2,7 @@ import { useAsyncTrigger } from '@shared/hooks/useAsyncTrigger'
 import { isIframe } from '@shared/utils/helpers'
 import type { FC, PropsWithChildren } from 'react'
 import { useAccount, useConnect, useDisconnect } from 'wagmi'
+import { AGENT_WALLET_ID } from '@/config/agentWallet'
 
 export const IframeAutoConnect: FC<PropsWithChildren> = ({ children }) => {
   const { connector } = useAccount()
@@ -17,7 +18,12 @@ export const IframeAutoConnect: FC<PropsWithChildren> = ({ children }) => {
       const ancestorOrigin = window.location.ancestorOrigins?.[0]
       const isSafeParent = ancestorOrigin?.toString().includes('safe')
 
-      if (connector && connector?.id !== 'safe' && !connector?.id?.toLowerCase().includes('ledger')) {
+      if (
+        connector &&
+        connector.id !== AGENT_WALLET_ID &&
+        connector.id !== 'safe' &&
+        !connector.id.toLowerCase().includes('ledger')
+      ) {
         if (!isSafeParent) {
           const ledgerConnector = connectors.find((c) => c.id.toLowerCase().includes('ledger'))
           if (ledgerConnector) {

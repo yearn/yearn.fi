@@ -68,16 +68,24 @@ function resolveAgentWalletAddress(): Address {
   }
 }
 
+function isProductionQaBuild(): boolean {
+  return (
+    env.PROD &&
+    env.NEXT_PUBLIC_VAULT_WIDGET_PARITY_ENABLED === 'true' &&
+    readBooleanFlag(env.NEXT_PUBLIC_AGENT_WALLET) === true
+  )
+}
+
 export function isAgentWalletEnabled(): boolean {
   if (env.PROD) {
-    return false
+    return isProductionQaBuild()
   }
 
   return readBooleanFlag(env.NEXT_PUBLIC_AGENT_WALLET) ?? readRuntimeFlag() ?? false
 }
 
 export function shouldAutoConnectAgentWallet(): boolean {
-  if (env.PROD) {
+  if (env.PROD && !isProductionQaBuild()) {
     return false
   }
 
