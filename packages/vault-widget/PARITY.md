@@ -48,10 +48,13 @@ Current rollout state:
 - yearn-bold keeps its legacy card by default. Setting
   `NEXT_PUBLIC_VAULT_WIDGET_ENABLED=true` switches its entire card to the
   package for parity testing.
-- The npm publish workflow requires the protected `npm` environment and an
-  authorized `NPM_TOKEN`; package ownership has not been verified locally.
-  Before checking npm access, it builds the exact package tarball and requires
-  both yearn.fi and a selectable yearn-bold ref to pass their consumer gates.
+- The `yearn` npm organization exists, but this development machine is not
+  authenticated and `@yearn/vault-widget` is not published yet. The publish
+  workflow requires the protected `npm` environment and an authorized
+  `NPM_TOKEN`. It verifies yearn.fi and a selectable yearn-bold ref against the
+  exact package tarball in an unprivileged job, then uses a fresh protected
+  runner to revalidate the trusted package source, npm organization membership,
+  release tag, and artifact before publishing.
 - `bun run qa:vault-widget:tenderly` snapshots configured mainnet and Optimism
   VNets, funds isolated QA accounts, exercises package-generated plans, reports
   stateful versus environment-limited coverage, and always reverts both

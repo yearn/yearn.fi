@@ -153,5 +153,8 @@ npm pack --dry-run --workspace @yearn/vault-widget
 bun run --cwd packages/vault-widget verify:artifact
 ```
 
-Publishing requires membership in the private `yearn` npm organization.
+Publishing requires membership in the private `yearn` npm organization and an
+`NPM_TOKEN` in the protected `npm` GitHub environment. Consumer verification
+runs without publishing credentials; a fresh protected runner rebuilds and
+publishes only the trusted package source.
 See [PARITY.md](./PARITY.md) for the production cutover gate.
