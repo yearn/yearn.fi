@@ -30,6 +30,7 @@ import {
   readPositionSourceState,
   sumPositionValues
 } from './positionSources'
+import { resolveVaultWidgetSettings } from './settings'
 import { buildTransactionPlan } from './transactionPlan'
 
 type UseVaultWidgetControllerParams = {
@@ -207,7 +208,9 @@ export function useVaultWidgetController({
     getDefaultToken(config, mode)
   const [amount, setAmountValue] = useState('')
   const [execution, setExecution] = useState<VaultWidgetExecutionState>({ status: 'idle' })
-  const [settings, setSettingsState] = useState<VaultWidgetSettings>(() => services.settings.read())
+  const [settings, setSettingsState] = useState<VaultWidgetSettings>(() =>
+    resolveVaultWidgetSettings(config, services.settings)
+  )
   const balanceDecimals =
     transactionMode === 'withdraw'
       ? (config.depositTokens[0]?.decimals ?? selectedToken.decimals)
@@ -215,7 +218,21 @@ export function useVaultWidgetController({
   const parsedAmount = parseAmount(amount, balanceDecimals)
 
   // Settings are an external browser store, so a subscription is the appropriate synchronization boundary.
-  useEffect(() => services.settings.subscribe?.(() => setSettingsState(services.settings.read())), [services.settings])
+  useEffect(() => {
+    const syncSettings = (): void => {
+      setSettingsState(
+        resolveVaultWidgetSettings(
+          {
+            defaultMaxLossBps: config.defaultMaxLossBps,
+            defaultSlippagePercent: config.defaultSlippagePercent
+          },
+          services.settings
+        )
+      )
+    }
+    syncSettings()
+    return services.settings.subscribe?.(syncSettings)
+  }, [config.defaultMaxLossBps, config.defaultSlippagePercent, services.settings])
   useEffect(() => {
     if (controlledMode !== undefined && controlledMode !== mode) onModeChange?.(mode)
   }, [controlledMode, mode, onModeChange])

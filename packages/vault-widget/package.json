@@ -38,11 +38,12 @@
     "./styles.css": "./dist/styles.css"
   },
   "scripts": {
-    "build": "tsc -p tsconfig.build.json && cp src/styles.css dist/styles.css",
+    "build": "tsc -p tsconfig.build.json && node scripts/fix-esm-specifiers.mjs && cp src/styles.css dist/styles.css",
     "clean": "rm -rf dist",
     "prepack": "bun run build",
     "test": "vitest run",
-    "tslint": "tsc -p tsconfig.json --noEmit"
+    "tslint": "tsc -p tsconfig.json --noEmit",
+    "verify:artifact": "node scripts/verify-artifact.mjs"
   },
   "publishConfig": {
     "access": "restricted",

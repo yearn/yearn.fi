@@ -19,6 +19,7 @@ export type VaultWidgetSettings = {
 }
 
 export type VaultWidgetSettingsStore = {
+  hasStored?: (setting: keyof VaultWidgetSettings) => boolean
   read: () => VaultWidgetSettings
   write: (settings: VaultWidgetSettings) => void
   subscribe?: (listener: () => void) => () => void

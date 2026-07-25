@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { createBrowserActivityStore, createMemoryActivityStore, createYearnFiSettingsStore } from './storage'
+import {
+  createBrowserActivityStore,
+  createBrowserSettingsStore,
+  createMemoryActivityStore,
+  createYearnFiSettingsStore
+} from './storage'
 
 const originalWindow = globalThis.window
 
@@ -63,6 +68,29 @@ describe('createYearnFiSettingsStore', () => {
     })
 
     expect(localStorage.getItem('yearn.fi/max-loss')).toBe(JSON.stringify({ __type: 'bigint', value: '3' }))
+  })
+})
+
+describe('createBrowserSettingsStore', () => {
+  afterEach(() => {
+    if (originalWindow) {
+      Object.defineProperty(globalThis, 'window', { configurable: true, value: originalWindow })
+      return
+    }
+    Reflect.deleteProperty(globalThis, 'window')
+  })
+
+  it('distinguishes configured defaults from persisted user choices', () => {
+    const localStorage = createLocalStorage()
+    Object.defineProperty(globalThis, 'window', {
+      configurable: true,
+      value: { dispatchEvent: vi.fn(), localStorage }
+    })
+    const store = createBrowserSettingsStore({ namespace: 'test-widget' })
+
+    expect(store.hasStored?.('slippagePercent')).toBe(false)
+    store.write({ ...store.read(), slippagePercent: 1 })
+    expect(store.hasStored?.('slippagePercent')).toBe(true)
   })
 })
 

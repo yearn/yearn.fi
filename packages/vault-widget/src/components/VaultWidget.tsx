@@ -1,7 +1,7 @@
 'use client'
 
 import { useQuery } from '@tanstack/react-query'
-import { type ReactElement, useCallback, useId, useRef, useState } from 'react'
+import { type KeyboardEvent, type ReactElement, useCallback, useId, useRef, useState } from 'react'
 import { formatUnits } from 'viem'
 import { useVaultWidgetServices } from '../context'
 import { useVaultWidgetController } from '../headless'
@@ -20,10 +20,10 @@ const DEFAULT_COPY: VaultWidgetCopy = {
   balance: 'Balance',
   position: 'Position',
   settings: 'Transaction Settings',
-  slippage: 'Slippage tolerance',
+  slippage: 'Slippage & Price Impact',
   maximumLoss: 'Maximum loss',
   solver: 'Route provider',
-  autoStake: 'Automatically stake eligible deposits',
+  autoStake: 'Stake Automatically',
   submitDeposit: 'Deposit',
   submitWithdraw: 'Withdraw',
   findingRoute: 'Finding best route…',
@@ -114,6 +114,14 @@ function getModeLabel(mode: VaultWidgetMode, labels?: Partial<Record<VaultWidget
   return mode.slice(0, 1).toUpperCase() + mode.slice(1)
 }
 
+export function getNextVaultActionTabIndex(key: string, index: number, tabCount: number): number | undefined {
+  if (key === 'ArrowRight') return (index + 1) % tabCount
+  if (key === 'ArrowLeft') return (index - 1 + tabCount) % tabCount
+  if (key === 'Home') return 0
+  if (key === 'End') return tabCount - 1
+  return undefined
+}
+
 function formatInputAmount(value: string): string {
   return formatWidgetValue(Number(value || '0'))
 }
@@ -174,7 +182,9 @@ function ConfiguredVaultWidget({
   const [internalSettingsOpen, setInternalSettingsOpen] = useState(defaultSettingsOpen)
   const settingsOpen = controlledSettingsOpen ?? internalSettingsOpen
   const settingsId = useId()
+  const navigationId = useId()
   const settingsTriggerRef = useRef<HTMLButtonElement>(null)
+  const modeTabRefs = useRef<Array<HTMLButtonElement | null>>([])
   const [tokenSelectorOpen, setTokenSelectorOpen] = useState(false)
   const [selectedPercentage, setSelectedPercentage] = useState<number | null>(null)
   const tokenSelectorButtonRef = useRef<HTMLButtonElement>(null)
@@ -226,6 +236,15 @@ function ConfiguredVaultWidget({
     if (controlledSettingsOpen === undefined) setInternalSettingsOpen(false)
     onSettingsOpenChange?.(false)
     controller.setMode(nextMode)
+  }
+  const handleModeTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number): void => {
+    const nextIndex = getNextVaultActionTabIndex(event.key, index, controller.modes.length)
+    if (nextIndex === undefined) return
+    event.preventDefault()
+    const nextMode = controller.modes[nextIndex]
+    if (!nextMode) return
+    setMode(nextMode)
+    modeTabRefs.current[nextIndex]?.focus()
   }
 
   const closeTokenSelector = useCallback((): void => {
@@ -293,16 +312,23 @@ function ConfiguredVaultWidget({
           )}
 
           <div className="yv-widget__tabs" role="tablist" aria-label="Vault action">
-            {controller.modes.map((availableMode) => (
+            {controller.modes.map((availableMode, index) => (
               <button
+                aria-controls={`${navigationId}-${availableMode}`}
                 className="yv-widget__tab"
                 data-active={controller.mode === availableMode}
                 data-mode={availableMode}
+                id={`${navigationId}-${availableMode}-tab`}
                 key={availableMode}
-                type="button"
                 role="tab"
                 aria-selected={controller.mode === availableMode}
+                onKeyDown={(event) => handleModeTabKeyDown(event, index)}
                 onClick={() => setMode(availableMode)}
+                ref={(element) => {
+                  modeTabRefs.current[index] = element
+                }}
+                tabIndex={controller.mode === availableMode ? 0 : -1}
+                type="button"
               >
                 {getModeLabel(availableMode, config.display?.modeLabels)}
               </button>
@@ -313,8 +339,10 @@ function ConfiguredVaultWidget({
 
       {settingsOpen ? (
         <SettingsPanel
+          autoStakeLabel={copy.autoStake}
           id={settingsId}
           settings={controller.settings}
+          slippageLabel={copy.slippage}
           title={copy.settings}
           onChange={controller.setSettings}
           onClose={closeSettings}
@@ -322,23 +350,41 @@ function ConfiguredVaultWidget({
       ) : null}
 
       {controller.mode === 'info' ? (
-        <div className="yv-widget__panel" aria-hidden={settingsOpen || undefined} inert={settingsOpen || undefined}>
-          <ActivityPanel
-            availableBalance={controller.balance}
-            availableToken={controller.selectedToken}
-            config={config}
-            depositedValue={controller.positionValue}
-            depositedValueDecimals={controller.positionValueDecimals}
-            depositedValueUsd={formatUsd(positionUsd)}
-            onConnectWallet={onConnectWallet}
-            onViewAllActivity={onViewAllActivity}
-            positionSources={controller.infoPositionSources}
-            TransactionLink={slots?.TransactionLink}
-          />
+        <div
+          aria-hidden={settingsOpen || undefined}
+          aria-labelledby={showNavigation ? `${navigationId}-info-tab` : undefined}
+          className="yv-widget__panel"
+          id={showNavigation ? `${navigationId}-info` : undefined}
+          inert={settingsOpen || undefined}
+          role={showNavigation ? 'tabpanel' : undefined}
+        >
+          {headerActions ? <div className="yv-widget__panel-actions">{headerActions}</div> : null}
+          {renderPanel?.(controller.mode) ?? (
+            <ActivityPanel
+              availableBalance={controller.balance}
+              availableToken={controller.selectedToken}
+              config={config}
+              depositedValue={controller.positionValue}
+              depositedValueDecimals={controller.positionValueDecimals}
+              depositedValueUsd={formatUsd(positionUsd)}
+              onConnectWallet={onConnectWallet}
+              onViewAllActivity={onViewAllActivity}
+              positionSources={controller.infoPositionSources}
+              TransactionLink={slots?.TransactionLink}
+            />
+          )}
         </div>
       ) : null}
       {controller.mode === 'migrate' ? (
-        <div className="yv-widget__panel" aria-hidden={settingsOpen || undefined} inert={settingsOpen || undefined}>
+        <div
+          aria-hidden={settingsOpen || undefined}
+          aria-labelledby={showNavigation ? `${navigationId}-migrate-tab` : undefined}
+          className="yv-widget__panel"
+          id={showNavigation ? `${navigationId}-migrate` : undefined}
+          inert={settingsOpen || undefined}
+          role={showNavigation ? 'tabpanel' : undefined}
+        >
+          {headerActions ? <div className="yv-widget__panel-actions">{headerActions}</div> : null}
           {renderPanel?.(controller.mode) ?? (
             <MigrationPanel
               account={controller.account}
@@ -354,7 +400,15 @@ function ConfiguredVaultWidget({
         </div>
       ) : null}
       {controller.mode === 'rewards' ? (
-        <div className="yv-widget__panel" aria-hidden={settingsOpen || undefined} inert={settingsOpen || undefined}>
+        <div
+          aria-hidden={settingsOpen || undefined}
+          aria-labelledby={showNavigation ? `${navigationId}-rewards-tab` : undefined}
+          className="yv-widget__panel"
+          id={showNavigation ? `${navigationId}-rewards` : undefined}
+          inert={settingsOpen || undefined}
+          role={showNavigation ? 'tabpanel' : undefined}
+        >
+          {headerActions ? <div className="yv-widget__panel-actions">{headerActions}</div> : null}
           {renderPanel?.(controller.mode) ?? (
             <RewardsPanel
               config={config}
@@ -371,10 +425,13 @@ function ConfiguredVaultWidget({
 
       {isTransactionMode ? (
         <div
+          aria-labelledby={showNavigation ? `${navigationId}-${controller.mode}-tab` : undefined}
           className="yv-widget__body"
           data-token-selector-open={tokenSelectorOpen}
           aria-hidden={settingsOpen || undefined}
+          id={showNavigation ? `${navigationId}-${controller.mode}` : undefined}
           inert={settingsOpen || undefined}
+          role={showNavigation ? 'tabpanel' : undefined}
         >
           <div className="yv-widget__body-heading">
             <h3 className="yv-widget__body-title">{getModeLabel(controller.mode, config.display?.modeLabels)}</h3>

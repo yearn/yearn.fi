@@ -37,7 +37,16 @@ jobs:
           bun run --cwd packages/vault-widget tslint
           bun run --cwd packages/vault-widget test
           bun run --cwd packages/vault-widget build
-          npm pack --dry-run --workspace @yearn/vault-widget
+          bun run --cwd packages/vault-widget verify:artifact
+
+      - name: Verify yearn.fi consumer
+        env:
+          NEXT_PUBLIC_VAULT_WIDGET_ENABLED: "true"
+        run: |
+          bun run lint
+          bun run tslint
+          bun run test
+          bun run build
 
       - name: Verify npm access
         env:

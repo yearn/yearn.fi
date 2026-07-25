@@ -30,7 +30,7 @@ export {
   YVBTC_UNLOCKED_ADDRESS,
   yvBtcAssetToken
 } from './yvBtc'
-export type { CreateYvUsdPresetOptions } from './yvUsd'
+export type { CreateYvUsdFamilyPresetOptions, CreateYvUsdPresetOptions } from './yvUsd'
 export {
   createYvUsdFamilyPreset,
   createYvUsdPreset,

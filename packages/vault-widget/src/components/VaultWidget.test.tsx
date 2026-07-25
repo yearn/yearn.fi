@@ -5,7 +5,7 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import type { CSSProperties, ReactElement } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { VaultWidgetConfig, VaultWidgetToken } from '../types'
-import { VaultWidget } from './VaultWidget'
+import { getNextVaultActionTabIndex, VaultWidget } from './VaultWidget'
 
 const { useController } = vi.hoisted(() => ({
   useController: vi.fn()
@@ -133,7 +133,12 @@ describe('VaultWidget', () => {
       <VaultWidget
         chainId={1}
         config={config}
-        copy={{ amount: 'Quantity', connect: 'Link wallet' }}
+        copy={{
+          amount: 'Quantity',
+          autoStake: 'Compound automatically',
+          connect: 'Link wallet',
+          slippage: 'Route tolerance'
+        }}
         onConnectWallet={onConnectWallet}
         slots={{ ConnectButton, Details, Header }}
         style={{ '--yv-widget-primary': 'oklch(0.62 0.2 255)' } as CSSProperties}
@@ -151,6 +156,10 @@ describe('VaultWidget', () => {
     expect(screen.getByText('Host details')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Custom Link wallet' }))
     expect(onConnectWallet).toHaveBeenCalledOnce()
+
+    fireEvent.click(screen.getAllByRole('button', { name: 'Transaction Settings' })[0]!)
+    expect(screen.getByText('Route tolerance')).toBeTruthy()
+    expect(screen.getByRole('switch', { name: 'Compound automatically' })).toBeTruthy()
   })
 
   it('maps accessible tab interaction to controlled mode changes', () => {
@@ -165,6 +174,64 @@ describe('VaultWidget', () => {
     expect(withdraw.getAttribute('aria-selected')).toBe('false')
     fireEvent.click(withdraw)
     expect(setMode).toHaveBeenCalledWith('withdraw')
+    expect(deposit.getAttribute('tabindex')).toBe('0')
+    expect(withdraw.getAttribute('tabindex')).toBe('-1')
+    expect(deposit.getAttribute('aria-controls')).toBe(screen.getByRole('tabpanel').id)
+    expect(screen.getByRole('tabpanel').getAttribute('aria-labelledby')).toBe(deposit.id)
+  })
+
+  it('supports roving keyboard focus across every action tab', () => {
+    const setMode = vi.fn()
+    useController.mockReturnValue(
+      createController({
+        modes: ['deposit', 'withdraw', 'info'],
+        setMode
+      })
+    )
+
+    renderWidget(<VaultWidget chainId={1} config={config} vaultAddress={config.vaultAddress} />)
+
+    const deposit = screen.getByRole('tab', { name: 'Deposit' })
+    const withdraw = screen.getByRole('tab', { name: 'Withdraw' })
+    const info = screen.getByRole('tab', { name: 'My Info' })
+
+    withdraw.focus()
+    fireEvent.keyDown(withdraw, { key: 'ArrowRight' })
+    expect(setMode).toHaveBeenLastCalledWith('info')
+    expect(document.activeElement).toBe(info)
+
+    fireEvent.keyDown(info, { key: 'Home' })
+    expect(setMode).toHaveBeenLastCalledWith('deposit')
+    expect(document.activeElement).toBe(deposit)
+
+    fireEvent.keyDown(deposit, { key: 'ArrowLeft' })
+    expect(setMode).toHaveBeenLastCalledWith('info')
+    expect(document.activeElement).toBe(info)
+  })
+
+  it('allows a headless host to replace the My Info workflow panel', () => {
+    useController.mockReturnValue(
+      createController({
+        mode: 'info',
+        modes: ['deposit', 'withdraw', 'info']
+      })
+    )
+
+    renderWidget(
+      <VaultWidget
+        chainId={1}
+        config={config}
+        headerActions={<button type="button">Choose variant</button>}
+        renderPanel={(mode) => <p>Host {mode} panel</p>}
+        vaultAddress={config.vaultAddress}
+      />
+    )
+
+    expect(screen.getByRole('tabpanel').getAttribute('aria-labelledby')).toBe(
+      screen.getByRole('tab', { name: 'My Info' }).id
+    )
+    expect(screen.getByText('Host info panel')).toBeTruthy()
+    expect(screen.getByRole('button', { name: 'Choose variant' })).toBeTruthy()
   })
 
   it('closes settings with Escape and restores focus to the opening control', () => {
@@ -200,5 +267,15 @@ describe('VaultWidget', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Close token selector' }))
     expect(screen.queryByRole('dialog', { name: 'Select deposit token' })).toBeNull()
     expect(document.activeElement).toBe(tokenButton)
+  })
+})
+
+describe('getNextVaultActionTabIndex', () => {
+  it('wraps arrows and supports tablist boundaries', () => {
+    expect(getNextVaultActionTabIndex('ArrowRight', 2, 3)).toBe(0)
+    expect(getNextVaultActionTabIndex('ArrowLeft', 0, 3)).toBe(2)
+    expect(getNextVaultActionTabIndex('Home', 2, 3)).toBe(0)
+    expect(getNextVaultActionTabIndex('End', 0, 3)).toBe(2)
+    expect(getNextVaultActionTabIndex('Enter', 0, 3)).toBeUndefined()
   })
 })

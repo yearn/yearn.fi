@@ -49,6 +49,9 @@ export function createBrowserSettingsStore(options: BrowserSettingsOptions = {})
   })
 
   return {
+    hasStored(setting): boolean {
+      return typeof window !== 'undefined' && window.localStorage.getItem(keys[setting]) !== null
+    },
     read,
     write(settings): void {
       if (typeof window === 'undefined') return

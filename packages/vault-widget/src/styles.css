@@ -996,6 +996,12 @@
   margin-top: 1rem;
 }
 
+.yv-widget__panel-actions {
+  display: flex;
+  justify-content: flex-end;
+  padding: 0.75rem 1.5rem 0;
+}
+
 .yv-widget__workflow {
   display: grid;
   gap: 1.25rem;
@@ -1453,10 +1459,6 @@
   display: inline-grid;
 }
 
-.yv-widget[data-viewport="mobile"] .yv-widget__tab[data-mode="info"] {
-  display: none;
-}
-
 .yv-widget[data-viewport="mobile"] .yv-widget__settings-button--action {
   display: none;
 }
@@ -1544,10 +1546,6 @@
 
   .yv-widget[data-viewport="auto"] .yv-widget__close-button {
     display: inline-grid;
-  }
-
-  .yv-widget[data-viewport="auto"] .yv-widget__tab[data-mode="info"] {
-    display: none;
   }
 
   .yv-widget[data-viewport="auto"] .yv-widget__settings-button--action {

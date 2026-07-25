@@ -1,3 +1,6 @@
+import type { VaultWidgetSettings, VaultWidgetSettingsStore } from '../services/types'
+import type { VaultWidgetConfig } from '../types'
+
 export const SLIPPAGE_RISK_ACKNOWLEDGEMENT_THRESHOLD = 1
 export const SLIPPAGE_HARD_CAP = 5
 export const SLIPPAGE_RISK_ACKNOWLEDGEMENT_TEXT = 'I accept the risk that I may lose money doing this'
@@ -45,5 +48,23 @@ export function getSlippageSaveState({
     isSlippageDirty,
     needsRiskAcknowledgement,
     hasValidRiskAcknowledgement
+  }
+}
+
+export function resolveVaultWidgetSettings(
+  config: Pick<VaultWidgetConfig, 'defaultMaxLossBps' | 'defaultSlippagePercent'>,
+  store: VaultWidgetSettingsStore
+): VaultWidgetSettings {
+  const settings = store.read()
+  return {
+    ...settings,
+    maxLossBps:
+      config.defaultMaxLossBps !== undefined && store.hasStored?.('maxLossBps') === false
+        ? config.defaultMaxLossBps
+        : settings.maxLossBps,
+    slippagePercent:
+      config.defaultSlippagePercent !== undefined && store.hasStored?.('slippagePercent') === false
+        ? config.defaultSlippagePercent
+        : settings.slippagePercent
   }
 }

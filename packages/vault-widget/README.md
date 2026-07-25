@@ -138,6 +138,7 @@ bun run --cwd packages/vault-widget tslint
 bun run --cwd packages/vault-widget test
 bun run --cwd packages/vault-widget build
 npm pack --dry-run --workspace @yearn/vault-widget
+bun run --cwd packages/vault-widget verify:artifact
 ```
 
 Publishing requires membership in the private `yearn` npm organization.

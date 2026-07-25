@@ -10,10 +10,12 @@ import {
 import type { VaultWidgetSettings } from '../services'
 
 type SettingsPanelProps = {
+  autoStakeLabel?: string
   id?: string
   onChange: (settings: VaultWidgetSettings) => void
   onClose: () => void
   settings: VaultWidgetSettings
+  slippageLabel?: string
   title: string
 }
 
@@ -25,7 +27,15 @@ function CloseIcon(): ReactElement {
   )
 }
 
-export function SettingsPanel({ id, onChange, onClose, settings, title }: SettingsPanelProps): ReactElement {
+export function SettingsPanel({
+  autoStakeLabel = 'Stake Automatically',
+  id,
+  onChange,
+  onClose,
+  settings,
+  slippageLabel = 'Slippage & Price Impact',
+  title
+}: SettingsPanelProps): ReactElement {
   const [localSlippage, setLocalSlippage] = useState(settings.slippagePercent)
   const [riskAcknowledgement, setRiskAcknowledgement] = useState('')
   const slippageId = useId()
@@ -73,7 +83,7 @@ export function SettingsPanel({ id, onChange, onClose, settings, title }: Settin
       <div className="yv-widget__settings-content">
         <section className="yv-widget__slippage-settings">
           <div className="yv-widget__setting-heading">
-            <label htmlFor={slippageId}>Slippage &amp; Price Impact</label>
+            <label htmlFor={slippageId}>{slippageLabel}</label>
             <span>{sanitizedSlippage}%</span>
           </div>
           <div className="yv-widget__slippage-options">
@@ -124,7 +134,7 @@ export function SettingsPanel({ id, onChange, onClose, settings, title }: Settin
 
         <section className="yv-widget__auto-stake-setting">
           <div>
-            <label htmlFor={autoStakeId}>Stake Automatically</label>
+            <label htmlFor={autoStakeId}>{autoStakeLabel}</label>
             <p>Automatically stake to maximize APY.</p>
             <p>No assets will be locked.</p>
           </div>
@@ -132,7 +142,7 @@ export function SettingsPanel({ id, onChange, onClose, settings, title }: Settin
             id={autoStakeId}
             type="button"
             role="switch"
-            aria-label="Stake Automatically"
+            aria-label={autoStakeLabel}
             aria-checked={settings.autoStake}
             onClick={() => onChange({ ...settings, autoStake: !settings.autoStake })}
           >
