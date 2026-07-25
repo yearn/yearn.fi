@@ -22,7 +22,8 @@ import {
   detectMigrationPermitSupport,
   readMigrationPermitTypedData,
   readVaultWidgetCooldownState,
-  splitMigrationPermitSignature
+  splitMigrationPermitSignature,
+  YEARN_4626_ROUTER_ADDRESS
 } from '@yearn/vault-widget/headless'
 import { createEnsoRouteHandler } from '@yearn/vault-widget/server'
 import { createHttpRewardDiscoveryService, createKongVaultConfigResolver } from '@yearn/vault-widget/services'
@@ -610,7 +611,7 @@ async function main(): Promise<void> {
         chainId: await publicClient.getChainId(),
         deadline,
         publicClient,
-        spender: sourceConfig.migration.migratorAddress,
+        spender: YEARN_4626_ROUTER_ADDRESS,
         tokenAddress: sourceConfig.positionToken.address,
         value: shares
       })
@@ -618,9 +619,17 @@ async function main(): Promise<void> {
       const quote = createMigrationQuote({
         account: QA_ACCOUNT,
         chainId: CANONICAL_CHAIN_ID,
+        currentTimestamp: block.timestamp,
         fromToken: sourceConfig.positionToken,
         migratorAddress: sourceConfig.migration.migratorAddress,
-        permit: splitMigrationPermitSignature(signature, deadline),
+        permit: splitMigrationPermitSignature(signature, {
+          chainId: CANONICAL_CHAIN_ID,
+          deadline,
+          owner: QA_ACCOUNT,
+          spender: YEARN_4626_ROUTER_ADDRESS,
+          token: sourceConfig.positionToken.address,
+          value: shares
+        }),
         shares,
         sourceVersion: sourceConfig.migration.sourceVersion,
         toVault: sourceConfig.migration.targetVault

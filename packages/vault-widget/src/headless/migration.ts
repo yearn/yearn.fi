@@ -96,21 +96,36 @@ const VECRV_ZAP_ABI = [
 ] as const
 
 export type VaultWidgetPermitSignature = {
+  chainId: number
   deadline: bigint
+  owner: Address
   r: Hex
   s: Hex
+  spender: Address
+  token: Address
+  value: bigint
   v: number
 }
 
 export type CreateMigrationQuoteParams = {
   account: Address
   chainId: number
+  currentTimestamp?: bigint
   fromToken: VaultWidgetToken
   migratorAddress: Address
   permit?: VaultWidgetPermitSignature
   shares: bigint
   sourceVersion?: string
   toVault: Address
+}
+
+export type SplitMigrationPermitSignatureParams = {
+  chainId: number
+  deadline: bigint
+  owner: Address
+  spender: Address
+  token: Address
+  value: bigint
 }
 
 function isV3(version?: string): boolean {
@@ -237,7 +252,10 @@ export async function readMigrationPermitTypedData(params: {
       functionName: 'apiVersion'
     })
   ])
-  const nonce = nonceResult.status === 'fulfilled' ? nonceResult.value : 0n
+  if (nonceResult.status === 'rejected') {
+    throw new Error('Unable to read the migration permit nonce')
+  }
+  const nonce = nonceResult.value
   const version =
     apiVersionResult.status === 'fulfilled' && apiVersionResult.value
       ? apiVersionResult.value
@@ -272,13 +290,41 @@ export async function readMigrationPermitTypedData(params: {
   }
 }
 
-export function splitMigrationPermitSignature(signature: Hex, deadline: bigint): VaultWidgetPermitSignature {
+export function splitMigrationPermitSignature(
+  signature: Hex,
+  params: SplitMigrationPermitSignatureParams
+): VaultWidgetPermitSignature {
+  if (!/^0x[0-9a-fA-F]{130}$/.test(signature)) {
+    throw new Error('Migration permit signature must be 65 bytes')
+  }
+  const recoveryId = hexToNumber(slice(signature, 64, 65))
+  const v = recoveryId < 27 ? recoveryId + 27 : recoveryId
+  if (v !== 27 && v !== 28) throw new Error('Migration permit signature has an invalid recovery ID')
   return {
-    deadline,
+    ...params,
     r: slice(signature, 0, 32),
     s: slice(signature, 32, 64),
-    v: hexToNumber(slice(signature, 64, 65))
+    v
   }
+}
+
+export function isMigrationPermitValid(params: {
+  account: Address
+  chainId: number
+  currentTimestamp: bigint
+  permit: VaultWidgetPermitSignature
+  spender: Address
+  token: Address
+  value: bigint
+}): boolean {
+  return (
+    params.permit.deadline > params.currentTimestamp &&
+    params.permit.chainId === params.chainId &&
+    isAddressEqual(params.permit.owner, params.account) &&
+    isAddressEqual(params.permit.spender, params.spender) &&
+    isAddressEqual(params.permit.token, params.token) &&
+    params.permit.value === params.value
+  )
 }
 
 export function createMigrationQuote(params: CreateMigrationQuoteParams): VaultWidgetQuote {
@@ -307,6 +353,25 @@ export function createMigrationQuote(params: CreateMigrationQuoteParams): VaultW
           args: [params.fromToken.address, params.toVault, params.shares, 0n]
         })
   const supportsPermit = supportsMigrationPermit(params)
+  if (params.permit) {
+    if (!supportsPermit) throw new Error('Migration permit is not supported for this route')
+    if (params.currentTimestamp === undefined) {
+      throw new Error('Migration permit validation requires the current chain timestamp')
+    }
+    if (
+      !isMigrationPermitValid({
+        account: params.account,
+        chainId: params.chainId,
+        currentTimestamp: params.currentTimestamp,
+        permit: params.permit,
+        spender: router,
+        token: params.fromToken.address,
+        value: params.shares
+      })
+    ) {
+      throw new Error('Migration permit is expired or does not match the migration request')
+    }
+  }
   const usesPermit = supportsPermit && !!params.permit
   const transactionData =
     usesPermit && params.permit

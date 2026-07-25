@@ -5,6 +5,7 @@ import {
   createMigrationQuote,
   detectMigrationPermitSupport,
   getMigrationAuthorizationMode,
+  isMigrationPermitValid,
   MIGRATION_ROUTER_ABI,
   readMigrationPermitTypedData,
   splitMigrationPermitSignature,
@@ -22,6 +23,15 @@ const token: VaultWidgetToken = {
   decimals: 18,
   symbol: 'yvOLD'
 }
+const permitContext = {
+  chainId: 1,
+  deadline: 1_000n,
+  owner: account,
+  spender: YEARN_4626_ROUTER_ADDRESS,
+  token: token.address,
+  value: 12n
+} as const
+const permitSignature = `0x${'11'.repeat(32)}${'22'.repeat(32)}1b` as const
 
 describe('migration plans', () => {
   it('uses permits only for EOA owners and keeps Safe migrations on approvals', () => {
@@ -63,14 +73,10 @@ describe('migration plans', () => {
     const quote = createMigrationQuote({
       account,
       chainId: 1,
+      currentTimestamp: 999n,
       fromToken: token,
       migratorAddress: YEARN_4626_ROUTER_ADDRESS,
-      permit: {
-        deadline: 1_000n,
-        r: `0x${'11'.repeat(32)}`,
-        s: `0x${'22'.repeat(32)}`,
-        v: 27
-      },
+      permit: splitMigrationPermitSignature(permitSignature, permitContext),
       shares: 12n,
       sourceVersion: '3.0.4',
       toVault: target
@@ -143,13 +149,85 @@ describe('migration plans', () => {
   })
 
   it('splits an EIP-2612 signature into router arguments', () => {
-    const signature = `0x${'11'.repeat(32)}${'22'.repeat(32)}1b` as const
-
-    expect(splitMigrationPermitSignature(signature, 1_000n)).toEqual({
-      deadline: 1_000n,
+    expect(splitMigrationPermitSignature(permitSignature, permitContext)).toEqual({
+      ...permitContext,
       r: `0x${'11'.repeat(32)}`,
       s: `0x${'22'.repeat(32)}`,
       v: 27
     })
+  })
+
+  it('normalizes compact recovery IDs and rejects malformed signatures', () => {
+    const compactSignature = `0x${'11'.repeat(32)}${'22'.repeat(32)}00` as const
+
+    expect(splitMigrationPermitSignature(compactSignature, permitContext).v).toBe(27)
+    expect(() => splitMigrationPermitSignature('0x1234', permitContext)).toThrow('65 bytes')
+    expect(() => splitMigrationPermitSignature(`0x${'11'.repeat(32)}${'22'.repeat(32)}02`, permitContext)).toThrow(
+      'invalid recovery ID'
+    )
+  })
+
+  it('binds permits to their owner, chain, token, spender, value, and deadline', () => {
+    const permit = splitMigrationPermitSignature(permitSignature, permitContext)
+    const base = {
+      account,
+      chainId: 1,
+      currentTimestamp: 999n,
+      permit,
+      spender: YEARN_4626_ROUTER_ADDRESS,
+      token: token.address,
+      value: 12n
+    } as const
+
+    expect(isMigrationPermitValid(base)).toBe(true)
+    expect(isMigrationPermitValid({ ...base, account: target })).toBe(false)
+    expect(isMigrationPermitValid({ ...base, chainId: 10 })).toBe(false)
+    expect(isMigrationPermitValid({ ...base, token: target })).toBe(false)
+    expect(isMigrationPermitValid({ ...base, spender: target })).toBe(false)
+    expect(isMigrationPermitValid({ ...base, value: 13n })).toBe(false)
+    expect(isMigrationPermitValid({ ...base, currentTimestamp: 1_000n })).toBe(false)
+  })
+
+  it('rejects stale or context-mismatched permits before creating calldata', () => {
+    const permit = splitMigrationPermitSignature(permitSignature, permitContext)
+    const params = {
+      account,
+      chainId: 1,
+      currentTimestamp: 1_000n,
+      fromToken: token,
+      migratorAddress: YEARN_4626_ROUTER_ADDRESS,
+      permit,
+      shares: 12n,
+      sourceVersion: '3.0.4',
+      toVault: target
+    } as const
+
+    expect(() => createMigrationQuote(params)).toThrow('expired or does not match')
+    expect(() => createMigrationQuote({ ...params, currentTimestamp: undefined })).toThrow('current chain timestamp')
+    expect(() => createMigrationQuote({ ...params, currentTimestamp: 999n, shares: 13n })).toThrow(
+      'expired or does not match'
+    )
+  })
+
+  it('does not sign with an assumed nonce when the nonce read fails', async () => {
+    const publicClient = {
+      readContract: vi
+        .fn()
+        .mockRejectedValueOnce(new Error('RPC unavailable'))
+        .mockResolvedValueOnce('3.0.4')
+        .mockResolvedValueOnce('3.0.4')
+    } as never
+
+    await expect(
+      readMigrationPermitTypedData({
+        account,
+        chainId: 1,
+        deadline: 1_000n,
+        publicClient,
+        spender: YEARN_4626_ROUTER_ADDRESS,
+        tokenAddress: token.address,
+        value: 12n
+      })
+    ).rejects.toThrow('permit nonce')
   })
 })

@@ -28,11 +28,16 @@ export {
   YVUSD_LOCKED_VAULT_ABI,
   YVUSD_LOCKED_ZAP_ABI
 } from './lockedVault'
-export type { CreateMigrationQuoteParams, VaultWidgetPermitSignature } from './migration'
+export type {
+  CreateMigrationQuoteParams,
+  SplitMigrationPermitSignatureParams,
+  VaultWidgetPermitSignature
+} from './migration'
 export {
   createMigrationQuote,
   detectMigrationPermitSupport,
   getMigrationAuthorizationMode,
+  isMigrationPermitValid,
   MIGRATION_ROUTER_ABI,
   readMigrationPermitTypedData,
   splitMigrationPermitSignature,

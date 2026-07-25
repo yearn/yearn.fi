@@ -9,6 +9,7 @@ import {
   createMigrationQuote,
   detectMigrationPermitSupport,
   getMigrationAuthorizationMode,
+  isMigrationPermitValid,
   readMigrationPermitTypedData,
   splitMigrationPermitSignature,
   supportsMigrationPermit,
@@ -50,6 +51,7 @@ export function MigrationPanel({
   const publicClient = usePublicClient({ chainId: config.chainId })
   const { signTypedDataAsync, isPending: isSigning } = useSignTypedData()
   const [permit, setPermit] = useState<VaultWidgetPermitSignature>()
+  const [permitTimestamp, setPermitTimestamp] = useState<bigint>()
   const [permitError, setPermitError] = useState<string>()
   const [submitAfterPermit, setSubmitAfterPermit] = useState(false)
   const permitEligible = migration ? supportsMigrationPermit(migration) : false
@@ -73,21 +75,37 @@ export function MigrationPanel({
   })
   const targetToken = migration?.targetToken ?? targetConfigQuery.data?.positionToken
   const permitSupported = permitEligible && permitSupportQuery.data === true
+  const validPermit =
+    account &&
+    permit &&
+    permitTimestamp !== undefined &&
+    isMigrationPermitValid({
+      account,
+      chainId: config.chainId,
+      currentTimestamp: permitTimestamp,
+      permit,
+      spender: YEARN_4626_ROUTER_ADDRESS,
+      token: config.positionToken.address,
+      value: positionBalance
+    })
+      ? permit
+      : undefined
   const quote = useMemo(
     () =>
       account && migration && positionBalance > 0n
         ? createMigrationQuote({
             account,
             chainId: config.chainId,
+            currentTimestamp: permitTimestamp,
             fromToken: config.positionToken,
             migratorAddress: migration.migratorAddress,
-            permit,
+            permit: validPermit,
             shares: positionBalance,
             sourceVersion: migration.sourceVersion,
             toVault: migration.targetVault
           })
         : undefined,
-    [account, config.chainId, config.positionToken, migration, permit, positionBalance]
+    [account, config.chainId, config.positionToken, migration, permitTimestamp, positionBalance, validPermit]
   )
   const action = useVaultWidgetActionController({
     activity: {
@@ -109,17 +127,37 @@ export function MigrationPanel({
       walletType: action.walletType
     }) === 'permit'
   const hasIncompatiblePermit = action.walletType === 'safe' && !!permit
+  const hasStalePermit = !!permit && !validPermit
   useEffect(() => {
-    if (!hasIncompatiblePermit) return
+    if (!hasIncompatiblePermit && !hasStalePermit) return
     setPermit(undefined)
+    setPermitTimestamp(undefined)
     setSubmitAfterPermit(false)
-  }, [hasIncompatiblePermit])
+  }, [hasIncompatiblePermit, hasStalePermit])
+  useEffect(() => {
+    if (!permit || permitTimestamp === undefined) return
+    const millisecondsUntilExpiry = Number(permit.deadline - permitTimestamp) * 1_000
+    if (millisecondsUntilExpiry <= 0) {
+      setPermit(undefined)
+      setPermitTimestamp(undefined)
+      setSubmitAfterPermit(false)
+      return
+    }
+    // A browser timer is required to invalidate an otherwise unchanged signed permit at its deadline.
+    const timeout = globalThis.setTimeout(() => {
+      setPermit(undefined)
+      setPermitTimestamp(undefined)
+      setSubmitAfterPermit(false)
+    }, millisecondsUntilExpiry)
+    return () => globalThis.clearTimeout(timeout)
+  }, [permit, permitTimestamp])
   const needsApproval = !!quote?.approval && action.allowance < quote.approval.amount
   const signPermit = async (): Promise<void> => {
     if (!account || !publicClient || positionBalance <= 0n) return
     setPermitError(undefined)
     try {
-      const deadline = BigInt(Math.floor(Date.now() / 1000) + 20 * 60)
+      const signingBlock = await publicClient.getBlock()
+      const deadline = signingBlock.timestamp + 20n * 60n
       const typedData = await readMigrationPermitTypedData({
         account,
         chainId: config.chainId,
@@ -133,7 +171,33 @@ export function MigrationPanel({
         account,
         ...typedData
       })
-      setPermit(splitMigrationPermitSignature(signature, deadline))
+      const [validationBlock, validationTypedData] = await Promise.all([
+        publicClient.getBlock(),
+        readMigrationPermitTypedData({
+          account,
+          chainId: config.chainId,
+          deadline,
+          publicClient,
+          spender: YEARN_4626_ROUTER_ADDRESS,
+          tokenAddress: config.positionToken.address,
+          value: positionBalance
+        })
+      ])
+      if (validationBlock.timestamp >= deadline) throw new Error('Migration permit expired before submission')
+      if (validationTypedData.message.nonce !== typedData.message.nonce) {
+        throw new Error('Migration permit nonce changed before submission')
+      }
+      setPermit(
+        splitMigrationPermitSignature(signature, {
+          chainId: config.chainId,
+          deadline,
+          owner: account,
+          spender: YEARN_4626_ROUTER_ADDRESS,
+          token: config.positionToken.address,
+          value: positionBalance
+        })
+      )
+      setPermitTimestamp(validationBlock.timestamp)
       setSubmitAfterPermit(true)
     } catch (value) {
       const error = value instanceof Error ? value : new Error(String(value))
@@ -143,10 +207,10 @@ export function MigrationPanel({
 
   const { canSubmit, submit } = action
   useEffect(() => {
-    if (!submitAfterPermit || !canSubmit || !permit) return
+    if (!submitAfterPermit || !canSubmit || !validPermit) return
     setSubmitAfterPermit(false)
     void submit()
-  }, [canSubmit, permit, submit, submitAfterPermit])
+  }, [canSubmit, submit, submitAfterPermit, validPermit])
 
   if (!migration) {
     return <p className="yv-widget__empty">Migration is not configured for this vault.</p>
@@ -193,15 +257,21 @@ export function MigrationPanel({
       ) : (
         <button
           className="yv-widget__button yv-widget__button--primary"
-          disabled={!action.canSubmit || positionBalance === 0n || hasIncompatiblePermit}
+          disabled={
+            !action.canSubmit ||
+            positionBalance === 0n ||
+            hasIncompatiblePermit ||
+            isSigning ||
+            (permitEligible && permitSupportQuery.isLoading)
+          }
           type="button"
-          onClick={() => (supportsPermit && !permit ? void signPermit() : void action.submit())}
+          onClick={() => (supportsPermit && !validPermit ? void signPermit() : void action.submit())}
         >
           {positionBalance === 0n
             ? 'Nothing to migrate'
             : isSigning || permitSupportQuery.isLoading
               ? 'Preparing permit…'
-              : supportsPermit && !permit
+              : supportsPermit && !validPermit
                 ? 'Sign & Migrate'
                 : needsApproval
                   ? 'Approve & Migrate'
