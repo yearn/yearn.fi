@@ -1,4 +1,4 @@
-import { type Address, formatUnits, type Hex, isAddressEqual, type PublicClient } from 'viem'
+import { type Address, formatUnits, type Hex, isAddress, isAddressEqual, type PublicClient } from 'viem'
 import { createMerkleClaimQuote, createStakingClaimQuote, MERKLE_DISTRIBUTOR_ADDRESS } from '../headless/rewards'
 import type { VaultWidgetConfig, VaultWidgetQuote, VaultWidgetRewardToken } from '../types'
 import type { VaultWidgetRewardDiscoveryService } from './types'
@@ -52,9 +52,9 @@ const JUICED_EARNED_ABI = [
 type MerklReward = {
   amount: string
   claimed: string
-  proofs: string[]
+  proofs: Hex[]
   token: {
-    address: string
+    address: Address
     decimals: number
     price?: number
     symbol: string
@@ -84,6 +84,74 @@ function rewardUsdValue(amount: bigint, token: VaultWidgetRewardToken): number {
   return Number(formatUnits(amount, token.decimals)) * (token.priceUsd ?? 0)
 }
 
+function parseMerklAmount(value: string, field: 'amount' | 'claimed'): bigint {
+  if (!/^\d+$/.test(value)) throw new Error(`Merkl returned an invalid ${field}`)
+  return BigInt(value)
+}
+
+function isRecord(value: unknown): value is Record<string, unknown> {
+  return !!value && typeof value === 'object'
+}
+
+function parseMerklReward(value: unknown): MerklReward {
+  if (!isRecord(value)) throw new Error('Merkl returned an invalid reward')
+  const token = value.token
+  if (!isRecord(token)) throw new Error('Merkl returned an invalid reward token')
+  if (typeof value.amount !== 'string') throw new Error('Merkl returned an invalid amount')
+  if (typeof value.claimed !== 'string') throw new Error('Merkl returned an invalid claimed')
+  parseMerklAmount(value.amount, 'amount')
+  parseMerklAmount(value.claimed, 'claimed')
+  if (
+    typeof token.address !== 'string' ||
+    !isAddress(token.address) ||
+    typeof token.decimals !== 'number' ||
+    !Number.isInteger(token.decimals) ||
+    token.decimals < 0 ||
+    token.decimals > 255 ||
+    typeof token.symbol !== 'string' ||
+    token.symbol.length === 0 ||
+    (token.price !== undefined &&
+      token.price !== null &&
+      (typeof token.price !== 'number' || !Number.isFinite(token.price) || token.price < 0))
+  ) {
+    throw new Error('Merkl returned an invalid reward token')
+  }
+  if (
+    !Array.isArray(value.proofs) ||
+    !value.proofs.every((proof): proof is Hex => typeof proof === 'string' && /^0x[0-9a-fA-F]{64}$/.test(proof))
+  ) {
+    throw new Error('Merkl returned an invalid reward proof')
+  }
+  return {
+    amount: value.amount,
+    claimed: value.claimed,
+    proofs: value.proofs,
+    token: {
+      address: token.address,
+      decimals: token.decimals,
+      price: typeof token.price === 'number' ? token.price : undefined,
+      symbol: token.symbol
+    }
+  }
+}
+
+function parseMerklResponse(value: unknown): MerklResponse {
+  if (!Array.isArray(value)) throw new Error('Merkl returned an invalid rewards response')
+  return value.map((entry) => {
+    if (!isRecord(entry) || !isRecord(entry.chain) || !Array.isArray(entry.rewards)) {
+      throw new Error('Merkl returned an invalid chain reward entry')
+    }
+    const chainId = entry.chain.id
+    if (typeof chainId !== 'number' || !Number.isSafeInteger(chainId) || chainId <= 0) {
+      throw new Error('Merkl returned an invalid reward chain')
+    }
+    return {
+      chain: { id: chainId },
+      rewards: entry.rewards.map(parseMerklReward)
+    }
+  })
+}
+
 function getConfiguredToken(
   config: VaultWidgetConfig,
   address: Address,
@@ -103,11 +171,6 @@ function groupMerklRewards(rewards: readonly MerklReward[]): Record<string, Merk
   return Object.fromEntries(
     keys.map((key) => [key, rewards.filter(({ token }) => token.address.toLowerCase() === key)])
   )
-}
-
-function parseMerklAmount(value: string, field: 'amount' | 'claimed'): bigint {
-  if (!/^\d+$/.test(value)) throw new Error(`Merkl returned an invalid ${field}`)
-  return BigInt(value)
 }
 
 function getApiClaimedAmount(group: readonly MerklReward[]): bigint {
@@ -133,18 +196,17 @@ async function discoverMerkleRewards(params: {
   })
   const response = await params.fetcher(`${params.endpoint}?${query}`, { signal: params.signal })
   if (!response.ok) throw new Error(`Unable to load Merkle rewards (${response.status})`)
-  const payload = (await response.json()) as MerklResponse
+  const payload = parseMerklResponse(await response.json())
   const rewards =
     payload
       .find(({ chain }) => chain.id === params.config.chainId)
-      ?.rewards.filter(({ token }) => allowlist.some((address) => isAddressEqual(address, token.address as Address))) ??
-    []
+      ?.rewards.filter(({ token }) => allowlist.some((address) => isAddressEqual(address, token.address))) ?? []
 
   const groups = await Promise.all(
     Object.values(groupMerklRewards(rewards)).map(async (group) => {
       const first = group[0]
       if (!first) throw new Error('Merkle reward group is empty')
-      const address = first.token.address as Address
+      const address = first.token.address
       const claimed = await params.publicClient
         .readContract({
           address: MERKLE_DISTRIBUTOR_ADDRESS,
@@ -173,7 +235,7 @@ async function discoverMerkleRewards(params: {
           rewards: claimable.map(({ accumulated, reward }) => ({
             accumulated,
             claimable: accumulated - claimed,
-            proof: reward.proofs as Hex[],
+            proof: reward.proofs,
             token
           }))
         }),

@@ -168,6 +168,83 @@ describe('createHttpRewardDiscoveryService', () => {
     ).rejects.toThrow('invalid claimed')
   })
 
+  it.each([
+    {
+      expected: 'invalid rewards response',
+      name: 'top-level response',
+      payload: { rewards: [] }
+    },
+    {
+      expected: 'invalid reward chain',
+      name: 'chain identifier',
+      payload: [{ chain: { id: '1' }, rewards: [] }]
+    },
+    {
+      expected: 'invalid reward token',
+      name: 'token address',
+      payload: [
+        {
+          chain: { id: 1 },
+          rewards: [
+            {
+              amount: '1',
+              claimed: '0',
+              proofs: [],
+              token: { address: 'not-an-address', decimals: 18, symbol: 'RWD' }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      expected: 'invalid reward token',
+      name: 'token decimals',
+      payload: [
+        {
+          chain: { id: 1 },
+          rewards: [
+            {
+              amount: '1',
+              claimed: '0',
+              proofs: [],
+              token: { address: rewardAddress, decimals: -1, symbol: 'RWD' }
+            }
+          ]
+        }
+      ]
+    },
+    {
+      expected: 'invalid reward proof',
+      name: 'Merkle proof',
+      payload: [
+        {
+          chain: { id: 1 },
+          rewards: [
+            {
+              amount: '1',
+              claimed: '0',
+              proofs: ['0x1234'],
+              token: { address: rewardAddress, decimals: 18, symbol: 'RWD' }
+            }
+          ]
+        }
+      ]
+    }
+  ])('rejects a malformed Merkl $name', async ({ expected, payload }) => {
+    await expect(
+      createHttpRewardDiscoveryService({
+        fetcher: vi.fn(async () => Response.json(payload))
+      }).discover({
+        account,
+        config: config({
+          merkleTokenAllowlist: [rewardAddress],
+          tokens: [rewardToken()]
+        }),
+        publicClient: { readContract: vi.fn() } as unknown as PublicClient
+      })
+    ).rejects.toThrow(expected)
+  })
+
   it('discovers V3 multi-token staking rewards and creates one getReward transaction', async () => {
     const first = rewardToken()
     const second = rewardToken(otherRewardAddress, { symbol: 'RWD2' })
