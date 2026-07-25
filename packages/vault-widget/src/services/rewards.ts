@@ -76,12 +76,31 @@ export type VaultWidgetDiscoveredReward = {
 }
 
 export type CreateHttpRewardDiscoveryServiceOptions = {
+  claimedReadTimeoutMs?: number
   endpoint?: string
   fetcher?: typeof fetch
 }
 
+const DEFAULT_CLAIMED_READ_TIMEOUT_MS = 10_000
+
 function rewardUsdValue(amount: bigint, token: VaultWidgetRewardToken): number {
   return Number(formatUnits(amount, token.decimals)) * (token.priceUsd ?? 0)
+}
+
+function withTimeout<T>(promise: Promise<T>, timeoutMs: number): Promise<T> {
+  return new Promise<T>((resolve, reject) => {
+    const timer = setTimeout(() => reject(new Error('Merkle claimed read timed out')), timeoutMs)
+    promise.then(
+      (value) => {
+        clearTimeout(timer)
+        resolve(value)
+      },
+      (error: unknown) => {
+        clearTimeout(timer)
+        reject(error)
+      }
+    )
+  })
 }
 
 function parseMerklAmount(value: string, field: 'amount' | 'claimed'): bigint {
@@ -186,6 +205,7 @@ async function discoverMerkleRewards(params: {
   endpoint: string
   fetcher: typeof fetch
   publicClient: PublicClient
+  claimedReadTimeoutMs: number
   signal?: AbortSignal
 }): Promise<VaultWidgetDiscoveredReward[]> {
   const allowlist = params.config.rewards?.merkleTokenAllowlist ?? []
@@ -194,7 +214,8 @@ async function discoverMerkleRewards(params: {
     chainId: String(params.config.chainId),
     userAddress: params.account
   })
-  const response = await params.fetcher(`${params.endpoint}?${query}`, { signal: params.signal })
+  const fetcher = params.fetcher
+  const response = await fetcher(`${params.endpoint}?${query}`, { signal: params.signal })
   if (!response.ok) throw new Error(`Unable to load Merkle rewards (${response.status})`)
   const payload = parseMerklResponse(await response.json())
   const rewards =
@@ -207,14 +228,15 @@ async function discoverMerkleRewards(params: {
       const first = group[0]
       if (!first) throw new Error('Merkle reward group is empty')
       const address = first.token.address
-      const claimed = await params.publicClient
-        .readContract({
+      const claimed = await withTimeout(
+        params.publicClient.readContract({
           address: MERKLE_DISTRIBUTOR_ADDRESS,
           abi: CLAIMED_ABI,
           functionName: 'claimed',
           args: [params.account, address]
-        })
-        .catch(() => getApiClaimedAmount(group))
+        }),
+        params.claimedReadTimeoutMs
+      ).catch(() => getApiClaimedAmount(group))
       const claimable = group
         .map((reward) => ({ accumulated: parseMerklAmount(reward.amount, 'amount'), reward }))
         .filter(({ accumulated }) => accumulated > claimed)
@@ -293,7 +315,7 @@ async function discoverStakingRewards(params: {
   const amounts = await readStakingAmounts(params)
   const claimable = rewards.tokens
     .map((token, index) => ({ amount: amounts[index] ?? 0n, token }))
-    .filter(({ amount, token }) => amount > 0n && !token.isFinished)
+    .filter(({ amount }) => amount > 0n)
   if (claimable.length === 0) return []
   return claimable.map(({ amount, token }) => ({
     amount,
@@ -312,12 +334,16 @@ async function discoverStakingRewards(params: {
 export function createHttpRewardDiscoveryService(
   options: CreateHttpRewardDiscoveryServiceOptions = {}
 ): VaultWidgetRewardDiscoveryService {
+  const claimedReadTimeoutMs = options.claimedReadTimeoutMs ?? DEFAULT_CLAIMED_READ_TIMEOUT_MS
+  if (!Number.isFinite(claimedReadTimeoutMs) || claimedReadTimeoutMs <= 0) {
+    throw new Error('Merkle claimed read timeout must be positive')
+  }
   const endpoint = options.endpoint ?? '/api/merkl/rewards'
   const fetcher = options.fetcher ?? fetch
   return {
     async discover({ account, config, publicClient, signal }) {
       const [merkle, staking] = await Promise.all([
-        discoverMerkleRewards({ account, config, endpoint, fetcher, publicClient, signal }),
+        discoverMerkleRewards({ account, claimedReadTimeoutMs, config, endpoint, fetcher, publicClient, signal }),
         discoverStakingRewards({ account, config, publicClient })
       ])
       return [...staking, ...merkle]

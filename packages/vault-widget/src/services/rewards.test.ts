@@ -84,6 +84,26 @@ function merklResponse(): unknown {
 }
 
 describe('createHttpRewardDiscoveryService', () => {
+  it('invokes the browser fetch implementation without an object receiver', async () => {
+    const fetcher = function (this: unknown): Promise<Response> {
+      expect(this).toBeUndefined()
+      return Promise.resolve(Response.json(merklResponse()))
+    } as typeof fetch
+
+    const rewards = await createHttpRewardDiscoveryService({ fetcher }).discover({
+      account,
+      config: config({
+        merkleTokenAllowlist: [rewardAddress],
+        tokens: [rewardToken()]
+      }),
+      publicClient: {
+        readContract: vi.fn().mockResolvedValue(25_000_000n)
+      } as unknown as PublicClient
+    })
+
+    expect(rewards).toHaveLength(1)
+  })
+
   it('filters Merkl rewards, subtracts claimed amounts, and preserves accumulated claim calldata', async () => {
     const fetcher = vi.fn(async () => Response.json(merklResponse()))
     const readContract = vi.fn(async () => 25_000_000n)
@@ -139,6 +159,27 @@ describe('createHttpRewardDiscoveryService', () => {
       }),
       publicClient: {
         readContract: vi.fn().mockRejectedValue(new Error('RPC unavailable'))
+      } as unknown as PublicClient
+    })
+
+    expect(rewards[0]).toMatchObject({
+      amount: 75_000_000n,
+      quote: { activityAmount: '75', expectedOut: 75_000_000n }
+    })
+  })
+
+  it('uses the validated Merkl claimed total when the onchain read does not settle', async () => {
+    const rewards = await createHttpRewardDiscoveryService({
+      claimedReadTimeoutMs: 1,
+      fetcher: vi.fn(async () => Response.json(merklResponse()))
+    }).discover({
+      account,
+      config: config({
+        merkleTokenAllowlist: [rewardAddress],
+        tokens: [rewardToken()]
+      }),
+      publicClient: {
+        readContract: vi.fn(() => new Promise<bigint>(() => undefined))
       } as unknown as PublicClient
     })
 
@@ -275,6 +316,28 @@ describe('createHttpRewardDiscoveryService', () => {
     expect(rewards[0]!.quote).toMatchObject({
       adapterId: 'staking-rewards',
       transaction: { chainId: 1, to: stakingAddress }
+    })
+  })
+
+  it('keeps earned rewards claimable after a staking program finishes', async () => {
+    const finishedReward = rewardToken(rewardAddress, { isFinished: true })
+    const rewards = await createHttpRewardDiscoveryService({ fetcher: vi.fn() }).discover({
+      account,
+      config: config({
+        stakingAddress,
+        stakingSource: 'VeYFI',
+        tokens: [finishedReward]
+      }),
+      publicClient: {
+        readContract: vi.fn().mockResolvedValue(12_887_761_703_751_036n)
+      } as unknown as PublicClient
+    })
+
+    expect(rewards).toHaveLength(1)
+    expect(rewards[0]).toMatchObject({
+      amount: 12_887_761_703_751_036n,
+      kind: 'staking',
+      token: finishedReward
     })
   })
 

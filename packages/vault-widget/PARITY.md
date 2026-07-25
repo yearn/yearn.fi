@@ -1,7 +1,7 @@
 # Vault widget parity gate
 
-The package must not replace the complete yearn.fi widget surface or be
-published as the production dependency until every row below is complete.
+The package must not replace the complete yearn.fi widget surface until every
+row below is complete.
 
 | Area | Status | Evidence |
 | --- | --- | --- |
@@ -18,8 +18,8 @@ published as the production dependency until every row below is complete.
 | yvUSD locked/unlocked and cooldown | In progress | Live family presets, nested share valuation, protocol-executable two-vault Max redemption, zap deposit, cooldown reads, styled start/cancel plans, stateful unlocked/locked cooldown QA, and connected desktop/mobile family-state parity complete; wallet-confirmation QA pending |
 | yvBTC locked/unlocked | Complete for current production behavior | Unlocked cbBTC ERC-4626 preset, family selector, and connected desktop/mobile state parity complete; plan validation confirms the live vault asset while stateful deposits remain unavailable because `maxDeposit=0`; locked remains explicitly unavailable while its address is the legacy zero-address placeholder |
 | Permit and approval migration | In progress | Kong target discovery, destination metadata, full-balance panel, registry-compatible migrator/router/zap selectors, EOA permit detection/signing with nonce-read failure handling, normalized recovery IDs, account/chain/token/value binding, and deadline invalidation, multi-approval and chain-aware allowance planning, Safe approval batching, V2/V3 calls, shared execution, activity persistence, tests, stateful approval migration QA, a stateful signed V3 EIP-2612 migration, and connected legacy/package mode parity against a live V2 holder complete; wallet-confirmation prompt QA pending |
-| Merkle and staking rewards | In progress | Allowlisted Merkl and source-compatible VeYFI/Juiced/OP Boost staking discovery, fully validated Merkl response boundaries, cumulative-proof calldata with claimable outcome accounting, validated API fallback when the claimed-total RPC is unavailable, per-token formatted activity persistence, styled claim rows, shared execution, chain-switch/Safe plans, tests, a stateful Juiced reward discovery/claim, and connected legacy/package parity for a live claimable Juiced AJNA position complete; Merkl, VeYFI, and OP Boost connected-wallet visual QA pending |
-| Full styled My Info/settings/activity parity | In progress | Combined family positions, vault-filtered recent activity, reload reconciliation for EOA/Safe/cross-chain execution, preset defaults that preserve stored host preferences, controlled settings and copy, mobile settings popover, fully reachable My Info, roving keyboard tabs with tabpanel relationships, widget-constrained token dialog with focus containment/restoration, component/service tests, and an automated 16-case connected legacy/package desktop/mobile matrix complete; connected-wallet visual QA for the remaining live reward sources remains |
+| Merkle and staking rewards | In progress | Allowlisted Merkl and source-compatible VeYFI/Juiced/OP Boost staking discovery, browser-safe fetch behavior, bounded claimed-total RPC reads with a validated API fallback, cumulative-proof calldata with claimable outcome accounting, claims preserved after a staking program finishes, per-token formatted activity persistence, styled claim rows, shared execution, chain-switch/Safe plans, tests, a stateful Juiced reward discovery/claim, and connected legacy/package parity for live claimable Juiced AJNA, VeYFI dYFI, and Katana Merkl KAT positions complete. A current Kong inventory of all 35 staking-enabled vaults contains 12 Juiced, 7 V3 Staking, and 16 VeYFI sources, with no live OP Boost source; stateful Merkl and VeYFI wallet-confirmation/execution QA remains |
+| Full styled My Info/settings/activity parity | In progress | Combined family positions, vault-filtered recent activity, reload reconciliation for EOA/Safe/cross-chain execution, preset defaults that preserve stored host preferences, controlled settings and copy, mobile settings popover, fully reachable My Info, roving keyboard tabs with tabpanel relationships, widget-constrained token dialog with focus containment/restoration, component/service tests, and an automated 18-case connected legacy/package desktop/mobile matrix including every currently live reward source complete; wallet-confirmation overlays remain tracked in their workflow rows |
 | Tenderly transaction-family QA | In progress | Reproducible snapshot/revert harness executes 27 transactions across ERC-4626 yvUSD, locked yvUSD cooldown/nested redemption, yBOLD zap, V3 deposit, V2 approval migration, signed V3 EIP-2612 migration, Juiced rewards, same-chain Enso, and an Optimism-to-mainnet Enso source route. yvBTC is plan-only while the live vault reports `maxDeposit=0`; staking is partial-stateful because the stale VNet gauge reward callback reverts; isolated cross-chain QA cannot deliver the destination leg without a bridge relayer. Live Safe iframe and destination-delivery QA remain |
 
 Current rollout state:
@@ -48,21 +48,14 @@ Current rollout state:
 - yearn-bold keeps its legacy card by default. Setting
   `NEXT_PUBLIC_VAULT_WIDGET_ENABLED=true` switches its entire card to the
   package for parity testing.
-- The `yearn` npm organization exists, but this development machine is not
-  authenticated and `@yearn/vault-widget` is not published yet. The publish
-  workflow requires the protected `npm` environment and an authorized
-  `NPM_TOKEN`. It verifies yearn.fi and a selectable yearn-bold ref against the
-  exact package tarball in an unprivileged job, then uses a fresh protected
-  runner to revalidate the trusted package source, npm organization membership,
-  release tag, and artifact before publishing.
 - `bun run qa:vault-widget:tenderly` snapshots configured mainnet and Optimism
   VNets, funds isolated QA accounts, exercises package-generated plans, reports
   stateful versus environment-limited coverage, and always reverts both
   snapshots.
 - `bun run qa:vault-widget:parity` drives the production-build harness
-  sequentially across 16 connected desktop/mobile cases. It rejects package
+  sequentially across 18 connected desktop/mobile cases. It rejects package
   markup in the legacy frame and requires equivalent selected states for
   yBOLD, yvBTC, locked/unlocked yvUSD, V2 withdrawal/migration, V3 staking,
-  settings, and My Info. The rewards case uses a live claimable Juiced AJNA
-  position and requires both implementations to expose an enabled claim action
-  with the same formatted reward amount.
+  settings, and My Info. Reward cases use live claimable Juiced AJNA, VeYFI
+  dYFI, and Katana Merkl KAT positions and require both implementations to
+  expose an enabled claim action with the same formatted reward amount.

@@ -66,6 +66,12 @@ const VAULT_FIXTURES = [
     label: 'Juiced · claimable rewards',
     chainId: 1,
     vaultAddress: '0xe24BA27551aBE96Ca401D39761cA2319Ea14e3CB' as Address
+  },
+  {
+    id: 'merkl-rewards',
+    label: 'Katana · claimable Merkl rewards',
+    chainId: 747474,
+    vaultAddress: '0x80c34BD3A3569E126e7055831036aa7b212cB159' as Address
   }
 ] as const
 const DESKTOP_VIEWPORT = { width: 1440, height: 900 }
@@ -342,7 +348,7 @@ export function VaultWidgetParityPage(): ReactElement {
           { label: 'My Info', value: 'info' },
           { label: 'Settings', value: 'settings' }
         ]
-      : vaultId === 'v3-staking' || vaultId === 'juiced-rewards'
+      : vaultId === 'v3-staking' || vaultId === 'juiced-rewards' || vaultId === 'merkl-rewards'
         ? [
             { label: 'Deposit', value: 'deposit' },
             { label: 'Withdraw', value: 'withdraw' },

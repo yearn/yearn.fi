@@ -56,11 +56,11 @@ function RewardRow({
   return (
     <li className="yv-widget__reward-row">
       <TokenIcon token={reward.token} size={32} />
-      <span>
+      <span className="yv-widget__reward-token">
         <strong>{reward.token.symbol}</strong>
         <small>{reward.kind === 'merkle' ? 'Merkle reward' : 'Staking reward'}</small>
       </span>
-      <span>
+      <span className="yv-widget__reward-amount">
         <strong>{formatRewardAmount(reward.amount, reward.token.decimals)}</strong>
         <small>
           {reward.usdValue.toLocaleString('en-US', {

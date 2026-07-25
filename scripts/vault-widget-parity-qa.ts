@@ -6,7 +6,7 @@ type ParityCase = {
   id: string
   state: 'deposit' | 'info' | 'migrate' | 'rewards' | 'settings' | 'withdraw'
   variant?: 'locked' | 'unlocked'
-  vault: 'juiced-rewards' | 'v2-migration' | 'v2-ycrv' | 'v3-staking' | 'ybold' | 'yvbtc' | 'yvusd'
+  vault: 'juiced-rewards' | 'merkl-rewards' | 'v2-migration' | 'v2-ycrv' | 'v3-staking' | 'ybold' | 'yvbtc' | 'yvusd'
   viewport: 'desktop' | 'mobile'
 }
 
@@ -21,6 +21,8 @@ const BASE_URL = process.env.VAULT_WIDGET_QA_URL ?? 'http://127.0.0.1:4246/dev/v
 const CASE_FILTER = process.env.VAULT_WIDGET_QA_CASE?.trim()
 const CONCURRENCY = 1
 const JUICED_REWARD_ACCOUNT = '0x719b3d3bbb9207e301ee9abf7574a4a756e0c2e3'
+const MERKL_REWARD_ACCOUNT = '0xf46e183e8b010cfdebe57a50064149e65504c2bf'
+const VEYFI_REWARD_ACCOUNT = '0x8ee796309494a10b4170f8912613ee78c75a3430'
 const V2_USDC_HOLDER = '0xC4080c19DE69c2362d01B20F071D4046364A0226'
 const STATE_LABELS: Record<ParityCase['state'], string> = {
   deposit: 'Deposit',
@@ -71,6 +73,22 @@ const CASES: readonly ParityCase[] = [
     id: 'juiced-rewards-desktop',
     state: 'rewards',
     vault: 'juiced-rewards',
+    viewport: 'desktop'
+  },
+  {
+    account: VEYFI_REWARD_ACCOUNT,
+    expectedRewardSymbol: 'dYFI',
+    id: 'veyfi-rewards-desktop',
+    state: 'rewards',
+    vault: 'v3-staking',
+    viewport: 'desktop'
+  },
+  {
+    account: MERKL_REWARD_ACCOUNT,
+    expectedRewardSymbol: 'KAT',
+    id: 'merkl-rewards-desktop',
+    state: 'rewards',
+    vault: 'merkl-rewards',
     viewport: 'desktop'
   }
 ]
@@ -191,7 +209,29 @@ async function verifyLegacyState(frame: Frame, qaCase: ParityCase): Promise<bool
     await frame.getByText('Claimable Rewards', { exact: true }).waitFor({ state: 'visible' })
     const rewardRow = frame.locator('div.flex.flex-col.gap-3.py-3').filter({ hasText: qaCase.expectedRewardSymbol })
     await rewardRow.waitFor({ state: 'visible' })
-    await rewardRow.getByRole('button', { exact: true, name: 'Claim' }).click({ trial: true })
+    const claimButton = rewardRow.getByRole('button', { exact: true, name: 'Claim' })
+    const readiness = await frame.waitForFunction((symbol) => {
+      const rewardRow = Array.from(document.querySelectorAll<HTMLElement>('div.flex.flex-col.gap-3.py-3')).find(
+        (element) => element.textContent?.includes(symbol)
+      )
+      const claimButton = Array.from(rewardRow?.querySelectorAll<HTMLButtonElement>('button') ?? []).find(
+        (button) => button.textContent?.trim() === 'Claim'
+      )
+      if (!claimButton) return false
+      if (!claimButton.disabled) return 'ready'
+
+      const switchChainButton = Array.from(document.querySelectorAll<HTMLButtonElement>('button')).find(
+        (button) => button.textContent?.trim() === 'Switch Chain'
+      )
+      if (!switchChainButton) return false
+      const rect = switchChainButton.getBoundingClientRect()
+      return rect.width > 0 && rect.height > 0 ? 'switch' : false
+    }, qaCase.expectedRewardSymbol)
+    if ((await readiness.jsonValue()) === 'switch') {
+      const switchChainButton = frame.getByRole('button', { exact: true, name: 'Switch Chain' })
+      await switchChainButton.click()
+    }
+    await claimButton.click({ trial: true })
     return true
   }
 
@@ -244,7 +284,7 @@ async function runCase(page: Page, qaCase: ParityCase): Promise<ParityResult> {
     invariant(qaCase.expectedRewardSymbol, `${qaCase.id}: expected reward symbol is not configured`)
     const packageRow = page.locator('.yv-widget__reward-row').filter({ hasText: qaCase.expectedRewardSymbol })
     const legacyRow = frame.locator('div.flex.flex-col.gap-3.py-3').filter({ hasText: qaCase.expectedRewardSymbol })
-    const packageAmount = (await packageRow.locator(':scope > span').nth(1).locator('strong').innerText()).trim()
+    const packageAmount = (await packageRow.locator('.yv-widget__reward-amount > strong').innerText()).trim()
     const legacyAmount = (await legacyRow.locator('span.text-base.font-bold').first().innerText()).trim()
     invariant(
       packageAmount === legacyAmount,
