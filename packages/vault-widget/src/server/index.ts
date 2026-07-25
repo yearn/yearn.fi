@@ -1,4 +1,4 @@
-import { isAddress } from 'viem'
+import { isAddress, zeroAddress } from 'viem'
 import { ENSO_ROUTER_BY_CHAIN } from '../presets/enso'
 
 const DEFAULT_ENSO_API_BASE = 'https://api.enso.build'
@@ -17,6 +17,7 @@ type EnsoServerOptions = {
 }
 
 type EnsoBalancesHandlerOptions = EnsoServerOptions & {
+  allowedChainIds?: readonly number[]
   cacheControl?: string
   defaultChainId?: number | 'all'
   useEoa?: boolean
@@ -26,7 +27,12 @@ type EnsoStatusHandlerOptions = EnsoServerOptions & {
   mode?: 'configuration' | 'proxy'
 }
 
+type EnsoBridgeStatusHandlerOptions = EnsoServerOptions & {
+  allowedChainIds?: readonly number[]
+}
+
 const ENSO_BRIDGE_PROTOCOLS = ['stargate', 'ccip', 'relay'] as const
+const MAX_UINT256 = 2n ** 256n - 1n
 export const ENSO_SUPPORTED_CHAIN_IDS = Object.keys(ENSO_ROUTER_BY_CHAIN).map(Number)
 
 export type EnsoRoutePolicy = {
@@ -50,12 +56,20 @@ function jsonError(message: string, status: number): Response {
 
 function getRequiredAddress(parameters: URLSearchParams, key: string): `0x${string}` | undefined {
   const value = parameters.get(key)
-  return value && isAddress(value) ? value : undefined
+  return value && isAddress(value) && value.toLowerCase() !== zeroAddress ? value : undefined
 }
 
 function getPositiveInteger(parameters: URLSearchParams, key: string): string | undefined {
   const value = parameters.get(key)
-  return value && /^\d+$/.test(value) && BigInt(value) > 0n ? value : undefined
+  if (!value || !/^\d+$/.test(value) || value.length > 78) return undefined
+  const parsed = BigInt(value)
+  return parsed > 0n && parsed <= MAX_UINT256 ? parsed.toString() : undefined
+}
+
+function getSafeInteger(value: string | null, minimum: number): number | undefined {
+  if (!value || !/^\d+$/.test(value)) return undefined
+  const parsed = Number(value)
+  return Number.isSafeInteger(parsed) && parsed >= minimum ? parsed : undefined
 }
 
 async function proxyEnso(
@@ -98,29 +112,28 @@ export function createEnsoRouteHandler(options: EnsoRouteHandlerOptions) {
   return async function GET(request: Request): Promise<Response> {
     const parameters = new URL(request.url).searchParams
     const account = getRequiredAddress(parameters, 'fromAddress')
-    const receiver = getRequiredAddress(parameters, 'receiver') ?? account
+    const receiver = parameters.has('receiver') ? getRequiredAddress(parameters, 'receiver') : account
     const tokenIn = getRequiredAddress(parameters, 'tokenIn')
     const tokenOut = getRequiredAddress(parameters, 'tokenOut')
     const amountIn = getPositiveInteger(parameters, 'amountIn')
-    const chainId = Number(parameters.get('chainId') ?? '1')
-    const destinationChainId = Number(parameters.get('destinationChainId') ?? chainId)
-    const slippage = Number(parameters.get('slippage') ?? '0')
+    const chainId = getSafeInteger(parameters.get('chainId'), 1)
+    const destinationChainId = getSafeInteger(parameters.get('destinationChainId') ?? String(chainId ?? ''), 1)
+    const slippage = getSafeInteger(parameters.get('slippage') ?? '0', 0)
+    const routingStrategy = parameters.get('routingStrategy') ?? 'router'
     const maxSlippage = options.policy?.maxSlippageBps ?? 500
+    const allowedChainIds = options.policy?.allowedChainIds ?? ENSO_SUPPORTED_CHAIN_IDS
 
     if (!account || !receiver) return jsonError('Missing or invalid fromAddress or receiver', 400)
     if (!tokenIn || !tokenOut) return jsonError('Missing or invalid token pair', 400)
     if (!amountIn) return jsonError('Missing or invalid amountIn', 400)
-    if (!Number.isInteger(chainId) || !Number.isInteger(destinationChainId)) {
+    if (chainId === undefined || destinationChainId === undefined) {
       return jsonError('Missing or invalid chain id', 400)
     }
-    if (!Number.isInteger(slippage) || slippage < 0 || slippage > maxSlippage) {
+    if (slippage === undefined || slippage > maxSlippage) {
       return jsonError(`Slippage must be between 0 and ${maxSlippage} basis points`, 400)
     }
-    if (
-      options.policy?.allowedChainIds &&
-      (!options.policy.allowedChainIds.includes(chainId) ||
-        !options.policy.allowedChainIds.includes(destinationChainId))
-    ) {
+    if (routingStrategy !== 'router') return jsonError('Unsupported routing strategy', 400)
+    if (!allowedChainIds.includes(chainId) || !allowedChainIds.includes(destinationChainId)) {
       return jsonError('Unsupported source or destination chain', 400)
     }
     if (
@@ -137,7 +150,7 @@ export function createEnsoRouteHandler(options: EnsoRouteHandlerOptions) {
       ['destinationChainId', destinationChainId.toString()],
       ['fromAddress', account],
       ['receiver', receiver],
-      ['routingStrategy', parameters.get('routingStrategy') ?? 'router'],
+      ['routingStrategy', routingStrategy],
       ['slippage', slippage.toString()],
       ['tokenIn', tokenIn],
       ['tokenOut', tokenOut]
@@ -153,15 +166,17 @@ export function createEnsoBalancesHandler(options: EnsoBalancesHandlerOptions) {
   return async function GET(request: Request): Promise<Response> {
     const parameters = new URL(request.url).searchParams
     const account = getRequiredAddress(parameters, 'eoaAddress')
-    const chainId = parameters.get('chainId') ?? String(options.defaultChainId ?? 1)
+    const requestedChainId = parameters.get('chainId') ?? String(options.defaultChainId ?? 1)
     if (!account) return jsonError('Missing or invalid eoaAddress', 400)
-    if (chainId !== 'all' && (!/^\d+$/.test(chainId) || Number(chainId) <= 0)) {
-      return jsonError('Missing or invalid chainId', 400)
+    const chainId = requestedChainId === 'all' ? 'all' : getSafeInteger(requestedChainId, 1)
+    if (chainId === undefined) return jsonError('Missing or invalid chainId', 400)
+    if (chainId !== 'all' && !(options.allowedChainIds ?? ENSO_SUPPORTED_CHAIN_IDS).includes(chainId)) {
+      return jsonError('Unsupported chainId', 400)
     }
 
     const upstream = new URL('/api/v1/wallet/balances', options.apiBaseUrl ?? DEFAULT_ENSO_API_BASE)
     upstream.searchParams.set('eoaAddress', account)
-    upstream.searchParams.set('chainId', chainId)
+    upstream.searchParams.set('chainId', String(chainId))
     if (options.useEoa !== undefined) upstream.searchParams.set('useEoa', String(options.useEoa))
     return proxyEnso(
       upstream,
@@ -187,18 +202,21 @@ export function createEnsoStatusHandler(options: EnsoStatusHandlerOptions) {
   }
 }
 
-export function createEnsoBridgeStatusHandler(options: EnsoServerOptions) {
+export function createEnsoBridgeStatusHandler(options: EnsoBridgeStatusHandlerOptions) {
   return async function GET(request: Request): Promise<Response> {
     const parameters = new URL(request.url).searchParams
     const protocol = parameters.get('protocol')
-    const chainId = Number(parameters.get('chainId'))
+    const chainId = getSafeInteger(parameters.get('chainId'), 1)
     const txHash = parameters.get('txHash')
 
     if (!ENSO_BRIDGE_PROTOCOLS.some((candidate) => candidate === protocol)) {
       return jsonError('Missing or unsupported bridge protocol', 400)
     }
-    if (!Number.isInteger(chainId) || chainId <= 0) {
+    if (chainId === undefined) {
       return jsonError('Missing or invalid chainId', 400)
+    }
+    if (!(options.allowedChainIds ?? ENSO_SUPPORTED_CHAIN_IDS).includes(chainId)) {
+      return jsonError('Unsupported chainId', 400)
     }
     if (!txHash || !/^0x[0-9a-fA-F]{64}$/.test(txHash)) {
       return jsonError('Missing or invalid txHash', 400)

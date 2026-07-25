@@ -47,6 +47,24 @@ describe('createEnsoBridgeStatusHandler', () => {
     expect(response.status).toBe(400)
     expect(fetcher).not.toHaveBeenCalled()
   })
+
+  it('rejects unsupported chains by default and permits an explicit host override', async () => {
+    const fetcher = vi.fn<typeof fetch>(async () => Response.json({ status: 'pending' }))
+    vi.stubGlobal('fetch', fetcher)
+    const request = new Request(`https://yearn.test/api/enso/bridge-status?protocol=relay&chainId=56&txHash=${txHash}`)
+
+    expect((await createEnsoBridgeStatusHandler({ apiKey: 'secret' })(request.clone())).status).toBe(400)
+    expect(fetcher).not.toHaveBeenCalled()
+    expect(
+      (
+        await createEnsoBridgeStatusHandler({
+          allowedChainIds: [56],
+          apiKey: 'secret'
+        })(request)
+      ).status
+    ).toBe(200)
+    expect(fetcher).toHaveBeenCalledOnce()
+  })
 })
 
 describe('createEnsoRouteHandler', () => {
@@ -88,6 +106,52 @@ describe('createEnsoRouteHandler', () => {
     expect(input.toString()).toContain(`receiver=${account}`)
     expect(input.toString()).toContain('slippage=100')
   })
+
+  it.each([
+    { key: 'chainId', name: 'zero chain', value: '0' },
+    { key: 'chainId', name: 'unsafe chain', value: '9007199254740992' },
+    { key: 'slippage', name: 'non-decimal slippage', value: '1e2' },
+    { key: 'routingStrategy', name: 'delegate routing', value: 'delegate' },
+    { key: 'fromAddress', name: 'zero sender', value: '0x0000000000000000000000000000000000000000' },
+    { key: 'receiver', name: 'zero receiver', value: '0x0000000000000000000000000000000000000000' },
+    {
+      key: 'amountIn',
+      name: 'amount above uint256',
+      value: (2n ** 256n).toString()
+    }
+  ])('rejects a $name before proxying', async ({ key, value }) => {
+    const fetcher = vi.fn<typeof fetch>()
+    vi.stubGlobal('fetch', fetcher)
+    const url = new URL('https://yearn.test/api/enso/route')
+    url.search = new URLSearchParams({
+      amountIn: '1',
+      chainId: '1',
+      fromAddress: account,
+      routingStrategy: 'router',
+      slippage: '100',
+      tokenIn,
+      tokenOut
+    }).toString()
+    url.searchParams.set(key, value)
+
+    expect((await createEnsoRouteHandler({ apiKey: 'secret' })(new Request(url))).status).toBe(400)
+    expect(fetcher).not.toHaveBeenCalled()
+  })
+
+  it('requires an explicit source chain and applies the packaged supported-chain policy by default', async () => {
+    const fetcher = vi.fn<typeof fetch>()
+    vi.stubGlobal('fetch', fetcher)
+    const base = new URL(
+      `https://yearn.test/api/enso/route?fromAddress=${account}&tokenIn=${tokenIn}&tokenOut=${tokenOut}&amountIn=1&slippage=100`
+    )
+
+    expect((await createEnsoRouteHandler({ apiKey: 'secret' })(new Request(base))).status).toBe(400)
+    base.searchParams.set('chainId', '56')
+    await expect(
+      createEnsoRouteHandler({ apiKey: 'secret' })(new Request(base)).then((response) => response.json())
+    ).resolves.toEqual({ error: 'Unsupported source or destination chain' })
+    expect(fetcher).not.toHaveBeenCalled()
+  })
 })
 
 describe('createEnsoBalancesHandler', () => {
@@ -108,6 +172,36 @@ describe('createEnsoBalancesHandler', () => {
     expect(input.toString()).toContain(`eoaAddress=${account}`)
     expect(input.toString()).toContain('chainId=all')
     expect(input.toString()).toContain('useEoa=true')
+  })
+
+  it('rejects unsafe and unsupported balance chains before proxying', async () => {
+    const fetcher = vi.fn<typeof fetch>()
+    vi.stubGlobal('fetch', fetcher)
+    const handler = createEnsoBalancesHandler({ apiKey: 'secret' })
+
+    expect(
+      (
+        await handler(
+          new Request(`https://yearn.test/api/enso/balances?eoaAddress=${account}&chainId=9007199254740992`)
+        )
+      ).status
+    ).toBe(400)
+    expect(
+      (await handler(new Request(`https://yearn.test/api/enso/balances?eoaAddress=${account}&chainId=56`))).status
+    ).toBe(400)
+    expect(fetcher).not.toHaveBeenCalled()
+  })
+
+  it('allows hosts to extend the balance-chain policy explicitly', async () => {
+    const fetcher = vi.fn<typeof fetch>(async () => Response.json({ balances: [] }))
+    vi.stubGlobal('fetch', fetcher)
+    const response = await createEnsoBalancesHandler({
+      allowedChainIds: [56],
+      apiKey: 'secret'
+    })(new Request(`https://yearn.test/api/enso/balances?eoaAddress=${account}&chainId=56`))
+
+    expect(response.status).toBe(200)
+    expect(fetcher).toHaveBeenCalledOnce()
   })
 })
 
