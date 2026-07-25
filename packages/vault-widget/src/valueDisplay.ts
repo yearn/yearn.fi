@@ -64,6 +64,14 @@ export function formatWidgetAllowance(value: bigint, decimals: number): string {
   return formatWidgetValue(value, decimals)
 }
 
+export function formatRewardAmount(value: bigint, decimals: number): string {
+  const amount = Number(formatUnits(value, decimals))
+  return new Intl.NumberFormat('en-US', {
+    minimumFractionDigits: 2,
+    maximumFractionDigits: 6
+  }).format(Number.isFinite(amount) ? amount : 0)
+}
+
 export function formatWalletBalance(value: bigint, decimals: number): string {
   const amount = Number(formatUnits(value, decimals))
   if (!Number.isFinite(amount)) return '∞'

@@ -14,9 +14,11 @@ type ParityResult = {
   id: string
   legacyStateVerified: boolean
   packageStateVerified: boolean
+  rewardAmount?: string
 }
 
 const BASE_URL = process.env.VAULT_WIDGET_QA_URL ?? 'http://127.0.0.1:4246/dev/vault-widget'
+const CASE_FILTER = process.env.VAULT_WIDGET_QA_CASE?.trim()
 const CONCURRENCY = 1
 const JUICED_REWARD_ACCOUNT = '0x719b3d3bbb9207e301ee9abf7574a4a756e0c2e3'
 const V2_USDC_HOLDER = '0xC4080c19DE69c2362d01B20F071D4046364A0226'
@@ -72,6 +74,7 @@ const CASES: readonly ParityCase[] = [
     viewport: 'desktop'
   }
 ]
+const ACTIVE_CASES = CASE_FILTER ? CASES.filter(({ id }) => id === CASE_FILTER) : CASES
 
 function invariant(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message)
@@ -136,10 +139,7 @@ async function waitForPackage(page: Page, qaCase: ParityCase): Promise<boolean> 
     })
     const rewardRow = widget.locator('.yv-widget__reward-row').filter({ hasText: qaCase.expectedRewardSymbol })
     await rewardRow.waitFor({ state: 'visible' })
-    invariant(
-      await rewardRow.getByRole('button', { exact: true, name: 'Claim' }).isEnabled(),
-      `${qaCase.id}: package reward is not claimable`
-    )
+    await rewardRow.getByRole('button', { exact: true, name: 'Claim' }).click({ trial: true })
   }
   return true
 }
@@ -191,10 +191,7 @@ async function verifyLegacyState(frame: Frame, qaCase: ParityCase): Promise<bool
     await frame.getByText('Claimable Rewards', { exact: true }).waitFor({ state: 'visible' })
     const rewardRow = frame.locator('div.flex.flex-col.gap-3.py-3').filter({ hasText: qaCase.expectedRewardSymbol })
     await rewardRow.waitFor({ state: 'visible' })
-    invariant(
-      await rewardRow.getByRole('button', { exact: true, name: 'Claim' }).isEnabled(),
-      `${qaCase.id}: legacy reward is not claimable`
-    )
+    await rewardRow.getByRole('button', { exact: true, name: 'Claim' }).click({ trial: true })
     return true
   }
 
@@ -242,15 +239,30 @@ async function runCase(page: Page, qaCase: ParityCase): Promise<ParityResult> {
   const legacyStateVerified = await verifyLegacyState(frame, qaCase)
   invariant(packageStateVerified, `${qaCase.id}: package did not select ${qaCase.state}`)
   invariant(legacyStateVerified, `${qaCase.id}: legacy frame did not select ${qaCase.state}`)
+  let rewardAmount: string | undefined
+  if (qaCase.state === 'rewards') {
+    invariant(qaCase.expectedRewardSymbol, `${qaCase.id}: expected reward symbol is not configured`)
+    const packageRow = page.locator('.yv-widget__reward-row').filter({ hasText: qaCase.expectedRewardSymbol })
+    const legacyRow = frame.locator('div.flex.flex-col.gap-3.py-3').filter({ hasText: qaCase.expectedRewardSymbol })
+    const packageAmount = (await packageRow.locator(':scope > span').nth(1).locator('strong').innerText()).trim()
+    const legacyAmount = (await legacyRow.locator('span.text-base.font-bold').first().innerText()).trim()
+    invariant(
+      packageAmount === legacyAmount,
+      `${qaCase.id}: reward amount differs (package ${packageAmount}, legacy ${legacyAmount})`
+    )
+    rewardAmount = packageAmount
+  }
 
   return {
     id: qaCase.id,
     legacyStateVerified,
-    packageStateVerified
+    packageStateVerified,
+    rewardAmount
   }
 }
 
 async function main(): Promise<void> {
+  invariant(ACTIVE_CASES.length > 0, `Unknown vault widget parity case: ${CASE_FILTER}`)
   const browser = await chromium.launch({ headless: true })
   const results: ParityResult[] = []
   const failures: { error: string; id: string }[] = []
@@ -259,8 +271,8 @@ async function main(): Promise<void> {
   try {
     await Promise.all(
       Array.from({ length: CONCURRENCY }, async () => {
-        while (caseIndex < CASES.length) {
-          const qaCase = CASES[caseIndex++]
+        while (caseIndex < ACTIVE_CASES.length) {
+          const qaCase = ACTIVE_CASES[caseIndex++]
           if (!qaCase) return
           const page = await browser.newPage({ viewport: { height: 1_000, width: 1_440 } })
           try {
@@ -284,7 +296,7 @@ async function main(): Promise<void> {
     JSON.stringify(
       {
         baseUrl: BASE_URL,
-        cases: CASES.length,
+        cases: ACTIVE_CASES.length,
         failures,
         passed: results.length,
         results

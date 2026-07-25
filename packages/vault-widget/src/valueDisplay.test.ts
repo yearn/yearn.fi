@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { formatWalletBalance, formatWidgetAllowance, formatWidgetValue } from './valueDisplay'
+import { formatRewardAmount, formatWalletBalance, formatWidgetAllowance, formatWidgetValue } from './valueDisplay'
 
 describe('widget value display', () => {
   it.each([
@@ -19,6 +19,14 @@ describe('widget value display', () => {
 
   it('recognizes unlimited allowances', () => {
     expect(formatWidgetAllowance(2n ** 256n - 1n, 18)).toBe('Unlimited')
+  })
+
+  it.each([
+    [0n, 18, '0.00'],
+    [43_928028468892007041855n, 18, '43,928.028469'],
+    [1234567n, 6, '1.234567']
+  ])('formats reward amounts with the legacy two-to-six decimal scheme', (value, decimals, expected) => {
+    expect(formatRewardAmount(value, decimals)).toBe(expected)
   })
 
   it.each([

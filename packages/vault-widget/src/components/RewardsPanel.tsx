@@ -7,7 +7,7 @@ import { useVaultWidgetServices } from '../context'
 import { useVaultWidgetActionController } from '../headless/useVaultWidgetActionController'
 import type { VaultWidgetDiscoveredReward } from '../services/rewards'
 import type { VaultWidgetConfig, VaultWidgetEvent, VaultWidgetToken } from '../types'
-import { formatWidgetValue } from '../valueDisplay'
+import { formatRewardAmount } from '../valueDisplay'
 import { TransactionStatus } from './TransactionStatus'
 
 type RewardRowProps = {
@@ -61,7 +61,7 @@ function RewardRow({
         <small>{reward.kind === 'merkle' ? 'Merkle reward' : 'Staking reward'}</small>
       </span>
       <span>
-        <strong>{formatWidgetValue(reward.amount, reward.token.decimals)}</strong>
+        <strong>{formatRewardAmount(reward.amount, reward.token.decimals)}</strong>
         <small>
           {reward.usdValue.toLocaleString('en-US', {
             style: 'currency',
