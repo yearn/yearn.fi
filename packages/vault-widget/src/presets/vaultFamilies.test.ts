@@ -12,7 +12,12 @@ const btcAsset: VaultWidgetToken = {
 
 describe('product family presets', () => {
   it('provides live locked and unlocked yvUSD configurations', () => {
-    const family = createYvUsdFamilyPreset()
+    const family = createYvUsdFamilyPreset({
+      estimatedAprByVariant: {
+        locked: 0.12,
+        unlocked: 0.05
+      }
+    })
     const locked = family.variants.find(({ id }) => id === 'locked')
     const unlocked = family.variants.find(({ id }) => id === 'unlocked')
 
@@ -25,9 +30,11 @@ describe('product family presets', () => {
       showAllPositionSources: true,
       showTotalShares: false
     })
+    expect(locked?.config?.display?.estimatedApr).toBe(0.12)
     expect(unlocked).toMatchObject({ available: true, config: { vaultAddress: YVUSD_UNLOCKED_ADDRESS } })
     expect(unlocked?.config?.adapters[0]?.id).toBe('erc4626')
     expect(unlocked?.config?.infoPositionSources?.map(({ id }) => id)).toEqual(['yvUSD-unlocked', 'yvUSD-locked'])
+    expect(unlocked?.config?.display?.estimatedApr).toBe(0.05)
   })
 
   it('keeps locked yvBTC explicitly unavailable until its contract launches', () => {

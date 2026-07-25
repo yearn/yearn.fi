@@ -27,7 +27,8 @@ Current rollout state:
 - `NEXT_PUBLIC_VAULT_WIDGET_ENABLED=true` switches the complete yearn.fi vault
   widget surface to the package for generic V2/ERC-4626 vaults, staking vaults,
   yBOLD, yvUSD, and yvBTC. The host retains only wallet-provider setup,
-  page-level navigation, refresh callbacks, and design-token mapping.
+  page-level navigation, family-aware refresh callbacks, analytics event
+  bridging, live per-variant display metrics, and design-token mapping.
 - `/dev/vault-widget` remains the development-only side-by-side harness, with
   package fixtures for yBOLD and direct Yearn V2 vaults, a real retired V2
   migration, a V3 vault with staking and rewards, and locked/unlocked yvUSD.

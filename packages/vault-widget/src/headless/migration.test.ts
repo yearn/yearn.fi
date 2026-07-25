@@ -43,6 +43,10 @@ describe('migration plans', () => {
     const plan = buildTransactionPlan({ allowance: 0n, mode: 'migrate', quote })
 
     expect(quote.approval).toMatchObject({ amount: 12n, spender: YEARN_4626_ROUTER_ADDRESS })
+    expect(quote).toMatchObject({
+      activityTokenIn: token.address,
+      activityTokenOut: target
+    })
     expect(quote.transaction.data.slice(0, 10)).toBe(
       toFunctionSelector('migrateFromV2(address,address,uint256,uint256)')
     )

@@ -1,6 +1,8 @@
 'use client'
 
+import { usePlausible } from '@hooks/usePlausible'
 import { WidgetActionType } from '@pages/vaults/types'
+import { PLAUSIBLE_EVENTS, type TPlausibleEventName } from '@shared/utils/plausible'
 import { getNetwork } from '@shared/utils/wagmi/utils'
 import {
   createYBoldPreset,
@@ -23,6 +25,64 @@ const yearnFiServices = {
 }
 
 export type PackagedVaultKind = 'generic' | 'ybold' | 'yvbtc' | 'yvusd'
+
+type PackagedVaultAnalyticsEvent = {
+  name: TPlausibleEventName
+  props: Record<string, string>
+}
+
+export function resolvePackagedVaultAnalyticsEvent(
+  event: VaultWidgetEvent,
+  chainId: number,
+  vaultAddress: Address
+): PackagedVaultAnalyticsEvent | undefined {
+  if (event.type !== 'transaction_succeeded') return undefined
+
+  const { plan } = event
+  const commonProps = {
+    chainID: String(chainId),
+    vaultAddress,
+    adapterId: plan.quote.adapterId,
+    amountInRaw: plan.quote.amountIn.toString(),
+    expectedOutRaw: plan.quote.expectedOut.toString(),
+    action: plan.mode
+  }
+
+  if (plan.mode === 'deposit') {
+    return {
+      name: PLAUSIBLE_EVENTS.DEPOSIT,
+      props: {
+        ...commonProps,
+        isZap: String(plan.quote.adapterId === 'enso')
+      }
+    }
+  }
+  if (plan.mode === 'withdraw') {
+    return {
+      name: PLAUSIBLE_EVENTS.WITHDRAW,
+      props: {
+        ...commonProps,
+        isZap: String(plan.quote.adapterId === 'enso')
+      }
+    }
+  }
+  if (plan.mode === 'migrate') {
+    return {
+      name: PLAUSIBLE_EVENTS.MIGRATE,
+      props: {
+        ...commonProps,
+        fromVault: vaultAddress
+      }
+    }
+  }
+  return {
+    name: PLAUSIBLE_EVENTS.CLAIM,
+    props: {
+      ...commonProps,
+      source: 'vault'
+    }
+  }
+}
 
 function TransactionLink({
   chainId,
@@ -58,6 +118,7 @@ type PackagedVaultWidgetProps = {
   assetPriceUsd?: number
   chainId: number
   estimatedApr?: number
+  estimatedAprByVariant?: Partial<Record<'locked' | 'unlocked', number>>
   kind?: PackagedVaultKind
   mode: WidgetActionType
   onConnectWallet: () => void
@@ -77,6 +138,7 @@ export function PackagedVaultWidget({
   assetPriceUsd,
   chainId,
   estimatedApr,
+  estimatedAprByVariant,
   kind = 'generic',
   mode,
   onConnectWallet,
@@ -92,6 +154,7 @@ export function PackagedVaultWidget({
   viewport
 }: PackagedVaultWidgetProps): ReactElement {
   const router = useRouter()
+  const trackEvent = usePlausible()
   const packageMode = resolvePackagedVaultMode(mode, showInfo, showRewards)
   const yBoldConfig = useMemo(() => {
     if (kind !== 'ybold') return undefined
@@ -106,10 +169,28 @@ export function PackagedVaultWidget({
     }
   }, [assetPriceUsd, estimatedApr, kind])
   const family = useMemo(() => {
-    if (kind === 'yvusd') return createYvUsdFamilyPreset({ assetPriceUsd, estimatedApr })
-    if (kind === 'yvbtc') return createYvBtcFamilyPreset({ assetPriceUsd, estimatedApr })
+    if (kind === 'yvusd') {
+      return createYvUsdFamilyPreset({ assetPriceUsd, estimatedApr, estimatedAprByVariant })
+    }
+    if (kind === 'yvbtc') {
+      return createYvBtcFamilyPreset({
+        assetPriceUsd,
+        estimatedApr: estimatedAprByVariant?.unlocked ?? estimatedApr
+      })
+    }
     return undefined
-  }, [assetPriceUsd, estimatedApr, kind])
+  }, [assetPriceUsd, estimatedApr, estimatedAprByVariant, kind])
+  const selectedFamilyConfig =
+    family?.variants.find(({ id }) => id === (variant ?? family.defaultVariant))?.config ??
+    family?.variants.find(({ id }) => id === family.defaultVariant)?.config
+  const handleEvent = (event: VaultWidgetEvent): void => {
+    const analyticsEvent = resolvePackagedVaultAnalyticsEvent(
+      event,
+      selectedFamilyConfig?.chainId ?? chainId,
+      selectedFamilyConfig?.vaultAddress ?? vaultAddress
+    )
+    if (analyticsEvent) trackEvent(analyticsEvent.name, { props: analyticsEvent.props })
+  }
   const sharedProps = {
     mode: packageMode,
     onConnectWallet,
@@ -119,6 +200,7 @@ export function PackagedVaultWidget({
       if (nextMode === 'migrate') onModeChange(WidgetActionType.Migrate)
     },
     onSettingsOpenChange,
+    onEvent: handleEvent,
     onSuccess,
     onViewAllActivity: (): void => router.push('/portfolio?tab=activity'),
     settingsOpen,

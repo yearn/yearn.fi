@@ -336,6 +336,8 @@ export function createMigrationQuote(params: CreateMigrationQuoteParams): VaultW
   return {
     actionLabel: usesPermit ? 'Permit & Migrate' : 'Migrate',
     activityAmount: formatUnits(params.shares, params.fromToken.decimals),
+    activityTokenIn: params.fromToken.address,
+    activityTokenOut: params.toVault,
     activityType: 'migrate',
     adapterId: usesPermit ? 'migration-permit' : 'migration-approval',
     amountIn: params.shares,

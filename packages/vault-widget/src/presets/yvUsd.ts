@@ -45,6 +45,10 @@ export type CreateYvUsdPresetOptions = {
   variant?: 'locked' | 'unlocked'
 }
 
+export type CreateYvUsdFamilyPresetOptions = Omit<CreateYvUsdPresetOptions, 'variant'> & {
+  estimatedAprByVariant?: Partial<Record<'locked' | 'unlocked', number>>
+}
+
 export function createYvUsdPreset(options: CreateYvUsdPresetOptions = {}): VaultWidgetConfig {
   const variant = options.variant ?? 'unlocked'
   const isLocked = variant === 'locked'
@@ -110,9 +114,8 @@ export function createYvUsdPreset(options: CreateYvUsdPresetOptions = {}): Vault
   }
 }
 
-export function createYvUsdFamilyPreset(
-  options: Omit<CreateYvUsdPresetOptions, 'variant'> = {}
-): VaultWidgetFamilyPreset {
+export function createYvUsdFamilyPreset(options: CreateYvUsdFamilyPresetOptions = {}): VaultWidgetFamilyPreset {
+  const { estimatedAprByVariant, ...sharedOptions } = options
   return {
     id: 'yvUSD',
     name: 'yvUSD',
@@ -123,14 +126,22 @@ export function createYvUsdFamilyPreset(
         label: 'Locked',
         description: 'Higher yield with a cooldown and withdrawal window.',
         available: true,
-        config: createYvUsdPreset({ ...options, variant: 'locked' })
+        config: createYvUsdPreset({
+          ...sharedOptions,
+          estimatedApr: estimatedAprByVariant?.locked ?? sharedOptions.estimatedApr,
+          variant: 'locked'
+        })
       },
       {
         id: 'unlocked',
         label: 'Unlocked',
         description: 'Liquid deposits without a cooldown.',
         available: true,
-        config: createYvUsdPreset({ ...options, variant: 'unlocked' })
+        config: createYvUsdPreset({
+          ...sharedOptions,
+          estimatedApr: estimatedAprByVariant?.unlocked ?? sharedOptions.estimatedApr,
+          variant: 'unlocked'
+        })
       }
     ]
   }

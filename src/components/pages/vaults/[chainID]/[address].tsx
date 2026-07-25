@@ -72,6 +72,7 @@ import { IconSettings } from '@shared/icons/IconSettings'
 import { cl, isZeroAddress, toAddress, toNormalizedBN } from '@shared/utils'
 import { getVaultName } from '@shared/utils/helpers'
 import type { TKongVaultSnapshot } from '@shared/utils/schemas/kongVaultSnapshotSchema'
+import type { VaultWidgetEvent } from '@yearn/vault-widget'
 import Link from 'next/link'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import type { ReactElement, ReactNode } from 'react'
@@ -1616,18 +1617,47 @@ function Index(): ReactElement | null {
       { address: YBOLD_STAKING_ADDRESS, chainID: resolvedCurrentVault.chainID }
     ])
   }
-  const handlePackagedVaultSuccess = (): void => {
+  const handlePackagedVaultSuccess = (event: Extract<VaultWidgetEvent, { type: 'transaction_succeeded' }>): void => {
     setIsYBoldStakePrefillActive(false)
     setYBoldStakePrefillAmountSnapshot(null)
     refetchSnapshot()
     if (isYBold) refetchYBoldSnapshot()
-    onRefresh([
+    const sourceChainId = event.plan.quote.transaction.chainId
+    const destinationChainId = event.plan.quote.bridge?.destinationChainId ?? sourceChainId
+    const refreshTargets = [
       { address: resolvedCurrentVault.address, chainID: resolvedCurrentVault.chainID },
       { address: resolvedCurrentVault.token.address, chainID: resolvedCurrentVault.chainID },
-      ...(isYBold ? [{ address: YBOLD_STAKING_ADDRESS, chainID: resolvedCurrentVault.chainID }] : [])
-    ])
+      ...(isYBold ? [{ address: YBOLD_STAKING_ADDRESS, chainID: resolvedCurrentVault.chainID }] : []),
+      ...(isYvUsd
+        ? [
+            { address: YVUSD_UNLOCKED_ADDRESS, chainID: YVUSD_CHAIN_ID },
+            { address: YVUSD_LOCKED_ADDRESS, chainID: YVUSD_CHAIN_ID }
+          ]
+        : []),
+      ...(isYvBtc ? [{ address: YVBTC_UNLOCKED_ADDRESS, chainID: YVBTC_CHAIN_ID }] : []),
+      ...(event.plan.quote.activityTokenIn
+        ? [{ address: event.plan.quote.activityTokenIn, chainID: sourceChainId }]
+        : []),
+      ...(event.plan.quote.activityTokenOut
+        ? [{ address: event.plan.quote.activityTokenOut, chainID: destinationChainId }]
+        : [])
+    ]
+    onRefresh(
+      refreshTargets.filter(
+        (target, index) =>
+          refreshTargets.findIndex(
+            (candidate) =>
+              candidate.chainID === target.chainID && candidate.address.toLowerCase() === target.address.toLowerCase()
+          ) === index
+      )
+    )
   }
   const packagedVaultKind: PackagedVaultKind = isYBold ? 'ybold' : isYvUsd ? 'yvusd' : isYvBtc ? 'yvbtc' : 'generic'
+  const packagedEstimatedAprByVariant = isYvUsd
+    ? { locked: yvUsdMetrics.locked.apy, unlocked: yvUsdMetrics.unlocked.apy }
+    : isYvBtc
+      ? { locked: yvBtcMetrics.locked.apy, unlocked: yvBtcMetrics.unlocked.apy }
+      : undefined
   const canShowPackagedRewards =
     shouldUsePackagedVaultWidget && (chainId === 747474 || (resolvedCurrentVault.staking.rewards?.length ?? 0) > 0)
   const handlePackagedVariantChange = (nextVariant: string): void => {
@@ -1690,6 +1720,7 @@ function Index(): ReactElement | null {
           assetPriceUsd={resolvedCurrentVault.tvl.price || 1}
           chainId={chainId}
           estimatedApr={resolvedCurrentVault.apr.forwardAPR.netAPR || resolvedCurrentVault.apr.netAPR || 0}
+          estimatedAprByVariant={packagedEstimatedAprByVariant}
           kind={packagedVaultKind}
           mode={resolvedWidgetMode}
           onConnectWallet={openLoginModal}
@@ -1787,6 +1818,7 @@ function Index(): ReactElement | null {
             assetPriceUsd={resolvedCurrentVault.tvl.price || 1}
             chainId={chainId}
             estimatedApr={resolvedCurrentVault.apr.forwardAPR.netAPR || resolvedCurrentVault.apr.netAPR || 0}
+            estimatedAprByVariant={packagedEstimatedAprByVariant}
             kind={packagedVaultKind}
             mode={mobileDrawerAction}
             onConnectWallet={openLoginModal}
