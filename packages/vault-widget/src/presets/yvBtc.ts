@@ -7,12 +7,12 @@ export const YVBTC_UNLOCKED_ADDRESS = '0xb8787E236e699654F910CAD14F338d0DdB529Fd
 export const YVBTC_LOCKED_ADDRESS = '0x0000000000000000000000000000000000000000' as Address
 
 export const yvBtcAssetToken: VaultWidgetToken = {
-  address: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599',
+  address: '0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf',
   chainId: YVBTC_CHAIN_ID,
   decimals: 8,
-  logoURI: 'https://assets.yearn.fi/tokens/1/0x2260fac5e5542a773aa44fbcfedf7c193bc2c599/logo-128.png',
-  name: 'Wrapped BTC',
-  symbol: 'WBTC'
+  logoURI: 'https://assets.yearn.fi/tokens/1/0xcbb7c0000ab88b473b1f5afd9ef808440eed33bf/logo-128.png',
+  name: 'Coinbase Wrapped BTC',
+  symbol: 'cbBTC'
 }
 
 export type CreateYvBtcPresetOptions = {

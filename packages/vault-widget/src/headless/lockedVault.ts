@@ -259,7 +259,9 @@ async function quoteLockedWithdrawal(
         args: [request.amount]
       })
   const lockedShares = redeemAll
-    ? request.positionBalance
+    ? cooldown.state === 'ready' && cooldown.maxRedeem > 0n && cooldown.maxRedeem < request.positionBalance
+      ? cooldown.maxRedeem
+      : request.positionBalance
     : await publicClient.readContract({
         address: options.lockedVaultAddress,
         abi: erc4626Abi,

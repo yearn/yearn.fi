@@ -160,6 +160,43 @@ describe('locked vault adapter', () => {
     })
   })
 
+  it('clamps a ready max withdrawal to the protocol-executable locked shares', async () => {
+    const readContract = vi
+      .fn()
+      .mockResolvedValueOnce(1_000n)
+      .mockResolvedValueOnce(500n)
+      .mockResolvedValueOnce([100n, 200n, 100n])
+      .mockResolvedValueOnce(80n)
+      .mockResolvedValueOnce(99n)
+      .mockResolvedValueOnce(80n)
+      .mockResolvedValueOnce(75n)
+    const client = {
+      readContract,
+      getBlock: vi.fn().mockResolvedValue({ timestamp: 150n })
+    } as unknown as PublicClient
+    const request = {
+      ...createRequest('withdraw', 74n),
+      positionBalance: 100n,
+      redeemAll: true
+    }
+
+    const quote = await adapter.quote(request, client)
+
+    expect(quote).toMatchObject({
+      adapterId: 'yvUSD-locked',
+      expectedOut: 75n,
+      positionAmount: 99n
+    })
+    expect(decodeFunctionData({ abi: erc4626Abi, data: quote.transactions?.[0]?.transaction.data ?? '0x' })).toEqual({
+      functionName: 'redeem',
+      args: [99n, account, account]
+    })
+    expect(decodeFunctionData({ abi: erc4626Abi, data: quote.transactions?.[1]?.transaction.data ?? '0x' })).toEqual({
+      functionName: 'redeem',
+      args: [80n, account, account]
+    })
+  })
+
   it('offers cooldown cancellation while shares are already cooling', async () => {
     const readContract = vi
       .fn()

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import type { VaultWidgetToken } from '../types'
-import { createYvBtcFamilyPreset, YVBTC_LOCKED_ADDRESS } from './yvBtc'
+import { createYvBtcFamilyPreset, createYvBtcPreset, YVBTC_LOCKED_ADDRESS } from './yvBtc'
 import { createYvUsdFamilyPreset, YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from './yvUsd'
 
 const btcAsset: VaultWidgetToken = {
@@ -50,5 +50,16 @@ describe('product family presets', () => {
       available: false,
       unavailableMessage: 'Locked yvBTC is not live yet.'
     })
+  })
+
+  it('configures the live yvBTC vault with its canonical cbBTC asset', () => {
+    expect(createYvBtcPreset().depositTokens).toEqual([
+      expect.objectContaining({
+        address: '0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf',
+        decimals: 8,
+        name: 'Coinbase Wrapped BTC',
+        symbol: 'cbBTC'
+      })
+    ])
   })
 })

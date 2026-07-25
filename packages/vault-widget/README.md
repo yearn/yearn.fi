@@ -89,10 +89,11 @@ import {
 ```
 
 The locked yvUSD preset owns nested share valuation, USDC zap deposits, the
-ordered locked-yvUSD-to-USDC withdrawal calls, and contextual start/cancel
-cooldown plans. Headless consumers can use `readVaultWidgetCooldownState`,
-`createStartCooldownTransaction`, and `createCancelCooldownTransaction`
-directly.
+ordered locked-yvUSD-to-USDC withdrawal calls (including protocol-executable
+Max redemption when vault rounding leaves unavoidable share dust), and
+contextual start/cancel cooldown plans. Headless consumers can use
+`readVaultWidgetCooldownState`, `createStartCooldownTransaction`, and
+`createCancelCooldownTransaction` directly.
 
 Vaults whose Kong metadata exposes a migration target or reward sources gain
 styled migration and rewards workflows automatically. Migration resolves the
@@ -146,6 +147,7 @@ the handler policy.
 bun run --cwd packages/vault-widget tslint
 bun run --cwd packages/vault-widget test
 bun run --cwd packages/vault-widget build
+bun run qa:vault-widget:tenderly
 npm pack --dry-run --workspace @yearn/vault-widget
 bun run --cwd packages/vault-widget verify:artifact
 ```
