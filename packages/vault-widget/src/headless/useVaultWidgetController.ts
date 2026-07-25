@@ -118,6 +118,30 @@ function getError(value: unknown): Error {
   return value instanceof Error ? value : new Error(String(value))
 }
 
+function getQuoteApprovalTargets(quote?: VaultWidgetQuote): readonly VaultWidgetApprovalTarget[] {
+  if (quote?.approvals?.length) return quote.approvals
+  return quote?.approval ? [quote.approval] : []
+}
+
+function isSameApprovalTarget(left: VaultWidgetApprovalTarget, right: VaultWidgetApprovalTarget): boolean {
+  return (
+    left.token.chainId === right.token.chainId &&
+    isAddressEqual(left.token.address, right.token.address) &&
+    isAddressEqual(left.spender, right.spender)
+  )
+}
+
+function matchApprovalAllowances(
+  quote: VaultWidgetQuote,
+  currentTargets: readonly VaultWidgetApprovalTarget[],
+  currentAllowances: readonly bigint[]
+): readonly bigint[] {
+  return getQuoteApprovalTargets(quote).map((target) => {
+    const index = currentTargets.findIndex((candidate) => isSameApprovalTarget(candidate, target))
+    return index === -1 ? 0n : (currentAllowances[index] ?? 0n)
+  })
+}
+
 export function useVaultWidgetController({
   config,
   mode: controlledMode,
@@ -336,15 +360,20 @@ export function useVaultWidgetController({
   const legacyApprovalTarget = adapter?.getApprovalTarget?.(approvalRequest)
   const adapterApprovalTargets =
     adapter?.getApprovalTargets?.(approvalRequest) ?? (legacyApprovalTarget ? [legacyApprovalTarget] : [])
-  const approvalTargets = quoteQuery.data?.approvals?.length
-    ? quoteQuery.data.approvals
-    : quoteQuery.data?.approval
-      ? [quoteQuery.data.approval]
-      : adapterApprovalTargets
+  const quoteApprovalTargets = getQuoteApprovalTargets(quoteQuery.data)
+  const approvalTargets = quoteApprovalTargets.length ? quoteApprovalTargets : adapterApprovalTargets
   const approvalTarget = approvalTargets[0]
   const allowanceQueries = useQueries({
     queries: approvalTargets.map((target) => ({
-      queryKey: ['vault-widget', config.id, 'allowance', account, target.token.address, target.spender],
+      queryKey: [
+        'vault-widget',
+        config.id,
+        'allowance',
+        account,
+        target.token.chainId,
+        target.token.address,
+        target.spender
+      ],
       queryFn: async (): Promise<bigint> => {
         if (!account) return 0n
         const allowanceClient = getPublicClient(wagmiConfig, { chainId: target.token.chainId })
@@ -427,15 +456,16 @@ export function useVaultWidgetController({
     if (!refreshedQuote || (refreshedQuote.expiresAt !== undefined && refreshedQuote.expiresAt <= Date.now())) {
       throw new Error('The route quote expired and could not be refreshed')
     }
+    const refreshedAllowances = matchApprovalAllowances(refreshedQuote, approvalTargets, allowances)
     return buildTransactionPlan({
-      allowance,
-      allowances,
+      allowance: refreshedAllowances[0] ?? 0n,
+      allowances: refreshedAllowances,
       connectedChainId,
       mode: transactionMode,
       quote: refreshedQuote,
       walletType
     })
-  }, [allowance, allowances, connectedChainId, plan, refetchQuote, transactionMode, walletType])
+  }, [allowances, approvalTargets, connectedChainId, plan, refetchQuote, transactionMode, walletType])
 
   const submit = useCallback(async (): Promise<void> => {
     if (!account || !plan || !canSubmit) return

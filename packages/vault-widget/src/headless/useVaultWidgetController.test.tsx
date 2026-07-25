@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
+import { decodeFunctionData, erc20Abi } from 'viem'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Config } from 'wagmi'
 import { VaultWidgetProvider } from '../context'
@@ -46,6 +47,8 @@ const positionToken: VaultWidgetToken = {
   symbol: 'yvASSET'
 }
 const transactionTarget = '0x4444444444444444444444444444444444444444' as const
+const firstSpender = '0x6666666666666666666666666666666666666666' as const
+const secondSpender = '0x7777777777777777777777777777777777777777' as const
 const transactionHash = `0x${'55'.repeat(32)}` as const
 const wagmiConfig = {} as Config
 
@@ -70,8 +73,11 @@ function createHarness(quote: (request: unknown, publicClient: unknown) => Promi
   services: Partial<VaultWidgetServices>
 } {
   const publicClient = {
-    readContract: vi.fn(async ({ address }: { address: `0x${string}` }) =>
-      address === asset.address ? 10n * 10n ** 18n : 0n
+    readContract: vi.fn(
+      async ({ address, functionName }: { address: `0x${string}`; functionName: 'allowance' | 'balanceOf' }) => {
+        if (functionName === 'allowance') return 10n * 10n ** 18n
+        return address === asset.address ? 10n * 10n ** 18n : 0n
+      }
     )
   }
   mocks.usePublicClient.mockReturnValue(publicClient)
@@ -211,5 +217,35 @@ describe('useVaultWidgetController stale quote handling', () => {
       status: 'error',
       error: expect.objectContaining({ message: 'The route quote expired and could not be refreshed' })
     })
+  })
+
+  it('does not reuse an allowance when the refreshed quote changes its approval target', async () => {
+    const expiredQuote = {
+      ...createQuote('0xaaaa', Date.now() - 1),
+      approval: { amount: 10n ** 18n, spender: firstSpender, token: asset }
+    }
+    const freshQuote = {
+      ...createQuote('0xbbbb', Date.now() + 60_000),
+      approval: { amount: 10n ** 18n, spender: secondSpender, token: asset }
+    }
+    const quote = vi.fn().mockResolvedValueOnce(expiredQuote).mockResolvedValueOnce(freshQuote)
+    const { config, services } = createHarness(quote)
+    const { result } = renderHook(() => useVaultWidgetController({ config }), {
+      wrapper: createWrapper(services)
+    })
+
+    act(() => result.current.setAmount('1'))
+    await waitFor(() => expect(result.current.canSubmit).toBe(true))
+
+    await act(async () => result.current.submit())
+
+    const executedPlan = mocks.executePlan.mock.calls[0]?.[0].plan
+    expect(executedPlan.steps.map(({ kind }: { kind: string }) => kind)).toEqual(['approve', 'execute', 'refresh'])
+    expect(
+      decodeFunctionData({
+        abi: erc20Abi,
+        data: executedPlan.steps[0].request.data
+      }).args
+    ).toEqual([secondSpender, 10n ** 18n])
   })
 })
