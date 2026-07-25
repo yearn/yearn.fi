@@ -45,6 +45,7 @@ export {
   getAvailableVaultWidgetModes,
   getDefaultPositionSource,
   getPositionSources,
+  isModeAvailabilityPending,
   readPositionSourceState,
   sumPositionValues
 } from './positionSources'

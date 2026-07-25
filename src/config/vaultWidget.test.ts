@@ -19,4 +19,28 @@ describe('vault widget cutover', () => {
 
     expect(isVaultWidgetCutoverEnabled()).toBe(true)
   })
+
+  it('allows the legacy comparison override during development', async () => {
+    vi.stubEnv('NODE_ENV', 'development')
+    const { isLegacyVaultWidgetPreview } = await import('@/config/vaultWidget')
+
+    expect(isLegacyVaultWidgetPreview(new URLSearchParams('vaultWidget=legacy'))).toBe(true)
+  })
+
+  it('keeps the legacy override disabled in an ordinary production build', async () => {
+    vi.stubEnv('NODE_ENV', 'production')
+    vi.stubEnv('NEXT_PUBLIC_VAULT_WIDGET_PARITY_ENABLED', '')
+    const { isLegacyVaultWidgetPreview } = await import('@/config/vaultWidget')
+
+    expect(isLegacyVaultWidgetPreview(new URLSearchParams('vaultWidget=legacy'))).toBe(false)
+  })
+
+  it('allows the legacy override in an explicitly flagged production parity build', async () => {
+    vi.stubEnv('NODE_ENV', 'production')
+    vi.stubEnv('NEXT_PUBLIC_VAULT_WIDGET_PARITY_ENABLED', 'true')
+    const { isLegacyVaultWidgetPreview } = await import('@/config/vaultWidget')
+
+    expect(isLegacyVaultWidgetPreview(new URLSearchParams('vaultWidget=legacy'))).toBe(true)
+    expect(isLegacyVaultWidgetPreview(new URLSearchParams())).toBe(false)
+  })
 })

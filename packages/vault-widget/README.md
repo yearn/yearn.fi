@@ -148,6 +148,7 @@ bun run --cwd packages/vault-widget tslint
 bun run --cwd packages/vault-widget test
 bun run --cwd packages/vault-widget build
 bun run qa:vault-widget:tenderly
+bun run qa:vault-widget:parity
 npm pack --dry-run --workspace @yearn/vault-widget
 bun run --cwd packages/vault-widget verify:artifact
 ```

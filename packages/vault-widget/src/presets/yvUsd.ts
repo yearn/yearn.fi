@@ -4,7 +4,7 @@ import { createLockedVaultAdapter, createLockedVaultPositionValueReader } from '
 import type { VaultWidgetConfig, VaultWidgetFamilyPreset, VaultWidgetToken } from '../types'
 
 export const YVUSD_CHAIN_ID = 1
-export const YVUSD_ASSET_ADDRESS = '0xA0b86991c6218b36c1d19d4a2e9eb0ce3606eb48' as Address
+export const YVUSD_ASSET_ADDRESS = '0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48' as Address
 export const YVUSD_UNLOCKED_ADDRESS = '0x696d02Db93291651ED510704c9b286841d506987' as Address
 export const YVUSD_LOCKED_ADDRESS = '0xAaaFEa48472f77563961Cdb53291DEDfB46F9040' as Address
 export const YVUSD_LOCKED_ZAP_ADDRESS = '0x7ba61c8e19414dcB8fe769a7Be63B508C8062bbA' as Address

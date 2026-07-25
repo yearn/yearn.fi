@@ -94,7 +94,7 @@ import { deriveListKind } from '@/components/pages/vaults/utils/vaultListFacets'
 import { getVaultPrimaryLogoSrc } from '@/components/pages/vaults/utils/vaultLogo'
 import { getCategoryDescription, getProductTypeDescription } from '@/components/pages/vaults/utils/vaultTagCopy'
 import { useWeb3 } from '@/components/shared/contexts/useWeb3'
-import { isVaultWidgetCutoverEnabled } from '@/config/vaultWidget'
+import { isLegacyVaultWidgetPreview, isVaultWidgetCutoverEnabled } from '@/config/vaultWidget'
 import { useDevFlags } from '@/contexts/useDevFlags'
 
 const resolveHeaderOffset = (): number => {
@@ -655,9 +655,7 @@ function Index(): ReactElement | null {
       expectedAddress: YBOLD_VAULT_ADDRESS
     })
   }, [isDualVariantVault, baseVault?.address, params.address, chainId])
-  const shouldUsePackagedVaultWidget =
-    isVaultWidgetCutoverEnabled() &&
-    !(process.env.NODE_ENV === 'development' && searchParams.get('vaultWidget') === 'legacy')
+  const shouldUsePackagedVaultWidget = isVaultWidgetCutoverEnabled() && !isLegacyVaultWidgetPreview(searchParams)
 
   const yBoldStakingVault = useMemo(() => {
     if (!isYBold) return undefined

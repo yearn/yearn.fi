@@ -60,6 +60,58 @@ const DESKTOP_WIDGET_CROP = { left: 916, top: 190, width: 406, height: 570 }
 type TestViewport = 'desktop' | 'mobile'
 type TestVaultId = (typeof VAULT_FIXTURES)[number]['id']
 type TestWidgetState = VaultWidgetMode | 'settings'
+
+const TEST_VIEWPORTS: readonly TestViewport[] = ['desktop', 'mobile']
+const TEST_WIDGET_STATES: readonly TestWidgetState[] = ['deposit', 'withdraw', 'migrate', 'rewards', 'info', 'settings']
+const TEST_VARIANTS = ['locked', 'unlocked'] as const
+
+function includesValue<T extends string>(values: readonly T[], value: string | null): value is T {
+  return value !== null && values.some((candidate) => candidate === value)
+}
+
+function readHarnessQuery(): {
+  state?: TestWidgetState
+  variant?: (typeof TEST_VARIANTS)[number]
+  vaultId?: TestVaultId
+  viewport?: TestViewport
+} {
+  const searchParams = new URL(window.location.href).searchParams
+  const vaultId = searchParams.get('vault')
+  const viewport = searchParams.get('viewport')
+  const state = searchParams.get('state')
+  const variant = searchParams.get('variant')
+
+  return {
+    state: includesValue(TEST_WIDGET_STATES, state) ? state : undefined,
+    variant: includesValue(TEST_VARIANTS, variant) ? variant : undefined,
+    vaultId: includesValue(
+      VAULT_FIXTURES.map((fixture) => fixture.id),
+      vaultId
+    )
+      ? vaultId
+      : undefined,
+    viewport: includesValue(TEST_VIEWPORTS, viewport) ? viewport : undefined
+  }
+}
+
+function writeHarnessQuery(
+  vaultId: TestVaultId,
+  viewport: TestViewport,
+  state: TestWidgetState,
+  variant: string
+): void {
+  const url = new URL(window.location.href)
+  url.searchParams.set('vault', vaultId)
+  url.searchParams.set('viewport', viewport)
+  url.searchParams.set('state', state)
+  if (vaultId === 'yvusd') {
+    url.searchParams.set('variant', variant)
+  } else {
+    url.searchParams.delete('variant')
+  }
+  window.history.replaceState(window.history.state, '', url)
+}
+
 function getButtonLabel(element: Element): string {
   return element.textContent?.replace(/\s+/g, ' ').trim().toLowerCase() ?? ''
 }
@@ -84,7 +136,7 @@ function synchronizeLegacyWidget(
     if (settingsPanelIsOpen) return
     const settingsButton = Array.from(
       document.querySelectorAll<HTMLElement>(
-        'button[aria-label="Transaction Settings"], button[aria-label="Open settings"]'
+        'button[aria-label="Transaction Settings"], button[aria-label="Open transaction settings"], button[aria-label="Open settings"]'
       )
     ).find(isVisible)
     if (settingsButton) {
@@ -124,7 +176,11 @@ function synchronizeLegacyWidget(
   // On mobile the first click opens the legacy action drawer. Once open, the
   // same label appears again in its tab bar; the next synchronization pass
   // selects that tab without coupling the package to legacy implementation.
-  const lowestButton = candidates.reduce((lowest, candidate) =>
+  const tabCandidates = candidates.filter(
+    (candidate) => candidate.getAttribute('role') === 'tab' || candidate.classList.contains('flex-1')
+  )
+  const selectableCandidates = tabCandidates.length > 0 ? tabCandidates : candidates
+  const lowestButton = selectableCandidates.reduce((lowest, candidate) =>
     candidate.getBoundingClientRect().top > lowest.getBoundingClientRect().top ? candidate : lowest
   )
   lowestButton.click()
@@ -253,6 +309,7 @@ export function VaultWidgetParityPage(): ReactElement {
   const [widgetState, setWidgetState] = useState<TestWidgetState>('deposit')
   const lastModeRef = useRef<VaultWidgetMode>('deposit')
   const [variant, setVariant] = useState('locked')
+  const [queryReady, setQueryReady] = useState(false)
   const [legacyLoadCount, setLegacyLoadCount] = useState(0)
   const services = useMemo(
     () => ({
@@ -289,8 +346,30 @@ export function VaultWidgetParityPage(): ReactElement {
     if (nextState !== 'settings') lastModeRef.current = nextState
     setWidgetState(nextState)
   }
-  const legacyVaultPath = `/vaults/${vaultFixture.chainId}/${vaultFixture.vaultAddress}?vaultWidget=legacy`
+  const legacyVaultQuery = new URLSearchParams({ vaultWidget: 'legacy' })
+  if (address) legacyVaultQuery.set('agentWalletAddress', address)
+  const legacyVaultPath = `/vaults/${vaultFixture.chainId}/${vaultFixture.vaultAddress}?${legacyVaultQuery}`
   const comparisonWidth = viewport === 'desktop' ? DESKTOP_WIDGET_CROP.width : MOBILE_VIEWPORT.width
+
+  useEffect(() => {
+    const query = readHarnessQuery()
+    const nextViewport = query.viewport ?? 'desktop'
+    const nextState = nextViewport === 'mobile' && query.state === 'info' ? 'deposit' : query.state
+
+    if (query.vaultId) setVaultId(query.vaultId)
+    if (query.viewport) setViewport(query.viewport)
+    if (nextState) {
+      if (nextState !== 'settings') lastModeRef.current = nextState
+      setWidgetState(nextState)
+    }
+    if (query.variant) setVariant(query.variant)
+    setQueryReady(true)
+  }, [])
+
+  useEffect(() => {
+    if (!queryReady) return
+    writeHarnessQuery(vaultId, viewport, widgetState, variant)
+  }, [queryReady, variant, vaultId, viewport, widgetState])
 
   const synchronizeLegacy = useCallback(() => {
     synchronizeLegacyWidget(iframeRef.current, viewport, widgetState, vaultId === 'yvusd' ? variant : undefined)
@@ -299,7 +378,9 @@ export function VaultWidgetParityPage(): ReactElement {
   // The parity harness is intentionally allowed to drive its same-origin
   // legacy iframe so both implementations stay on the selected test state.
   useEffect(() => {
-    const timeouts = [100, 500, 1200].map((delay) => window.setTimeout(synchronizeLegacy, delay))
+    const timeouts = [100, 500, 1200, 2500, 5000, 8000, 15_000, 30_000, 45_000].map((delay) =>
+      window.setTimeout(synchronizeLegacy, delay)
+    )
     return () =>
       timeouts.forEach((timeout) => {
         window.clearTimeout(timeout)

@@ -31,6 +31,7 @@ import {
   getAvailableVaultWidgetModes,
   getDefaultPositionSource,
   getPositionSources,
+  isModeAvailabilityPending,
   readPositionSourceState,
   sumPositionValues
 } from './positionSources'
@@ -238,9 +239,17 @@ export function useVaultWidgetController({
     syncSettings()
     return services.settings.subscribe?.(syncSettings)
   }, [config.defaultMaxLossBps, config.defaultSlippagePercent, services.settings])
+  // A controlled migration can only be validated after the connected account's
+  // asynchronous share balance resolves, so defer fallback synchronization.
   useEffect(() => {
-    if (controlledMode !== undefined && controlledMode !== mode) onModeChange?.(mode)
-  }, [controlledMode, mode, onModeChange])
+    if (
+      controlledMode !== undefined &&
+      controlledMode !== mode &&
+      !isModeAvailabilityPending(controlledMode, account, positionSourcesQuery.isLoading)
+    ) {
+      onModeChange?.(mode)
+    }
+  }, [account, controlledMode, mode, onModeChange, positionSourcesQuery.isLoading])
 
   const balanceClient = usePublicClient({ chainId: selectedToken.chainId })
   const quoteChainId = transactionMode === 'deposit' ? selectedToken.chainId : selectedPositionSource.token.chainId
@@ -387,7 +396,8 @@ export function useVaultWidgetController({
         : undefined,
     [allowance, allowances, connectedChainId, quoteQuery.data, transactionMode, walletType]
   )
-  const error = quoteQuery.error ? getError(quoteQuery.error) : undefined
+  const queryError = quoteQuery.error ?? positionSourcesQuery.error ?? balanceQuery.error
+  const error = queryError ? getError(queryError) : undefined
   const isExecuting =
     execution.status === 'confirming' || execution.status === 'pending' || execution.status === 'submitted'
   const canSubmit =

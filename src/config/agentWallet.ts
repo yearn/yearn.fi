@@ -7,6 +7,7 @@ import { env } from '@/env'
 export const AGENT_WALLET_ID = 'agent'
 const AGENT_WALLET_NAME = 'Agent Wallet'
 const AGENT_WALLET_QUERY_PARAM = 'agentWallet'
+const AGENT_WALLET_ADDRESS_QUERY_PARAM = 'agentWalletAddress'
 const AGENT_WALLET_STORAGE_KEY = 'dev-agent-wallet-enabled'
 const DEFAULT_AGENT_WALLET_ADDRESS = '0x000000000000000000000000000000000000c0DE'
 const AGENT_WALLET_ICON =
@@ -52,7 +53,25 @@ function readRuntimeFlag(): boolean | undefined {
   }
 }
 
-function resolveAgentWalletAddress(): Address {
+function readRuntimeAddress(): Address | undefined {
+  if (typeof window === 'undefined' || (env.PROD && !isProductionQaBuild())) {
+    return undefined
+  }
+
+  try {
+    const configuredAddress = new URL(window.location.href).searchParams.get(AGENT_WALLET_ADDRESS_QUERY_PARAM)
+    return configuredAddress ? getAddress(configuredAddress) : undefined
+  } catch {
+    return undefined
+  }
+}
+
+export function resolveAgentWalletAddress(): Address {
+  const runtimeAddress = readRuntimeAddress()
+  if (runtimeAddress) {
+    return runtimeAddress
+  }
+
   const configuredAddress = env.NEXT_PUBLIC_AGENT_WALLET_ADDRESS?.trim()
   if (!configuredAddress) {
     return DEFAULT_AGENT_WALLET_ADDRESS

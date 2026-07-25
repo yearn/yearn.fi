@@ -15,11 +15,11 @@ published as the production dependency until every row below is complete.
 | Stake, unstake, and combined routes | Complete | Kong staking metadata, selectable vault/staked positions, source-aware partial conversion, exact-share nested Max redemption, composed valuation, ordered plans, and stateful V3 deposit QA; the current stale VNet reward callback blocks stake completion |
 | Generic same-chain and cross-chain Enso | Complete | Exact-position Max routing, source/destination policy validation, package-owned server handlers, protected re-quotes, bridge protocol discovery, destination-aware activity, submitted state, destination completion polling, stateful same-chain DAI-to-yvUSD execution, and stateful Optimism-to-mainnet source execution |
 | Safe proposal and delayed execution | In progress | Atomic plan batching, Safe connector and EIP-5792 provider contract tests, mandatory execution tracking, rejection/revert transitions, delayed Safe and cross-chain completion tests complete; live Safe iframe QA pending |
-| yvUSD locked/unlocked and cooldown | In progress | Live family presets, nested share valuation, protocol-executable two-vault Max redemption, zap deposit, cooldown reads, styled start/cancel plans, and stateful unlocked/locked cooldown QA complete; wallet-connected QA pending |
+| yvUSD locked/unlocked and cooldown | In progress | Live family presets, nested share valuation, protocol-executable two-vault Max redemption, zap deposit, cooldown reads, styled start/cancel plans, stateful unlocked/locked cooldown QA, and connected desktop/mobile family-state parity complete; wallet-confirmation QA pending |
 | yvBTC locked/unlocked | Complete for current production behavior | Unlocked cbBTC ERC-4626 preset and family selector complete; plan validation confirms the live vault asset while stateful deposits remain unavailable because `maxDeposit=0`; locked remains explicitly unavailable while its address is the legacy zero-address placeholder |
-| Permit and approval migration | In progress | Kong target discovery, destination metadata, full-balance panel, registry-compatible migrator/router/zap selectors, EOA permit detection/signing, Safe approval batching, V2/V3 calls, shared execution, activity persistence, tests, stateful approval migration QA, and a stateful signed V3 EIP-2612 migration complete; connected-wallet prompt QA pending |
+| Permit and approval migration | In progress | Kong target discovery, destination metadata, full-balance panel, registry-compatible migrator/router/zap selectors, EOA permit detection/signing, Safe approval batching, V2/V3 calls, shared execution, activity persistence, tests, stateful approval migration QA, a stateful signed V3 EIP-2612 migration, and connected legacy/package mode parity against a live V2 holder complete; wallet-confirmation prompt QA pending |
 | Merkle and staking rewards | In progress | Allowlisted Merkl and source-compatible VeYFI/Juiced/OP Boost staking discovery, claimed accounting, styled claim rows, shared execution/activity persistence, chain-switch/Safe plans, tests, and a stateful Juiced reward discovery/claim complete; connected-wallet and other live-source visual QA pending |
-| Full styled My Info/settings/activity parity | In progress | Combined family positions, vault-filtered recent activity, reload reconciliation for EOA/Safe/cross-chain execution, preset defaults that preserve stored host preferences, controlled settings and copy, mobile settings popover, fully reachable My Info, roving keyboard tabs with tabpanel relationships, widget-constrained token dialog with focus containment/restoration, component/service tests, and a production-build yBOLD connected-session comparison complete; connected-wallet visual QA across the remaining variants remains |
+| Full styled My Info/settings/activity parity | In progress | Combined family positions, vault-filtered recent activity, reload reconciliation for EOA/Safe/cross-chain execution, preset defaults that preserve stored host preferences, controlled settings and copy, mobile settings popover, fully reachable My Info, roving keyboard tabs with tabpanel relationships, widget-constrained token dialog with focus containment/restoration, component/service tests, and an automated 13-case connected legacy/package desktop/mobile matrix complete; connected-wallet visual QA for yvBTC and remaining live reward sources remains |
 | Tenderly transaction-family QA | In progress | Reproducible snapshot/revert harness executes 27 transactions across ERC-4626 yvUSD, locked yvUSD cooldown/nested redemption, yBOLD zap, V3 deposit, V2 approval migration, signed V3 EIP-2612 migration, Juiced rewards, same-chain Enso, and an Optimism-to-mainnet Enso source route. yvBTC is plan-only while the live vault reports `maxDeposit=0`; staking is partial-stateful because the stale VNet gauge reward callback reverts; isolated cross-chain QA cannot deliver the destination leg without a bridge relayer. Live Safe iframe and destination-delivery QA remain |
 
 Current rollout state:
@@ -37,11 +37,12 @@ Current rollout state:
   it explicitly with `NEXT_PUBLIC_VAULT_WIDGET_PARITY_ENABLED=true`; deployed
   production builds leave that flag unset.
 - A production-like QA build may also set `NEXT_PUBLIC_AGENT_WALLET=true` and
-  `NEXT_PUBLIC_AGENT_WALLET_ADDRESS=<Tenderly account>`, then open the harness
-  with `?agentWallet=true`. Production builds include and auto-connect this
-  mock wallet only when the parity flag is also enabled. The same-origin legacy
-  frame retains that session, so connected surfaces can be compared without a
-  browser extension.
+  `NEXT_PUBLIC_AGENT_WALLET_ADDRESS=<QA account>`, then open the harness with
+  `?agentWallet=true`. Individual deep-linked parity fixtures may use
+  `agentWalletAddress=<EOA>` to exercise a real holder; that override is
+  accepted only in development or an explicitly authorized production-like
+  parity build. The same-origin legacy frame retains that session, so
+  connected surfaces can be compared without a browser extension.
 - The flag remains a QA/rollback gate until connected-wallet and Tenderly
   validation is complete. The legacy surface is not removed before that gate.
 - yearn-bold keeps its legacy card by default. Setting
@@ -53,3 +54,8 @@ Current rollout state:
   VNets, funds isolated QA accounts, exercises package-generated plans, reports
   stateful versus environment-limited coverage, and always reverts both
   snapshots.
+- `bun run qa:vault-widget:parity` drives the production-build harness
+  sequentially across 13 connected desktop/mobile cases. It rejects package
+  markup in the legacy frame and requires equivalent selected states for
+  yBOLD, locked/unlocked yvUSD, V2 withdrawal/migration, V3 staking, rewards,
+  settings, and My Info.

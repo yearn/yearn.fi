@@ -13,6 +13,14 @@ export function getAvailableVaultWidgetModes(
   return configuredModes.filter((mode) => mode !== 'migrate' || migrationBalance > 0n)
 }
 
+export function isModeAvailabilityPending(
+  requestedMode: VaultWidgetMode | undefined,
+  account: `0x${string}` | undefined,
+  positionSourcesLoading: boolean
+): boolean {
+  return requestedMode === 'migrate' && (!account || positionSourcesLoading)
+}
+
 export function getPositionSources(config: VaultWidgetConfig): readonly VaultWidgetPositionSource[] {
   if (config.positionSources?.length) return config.positionSources
 

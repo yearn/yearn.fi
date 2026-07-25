@@ -4,6 +4,7 @@ import {
   getAvailableVaultWidgetModes,
   getDefaultPositionSource,
   getPositionSources,
+  isModeAvailabilityPending,
   sumPositionValues
 } from './positionSources'
 
@@ -34,6 +35,15 @@ describe('position sources', () => {
 
     expect(getAvailableVaultWidgetModes(modes, 0n)).toEqual(['withdraw', 'info'])
     expect(getAvailableVaultWidgetModes(modes, 1n)).toEqual(modes)
+  })
+
+  it('does not discard a controlled migration mode before its balance is known', () => {
+    const account = '0x2222222222222222222222222222222222222222'
+
+    expect(isModeAvailabilityPending('migrate', undefined, false)).toBe(true)
+    expect(isModeAvailabilityPending('migrate', account, true)).toBe(true)
+    expect(isModeAvailabilityPending('migrate', account, false)).toBe(false)
+    expect(isModeAvailabilityPending('withdraw', undefined, true)).toBe(false)
   })
 
   it('creates a backward-compatible source from the legacy position token', () => {
