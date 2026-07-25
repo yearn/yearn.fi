@@ -660,7 +660,7 @@ export function VaultWidgetParityPage(): ReactElement {
                 style={{ height: viewport === 'desktop' ? DESKTOP_WIDGET_CROP.height : MOBILE_VIEWPORT.height }}
               >
                 <div
-                  className={previewExecution ? 'yv-widget h-full' : undefined}
+                  className={previewExecution ? 'yv-widget h-full w-full' : 'w-full'}
                   data-execution-preview={executionPreview}
                 >
                   <VaultWidgetProvider services={services}>

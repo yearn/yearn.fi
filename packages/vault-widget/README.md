@@ -166,6 +166,7 @@ bun run qa:vault-widget:tenderly --list
 bun run qa:vault-widget:tenderly --flow yvusd-direct --max-rpc-methods 30
 bun run qa:vault-widget:parity
 bun run qa:vault-widget:execution-states
+bun run qa:vault-widget:cutover
 npm pack --dry-run --workspace @yearn/vault-widget
 bun run --cwd packages/vault-widget verify:artifact
 ```

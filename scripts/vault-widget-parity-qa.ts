@@ -124,19 +124,23 @@ async function waitForConnectedHarness(page: Page): Promise<string> {
   return label
 }
 
-async function waitForPackage(page: Page, qaCase: ParityCase): Promise<boolean> {
-  const widget = page.locator('.yv-widget')
-  await widget.waitFor({ state: 'visible' })
+async function waitForPackage(page: Page, qaCase: ParityCase, canRetry = true): Promise<boolean> {
+  const widget = page.locator(`.yv-widget[data-viewport="${qaCase.viewport}"]:visible`)
+  try {
+    await widget.waitFor({ state: 'visible', timeout: canRetry ? 30_000 : 60_000 })
+  } catch (error) {
+    if (!canRetry) throw error
+    await page.reload({ waitUntil: 'domcontentloaded', timeout: 60_000 })
+    await waitForConnectedHarness(page)
+    return waitForPackage(page, qaCase, false)
+  }
   await page.waitForFunction(() => {
-    const element = document.querySelector('.yv-widget')
-    return !!element && !element.textContent?.includes('Loading vault')
+    return Array.from(document.querySelectorAll<HTMLElement>('.yv-widget')).some((element) => {
+      const rect = element.getBoundingClientRect()
+      return rect.width > 0 && rect.height > 0 && !element.textContent?.includes('Loading vault')
+    })
   })
-  await page.waitForFunction(
-    (viewport) => document.querySelector('.yv-widget')?.getAttribute('data-viewport') === viewport,
-    qaCase.viewport
-  )
-
-  invariant((await widget.count()) === 1, `${qaCase.id}: expected exactly one package widget`)
+  invariant((await widget.count()) === 1, `${qaCase.id}: expected exactly one visible package widget`)
   const text = await widget.innerText()
   invariant(!text.includes('Unable to load'), `${qaCase.id}: package rendered a loading error`)
 

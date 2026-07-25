@@ -1,7 +1,6 @@
 'use client'
 
 import { usePlausible } from '@hooks/usePlausible'
-import { WidgetActionType } from '@pages/vaults/types'
 import { PLAUSIBLE_EVENTS, type TPlausibleEventName } from '@shared/utils/plausible'
 import { getNetwork } from '@shared/utils/wagmi/utils'
 import {
@@ -125,14 +124,13 @@ function TransactionLink({
 }
 
 export function resolvePackagedVaultMode(
-  mode: WidgetActionType,
+  mode: 'deposit' | 'migrate' | 'withdraw',
   showInfo: boolean,
   showRewards: boolean
 ): VaultWidgetMode {
   if (showRewards) return 'rewards'
   if (showInfo) return 'info'
-  if (mode === WidgetActionType.Migrate) return 'migrate'
-  return mode === WidgetActionType.Withdraw ? 'withdraw' : 'deposit'
+  return mode
 }
 
 type PackagedVaultWidgetProps = {
@@ -141,15 +139,14 @@ type PackagedVaultWidgetProps = {
   estimatedApr?: number
   estimatedAprByVariant?: Partial<Record<'locked' | 'unlocked', number>>
   kind?: PackagedVaultKind
-  mode: WidgetActionType
+  mode: VaultWidgetMode
+  onClose?: () => void
   onConnectWallet: () => void
-  onModeChange: (mode: WidgetActionType) => void
+  onModeChange: (mode: VaultWidgetMode) => void
   onSettingsOpenChange?: (open: boolean) => void
   onSuccess?: (event: Extract<VaultWidgetEvent, { type: 'transaction_succeeded' }>) => void
   onVariantChange?: (variant: string) => void
   settingsOpen?: boolean
-  showInfo?: boolean
-  showRewards?: boolean
   variant?: string
   vaultAddress: Address
   viewport: 'desktop' | 'mobile'
@@ -162,21 +159,19 @@ export function PackagedVaultWidget({
   estimatedAprByVariant,
   kind = 'generic',
   mode,
+  onClose,
   onConnectWallet,
   onModeChange,
   onSettingsOpenChange,
   onSuccess,
   onVariantChange,
   settingsOpen,
-  showInfo = false,
-  showRewards = false,
   variant,
   vaultAddress,
   viewport
 }: PackagedVaultWidgetProps): ReactElement {
   const router = useRouter()
   const trackEvent = usePlausible()
-  const packageMode = resolvePackagedVaultMode(mode, showInfo, showRewards)
   const yBoldConfig = useMemo(() => {
     if (kind !== 'ybold') return undefined
     const config = createYBoldPreset({ ensoEndpoint: '/api/enso/route' })
@@ -230,19 +225,16 @@ export function PackagedVaultWidget({
     if (analyticsEvent) trackEvent(analyticsEvent.name, { props: analyticsEvent.props })
   }
   const sharedProps = {
-    mode: packageMode,
+    mode,
+    onClose,
     onConnectWallet,
-    onModeChange: (nextMode: VaultWidgetMode): void => {
-      if (nextMode === 'deposit') onModeChange(WidgetActionType.Deposit)
-      if (nextMode === 'withdraw') onModeChange(WidgetActionType.Withdraw)
-      if (nextMode === 'migrate') onModeChange(WidgetActionType.Migrate)
-    },
+    onModeChange,
     onSettingsOpenChange,
     onEvent: handleEvent,
     onSuccess,
     onViewAllActivity: (): void => router.push('/portfolio?tab=activity'),
     settingsOpen,
-    showNavigation: false,
+    showNavigation: true,
     slots: { TransactionLink },
     viewport
   } as const

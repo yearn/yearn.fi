@@ -10,6 +10,7 @@ type TBottomDrawerProps = {
   children: ReactNode
   title?: string
   headerActions?: ReactNode
+  hideHeader?: boolean
   panelRef?: Ref<HTMLDivElement>
 }
 
@@ -19,6 +20,7 @@ export function BottomDrawer({
   children,
   title,
   headerActions,
+  hideHeader = false,
   panelRef
 }: TBottomDrawerProps): ReactElement {
   return (
@@ -55,25 +57,35 @@ export function BottomDrawer({
                   'flex flex-col'
                 )}
               >
-                <div className={'flex items-center justify-between p-4 pb-2'}>
-                  {title ? <h2 className={'text-lg font-semibold text-text-primary'}>{title}</h2> : <div />}
-                  <div className={'flex items-center gap-2'}>
-                    {headerActions}
-                    <button
-                      type={'button'}
-                      onClick={onClose}
-                      className={cl(
-                        'inline-flex size-10 items-center justify-center rounded-full',
-                        'bg-surface-secondary text-text-secondary',
-                        'active:scale-95 transition-all duration-150',
-                        'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary'
-                      )}
-                      aria-label={'Close drawer'}
-                    >
-                      <IconClose className={'size-5'} />
-                    </button>
+                {hideHeader ? (
+                  title ? (
+                    <Dialog.Title className={'sr-only'}>{title}</Dialog.Title>
+                  ) : null
+                ) : (
+                  <div className={'flex items-center justify-between p-4 pb-2'}>
+                    {title ? (
+                      <Dialog.Title className={'text-lg font-semibold text-text-primary'}>{title}</Dialog.Title>
+                    ) : (
+                      <div />
+                    )}
+                    <div className={'flex items-center gap-2'}>
+                      {headerActions}
+                      <button
+                        type={'button'}
+                        onClick={onClose}
+                        className={cl(
+                          'inline-flex size-10 items-center justify-center rounded-full',
+                          'bg-surface-secondary text-text-secondary',
+                          'active:scale-95 transition-all duration-150',
+                          'focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-primary'
+                        )}
+                        aria-label={'Close drawer'}
+                      >
+                        <IconClose className={'size-5'} />
+                      </button>
+                    </div>
                   </div>
-                </div>
+                )}
                 <div className={'flex-auto min-h-0 overflow-y-auto overflow-x-hidden relative'}>
                   <div className={'bg-surface-secondary pb-[calc(2rem+env(safe-area-inset-bottom,0px))]'}>
                     {children}

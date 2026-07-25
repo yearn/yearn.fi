@@ -23,13 +23,17 @@ const TOUR_STEPS: TourStep[] = [
     id: 'user-deposit',
     title: 'Your deposit info',
     description: 'Review your holdings and switch widget modes.',
-    selectors: ['[data-tour="vault-detail-user-holdings"]', '[data-tour="vault-detail-widget-tabs"]']
+    selectors: [
+      '[data-tour="vault-detail-user-holdings"]',
+      '[data-tour="vault-detail-widget-tabs"]',
+      '.yv-widget__navigation'
+    ]
   },
   {
     id: 'deposit-widget',
     title: 'Deposit widget',
     description: 'Use the widget to deposit and withdraw to and from the vault.',
-    selectors: ['[data-tour="vault-detail-deposit-widget"]']
+    selectors: ['[data-tour="vault-detail-deposit-widget"]', '.yv-widget__body']
   },
   {
     id: 'strategies',

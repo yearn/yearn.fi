@@ -16,9 +16,13 @@ import { VaultStrategiesSection } from '@pages/vaults/components/detail/VaultStr
 import { YvUsdChartsSection } from '@pages/vaults/components/detail/YvUsdChartsSection'
 import { resolveForwardApyDisplayConfig } from '@pages/vaults/components/table/apyDisplayConfig'
 import { VaultDetailsWelcomeTour } from '@pages/vaults/components/tour/VaultDetailsWelcomeTour'
-import { type TWidgetRef, Widget, WidgetTabs } from '@pages/vaults/components/widget'
+import { type TWidgetRef, Widget } from '@pages/vaults/components/widget'
 import { MobileDrawerSettingsButton } from '@pages/vaults/components/widget/MobileDrawerSettingsButton'
-import { type PackagedVaultKind, PackagedVaultWidget } from '@pages/vaults/components/widget/PackagedVaultWidget'
+import {
+  type PackagedVaultKind,
+  PackagedVaultWidget,
+  resolvePackagedVaultMode
+} from '@pages/vaults/components/widget/PackagedVaultWidget'
 import { WidgetRewards } from '@pages/vaults/components/widget/rewards'
 import { WalletPanel } from '@pages/vaults/components/widget/WalletPanel'
 import { YvBtcWidget } from '@pages/vaults/components/widget/yvBTC/YvBtcWidget'
@@ -70,11 +74,10 @@ import { useYearn } from '@shared/contexts/useYearn'
 import { useYearnSpotPrices } from '@shared/hooks/useYearnSpotPrices'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconInfo } from '@shared/icons/IconInfo'
-import { IconSettings } from '@shared/icons/IconSettings'
 import { cl, isZeroAddress, toAddress, toNormalizedBN } from '@shared/utils'
 import { getVaultName } from '@shared/utils/helpers'
 import type { TKongVaultSnapshot } from '@shared/utils/schemas/kongVaultSnapshotSchema'
-import type { VaultWidgetEvent } from '@yearn/vault-widget'
+import type { VaultWidgetEvent, VaultWidgetMode } from '@yearn/vault-widget'
 import Link from 'next/link'
 import { useParams, useRouter, useSearchParams } from 'next/navigation'
 import type { ReactElement, ReactNode } from 'react'
@@ -119,6 +122,13 @@ const resolveHeaderOffset = (): number => {
 }
 
 const desktopWidgetHeightClassNames = getDesktopWidgetHeightClassNames()
+
+function getWidgetActionFromPackageMode(mode: VaultWidgetMode): WidgetActionType | undefined {
+  if (mode === 'deposit') return WidgetActionType.Deposit
+  if (mode === 'withdraw') return WidgetActionType.Withdraw
+  if (mode === 'migrate') return WidgetActionType.Migrate
+  return undefined
+}
 
 function PendingStrategyChangesTooltip({ items }: { items: TPendingTimelockStrategy[] }): ReactElement {
   const visibleItems = items.slice(0, 3)
@@ -1506,6 +1516,10 @@ function Index(): ReactElement | null {
     setMobileDrawerAction(action)
     setIsMobileDrawerOpen(true)
   }, [])
+  const closeMobileDrawer = (): void => {
+    setIsYBoldStakePrefillActive(false)
+    setIsMobileDrawerOpen(false)
+  }
 
   useLayoutEffect(() => {
     // Reset when switching actions so we can re-measure with tabs visible.
@@ -1665,8 +1679,25 @@ function Index(): ReactElement | null {
     : isYvBtc
       ? { locked: yvBtcMetrics.locked.apy, unlocked: yvBtcMetrics.unlocked.apy }
       : undefined
-  const canShowPackagedRewards =
-    shouldUsePackagedVaultWidget && (chainId === 747474 || (resolvedCurrentVault.staking.rewards?.length ?? 0) > 0)
+  const packagedDesktopMode = resolvePackagedVaultMode(resolvedWidgetMode, isWidgetWalletOpen, isWidgetRewardsOpen)
+  const packagedMobileMode = resolvePackagedVaultMode(mobileDrawerAction, isWidgetWalletOpen, isWidgetRewardsOpen)
+  const handlePackagedModeChange = (
+    nextMode: VaultWidgetMode,
+    setTransactionMode: (mode: WidgetActionType) => void
+  ): void => {
+    if (nextMode === 'info') {
+      openWidgetWallet()
+      return
+    }
+    if (nextMode === 'rewards') {
+      openWidgetRewards()
+      return
+    }
+    const nextAction = getWidgetActionFromPackageMode(nextMode)
+    if (!nextAction) return
+    closeWidgetOverlays()
+    setTransactionMode(nextAction)
+  }
   const handlePackagedVariantChange = (nextVariant: string): void => {
     if (nextVariant === 'locked' || nextVariant === 'unlocked') setYvUsdApyVariant(nextVariant)
   }
@@ -1729,15 +1760,13 @@ function Index(): ReactElement | null {
           estimatedApr={resolvedCurrentVault.apr.forwardAPR.netAPR || resolvedCurrentVault.apr.netAPR || 0}
           estimatedAprByVariant={packagedEstimatedAprByVariant}
           kind={packagedVaultKind}
-          mode={resolvedWidgetMode}
+          mode={packagedDesktopMode}
           onConnectWallet={openLoginModal}
-          onModeChange={handleWidgetModeChange}
+          onModeChange={(nextMode) => handlePackagedModeChange(nextMode, handleWidgetModeChange)}
           onSettingsOpenChange={setIsWidgetSettingsOpen}
           onSuccess={handlePackagedVaultSuccess}
           onVariantChange={handlePackagedVariantChange}
           settingsOpen={isWidgetSettingsOpen}
-          showInfo={isWidgetWalletOpen}
-          showRewards={isWidgetRewardsOpen}
           variant={isDualVariantVault ? yvUsdApyVariant : undefined}
           vaultAddress={toAddress(resolvedCurrentVault.address)}
           viewport="desktop"
@@ -1802,45 +1831,24 @@ function Index(): ReactElement | null {
   function renderMobileWidget(): ReactElement {
     if (shouldUsePackagedVaultWidget) {
       return (
-        <div className="flex h-full w-full flex-col">
-          <WidgetTabs
-            actions={widgetActions}
-            activeAction={mobileDrawerAction}
-            onActionChange={handleMobileWidgetModeChange}
-            onOpenWallet={openWidgetWallet}
-            isWalletOpen={isWidgetWalletOpen}
-            onCloseOverlays={closeWidgetOverlays}
-            disableBorderRadius
-          />
-          {canShowPackagedRewards ? (
-            <button
-              type="button"
-              className="border-x border-b border-border bg-surface-secondary px-4 py-2 text-xs font-semibold text-text-secondary"
-              onClick={isWidgetRewardsOpen ? closeWidgetRewards : openWidgetRewards}
-            >
-              {isWidgetRewardsOpen ? 'Back to vault actions' : 'View rewards'}
-            </button>
-          ) : null}
-          <PackagedVaultWidget
-            assetPriceUsd={resolvedCurrentVault.tvl.price || 1}
-            chainId={chainId}
-            estimatedApr={resolvedCurrentVault.apr.forwardAPR.netAPR || resolvedCurrentVault.apr.netAPR || 0}
-            estimatedAprByVariant={packagedEstimatedAprByVariant}
-            kind={packagedVaultKind}
-            mode={mobileDrawerAction}
-            onConnectWallet={openLoginModal}
-            onModeChange={handleMobileWidgetModeChange}
-            onSettingsOpenChange={setIsWidgetSettingsOpen}
-            onSuccess={handlePackagedVaultSuccess}
-            onVariantChange={handlePackagedVariantChange}
-            settingsOpen={isWidgetSettingsOpen}
-            showInfo={isWidgetWalletOpen}
-            showRewards={isWidgetRewardsOpen}
-            variant={isDualVariantVault ? yvUsdApyVariant : undefined}
-            vaultAddress={toAddress(resolvedCurrentVault.address)}
-            viewport="mobile"
-          />
-        </div>
+        <PackagedVaultWidget
+          assetPriceUsd={resolvedCurrentVault.tvl.price || 1}
+          chainId={chainId}
+          estimatedApr={resolvedCurrentVault.apr.forwardAPR.netAPR || resolvedCurrentVault.apr.netAPR || 0}
+          estimatedAprByVariant={packagedEstimatedAprByVariant}
+          kind={packagedVaultKind}
+          mode={packagedMobileMode}
+          onClose={closeMobileDrawer}
+          onConnectWallet={openLoginModal}
+          onModeChange={(nextMode) => handlePackagedModeChange(nextMode, handleMobileWidgetModeChange)}
+          onSettingsOpenChange={setIsWidgetSettingsOpen}
+          onSuccess={handlePackagedVaultSuccess}
+          onVariantChange={handlePackagedVariantChange}
+          settingsOpen={isWidgetSettingsOpen}
+          variant={isDualVariantVault ? yvUsdApyVariant : undefined}
+          vaultAddress={toAddress(resolvedCurrentVault.address)}
+          viewport="mobile"
+        />
       )
     }
     if (isYvUsd) {
@@ -1925,6 +1933,7 @@ function Index(): ReactElement | null {
                   isWidgetWalletOpen={isWidgetWalletOpen}
                   onWidgetWalletOpen={(): void => undefined}
                   onWidgetCloseOverlays={(): void => undefined}
+                  showHostWidgetControls={!shouldUsePackagedVaultWidget}
                   includeTourAttributes={false}
                 />
               </div>
@@ -1958,6 +1967,7 @@ function Index(): ReactElement | null {
             isWidgetWalletOpen={isWidgetWalletOpen}
             onWidgetWalletOpen={openWidgetWallet}
             onWidgetCloseOverlays={closeWidgetOverlays}
+            showHostWidgetControls={!shouldUsePackagedVaultWidget}
             onCompressionChange={setIsHeaderCompressed}
             onCompressionStateChange={({ isCompressed, isForceCompressed }): void => {
               setIsHeaderCompressed(isCompressed)
@@ -2142,15 +2152,6 @@ function Index(): ReactElement | null {
                     vaultUserData={vaultUserData}
                   />
                 ) : null}
-                {canShowPackagedRewards ? (
-                  <button
-                    type="button"
-                    className="mt-4 flex min-h-11 w-full items-center justify-center rounded-lg border border-border bg-surface px-4 text-sm font-semibold text-text-primary"
-                    onClick={isWidgetRewardsOpen ? closeWidgetRewards : openWidgetRewards}
-                  >
-                    {isWidgetRewardsOpen ? 'Back to vault actions' : 'View rewards'}
-                  </button>
-                ) : null}
               </div>
               {!shouldUsePackagedVaultWidget && shouldShowWidgetRewards ? (
                 <div ref={widgetRewardsRef} className={cl('w-full min-w-0', isWidgetRewardsOpen ? 'flex min-h-0' : '')}>
@@ -2301,26 +2302,10 @@ function Index(): ReactElement | null {
 
       <BottomDrawer
         isOpen={isMobileDrawerOpen}
-        onClose={() => {
-          setIsYBoldStakePrefillActive(false)
-          setIsMobileDrawerOpen(false)
-        }}
+        onClose={closeMobileDrawer}
         title={currentVault.name}
-        headerActions={
-          shouldUsePackagedVaultWidget ? (
-            <button
-              type="button"
-              className="inline-flex size-10 items-center justify-center rounded-full bg-surface-secondary text-text-secondary"
-              aria-label={isWidgetSettingsOpen ? 'Close settings' : 'Open settings'}
-              aria-expanded={isWidgetSettingsOpen}
-              onClick={toggleWidgetSettings}
-            >
-              <IconSettings className="size-5" />
-            </button>
-          ) : isYvUsd ? undefined : (
-            <MobileDrawerSettingsButton />
-          )
-        }
+        headerActions={shouldUsePackagedVaultWidget || isYvUsd ? undefined : <MobileDrawerSettingsButton />}
+        hideHeader={shouldUsePackagedVaultWidget}
         panelRef={mobileDrawerPanelRef}
       >
         {renderMobileWidget()}

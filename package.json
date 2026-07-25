@@ -18,6 +18,7 @@
     "qa:vault-widget:tenderly:smoke": "bun scripts/vault-widget-tenderly-qa.ts --suite smoke",
     "qa:vault-widget:parity": "bun scripts/vault-widget-parity-qa.ts",
     "qa:vault-widget:execution-states": "bun scripts/vault-widget-execution-preview-qa.ts",
+    "qa:vault-widget:cutover": "bun scripts/vault-widget-cutover-qa.ts",
     "lint": "biome check .",
     "lint:fix": "biome check --write .",
     "measure:ssr": "bun scripts/measure-ssr-baseline.ts",

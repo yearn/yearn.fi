@@ -1,4 +1,5 @@
 import { YBOLD_VAULT_ADDRESS } from '@pages/vaults/domain/normalizeVault'
+import { WidgetActionType } from '@pages/vaults/types'
 import { YVBTC_LOCKED_ADDRESS, YVBTC_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvBtc'
 import { YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import type { ReactNode } from 'react'
@@ -377,6 +378,24 @@ describe('VaultDetailsHeaderPresentation', () => {
     expect(html).not.toContain('IN COOLDOWN')
     expect(html).not.toContain('WITHDRAWABLE')
     expect(html).not.toContain('EXPIRED COOLDOWN')
+  })
+
+  it('removes host widget controls when the package owns the complete surface', () => {
+    const html = renderToStaticMarkup(
+      <VaultDetailsHeaderPresentation
+        currentVault={YVUSD_VAULT as never}
+        depositedValue={0n}
+        isCompressed={false}
+        onWidgetModeChange={vi.fn()}
+        showHostWidgetControls={false}
+        widgetActions={[WidgetActionType.Deposit, WidgetActionType.Withdraw]}
+        widgetMode={WidgetActionType.Deposit}
+      />
+    )
+
+    expect(html).not.toContain('Your Deposits')
+    expect(html).not.toContain('Widget Tabs')
+    expect(html).toContain('md:col-span-20')
   })
 
   it('does not enable locked yvBTC user-data reads while the locked address is a placeholder', () => {
