@@ -1,3 +1,4 @@
+import { MethodNotFoundRpcError } from 'viem'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Config } from 'wagmi'
 import {
@@ -115,7 +116,13 @@ describe('createWagmiExecutionService', () => {
 
 describe('createWagmiSafeExecutionService', () => {
   it('detects the Safe connector and submits an atomic EIP-5792 call batch', async () => {
+    const simulateBlocks = vi.fn().mockResolvedValue([
+      {
+        calls: [{ status: 'success' }, { status: 'success' }]
+      }
+    ])
     wagmiActions.getAccount.mockReturnValue({ connector: { id: 'safe' } })
+    wagmiActions.getPublicClient.mockReturnValue({ simulateBlocks })
     wagmiActions.sendCalls.mockResolvedValue({ id: '0x1234' })
     const service = createWagmiSafeExecutionService()
     const requestWithValue = {
@@ -134,6 +141,17 @@ describe('createWagmiSafeExecutionService', () => {
       })
     ).resolves.toBe('0x1234')
 
+    expect(simulateBlocks).toHaveBeenCalledWith({
+      blocks: [
+        {
+          calls: [
+            { account, data: request.data, to: request.to, value: 0n },
+            { account, data: request.data, to: request.to, value: 42n }
+          ]
+        }
+      ]
+    })
+    expect(simulateBlocks.mock.invocationCallOrder[0]).toBeLessThan(wagmiActions.sendCalls.mock.invocationCallOrder[0]!)
     expect(wagmiActions.sendCalls).toHaveBeenCalledWith(config, {
       account,
       calls: [
@@ -143,6 +161,68 @@ describe('createWagmiSafeExecutionService', () => {
       chainId: 1,
       forceAtomic: true
     })
+  })
+
+  it('does not propose a Safe batch when atomic simulation fails', async () => {
+    const simulationError = new Error('execution reverted')
+    wagmiActions.getPublicClient.mockReturnValue({
+      simulateBlocks: vi.fn().mockResolvedValue([
+        {
+          calls: [{ error: simulationError, status: 'failure' }]
+        }
+      ])
+    })
+    const service = createWagmiSafeExecutionService()
+
+    await expect(
+      service.proposeSafeBatch?.({
+        account,
+        chainId: 1,
+        config,
+        requests: [request],
+        step
+      })
+    ).rejects.toBe(simulationError)
+    expect(wagmiActions.sendCalls).not.toHaveBeenCalled()
+  })
+
+  it('does not propose a Safe batch when atomic simulation returns incomplete results', async () => {
+    wagmiActions.getPublicClient.mockReturnValue({
+      simulateBlocks: vi.fn().mockResolvedValue([{ calls: [] }])
+    })
+    const service = createWagmiSafeExecutionService()
+
+    await expect(
+      service.proposeSafeBatch?.({
+        account,
+        chainId: 1,
+        config,
+        requests: [request],
+        step
+      })
+    ).rejects.toThrow('Safe batch simulation returned incomplete results')
+    expect(wagmiActions.sendCalls).not.toHaveBeenCalled()
+  })
+
+  it('delegates simulation to the Safe wallet when eth_simulateV1 is unavailable', async () => {
+    wagmiActions.getPublicClient.mockReturnValue({
+      simulateBlocks: vi
+        .fn()
+        .mockRejectedValue(new MethodNotFoundRpcError(new Error('method unavailable'), { method: 'eth_simulateV1' }))
+    })
+    wagmiActions.sendCalls.mockResolvedValue({ id: '0x1234' })
+    const service = createWagmiSafeExecutionService()
+
+    await expect(
+      service.proposeSafeBatch?.({
+        account,
+        chainId: 1,
+        config,
+        requests: [request],
+        step
+      })
+    ).resolves.toBe('0x1234')
+    expect(wagmiActions.sendCalls).toHaveBeenCalledOnce()
   })
 
   it('classifies other connectors as EOAs', async () => {

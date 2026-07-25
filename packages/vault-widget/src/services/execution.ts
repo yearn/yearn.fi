@@ -1,3 +1,4 @@
+import { MethodNotFoundRpcError, MethodNotSupportedRpcError } from 'viem'
 import {
   getAccount,
   getCallsStatus,
@@ -22,6 +23,47 @@ type WagmiSafeExecutionOptions = {
 
 function wait(milliseconds: number): Promise<void> {
   return new Promise((resolve) => globalThis.setTimeout(resolve, milliseconds))
+}
+
+function isAtomicSimulationUnavailable(error: unknown): boolean {
+  return error instanceof MethodNotFoundRpcError || error instanceof MethodNotSupportedRpcError
+}
+
+async function simulateSafeBatch({
+  account,
+  chainId,
+  config,
+  requests
+}: VaultWidgetSafeProposalContext): Promise<void> {
+  const publicClient = getPublicClient(config, { chainId })
+  if (!publicClient) throw new Error(`No public client is configured for chain ${chainId}`)
+
+  try {
+    const [block] = await publicClient.simulateBlocks({
+      blocks: [
+        {
+          calls: requests.map(({ data, to, value }) => ({
+            account,
+            data,
+            to,
+            value: value ?? 0n
+          }))
+        }
+      ]
+    })
+    if (!block || block.calls.length !== requests.length) {
+      throw new Error('Safe batch simulation returned incomplete results')
+    }
+    const failedCall = block.calls.find(({ status }) => status === 'failure')
+    if (failedCall?.status === 'failure') {
+      throw failedCall.error ?? new Error('Safe batch simulation failed')
+    }
+  } catch (error) {
+    // Most canonical RPCs do not expose eth_simulateV1 yet. In that case the
+    // Safe wallet remains the final atomic simulation boundary.
+    if (isAtomicSimulationUnavailable(error)) return
+    throw error
+  }
 }
 
 export function createWagmiExecutionService(): VaultWidgetExecutionService {
@@ -86,7 +128,9 @@ export function createWagmiSafeExecutionService(options: WagmiSafeExecutionOptio
     async isSafe({ config }) {
       return isSafeConnector(getAccount(config).connector?.id)
     },
-    async propose({ account, chainId, config, requests }) {
+    async propose(context) {
+      const { account, chainId, config, requests } = context
+      await simulateSafeBatch(context)
       const result = await sendCalls(config, {
         account,
         calls: requests.map(({ data, to, value }) => ({ data, to, value })),
