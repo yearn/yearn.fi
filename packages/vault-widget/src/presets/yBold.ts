@@ -2,21 +2,14 @@ import { type Abi, type Address, isAddressEqual, type PublicClient } from 'viem'
 import { createEnsoAdapter, createYBoldAdapter } from '../headless/adapters'
 import { createHttpEnsoQuoteProvider } from '../headless/enso'
 import type { EnsoQuoteProvider, VaultWidgetConfig, VaultWidgetToken, VaultWidgetTokenSelectorChain } from '../types'
+import { ENSO_NATIVE_TOKEN_ADDRESS, ENSO_ROUTER_BY_CHAIN, ensoSelectorChains } from './enso'
+
+export { ENSO_NATIVE_TOKEN_ADDRESS, ENSO_ROUTER_BY_CHAIN } from './enso'
 
 export const BOLD_ADDRESS: Address = '0x6440f144b7e50D6a8439336510312d2F54beB01D'
 export const YBOLD_VAULT_ADDRESS: Address = '0x9F4330700a36B29952869fac9b33f45EEdd8A3d8'
 export const YBOLD_POSITION_ADDRESS: Address = '0x23346B04a7f55b8760E5860AA5A77383D63491cD'
 export const YBOLD_ZAPPER_ADDRESS: Address = '0xE7099092533A3FB693Bb123cD96B8e53b4d83C58'
-export const ENSO_NATIVE_TOKEN_ADDRESS: Address = '0xEeeeeEeeeEeEeeEeEeEeeEEEeeeeEeeeeeeeEEeE'
-
-export const ENSO_ROUTER_BY_CHAIN: Readonly<Record<number, Address>> = {
-  1: '0xF75584eF6673aD213a685a1B58Cc0330B8eA22Cf',
-  10: '0xF75584eF6673aD213a685a1B58Cc0330B8eA22Cf',
-  137: '0xF75584eF6673aD213a685a1B58Cc0330B8eA22Cf',
-  8453: '0xF75584eF6673aD213a685a1B58Cc0330B8eA22Cf',
-  42161: '0xF75584eF6673aD213a685a1B58Cc0330B8eA22Cf',
-  747474: '0x3067BDBa0e6628497d527bEF511c22DA8b32cA3F'
-}
 
 const YBOLD_ZAPPER_ABI = [
   {
@@ -69,16 +62,7 @@ const POSITION_ABI = [
 const tokenLogo = (address: Address): string =>
   `https://cdn.jsdelivr.net/gh/SmolDapp/tokenAssets@main/tokens/1/${address.toLowerCase()}/logo-128.png`
 
-const chainLogo = (chainId: number): string => `https://assets.yearn.fi/chains/${chainId}/logo.svg`
-
-export const yBoldSelectorChains: readonly VaultWidgetTokenSelectorChain[] = [
-  { id: 1, name: 'Ethereum', logoURI: chainLogo(1) },
-  { id: 10, name: 'Optimism', logoURI: chainLogo(10) },
-  { id: 137, name: 'Polygon', logoURI: chainLogo(137) },
-  { id: 42161, name: 'Arbitrum', logoURI: chainLogo(42161) },
-  { id: 8453, name: 'Base', logoURI: chainLogo(8453) },
-  { id: 747474, name: 'Katana', logoURI: chainLogo(747474) }
-]
+export const yBoldSelectorChains: readonly VaultWidgetTokenSelectorChain[] = ensoSelectorChains
 
 export const yBoldAssetToken: VaultWidgetToken = {
   address: BOLD_ADDRESS,
@@ -282,6 +266,7 @@ export function createYBoldPreset(options: CreateYBoldPresetOptions = {}): Vault
       estimatedApr: 0,
       positionLabel: 'Staked shares'
     },
+    readPositionAmount: withdrawAmountToPosition,
     readPositionValue
   }
 }

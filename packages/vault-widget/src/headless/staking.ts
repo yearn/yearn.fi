@@ -106,6 +106,14 @@ type UnstakeAndWithdrawAdapterOptions = {
   vaultToken: VaultWidgetToken
 }
 
+type DepositAndStakeAdapterOptions = {
+  assetToken: VaultWidgetToken
+  stakingAdapter: VaultWidgetRouteAdapter
+  stakingToken: VaultWidgetToken
+  vaultAdapter: VaultWidgetRouteAdapter
+  vaultToken: VaultWidgetToken
+}
+
 export function normalizeStakingSource(source?: string): VaultWidgetStakingSource {
   if (source === 'VeYFI') return 'VeYFI'
   if (source === 'yBOLD') return 'yBOLD'
@@ -170,6 +178,16 @@ export function createStakingPositionValueReader(
   return async (publicClient, shares) => {
     if (shares === 0n || source === 'default') return shares
     return previewStakingAmount(publicClient, options.stakingAddress, 'previewRedeem', shares)
+  }
+}
+
+export function createStakingPositionAmountReader(
+  options: Pick<StakingAdapterOptions, 'source' | 'stakingAddress'>
+): (publicClient: PublicClient, assets: bigint) => Promise<bigint> {
+  const source = normalizeStakingSource(options.source)
+  return async (publicClient, assets) => {
+    if (assets === 0n || source === 'default') return assets
+    return previewStakingAmount(publicClient, options.stakingAddress, 'previewWithdraw', assets)
   }
 }
 
@@ -240,6 +258,69 @@ export function createStakingAdapter(options: StakingAdapterOptions): VaultWidge
         positionAmount,
         transaction,
         transactions: [{ id: 'unstake', label: 'Unstake', transaction }]
+      }
+    }
+  }
+}
+
+export function createDepositAndStakeAdapter(options: DepositAndStakeAdapterOptions): VaultWidgetRouteAdapter {
+  return {
+    id: 'deposit-and-stake',
+    supports(request): boolean {
+      return (
+        request.autoStake === true &&
+        request.mode === 'deposit' &&
+        request.chainId === options.assetToken.chainId &&
+        isAddressEqual(request.selectedToken.address, options.assetToken.address)
+      )
+    },
+    getApprovalTargets(request) {
+      const vaultTarget = options.vaultAdapter.getApprovalTarget?.({ ...request, autoStake: false })
+      const stakingTarget = options.stakingAdapter.getApprovalTarget?.({
+        ...request,
+        autoStake: false,
+        selectedToken: options.vaultToken
+      })
+      return [vaultTarget, stakingTarget].filter((target) => target !== undefined)
+    },
+    async quote(request, publicClient) {
+      if (request.mode !== 'deposit') throw new Error('Combined deposit and stake only supports deposits')
+
+      const vaultQuote = await options.vaultAdapter.quote({ ...request, autoStake: false }, publicClient)
+      const stakingQuote = await options.stakingAdapter.quote(
+        {
+          ...request,
+          amount: vaultQuote.expectedOut,
+          autoStake: false,
+          selectedToken: options.vaultToken
+        },
+        publicClient
+      )
+      const depositTransactions = vaultQuote.transactions ?? [
+        { id: 'deposit', label: 'Deposit', transaction: vaultQuote.transaction }
+      ]
+      const stakingTransactions = stakingQuote.transactions ?? [
+        { id: 'stake', label: 'Stake', transaction: stakingQuote.transaction }
+      ]
+      const approvals = [
+        ...(vaultQuote.approvals ?? (vaultQuote.approval ? [vaultQuote.approval] : [])),
+        ...(stakingQuote.approvals ?? (stakingQuote.approval ? [stakingQuote.approval] : []))
+      ]
+
+      return {
+        actionLabel: 'Deposit and stake',
+        adapterId: 'deposit-and-stake',
+        activityType: 'deposit and stake',
+        activityTokenOut: options.stakingToken.address,
+        amountIn: vaultQuote.amountIn,
+        assetValue: vaultQuote.assetValue ?? vaultQuote.amountIn,
+        expectedOut: stakingQuote.expectedOut,
+        minExpectedOut: stakingQuote.minExpectedOut,
+        positionAmount: stakingQuote.positionAmount,
+        transaction: stakingQuote.transaction,
+        transactions: [...depositTransactions, ...stakingTransactions],
+        approval: approvals[0],
+        approvals
       }
     }
   }

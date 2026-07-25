@@ -52,6 +52,38 @@ describe('buildTransactionPlan', () => {
     ).toEqual(['execute', 'refresh'])
   })
 
+  it('plans each insufficient approval in a composed workflow', () => {
+    const secondToken = {
+      ...token,
+      address: '0x4444444444444444444444444444444444444444' as const,
+      symbol: 'SHARE'
+    }
+    const plan = buildTransactionPlan({
+      allowance: 10n,
+      allowances: [10n, 0n],
+      connectedChainId: 1,
+      mode: 'deposit',
+      quote: {
+        ...quote,
+        approval: undefined,
+        approvals: [
+          quote.approval!,
+          {
+            amount: 9n,
+            spender: '0x5555555555555555555555555555555555555555',
+            token: secondToken
+          }
+        ]
+      }
+    })
+
+    expect(plan.steps.map((step) => [step.id, step.kind])).toEqual([
+      ['approve-2', 'approve'],
+      ['deposit', 'execute'],
+      ['refresh', 'refresh']
+    ])
+  })
+
   it('preserves ordered execution calls and switches chains between them', () => {
     const plan = buildTransactionPlan({
       allowance: 0n,

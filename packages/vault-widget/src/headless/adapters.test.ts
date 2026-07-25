@@ -128,9 +128,35 @@ describe('Enso adapter', () => {
     })
 
     await expect(adapter.quote(request, {} as PublicClient)).resolves.toMatchObject({
+      assetValue: undefined,
       bridge,
       isCrossChain: true
     })
+  })
+
+  it('does not read destination share values through the source-chain client', async () => {
+    const readPositionValue = vi.fn()
+    const adapter = createEnsoAdapter({
+      asset,
+      destinationChainId: 1,
+      positionToken,
+      provider: {
+        getRoute: async () => ({
+          ...route,
+          bridge: {
+            destinationChainId: 1,
+            protocol: 'relay',
+            sourceChainId: 10
+          }
+        })
+      },
+      readPositionValue,
+      routerByChain: { 10: router }
+    })
+
+    await adapter.quote(request, {} as PublicClient)
+
+    expect(readPositionValue).not.toHaveBeenCalled()
   })
 })
 

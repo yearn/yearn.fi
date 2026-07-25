@@ -20,6 +20,19 @@ export {
   createYearnFiSettingsStore
 } from './storage'
 export type {
+  EnsoVaultConfigResolverOptions,
+  HttpTokenCatalogOptions,
+  HttpTokenPriceServiceOptions,
+  VaultWidgetTokenCatalog,
+  VaultWidgetTokenPriceService
+} from './tokens'
+export {
+  createEnsoVaultConfigResolver,
+  createHttpTokenCatalog,
+  createHttpTokenPriceService,
+  DEFAULT_TOKEN_LIST_URLS
+} from './tokens'
+export type {
   VaultWidgetActivityStore,
   VaultWidgetConfigResolver,
   VaultWidgetExecutionContext,

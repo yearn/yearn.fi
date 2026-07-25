@@ -1,3 +1,5 @@
+export type { WithEnsoRoutesOptions } from './enso'
+export { ensoSelectorChains, withEnsoRoutes } from './enso'
 export type { CreateStakingPresetOptions } from './staking'
 export { createStakingPreset } from './staking'
 export type { CreateYBoldPresetOptions } from './yBold'
@@ -25,7 +27,8 @@ export {
   createYvBtcPreset,
   YVBTC_CHAIN_ID,
   YVBTC_LOCKED_ADDRESS,
-  YVBTC_UNLOCKED_ADDRESS
+  YVBTC_UNLOCKED_ADDRESS,
+  yvBtcAssetToken
 } from './yvBtc'
 export type { CreateYvUsdPresetOptions } from './yvUsd'
 export {

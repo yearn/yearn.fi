@@ -8,55 +8,60 @@ import type {
 
 type BuildTransactionPlanParams = {
   allowance: bigint
+  allowances?: readonly bigint[]
   connectedChainId?: number
   mode: VaultWidgetTransactionPlan['mode']
   quote: VaultWidgetQuote
   walletType?: VaultWidgetWalletType
 }
 
-function buildApprovalSteps(quote: VaultWidgetQuote, allowance: bigint): VaultWidgetExecutionStep[] {
-  const approval = quote.approval
-  if (!approval || allowance >= approval.amount) return []
+function buildApprovalSteps(quote: VaultWidgetQuote, allowances?: readonly bigint[]): VaultWidgetExecutionStep[] {
+  const approvals = quote.approvals?.length ? quote.approvals : quote.approval ? [quote.approval] : []
 
-  const resetStep: VaultWidgetExecutionStep[] =
-    approval.resetBeforeApproval && allowance > 0n
-      ? [
-          {
-            id: 'reset-approval',
-            kind: 'reset-approval',
-            label: `Reset ${approval.token.symbol} approval`,
-            chainId: approval.token.chainId,
-            request: {
+  return approvals.flatMap((approval, index) => {
+    const allowance = allowances?.[index] ?? 0n
+    if (allowance >= approval.amount) return []
+    const suffix = approvals.length > 1 ? `-${index + 1}` : ''
+    const resetStep: VaultWidgetExecutionStep[] =
+      approval.resetBeforeApproval && allowance > 0n
+        ? [
+            {
+              id: `reset-approval${suffix}`,
+              kind: 'reset-approval',
+              label: `Reset ${approval.token.symbol} approval`,
               chainId: approval.token.chainId,
-              to: approval.token.address,
-              data: encodeFunctionData({
-                abi: erc20Abi,
-                functionName: 'approve',
-                args: [approval.spender, 0n]
-              })
+              request: {
+                chainId: approval.token.chainId,
+                to: approval.token.address,
+                data: encodeFunctionData({
+                  abi: erc20Abi,
+                  functionName: 'approve',
+                  args: [approval.spender, 0n]
+                })
+              }
             }
-          }
-        ]
-      : []
+          ]
+        : []
 
-  return [
-    ...resetStep,
-    {
-      id: 'approve',
-      kind: 'approve',
-      label: `Approve ${approval.token.symbol}`,
-      chainId: approval.token.chainId,
-      request: {
+    return [
+      ...resetStep,
+      {
+        id: `approve${suffix}`,
+        kind: 'approve',
+        label: `Approve ${approval.token.symbol}`,
         chainId: approval.token.chainId,
-        to: approval.token.address,
-        data: encodeFunctionData({
-          abi: erc20Abi,
-          functionName: 'approve',
-          args: [approval.spender, approval.amount]
-        })
+        request: {
+          chainId: approval.token.chainId,
+          to: approval.token.address,
+          data: encodeFunctionData({
+            abi: erc20Abi,
+            functionName: 'approve',
+            args: [approval.spender, approval.amount]
+          })
+        }
       }
-    }
-  ]
+    ]
+  })
 }
 
 function getExecutionLabel(mode: VaultWidgetTransactionPlan['mode']): string {
@@ -153,12 +158,13 @@ function buildSafeProposalSteps(steps: readonly VaultWidgetExecutionStep[]): Vau
 
 export function buildTransactionPlan({
   allowance,
+  allowances,
   connectedChainId,
   mode,
   quote,
   walletType = 'eoa'
 }: BuildTransactionPlanParams): VaultWidgetTransactionPlan {
-  const approvalSteps = buildApprovalSteps(quote, allowance)
+  const approvalSteps = buildApprovalSteps(quote, allowances ?? [allowance])
   const executionSteps = buildExecutionSteps(quote, mode)
   const transactionSteps =
     walletType === 'safe'

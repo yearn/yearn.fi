@@ -1,6 +1,6 @@
 'use client'
 
-import { useQuery } from '@tanstack/react-query'
+import { useQueries, useQuery } from '@tanstack/react-query'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { type Address, erc20Abi, formatUnits, isAddressEqual, parseUnits } from 'viem'
 import { useAccount, useConfig, usePublicClient } from 'wagmi'
@@ -46,12 +46,14 @@ type VaultWidgetController = {
   allowance: bigint
   amount: string
   balance: bigint
+  balanceDecimals: number
   balanceFormatted: string
   canSubmit: boolean
   error?: Error
   execution: VaultWidgetExecutionState
   isLoading: boolean
   isQuoteLoading: boolean
+  needsApproval: boolean
   infoPositionSources: readonly VaultWidgetPositionSourceState[]
   mode: VaultWidgetMode
   modes: readonly VaultWidgetMode[]
@@ -205,7 +207,11 @@ export function useVaultWidgetController({
   const [amount, setAmountValue] = useState('')
   const [execution, setExecution] = useState<VaultWidgetExecutionState>({ status: 'idle' })
   const [settings, setSettingsState] = useState<VaultWidgetSettings>(() => services.settings.read())
-  const parsedAmount = parseAmount(amount, selectedToken.decimals)
+  const balanceDecimals =
+    transactionMode === 'withdraw'
+      ? (config.depositTokens[0]?.decimals ?? selectedToken.decimals)
+      : selectedToken.decimals
+  const parsedAmount = parseAmount(amount, balanceDecimals)
 
   // Settings are an external browser store, so a subscription is the appropriate synchronization boundary.
   useEffect(() => services.settings.subscribe?.(() => setSettingsState(services.settings.read())), [services.settings])
@@ -235,6 +241,7 @@ export function useVaultWidgetController({
 
   const adapter = config.adapters.find((candidate) =>
     candidate.supports({
+      autoStake: settings.autoStake,
       chainId: quoteChainId,
       mode: transactionMode,
       positionSource: selectedPositionSource,
@@ -255,7 +262,8 @@ export function useVaultWidgetController({
       activePositionSource.balance.toString(),
       parsedAmount.toString(),
       settings.maxLossBps,
-      settings.slippagePercent
+      settings.slippagePercent,
+      settings.autoStake
     ],
     queryFn: async ({ signal }): Promise<VaultWidgetQuote> => {
       if (!account || !adapter || !quoteClient) throw new Error('No route is available')
@@ -263,6 +271,7 @@ export function useVaultWidgetController({
         {
           account,
           amount: parsedAmount,
+          autoStake: settings.autoStake,
           chainId: quoteChainId,
           maxLossBps: settings.maxLossBps,
           mode: transactionMode,
@@ -283,28 +292,39 @@ export function useVaultWidgetController({
   })
   const refetchQuote = quoteQuery.refetch
 
-  const approvalTarget =
-    quoteQuery.data?.approval ??
-    adapter?.getApprovalTarget?.({
-      chainId: quoteChainId,
-      mode: transactionMode,
-      positionSource: selectedPositionSource,
-      selectedToken
-    })
-  const allowanceClient = usePublicClient({ chainId: approvalTarget?.token.chainId ?? config.chainId })
-  const allowanceQuery = useQuery({
-    queryKey: ['vault-widget', config.id, 'allowance', account, approvalTarget?.token.address, approvalTarget?.spender],
-    queryFn: async (): Promise<bigint> => {
-      if (!account || !approvalTarget || !allowanceClient) return 0n
-      return allowanceClient.readContract({
-        address: approvalTarget.token.address,
-        abi: erc20Abi,
-        functionName: 'allowance',
-        args: [account, approvalTarget.spender]
-      })
-    },
-    enabled: !!account && !!approvalTarget && !!allowanceClient,
-    refetchInterval: 15_000
+  const approvalRequest = {
+    autoStake: settings.autoStake,
+    chainId: quoteChainId,
+    mode: transactionMode,
+    positionSource: selectedPositionSource,
+    selectedToken
+  } as const
+  const legacyApprovalTarget = adapter?.getApprovalTarget?.(approvalRequest)
+  const adapterApprovalTargets =
+    adapter?.getApprovalTargets?.(approvalRequest) ?? (legacyApprovalTarget ? [legacyApprovalTarget] : [])
+  const approvalTargets = quoteQuery.data?.approvals?.length
+    ? quoteQuery.data.approvals
+    : quoteQuery.data?.approval
+      ? [quoteQuery.data.approval]
+      : adapterApprovalTargets
+  const approvalTarget = approvalTargets[0]
+  const allowanceQueries = useQueries({
+    queries: approvalTargets.map((target) => ({
+      queryKey: ['vault-widget', config.id, 'allowance', account, target.token.address, target.spender],
+      queryFn: async (): Promise<bigint> => {
+        if (!account) return 0n
+        const allowanceClient = getPublicClient(wagmiConfig, { chainId: target.token.chainId })
+        if (!allowanceClient) return 0n
+        return allowanceClient.readContract({
+          address: target.token.address,
+          abi: erc20Abi,
+          functionName: 'allowance',
+          args: [account, target.spender]
+        })
+      },
+      enabled: !!account,
+      refetchInterval: 15_000
+    }))
   })
 
   const balance = transactionMode === 'deposit' ? (balanceQuery.data ?? 0n) : activePositionSource.value
@@ -313,7 +333,11 @@ export function useVaultWidgetController({
   const positionValueDecimals = config.withdrawTokens[0]?.decimals ?? config.positionToken.decimals
   const overBalance =
     transactionMode === 'deposit' ? parsedAmount > balance : (quoteQuery.data?.positionAmount ?? 0n) > positionBalance
-  const allowance = allowanceQuery.data ?? 0n
+  const allowances = allowanceQueries.map(({ data }) => data ?? 0n)
+  const allowance = allowances[0] ?? 0n
+  const needsApproval =
+    quoteQuery.data?.approvals?.some((approval, index) => (allowances[index] ?? 0n) < approval.amount) ??
+    (!!quoteQuery.data?.approval && allowance < quoteQuery.data.approval.amount)
   const walletTypeQuery = useQuery({
     queryKey: ['vault-widget', config.id, 'wallet-type', account, connector?.id],
     queryFn: async (): Promise<VaultWidgetWalletType> => {
@@ -329,13 +353,14 @@ export function useVaultWidgetController({
       quoteQuery.data
         ? buildTransactionPlan({
             allowance,
+            allowances,
             connectedChainId,
             mode: transactionMode,
             quote: quoteQuery.data,
             walletType
           })
         : undefined,
-    [allowance, connectedChainId, quoteQuery.data, transactionMode, walletType]
+    [allowance, allowances, connectedChainId, quoteQuery.data, transactionMode, walletType]
   )
   const error = quoteQuery.error ? getError(quoteQuery.error) : undefined
   const isExecuting =
@@ -346,11 +371,16 @@ export function useVaultWidgetController({
     parsedAmount > 0n &&
     !overBalance &&
     !isExecuting &&
+    !allowanceQueries.some(({ isLoading }) => isLoading) &&
     !(services.execution.getWalletType && walletTypeQuery.isLoading)
 
   const refresh = useCallback(async (): Promise<void> => {
-    await Promise.allSettled([balanceQuery.refetch(), positionSourcesQuery.refetch(), allowanceQuery.refetch()])
-  }, [allowanceQuery, balanceQuery, positionSourcesQuery])
+    await Promise.allSettled([
+      balanceQuery.refetch(),
+      positionSourcesQuery.refetch(),
+      ...allowanceQueries.map((query) => query.refetch())
+    ])
+  }, [allowanceQueries, balanceQuery, positionSourcesQuery])
 
   const resolveFreshPlan = useCallback(async (): Promise<VaultWidgetTransactionPlan> => {
     if (!plan) throw new Error('No transaction plan is available')
@@ -360,12 +390,13 @@ export function useVaultWidgetController({
     if (!refreshedQuote) throw new Error('The route quote expired and could not be refreshed')
     return buildTransactionPlan({
       allowance,
+      allowances,
       connectedChainId,
       mode: transactionMode,
       quote: refreshedQuote,
       walletType
     })
-  }, [allowance, connectedChainId, plan, refetchQuote, transactionMode, walletType])
+  }, [allowance, allowances, connectedChainId, plan, refetchQuote, transactionMode, walletType])
 
   const submit = useCallback(async (): Promise<void> => {
     if (!account || !plan || !canSubmit) return
@@ -384,8 +415,12 @@ export function useVaultWidgetController({
       destinationChainId: selectedToken.chainId,
       status: 'pending',
       timestamp: Date.now(),
-      tokenIn: transactionMode === 'deposit' ? selectedToken.address : selectedPositionSource.token.address,
-      tokenOut: transactionMode === 'deposit' ? config.positionToken.address : selectedToken.address,
+      tokenIn:
+        transactionPlan.quote.activityTokenIn ??
+        (transactionMode === 'deposit' ? selectedToken.address : selectedPositionSource.token.address),
+      tokenOut:
+        transactionPlan.quote.activityTokenOut ??
+        (transactionMode === 'deposit' ? config.positionToken.address : selectedToken.address),
       type: getActivityType(transactionMode, transactionPlan.quote)
     })
 
@@ -521,10 +556,10 @@ export function useVaultWidgetController({
     (percentage: number): void => {
       const available = transactionMode === 'deposit' ? (balanceQuery.data ?? 0n) : activePositionSource.value
       const amountAtPercentage = (available * BigInt(percentage)) / 100n
-      setAmountValue(formatUnits(amountAtPercentage, selectedToken.decimals))
+      setAmountValue(formatUnits(amountAtPercentage, balanceDecimals))
       setExecution({ status: 'idle' })
     },
-    [activePositionSource.value, balanceQuery.data, selectedToken.decimals, transactionMode]
+    [activePositionSource.value, balanceDecimals, balanceQuery.data, transactionMode]
   )
 
   const setSettings = useCallback(
@@ -545,12 +580,14 @@ export function useVaultWidgetController({
     allowance,
     amount,
     balance,
-    balanceFormatted: formatUnits(balance, selectedToken.decimals),
+    balanceDecimals,
+    balanceFormatted: formatUnits(balance, balanceDecimals),
     canSubmit,
     error,
     execution,
     isLoading: balanceQuery.isLoading || positionSourcesQuery.isLoading,
     isQuoteLoading: quoteQuery.isLoading || quoteQuery.isFetching,
+    needsApproval,
     infoPositionSources: infoPositionSourceStates,
     mode,
     modes,

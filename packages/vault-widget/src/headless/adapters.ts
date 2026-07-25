@@ -1,5 +1,5 @@
 import { type Abi, type Address, encodeFunctionData, erc20Abi, isAddressEqual, type PublicClient } from 'viem'
-import type { EnsoQuoteProvider, VaultWidgetRouteAdapter, VaultWidgetToken } from '../types'
+import type { EnsoQuoteProvider, VaultWidgetRequest, VaultWidgetRouteAdapter, VaultWidgetToken } from '../types'
 
 const ERC4626_ABI = [
   {
@@ -112,6 +112,20 @@ export function createErc4626PositionValueReader(
   }
 }
 
+export function createErc4626PositionAmountReader(
+  options: Pick<Erc4626AdapterOptions, 'vaultAddress'>
+): (publicClient: PublicClient, assets: bigint) => Promise<bigint> {
+  return async (publicClient, assets) => {
+    if (assets === 0n) return 0n
+    return publicClient.readContract({
+      address: options.vaultAddress,
+      abi: ERC4626_ABI,
+      functionName: 'previewWithdraw',
+      args: [assets]
+    })
+  }
+}
+
 export function createErc4626Adapter(options: Erc4626AdapterOptions): VaultWidgetRouteAdapter {
   return {
     id: 'erc4626',
@@ -204,6 +218,16 @@ export function createYearnV2PositionValueReader(
     if (shares === 0n) return 0n
     const pricePerShare = await readYearnV2PricePerShare(publicClient, options.vaultAddress)
     return (shares * pricePerShare) / 10n ** BigInt(options.positionToken.decimals)
+  }
+}
+
+export function createYearnV2PositionAmountReader(
+  options: Pick<YearnV2AdapterOptions, 'positionToken' | 'vaultAddress'>
+): (publicClient: PublicClient, assets: bigint) => Promise<bigint> {
+  return async (publicClient, assets) => {
+    if (assets === 0n) return 0n
+    const pricePerShare = await readYearnV2PricePerShare(publicClient, options.vaultAddress)
+    return divideUp(assets * 10n ** BigInt(options.positionToken.decimals), pricePerShare)
   }
 }
 
@@ -387,8 +411,11 @@ export function createYBoldAdapter(options: YBoldAdapterOptions): VaultWidgetRou
 
 type EnsoAdapterOptions = {
   asset: VaultWidgetToken
+  autoStake?: boolean
   destinationChainId: number
+  modes?: readonly VaultWidgetRequest['mode'][]
   positionToken: VaultWidgetToken
+  positionSourceId?: string
   provider: EnsoQuoteProvider
   routerByChain: Readonly<Record<number, Address>>
   slippageBps?: number
@@ -400,7 +427,14 @@ export function createEnsoAdapter(options: EnsoAdapterOptions): VaultWidgetRoute
   return {
     id: 'enso',
     supports(request): boolean {
-      return !isAddressEqual(request.selectedToken.address, options.asset.address)
+      return (
+        (options.autoStake === undefined || request.autoStake === options.autoStake) &&
+        (!options.modes || options.modes.includes(request.mode)) &&
+        (!options.positionSourceId ||
+          request.mode === 'deposit' ||
+          request.positionSource?.id === options.positionSourceId) &&
+        !isAddressEqual(request.selectedToken.address, options.asset.address)
+      )
     },
     getApprovalTarget(request) {
       const token = request.mode === 'deposit' ? request.selectedToken : options.positionToken
@@ -442,12 +476,16 @@ export function createEnsoAdapter(options: EnsoAdapterOptions): VaultWidgetRoute
       const router = options.routerByChain[sourceChainId]
       if (!router) throw new Error(`No trusted Enso router is configured for chain ${sourceChainId}`)
       const assetValue =
-        request.mode === 'deposit' && options.readPositionValue
+        request.mode === 'deposit' && options.readPositionValue && !isCrossChain
           ? await options.readPositionValue(publicClient, route.amountOut)
-          : route.amountOut
+          : request.mode === 'withdraw'
+            ? route.amountOut
+            : undefined
 
       return {
         adapterId: 'enso',
+        activityTokenIn: tokenIn,
+        activityTokenOut: tokenOut,
         amountIn: positionAmount,
         assetValue,
         expectedOut: route.amountOut,

@@ -1,8 +1,9 @@
 import { decodeFunctionData, type PublicClient } from 'viem'
 import { describe, expect, it, vi } from 'vitest'
 import type { VaultWidgetRequest, VaultWidgetToken } from '../types'
-import { createYearnV2Adapter, YEARN_V2_VAULT_ABI } from './adapters'
+import { createErc4626Adapter, createYearnV2Adapter, ERC4626_ABI, YEARN_V2_VAULT_ABI } from './adapters'
 import {
+  createDepositAndStakeAdapter,
   createStakingAdapter,
   createStakingPositionValueReader,
   createUnstakeAndWithdrawAdapter,
@@ -159,6 +160,57 @@ describe('createStakingPositionValueReader', () => {
 
     await expect(readPositionValue(client, 100n)).resolves.toBe(100n)
     expect(client.readContract).not.toHaveBeenCalled()
+  })
+})
+
+describe('createDepositAndStakeAdapter', () => {
+  it('composes vault deposit and staking calls with both approvals', async () => {
+    const stakingAdapter = createStakingAdapter({
+      chainId: 1,
+      source: 'VeYFI',
+      stakingAddress,
+      stakingToken,
+      vaultToken
+    })
+    const vaultAdapter = createErc4626Adapter({
+      asset: assetToken,
+      vaultAddress
+    })
+    const adapter = createDepositAndStakeAdapter({
+      assetToken,
+      stakingAdapter,
+      stakingToken,
+      vaultAdapter,
+      vaultToken
+    })
+    const readContract = vi.fn().mockResolvedValueOnce(80n).mockResolvedValueOnce(70n)
+    const quote = await adapter.quote(
+      {
+        ...createRequest('deposit'),
+        autoStake: true,
+        selectedToken: assetToken
+      },
+      { readContract } as unknown as PublicClient
+    )
+    const [deposit, stake] = quote.transactions ?? []
+
+    expect(quote).toMatchObject({
+      activityType: 'deposit and stake',
+      expectedOut: 70n,
+      positionAmount: 70n
+    })
+    expect(quote.approvals).toEqual([
+      expect.objectContaining({ amount: 100n, token: assetToken }),
+      expect.objectContaining({ amount: 80n, token: vaultToken })
+    ])
+    expect(decodeFunctionData({ abi: ERC4626_ABI, data: deposit!.transaction.data })).toEqual({
+      functionName: 'deposit',
+      args: [100n, account]
+    })
+    expect(decodeFunctionData({ abi: VEYFI_STAKING_ABI, data: stake!.transaction.data })).toEqual({
+      functionName: 'deposit',
+      args: [80n]
+    })
   })
 })
 

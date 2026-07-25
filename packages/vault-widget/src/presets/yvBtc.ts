@@ -6,13 +6,23 @@ export const YVBTC_CHAIN_ID = 1
 export const YVBTC_UNLOCKED_ADDRESS = '0xb8787E236e699654F910CAD14F338d0DdB529Fd7' as Address
 export const YVBTC_LOCKED_ADDRESS = '0x0000000000000000000000000000000000000000' as Address
 
+export const yvBtcAssetToken: VaultWidgetToken = {
+  address: '0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599',
+  chainId: YVBTC_CHAIN_ID,
+  decimals: 8,
+  logoURI: 'https://assets.yearn.fi/tokens/1/0x2260fac5e5542a773aa44fbcfedf7c193bc2c599/logo-128.png',
+  name: 'Wrapped BTC',
+  symbol: 'WBTC'
+}
+
 export type CreateYvBtcPresetOptions = {
-  asset: VaultWidgetToken
+  asset?: VaultWidgetToken
   assetPriceUsd?: number
   estimatedApr?: number
 }
 
-export function createYvBtcPreset(options: CreateYvBtcPresetOptions): VaultWidgetConfig {
+export function createYvBtcPreset(options: CreateYvBtcPresetOptions = {}): VaultWidgetConfig {
+  const asset = options.asset ?? yvBtcAssetToken
   const readPositionValue = createErc4626PositionValueReader({ vaultAddress: YVBTC_UNLOCKED_ADDRESS })
   return {
     id: 'yvBTC:unlocked',
@@ -27,9 +37,9 @@ export function createYvBtcPreset(options: CreateYvBtcPresetOptions): VaultWidge
       name: 'yvBTC Unlocked',
       symbol: 'yvBTC'
     },
-    depositTokens: [options.asset],
-    withdrawTokens: [options.asset],
-    adapters: [createErc4626Adapter({ asset: options.asset, vaultAddress: YVBTC_UNLOCKED_ADDRESS })],
+    depositTokens: [asset],
+    withdrawTokens: [asset],
+    adapters: [createErc4626Adapter({ asset, vaultAddress: YVBTC_UNLOCKED_ADDRESS })],
     modes: ['deposit', 'withdraw', 'info'],
     readPositionValue,
     display: {
@@ -41,7 +51,7 @@ export function createYvBtcPreset(options: CreateYvBtcPresetOptions): VaultWidge
   }
 }
 
-export function createYvBtcFamilyPreset(options: CreateYvBtcPresetOptions): VaultWidgetFamilyPreset {
+export function createYvBtcFamilyPreset(options: CreateYvBtcPresetOptions = {}): VaultWidgetFamilyPreset {
   return {
     id: 'yvBTC',
     name: 'yvBTC',

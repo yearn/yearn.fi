@@ -1,5 +1,6 @@
 import { describe, expect, it, vi } from 'vitest'
 import { YBOLD_VAULT_ADDRESS } from '../presets/yBold'
+import { YVBTC_UNLOCKED_ADDRESS } from '../presets/yvBtc'
 import { YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '../presets/yvUsd'
 import { createKongVaultConfigResolver } from './config'
 
@@ -13,6 +14,7 @@ describe('createKongVaultConfigResolver', () => {
       Response.json({
         address: vaultAddress,
         apiVersion: '3.0.4',
+        apr: { forwardAPR: { netAPR: 0.123 } },
         asset: {
           address: assetAddress,
           decimals: 6,
@@ -22,7 +24,8 @@ describe('createKongVaultConfigResolver', () => {
         chainId: 1,
         decimals: 18,
         name: 'Yearn USDC',
-        symbol: 'yvUSDC'
+        symbol: 'yvUSDC',
+        tvl: { price: 1.001 }
       })
     )
 
@@ -33,6 +36,8 @@ describe('createKongVaultConfigResolver', () => {
     expect(config.adapters[0]?.id).toBe('erc4626')
     expect(config.modes).toEqual(['deposit', 'withdraw', 'info'])
     expect(config.display?.positionLabel).toBe('Vault shares')
+    expect(config.display).toMatchObject({ assetPriceUsd: 1.001, estimatedApr: 0.123 })
+    expect(config.depositTokens[0]?.priceUsd).toBe(1.001)
     expect(config.readPositionValue).toBeTypeOf('function')
   })
 
@@ -98,7 +103,23 @@ describe('createKongVaultConfigResolver', () => {
     expect(config.positionSources?.map(({ id }) => id)).toEqual(['vault', 'staked'])
     expect(stakedSource?.withdrawLabel).toBe('You will unstake and redeem')
     expect(config.depositTokens.map(({ address }) => address)).toEqual([assetAddress, vaultAddress])
-    expect(config.adapters.map(({ id }) => id)).toEqual(['erc4626', 'staking-veyfi', 'unstake-and-withdraw'])
+    expect(config.adapters.map(({ id }) => id)).toEqual([
+      'deposit-and-stake',
+      'erc4626',
+      'staking-veyfi',
+      'unstake-and-withdraw'
+    ])
+    expect(
+      config.adapters
+        .find(({ id }) => id === 'deposit-and-stake')
+        ?.supports({
+          autoStake: true,
+          chainId: 1,
+          mode: 'deposit',
+          positionSource: vaultSource,
+          selectedToken: asset!
+        })
+    ).toBe(true)
     expect(
       config.adapters
         .find(({ id }) => id === 'erc4626')
@@ -200,13 +221,14 @@ describe('createKongVaultConfigResolver', () => {
 
   it.each([
     { address: YVUSD_LOCKED_ADDRESS, adapter: 'yvUSD-locked', variant: 'locked' },
-    { address: YVUSD_UNLOCKED_ADDRESS, adapter: 'erc4626', variant: 'unlocked' }
-  ])('resolves the package-owned yvUSD $variant preset', async ({ adapter, address, variant }) => {
+    { address: YVUSD_UNLOCKED_ADDRESS, adapter: 'erc4626', variant: 'unlocked' },
+    { address: YVBTC_UNLOCKED_ADDRESS, adapter: 'erc4626', variant: 'unlocked', family: 'yvBTC' }
+  ])('resolves the package-owned $family $variant preset', async ({ adapter, address, family = 'yvUSD', variant }) => {
     const fetcher = vi.fn()
 
     const config = await createKongVaultConfigResolver({ fetcher }).resolve(1, address)
 
-    expect(config.id).toBe(`yvUSD:${variant}`)
+    expect(config.id).toBe(`${family}:${variant}`)
     expect(config.adapters[0]?.id).toBe(adapter)
     expect(fetcher).not.toHaveBeenCalled()
   })

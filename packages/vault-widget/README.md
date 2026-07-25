@@ -18,9 +18,11 @@ import '@yearn/vault-widget/styles.css'
 ```
 
 `chainId` and `vaultAddress` are the primary integration. The default service
-resolves ERC-4626 metadata from Kong and recognizes package presets such as
-yBOLD. Pass `config` to override resolution or inject a `configResolver`
-through `VaultWidgetProvider` for another metadata source.
+resolves V2/ERC-4626 metadata from Kong, recognizes package presets such as
+yBOLD, and decorates generic vaults with the supported Enso token catalog,
+same-chain routes, and cross-chain routes. Pass `config` to override resolution
+or inject a `configResolver` through `VaultWidgetProvider` for another metadata
+source.
 
 The styled widget uses the same in-widget asset picker as yearn.fi. Route-capable
 tokens come from `depositTokens` and `withdrawTokens`. Use
@@ -50,8 +52,9 @@ remain available through search as long as they are present in `routeTokens`.
 Vaults with Kong staking metadata automatically expose separate direct-vault
 and staked position sources. The selected source controls the available output
 assets and selects direct withdraw, unstake, or combined unstake-and-withdraw
-routing. Custom integrations can define the same behavior with
-`positionSources` and source-aware route adapters.
+routing. Enabling automatic staking produces one ordered deposit-then-stake
+plan, including both approvals when required. Custom integrations can define
+the same behavior with `positionSources` and source-aware route adapters.
 
 The default execution service detects the Wagmi Safe connector, combines
 same-chain approval and execution calls into an atomic wallet-call proposal,

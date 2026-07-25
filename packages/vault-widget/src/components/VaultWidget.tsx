@@ -185,7 +185,7 @@ function ConfiguredVaultWidget({
   const isTransactionMode = controller.mode === 'deposit' || controller.mode === 'withdraw'
   const transactionMode = controller.mode === 'withdraw' ? 'withdraw' : 'deposit'
   const quote = controller.quote
-  const needsApproval = !!quote?.approval && controller.allowance < quote.approval.amount
+  const needsApproval = controller.needsApproval
   const actionLabel =
     quote?.actionLabel ??
     (controller.isQuoteLoading
@@ -198,14 +198,17 @@ function ConfiguredVaultWidget({
           ? copy.approveAndDeposit
           : copy.submitDeposit)
   const inputAmount = Number(controller.amount || '0')
-  const inputPriceUsd = controller.selectedToken.priceUsd ?? 0
+  const assetToken = config.depositTokens[0] ?? controller.selectedToken
+  const inputPriceUsd =
+    transactionMode === 'deposit'
+      ? (controller.selectedToken.priceUsd ?? 0)
+      : (assetToken.priceUsd ?? config.display?.assetPriceUsd ?? 0)
   const inputUsd = inputAmount * inputPriceUsd
   const positionValue = Number(formatUnits(controller.positionValue, controller.positionValueDecimals))
   const positionUsd = positionValue * (config.display?.assetPriceUsd ?? 0)
   const positionAmount = quote?.positionAmount ?? 0n
   const expectedOut = quote?.expectedOut ?? 0n
   const assetValue = quote?.assetValue ?? 0n
-  const assetToken = config.depositTokens[0] ?? controller.selectedToken
   const assetValueFormatted = formatWidgetValue(assetValue, assetToken.decimals)
   const assetValueNumeric = Number(formatUnits(assetValue, assetToken.decimals))
   const estimatedAnnualReturn = assetValueNumeric * (config.display?.estimatedApr ?? 0)
@@ -458,8 +461,8 @@ function ConfiguredVaultWidget({
               <span>{formatUsd(inputUsd)}</span>
               {controller.account && controller.balance > 0n ? (
                 <span>
-                  {copy.balance}: {formatWalletBalance(controller.balance, controller.selectedToken.decimals)}{' '}
-                  {controller.selectedToken.symbol}
+                  {copy.balance}: {formatWalletBalance(controller.balance, controller.balanceDecimals)}{' '}
+                  {transactionMode === 'withdraw' ? assetToken.symbol : controller.selectedToken.symbol}
                 </span>
               ) : !controller.account ? (
                 <button type="button" onClick={() => onConnectWallet?.()}>
@@ -600,8 +603,8 @@ function ConfiguredVaultWidget({
             <TokenSelectorOverlay
               balance={
                 controller.account
-                  ? `${formatWalletBalance(controller.balance, controller.selectedToken.decimals)} ${
-                      controller.selectedToken.symbol
+                  ? `${formatWalletBalance(controller.balance, controller.balanceDecimals)} ${
+                      transactionMode === 'withdraw' ? assetToken.symbol : controller.selectedToken.symbol
                     }`
                   : undefined
               }

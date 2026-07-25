@@ -1,16 +1,21 @@
 import { type Address, isAddress, isAddressEqual } from 'viem'
 import {
   createErc4626Adapter,
+  createErc4626PositionAmountReader,
   createErc4626PositionValueReader,
   createYearnV2Adapter,
+  createYearnV2PositionAmountReader,
   createYearnV2PositionValueReader
 } from '../headless/adapters'
 import {
+  createDepositAndStakeAdapter,
   createStakingAdapter,
+  createStakingPositionAmountReader,
   createStakingPositionValueReader,
   createUnstakeAndWithdrawAdapter
 } from '../headless/staking'
 import { createYBoldPreset, YBOLD_VAULT_ADDRESS } from '../presets/yBold'
+import { createYvBtcPreset, YVBTC_UNLOCKED_ADDRESS } from '../presets/yvBtc'
 import { createYvUsdPreset, YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '../presets/yvUsd'
 import type { VaultWidgetConfig, VaultWidgetToken } from '../types'
 import type { VaultWidgetConfigResolver } from './types'
@@ -22,11 +27,20 @@ type KongVault = {
   decimals?: number | string | null
   name: string
   symbol?: string | null
+  apr?: {
+    forwardAPR?: {
+      netAPR?: number | null
+    } | null
+    netAPR?: number | null
+  } | null
   asset?: {
     address: Address
     decimals?: number | string | null
     name: string
     symbol: string
+  } | null
+  tvl?: {
+    price?: number | null
   } | null
   staking?: {
     address?: Address | null
@@ -113,6 +127,7 @@ function createConfig(vault: KongVault): VaultWidgetConfig {
     decimals: normalizeDecimals(vault.asset.decimals),
     logoURI: tokenLogo(vault.chainId, vault.asset.address),
     name: vault.asset.name,
+    priceUsd: vault.tvl?.price ?? undefined,
     symbol: vault.asset.symbol
   }
   const positionToken: VaultWidgetToken = {
@@ -180,6 +195,9 @@ function createConfig(vault: KongVault): VaultWidgetConfig {
   const readPositionValue = isYearnV2
     ? createYearnV2PositionValueReader({ positionToken, vaultAddress: vault.address })
     : createErc4626PositionValueReader({ vaultAddress: vault.address })
+  const readPositionAmount = isYearnV2
+    ? createYearnV2PositionAmountReader({ positionToken, vaultAddress: vault.address })
+    : createErc4626PositionAmountReader({ vaultAddress: vault.address })
 
   if (stakingAddress) {
     const stakingToken: VaultWidgetToken = {
@@ -202,6 +220,10 @@ function createConfig(vault: KongVault): VaultWidgetConfig {
       source: vault.staking?.source ?? undefined,
       stakingAddress
     })
+    const readStakingAmount = createStakingPositionAmountReader({
+      source: vault.staking?.source ?? undefined,
+      stakingAddress
+    })
 
     return {
       id: `${vault.chainId}:${vault.address.toLowerCase()}`,
@@ -215,6 +237,7 @@ function createConfig(vault: KongVault): VaultWidgetConfig {
           id: 'vault',
           label: 'Vault shares',
           token: positionToken,
+          readAmount: readPositionAmount,
           readValue: readPositionValue
         },
         {
@@ -223,6 +246,8 @@ function createConfig(vault: KongVault): VaultWidgetConfig {
           label: 'Staked shares',
           token: stakingToken,
           withdrawLabel: 'You will unstake and redeem',
+          readAmount: async (publicClient, assets) =>
+            readStakingAmount(publicClient, await readPositionAmount(publicClient, assets)),
           readValue: async (publicClient, balance) =>
             readPositionValue(publicClient, await readStakingValue(publicClient, balance))
         }
@@ -230,6 +255,13 @@ function createConfig(vault: KongVault): VaultWidgetConfig {
       depositTokens: [asset, positionToken],
       withdrawTokens: [asset, positionToken],
       adapters: [
+        createDepositAndStakeAdapter({
+          assetToken: asset,
+          stakingAdapter,
+          stakingToken,
+          vaultAdapter: adapter,
+          vaultToken: positionToken
+        }),
         adapter,
         stakingAdapter,
         createUnstakeAndWithdrawAdapter({
@@ -243,10 +275,13 @@ function createConfig(vault: KongVault): VaultWidgetConfig {
       modes,
       defaultMode: migrationConfig ? 'migrate' : isRetired ? 'withdraw' : undefined,
       migration: migrationConfig,
+      readPositionAmount,
       readPositionValue,
       rewards: rewardsConfig,
       display: {
         approvalSpenderName: { deposit: positionToken.symbol },
+        assetPriceUsd: vault.tvl?.price ?? undefined,
+        estimatedApr: vault.apr?.forwardAPR?.netAPR ?? vault.apr?.netAPR ?? undefined,
         positionLabel: 'Vault shares'
       }
     }
@@ -264,10 +299,13 @@ function createConfig(vault: KongVault): VaultWidgetConfig {
     modes,
     defaultMode: migrationConfig ? 'migrate' : isRetired ? 'withdraw' : undefined,
     migration: migrationConfig,
+    readPositionAmount,
     readPositionValue,
     rewards: rewardsConfig,
     display: {
       approvalSpenderName: { deposit: positionToken.symbol },
+      assetPriceUsd: vault.tvl?.price ?? undefined,
+      estimatedApr: vault.apr?.forwardAPR?.netAPR ?? vault.apr?.netAPR ?? undefined,
       positionLabel: 'Vault shares'
     }
   }
@@ -287,6 +325,9 @@ export function createKongVaultConfigResolver(options: KongConfigResolverOptions
       }
       if (chainId === 1 && isAddressEqual(vaultAddress, YVUSD_UNLOCKED_ADDRESS)) {
         return createYvUsdPreset({ variant: 'unlocked' })
+      }
+      if (chainId === 1 && isAddressEqual(vaultAddress, YVBTC_UNLOCKED_ADDRESS)) {
+        return createYvBtcPreset({})
       }
 
       const response = await fetcher(`${baseUrl}/snapshot/${chainId}/${vaultAddress}`, {

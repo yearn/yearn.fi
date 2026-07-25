@@ -24,6 +24,7 @@ export type VaultWidgetPositionSource = {
   label: string
   token: VaultWidgetToken
   withdrawLabel?: string
+  readAmount?: (publicClient: PublicClient, assets: bigint) => Promise<bigint>
   readValue?: (publicClient: PublicClient, balance: bigint) => Promise<bigint>
 }
 
@@ -48,6 +49,7 @@ export type VaultWidgetTokenSelectorConfig = {
 export type VaultWidgetRequest = {
   account: Address
   amount: bigint
+  autoStake?: boolean
   chainId: number
   maxLossBps: number
   mode: 'deposit' | 'withdraw'
@@ -83,6 +85,8 @@ export type VaultWidgetExecutionCall = {
 export type VaultWidgetQuote = {
   actionLabel?: string
   activityAmount?: string
+  activityTokenIn?: Address
+  activityTokenOut?: Address
   adapterId: string
   activityType?: VaultWidgetActivity['type']
   amountIn: bigint
@@ -94,6 +98,7 @@ export type VaultWidgetQuote = {
   transaction: VaultWidgetTransactionRequest
   transactions?: readonly VaultWidgetExecutionCall[]
   approval?: VaultWidgetApproval
+  approvals?: readonly VaultWidgetApproval[]
   priceImpactPercent?: number | null
   isCrossChain?: boolean
   bridge?: EnsoBridgeDetails
@@ -103,10 +108,15 @@ export type VaultWidgetQuote = {
 
 export type VaultWidgetRouteAdapter = {
   id: string
-  supports: (request: Pick<VaultWidgetRequest, 'chainId' | 'mode' | 'positionSource' | 'selectedToken'>) => boolean
+  supports: (
+    request: Pick<VaultWidgetRequest, 'autoStake' | 'chainId' | 'mode' | 'positionSource' | 'selectedToken'>
+  ) => boolean
   getApprovalTarget?: (
-    request: Pick<VaultWidgetRequest, 'chainId' | 'mode' | 'positionSource' | 'selectedToken'>
+    request: Pick<VaultWidgetRequest, 'autoStake' | 'chainId' | 'mode' | 'positionSource' | 'selectedToken'>
   ) => VaultWidgetApprovalTarget | undefined
+  getApprovalTargets?: (
+    request: Pick<VaultWidgetRequest, 'autoStake' | 'chainId' | 'mode' | 'positionSource' | 'selectedToken'>
+  ) => readonly VaultWidgetApprovalTarget[]
   quote: (request: VaultWidgetRequest, publicClient: PublicClient) => Promise<VaultWidgetQuote>
 }
 
@@ -130,6 +140,7 @@ export type VaultWidgetConfig = {
   defaultMaxLossBps?: number
   tokenSelector?: VaultWidgetTokenSelectorConfig
   readPositionValue?: (publicClient: PublicClient, shares: bigint) => Promise<bigint>
+  readPositionAmount?: (publicClient: PublicClient, assets: bigint) => Promise<bigint>
   migration?: VaultWidgetMigrationConfig
   rewards?: VaultWidgetRewardsConfig
   info?: VaultWidgetInfoConfig

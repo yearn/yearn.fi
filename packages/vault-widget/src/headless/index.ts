@@ -1,9 +1,11 @@
 export {
   createEnsoAdapter,
   createErc4626Adapter,
+  createErc4626PositionAmountReader,
   createErc4626PositionValueReader,
   createYBoldAdapter,
   createYearnV2Adapter,
+  createYearnV2PositionAmountReader,
   createYearnV2PositionValueReader,
   ERC4626_ABI,
   YEARN_V2_VAULT_ABI
@@ -63,7 +65,9 @@ export {
 } from './settings'
 export type { VaultWidgetStakingSource } from './staking'
 export {
+  createDepositAndStakeAdapter,
   createStakingAdapter,
+  createStakingPositionAmountReader,
   createStakingPositionValueReader,
   createUnstakeAndWithdrawAdapter,
   DEFAULT_STAKING_ABI,

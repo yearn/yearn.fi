@@ -24,13 +24,15 @@ published as the production dependency until every row below is complete.
 
 Current rollout state:
 
-- yearn.fi can mount the package for the complete yBOLD surface with
-  `NEXT_PUBLIC_VAULT_WIDGET_ENABLED=true`. `/dev/vault-widget` remains the
-  development-only side-by-side harness, with package fixtures for yBOLD and
-  direct Yearn V2 vaults, a real retired V2 migration, a V3 vault with staking
-  and rewards, and locked/unlocked yvUSD.
-  Other product families stay on their legacy implementations until their
-  parity gates pass.
+- `NEXT_PUBLIC_VAULT_WIDGET_ENABLED=true` switches the complete yearn.fi vault
+  widget surface to the package for generic V2/ERC-4626 vaults, staking vaults,
+  yBOLD, yvUSD, and yvBTC. The host retains only wallet-provider setup,
+  page-level navigation, refresh callbacks, and design-token mapping.
+- `/dev/vault-widget` remains the development-only side-by-side harness, with
+  package fixtures for yBOLD and direct Yearn V2 vaults, a real retired V2
+  migration, a V3 vault with staking and rewards, and locked/unlocked yvUSD.
+- The flag remains a QA/rollback gate until connected-wallet and Tenderly
+  validation is complete. The legacy surface is not removed before that gate.
 - yearn-bold keeps its legacy card by default. Setting
   `NEXT_PUBLIC_VAULT_WIDGET_ENABLED=true` switches its entire card to the
   package for parity testing.

@@ -21,6 +21,7 @@ export function getPositionSources(config: VaultWidgetConfig): readonly VaultWid
       id: 'default',
       label: config.display?.positionLabel ?? config.positionToken.symbol,
       token: config.positionToken,
+      readAmount: config.readPositionAmount,
       readValue: config.readPositionValue
     }
   ]
