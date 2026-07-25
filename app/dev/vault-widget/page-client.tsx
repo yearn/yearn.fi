@@ -3,11 +3,13 @@
 import { useAccountModal, useConnectModal } from '@rainbow-me/rainbowkit'
 import {
   createYBoldPreset,
+  createYvBtcFamilyPreset,
   createYvUsdFamilyPreset,
   VaultFamilyWidget,
   VaultWidget,
   type VaultWidgetMode,
   VaultWidgetProvider,
+  YVBTC_UNLOCKED_ADDRESS,
   YVUSD_UNLOCKED_ADDRESS
 } from '@yearn/vault-widget'
 import { createYearnFiActivityStore, createYearnFiSettingsStore } from '@yearn/vault-widget/services'
@@ -19,9 +21,16 @@ import { useAccount } from 'wagmi'
 const yBoldConfig = createYBoldPreset({
   ensoEndpoint: '/api/enso/route'
 })
+const yvBtcFamily = createYvBtcFamilyPreset()
 const yvUsdFamily = createYvUsdFamilyPreset()
 
 const VAULT_FIXTURES = [
+  {
+    id: 'yvbtc',
+    label: 'yvBTC',
+    chainId: 1,
+    vaultAddress: YVBTC_UNLOCKED_ADDRESS
+  },
   {
     id: 'yvusd',
     label: 'yvUSD',
@@ -493,13 +502,13 @@ export function VaultWidgetParityPage(): ReactElement {
                 style={{ height: viewport === 'desktop' ? DESKTOP_WIDGET_CROP.height : MOBILE_VIEWPORT.height }}
               >
                 <VaultWidgetProvider services={services}>
-                  {vaultId === 'yvusd' ? (
+                  {vaultId === 'yvusd' || vaultId === 'yvbtc' ? (
                     <VaultFamilyWidget
                       key={`${vaultFixture.id}:${viewport}`}
-                      family={yvUsdFamily}
+                      family={vaultId === 'yvbtc' ? yvBtcFamily : yvUsdFamily}
                       mode={mode}
                       settingsOpen={widgetState === 'settings'}
-                      variant={variant}
+                      variant={vaultId === 'yvbtc' ? 'unlocked' : variant}
                       viewport={viewport}
                       onVariantChange={setVariant}
                       onModeChange={changeWidgetState}

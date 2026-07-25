@@ -5,7 +5,7 @@ type ParityCase = {
   id: string
   state: 'deposit' | 'info' | 'migrate' | 'rewards' | 'settings' | 'withdraw'
   variant?: 'locked' | 'unlocked'
-  vault: 'v2-migration' | 'v2-ycrv' | 'v3-staking' | 'ybold' | 'yvusd'
+  vault: 'v2-migration' | 'v2-ycrv' | 'v3-staking' | 'ybold' | 'yvbtc' | 'yvusd'
   viewport: 'desktop' | 'mobile'
 }
 
@@ -34,6 +34,9 @@ const CASES: readonly ParityCase[] = [
   { id: 'ybold-settings-desktop', state: 'settings', vault: 'ybold', viewport: 'desktop' },
   { id: 'ybold-deposit-mobile', state: 'deposit', vault: 'ybold', viewport: 'mobile' },
   { id: 'ybold-withdraw-mobile', state: 'withdraw', vault: 'ybold', viewport: 'mobile' },
+  { id: 'yvbtc-deposit-desktop', state: 'deposit', vault: 'yvbtc', viewport: 'desktop' },
+  { id: 'yvbtc-info-desktop', state: 'info', vault: 'yvbtc', viewport: 'desktop' },
+  { id: 'yvbtc-withdraw-mobile', state: 'withdraw', vault: 'yvbtc', viewport: 'mobile' },
   { id: 'yvusd-locked-withdraw-desktop', state: 'withdraw', variant: 'locked', vault: 'yvusd', viewport: 'desktop' },
   {
     id: 'yvusd-unlocked-deposit-desktop',
