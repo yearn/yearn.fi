@@ -5,6 +5,7 @@ import {
   createYBoldPreset,
   createYvBtcPreset,
   createYvUsdPreset,
+  ENSO_ROUTER_BY_CHAIN,
   type VaultWidgetConfig,
   type VaultWidgetRequest,
   type VaultWidgetRouteAdapter,
@@ -14,8 +15,17 @@ import {
   YVUSD_LOCKED_ADDRESS,
   YVUSD_UNLOCKED_ADDRESS
 } from '@yearn/vault-widget'
-import { createMigrationQuote, readVaultWidgetCooldownState } from '@yearn/vault-widget/headless'
-import { createKongVaultConfigResolver } from '@yearn/vault-widget/services'
+import {
+  createEnsoAdapter,
+  createHttpEnsoQuoteProvider,
+  createMigrationQuote,
+  detectMigrationPermitSupport,
+  readMigrationPermitTypedData,
+  readVaultWidgetCooldownState,
+  splitMigrationPermitSignature
+} from '@yearn/vault-widget/headless'
+import { createEnsoRouteHandler } from '@yearn/vault-widget/server'
+import { createHttpRewardDiscoveryService, createKongVaultConfigResolver } from '@yearn/vault-widget/services'
 import {
   type Address,
   createPublicClient,
@@ -30,10 +40,18 @@ import {
   parseUnits,
   toHex
 } from 'viem'
+import { privateKeyToAccount } from 'viem/accounts'
 
 const CANONICAL_CHAIN_ID = 1
-const QA_ACCOUNT = '0x000000000000000000000000000000000000bEEF' as Address
+const DAI_ADDRESS = '0x6B175474E89094C44Da98b954EedeAC495271d0F' as Address
+// Anvil's first deterministic test key. It must never hold production funds.
+const QA_SIGNER = privateKeyToAccount('0xac0974bec39a17e36ba4a6b4d238ff944bacb478cbed5efcae784d7bf4f2ff80')
+const QA_ACCOUNT = QA_SIGNER.address
+const JUICED_DAI_VAULT = '0xe24BA27551aBE96Ca401D39761cA2319Ea14e3CB' as Address
+const JUICED_REWARD_ACCOUNT = '0x719b3d3bbb9207e301ee9abf7574a4a756e0c2e3' as Address
+const OPTIMISM_USDC = '0x0b2C639c533813f4Aa9D7837CAf62653d097Ff85' as Address
 const V2_USDC_VAULT = '0xa354F35829Ae975e850e23e9615b11Da1B3dC4DE' as Address
+const V3_USDC_MIGRATION_VAULT = '0x22028E652a2e937c876F2577f8E78f692d6DAA93' as Address
 const V3_USDC_STAKING_VAULT = '0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204' as Address
 
 type RpcResponse<T> = {
@@ -72,6 +90,7 @@ function getAdapter(config: VaultWidgetConfig, id: string): VaultWidgetRouteAdap
 
 function createRequest(params: {
   amount: bigint
+  chainId?: number
   config: VaultWidgetConfig
   mode: 'deposit' | 'withdraw'
   positionBalance?: bigint
@@ -82,7 +101,7 @@ function createRequest(params: {
   return {
     account: QA_ACCOUNT,
     amount: params.amount,
-    chainId: CANONICAL_CHAIN_ID,
+    chainId: params.chainId ?? CANONICAL_CHAIN_ID,
     maxLossBps: 50,
     mode: params.mode,
     positionBalance: params.positionBalance ?? 0n,
@@ -99,32 +118,42 @@ function createRequest(params: {
 async function main(): Promise<void> {
   const environment = readEnvFile()
   const adminRpc = environment.TENDERLY_ADMIN_RPC_URI_FOR_1
+  const optimismAdminRpc = environment.TENDERLY_ADMIN_RPC_URI_FOR_10
   invariant(adminRpc, 'TENDERLY_ADMIN_RPC_URI_FOR_1 is not configured')
+  invariant(optimismAdminRpc, 'TENDERLY_ADMIN_RPC_URI_FOR_10 is not configured')
 
   let requestId = 0
-  const rpc = async <T>(method: string, params: readonly unknown[] = []): Promise<T> => {
-    const response = await fetch(adminRpc, {
-      body: JSON.stringify({ id: ++requestId, jsonrpc: '2.0', method, params }),
-      headers: { 'Content-Type': 'application/json' },
-      method: 'POST'
-    })
-    const payload = (await response.json()) as RpcResponse<T>
-    if (!response.ok || payload.error || payload.result === undefined) {
-      throw new Error(`${method}: ${payload.error?.message ?? `HTTP ${response.status}`}`)
+  const createRpc = (url: string) =>
+    async function rpcRequest<T>(method: string, params: readonly unknown[] = []): Promise<T> {
+      const response = await fetch(url, {
+        body: JSON.stringify({ id: ++requestId, jsonrpc: '2.0', method, params }),
+        headers: { 'Content-Type': 'application/json' },
+        method: 'POST'
+      })
+      const payload = (await response.json()) as RpcResponse<T>
+      if (!response.ok || payload.error || payload.result === undefined) {
+        throw new Error(`${method}: ${payload.error?.message ?? `HTTP ${response.status}`}`)
+      }
+      return payload.result
     }
-    return payload.result
-  }
+  const rpc = createRpc(adminRpc)
+  const optimismRpc = createRpc(optimismAdminRpc)
 
   const publicClient = createPublicClient({ transport: http(adminRpc) }) as PublicClient
+  const optimismPublicClient = createPublicClient({ transport: http(optimismAdminRpc) }) as PublicClient
   const snapshotId = await rpc<string>('evm_snapshot')
   const results: FlowResult[] = []
   let transactionCount = 0
 
-  const send = async (transaction: VaultWidgetTransactionRequest, label = 'Transaction'): Promise<Hash> => {
+  const send = async (
+    transaction: VaultWidgetTransactionRequest,
+    label = 'Transaction',
+    account: Address = QA_ACCOUNT
+  ): Promise<Hash> => {
     const hash = await rpc<Hash>('eth_sendTransaction', [
       {
         data: transaction.data,
-        from: QA_ACCOUNT,
+        from: account,
         to: transaction.to,
         ...(transaction.value ? { value: toHex(transaction.value) } : {})
       }
@@ -134,7 +163,7 @@ async function main(): Promise<void> {
       let reason = 'No revert reason returned'
       try {
         await publicClient.call({
-          account: QA_ACCOUNT,
+          account,
           data: transaction.data,
           to: transaction.to,
           value: transaction.value
@@ -176,6 +205,39 @@ async function main(): Promise<void> {
     })
   }
 
+  const sendOptimism = async (
+    transaction: VaultWidgetTransactionRequest,
+    label = 'Optimism transaction'
+  ): Promise<Hash> => {
+    const hash = await optimismRpc<Hash>('eth_sendTransaction', [
+      {
+        data: transaction.data,
+        from: QA_ACCOUNT,
+        to: transaction.to,
+        ...(transaction.value ? { value: toHex(transaction.value) } : {})
+      }
+    ])
+    const receipt = await optimismPublicClient.waitForTransactionReceipt({ hash, timeout: 60_000 })
+    invariant(receipt.status === 'success', `${label} ${hash} reverted at ${transaction.to}`)
+    transactionCount += 1
+    return hash
+  }
+
+  const approveOptimism = async (token: Address, spender: Address, amount: bigint): Promise<void> => {
+    await sendOptimism(
+      {
+        chainId: 10,
+        data: encodeFunctionData({
+          abi: erc20Abi,
+          args: [spender, amount],
+          functionName: 'approve'
+        }),
+        to: token
+      },
+      'Approve Enso router'
+    )
+  }
+
   const balanceOf = (token: Address): Promise<bigint> =>
     publicClient.readContract({
       abi: erc20Abi,
@@ -186,6 +248,9 @@ async function main(): Promise<void> {
 
   const setTokenBalance = (token: Address, amount: bigint): Promise<unknown> =>
     rpc('tenderly_setErc20Balance', [token, QA_ACCOUNT, toHex(amount)])
+
+  const setOptimismTokenBalance = (token: Address, amount: bigint): Promise<unknown> =>
+    optimismRpc('tenderly_setErc20Balance', [token, QA_ACCOUNT, toHex(amount)])
 
   const runFlow = async (flow: string, execute: () => Promise<unknown>): Promise<void> => {
     const startCount = transactionCount
@@ -201,6 +266,24 @@ async function main(): Promise<void> {
       transactions: transactionCount - startCount
     })
   }
+  invariant(environment.ENSO_API_KEY, 'ENSO_API_KEY is not configured')
+  const ensoRouteHandler = createEnsoRouteHandler({
+    apiKey: environment.ENSO_API_KEY,
+    policy: {
+      allowedChainIds: [1, 10],
+      maxSlippageBps: 100
+    }
+  })
+  const ensoProvider = createHttpEnsoQuoteProvider({
+    endpoint: 'https://yearn.test/api/enso/route',
+    fetcher: (input, init) => ensoRouteHandler(new Request(input, init)),
+    maxPriceImpactPercent: 1,
+    requirePriceImpact: true,
+    trustedRouters: {
+      1: [ENSO_ROUTER_BY_CHAIN[1]!],
+      10: [ENSO_ROUTER_BY_CHAIN[10]!]
+    }
+  })
 
   try {
     await rpc('tenderly_setBalance', [QA_ACCOUNT, toHex(parseEther('100'))])
@@ -509,6 +592,213 @@ async function main(): Promise<void> {
       invariant((await balanceOf(sourceConfig.positionToken.address)) === 0n, 'V2 migration left source shares')
       invariant((await balanceOf(targetConfig.positionToken.address)) > 0n, 'V2 migration produced no target shares')
     })
+
+    await runFlow('V3 EIP-2612 permit migration', async () => {
+      const resolver = createKongVaultConfigResolver()
+      const sourceConfig = await resolver.resolve(CANONICAL_CHAIN_ID, V3_USDC_MIGRATION_VAULT)
+      invariant(sourceConfig.migration, 'V3 USDC migration metadata is missing')
+      const permitSupported = await detectMigrationPermitSupport(publicClient, sourceConfig.positionToken.address)
+      invariant(permitSupported, 'V3 USDC migration source does not expose EIP-2612 permit')
+
+      const shares = parseUnits('1', sourceConfig.positionToken.decimals)
+      await setTokenBalance(sourceConfig.positionToken.address, shares)
+      const targetBalanceBefore = await balanceOf(sourceConfig.migration.targetVault)
+      const block = await publicClient.getBlock()
+      const deadline = block.timestamp + 3_600n
+      const typedData = await readMigrationPermitTypedData({
+        account: QA_ACCOUNT,
+        chainId: await publicClient.getChainId(),
+        deadline,
+        publicClient,
+        spender: sourceConfig.migration.migratorAddress,
+        tokenAddress: sourceConfig.positionToken.address,
+        value: shares
+      })
+      const signature = await QA_SIGNER.signTypedData(typedData)
+      const quote = createMigrationQuote({
+        account: QA_ACCOUNT,
+        chainId: CANONICAL_CHAIN_ID,
+        fromToken: sourceConfig.positionToken,
+        migratorAddress: sourceConfig.migration.migratorAddress,
+        permit: splitMigrationPermitSignature(signature, deadline),
+        shares,
+        sourceVersion: sourceConfig.migration.sourceVersion,
+        toVault: sourceConfig.migration.targetVault
+      })
+
+      invariant(quote.adapterId === 'migration-permit', 'V3 migration did not select the permit route')
+      invariant(!quote.approval, 'V3 permit migration unexpectedly requested an approval')
+      await send(quote.transaction)
+      invariant((await balanceOf(sourceConfig.positionToken.address)) === 0n, 'V3 permit migration left source shares')
+      invariant(
+        (await balanceOf(sourceConfig.migration.targetVault)) > targetBalanceBefore,
+        'V3 permit migration produced no target shares'
+      )
+    })
+
+    const juicedRewardsSnapshotId = await rpc<string>('evm_snapshot')
+    try {
+      await runFlow('Juiced staking reward discovery and claim', async () => {
+        const config = await createKongVaultConfigResolver().resolve(CANONICAL_CHAIN_ID, JUICED_DAI_VAULT)
+        const adapter = getAdapter(config, 'deposit-and-stake')
+        const asset = config.depositTokens[0]!
+        const amount = parseUnits('100', asset.decimals)
+        await setTokenBalance(asset.address, amount)
+
+        const depositQuote = await adapter.quote(
+          { ...createRequest({ amount, config, mode: 'deposit', selectedToken: asset }), autoStake: true },
+          publicClient
+        )
+        for (const approval of depositQuote.approvals ?? []) {
+          await approve(approval.token.address, approval.spender, approval.amount)
+        }
+        for (const step of depositQuote.transactions ?? []) await send(step.transaction, step.label)
+
+        await rpc('evm_increaseTime', [toHex(7 * 86_400)])
+        await rpc('evm_mine')
+        const rewards = await createHttpRewardDiscoveryService().discover({
+          account: QA_ACCOUNT,
+          config,
+          publicClient
+        })
+        const reward = rewards.find(({ kind }) => kind === 'staking')
+        if (!reward) {
+          return {
+            coverage: 'partial-stateful',
+            note: 'Deposit and stake executed, but this VNet snapshot accrued no Juiced rewards.'
+          }
+        }
+
+        const balanceBefore = await balanceOf(reward.token.address)
+        await send(reward.quote.transaction, 'Claim rewards')
+        invariant((await balanceOf(reward.token.address)) > balanceBefore, 'Juiced reward claim transferred no rewards')
+        return undefined
+      })
+    } finally {
+      await rpc('evm_revert', [juicedRewardsSnapshotId])
+    }
+
+    await runFlow('Juiced staking reward claim from an existing EOA position', async () => {
+      const config = await createKongVaultConfigResolver().resolve(CANONICAL_CHAIN_ID, JUICED_DAI_VAULT)
+      await rpc('tenderly_setBalance', [JUICED_REWARD_ACCOUNT, toHex(parseEther('1'))])
+      const rewards = await createHttpRewardDiscoveryService().discover({
+        account: JUICED_REWARD_ACCOUNT,
+        config,
+        publicClient
+      })
+      const reward = rewards.find(({ kind }) => kind === 'staking')
+      invariant(reward, 'Existing Juiced position has no discoverable reward')
+
+      const balanceBefore = await publicClient.readContract({
+        abi: erc20Abi,
+        address: reward.token.address,
+        args: [JUICED_REWARD_ACCOUNT],
+        functionName: 'balanceOf'
+      })
+      await send(reward.quote.transaction, 'Claim rewards', JUICED_REWARD_ACCOUNT)
+      const balanceAfter = await publicClient.readContract({
+        abi: erc20Abi,
+        address: reward.token.address,
+        args: [JUICED_REWARD_ACCOUNT],
+        functionName: 'balanceOf'
+      })
+      invariant(balanceAfter > balanceBefore, 'Existing Juiced position reward claim transferred no rewards')
+    })
+
+    await runFlow('Enso same-chain DAI deposit to yvUSD', async () => {
+      const config = createYvUsdPreset({ variant: 'unlocked' })
+      const sourceToken: VaultWidgetToken = {
+        address: DAI_ADDRESS,
+        chainId: CANONICAL_CHAIN_ID,
+        decimals: 18,
+        name: 'Dai Stablecoin',
+        symbol: 'DAI'
+      }
+      const amount = parseUnits('1000', sourceToken.decimals)
+      const adapter = createEnsoAdapter({
+        asset: config.depositTokens[0]!,
+        destinationChainId: CANONICAL_CHAIN_ID,
+        modes: ['deposit'],
+        positionToken: config.positionToken,
+        provider: ensoProvider,
+        routerByChain: ENSO_ROUTER_BY_CHAIN
+      })
+
+      await setTokenBalance(sourceToken.address, amount)
+      const positionBefore = await balanceOf(config.positionToken.address)
+      const quote = await adapter.quote(
+        createRequest({
+          amount,
+          config,
+          mode: 'deposit',
+          selectedToken: sourceToken
+        }),
+        publicClient
+      )
+      invariant(!quote.isCrossChain && !quote.bridge, 'Same-chain Enso route unexpectedly contains a bridge')
+      invariant(quote.approval, 'Same-chain Enso route is missing its source approval')
+      await approve(sourceToken.address, quote.approval.spender, quote.approval.amount)
+      await send(quote.transaction, 'Execute Enso same-chain deposit')
+      invariant(
+        (await balanceOf(config.positionToken.address)) > positionBefore,
+        'Enso deposit produced no yvUSD shares'
+      )
+    })
+
+    const optimismSnapshotId = await optimismRpc<string>('evm_snapshot')
+    try {
+      await runFlow('Enso Optimism-to-mainnet source execution', async () => {
+        const config = createYvUsdPreset({ variant: 'unlocked' })
+        const sourceToken: VaultWidgetToken = {
+          address: OPTIMISM_USDC,
+          chainId: 10,
+          decimals: 6,
+          name: 'USD Coin',
+          symbol: 'USDC'
+        }
+        const amount = parseUnits('1000', sourceToken.decimals)
+        const adapter = createEnsoAdapter({
+          asset: config.depositTokens[0]!,
+          destinationChainId: CANONICAL_CHAIN_ID,
+          modes: ['deposit'],
+          positionToken: config.positionToken,
+          provider: ensoProvider,
+          routerByChain: ENSO_ROUTER_BY_CHAIN
+        })
+
+        await optimismRpc('tenderly_setBalance', [QA_ACCOUNT, toHex(parseEther('1'))])
+        await setOptimismTokenBalance(sourceToken.address, amount)
+        const quote = await adapter.quote(
+          createRequest({
+            amount,
+            chainId: 10,
+            config,
+            mode: 'deposit',
+            selectedToken: sourceToken
+          }),
+          optimismPublicClient
+        )
+        invariant(quote.isCrossChain && quote.bridge, 'Enso route did not preserve cross-chain tracking')
+        invariant(quote.bridge.sourceChainId === 10, 'Enso route has the wrong source chain')
+        invariant(quote.bridge.destinationChainId === 1, 'Enso route has the wrong destination chain')
+        invariant(quote.approval, 'Enso cross-chain route is missing its source approval')
+        await approveOptimism(sourceToken.address, quote.approval.spender, quote.approval.amount)
+        await sendOptimism(quote.transaction, 'Execute Enso cross-chain source')
+        const remaining = await optimismPublicClient.readContract({
+          abi: erc20Abi,
+          address: sourceToken.address,
+          args: [QA_ACCOUNT],
+          functionName: 'balanceOf'
+        })
+        invariant(remaining < amount, 'Enso cross-chain source execution spent no input tokens')
+        return {
+          coverage: 'partial-stateful',
+          note: 'Source approval and router transaction executed; destination delivery requires an external bridge relayer.'
+        }
+      })
+    } finally {
+      await optimismRpc('evm_revert', [optimismSnapshotId])
+    }
   } finally {
     const reverted = await rpc<boolean>('evm_revert', [snapshotId])
     invariant(reverted, 'Unable to revert the Tenderly QA snapshot')

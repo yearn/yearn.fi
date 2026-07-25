@@ -1,6 +1,10 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { Config } from 'wagmi'
-import { createSafeAwareExecutionService, createWagmiExecutionService } from './execution'
+import {
+  createSafeAwareExecutionService,
+  createWagmiExecutionService,
+  createWagmiSafeExecutionService
+} from './execution'
 
 const wagmiActions = vi.hoisted(() => ({
   getAccount: vi.fn(),
@@ -106,5 +110,65 @@ describe('createWagmiExecutionService', () => {
     const service = createWagmiExecutionService()
 
     await expect(service.waitForReceipt(config, 1, '0x1234')).rejects.toThrow('Transaction reverted')
+  })
+})
+
+describe('createWagmiSafeExecutionService', () => {
+  it('detects the Safe connector and submits an atomic EIP-5792 call batch', async () => {
+    wagmiActions.getAccount.mockReturnValue({ connector: { id: 'safe' } })
+    wagmiActions.sendCalls.mockResolvedValue({ id: '0x1234' })
+    const service = createWagmiSafeExecutionService()
+    const requestWithValue = {
+      ...request,
+      value: 42n
+    }
+
+    await expect(service.getWalletType?.({ account, config })).resolves.toBe('safe')
+    await expect(
+      service.proposeSafeBatch?.({
+        account,
+        chainId: 1,
+        config,
+        requests: [request, requestWithValue],
+        step: { ...step, requests: [request, requestWithValue] }
+      })
+    ).resolves.toBe('0x1234')
+
+    expect(wagmiActions.sendCalls).toHaveBeenCalledWith(config, {
+      account,
+      calls: [
+        { data: request.data, to: request.to, value: undefined },
+        { data: request.data, to: request.to, value: 42n }
+      ],
+      chainId: 1,
+      forceAtomic: true
+    })
+  })
+
+  it('classifies other connectors as EOAs', async () => {
+    wagmiActions.getAccount.mockReturnValue({ connector: { id: 'injected' } })
+    const service = createWagmiSafeExecutionService()
+
+    await expect(service.getWalletType?.({ account, config })).resolves.toBe('eoa')
+  })
+
+  it('tracks a pending Safe call batch through its mined receipt', async () => {
+    wagmiActions.getCallsStatus.mockResolvedValueOnce({ status: 'pending' }).mockResolvedValueOnce({
+      receipts: [{ transactionHash: '0xabcd' }],
+      status: 'success'
+    })
+    const service = createWagmiSafeExecutionService({ pollIntervalMs: 0 })
+
+    await expect(service.waitForSafeExecution?.(config, 1, '0x1234')).resolves.toBe('0xabcd')
+    expect(wagmiActions.getCallsStatus).toHaveBeenCalledTimes(2)
+    expect(wagmiActions.getCallsStatus).toHaveBeenNthCalledWith(1, config, { id: '0x1234' })
+    expect(wagmiActions.getCallsStatus).toHaveBeenNthCalledWith(2, config, { id: '0x1234' })
+  })
+
+  it('rejects failed Safe call batches', async () => {
+    wagmiActions.getCallsStatus.mockResolvedValue({ status: 'failure' })
+    const service = createWagmiSafeExecutionService({ pollIntervalMs: 0 })
+
+    await expect(service.waitForSafeExecution?.(config, 1, '0x1234')).rejects.toThrow('Safe transaction failed')
   })
 })
