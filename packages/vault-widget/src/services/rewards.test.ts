@@ -151,4 +151,29 @@ describe('createHttpRewardDiscoveryService', () => {
       transaction: { chainId: 1, to: stakingAddress }
     })
   })
+
+  it('reads OP Boost rewards with the same per-token contract interface as Juiced staking', async () => {
+    const first = rewardToken()
+    const second = rewardToken(otherRewardAddress, { symbol: 'RWD2' })
+    const readContract = vi.fn().mockResolvedValueOnce(2_000_000n).mockResolvedValueOnce(3_000_000n)
+    const rewards = await createHttpRewardDiscoveryService({ fetcher: vi.fn() }).discover({
+      account,
+      config: config({
+        stakingAddress,
+        stakingSource: 'OP Boost',
+        tokens: [first, second]
+      }),
+      publicClient: { readContract } as unknown as PublicClient
+    })
+
+    expect(readContract).toHaveBeenNthCalledWith(
+      1,
+      expect.objectContaining({ functionName: 'earned', args: [account, first.address] })
+    )
+    expect(readContract).toHaveBeenNthCalledWith(
+      2,
+      expect.objectContaining({ functionName: 'earned', args: [account, second.address] })
+    )
+    expect(rewards.map(({ amount }) => amount)).toEqual([2_000_000n, 3_000_000n])
+  })
 })

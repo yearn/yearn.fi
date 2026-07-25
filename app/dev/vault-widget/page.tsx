@@ -4,7 +4,7 @@ import { env } from '@/env'
 import { VaultWidgetParityPage } from './page-client'
 
 export default function Page(): ReactElement {
-  if (!env.DEV) {
+  if (!env.DEV && env.NEXT_PUBLIC_VAULT_WIDGET_PARITY_ENABLED !== 'true') {
     notFound()
   }
 

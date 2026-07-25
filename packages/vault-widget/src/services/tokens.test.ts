@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import type { VaultWidgetConfig } from '../types'
+import type { VaultWidgetConfig, VaultWidgetToken } from '../types'
 import { createEnsoVaultConfigResolver, createHttpTokenCatalog, createHttpTokenPriceService } from './tokens'
 import type { VaultWidgetConfigResolver } from './types'
 
@@ -88,7 +88,11 @@ describe('createEnsoVaultConfigResolver', () => {
     const resolver = createEnsoVaultConfigResolver({
       baseResolver,
       enso: { getRoute: vi.fn() },
-      priceService: false,
+      priceService: {
+        hydrate: vi.fn(async (tokens: readonly VaultWidgetToken[]) =>
+          tokens.map((token) => (token.address === assetAddress ? { ...token, priceUsd: 1.001 } : token))
+        )
+      },
       tokenCatalog: {
         list: vi.fn().mockResolvedValue([{ address: routeAddress, chainId: 10, decimals: 18, symbol: 'WETH' }])
       }
@@ -97,6 +101,7 @@ describe('createEnsoVaultConfigResolver', () => {
     const resolved = await resolver.resolve(1, vaultAddress)
 
     expect(resolved.depositTokens.map(({ address }) => address)).toContain(routeAddress)
+    expect(resolved.display?.assetPriceUsd).toBe(1.001)
     expect(resolved.solvers).toContain('enso')
   })
 

@@ -55,6 +55,10 @@ assets and selects direct withdraw, unstake, or combined unstake-and-withdraw
 routing. Enabling automatic staking produces one ordered deposit-then-stake
 plan, including both approvals when required. Custom integrations can define
 the same behavior with `positionSources` and source-aware route adapters.
+Max withdrawals preserve the user's exact share balance and use `redeem`
+semantics where supported, avoiding the dust left by an asset-to-share
+round-trip. This applies to direct ERC-4626, V2, staked, routed, yBOLD, and
+nested locked-vault positions.
 
 The default execution service detects the Wagmi Safe connector, combines
 same-chain approval and execution calls into an atomic wallet-call proposal,
@@ -130,6 +134,11 @@ selectors, veCRV zap arguments, and V3 EIP-2612 multicalls.
 that can be passed to `buildTransactionPlan` with the `migrate` or `rewards`
 mode, including Safe batching and chain switching. Hosts may override reward
 discovery by supplying a `rewards` service through `VaultWidgetProvider`.
+
+Framework-neutral Enso route, balance, status, and bridge-status handler
+factories are exported from `@yearn/vault-widget/server`. Consumers keep their
+API keys server-side and can constrain route source/destination chains through
+the handler policy.
 
 ## Development
 

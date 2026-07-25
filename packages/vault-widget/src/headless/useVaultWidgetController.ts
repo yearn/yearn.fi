@@ -7,7 +7,11 @@ import { useAccount, useConfig, usePublicClient } from 'wagmi'
 import { getPublicClient } from 'wagmi/actions'
 import { useVaultWidgetServices } from '../context'
 import type { VaultWidgetSettings } from '../services'
-import { addVaultWidgetActivitySafely, updateVaultWidgetActivitySafely } from '../services/activity'
+import {
+  addVaultWidgetActivitySafely,
+  resolveVaultWidgetActivityDestinationChainId,
+  updateVaultWidgetActivitySafely
+} from '../services/activity'
 import type {
   VaultWidgetActivity,
   VaultWidgetApprovalTarget,
@@ -216,6 +220,7 @@ export function useVaultWidgetController({
       ? (config.depositTokens[0]?.decimals ?? selectedToken.decimals)
       : selectedToken.decimals
   const parsedAmount = parseAmount(amount, balanceDecimals)
+  const redeemAll = transactionMode === 'withdraw' && parsedAmount > 0n && parsedAmount === activePositionSource.value
 
   // Settings are an external browser store, so a subscription is the appropriate synchronization boundary.
   useEffect(() => {
@@ -279,6 +284,7 @@ export function useVaultWidgetController({
       selectedPositionSource.id,
       activePositionSource.balance.toString(),
       parsedAmount.toString(),
+      redeemAll,
       settings.maxLossBps,
       settings.slippagePercent,
       settings.autoStake
@@ -295,6 +301,7 @@ export function useVaultWidgetController({
           mode: transactionMode,
           positionBalance: activePositionSource.balance,
           positionSource: selectedPositionSource,
+          redeemAll,
           selectedToken,
           signal,
           slippageBps: Math.round(settings.slippagePercent * 100)
@@ -430,7 +437,12 @@ export function useVaultWidgetController({
       amount: transactionPlan.quote.activityAmount ?? amount,
       bridge: transactionPlan.quote.bridge,
       chainId: transactionPlan.quote.transaction.chainId,
-      destinationChainId: selectedToken.chainId,
+      destinationChainId: resolveVaultWidgetActivityDestinationChainId({
+        configChainId: config.chainId,
+        mode: transactionMode,
+        quote: transactionPlan.quote,
+        selectedTokenChainId: selectedToken.chainId
+      }),
       status: 'pending',
       timestamp: Date.now(),
       tokenIn:
@@ -505,6 +517,8 @@ export function useVaultWidgetController({
     account,
     amount,
     canSubmit,
+    config.chainId,
+    config.positionToken.address,
     onError,
     onEvent,
     onSuccess,

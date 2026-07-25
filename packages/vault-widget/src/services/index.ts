@@ -4,6 +4,7 @@ export {
   filterVaultWidgetActivities,
   getVaultWidgetRelatedAddresses,
   reconcileVaultWidgetActivity,
+  resolveVaultWidgetActivityDestinationChainId,
   updateVaultWidgetActivitySafely
 } from './activity'
 export { createKongVaultConfigResolver } from './config'

@@ -129,6 +129,9 @@ export function withEnsoRoutes(config: VaultWidgetConfig, options: WithEnsoRoute
     })
   )
   const routeTokens = uniqueTokens([...config.depositTokens, ...config.withdrawTokens, ...options.routeTokens])
+  const hydratedAsset = routeTokens.find(
+    (token) => token.chainId === asset.chainId && isAddressEqual(token.address, asset.address)
+  )
 
   return {
     ...config,
@@ -136,6 +139,10 @@ export function withEnsoRoutes(config: VaultWidgetConfig, options: WithEnsoRoute
     depositTokens: routeTokens,
     withdrawTokens: routeTokens,
     solvers: [...new Set([...(config.solvers ?? []), 'enso'])],
+    display: {
+      ...config.display,
+      assetPriceUsd: config.display?.assetPriceUsd ?? hydratedAsset?.priceUsd
+    },
     tokenSelector: {
       ...config.tokenSelector,
       chains: options.selectorChains ?? config.tokenSelector?.chains ?? ensoSelectorChains,

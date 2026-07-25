@@ -43,6 +43,17 @@ const ERC4626_ABI = [
       { name: 'owner', type: 'address' }
     ],
     outputs: [{ name: 'shares', type: 'uint256' }]
+  },
+  {
+    type: 'function',
+    name: 'redeem',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'shares', type: 'uint256' },
+      { name: 'receiver', type: 'address' },
+      { name: 'owner', type: 'address' }
+    ],
+    outputs: [{ name: 'assets', type: 'uint256' }]
   }
 ] as const
 
@@ -177,6 +188,32 @@ export function createErc4626Adapter(options: Erc4626AdapterOptions): VaultWidge
         }
       }
 
+      if (request.redeemAll && request.positionBalance > 0n) {
+        const expectedOut = await publicClient.readContract({
+          address: options.vaultAddress,
+          abi: ERC4626_ABI,
+          functionName: 'previewRedeem',
+          args: [request.positionBalance]
+        })
+        return {
+          adapterId: 'erc4626',
+          amountIn: request.positionBalance,
+          assetValue: expectedOut,
+          expectedOut,
+          minExpectedOut: expectedOut,
+          positionAmount: request.positionBalance,
+          transaction: {
+            chainId: request.chainId,
+            to: options.vaultAddress,
+            data: encodeFunctionData({
+              abi: ERC4626_ABI,
+              functionName: 'redeem',
+              args: [request.positionBalance, request.account, request.account]
+            })
+          }
+        }
+      }
+
       const shares = await publicClient.readContract({
         address: options.vaultAddress,
         abi: ERC4626_ABI,
@@ -280,13 +317,15 @@ export function createYearnV2Adapter(options: YearnV2AdapterOptions): VaultWidge
         }
       }
 
-      const shares = divideUp(request.amount * shareScale, pricePerShare)
+      const redeemAll = request.redeemAll === true && request.positionBalance > 0n
+      const shares = redeemAll ? request.positionBalance : divideUp(request.amount * shareScale, pricePerShare)
+      const expectedOut = redeemAll ? (shares * pricePerShare) / shareScale : request.amount
       return {
         adapterId: 'yearn-v2',
         amountIn: shares,
-        assetValue: request.amount,
-        expectedOut: request.amount,
-        minExpectedOut: request.amount,
+        assetValue: expectedOut,
+        expectedOut,
+        minExpectedOut: expectedOut,
         positionAmount: shares,
         transaction: {
           chainId: request.chainId,
@@ -371,12 +410,10 @@ export function createYBoldAdapter(options: YBoldAdapterOptions): VaultWidgetRou
         }
       }
 
-      const positionAmount = await readYBoldWithdrawalShares(
-        publicClient,
-        options.positionToken,
-        options.stakingAbi,
-        request.amount
-      )
+      const positionAmount =
+        request.redeemAll && request.positionBalance > 0n
+          ? request.positionBalance
+          : await readYBoldWithdrawalShares(publicClient, options.positionToken, options.stakingAbi, request.amount)
       const expectedOut = (await publicClient.readContract({
         address: options.zapperAddress,
         abi: options.zapperAbi,
@@ -445,9 +482,11 @@ export function createEnsoAdapter(options: EnsoAdapterOptions): VaultWidgetRoute
     },
     async quote(request, publicClient) {
       const positionAmount =
-        request.mode === 'withdraw' && options.withdrawAmountToPosition
-          ? await options.withdrawAmountToPosition(publicClient, request.amount)
-          : request.amount
+        request.mode === 'withdraw' && request.redeemAll && request.positionBalance > 0n
+          ? request.positionBalance
+          : request.mode === 'withdraw' && options.withdrawAmountToPosition
+            ? await options.withdrawAmountToPosition(publicClient, request.amount)
+            : request.amount
       const tokenIn = request.mode === 'deposit' ? request.selectedToken.address : options.positionToken.address
       const tokenOut = request.mode === 'deposit' ? options.positionToken.address : request.selectedToken.address
       const sourceChainId = request.mode === 'deposit' ? request.selectedToken.chainId : options.positionToken.chainId

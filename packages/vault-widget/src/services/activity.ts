@@ -1,6 +1,6 @@
 import { type Hash, isAddressEqual } from 'viem'
 import type { Config } from 'wagmi'
-import type { EnsoBridgeStatusProvider, VaultWidgetActivity, VaultWidgetConfig } from '../types'
+import type { EnsoBridgeStatusProvider, VaultWidgetActivity, VaultWidgetConfig, VaultWidgetQuote } from '../types'
 import type { VaultWidgetActivityStore, VaultWidgetExecutionService } from './types'
 
 export async function addVaultWidgetActivitySafely(
@@ -40,6 +40,18 @@ export function getVaultWidgetRelatedAddresses(config: VaultWidgetConfig): reado
 
   return addresses.filter(
     (address, index) => addresses.findIndex((candidate) => isAddressEqual(candidate, address)) === index
+  )
+}
+
+export function resolveVaultWidgetActivityDestinationChainId(params: {
+  configChainId: number
+  mode: 'deposit' | 'withdraw'
+  quote: Pick<VaultWidgetQuote, 'bridge'>
+  selectedTokenChainId: number
+}): number {
+  return (
+    params.quote.bridge?.destinationChainId ??
+    (params.mode === 'deposit' ? params.configChainId : params.selectedTokenChainId)
   )
 }
 

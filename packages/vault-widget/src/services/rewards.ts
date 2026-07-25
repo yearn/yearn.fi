@@ -184,7 +184,7 @@ async function readStakingAmounts(params: {
       args: [params.account]
     })
   }
-  if (rewards.stakingSource === 'Juiced') {
+  if (rewards.stakingSource === 'Juiced' || rewards.stakingSource === 'OP Boost') {
     return Promise.all(
       rewards.tokens.map((token) =>
         params.publicClient.readContract({

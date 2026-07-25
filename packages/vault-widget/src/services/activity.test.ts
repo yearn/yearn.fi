@@ -6,6 +6,7 @@ import {
   filterVaultWidgetActivities,
   getVaultWidgetRelatedAddresses,
   reconcileVaultWidgetActivity,
+  resolveVaultWidgetActivityDestinationChainId,
   updateVaultWidgetActivitySafely
 } from './activity'
 
@@ -72,6 +73,39 @@ describe('vault widget activity helpers', () => {
     } as unknown as VaultWidgetConfig
 
     expect(getVaultWidgetRelatedAddresses(config)).toEqual([vaultAddress, positionAddress, unrelatedAddress, account])
+  })
+
+  it('records the actual destination chain for deposits and cross-chain routes', () => {
+    expect(
+      resolveVaultWidgetActivityDestinationChainId({
+        configChainId: 1,
+        mode: 'deposit',
+        quote: {},
+        selectedTokenChainId: 10
+      })
+    ).toBe(1)
+    expect(
+      resolveVaultWidgetActivityDestinationChainId({
+        configChainId: 1,
+        mode: 'deposit',
+        quote: {
+          bridge: {
+            destinationChainId: 42161,
+            protocol: 'relay',
+            sourceChainId: 10
+          }
+        },
+        selectedTokenChainId: 10
+      })
+    ).toBe(42161)
+    expect(
+      resolveVaultWidgetActivityDestinationChainId({
+        configChainId: 1,
+        mode: 'withdraw',
+        quote: {},
+        selectedTokenChainId: 10
+      })
+    ).toBe(10)
   })
 
   it('resumes a final EOA transaction from its persisted hash', async () => {

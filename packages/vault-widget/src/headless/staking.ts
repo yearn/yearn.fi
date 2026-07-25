@@ -62,6 +62,17 @@ const VEYFI_STAKING_ABI = [
       { name: 'owner', type: 'address' }
     ],
     outputs: [{ name: 'shares', type: 'uint256' }]
+  },
+  {
+    type: 'function',
+    name: 'redeem',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'shares', type: 'uint256' },
+      { name: 'receiver', type: 'address' },
+      { name: 'owner', type: 'address' }
+    ],
+    outputs: [{ name: 'assets', type: 'uint256' }]
   }
 ] as const
 
@@ -86,12 +97,24 @@ const TOKENIZED_STAKING_ABI = [
       { name: 'owner', type: 'address' }
     ],
     outputs: [{ name: 'shares', type: 'uint256' }]
+  },
+  {
+    type: 'function',
+    name: 'redeem',
+    stateMutability: 'nonpayable',
+    inputs: [
+      { name: 'shares', type: 'uint256' },
+      { name: 'receiver', type: 'address' },
+      { name: 'owner', type: 'address' }
+    ],
+    outputs: [{ name: 'assets', type: 'uint256' }]
   }
 ] as const
 
 type StakingAdapterOptions = {
   chainId: number
   positionSourceId?: string
+  readVaultAmount?: (publicClient: PublicClient, assets: bigint) => Promise<bigint>
   source?: string
   stakingAddress: Address
   stakingToken: VaultWidgetToken
@@ -171,6 +194,18 @@ function encodeUnstake(source: VaultWidgetStakingSource, amount: bigint, account
   })
 }
 
+function encodeRedeem(
+  source: Exclude<VaultWidgetStakingSource, 'default'>,
+  shares: bigint,
+  account: Address
+): `0x${string}` {
+  return encodeFunctionData({
+    abi: source === 'VeYFI' ? VEYFI_STAKING_ABI : TOKENIZED_STAKING_ABI,
+    functionName: 'redeem',
+    args: [shares, account, account]
+  })
+}
+
 export function createStakingPositionValueReader(
   options: Pick<StakingAdapterOptions, 'source' | 'stakingAddress'>
 ): (publicClient: PublicClient, shares: bigint) => Promise<bigint> {
@@ -239,22 +274,33 @@ export function createStakingAdapter(options: StakingAdapterOptions): VaultWidge
         }
       }
 
-      const positionAmount =
-        source === 'default'
-          ? request.amount
-          : await previewStakingAmount(publicClient, options.stakingAddress, 'previewWithdraw', request.amount)
+      const redeemAll = request.redeemAll === true && request.positionBalance > 0n
+      const vaultAmount = redeemAll
+        ? source === 'default'
+          ? request.positionBalance
+          : await previewStakingAmount(publicClient, options.stakingAddress, 'previewRedeem', request.positionBalance)
+        : (request.requestedPositionAmount ??
+          (options.readVaultAmount ? await options.readVaultAmount(publicClient, request.amount) : request.amount))
+      const positionAmount = redeemAll
+        ? request.positionBalance
+        : source === 'default'
+          ? vaultAmount
+          : await previewStakingAmount(publicClient, options.stakingAddress, 'previewWithdraw', vaultAmount)
       const transaction = {
         chainId: options.chainId,
         to: options.stakingAddress,
-        data: encodeUnstake(source, request.amount, request.account)
+        data:
+          redeemAll && source !== 'default'
+            ? encodeRedeem(source, positionAmount, request.account)
+            : encodeUnstake(source, vaultAmount, request.account)
       }
       return {
         adapterId: `staking-${source.toLowerCase()}`,
         activityType: 'unstake',
         amountIn: positionAmount,
         assetValue: request.amount,
-        expectedOut: request.amount,
-        minExpectedOut: request.amount,
+        expectedOut: vaultAmount,
+        minExpectedOut: vaultAmount,
         positionAmount,
         transaction,
         transactions: [{ id: 'unstake', label: 'Unstake', transaction }]
@@ -340,17 +386,36 @@ export function createUnstakeAndWithdrawAdapter(options: UnstakeAndWithdrawAdapt
     async quote(request, publicClient) {
       if (request.mode !== 'withdraw') throw new Error('Combined unstake and withdraw only supports withdrawals')
 
-      const vaultQuote = await options.vaultAdapter.quote(request, publicClient)
-      const stakingQuote = await options.stakingAdapter.quote(
-        {
-          ...request,
-          amount: vaultQuote.positionAmount,
-          selectedToken: options.vaultToken
-        },
+      const stakingQuote = request.redeemAll
+        ? await options.stakingAdapter.quote(
+            {
+              ...request,
+              selectedToken: options.vaultToken
+            },
+            publicClient
+          )
+        : undefined
+      const vaultQuote = await options.vaultAdapter.quote(
+        request.redeemAll && stakingQuote
+          ? {
+              ...request,
+              positionBalance: stakingQuote.expectedOut
+            }
+          : request,
         publicClient
       )
-      const unstakeTransactions = stakingQuote.transactions ?? [
-        { id: 'unstake', label: 'Unstake', transaction: stakingQuote.transaction }
+      const resolvedStakingQuote =
+        stakingQuote ??
+        (await options.stakingAdapter.quote(
+          {
+            ...request,
+            requestedPositionAmount: vaultQuote.positionAmount,
+            selectedToken: options.vaultToken
+          },
+          publicClient
+        ))
+      const unstakeTransactions = resolvedStakingQuote.transactions ?? [
+        { id: 'unstake', label: 'Unstake', transaction: resolvedStakingQuote.transaction }
       ]
       const withdrawTransactions = vaultQuote.transactions ?? [
         { id: 'withdraw', label: 'Withdraw', transaction: vaultQuote.transaction }
@@ -359,11 +424,11 @@ export function createUnstakeAndWithdrawAdapter(options: UnstakeAndWithdrawAdapt
       return {
         adapterId: 'unstake-and-withdraw',
         activityType: 'unstake and withdraw',
-        amountIn: stakingQuote.positionAmount,
+        amountIn: resolvedStakingQuote.positionAmount,
         assetValue: vaultQuote.assetValue ?? vaultQuote.expectedOut,
         expectedOut: vaultQuote.expectedOut,
         minExpectedOut: vaultQuote.minExpectedOut,
-        positionAmount: stakingQuote.positionAmount,
+        positionAmount: resolvedStakingQuote.positionAmount,
         transaction: vaultQuote.transaction,
         transactions: [...unstakeTransactions, ...withdrawTransactions]
       }

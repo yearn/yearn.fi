@@ -124,6 +124,42 @@ describe('locked vault adapter', () => {
     })
   })
 
+  it('redeems exact nested share balances for a max withdrawal', async () => {
+    const readContract = vi
+      .fn()
+      .mockResolvedValueOnce(1_000n)
+      .mockResolvedValueOnce(500n)
+      .mockResolvedValueOnce([0n, 0n, 0n])
+      .mockResolvedValueOnce(1_000n)
+      .mockResolvedValueOnce(1_000n)
+      .mockResolvedValueOnce(80n)
+      .mockResolvedValueOnce(75n)
+    const client = {
+      readContract,
+      getBlock: vi.fn().mockResolvedValue({ timestamp: 1n })
+    } as unknown as PublicClient
+    const request = {
+      ...createRequest('withdraw', 74n),
+      positionBalance: 100n,
+      redeemAll: true
+    }
+
+    const quote = await adapter.quote(request, client)
+
+    expect(quote).toMatchObject({
+      expectedOut: 75n,
+      positionAmount: 100n
+    })
+    expect(decodeFunctionData({ abi: erc4626Abi, data: quote.transactions?.[0]?.transaction.data ?? '0x' })).toEqual({
+      functionName: 'redeem',
+      args: [100n, account, account]
+    })
+    expect(decodeFunctionData({ abi: erc4626Abi, data: quote.transactions?.[1]?.transaction.data ?? '0x' })).toEqual({
+      functionName: 'redeem',
+      args: [80n, account, account]
+    })
+  })
+
   it('offers cooldown cancellation while shares are already cooling', async () => {
     const readContract = vi
       .fn()

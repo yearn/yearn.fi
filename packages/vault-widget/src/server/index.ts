@@ -1,4 +1,5 @@
 import { isAddress } from 'viem'
+import { ENSO_ROUTER_BY_CHAIN } from '../presets/enso'
 
 const DEFAULT_ENSO_API_BASE = 'https://api.enso.build'
 const CORS_HEADERS = {
@@ -7,6 +8,7 @@ const CORS_HEADERS = {
   'Access-Control-Allow-Origin': '*',
   'Cache-Control': 'no-store'
 }
+export const ENSO_BALANCES_CACHE_CONTROL = 'private, no-store, max-age=0, must-revalidate'
 
 type EnsoServerOptions = {
   apiKey?: string
@@ -14,7 +16,18 @@ type EnsoServerOptions = {
   fallbackUrl?: string
 }
 
+type EnsoBalancesHandlerOptions = EnsoServerOptions & {
+  cacheControl?: string
+  defaultChainId?: number | 'all'
+  useEoa?: boolean
+}
+
+type EnsoStatusHandlerOptions = EnsoServerOptions & {
+  mode?: 'configuration' | 'proxy'
+}
+
 const ENSO_BRIDGE_PROTOCOLS = ['stargate', 'ccip', 'relay'] as const
+export const ENSO_SUPPORTED_CHAIN_IDS = Object.keys(ENSO_ROUTER_BY_CHAIN).map(Number)
 
 export type EnsoRoutePolicy = {
   allowedChainIds?: readonly number[]
@@ -45,7 +58,12 @@ function getPositiveInteger(parameters: URLSearchParams, key: string): string | 
   return value && /^\d+$/.test(value) && BigInt(value) > 0n ? value : undefined
 }
 
-async function proxyEnso(url: URL, apiKey: string | undefined, fallbackUrl?: string): Promise<Response> {
+async function proxyEnso(
+  url: URL,
+  apiKey: string | undefined,
+  fallbackUrl?: string,
+  responseHeaders?: HeadersInit
+): Promise<Response> {
   const target = apiKey ? url : fallbackUrl ? new URL(fallbackUrl) : undefined
   if (!target) return jsonError('Enso API is not configured', 500)
   if (!apiKey) {
@@ -67,6 +85,7 @@ async function proxyEnso(url: URL, apiKey: string | undefined, fallbackUrl?: str
       status: response.status,
       headers: {
         ...CORS_HEADERS,
+        ...responseHeaders,
         'Content-Type': response.headers.get('Content-Type') ?? 'application/json'
       }
     })
@@ -97,8 +116,12 @@ export function createEnsoRouteHandler(options: EnsoRouteHandlerOptions) {
     if (!Number.isInteger(slippage) || slippage < 0 || slippage > maxSlippage) {
       return jsonError(`Slippage must be between 0 and ${maxSlippage} basis points`, 400)
     }
-    if (options.policy?.allowedChainIds && !options.policy.allowedChainIds.includes(chainId)) {
-      return jsonError('Unsupported source chain', 400)
+    if (
+      options.policy?.allowedChainIds &&
+      (!options.policy.allowedChainIds.includes(chainId) ||
+        !options.policy.allowedChainIds.includes(destinationChainId))
+    ) {
+      return jsonError('Unsupported source or destination chain', 400)
     }
     if (
       options.policy?.isTokenPairAllowed &&
@@ -126,23 +149,39 @@ export function createEnsoRouteHandler(options: EnsoRouteHandlerOptions) {
   }
 }
 
-export function createEnsoBalancesHandler(options: EnsoServerOptions) {
+export function createEnsoBalancesHandler(options: EnsoBalancesHandlerOptions) {
   return async function GET(request: Request): Promise<Response> {
     const parameters = new URL(request.url).searchParams
     const account = getRequiredAddress(parameters, 'eoaAddress')
-    const chainId = Number(parameters.get('chainId') ?? '1')
+    const chainId = parameters.get('chainId') ?? String(options.defaultChainId ?? 1)
     if (!account) return jsonError('Missing or invalid eoaAddress', 400)
-    if (!Number.isInteger(chainId)) return jsonError('Missing or invalid chainId', 400)
+    if (chainId !== 'all' && (!/^\d+$/.test(chainId) || Number(chainId) <= 0)) {
+      return jsonError('Missing or invalid chainId', 400)
+    }
 
     const upstream = new URL('/api/v1/wallet/balances', options.apiBaseUrl ?? DEFAULT_ENSO_API_BASE)
     upstream.searchParams.set('eoaAddress', account)
-    upstream.searchParams.set('chainId', chainId.toString())
-    return proxyEnso(upstream, options.apiKey, options.fallbackUrl)
+    upstream.searchParams.set('chainId', chainId)
+    if (options.useEoa !== undefined) upstream.searchParams.set('useEoa', String(options.useEoa))
+    return proxyEnso(
+      upstream,
+      options.apiKey,
+      options.fallbackUrl,
+      options.cacheControl ? { 'Cache-Control': options.cacheControl } : undefined
+    )
   }
 }
 
-export function createEnsoStatusHandler(options: EnsoServerOptions) {
+export function createEnsoStatusHandler(options: EnsoStatusHandlerOptions) {
   return async function GET(): Promise<Response> {
+    if (options.mode === 'configuration') {
+      return Response.json(
+        { configured: Boolean(options.apiKey || options.fallbackUrl) },
+        {
+          headers: CORS_HEADERS
+        }
+      )
+    }
     const upstream = new URL('/api/v1/status', options.apiBaseUrl ?? DEFAULT_ENSO_API_BASE)
     return proxyEnso(upstream, options.apiKey, options.fallbackUrl)
   }

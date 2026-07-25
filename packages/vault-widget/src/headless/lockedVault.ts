@@ -249,18 +249,39 @@ async function quoteLockedWithdrawal(
     publicClient,
     vaultAddress: options.lockedVaultAddress
   })
-  const unlockedShares = await publicClient.readContract({
-    address: options.unlockedVaultAddress,
-    abi: erc4626Abi,
-    functionName: 'previewWithdraw',
-    args: [request.amount]
-  })
-  const lockedShares = await publicClient.readContract({
-    address: options.lockedVaultAddress,
-    abi: erc4626Abi,
-    functionName: 'previewWithdraw',
-    args: [unlockedShares]
-  })
+  const redeemAll = request.redeemAll === true && request.positionBalance > 0n
+  const requestedUnlockedShares = redeemAll
+    ? undefined
+    : await publicClient.readContract({
+        address: options.unlockedVaultAddress,
+        abi: erc4626Abi,
+        functionName: 'previewWithdraw',
+        args: [request.amount]
+      })
+  const lockedShares = redeemAll
+    ? request.positionBalance
+    : await publicClient.readContract({
+        address: options.lockedVaultAddress,
+        abi: erc4626Abi,
+        functionName: 'previewWithdraw',
+        args: [requestedUnlockedShares!]
+      })
+  const unlockedShares = redeemAll
+    ? await publicClient.readContract({
+        address: options.lockedVaultAddress,
+        abi: erc4626Abi,
+        functionName: 'previewRedeem',
+        args: [lockedShares]
+      })
+    : requestedUnlockedShares!
+  const expectedOut = redeemAll
+    ? await publicClient.readContract({
+        address: options.unlockedVaultAddress,
+        abi: erc4626Abi,
+        functionName: 'previewRedeem',
+        args: [unlockedShares]
+      })
+    : request.amount
 
   if (unlockedShares > cooldown.availableWithdrawLimit || lockedShares > cooldown.maxRedeem) {
     const shouldStartCooldown = cooldown.state === 'none' || cooldown.state === 'expired'
@@ -281,7 +302,7 @@ async function quoteLockedWithdrawal(
       adapterId: 'yvUSD-cooldown',
       activityType: shouldStartCooldown ? 'start cooldown' : 'cancel cooldown',
       amountIn: shouldStartCooldown ? lockedShares : cooldown.shares,
-      assetValue: request.amount,
+      assetValue: expectedOut,
       expectedOut: 0n,
       hideDetails: true,
       minExpectedOut: 0n,
@@ -300,8 +321,8 @@ async function quoteLockedWithdrawal(
     to: options.lockedVaultAddress,
     data: encodeFunctionData({
       abi: erc4626Abi,
-      functionName: 'withdraw',
-      args: [unlockedShares, request.account, request.account]
+      functionName: redeemAll ? 'redeem' : 'withdraw',
+      args: [redeemAll ? lockedShares : unlockedShares, request.account, request.account]
     })
   }
   const withdrawTransaction: VaultWidgetTransactionRequest = {
@@ -309,8 +330,8 @@ async function quoteLockedWithdrawal(
     to: options.unlockedVaultAddress,
     data: encodeFunctionData({
       abi: erc4626Abi,
-      functionName: 'withdraw',
-      args: [request.amount, request.account, request.account]
+      functionName: redeemAll ? 'redeem' : 'withdraw',
+      args: [redeemAll ? unlockedShares : request.amount, request.account, request.account]
     })
   }
 
@@ -318,9 +339,9 @@ async function quoteLockedWithdrawal(
     adapterId: 'yvUSD-locked',
     activityType: 'withdraw',
     amountIn: lockedShares,
-    assetValue: request.amount,
-    expectedOut: request.amount,
-    minExpectedOut: request.amount,
+    assetValue: expectedOut,
+    expectedOut,
+    minExpectedOut: expectedOut,
     positionAmount: lockedShares,
     transaction: unlockTransaction,
     transactions: [

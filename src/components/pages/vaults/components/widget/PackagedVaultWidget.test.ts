@@ -1,9 +1,10 @@
 import {
+  applyPackagedVaultDisplay,
   resolvePackagedVaultAnalyticsEvent,
   resolvePackagedVaultMode
 } from '@pages/vaults/components/widget/PackagedVaultWidget'
 import { WidgetActionType } from '@pages/vaults/types'
-import type { VaultWidgetEvent, VaultWidgetTransactionMode } from '@yearn/vault-widget'
+import type { VaultWidgetConfig, VaultWidgetEvent, VaultWidgetTransactionMode } from '@yearn/vault-widget'
 import type { Address } from 'viem'
 import { describe, expect, it } from 'vitest'
 
@@ -40,6 +41,32 @@ describe('resolvePackagedVaultMode', () => {
     expect(resolvePackagedVaultMode(WidgetActionType.Migrate, false, false)).toBe('migrate')
     expect(resolvePackagedVaultMode(WidgetActionType.Deposit, true, false)).toBe('info')
     expect(resolvePackagedVaultMode(WidgetActionType.Deposit, false, true)).toBe('rewards')
+  })
+})
+
+describe('applyPackagedVaultDisplay', () => {
+  it('uses yearn.fi display metrics without replacing package-owned configuration', () => {
+    const token = { address: vaultAddress, chainId: 1, decimals: 18, symbol: 'yvTEST' } as const
+    const config: VaultWidgetConfig = {
+      adapters: [],
+      chainId: 1,
+      depositTokens: [token],
+      display: { assetPriceUsd: 1, estimatedApr: 0.01, positionLabel: 'Vault shares' },
+      id: 'test',
+      name: 'Test vault',
+      positionToken: token,
+      vaultAddress,
+      withdrawTokens: [token]
+    }
+
+    expect(applyPackagedVaultDisplay(config, { assetPriceUsd: 2, estimatedApr: 0.2 })).toMatchObject({
+      adapters: config.adapters,
+      display: {
+        assetPriceUsd: 2,
+        estimatedApr: 0.2,
+        positionLabel: 'Vault shares'
+      }
+    })
   })
 })
 

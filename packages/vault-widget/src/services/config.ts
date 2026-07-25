@@ -33,6 +33,9 @@ type KongVault = {
     } | null
     netAPR?: number | null
   } | null
+  apy?: {
+    net?: number | null
+  } | null
   asset?: {
     address: Address
     decimals?: number | string | null
@@ -116,6 +119,10 @@ function normalizeDecimals(value: number | string | null | undefined): number {
 
 function getMigration(vault: KongVault): KongVault['migration'] {
   return vault.migration ?? vault.meta?.migration
+}
+
+function getEstimatedApr(vault: KongVault): number | undefined {
+  return vault.apr?.forwardAPR?.netAPR ?? vault.apr?.netAPR ?? vault.apy?.net ?? undefined
 }
 
 function createConfig(vault: KongVault): VaultWidgetConfig {
@@ -211,6 +218,7 @@ function createConfig(vault: KongVault): VaultWidgetConfig {
     const stakingAdapter = createStakingAdapter({
       chainId: vault.chainId,
       positionSourceId: 'staked',
+      readVaultAmount: readPositionAmount,
       source: vault.staking?.source ?? undefined,
       stakingAddress,
       stakingToken,
@@ -281,7 +289,7 @@ function createConfig(vault: KongVault): VaultWidgetConfig {
       display: {
         approvalSpenderName: { deposit: positionToken.symbol },
         assetPriceUsd: vault.tvl?.price ?? undefined,
-        estimatedApr: vault.apr?.forwardAPR?.netAPR ?? vault.apr?.netAPR ?? undefined,
+        estimatedApr: getEstimatedApr(vault),
         positionLabel: 'Vault shares'
       }
     }
@@ -305,7 +313,7 @@ function createConfig(vault: KongVault): VaultWidgetConfig {
     display: {
       approvalSpenderName: { deposit: positionToken.symbol },
       assetPriceUsd: vault.tvl?.price ?? undefined,
-      estimatedApr: vault.apr?.forwardAPR?.netAPR ?? vault.apr?.netAPR ?? undefined,
+      estimatedApr: getEstimatedApr(vault),
       positionLabel: 'Vault shares'
     }
   }

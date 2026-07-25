@@ -139,6 +139,54 @@ describe('createStakingAdapter', () => {
       args: [100n, account, account]
     })
   })
+
+  it('converts underlying input into vault tokens before unstaking', async () => {
+    const readVaultAmount = vi.fn().mockResolvedValue(50n)
+    const adapter = createStakingAdapter({
+      chainId: 1,
+      readVaultAmount,
+      source: 'VeYFI',
+      stakingAddress,
+      stakingToken,
+      vaultToken
+    })
+    const quote = await adapter.quote(createRequest('withdraw', 100n), createClient(60n))
+
+    expect(readVaultAmount).toHaveBeenCalledWith(expect.anything(), 100n)
+    expect(quote).toMatchObject({
+      assetValue: 100n,
+      expectedOut: 50n,
+      positionAmount: 60n
+    })
+    expect(decodeFunctionData({ abi: VEYFI_STAKING_ABI, data: quote.transaction.data })).toEqual({
+      functionName: 'withdraw',
+      args: [50n, account, account]
+    })
+  })
+
+  it('redeems the exact tokenized staking balance for max', async () => {
+    const adapter = createStakingAdapter({
+      chainId: 1,
+      source: 'yBOLD',
+      stakingAddress,
+      stakingToken,
+      vaultToken
+    })
+    const quote = await adapter.quote(
+      { ...createRequest('withdraw', 99n), positionBalance: 100n, redeemAll: true },
+      createClient(98n)
+    )
+
+    expect(quote).toMatchObject({
+      amountIn: 100n,
+      expectedOut: 98n,
+      positionAmount: 100n
+    })
+    expect(decodeFunctionData({ abi: TOKENIZED_STAKING_ABI, data: quote.transaction.data })).toEqual({
+      functionName: 'redeem',
+      args: [100n, account, account]
+    })
+  })
 })
 
 describe('createStakingPositionValueReader', () => {
@@ -255,6 +303,53 @@ describe('createUnstakeAndWithdrawAdapter', () => {
     expect(decodeFunctionData({ abi: VEYFI_STAKING_ABI, data: unstake!.transaction.data })).toEqual({
       functionName: 'withdraw',
       args: [5n * 10n ** 18n, account, account]
+    })
+    expect(decodeFunctionData({ abi: YEARN_V2_VAULT_ABI, data: withdraw!.transaction.data })).toEqual({
+      functionName: 'withdraw',
+      args: [5n * 10n ** 18n, account, 100n]
+    })
+  })
+
+  it('redeems exact nested balances for a max unstake and withdrawal', async () => {
+    const stakingAdapter = createStakingAdapter({
+      chainId: 1,
+      source: 'VeYFI',
+      stakingAddress,
+      stakingToken,
+      vaultToken
+    })
+    const vaultAdapter = createYearnV2Adapter({
+      asset: assetToken,
+      positionToken: vaultToken,
+      vaultAddress
+    })
+    const adapter = createUnstakeAndWithdrawAdapter({
+      assetToken,
+      stakingAdapter,
+      vaultAdapter,
+      vaultToken
+    })
+    const readContract = vi
+      .fn()
+      .mockResolvedValueOnce(5n * 10n ** 18n)
+      .mockResolvedValueOnce(2n * 10n ** 18n)
+    const request = {
+      ...createRequest('withdraw', 9n * 10n ** 18n),
+      positionBalance: 6n * 10n ** 18n,
+      redeemAll: true,
+      selectedToken: assetToken
+    }
+    const quote = await adapter.quote(request, { readContract } as unknown as PublicClient)
+    const [unstake, withdraw] = quote.transactions ?? []
+
+    expect(quote).toMatchObject({
+      amountIn: 6n * 10n ** 18n,
+      expectedOut: 10n * 10n ** 18n,
+      positionAmount: 6n * 10n ** 18n
+    })
+    expect(decodeFunctionData({ abi: VEYFI_STAKING_ABI, data: unstake!.transaction.data })).toEqual({
+      functionName: 'redeem',
+      args: [6n * 10n ** 18n, account, account]
     })
     expect(decodeFunctionData({ abi: YEARN_V2_VAULT_ABI, data: withdraw!.transaction.data })).toEqual({
       functionName: 'withdraw',

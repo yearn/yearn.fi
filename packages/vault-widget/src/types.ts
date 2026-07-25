@@ -55,6 +55,8 @@ export type VaultWidgetRequest = {
   mode: 'deposit' | 'withdraw'
   positionBalance: bigint
   positionSource?: VaultWidgetPositionSource
+  redeemAll?: boolean
+  requestedPositionAmount?: bigint
   selectedToken: VaultWidgetToken
   signal: AbortSignal
   slippageBps: number

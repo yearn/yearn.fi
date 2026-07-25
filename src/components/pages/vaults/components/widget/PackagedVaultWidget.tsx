@@ -10,21 +10,42 @@ import {
   createYvUsdFamilyPreset,
   VaultFamilyWidget,
   VaultWidget,
+  type VaultWidgetConfig,
   type VaultWidgetEvent,
   type VaultWidgetMode,
   VaultWidgetProvider
 } from '@yearn/vault-widget'
-import { createYearnFiActivityStore, createYearnFiSettingsStore } from '@yearn/vault-widget/services'
+import {
+  createEnsoVaultConfigResolver,
+  createYearnFiActivityStore,
+  createYearnFiSettingsStore
+} from '@yearn/vault-widget/services'
 import { useRouter } from 'next/navigation'
 import { type ReactElement, type ReactNode, useMemo } from 'react'
 import type { Address, Hash } from 'viem'
 
-const yearnFiServices = {
-  activityStore: createYearnFiActivityStore(),
-  settings: createYearnFiSettingsStore()
-}
+const yearnFiActivityStore = createYearnFiActivityStore()
+const yearnFiConfigResolver = createEnsoVaultConfigResolver()
+const yearnFiSettingsStore = createYearnFiSettingsStore()
 
 export type PackagedVaultKind = 'generic' | 'ybold' | 'yvbtc' | 'yvusd'
+
+export function applyPackagedVaultDisplay(
+  config: VaultWidgetConfig,
+  overrides: {
+    assetPriceUsd?: number
+    estimatedApr?: number
+  }
+): VaultWidgetConfig {
+  return {
+    ...config,
+    display: {
+      ...config.display,
+      assetPriceUsd: overrides.assetPriceUsd ?? config.display?.assetPriceUsd,
+      estimatedApr: overrides.estimatedApr ?? config.display?.estimatedApr
+    }
+  }
+}
 
 type PackagedVaultAnalyticsEvent = {
   name: TPlausibleEventName
@@ -168,6 +189,23 @@ export function PackagedVaultWidget({
       }
     }
   }, [assetPriceUsd, estimatedApr, kind])
+  const yearnFiServices = useMemo(
+    () => ({
+      activityStore: yearnFiActivityStore,
+      configResolver: {
+        async resolve(
+          resolverChainId: number,
+          resolverVaultAddress: Address,
+          signal?: AbortSignal
+        ): Promise<VaultWidgetConfig> {
+          const config = await yearnFiConfigResolver.resolve(resolverChainId, resolverVaultAddress, signal)
+          return applyPackagedVaultDisplay(config, { assetPriceUsd, estimatedApr })
+        }
+      },
+      settings: yearnFiSettingsStore
+    }),
+    [assetPriceUsd, estimatedApr]
+  )
   const family = useMemo(() => {
     if (kind === 'yvusd') {
       return createYvUsdFamilyPreset({ assetPriceUsd, estimatedApr, estimatedAprByVariant })

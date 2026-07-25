@@ -14,7 +14,7 @@ describe('createKongVaultConfigResolver', () => {
       Response.json({
         address: vaultAddress,
         apiVersion: '3.0.4',
-        apr: { forwardAPR: { netAPR: 0.123 } },
+        apy: { net: 0.123 },
         asset: {
           address: assetAddress,
           decimals: 6,
@@ -39,6 +39,30 @@ describe('createKongVaultConfigResolver', () => {
     expect(config.display).toMatchObject({ assetPriceUsd: 1.001, estimatedApr: 0.123 })
     expect(config.depositTokens[0]?.priceUsd).toBe(1.001)
     expect(config.readPositionValue).toBeTypeOf('function')
+  })
+
+  it('continues accepting the aggregated APR shape used by host data', async () => {
+    const fetcher = vi.fn(async () =>
+      Response.json({
+        address: vaultAddress,
+        apiVersion: '3.0.4',
+        apr: { forwardAPR: { netAPR: 0.456 } },
+        asset: {
+          address: assetAddress,
+          decimals: 6,
+          name: 'USD Coin',
+          symbol: 'USDC'
+        },
+        chainId: 1,
+        decimals: 18,
+        name: 'Yearn USDC',
+        symbol: 'yvUSDC'
+      })
+    )
+
+    const config = await createKongVaultConfigResolver({ fetcher }).resolve(1, vaultAddress)
+
+    expect(config.display?.estimatedApr).toBe(0.456)
   })
 
   it('creates a Yearn V2 configuration for legacy API versions', async () => {

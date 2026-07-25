@@ -126,6 +126,24 @@ describe('ERC-4626 adapter', () => {
       args: [5n, account, account]
     })
   })
+
+  it('redeems the exact share balance for a max withdrawal', async () => {
+    const adapter = createErc4626Adapter({ asset, vaultAddress: vault })
+    const request = { ...createRequest('withdraw', 199n), positionBalance: 100n, redeemAll: true }
+    const quote = await adapter.quote(request, {
+      readContract: vi.fn().mockResolvedValue(198n)
+    } as unknown as PublicClient)
+
+    expect(quote).toMatchObject({
+      amountIn: 100n,
+      expectedOut: 198n,
+      positionAmount: 100n
+    })
+    expect(decodeFunctionData({ abi: ERC4626_ABI, data: quote.transaction.data })).toEqual({
+      functionName: 'redeem',
+      args: [100n, account, account]
+    })
+  })
 })
 
 describe('yBOLD adapter', () => {
@@ -205,6 +223,31 @@ describe('yBOLD adapter', () => {
     expect(decodeFunctionData({ abi: zapperAbi, data: withdraw.transaction.data })).toEqual({
       functionName: 'zapOut',
       args: [7n, account, 75n]
+    })
+  })
+
+  it('zaps out the exact position balance for a max withdrawal', async () => {
+    const adapter = createYBoldAdapter({
+      asset,
+      positionToken,
+      stakingAbi,
+      zapperAbi,
+      zapperAddress: zapper
+    })
+    const readContract = vi.fn().mockResolvedValue(98n)
+    const quote = await adapter.quote({ ...createRequest('withdraw', 99n), positionBalance: 100n, redeemAll: true }, {
+      readContract
+    } as unknown as PublicClient)
+
+    expect(quote).toMatchObject({
+      amountIn: 100n,
+      expectedOut: 98n,
+      positionAmount: 100n
+    })
+    expect(readContract).toHaveBeenCalledOnce()
+    expect(decodeFunctionData({ abi: zapperAbi, data: quote.transaction.data })).toEqual({
+      functionName: 'zapOut',
+      args: [100n, account, 75n]
     })
   })
 })
@@ -291,6 +334,41 @@ describe('Enso adapter', () => {
 
     expect(readPositionValue).not.toHaveBeenCalled()
   })
+
+  it('routes the exact position balance instead of round-tripping a max withdrawal', async () => {
+    const getRoute = vi.fn().mockResolvedValue({
+      amountOut: 95n,
+      minAmountOut: 94n,
+      transaction: {
+        chainId: 1,
+        data: '0x1234',
+        from: account,
+        to: router,
+        value: 0n
+      }
+    })
+    const withdrawAmountToPosition = vi.fn()
+    const adapter = createEnsoAdapter({
+      asset,
+      destinationChainId: 1,
+      positionToken,
+      provider: { getRoute },
+      routerByChain: { 1: router },
+      withdrawAmountToPosition
+    })
+
+    await adapter.quote(
+      {
+        ...createRequest('withdraw', 99n, routeToken),
+        positionBalance: 100n,
+        redeemAll: true
+      },
+      {} as PublicClient
+    )
+
+    expect(withdrawAmountToPosition).not.toHaveBeenCalled()
+    expect(getRoute).toHaveBeenCalledWith(expect.objectContaining({ amountIn: 100n }))
+  })
 })
 
 describe('ERC-4626 position value', () => {
@@ -362,6 +440,25 @@ describe('Yearn V2 adapter', () => {
     expect(transaction).toEqual({
       functionName: 'withdraw',
       args: [2500000000000000001n, '0x7777777777777777777777777777777777777777', 75n]
+    })
+  })
+
+  it('withdraws the exact V2 share balance for max without rounding up', async () => {
+    const adapter = createYearnV2Adapter({ asset, positionToken, vaultAddress: vault })
+    const request = {
+      ...createRequest('withdraw', 199n * 10n ** 18n, 75),
+      positionBalance: 100n * 10n ** 18n,
+      redeemAll: true
+    }
+    const quote = await adapter.quote(request, createClient(2n * 10n ** 18n))
+
+    expect(quote).toMatchObject({
+      expectedOut: 200n * 10n ** 18n,
+      positionAmount: 100n * 10n ** 18n
+    })
+    expect(decodeFunctionData({ abi: YEARN_V2_VAULT_ABI, data: quote.transaction.data })).toEqual({
+      functionName: 'withdraw',
+      args: [100n * 10n ** 18n, account, 75n]
     })
   })
 
