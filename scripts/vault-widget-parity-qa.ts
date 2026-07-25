@@ -2,10 +2,11 @@ import { chromium, type Frame, type Page } from 'playwright'
 
 type ParityCase = {
   account?: `0x${string}`
+  expectedRewardSymbol?: string
   id: string
   state: 'deposit' | 'info' | 'migrate' | 'rewards' | 'settings' | 'withdraw'
   variant?: 'locked' | 'unlocked'
-  vault: 'v2-migration' | 'v2-ycrv' | 'v3-staking' | 'ybold' | 'yvbtc' | 'yvusd'
+  vault: 'juiced-rewards' | 'v2-migration' | 'v2-ycrv' | 'v3-staking' | 'ybold' | 'yvbtc' | 'yvusd'
   viewport: 'desktop' | 'mobile'
 }
 
@@ -17,6 +18,7 @@ type ParityResult = {
 
 const BASE_URL = process.env.VAULT_WIDGET_QA_URL ?? 'http://127.0.0.1:4246/dev/vault-widget'
 const CONCURRENCY = 1
+const JUICED_REWARD_ACCOUNT = '0x719b3d3bbb9207e301ee9abf7574a4a756e0c2e3'
 const V2_USDC_HOLDER = '0xC4080c19DE69c2362d01B20F071D4046364A0226'
 const STATE_LABELS: Record<ParityCase['state'], string> = {
   deposit: 'Deposit',
@@ -61,7 +63,14 @@ const CASES: readonly ParityCase[] = [
     viewport: 'desktop'
   },
   { id: 'v3-staking-deposit-desktop', state: 'deposit', vault: 'v3-staking', viewport: 'desktop' },
-  { id: 'v3-staking-rewards-desktop', state: 'rewards', vault: 'v3-staking', viewport: 'desktop' }
+  {
+    account: JUICED_REWARD_ACCOUNT,
+    expectedRewardSymbol: 'AJNA',
+    id: 'juiced-rewards-desktop',
+    state: 'rewards',
+    vault: 'juiced-rewards',
+    viewport: 'desktop'
+  }
 ]
 
 function invariant(condition: unknown, message: string): asserts condition {
@@ -120,6 +129,18 @@ async function waitForPackage(page: Page, qaCase: ParityCase): Promise<boolean> 
       document.querySelector('.yv-widget .yv-widget__tab[aria-selected="true"]')?.textContent?.trim() === selectedLabel,
     STATE_LABELS[qaCase.state]
   )
+  if (qaCase.state === 'rewards') {
+    invariant(qaCase.expectedRewardSymbol, `${qaCase.id}: expected reward symbol is not configured`)
+    await widget.locator('.yv-widget__workflow-balance').filter({ hasText: 'Claimable Rewards' }).waitFor({
+      state: 'visible'
+    })
+    const rewardRow = widget.locator('.yv-widget__reward-row').filter({ hasText: qaCase.expectedRewardSymbol })
+    await rewardRow.waitFor({ state: 'visible' })
+    invariant(
+      await rewardRow.getByRole('button', { exact: true, name: 'Claim' }).isEnabled(),
+      `${qaCase.id}: package reward is not claimable`
+    )
+  }
   return true
 }
 
@@ -165,9 +186,17 @@ async function verifyLegacyState(frame: Frame, qaCase: ParityCase): Promise<bool
     return true
   }
 
-  // The package discovers Merkl rewards independently of the legacy reward
-  // panel, so a rewards-only package state has no guaranteed legacy control.
-  if (qaCase.state === 'rewards') return true
+  if (qaCase.state === 'rewards') {
+    invariant(qaCase.expectedRewardSymbol, `${qaCase.id}: expected reward symbol is not configured`)
+    await frame.getByText('Claimable Rewards', { exact: true }).waitFor({ state: 'visible' })
+    const rewardRow = frame.locator('div.flex.flex-col.gap-3.py-3').filter({ hasText: qaCase.expectedRewardSymbol })
+    await rewardRow.waitFor({ state: 'visible' })
+    invariant(
+      await rewardRow.getByRole('button', { exact: true, name: 'Claim' }).isEnabled(),
+      `${qaCase.id}: legacy reward is not claimable`
+    )
+    return true
+  }
 
   const modeLabel = STATE_LABELS[qaCase.state].toLowerCase()
   await frame.waitForFunction(

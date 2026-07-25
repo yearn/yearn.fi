@@ -60,6 +60,12 @@ const VAULT_FIXTURES = [
     label: 'V3 · USDC + staking',
     chainId: 1,
     vaultAddress: '0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204' as Address
+  },
+  {
+    id: 'juiced-rewards',
+    label: 'Juiced · claimable rewards',
+    chainId: 1,
+    vaultAddress: '0xe24BA27551aBE96Ca401D39761cA2319Ea14e3CB' as Address
   }
 ] as const
 const DESKTOP_VIEWPORT = { width: 1440, height: 900 }
@@ -336,7 +342,7 @@ export function VaultWidgetParityPage(): ReactElement {
           { label: 'My Info', value: 'info' },
           { label: 'Settings', value: 'settings' }
         ]
-      : vaultId === 'v3-staking'
+      : vaultId === 'v3-staking' || vaultId === 'juiced-rewards'
         ? [
             { label: 'Deposit', value: 'deposit' },
             { label: 'Withdraw', value: 'withdraw' },
