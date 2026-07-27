@@ -1504,10 +1504,167 @@ describe('pnl simple protocol return', () => {
 
     expect(familyHistory).toHaveLength(1)
     expect(familyHistory[0]?.vaultAddress).toBe(VAULT)
-    expect(familyHistory[0]?.dataPoints[0]?.protocolReturnPct).toBeCloseTo(0)
-    expect(familyHistory[0]?.dataPoints[1]?.protocolReturnPct).toBeCloseTo(10)
     expect(familyHistory[0]?.dataPoints[0]?.growthIndex).toBeCloseTo(100)
     expect(familyHistory[0]?.dataPoints[1]?.growthIndex).toBeCloseTo(110)
+  })
+
+  it('chains family PPS returns without treating added deposits or partial withdrawals as performance', () => {
+    const events = [
+      baseEvent({
+        kind: 'deposit',
+        id: 'initial-deposit',
+        blockTimestamp: 100,
+        shares: 100n * ONE,
+        assets: 100n * ONE,
+        owner: USER,
+        sender: USER
+      }),
+      baseEvent({
+        kind: 'deposit',
+        id: 'large-added-deposit',
+        blockTimestamp: 200,
+        blockNumber: 2,
+        shares: 1000n * ONE,
+        assets: 1090n * ONE,
+        owner: USER,
+        sender: USER
+      }),
+      baseEvent({
+        kind: 'withdrawal',
+        id: 'partial-withdrawal',
+        blockTimestamp: 250,
+        blockNumber: 3,
+        shares: 500n * ONE,
+        assets: 550n * ONE,
+        owner: USER
+      })
+    ]
+    const ppsData = new Map([
+      [
+        VAULT_KEY,
+        new Map([
+          [100, 1],
+          [200, 1.1],
+          [300, 1.2]
+        ])
+      ]
+    ])
+    const ledgers = buildProtocolReturnLedgers({
+      events,
+      userAddress: USER,
+      metadata,
+      ppsData,
+      priceData: new Map([[ASSET_PRICE_KEY, new Map([[100, 1]])]]),
+      currentTimestamp: 300
+    })
+    const selectedVault = materializeProtocolReturnVaults({
+      ledgers,
+      metadata,
+      ppsData,
+      currentTimestamp: 300
+    })[0]!
+
+    const familyHistory = buildProtocolReturnFamilyHistorySeries({
+      events,
+      userAddress: USER,
+      metadata,
+      ppsData,
+      priceData: new Map([[ASSET_PRICE_KEY, new Map([[100, 1]])]]),
+      timestamps: [100, 200, 300],
+      selectedVaults: [selectedVault]
+    })
+
+    expect(familyHistory[0]?.dataPoints.map((point) => point.growthIndex)).toEqual([
+      expect.closeTo(100),
+      expect.closeTo(110),
+      expect.closeTo(120)
+    ])
+  })
+
+  it('excludes fully exited periods and resumes the family index from a new PPS anchor on re-entry', () => {
+    const events = [
+      baseEvent({
+        kind: 'deposit',
+        id: 'first-entry',
+        blockTimestamp: 100,
+        shares: 100n * ONE,
+        assets: 100n * ONE,
+        owner: USER,
+        sender: USER
+      }),
+      baseEvent({
+        kind: 'withdrawal',
+        id: 'full-exit',
+        blockTimestamp: 200,
+        blockNumber: 2,
+        shares: 100n * ONE,
+        assets: 110n * ONE,
+        owner: USER
+      }),
+      baseEvent({
+        kind: 'deposit',
+        id: 're-entry',
+        blockTimestamp: 300,
+        blockNumber: 3,
+        shares: 100n * ONE,
+        assets: 200n * ONE,
+        owner: USER,
+        sender: USER
+      })
+    ]
+    const ppsData = new Map([
+      [
+        VAULT_KEY,
+        new Map([
+          [100, 1],
+          [200, 1.1],
+          [250, 1.5],
+          [300, 2],
+          [400, 2.2]
+        ])
+      ]
+    ])
+    const priceData = new Map([
+      [
+        ASSET_PRICE_KEY,
+        new Map([
+          [100, 1],
+          [300, 1]
+        ])
+      ]
+    ])
+    const ledgers = buildProtocolReturnLedgers({
+      events,
+      userAddress: USER,
+      metadata,
+      ppsData,
+      priceData,
+      currentTimestamp: 400
+    })
+    const selectedVault = materializeProtocolReturnVaults({
+      ledgers,
+      metadata,
+      ppsData,
+      currentTimestamp: 400
+    })[0]!
+
+    const familyHistory = buildProtocolReturnFamilyHistorySeries({
+      events,
+      userAddress: USER,
+      metadata,
+      ppsData,
+      priceData,
+      timestamps: [100, 200, 250, 300, 400],
+      selectedVaults: [selectedVault]
+    })
+
+    expect(familyHistory[0]?.dataPoints.map((point) => point.growthIndex)).toEqual([
+      expect.closeTo(100),
+      expect.closeTo(110),
+      null,
+      expect.closeTo(110),
+      expect.closeTo(121)
+    ])
   })
 
   it('keeps locked and unlocked yvUSD as separate protocol-return families', () => {
@@ -1803,11 +1960,8 @@ describe('pnl simple protocol return', () => {
     })
 
     expect(familyHistory[0]?.dataPoints[0]?.growthIndex).toBeCloseTo(100)
-    expect(familyHistory[0]?.dataPoints[0]?.protocolReturnPct).toBeCloseTo(0)
-    expect(familyHistory[0]?.dataPoints[1]?.growthIndex).toBeNull()
-    expect(familyHistory[0]?.dataPoints[1]?.protocolReturnPct).toBeNull()
+    expect(familyHistory[0]?.dataPoints[1]?.growthIndex).toBeCloseTo(110)
     expect(familyHistory[0]?.dataPoints[2]?.growthIndex).toBeNull()
-    expect(familyHistory[0]?.dataPoints[2]?.protocolReturnPct).toBeNull()
   })
 
   it('builds an aggregate growth index that does not step down when a new position opens', () => {

@@ -13,6 +13,7 @@ import {
   getYvUsdPositionApyBreakdown,
   getYvUsdPositionValues,
   getYvUsdUnderlyingPricePerShare,
+  hasYvUsdInfinifiPoints,
   YVUSD_CHAIN_ID,
   YVUSD_DECIMALS,
   YVUSD_LOCKED_ADDRESS,
@@ -22,6 +23,30 @@ import {
 describe('yvUSD token metadata', () => {
   it('uses Kong vault-share decimals for balance discovery', () => {
     expect(YVUSD_DECIMALS).toBe(6)
+  })
+})
+
+describe('hasYvUsdInfinifiPoints', () => {
+  it('returns false while points metrics are unavailable', () => {
+    expect(hasYvUsdInfinifiPoints()).toBe(false)
+  })
+
+  it('returns false when neither variant currently earns points', () => {
+    expect(
+      hasYvUsdInfinifiPoints({
+        unlocked: { hasInfinifiPoints: false },
+        locked: { hasInfinifiPoints: false }
+      })
+    ).toBe(false)
+  })
+
+  it('returns true when either variant currently earns points', () => {
+    expect(
+      hasYvUsdInfinifiPoints({
+        unlocked: { hasInfinifiPoints: false },
+        locked: { hasInfinifiPoints: true }
+      })
+    ).toBe(true)
   })
 })
 

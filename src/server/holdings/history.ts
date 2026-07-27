@@ -123,8 +123,8 @@ export async function GET(request: Request): Promise<Response> {
   const versionParam = queryValue(request, 'version')
   const denominationParam = queryValue(request, 'denomination')
   const timeframeParam = queryValue(request, 'timeframe')
-  // Keep the advanced event-fetch modes in the service layer for now, but do not expose them.
-  // const fetchTypeParam = queryValue(request, 'fetchType')
+  const fetchTypeParam = queryValue(request, 'fetchType')
+  // Keep the advanced pagination mode in the service layer for now, but do not expose it.
   // const paginationModeParam = queryValue(request, 'paginationMode')
   const debugParam = queryValue(request, 'debug')
   const progressIdParam = queryValue(request, 'progressId')
@@ -148,7 +148,7 @@ export async function GET(request: Request): Promise<Response> {
   }
 
   const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
-  const fetchType = parseHoldingsEventFetchType(undefined)
+  const fetchType = parseHoldingsEventFetchType(fetchTypeParam)
   const paginationMode = parseHoldingsEventPaginationMode(undefined)
   const denomination = parseHoldingsHistoryDenomination(denominationParam)
   const timeframe = parseHoldingsHistoryTimeframe(timeframeParam)

@@ -1,5 +1,10 @@
+import { YVUSD_LOCKED_COOLDOWN_DAYS, YVUSD_WITHDRAW_WINDOW_DAYS } from '@pages/vaults/utils/yvUsd'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { scheduleAdditionalYvUsdDepositRefetch, shouldRefetchUnlockedAfterYvUsdDeposit } from './YvUsdDeposit.helpers'
+import {
+  getYvUsdDepositTypeItems,
+  scheduleAdditionalYvUsdDepositRefetch,
+  shouldRefetchUnlockedAfterYvUsdDeposit
+} from './YvUsdDeposit.helpers'
 
 describe('YvUsdDeposit', () => {
   beforeEach(() => {
@@ -32,5 +37,17 @@ describe('YvUsdDeposit', () => {
     expect(shouldRefetchUnlockedAfterYvUsdDeposit('locked')).toBe(true)
     expect(shouldRefetchUnlockedAfterYvUsdDeposit('unlocked')).toBe(false)
     expect(shouldRefetchUnlockedAfterYvUsdDeposit(null)).toBe(false)
+  })
+
+  it('lists the locked deposit timing and yield tradeoffs', () => {
+    expect(getYvUsdDepositTypeItems('locked')).toEqual([
+      `${YVUSD_LOCKED_COOLDOWN_DAYS} day cooldown`,
+      `${YVUSD_WITHDRAW_WINDOW_DAYS} day withdrawal window`,
+      'Higher yield'
+    ])
+  })
+
+  it('lists the unlocked deposit liquidity and yield tradeoffs', () => {
+    expect(getYvUsdDepositTypeItems('unlocked')).toEqual(['No cooldown or withdrawal window', 'Lower yield'])
   })
 })

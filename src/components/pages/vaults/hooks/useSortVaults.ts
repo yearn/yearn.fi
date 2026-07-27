@@ -28,8 +28,30 @@ export type TPossibleSortBy =
   | 'deposited'
   | 'available'
   | 'featuringScore'
+  | 'none'
   | 'allocation'
   | 'score'
+
+export function compareDepositedValues({
+  a,
+  b,
+  sortDirection
+}: {
+  a: number
+  b: number
+  sortDirection: TSortDirection
+}): number {
+  const aHasHoldings = Number.isFinite(a) && a > 0
+  const bHasHoldings = Number.isFinite(b) && b > 0
+
+  if (aHasHoldings !== bHasHoldings) {
+    return aHasHoldings ? -1 : 1
+  }
+  if (!aHasHoldings) {
+    return 0
+  }
+  return numberSort({ a, b, sortDirection })
+}
 
 export function useSortVaults<TVault extends TKongVaultInput & { details?: TKongVaultStrategy['details'] }>(
   vaultList: TVault[],
@@ -174,7 +196,7 @@ export function useSortVaults<TVault extends TKongVaultInput & { details?: TKong
         )
       case 'deposited':
         return vaultList.toSorted((a, b): number =>
-          numberSort({
+          compareDepositedValues({
             a: depositedValueByVault.get(a) || 0,
             b: depositedValueByVault.get(b) || 0,
             sortDirection

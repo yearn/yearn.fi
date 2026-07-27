@@ -13,6 +13,29 @@ function createGraphqlResponse(data: Record<string, unknown>): Response {
   })
 }
 
+function createInMemoryGraphqlResponse(data: Record<string, unknown>): Response {
+  return {
+    ok: true,
+    json: async () => ({ data })
+  } as unknown as Response
+}
+
+function createTransferEvent(id: string, blockNumber: number) {
+  return {
+    id,
+    vaultAddress: VAULT,
+    chainId: 1,
+    blockNumber,
+    blockTimestamp: 200 + blockNumber,
+    logIndex: blockNumber,
+    transactionHash: `${TX_HASH}-${id}`,
+    transactionFrom: ROUTER,
+    sender: ROUTER,
+    receiver: USER,
+    value: '900'
+  }
+}
+
 function getEmptyResultKey(query: string): string {
   return query.includes('V2Deposit')
     ? 'V2Deposit'
@@ -36,36 +59,10 @@ describe('fetchUserEvents', () => {
     vi.unstubAllGlobals()
   })
 
-  it('falls back to sequential pagination when aggregate counts are unavailable', async () => {
-    const transferBatches = [
-      Array.from({ length: 1000 }, (_, index) => ({
-        id: `aggregate-transfer-in-${index}`,
-        vaultAddress: VAULT,
-        chainId: 1,
-        blockNumber: index + 1,
-        blockTimestamp: 200 + index,
-        logIndex: index,
-        transactionHash: `${TX_HASH}-${index}`,
-        transactionFrom: ROUTER,
-        sender: ROUTER,
-        receiver: USER,
-        value: '900'
-      })),
-      [
-        {
-          id: 'aggregate-transfer-in-last',
-          vaultAddress: VAULT,
-          chainId: 1,
-          blockNumber: 1001,
-          blockTimestamp: 1201,
-          logIndex: 1000,
-          transactionHash: `${TX_HASH}-last`,
-          transactionFrom: ROUTER,
-          sender: ROUTER,
-          receiver: USER,
-          value: '900'
-        }
-      ]
+  it('falls back to one count-free bulk page when aggregate counts are unavailable', async () => {
+    const transferEvents = [
+      createTransferEvent('aggregate-transfer-in-first', 1),
+      createTransferEvent('aggregate-transfer-in-last', 2)
     ]
 
     const fetchStub = vi.fn(async (_input: string | URL | Request, init?: RequestInit) => {
@@ -89,11 +86,11 @@ describe('fetchUserEvents', () => {
       }
 
       if (query.includes('GetTransfersIn')) {
-        const offset = Number(variables.offset ?? 0)
-        const batch = offset === 0 ? transferBatches[0] : offset === 1000 ? transferBatches[1] : []
+        expect(variables.limit).toBe(50000)
+        expect(variables.offset).toBe(0)
 
         return createGraphqlResponse({
-          Transfer: batch
+          Transfer: transferEvents
         })
       }
 
@@ -115,13 +112,13 @@ describe('fetchUserEvents', () => {
     const { fetchUserEvents } = await importGraphqlModule()
     const events = await fetchUserEvents(USER, 'all', undefined, 'parallel')
 
-    expect(events.transfersIn).toHaveLength(1001)
+    expect(events.transfersIn).toHaveLength(2)
     expect(events.transfersIn[0]).toEqual(
       expect.objectContaining({
-        id: 'aggregate-transfer-in-0'
+        id: 'aggregate-transfer-in-first'
       })
     )
-    expect(events.transfersIn[1000]).toEqual(
+    expect(events.transfersIn[1]).toEqual(
       expect.objectContaining({
         id: 'aggregate-transfer-in-last'
       })
@@ -136,7 +133,69 @@ describe('fetchUserEvents', () => {
       fetchStub.mock.calls.filter(([, init]) =>
         String((init as RequestInit | undefined)?.body ?? '').includes('GetTransfersIn')
       )
-    ).toHaveLength(2)
+    ).toHaveLength(1)
+  })
+
+  it('continues count-free bulk pagination when a page reaches the single-query limit', async () => {
+    const firstTransfer = createTransferEvent('bulk-transfer-in-first', 1)
+    const finalTransfer = createTransferEvent('bulk-transfer-in-final', 2)
+    const fullPage = Array.from({ length: 50000 }, () => firstTransfer)
+
+    const fetchStub = vi.fn(async (_input: string | URL | Request, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body ?? '{}')) as {
+        query: string
+        variables: Record<string, unknown>
+      }
+      const query = body.query
+      const variables = body.variables
+
+      if (query.includes('GetUserEventCountsAggregate')) {
+        return new Response(
+          JSON.stringify({
+            errors: [{ message: "field 'Deposit_aggregate' not found in type: 'query_root'" }]
+          }),
+          {
+            status: 200,
+            headers: { 'content-type': 'application/json' }
+          }
+        )
+      }
+
+      if (query.includes('GetTransfersIn')) {
+        const offset = Number(variables.offset ?? 0)
+
+        return createInMemoryGraphqlResponse({
+          Transfer: offset === 0 ? fullPage : offset === 50000 ? [finalTransfer] : []
+        })
+      }
+
+      if (
+        query.includes('GetDeposits(') ||
+        query.includes('GetWithdrawals(') ||
+        query.includes('GetTransfersOut') ||
+        query.includes('GetV2Deposits(') ||
+        query.includes('GetV2Withdrawals(')
+      ) {
+        return createGraphqlResponse({ [getEmptyResultKey(query)]: [] })
+      }
+
+      throw new Error(`Unexpected query: ${query}`)
+    })
+
+    vi.stubGlobal('fetch', fetchStub)
+
+    const { fetchUserEvents } = await importGraphqlModule()
+    const events = await fetchUserEvents(USER, 'all', undefined, 'parallel')
+    const transferRequests = fetchStub.mock.calls
+      .map(([, init]) => JSON.parse(String((init as RequestInit | undefined)?.body ?? '{}')))
+      .filter(({ query }) => String(query).includes('GetTransfersIn'))
+
+    expect(events.transfersIn).toHaveLength(50001)
+    expect(events.transfersIn[50000]).toEqual(expect.objectContaining({ id: 'bulk-transfer-in-final' }))
+    expect(transferRequests).toEqual([
+      expect.objectContaining({ variables: expect.objectContaining({ limit: 50000, offset: 0 }) }),
+      expect.objectContaining({ variables: expect.objectContaining({ limit: 50000, offset: 50000 }) })
+    ])
   })
 
   it('supports fetching address events in a single query without aggregate preflight', async () => {

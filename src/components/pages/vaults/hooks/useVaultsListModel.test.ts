@@ -14,12 +14,23 @@ const YVUSD_VAULT = {
 } as unknown as TKongVaultInput
 
 describe('getProductPinnedSections', () => {
-  it('pins yvUSD when it matches the active filters', () => {
+  it('pins yvUSD when it matches the active filters and sorting is off', () => {
     expect(
       getProductPinnedSections({
         shouldShowYvUsd: true,
+        sortBy: 'none',
         yvUsdVault: YVUSD_VAULT
       })
     ).toEqual([{ key: 'yvUSD', vaults: [YVUSD_VAULT] }])
+  })
+
+  it.each(['estAPY', 'tvl', 'deposited'] as const)('does not pin yvUSD while sorting by %s', (sortBy) => {
+    expect(
+      getProductPinnedSections({
+        shouldShowYvUsd: true,
+        sortBy,
+        yvUsdVault: YVUSD_VAULT
+      })
+    ).toEqual([])
   })
 })

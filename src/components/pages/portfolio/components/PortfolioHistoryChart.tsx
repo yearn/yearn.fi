@@ -36,7 +36,11 @@ import type {
   TPortfolioProtocolReturnHistorySummary
 } from '../types/api'
 import { PortfolioHistoryBreakdownModal } from './PortfolioHistoryBreakdownModal'
-import type { TPortfolioVaultGrowthChartMode, TPortfolioVaultGrowthChartSeries } from './PortfolioVaultGrowthChart'
+import type {
+  TPortfolioVaultGrowthChartMode,
+  TPortfolioVaultGrowthChartSeries,
+  TPortfolioVaultGrowthChartSortDirection
+} from './PortfolioVaultGrowthChart'
 import { PortfolioVaultGrowthChart } from './PortfolioVaultGrowthChart'
 
 export type TPortfolioHistoryChartTimeframe = '30d' | '90d' | '1y' | 'all'
@@ -56,6 +60,8 @@ type TPortfolioHistoryChartProps = {
   onGrowthDisplayModeOverrideChange: (mode: TGrowthDisplayMode | null) => void
   vaultGrowthMode: TPortfolioVaultGrowthChartMode
   onVaultGrowthModeChange: (mode: TPortfolioVaultGrowthChartMode) => void
+  vaultGrowthSortDirection: TPortfolioVaultGrowthChartSortDirection
+  onVaultGrowthSortDirectionChange: (direction: TPortfolioVaultGrowthChartSortDirection) => void
   balanceIsLoading: boolean
   balanceIsEmpty?: boolean
   balanceError?: Error | null
@@ -151,7 +157,7 @@ const CHART_TABS: Array<{ id: TPortfolioHistoryChartTab; label: string }> = [
   { id: 'balance', label: 'Balance' },
   { id: 'growth', label: 'Growth' },
   { id: 'annualized', label: 'Annualized %' },
-  { id: 'index', label: 'Growth Index' }
+  { id: 'index', label: 'Vault Performance' }
 ]
 const TIMEFRAME_OPTIONS: Array<{ id: TPortfolioHistoryChartTimeframe; label: string }> = [
   { id: '30d', label: '30D' },
@@ -514,6 +520,7 @@ function buildPortfolioVaultGrowthSeries(
   labelByVaultKey: Record<string, string>
 ): TPortfolioVaultGrowthChartSeries[] {
   return familySeries.map((series) => ({
+    chainId: series.chainId,
     vaultAddress: series.vaultAddress,
     vaultName:
       labelByVaultKey[`${series.chainId}:${series.vaultAddress.toLowerCase()}`] ??
@@ -595,7 +602,7 @@ function getEmptyMessage(activeTab: TPortfolioHistoryChartTab, growthDisplayMode
   }
 
   if (activeTab === 'index') {
-    return 'No growth index history available'
+    return 'No vault performance history available'
   }
 
   return 'No holdings history available'
@@ -613,6 +620,8 @@ export function PortfolioHistoryChart({
   onGrowthDisplayModeOverrideChange,
   vaultGrowthMode,
   onVaultGrowthModeChange,
+  vaultGrowthSortDirection,
+  onVaultGrowthSortDirectionChange,
   balanceIsLoading,
   balanceIsEmpty = false,
   balanceError,
@@ -861,7 +870,7 @@ export function PortfolioHistoryChart({
                   ? 'Protocol Growth (ETH)'
                   : 'Protocol Growth (USD)'
               : activeTab === 'index'
-                ? 'Growth Index'
+                ? 'Vault Performance'
                 : 'Protocol Return (%)',
         color: 'var(--chart-1)'
       }
@@ -1054,12 +1063,15 @@ export function PortfolioHistoryChart({
           series={vaultGrowthSeries}
           mode={vaultGrowthMode}
           onModeChange={onVaultGrowthModeChange}
+          sortDirection={vaultGrowthSortDirection}
+          onSortDirectionChange={onVaultGrowthSortDirectionChange}
           timeframe={timeframe}
           maxVaults={INDEX_SERIES_COLORS.length - 1}
           colors={[...INDEX_SERIES_COLORS.slice(1)]}
           title={''}
           height={'100%'}
           showModeToggle={false}
+          showSortToggle
           className={'h-full min-h-0 pt-1'}
           emptyMessage={getEmptyMessage(activeTab, resolvedGrowthDisplayMode)}
         />

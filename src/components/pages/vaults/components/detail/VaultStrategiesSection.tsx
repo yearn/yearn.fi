@@ -310,7 +310,7 @@ export function VaultStrategiesSection({
                       onClick={(): void => setAreInactiveStrategiesOpen((isOpen) => !isOpen)}
                     >
                       <span>
-                        {areInactiveStrategiesOpen ? 'Hide Inactive Strategies' : 'Show Inactive Strategies'}
+                        {areInactiveStrategiesOpen ? 'Hide Unallocated Strategies' : 'Show Unallocated Strategies'}
                         <span className={'ml-1 font-normal text-text-secondary'}>({inactiveStrategies.length})</span>
                       </span>
                       <IconChevron

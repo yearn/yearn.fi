@@ -138,7 +138,7 @@ describe('VaultsListRow', () => {
     expect(html).toContain('tvl-subline-tooltip')
   })
 
-  it('stacks the yvUSD mobile up-to label above the APY value', () => {
+  it('shows an asterisk beside the yvUSD mobile APY value', () => {
     mockUseMediaQuery.mockReturnValue(true)
     mockUseYvUsdVaults.mockReturnValue({
       metrics: {
@@ -182,9 +182,11 @@ describe('VaultsListRow', () => {
 
     const html = renderRowHtml(vault)
 
-    expect(html).toContain('Up to')
+    expect(html).toContain('decoration-dotted underline-offset-4')
+    expect(html).toContain('absolute left-full -top-px ml-px text-sm font-bold text-text-secondary">*</span>')
+    expect(html).not.toContain('Up to')
     expect(html).toContain('9.00%')
-    expect(html).toContain('inline-flex flex-col items-start')
+    expect(html).toContain('inline-flex items-center text-left leading-none')
     expect(html).toContain('style="width:40px;height:40px"')
     expect(html).not.toContain('style="width:48px;height:48px"')
   })
@@ -282,7 +284,7 @@ describe('VaultsListRow', () => {
     expect(html).toContain('flex items-center justify-center gap-2 whitespace-nowrap')
   })
 
-  it('positions the desktop yvUSD up-to label above the APY value without changing row flow', () => {
+  it('shows an asterisk beside the desktop yvUSD APY value without changing row flow', () => {
     mockUseMediaQuery.mockReturnValue(false)
     mockUseYvUsdVaults.mockReturnValue({
       metrics: {
@@ -327,8 +329,10 @@ describe('VaultsListRow', () => {
     const html = renderRowHtml(vault)
 
     expect(html).toContain('inline-flex items-center gap-2 text-right')
-    expect(html).toContain('relative inline-flex')
-    expect(html).toContain('absolute bottom-full left-0 mb-0.5')
+    expect(html).toContain('relative inline-flex items-center gap-1 underline')
+    expect(html).toContain('decoration-dotted underline-offset-4')
+    expect(html).toContain('absolute left-full -top-px ml-px text-sm font-bold text-text-secondary">*</span>')
+    expect(html).not.toContain('Up to')
   })
 
   it('shows the Infinifi points icon for yvUSD when either variant has points', () => {

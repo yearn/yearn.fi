@@ -227,7 +227,6 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
             Est. Annual Return
           </button>
           <p className="text-sm text-text-primary">
-            <span className="font-normal">{depositAmountBn > 0n ? '~' : ''}</span>
             <span className="font-semibold">
               {depositAmountBn > 0n ? formatWidgetValue(estimatedAnnualReturn) : '0'}
             </span>{' '}

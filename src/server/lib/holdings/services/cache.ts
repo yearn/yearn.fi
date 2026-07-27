@@ -30,8 +30,25 @@ export interface VaultIdentifier {
 
 const HOLDINGS_TOTALS_TTL_SECONDS = 30 * 24 * 60 * 60
 const HOLDINGS_TOTALS_KEY_PREFIX = 'holdings:totals'
+// Settled snapshots remain valid through the day; the settled-date guard rolls them over on the next day.
+const PROTOCOL_RETURN_HISTORY_TTL_SECONDS = 24 * 60 * 60
+const PROTOCOL_RETURN_HISTORY_KEY_PREFIX = 'holdings:protocol-return-history:v3'
 const VAULT_INVALIDATION_KEY_PREFIX = 'holdings:vault-invalidated'
 const REDIS_SCAN_COUNT = 500
+
+export interface ProtocolReturnHistoryCacheIdentity {
+  userAddress: string
+  version: string
+  timeframe: string
+  vaultScope?: VaultIdentifier[]
+}
+
+interface CachedProtocolReturnHistoryPayload<TResponse> {
+  settledDate: string
+  updatedAt: number
+  vaults: VaultIdentifier[]
+  response: TResponse
+}
 
 function normalizeUserAddress(userAddress: string): string {
   return userAddress.toLowerCase()
@@ -47,6 +64,25 @@ function getTotalsKey(userAddressHash: string, version: string): string {
 
 function getTotalsKeyPattern(userAddressHash: string): string {
   return `${HOLDINGS_TOTALS_KEY_PREFIX}:${userAddressHash}:*`
+}
+
+function getVaultScopeCacheKey(vaultScope?: VaultIdentifier[]): string {
+  if (!vaultScope?.length) {
+    return 'all'
+  }
+
+  const normalizedScope = Array.from(
+    new Set(vaultScope.map((vault) => `${vault.chainId}:${vault.address.toLowerCase()}`))
+  )
+    .sort()
+    .join(',')
+  return createHash('sha256').update(normalizedScope).digest('hex')
+}
+
+export function getProtocolReturnHistoryCacheKey(identity: ProtocolReturnHistoryCacheIdentity): string {
+  const userAddressHash = getUserAddressCacheKey(identity.userAddress)
+  const vaultScopeKey = getVaultScopeCacheKey(identity.vaultScope)
+  return `${PROTOCOL_RETURN_HISTORY_KEY_PREFIX}:${userAddressHash}:${identity.version}:${identity.timeframe}:${vaultScopeKey}`
 }
 
 function getVaultInvalidationKey(vault: VaultIdentifier): string {
@@ -80,6 +116,47 @@ function parseCachedTotalPayload(value: unknown): CachedTotalPayload | null {
   }
 
   return { usdValue, updatedAt }
+}
+
+function parseVaultIdentifier(value: unknown): VaultIdentifier | null {
+  if (!value || typeof value !== 'object') {
+    return null
+  }
+
+  const candidate = value as Partial<VaultIdentifier>
+  return typeof candidate.address === 'string' && Number.isInteger(candidate.chainId)
+    ? { address: candidate.address, chainId: Number(candidate.chainId) }
+    : null
+}
+
+function parseCachedProtocolReturnHistoryPayload<TResponse>(
+  value: unknown
+): CachedProtocolReturnHistoryPayload<TResponse> | null {
+  const parsed = parseJsonValue(value)
+  if (!parsed || typeof parsed !== 'object') {
+    return null
+  }
+
+  const payload = parsed as Partial<CachedProtocolReturnHistoryPayload<TResponse>>
+  const updatedAt = Number(payload.updatedAt)
+  const vaults = Array.isArray(payload.vaults) ? payload.vaults.map(parseVaultIdentifier) : []
+
+  if (
+    typeof payload.settledDate !== 'string' ||
+    !Number.isFinite(updatedAt) ||
+    !Array.isArray(payload.vaults) ||
+    vaults.some((vault) => vault === null) ||
+    !('response' in payload)
+  ) {
+    return null
+  }
+
+  return {
+    settledDate: payload.settledDate,
+    updatedAt,
+    vaults: vaults.filter((vault): vault is VaultIdentifier => vault !== null),
+    response: payload.response as TResponse
+  }
 }
 
 function isDateInRange(date: string, startDate: string, endDate: string): boolean {
@@ -170,6 +247,94 @@ export async function saveCachedTotals(userAddress: string, version: string, tot
   } catch (error) {
     handleHoldingsRedisError('cached totals save failed', error)
     debugError('cache', 'cached totals save failed', error, { rows: totals.length })
+    return false
+  }
+}
+
+export async function getCachedProtocolReturnHistory<TResponse>(
+  identity: ProtocolReturnHistoryCacheIdentity,
+  settledDate: string
+): Promise<TResponse | null> {
+  if (!isHoldingsStorageEnabled()) {
+    debugLog('cache', 'skipping protocol return history cache lookup because Redis storage is disabled')
+    return null
+  }
+
+  const redis = getHoldingsRedisClient()
+  if (!redis) {
+    debugLog('cache', 'skipping protocol return history cache lookup because Redis client is unavailable')
+    return null
+  }
+
+  const key = getProtocolReturnHistoryCacheKey(identity)
+
+  try {
+    const payload = parseCachedProtocolReturnHistoryPayload<TResponse>(await redis.get(key))
+    if (!payload) {
+      debugLog('cache', 'protocol return history cache miss', { key })
+      return null
+    }
+
+    if (payload.settledDate !== settledDate) {
+      debugLog('cache', 'protocol return history cache settled date mismatch', {
+        key,
+        cachedSettledDate: payload.settledDate,
+        requestedSettledDate: settledDate
+      })
+      return null
+    }
+
+    const isStale = await checkCacheStaleness(payload.vaults, new Date(payload.updatedAt))
+    if (isStale) {
+      debugLog('cache', 'protocol return history cache is stale', { key, vaults: payload.vaults.length })
+      return null
+    }
+
+    debugLog('cache', 'protocol return history cache hit', { key, vaults: payload.vaults.length })
+    return payload.response
+  } catch (error) {
+    handleHoldingsRedisError('protocol return history cache lookup failed', error)
+    debugError('cache', 'protocol return history cache lookup failed', error, { key })
+    return null
+  }
+}
+
+export async function saveCachedProtocolReturnHistory<TResponse>(
+  identity: ProtocolReturnHistoryCacheIdentity,
+  settledDate: string,
+  vaults: VaultIdentifier[],
+  response: TResponse,
+  updatedAt = Date.now()
+): Promise<boolean> {
+  if (!isHoldingsStorageEnabled()) {
+    debugLog('cache', 'skipping protocol return history cache save because Redis storage is disabled')
+    return false
+  }
+
+  const redis = getHoldingsRedisClient()
+  if (!redis) {
+    debugLog('cache', 'skipping protocol return history cache save because Redis client is unavailable')
+    return false
+  }
+
+  const key = getProtocolReturnHistoryCacheKey(identity)
+
+  try {
+    const payload: CachedProtocolReturnHistoryPayload<TResponse> = {
+      settledDate,
+      updatedAt,
+      vaults: vaults.map((vault) => ({
+        address: vault.address.toLowerCase(),
+        chainId: vault.chainId
+      })),
+      response
+    }
+    await redis.set(key, JSON.stringify(payload), { ex: PROTOCOL_RETURN_HISTORY_TTL_SECONDS })
+    debugLog('cache', 'saved protocol return history snapshot to Redis', { key, vaults: vaults.length })
+    return true
+  } catch (error) {
+    handleHoldingsRedisError('protocol return history cache save failed', error)
+    debugError('cache', 'protocol return history cache save failed', error, { key, vaults: vaults.length })
     return false
   }
 }

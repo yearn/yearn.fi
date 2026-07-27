@@ -43,7 +43,9 @@ vi.mock('./holdings', () => ({
 }))
 
 vi.mock('./vaults', () => ({
-  fetchMultipleVaultsMetadata: fetchMultipleVaultsMetadataMock
+  fetchMultipleVaultsMetadata: fetchMultipleVaultsMetadataMock,
+  getVaultMetadataFetchFailedVaults: vi.fn(() => 0),
+  markVaultMetadataFetchFailures: vi.fn((metadata: Map<unknown, unknown>) => metadata)
 }))
 
 vi.mock('./kong', () => ({

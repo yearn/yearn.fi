@@ -37,6 +37,10 @@ function parseVaultFilters({
       .split(',')
       .map((entry) => entry.trim())
       .filter(Boolean)
+    if (entries.length === 0) {
+      return undefined
+    }
+
     const parsedEntries = entries.map((entry) => {
       const [entryChainId, entryVaultAddress] = entry.split(':')
       const parsedChainId = Number(entryChainId)

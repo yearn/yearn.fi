@@ -186,7 +186,7 @@ export default function VaultsListRowExpandedContent({
           <div className={'col-span-12 border-r border-border'}>
             <VaultAboutSection
               currentVault={snapshotMergedVault}
-              className={'md:px-15 md:pb-2'}
+              className={'md:pl-16 md:pr-15 md:pb-2'}
               vaultAddresses={vaultAddresses}
               additionalFeaturesContent={plainApyTooltipContent}
               showKindTag={showKindTag}

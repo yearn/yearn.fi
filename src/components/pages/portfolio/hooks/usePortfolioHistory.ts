@@ -54,6 +54,7 @@ export function usePortfolioHistory(
       cacheDuration: PORTFOLIO_HISTORY_CACHE_DURATION,
       gcTime: PORTFOLIO_HISTORY_CACHE_DURATION,
       keepPreviousData: false,
+      maxRetries: 0,
       timeout: 2 * 60 * 1000 // 2 minutes for large holdings requests
     }
   })

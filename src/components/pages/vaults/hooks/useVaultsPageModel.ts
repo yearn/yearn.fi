@@ -23,7 +23,6 @@ import {
   AGGRESSIVENESS_OPTIONS,
   AVAILABLE_TOGGLE_VALUE,
   DEFAULT_MIN_TVL,
-  HOLDINGS_TOGGLE_VALUE,
   toggleInArray,
   V2_SUPPORTED_CHAINS,
   V3_ASSET_CATEGORIES,
@@ -391,14 +390,11 @@ export function useVaultsPageModel(
     return Array.from(new Set(normalized))
   }, [listUnderlyingAssets])
   const [activeToggleValues, setActiveToggleValues] = useState<string[]>([])
-  const [holdingsPinnedSortDirection, setHoldingsPinnedSortDirection] = useState<TSortDirection>('')
   const effectiveSortBy = sortBy === 'featuringScore' ? DEFAULT_SORT_BY : sortBy
-  const effectiveSortDirection = sortBy === 'featuringScore' ? 'desc' : sortDirection
-  const isHoldingsPinned = activeToggleValues.includes(HOLDINGS_TOGGLE_VALUE)
+  const effectiveSortDirection = effectiveSortBy === 'none' ? '' : sortBy === 'featuringScore' ? 'desc' : sortDirection
   const isAvailablePinned = activeToggleValues.includes(AVAILABLE_TOGGLE_VALUE)
   const {
     listCategoriesSanitized,
-    holdingsVaults,
     availableVaults,
     vaultFlags,
     underlyingAssetVaults,
@@ -426,8 +422,6 @@ export function useVaultsPageModel(
     searchValue,
     sortBy: effectiveSortBy,
     sortDirection: effectiveSortDirection,
-    holdingsPinnedSortDirection,
-    isHoldingsPinned,
     isAvailablePinned
   })
 
@@ -468,8 +462,6 @@ export function useVaultsPageModel(
     searchValue,
     sortBy: effectiveSortBy,
     sortDirection: blockingProbeSortDirection,
-    holdingsPinnedSortDirection: blockingProbeSortDirection,
-    isHoldingsPinned: false,
     isAvailablePinned: false
   }
 
@@ -588,13 +580,6 @@ export function useVaultsPageModel(
     () => getBlockingFilterActionGroups(hiddenByFiltersBlockingKeys),
     [hiddenByFiltersBlockingKeys]
   )
-
-  useEffect(() => {
-    if (holdingsVaults.length === 0 && isHoldingsPinned) {
-      setHoldingsPinnedSortDirection('')
-      setActiveToggleValues((prev) => prev.filter((value) => value !== HOLDINGS_TOGGLE_VALUE))
-    }
-  }, [holdingsVaults.length, isHoldingsPinned])
 
   useEffect(() => {
     if (availableVaults.length === 0 && isAvailablePinned) {
@@ -1073,7 +1058,10 @@ export function useVaultsPageModel(
       let targetSortBy = newSortBy as TPossibleSortBy
       let targetSortDirection = newSortDirection as TSortDirection
 
-      if (targetSortBy === 'deposited' && totalHoldingsMatching === 0) {
+      if (targetSortDirection === '') {
+        targetSortBy = 'none'
+        targetSortDirection = 'desc'
+      } else if (targetSortBy === 'deposited' && totalHoldingsMatching === 0) {
         targetSortBy = DEFAULT_SORT_BY
         targetSortDirection = 'desc'
       }
@@ -1082,27 +1070,6 @@ export function useVaultsPageModel(
       onChangeSortDirection(targetSortDirection)
     },
     onToggle: (value): void => {
-      if (value === HOLDINGS_TOGGLE_VALUE) {
-        const isHoldingsActive = activeToggleValues.includes(HOLDINGS_TOGGLE_VALUE)
-        if (!isHoldingsActive) {
-          setHoldingsPinnedSortDirection('')
-          setActiveToggleValues([HOLDINGS_TOGGLE_VALUE])
-          return
-        }
-        if (holdingsPinnedSortDirection === '') {
-          setHoldingsPinnedSortDirection('desc')
-          return
-        }
-        if (holdingsPinnedSortDirection === 'desc') {
-          setHoldingsPinnedSortDirection('asc')
-          return
-        }
-        setHoldingsPinnedSortDirection('')
-        setActiveToggleValues((prev) => prev.filter((entry) => entry !== value))
-        return
-      }
-
-      setHoldingsPinnedSortDirection('')
       setActiveToggleValues((prev) => {
         if (prev.includes(value)) {
           return prev.filter((entry) => entry !== value)
@@ -1124,6 +1091,8 @@ export function useVaultsPageModel(
         label: 'Est. APY',
         value: 'estAPY',
         sortable: true,
+        allowUnsorted: true,
+        activeChevronClassName: 'text-primary',
         className: hasWalletAddress ? 'col-span-4' : 'col-span-6'
       },
       {
@@ -1131,16 +1100,21 @@ export function useVaultsPageModel(
         label: 'TVL',
         value: 'tvl',
         sortable: true,
+        allowUnsorted: true,
+        activeChevronClassName: 'text-primary',
         className: hasWalletAddress ? 'col-span-4' : 'col-span-5'
       },
       ...(hasWalletAddress
         ? ([
             {
-              type: 'toggle',
+              type: 'sort',
               label: 'Holdings',
-              value: HOLDINGS_TOGGLE_VALUE,
+              value: 'deposited',
+              sortable: true,
+              allowUnsorted: true,
+              activeChevronClassName: 'text-primary',
               className: 'col-span-4 justify-end',
-              disabled: holdingsVaults.length === 0
+              disabled: totalHoldingsMatching === 0
             }
           ] satisfies TListHead['items'])
         : [])

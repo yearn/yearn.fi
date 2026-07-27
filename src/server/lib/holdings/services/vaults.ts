@@ -73,6 +73,7 @@ const DEFAULT_TIMEOUT_MS = 4_000
 const DEFAULT_MAX_RETRIES = 2
 const DEFAULT_RETRY_DELAY_MS = 200
 const SNAPSHOT_CONCURRENCY = 3
+const VAULT_METADATA_FETCH_FAILED_VAULTS = Symbol('vaultMetadataFetchFailedVaults')
 const KNOWN_STABLECOIN_SYMBOLS = new Set([
   'USDC',
   'USDT',
@@ -96,6 +97,26 @@ const vaultListState: TVaultListState = {
   stakingToVaultMap: null,
   hasLoadedGlobalVaultList: false,
   loadPromise: null
+}
+
+type TVaultMetadataFetchResult = Map<string, VaultMetadata> & {
+  [VAULT_METADATA_FETCH_FAILED_VAULTS]?: number
+}
+
+export function markVaultMetadataFetchFailures(
+  metadata: Map<string, VaultMetadata>,
+  failedVaults: number
+): Map<string, VaultMetadata> {
+  Object.defineProperty(metadata, VAULT_METADATA_FETCH_FAILED_VAULTS, {
+    value: failedVaults,
+    enumerable: false,
+    configurable: true
+  })
+  return metadata
+}
+
+export function getVaultMetadataFetchFailedVaults(metadata: Map<string, VaultMetadata>): number {
+  return (metadata as TVaultMetadataFetchResult)[VAULT_METADATA_FETCH_FAILED_VAULTS] ?? 0
 }
 
 function normalizeVaultCategory(category?: string | null): 'stable' | 'volatile' | null {
@@ -439,35 +460,49 @@ async function fetchFallbackMetadata(
   )
 
   const results = await chunkItems(uniqueVaults, SNAPSHOT_CONCURRENCY).reduce<
-    Promise<Array<{ key: string; metadata: VaultMetadata }>>
-  >(async (allResultsPromise, batch) => {
-    const allResults = await allResultsPromise
-    const batchResults = await Promise.allSettled(
-      batch.map(({ chainId, vaultAddress }) => fetchFallbackMetadataForVault(chainId, vaultAddress))
-    )
+    Promise<{ entries: Array<{ key: string; metadata: VaultMetadata }>; failedVaults: number }>
+  >(
+    async (allResultsPromise, batch) => {
+      const allResults = await allResultsPromise
+      const batchResults = await Promise.allSettled(
+        batch.map(({ chainId, vaultAddress }) => fetchFallbackMetadataForVault(chainId, vaultAddress))
+      )
 
-    const resolvedResults = batchResults.reduce<Array<{ key: string; metadata: VaultMetadata }>>((entries, result) => {
-      if (result.status === 'rejected') {
-        console.error('[Kong] Failed to fetch fallback vault metadata:', result.reason)
-        debugError('vaults', 'fallback metadata fetch failed', result.reason)
-        return entries
+      const resolvedResults = batchResults.reduce<{
+        entries: Array<{ key: string; metadata: VaultMetadata }>
+        failedVaults: number
+      }>(
+        (resultAccumulator, result) => {
+          if (result.status === 'rejected') {
+            console.error('[Kong] Failed to fetch fallback vault metadata:', result.reason)
+            debugError('vaults', 'fallback metadata fetch failed', result.reason)
+            resultAccumulator.failedVaults += Number(isRetryableError(result.reason))
+            return resultAccumulator
+          }
+
+          if (result.value === null) {
+            return resultAccumulator
+          }
+
+          resultAccumulator.entries.push(result.value)
+          return resultAccumulator
+        },
+        { entries: [], failedVaults: 0 }
+      )
+
+      return {
+        entries: [...allResults.entries, ...resolvedResults.entries],
+        failedVaults: allResults.failedVaults + resolvedResults.failedVaults
       }
+    },
+    Promise.resolve({ entries: [], failedVaults: 0 })
+  )
 
-      if (result.value === null) {
-        return entries
-      }
-
-      entries.push(result.value)
-      return entries
-    }, [])
-
-    return [...allResults, ...resolvedResults]
-  }, Promise.resolve([]))
-
-  return results.reduce<Map<string, VaultMetadata>>((map, { key, metadata }) => {
+  const metadata = results.entries.reduce<Map<string, VaultMetadata>>((map, { key, metadata }) => {
     map.set(key, metadata)
     return map
   }, new Map<string, VaultMetadata>())
+  return markVaultMetadataFetchFailures(metadata, results.failedVaults)
 }
 
 async function loadVaultList(): Promise<void> {
@@ -540,12 +575,19 @@ export async function fetchMultipleVaultsMetadata(
   const missingVaults = vaults.filter(
     ({ chainId, vaultAddress }) => !results.has(`${chainId}:${vaultAddress.toLowerCase()}`)
   )
+  const shouldFetchFallback = missingVaults.length > 0 && !options?.skipSnapshotFallback
 
-  if (missingVaults.length > 0 && !options?.skipSnapshotFallback) {
+  if (shouldFetchFallback) {
     debugLog('vaults', 'metadata missing from global cache, falling back to snapshots', {
       missing: missingVaults.length
     })
-    const fallbackResults = await fetchFallbackMetadata(missingVaults)
+  }
+
+  const fallbackResults = shouldFetchFallback
+    ? await fetchFallbackMetadata(missingVaults)
+    : new Map<string, VaultMetadata>()
+
+  if (shouldFetchFallback) {
     fallbackResults.forEach((metadata, key) => {
       results.set(key, metadata)
     })
@@ -560,5 +602,9 @@ export async function fetchMultipleVaultsMetadata(
     resolved: results.size,
     loadError: loadError?.message ?? null
   })
-  return results
+  const skippedFallbackFailures = options?.skipSnapshotFallback && loadError ? missingVaults.length : 0
+  return markVaultMetadataFetchFailures(
+    results,
+    getVaultMetadataFetchFailedVaults(fallbackResults) + skippedFallbackFailures
+  )
 }

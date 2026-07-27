@@ -11,6 +11,7 @@ export interface HoldingsDebugContext {
   vaultFilter: string | null
   txFilter: string | null
   progressId: string | null
+  pendingProgressWrites: Promise<void>[]
 }
 
 const storage = new AsyncLocalStorage<HoldingsDebugContext>()
@@ -52,12 +53,19 @@ export function createHoldingsDebugContext(
     lotsEnabled: options?.lotsEnabled ?? false,
     vaultFilter: options?.vaultFilter?.toLowerCase() ?? null,
     txFilter: options?.txFilter?.toLowerCase() ?? null,
-    progressId: options?.progressId ?? null
+    progressId: options?.progressId ?? null,
+    pendingProgressWrites: []
   }
 }
 
 export async function withHoldingsDebugContext<T>(context: HoldingsDebugContext, fn: () => Promise<T>): Promise<T> {
-  return storage.run(context, fn)
+  return storage.run(context, async () => {
+    try {
+      return await fn()
+    } finally {
+      await Promise.allSettled(context.pendingProgressWrites)
+    }
+  })
 }
 
 export function getHoldingsDebugContext(): HoldingsDebugContext | undefined {
@@ -81,23 +89,25 @@ export function getHoldingsDebugFilters(): {
 export function debugLog(scope: string, message: string, payload?: Record<string, unknown>): void {
   const context = getHoldingsDebugContext()
 
-  if (!context) {
+  if (!context?.enabled) {
     return
   }
 
   const elapsedMs = Date.now() - context.startedAt
-  void appendHoldingsProgressLog(context.progressId, { elapsedMs, scope, message })
-
-  if (!context.enabled) {
-    return
-  }
+  context.pendingProgressWrites.push(appendHoldingsProgressLog(context.progressId, { elapsedMs, scope, message }))
 
   console.log(`[HoldingsDebug][${context.requestId}][+${elapsedMs}ms][${scope}] ${message}${formatPayload(payload)}`)
 }
 
 export function reportHoldingsProgress(progress: number, message: string, detail?: string | null): void {
   const context = getHoldingsDebugContext()
-  void updateHoldingsProgress(context?.progressId, { progress, message, detail: detail ?? null })
+  if (!context) {
+    return
+  }
+
+  context.pendingProgressWrites.push(
+    updateHoldingsProgress(context.progressId, { progress, message, detail: detail ?? null })
+  )
 }
 
 export function debugError(scope: string, message: string, error: unknown, payload?: Record<string, unknown>): void {

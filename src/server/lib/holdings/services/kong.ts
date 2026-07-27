@@ -4,6 +4,16 @@ import { debugError, debugLog } from './debug'
 
 export type PPSTimeline = Map<number, number>
 
+const PPS_FETCH_FAILED_VAULTS = Symbol('ppsFetchFailedVaults')
+
+type TPpsFetchResult = Map<string, PPSTimeline> & {
+  [PPS_FETCH_FAILED_VAULTS]?: number
+}
+
+export function getPpsFetchFailedVaults(ppsData: Map<string, PPSTimeline>): number {
+  return (ppsData as TPpsFetchResult)[PPS_FETCH_FAILED_VAULTS] ?? 0
+}
+
 type TFetchLike = typeof fetch
 
 type TKongFetchOptions = {
@@ -190,7 +200,7 @@ export async function fetchMultipleVaultsPPS(
     maxRetries: getMaxRetries(options)
   })
   const results = await chunkVaults(uniqueVaults, getConcurrency(options)).reduce<
-    Promise<Array<{ key: string; timeline: PPSTimeline }>>
+    Promise<Array<{ key: string; timeline: PPSTimeline; failed: boolean }>>
   >(async (allResultsPromise, batch) => {
     const allResults = await allResultsPromise
     const batchResults = await Promise.all(
@@ -198,11 +208,11 @@ export async function fetchMultipleVaultsPPS(
         const key = `${chainId}:${vaultAddress.toLowerCase()}`
         try {
           const timeline = await fetchVaultPPSDeduped(chainId, vaultAddress, options)
-          return { key, timeline }
+          return { key, timeline, failed: false }
         } catch (error) {
           console.error(`[Kong] Failed to fetch PPS for ${key}:`, error)
           debugError('kong-pps', 'vault PPS fetch failed', error, { key })
-          return { key, timeline: new Map() as PPSTimeline }
+          return { key, timeline: new Map() as PPSTimeline, failed: true }
         }
       })
     )
@@ -211,7 +221,13 @@ export async function fetchMultipleVaultsPPS(
   }, Promise.resolve([]))
 
   const map = new Map<string, PPSTimeline>()
-  results.map(({ key, timeline }) => map.set(key, timeline))
+  results.forEach(({ key, timeline }) => {
+    map.set(key, timeline)
+  })
+  Object.defineProperty(map, PPS_FETCH_FAILED_VAULTS, {
+    value: results.filter((result) => result.failed).length,
+    enumerable: false
+  })
   debugLog('kong-pps', 'resolved PPS timelines', {
     resolved: map.size,
     emptyTimelines: Array.from(map.values()).filter((timeline) => timeline.size === 0).length

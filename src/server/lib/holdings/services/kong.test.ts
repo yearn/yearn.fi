@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { fetchMultipleVaultsPPS, getPPS } from './kong'
+import { fetchMultipleVaultsPPS, getPPS, getPpsFetchFailedVaults } from './kong'
 
 function createResponse(points: Array<{ time: number; value: string }>): Response {
   return new Response(JSON.stringify(points.map((point) => ({ ...point, component: 'pps' }))), {
@@ -112,5 +112,18 @@ describe('fetchMultipleVaultsPPS', () => {
     expect(fetchFn).toHaveBeenCalledTimes(1)
     expect(first.get('1:0xabc')?.get(100)).toBe(1.2)
     expect(second.get('1:0xabc')?.get(100)).toBe(1.2)
+  })
+
+  it('reports PPS requests that still fail after retries', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    const fetchFn = vi.fn().mockRejectedValue(new Error('permanent failure')) as typeof fetch
+
+    const timelines = await fetchMultipleVaultsPPS([{ chainId: 1, vaultAddress: '0xABC' }], {
+      fetchFn,
+      maxRetries: 0
+    })
+
+    expect(timelines.get('1:0xabc')).toEqual(new Map())
+    expect(getPpsFetchFailedVaults(timelines)).toBe(1)
   })
 })

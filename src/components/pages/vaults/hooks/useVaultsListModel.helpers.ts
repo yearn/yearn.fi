@@ -1,4 +1,5 @@
 import type { TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
+import type { TPossibleSortBy } from '@pages/vaults/hooks/useSortVaults'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
 
 export type TVaultsPinnedSection = {
@@ -8,9 +9,11 @@ export type TVaultsPinnedSection = {
 
 export function getProductPinnedSections({
   shouldShowYvUsd,
+  sortBy,
   yvUsdVault
 }: {
   shouldShowYvUsd: boolean
+  sortBy: TPossibleSortBy
   yvUsdVault?: TKongVaultInput
 }): TVaultsPinnedSection[] {
   const seen = new Set<string>()
@@ -26,7 +29,7 @@ export function getProductPinnedSections({
       return true
     })
 
-  if (shouldShowYvUsd && yvUsdVault) {
+  if (shouldShowYvUsd && sortBy === 'none' && yvUsdVault) {
     const yvUsdSectionVaults = takeUnseenVaults([yvUsdVault])
     if (yvUsdSectionVaults.length > 0) {
       sections.push({
