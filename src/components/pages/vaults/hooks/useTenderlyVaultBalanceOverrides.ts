@@ -177,6 +177,7 @@ export function useTenderlyVaultBalanceOverrides({
 }: TUseTenderlyVaultBalanceOverridesProps): TUseTenderlyVaultBalanceOverridesResult {
   const { clearBalanceOverride, registerBalanceOverrideRefresher, setBalanceOverride } = useWalletActions()
   const activeScopeIdRef = useRef<string | null>(null)
+  const refreshGenerationRef = useRef(0)
   const refreshKeyRef = useRef<string | null>(null)
   const registeredRefreshRef = useRef<() => Promise<TChainTokens>>(async () => ({}))
   const isTenderlyMode = isTenderlyModeEnabled()
@@ -206,11 +207,13 @@ export function useTenderlyVaultBalanceOverrides({
       return {}
     }
 
+    refreshGenerationRef.current += 1
+    const refreshGeneration = refreshGenerationRef.current
     const nextBalances = await fetchTenderlyVaultBalanceOverrides({
       account,
       tokens: tokensToRefresh
     })
-    if (activeScopeIdRef.current === scopeId) {
+    if (activeScopeIdRef.current === scopeId && refreshGenerationRef.current === refreshGeneration) {
       setBalanceOverride(scopeId, nextBalances)
     }
     return nextBalances
@@ -228,6 +231,7 @@ export function useTenderlyVaultBalanceOverrides({
     registerBalanceOverrideRefresher(scopeId, registeredRefresh)
 
     return () => {
+      refreshGenerationRef.current += 1
       if (activeScopeIdRef.current === scopeId) {
         activeScopeIdRef.current = null
       }
