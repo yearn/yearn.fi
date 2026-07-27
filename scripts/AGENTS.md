@@ -39,27 +39,22 @@ Use the smallest reviewed budget based on a previous measured run plus a small
 margin. Do not choose a large budget simply to prevent a test from failing.
 Running a multi-flow suite or adding a second chain requires deliberate review.
 
-The safe discovery command is:
+The safe discovery commands are:
 
 ```bash
-bun run qa:vault-widget:tenderly --list
+bun run tenderly --help
+bun scripts/tenderly-vnet-status.ts --help
 ```
 
-A deliberately scoped live invocation looks like:
-
-```bash
-bun run qa:vault-widget:tenderly \
-  --flow yvusd-direct \
-  --max-rpc-methods 30
-```
-
-Do not run `--suite full` unless the user explicitly asks for the full live
-suite and approves an appropriately reviewed budget.
+This branch does not provide a general-purpose live QA suite. Do not treat the
+generic Tenderly CLI or VNet status command as an implicit end-to-end runner.
+Do not add or run a broad live suite unless the user explicitly asks for it and
+approves an appropriately reviewed budget.
 
 ### Count requests accurately
 
-All Tenderly JSON-RPC transports in a QA script must use the shared budgeting
-logic in `tenderly-qa-control.ts`. Do not add a direct `fetch`, Viem transport,
+All Tenderly JSON-RPC transports in a live QA script must pass through shared,
+mock-tested budgeting logic. Do not add a direct `fetch`, Viem transport,
 poller, or retry path that bypasses accounting.
 
 Accounting must:

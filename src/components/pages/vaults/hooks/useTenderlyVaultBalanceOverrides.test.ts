@@ -388,4 +388,54 @@ describe('useTenderlyVaultBalanceOverrides', () => {
     })
     expect(setBalanceOverride).toHaveBeenCalledTimes(1)
   })
+
+  it('does not clear the active refresh key when an older lifecycle request rejects', async () => {
+    setupWalletActionsMocks()
+    const firstMountRefresh = Promise.withResolvers<TFetchTokenBalancesResult>()
+    const secondMountRefresh = Promise.withResolvers<TFetchTokenBalancesResult>()
+    const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    fetchTokenBalancesMock
+      .mockImplementationOnce(async () => await firstMountRefresh.promise)
+      .mockImplementationOnce(async () => await secondMountRefresh.promise)
+
+    const { rerender } = renderHook(
+      ({ account, currentVault }: { account?: TAddress; currentVault: typeof CURRENT_VAULT }) =>
+        useTenderlyVaultBalanceOverrides({
+          account,
+          currentVault
+        }),
+      {
+        initialProps: {
+          account: ACCOUNT as TAddress | undefined,
+          currentVault: CURRENT_VAULT
+        }
+      }
+    )
+
+    await waitFor(() => expect(fetchTokenBalancesMock).toHaveBeenCalledTimes(1))
+    rerender({ account: undefined, currentVault: CURRENT_VAULT })
+    rerender({ account: ACCOUNT, currentVault: CURRENT_VAULT })
+    await waitFor(() => expect(fetchTokenBalancesMock).toHaveBeenCalledTimes(2))
+
+    await act(async () => {
+      secondMountRefresh.resolve(createTokenBalances(2n))
+      await secondMountRefresh.promise
+    })
+    await act(async () => {
+      firstMountRefresh.reject(new Error('stale refresh failed'))
+      await firstMountRefresh.promise.catch(() => undefined)
+    })
+
+    rerender({
+      account: ACCOUNT,
+      currentVault: {
+        ...CURRENT_VAULT,
+        token: { ...CURRENT_VAULT.token }
+      }
+    })
+    await act(async () => await Promise.resolve())
+
+    expect(fetchTokenBalancesMock).toHaveBeenCalledTimes(2)
+    consoleError.mockRestore()
+  })
 })

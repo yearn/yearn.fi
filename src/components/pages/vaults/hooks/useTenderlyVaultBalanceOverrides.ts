@@ -177,6 +177,7 @@ export function useTenderlyVaultBalanceOverrides({
 }: TUseTenderlyVaultBalanceOverridesProps): TUseTenderlyVaultBalanceOverridesResult {
   const { clearBalanceOverride, registerBalanceOverrideRefresher, setBalanceOverride } = useWalletActions()
   const activeScopeIdRef = useRef<string | null>(null)
+  const automaticRefreshGenerationRef = useRef(0)
   const refreshGenerationRef = useRef(0)
   const refreshKeyRef = useRef<string | null>(null)
   const registeredRefreshRef = useRef<() => Promise<TChainTokens>>(async () => ({}))
@@ -231,6 +232,7 @@ export function useTenderlyVaultBalanceOverrides({
     registerBalanceOverrideRefresher(scopeId, registeredRefresh)
 
     return () => {
+      automaticRefreshGenerationRef.current += 1
       refreshGenerationRef.current += 1
       if (activeScopeIdRef.current === scopeId) {
         activeScopeIdRef.current = null
@@ -255,11 +257,15 @@ export function useTenderlyVaultBalanceOverrides({
       return
     }
     refreshKeyRef.current = refreshKey
+    automaticRefreshGenerationRef.current += 1
+    const automaticRefreshGeneration = automaticRefreshGenerationRef.current
 
     // Tenderly mutations are external to TanStack Query, so the active workflow needs an imperative VNet refresh.
     void refresh().catch((error) => {
       console.error('Failed to refresh Tenderly vault override balances:', error)
-      refreshKeyRef.current = null
+      if (automaticRefreshGenerationRef.current === automaticRefreshGeneration) {
+        refreshKeyRef.current = null
+      }
     })
   }, [account, currentVault, refresh, refreshRevision, scopeId, stakingAddress])
 
