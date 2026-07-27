@@ -12,7 +12,7 @@ export const YVUSD_LOCKED_ZAP_ADDRESS = toAddress('0x7ba61c8e19414dcB8fe769a7Be6
 export const YVUSD_LOCKED_COOLDOWN_DAYS = 14
 export const YVUSD_WITHDRAW_WINDOW_DAYS = 5
 export const YVUSD_ANNOUNCEMENT_URL = '#'
-export const YVUSD_LEARN_MORE_URL = 'https://x.com/Schlagonia/status/2032147643334582487'
+export const YVUSD_LEARN_MORE_URL = 'https://docs.yearn.fi/getting-started/products/yvaults/yvusd'
 
 function getYvUsdAprServiceEndpoint(): string {
   const configuredEndpoint = env.NEXT_PUBLIC_YVUSD_APR_SERVICE_API?.trim().replace(/\/$/, '')
