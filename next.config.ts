@@ -1,5 +1,26 @@
 import type { NextConfig } from 'next'
 
+const CSP_REPORT_URI =
+  'https://o4510960324837376.ingest.us.sentry.io/api/4510960614375424/security/?sentry_key=6b1b2932f1532eff2227d01a122adbb4'
+
+/**
+ * Origins allowed to frame yearn.fi.
+ *
+ * Derived from `Content-Security-Policy-Report-Only` telemetry in the Sentry `yearnfi` project.
+ * Only vetted integrations are listed; other observed origins were reviewed and excluded.
+ * Additions should be verified individually, not bulk-added from reports.
+ */
+const FRAME_ANCESTORS = [
+  "'self'",
+  'https://app.safe.global',
+  'https://eth.blockscout.com',
+  'https://polygon.blockscout.com',
+  'https://base.blockscout.com',
+  'https://arbitrum.blockscout.com',
+  'https://explorer.optimism.io',
+  'https://dapps.coin98.com'
+]
+
 const securityHeaders = [
   {
     key: 'Strict-Transport-Security',
@@ -14,9 +35,10 @@ const securityHeaders = [
     value: 'strict-origin-when-cross-origin'
   },
   {
-    key: 'Content-Security-Policy-Report-Only',
-    value:
-      "frame-ancestors 'self'; report-uri https://o4510960324837376.ingest.us.sentry.io/api/4510960614375424/security/?sentry_key=6b1b2932f1532eff2227d01a122adbb4;"
+    // X-Frame-Options is intentionally omitted: it cannot express a multi-origin allowlist and
+    // would break the Safe App and Blockscout embeds.
+    key: 'Content-Security-Policy',
+    value: [`frame-ancestors ${FRAME_ANCESTORS.join(' ')}`, `report-uri ${CSP_REPORT_URI}`].join('; ')
   }
 ]
 
