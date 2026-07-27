@@ -46,6 +46,12 @@ const positionToken: VaultWidgetToken = {
   decimals: 18,
   symbol: 'yvASSET'
 }
+const stakedPositionToken: VaultWidgetToken = {
+  address: '0x8888888888888888888888888888888888888888',
+  chainId: 1,
+  decimals: 18,
+  symbol: 'styvASSET'
+}
 const transactionTarget = '0x4444444444444444444444444444444444444444' as const
 const firstSpender = '0x6666666666666666666666666666666666666666' as const
 const secondSpender = '0x7777777777777777777777777777777777777777' as const
@@ -247,5 +253,42 @@ describe('useVaultWidgetController stale quote handling', () => {
         data: executedPlan.steps[0].request.data
       }).args
     ).toEqual([secondSpender, 10n ** 18n])
+  })
+
+  it.each([
+    { balances: [0n, 0n], expectedSource: 'vault', selectableSources: [] },
+    { balances: [2n, 0n], expectedSource: 'vault', selectableSources: [] },
+    { balances: [0n, 4n], expectedSource: 'staked', selectableSources: [] },
+    { balances: [2n, 4n], expectedSource: 'vault', selectableSources: ['vault', 'staked'] }
+  ])('selects the funded withdrawal source for balances $balances', async ({
+    balances,
+    expectedSource,
+    selectableSources
+  }: {
+    balances: bigint[]
+    expectedSource: string
+    selectableSources: string[]
+  }) => {
+    const { config, services } = createHarness(vi.fn())
+    const publicClient = {
+      readContract: vi.fn(
+        async ({ address }: { address: `0x${string}` }): Promise<bigint> =>
+          address === positionToken.address ? balances[0]! : address === stakedPositionToken.address ? balances[1]! : 0n
+      )
+    }
+    config.positionSources = [
+      { id: 'vault', label: 'Vault shares', token: positionToken },
+      { id: 'staked', label: 'Staked shares', token: stakedPositionToken }
+    ]
+    mocks.usePublicClient.mockReturnValue(publicClient)
+    mocks.getPublicClient.mockReturnValue(publicClient)
+
+    const { result } = renderHook(() => useVaultWidgetController({ config, mode: 'withdraw' }), {
+      wrapper: createWrapper(services)
+    })
+
+    await waitFor(() => expect(result.current.isLoading).toBe(false))
+    expect(result.current.selectedPositionSource.id).toBe(expectedSource)
+    expect(result.current.selectablePositionSources.map(({ id }) => id)).toEqual(selectableSources)
   })
 })

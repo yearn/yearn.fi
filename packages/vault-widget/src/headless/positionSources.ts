@@ -44,6 +44,30 @@ export function getDefaultPositionSource(
   return source
 }
 
+export function getSelectablePositionSources(
+  sources: readonly VaultWidgetPositionSourceState[]
+): readonly VaultWidgetPositionSourceState[] {
+  const fundedSources = sources.filter(({ balance }) => balance > 0n)
+  return fundedSources.length > 1 ? fundedSources : []
+}
+
+export function resolveWithdrawPositionSource(
+  sources: readonly VaultWidgetPositionSourceState[],
+  selectedId?: string
+): VaultWidgetPositionSourceState {
+  const unstakedSource = sources.find(({ id }) => id.toLowerCase() === 'vault') ?? sources[0]
+  if (!unstakedSource) throw new Error('Vault widget requires at least one position source')
+
+  const fundedSources = sources.filter(({ balance }) => balance > 0n)
+  if (fundedSources.length === 0) return unstakedSource
+  if (fundedSources.length === 1) return fundedSources[0]!
+  return (
+    fundedSources.find(({ id }) => id === selectedId) ??
+    fundedSources.find(({ id }) => id === unstakedSource.id) ??
+    fundedSources[0]!
+  )
+}
+
 export async function readPositionSourceState(
   publicClient: PublicClient,
   account: `0x${string}`,

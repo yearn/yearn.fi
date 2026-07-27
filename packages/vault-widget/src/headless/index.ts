@@ -50,8 +50,10 @@ export {
   getAvailableVaultWidgetModes,
   getDefaultPositionSource,
   getPositionSources,
+  getSelectablePositionSources,
   isModeAvailabilityPending,
   readPositionSourceState,
+  resolveWithdrawPositionSource,
   sumPositionValues
 } from './positionSources'
 export type { VaultWidgetMerkleReward } from './rewards'

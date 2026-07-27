@@ -458,11 +458,11 @@ function ConfiguredVaultWidget({
             {headerActions}
           </div>
 
-          {transactionMode === 'withdraw' && controller.positionSources.length > 1 ? (
+          {transactionMode === 'withdraw' && controller.selectablePositionSources.length > 1 ? (
             <fieldset className="yv-widget__position-sources">
               <legend>Withdraw from</legend>
               <div className="yv-widget__position-source-options">
-                {controller.positionSources.map((source) => (
+                {controller.selectablePositionSources.map((source) => (
                   <button
                     aria-pressed={controller.selectedPositionSource.id === source.id}
                     data-active={controller.selectedPositionSource.id === source.id}

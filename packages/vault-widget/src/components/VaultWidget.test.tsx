@@ -68,6 +68,7 @@ function createController(overrides: Record<string, unknown> = {}): Record<strin
     plan: undefined,
     positionBalance: 0n,
     positionSources: [positionSource],
+    selectablePositionSources: [],
     positionValue: 0n,
     positionValueDecimals: 18,
     quote: undefined,
@@ -392,6 +393,55 @@ describe('VaultWidget', () => {
     expect(screen.getByText('You will receive')).toBeTruthy()
     fireEvent.click(screen.getByRole('button', { name: 'Use full ASSET balance' }))
     expect(setPercentage).toHaveBeenCalledWith(100)
+  })
+
+  it('shows the withdrawal source selector only for multiple funded positions', () => {
+    const stakedSource = {
+      ...positionSource,
+      balance: 2_000_000_000_000_000_000n,
+      id: 'staked',
+      label: 'Staked shares',
+      token: { ...positionToken, address: '0x3333333333333333333333333333333333333333', symbol: 'styvASSET' }
+    }
+    const fundedVaultSource = { ...positionSource, balance: 1_000_000_000_000_000_000n }
+    useController.mockReturnValue(
+      createController({
+        account: '0x4444444444444444444444444444444444444444',
+        mode: 'withdraw',
+        positionSources: [fundedVaultSource, stakedSource],
+        selectablePositionSources: [fundedVaultSource, stakedSource],
+        selectedPositionSource: fundedVaultSource
+      })
+    )
+
+    renderWidget(<VaultWidget chainId={1} config={config} vaultAddress={config.vaultAddress} />)
+
+    expect(screen.getByRole('group', { name: 'Withdraw from' })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /Vault shares/ })).toBeTruthy()
+    expect(screen.getByRole('button', { name: /Staked shares/ })).toBeTruthy()
+  })
+
+  it('hides the withdrawal source selector when fewer than two positions are funded', () => {
+    const stakedSource = {
+      ...positionSource,
+      balance: 2_000_000_000_000_000_000n,
+      id: 'staked',
+      label: 'Staked shares',
+      token: { ...positionToken, address: '0x3333333333333333333333333333333333333333', symbol: 'styvASSET' }
+    }
+    useController.mockReturnValue(
+      createController({
+        account: '0x4444444444444444444444444444444444444444',
+        mode: 'withdraw',
+        positionSources: [positionSource, stakedSource],
+        selectablePositionSources: [],
+        selectedPositionSource: stakedSource
+      })
+    )
+
+    renderWidget(<VaultWidget chainId={1} config={config} vaultAddress={config.vaultAddress} />)
+
+    expect(screen.queryByRole('group', { name: 'Withdraw from' })).toBeNull()
   })
 
   it.each<{

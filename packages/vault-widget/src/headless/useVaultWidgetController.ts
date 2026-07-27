@@ -32,8 +32,10 @@ import {
   getAvailableVaultWidgetModes,
   getDefaultPositionSource,
   getPositionSources,
+  getSelectablePositionSources,
   isModeAvailabilityPending,
   readPositionSourceState,
+  resolveWithdrawPositionSource,
   sumPositionValues
 } from './positionSources'
 import { resolveVaultWidgetSettings } from './settings'
@@ -70,6 +72,7 @@ type VaultWidgetController = {
   approvalTarget?: VaultWidgetApprovalTarget
   positionBalance: bigint
   positionSources: readonly VaultWidgetPositionSourceState[]
+  selectablePositionSources: readonly VaultWidgetPositionSourceState[]
   selectedPositionSource: VaultWidgetPositionSourceState
   positionValue: bigint
   positionValueDecimals: number
@@ -150,7 +153,7 @@ export function useVaultWidgetController({
   )
   const defaultPositionSource = getDefaultPositionSource(positionSources, config.defaultPositionSource)
   const [selectedPositionSourceId, setSelectedPositionSourceId] = useState(defaultPositionSource.id)
-  const selectedPositionSource =
+  const requestedPositionSource =
     positionSources.find(({ id }) => id === selectedPositionSourceId) ?? defaultPositionSource
   const positionSourcesQuery = useQuery({
     queryKey: [
@@ -183,26 +186,27 @@ export function useVaultWidgetController({
   }
   const positionSourceStates = positionSources.map(getPositionSourceState)
   const infoPositionSourceStates = infoPositionSources.map(getPositionSourceState)
-  const activePositionSource = positionSourceStates.find(({ id }) => id === selectedPositionSource.id) ??
-    positionSourceStates[0] ?? {
-      ...selectedPositionSource,
-      balance: 0n,
-      value: 0n
-    }
+  const requestedPositionSourceState =
+    positionSourceStates.find(({ id }) => id === requestedPositionSource.id) ?? positionSourceStates[0]!
+  const selectablePositionSources = getSelectablePositionSources(positionSourceStates)
   const migrationBalance =
     positionSourceStates.find(({ token }) => isAddressEqual(token.address, config.positionToken.address))?.balance ?? 0n
   const modes = getAvailableVaultWidgetModes(configuredModes, migrationBalance)
   const requestedMode = controlledMode ?? internalMode
   const mode = modes.includes(requestedMode) ? requestedMode : (modes[0] ?? 'withdraw')
   const transactionMode = mode === 'withdraw' ? 'withdraw' : 'deposit'
+  const activePositionSource =
+    transactionMode === 'withdraw'
+      ? resolveWithdrawPositionSource(positionSourceStates, requestedPositionSource.id)
+      : requestedPositionSourceState
   const availableTokens =
     transactionMode === 'withdraw'
       ? config.withdrawTokens.filter((token) =>
           config.adapters.some((candidate) =>
             candidate.supports({
-              chainId: selectedPositionSource.token.chainId,
+              chainId: activePositionSource.token.chainId,
               mode: transactionMode,
-              positionSource: selectedPositionSource,
+              positionSource: activePositionSource,
               selectedToken: token
             })
           )
@@ -252,9 +256,15 @@ export function useVaultWidgetController({
       onModeChange?.(mode)
     }
   }, [account, controlledMode, mode, onModeChange, positionSourcesQuery.isLoading])
+  useEffect(() => {
+    if (transactionMode !== 'withdraw' || selectedPositionSourceId === activePositionSource.id) return
+    setSelectedPositionSourceId(activePositionSource.id)
+    setAmountValue('')
+    setExecution({ status: 'idle' })
+  }, [activePositionSource.id, selectedPositionSourceId, transactionMode])
 
   const balanceClient = usePublicClient({ chainId: selectedToken.chainId })
-  const quoteChainId = transactionMode === 'deposit' ? selectedToken.chainId : selectedPositionSource.token.chainId
+  const quoteChainId = transactionMode === 'deposit' ? selectedToken.chainId : activePositionSource.token.chainId
   const quoteClient = usePublicClient({ chainId: quoteChainId })
 
   const balanceQuery = useQuery({
@@ -278,7 +288,7 @@ export function useVaultWidgetController({
       autoStake: settings.autoStake,
       chainId: quoteChainId,
       mode: transactionMode,
-      positionSource: selectedPositionSource,
+      positionSource: activePositionSource,
       selectedToken
     })
   )
@@ -292,7 +302,7 @@ export function useVaultWidgetController({
       transactionMode,
       selectedToken.chainId,
       selectedToken.address,
-      selectedPositionSource.id,
+      activePositionSource.id,
       activePositionSource.balance.toString(),
       parsedAmount.toString(),
       redeemAll,
@@ -311,7 +321,7 @@ export function useVaultWidgetController({
           maxLossBps: settings.maxLossBps,
           mode: transactionMode,
           positionBalance: activePositionSource.balance,
-          positionSource: selectedPositionSource,
+          positionSource: activePositionSource,
           redeemAll,
           selectedToken,
           signal,
@@ -332,7 +342,7 @@ export function useVaultWidgetController({
     autoStake: settings.autoStake,
     chainId: quoteChainId,
     mode: transactionMode,
-    positionSource: selectedPositionSource,
+    positionSource: activePositionSource,
     selectedToken
   } as const
   const legacyApprovalTarget = adapter?.getApprovalTarget?.(approvalRequest)
@@ -469,7 +479,7 @@ export function useVaultWidgetController({
       timestamp: Date.now(),
       tokenIn:
         transactionPlan.quote.activityTokenIn ??
-        (transactionMode === 'deposit' ? selectedToken.address : selectedPositionSource.token.address),
+        (transactionMode === 'deposit' ? selectedToken.address : activePositionSource.token.address),
       tokenOut:
         transactionPlan.quote.activityTokenOut ??
         (transactionMode === 'deposit' ? config.positionToken.address : selectedToken.address),
@@ -548,7 +558,7 @@ export function useVaultWidgetController({
     resolveFreshPlan,
     selectedToken.address,
     selectedToken.chainId,
-    selectedPositionSource.token.address,
+    activePositionSource.token.address,
     services.activityStore,
     services.ensoBridge,
     services.execution,
@@ -656,6 +666,7 @@ export function useVaultWidgetController({
     approvalTarget,
     positionBalance,
     positionSources: positionSourceStates,
+    selectablePositionSources,
     selectedPositionSource: activePositionSource,
     positionValue,
     positionValueDecimals,
