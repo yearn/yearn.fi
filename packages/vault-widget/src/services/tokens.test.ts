@@ -85,14 +85,13 @@ describe('createEnsoVaultConfigResolver', () => {
     const baseResolver: VaultWidgetConfigResolver = {
       resolve: vi.fn().mockResolvedValue(config())
     }
+    const hydrate = vi.fn(async (tokens: readonly VaultWidgetToken[]) =>
+      tokens.map((token) => (token.address === assetAddress ? { ...token, priceUsd: 1.001 } : token))
+    )
     const resolver = createEnsoVaultConfigResolver({
       baseResolver,
       enso: { getRoute: vi.fn() },
-      priceService: {
-        hydrate: vi.fn(async (tokens: readonly VaultWidgetToken[]) =>
-          tokens.map((token) => (token.address === assetAddress ? { ...token, priceUsd: 1.001 } : token))
-        )
-      },
+      priceService: { hydrate },
       tokenCatalog: {
         list: vi.fn().mockResolvedValue([{ address: routeAddress, chainId: 10, decimals: 18, symbol: 'WETH' }])
       }
@@ -103,6 +102,32 @@ describe('createEnsoVaultConfigResolver', () => {
     expect(resolved.depositTokens.map(({ address }) => address)).toContain(routeAddress)
     expect(resolved.display?.assetPriceUsd).toBe(1.001)
     expect(resolved.solvers).toContain('enso')
+    expect(hydrate).toHaveBeenCalledWith([expect.objectContaining({ address: assetAddress })], undefined)
+  })
+
+  it('does not block startup on catalog-wide prices when Kong already provided the default asset price', async () => {
+    const baseConfig = config()
+    const baseResolver: VaultWidgetConfigResolver = {
+      resolve: vi.fn().mockResolvedValue({
+        ...baseConfig,
+        depositTokens: [{ ...baseConfig.depositTokens[0]!, priceUsd: 1.001 }],
+        withdrawTokens: [{ ...baseConfig.withdrawTokens[0]!, priceUsd: 1.001 }]
+      })
+    }
+    const hydrate = vi.fn()
+    const resolver = createEnsoVaultConfigResolver({
+      baseResolver,
+      priceService: { hydrate },
+      tokenCatalog: {
+        list: vi.fn().mockResolvedValue([{ address: routeAddress, chainId: 10, decimals: 18, symbol: 'WETH' }])
+      }
+    })
+
+    const resolved = await resolver.resolve(1, vaultAddress)
+
+    expect(resolved.depositTokens.map(({ address }) => address)).toContain(routeAddress)
+    expect(resolved.display?.assetPriceUsd).toBe(1.001)
+    expect(hydrate).not.toHaveBeenCalled()
   })
 
   it('does not decorate product presets that own their route behavior', async () => {

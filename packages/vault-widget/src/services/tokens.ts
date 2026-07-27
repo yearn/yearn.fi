@@ -164,6 +164,46 @@ function isPackageSpecificConfig(config: VaultWidgetConfig): boolean {
   return config.id === 'ybold-mainnet' || config.id.startsWith('yvUSD:') || config.id.startsWith('yvBTC:')
 }
 
+function getConfiguredDefaultToken(
+  tokens: readonly VaultWidgetToken[],
+  configuredAddress: VaultWidgetConfig['defaultDepositToken']
+): VaultWidgetToken | undefined {
+  return configuredAddress
+    ? (tokens.find(({ address }) => address.toLowerCase() === configuredAddress.toLowerCase()) ?? tokens[0])
+    : tokens[0]
+}
+
+function getDefaultRouteTokens(config: VaultWidgetConfig): readonly VaultWidgetToken[] {
+  return [
+    getConfiguredDefaultToken(config.depositTokens, config.defaultDepositToken),
+    getConfiguredDefaultToken(config.withdrawTokens, config.defaultWithdrawToken)
+  ]
+    .flatMap((token) => (token ? [token] : []))
+    .reduce<VaultWidgetToken[]>(
+      (tokens, token) =>
+        tokens.some(
+          (candidate) =>
+            candidate.chainId === token.chainId && candidate.address.toLowerCase() === token.address.toLowerCase()
+        )
+          ? tokens
+          : tokens.concat(token),
+      []
+    )
+}
+
+function mergeHydratedTokens(
+  tokens: readonly VaultWidgetToken[],
+  hydratedTokens: readonly VaultWidgetToken[]
+): readonly VaultWidgetToken[] {
+  return tokens.map((token) => {
+    const hydratedToken = hydratedTokens.find(
+      (candidate) =>
+        candidate.chainId === token.chainId && candidate.address.toLowerCase() === token.address.toLowerCase()
+    )
+    return hydratedToken ? { ...token, ...hydratedToken } : token
+  })
+}
+
 export function createEnsoVaultConfigResolver(options: EnsoVaultConfigResolverOptions = {}): VaultWidgetConfigResolver {
   const baseResolver = options.baseResolver ?? createKongVaultConfigResolver()
   const tokenCatalog = options.tokenCatalog ?? createHttpTokenCatalog()
@@ -176,7 +216,13 @@ export function createEnsoVaultConfigResolver(options: EnsoVaultConfigResolverOp
       if (isPackageSpecificConfig(config)) return config
       const catalogTokens = await tokenCatalog.list(signal)
       const tokens = [...config.depositTokens, ...config.withdrawTokens, ...catalogTokens]
-      const routeTokens = priceService ? await priceService.hydrate(tokens, signal).catch(() => tokens) : tokens
+      const defaultRouteTokens = getDefaultRouteTokens(config)
+      const tokensToHydrate = defaultRouteTokens.filter(({ priceUsd }) => priceUsd === undefined)
+      const hydratedTokens =
+        priceService && tokensToHydrate.length > 0
+          ? await priceService.hydrate(tokensToHydrate, signal).catch(() => [])
+          : []
+      const routeTokens = mergeHydratedTokens(tokens, hydratedTokens)
       return withEnsoRoutes(config, {
         defaultDepositTokens: options.defaultDepositTokens,
         defaultWithdrawTokens: options.defaultWithdrawTokens,

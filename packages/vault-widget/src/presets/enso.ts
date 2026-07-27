@@ -53,20 +53,23 @@ function withApprovalPolicy(token: VaultWidgetToken): VaultWidgetToken {
 }
 
 function uniqueTokens(tokens: readonly VaultWidgetToken[]): readonly VaultWidgetToken[] {
-  return tokens.map(withApprovalPolicy).reduce<VaultWidgetToken[]>((result, token) => {
-    const existingIndex = result.findIndex(
-      (candidate) => candidate.chainId === token.chainId && isAddressEqual(candidate.address, token.address)
+  const tokensById = tokens.map(withApprovalPolicy).reduce<Map<string, VaultWidgetToken>>((result, token) => {
+    const key = `${token.chainId}:${token.address.toLowerCase()}`
+    const existing = result.get(key)
+    result.set(
+      key,
+      existing
+        ? {
+            ...token,
+            ...existing,
+            priceUsd: existing.priceUsd ?? token.priceUsd,
+            requiresApprovalReset: existing.requiresApprovalReset ?? token.requiresApprovalReset
+          }
+        : token
     )
-    if (existingIndex === -1) return result.concat(token)
-    const existing = result[existingIndex]!
-    result[existingIndex] = {
-      ...token,
-      ...existing,
-      priceUsd: existing.priceUsd ?? token.priceUsd,
-      requiresApprovalReset: existing.requiresApprovalReset ?? token.requiresApprovalReset
-    }
     return result
-  }, [])
+  }, new Map())
+  return Array.from(tokensById.values())
 }
 
 export function withEnsoRoutes(config: VaultWidgetConfig, options: WithEnsoRoutesOptions): VaultWidgetConfig {

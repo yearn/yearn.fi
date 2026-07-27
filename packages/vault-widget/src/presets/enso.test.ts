@@ -1,4 +1,4 @@
-import type { PublicClient } from 'viem'
+import type { Address, PublicClient } from 'viem'
 import { describe, expect, it, vi } from 'vitest'
 import type { EnsoQuoteProvider, VaultWidgetConfig, VaultWidgetRequest, VaultWidgetToken } from '../types'
 import { withEnsoRoutes } from './enso'
@@ -143,5 +143,26 @@ describe('withEnsoRoutes', () => {
     expect(getRoute).toHaveBeenCalledWith(
       expect.objectContaining({ amountIn: 123n, tokenIn: stakedToken.address, tokenOut: routeToken.address })
     )
+  })
+
+  it('indexes a large route-token catalog without blocking widget initialization', () => {
+    const routeTokens = Array.from(
+      { length: 10_000 },
+      (_, index): VaultWidgetToken => ({
+        address: `0x${(index + 100).toString(16).padStart(40, '0')}` as Address,
+        chainId: index % 2 === 0 ? 1 : 10,
+        decimals: 18,
+        symbol: `TOKEN-${index}`
+      })
+    )
+    const start = performance.now()
+
+    const decorated = withEnsoRoutes(config(), {
+      enso: { getRoute: vi.fn() },
+      routeTokens
+    })
+
+    expect(decorated.depositTokens).toHaveLength(routeTokens.length + 1)
+    expect(performance.now() - start).toBeLessThan(500)
   })
 })
