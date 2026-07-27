@@ -151,6 +151,7 @@ describe('VaultWidget', () => {
     expect(screen.getByRole('region', { name: 'Test Vault vault actions' }).getAttribute('data-viewport')).toBe(
       'desktop'
     )
+    expect(screen.getByRole('region').getAttribute('data-switcher')).toBe('built-in')
     expect(screen.getByRole('region').getAttribute('style')).toContain('--yv-widget-primary')
     expect(screen.getByRole('heading', { name: 'Embedded Test Vault' })).toBeTruthy()
     expect(screen.getByLabelText('Quantity of ASSET')).toBeTruthy()
@@ -179,6 +180,34 @@ describe('VaultWidget', () => {
     expect(withdraw.getAttribute('tabindex')).toBe('-1')
     expect(deposit.getAttribute('aria-controls')).toBe(screen.getByRole('tabpanel').id)
     expect(screen.getByRole('tabpanel').getAttribute('aria-labelledby')).toBe(deposit.id)
+  })
+
+  it('lets a host control the mode through an external switcher', () => {
+    const onModeChange = vi.fn()
+    useController.mockReturnValue(
+      createController({
+        mode: 'withdraw'
+      })
+    )
+
+    renderWidget(
+      <VaultWidget
+        chainId={1}
+        config={config}
+        mode="withdraw"
+        onModeChange={onModeChange}
+        switcher="external"
+        vaultAddress={config.vaultAddress}
+      />
+    )
+
+    const widget = screen.getByRole('region', { name: 'Test Vault vault actions' })
+    expect(widget.getAttribute('data-switcher')).toBe('external')
+    expect(screen.queryByRole('tablist', { name: 'Vault action' })).toBeNull()
+    expect(screen.queryByText('Your deposits')).toBeNull()
+    expect(screen.getByRole('heading', { name: 'Withdraw' })).toBeTruthy()
+    expect(screen.queryByRole('tabpanel')).toBeNull()
+    expect(useController).toHaveBeenCalledWith(expect.objectContaining({ mode: 'withdraw', onModeChange }))
   })
 
   it('supports roving keyboard focus across every action tab', () => {

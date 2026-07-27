@@ -12,7 +12,16 @@ import type { VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { WidgetActionType as ActionType } from '@pages/vaults/types'
 import type { TAddress } from '@shared/types'
 import { cl, isZeroAddress, toAddress } from '@shared/utils'
-import { type ForwardedRef, forwardRef, type ReactElement, type ReactNode, useImperativeHandle, useState } from 'react'
+import {
+  type ForwardedRef,
+  forwardRef,
+  type KeyboardEvent,
+  type ReactElement,
+  type ReactNode,
+  useImperativeHandle,
+  useRef,
+  useState
+} from 'react'
 import { WidgetDeposit } from './deposit'
 import { WidgetMigrate } from './migrate'
 import { WidgetWithdraw } from './withdraw'
@@ -221,6 +230,8 @@ type WidgetTabsProps = {
   className?: string
   onOpenWallet?: () => void
   isWalletOpen?: boolean
+  onOpenRewards?: () => void
+  isRewardsOpen?: boolean
   onCloseOverlays?: () => void
   disableBorderRadius?: boolean
   dataTour?: string
@@ -234,12 +245,67 @@ export function WidgetTabs({
   className,
   onOpenWallet,
   isWalletOpen,
+  onOpenRewards,
+  isRewardsOpen,
   onCloseOverlays,
   disableBorderRadius,
   dataTour,
   walletDataTour
 }: WidgetTabsProps): ReactElement {
   const isWalletTabActive = !!isWalletOpen
+  const isRewardsTabActive = !!isRewardsOpen
+  const tabRefs = useRef<Array<HTMLButtonElement | null>>([])
+  const tabs = [
+    ...actions.map((action) => ({
+      id: action,
+      isActive: !isWalletTabActive && !isRewardsTabActive && activeAction === action,
+      label: getActionLabel(action),
+      onSelect: (): void => onActionChange(action)
+    })),
+    ...(onOpenRewards
+      ? [
+          {
+            id: 'rewards',
+            isActive: isRewardsTabActive,
+            label: 'Rewards',
+            onSelect: onOpenRewards
+          }
+        ]
+      : []),
+    ...(onOpenWallet
+      ? [
+          {
+            dataTour: walletDataTour,
+            id: 'info',
+            isActive: isWalletTabActive,
+            label: 'My Info',
+            onSelect: onOpenWallet
+          }
+        ]
+      : [])
+  ]
+  const selectTab = (index: number, focus = false): void => {
+    const tab = tabs[index]
+    if (!tab) return
+    onCloseOverlays?.()
+    tab.onSelect()
+    if (focus) tabRefs.current[index]?.focus()
+  }
+  const handleTabKeyDown = (event: KeyboardEvent<HTMLButtonElement>, index: number): void => {
+    const nextIndex =
+      event.key === 'Home'
+        ? 0
+        : event.key === 'End'
+          ? tabs.length - 1
+          : event.key === 'ArrowRight'
+            ? (index + 1) % tabs.length
+            : event.key === 'ArrowLeft'
+              ? (index - 1 + tabs.length) % tabs.length
+              : undefined
+    if (nextIndex === undefined) return
+    event.preventDefault()
+    selectTab(nextIndex, true)
+  }
 
   return (
     <div
@@ -247,49 +313,56 @@ export function WidgetTabs({
         'rounded-b-lg': !disableBorderRadius
       })}
       data-tour={dataTour}
+      role="tablist"
+      aria-label="Vault action"
     >
-      {actions.map((action) => (
+      {tabs.map((tab, index) => (
         <TabButton
-          key={action}
-          isActive={!isWalletTabActive && activeAction === action}
-          onClick={() => {
-            onCloseOverlays?.()
-            onActionChange(action)
+          buttonRef={(element) => {
+            tabRefs.current[index] = element
           }}
+          dataTour={'dataTour' in tab ? tab.dataTour : undefined}
+          isActive={tab.isActive}
+          key={tab.id}
+          onClick={() => selectTab(index)}
+          onKeyDown={(event) => handleTabKeyDown(event, index)}
         >
-          {getActionLabel(action)}
+          {tab.label}
         </TabButton>
       ))}
-      {onOpenWallet ? (
-        <TabButton
-          isActive={isWalletTabActive}
-          onClick={() => {
-            onCloseOverlays?.()
-            onOpenWallet()
-          }}
-          dataTour={walletDataTour}
-        >
-          {'My Info'}
-        </TabButton>
-      ) : null}
     </div>
   )
 }
 
 type TabButtonProps = {
+  buttonRef?: (element: HTMLButtonElement | null) => void
   className?: string
   children: ReactNode
+  onKeyDown?: (event: KeyboardEvent<HTMLButtonElement>) => void
   onClick: () => void
   isActive: boolean
   dataTour?: string
 }
 
-function TabButton({ children, onClick, isActive, className, dataTour }: TabButtonProps): ReactElement {
+function TabButton({
+  buttonRef,
+  children,
+  onClick,
+  onKeyDown,
+  isActive,
+  className,
+  dataTour
+}: TabButtonProps): ReactElement {
   return (
     <button
       type="button"
       onClick={onClick}
+      onKeyDown={onKeyDown}
       data-tour={dataTour}
+      ref={buttonRef}
+      role="tab"
+      aria-selected={isActive}
+      tabIndex={isActive ? 0 : -1}
       className={cl(
         'flex-1 px-3 py-3 md:py-2.5 text-sm min-h-9 md:text-xs font-semibold transition-all duration-200',
         'border border-transparent focus-visible:outline-none focus-visible:ring-0',

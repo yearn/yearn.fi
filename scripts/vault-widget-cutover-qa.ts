@@ -4,7 +4,7 @@ import { chromium, type Locator, type Page } from 'playwright'
 type CutoverResult = {
   id: string
   mode: string
-  navigation: 'full'
+  switcher: 'built-in' | 'external'
 }
 
 const BASE_URL = process.env.VAULT_WIDGET_QA_URL ?? 'http://127.0.0.1:4246'
@@ -28,7 +28,7 @@ function vaultUrl(chainId: number, vaultAddress: string, account?: string): stri
   return url.toString()
 }
 
-async function waitForCompleteWidget(page: Page): Promise<void> {
+async function waitForCompleteWidget(page: Page, switcher: CutoverResult['switcher']): Promise<Locator> {
   const widget = page.locator('.yv-widget:visible')
   await widget.waitFor({ state: 'visible' })
   await page.waitForFunction(() => {
@@ -38,15 +38,34 @@ async function waitForCompleteWidget(page: Page): Promise<void> {
     })
   })
   invariant((await widget.count()) === 1, 'Expected exactly one visible package widget on the cutover route')
-  invariant((await widget.getAttribute('data-navigation')) === 'full', 'Package navigation is not enabled')
-  invariant(
-    (await page.locator('[data-tour="vault-detail-widget-tabs"]').count()) === 0,
-    'Legacy host widget tabs remained mounted'
-  )
-  invariant(
-    (await page.getByRole('button', { exact: true, name: 'View rewards' }).count()) === 0,
-    'Legacy rewards control remained mounted'
-  )
+  invariant((await widget.getAttribute('data-switcher')) === switcher, `Expected the ${switcher} package switcher`)
+  const hostSwitcher = page.locator('[data-tour="vault-detail-widget-tabs"]:visible')
+  if (switcher === 'external') {
+    invariant((await hostSwitcher.count()) === 1, 'The yearn.fi header switcher is not visible')
+    invariant(
+      (await widget.getByRole('tablist', { name: 'Vault action' }).count()) === 0,
+      'Package switcher remained visible'
+    )
+    invariant((await widget.locator('.yv-widget__summary').count()) === 0, 'Package summary remained visible')
+  } else {
+    invariant((await hostSwitcher.count()) === 0, 'The host switcher remained visible beside the built-in switcher')
+    invariant(
+      (await widget.getByRole('tablist', { name: 'Vault action' }).count()) === 1,
+      'Package switcher is missing'
+    )
+  }
+  return widget
+}
+
+async function verifyDesktopSwitcherLayout(page: Page, widget: Locator): Promise<void> {
+  const hostSwitcher = page.locator('[data-tour="vault-detail-widget-tabs"]:visible')
+  const holdings = page.locator('[data-tour="vault-detail-user-holdings"]:visible')
+  await holdings.waitFor({ state: 'visible' })
+  const [switcherBox, widgetBox] = await Promise.all([hostSwitcher.boundingBox(), widget.boundingBox()])
+  invariant(switcherBox && widgetBox, 'Unable to measure the desktop switcher and widget')
+  invariant(Math.abs(switcherBox.x - widgetBox.x) <= 2, 'Header switcher and widget are not horizontally aligned')
+  invariant(Math.abs(switcherBox.width - widgetBox.width) <= 2, 'Header switcher and widget widths do not match')
+  invariant(widgetBox.y >= switcherBox.y + switcherBox.height, 'Widget overlaps the header switcher')
 }
 
 async function verifySettingsVersion(widget: Locator): Promise<void> {
@@ -57,53 +76,66 @@ async function verifySettingsVersion(widget: Locator): Promise<void> {
 
 async function verifyDesktopYBold(page: Page): Promise<CutoverResult> {
   await page.goto(vaultUrl(1, YBOLD_VAULT), { waitUntil: 'domcontentloaded' })
-  await waitForCompleteWidget(page)
-  const widget = page.locator('.yv-widget:visible')
-  await widget.locator('.yv-widget__summary-desktop').filter({ hasText: 'Your deposits' }).waitFor({ state: 'visible' })
+  const widget = await waitForCompleteWidget(page, 'external')
+  await verifyDesktopSwitcherLayout(page, widget)
+  await page.locator('[data-tour="vault-detail-user-holdings"]').filter({ hasText: 'Your Deposits' }).waitFor({
+    state: 'visible'
+  })
   await widget.locator('.yv-widget__settings-button--action').click()
   await widget.locator('.yv-widget__settings').waitFor({ state: 'visible' })
   await verifySettingsVersion(widget)
   await widget.getByRole('button', { exact: true, name: 'Close settings' }).click()
   await widget.locator('.yv-widget__settings').waitFor({ state: 'hidden' })
-  await widget.getByRole('tab', { exact: true, name: 'My Info' }).click()
+  await page
+    .locator('[data-tour="vault-detail-widget-tabs"]')
+    .getByRole('tab', { exact: true, name: 'My Info' })
+    .click()
   invariant(
-    (await widget.getByRole('tab', { exact: true, name: 'My Info' }).getAttribute('aria-selected')) === 'true',
-    'Package My Info tab did not become active'
+    (await page
+      .locator('[data-tour="vault-detail-widget-tabs"]')
+      .getByRole('tab', { exact: true, name: 'My Info' })
+      .getAttribute('aria-selected')) === 'true',
+    'Host My Info tab did not become active'
   )
-  return { id: 'ybold-desktop-complete-surface', mode: 'info/settings', navigation: 'full' }
+  await widget.locator('.yv-widget__wallet').waitFor({ state: 'visible' })
+  return { id: 'ybold-desktop-complete-surface', mode: 'info/settings', switcher: 'external' }
 }
 
 async function verifyDesktopMigration(page: Page): Promise<CutoverResult> {
   await page.goto(vaultUrl(1, V2_MIGRATION_VAULT, V2_USDC_HOLDER), { waitUntil: 'domcontentloaded' })
-  await waitForCompleteWidget(page)
-  const migrateTab = page.locator('.yv-widget:visible').getByRole('tab', { exact: true, name: 'Migrate' })
+  const widget = await waitForCompleteWidget(page, 'external')
+  await verifyDesktopSwitcherLayout(page, widget)
+  const migrateTab = page
+    .locator('[data-tour="vault-detail-widget-tabs"]')
+    .getByRole('tab', { exact: true, name: 'Migrate' })
   await migrateTab.waitFor({ state: 'visible' })
   await migrateTab.click()
   invariant((await migrateTab.getAttribute('aria-selected')) === 'true', 'Package migration tab did not become active')
-  await page.locator('.yv-widget:visible .yv-widget__workflow-destination').waitFor({ state: 'visible' })
-  return { id: 'v2-migration-desktop-complete-surface', mode: 'migrate', navigation: 'full' }
+  await widget.locator('.yv-widget__workflow-destination').waitFor({ state: 'visible' })
+  return { id: 'v2-migration-desktop-complete-surface', mode: 'migrate', switcher: 'external' }
 }
 
 async function verifyDesktopRewards(page: Page): Promise<CutoverResult> {
   await page.goto(vaultUrl(1, JUICED_REWARD_VAULT, JUICED_REWARD_ACCOUNT), { waitUntil: 'domcontentloaded' })
-  await waitForCompleteWidget(page)
-  const rewardsTab = page.locator('.yv-widget:visible').getByRole('tab', { exact: true, name: 'Rewards' })
+  const widget = await waitForCompleteWidget(page, 'external')
+  await verifyDesktopSwitcherLayout(page, widget)
+  const rewardsTab = page
+    .locator('[data-tour="vault-detail-widget-tabs"]')
+    .getByRole('tab', { exact: true, name: 'Rewards' })
   await rewardsTab.waitFor({ state: 'visible' })
   await rewardsTab.click()
   invariant((await rewardsTab.getAttribute('aria-selected')) === 'true', 'Package rewards tab did not become active')
-  await page.locator('.yv-widget__workflow-balance').filter({ hasText: 'Claimable Rewards' }).waitFor({
+  await widget.locator('.yv-widget__workflow-balance').filter({ hasText: 'Claimable Rewards' }).waitFor({
     state: 'visible'
   })
-  return { id: 'rewards-desktop-complete-surface', mode: 'rewards', navigation: 'full' }
+  return { id: 'rewards-desktop-complete-surface', mode: 'rewards', switcher: 'external' }
 }
 
 async function verifyMobileYBold(page: Page): Promise<CutoverResult> {
   await page.goto(vaultUrl(1, YBOLD_VAULT), { waitUntil: 'domcontentloaded' })
   await page.getByRole('button', { exact: true, name: 'Deposit' }).click()
   const drawer = page.getByRole('dialog')
-  const widget = drawer.locator('.yv-widget:visible')
-  await widget.waitFor({ state: 'visible' })
-  await waitForCompleteWidget(page)
+  const widget = await waitForCompleteWidget(page, 'built-in')
   await widget.locator('.yv-widget__summary-mobile').filter({ hasText: 'Yearn BOLD' }).waitFor({ state: 'visible' })
   invariant(
     (await drawer.locator('button[aria-label="Close drawer"]').count()) === 0,
@@ -119,7 +151,22 @@ async function verifyMobileYBold(page: Page): Promise<CutoverResult> {
   )
   await widget.getByRole('button', { exact: true, name: 'Close' }).click()
   await widget.waitFor({ state: 'hidden' })
-  return { id: 'ybold-mobile-complete-surface', mode: 'settings/info/close', navigation: 'full' }
+  return { id: 'ybold-mobile-complete-surface', mode: 'settings/info/close', switcher: 'built-in' }
+}
+
+async function verifyStandaloneSwitcher(page: Page): Promise<CutoverResult> {
+  const url = new URL('/dev/vault-widget', BASE_URL)
+  url.searchParams.set('vault', 'ybold')
+  url.searchParams.set('state', 'deposit')
+  url.searchParams.set('viewport', 'desktop')
+  await page.goto(url.toString(), { waitUntil: 'domcontentloaded' })
+  const widget = await waitForCompleteWidget(page, 'built-in')
+  await widget.getByRole('tab', { exact: true, name: 'Withdraw' }).click()
+  invariant(
+    (await widget.getByRole('tab', { exact: true, name: 'Withdraw' }).getAttribute('aria-selected')) === 'true',
+    'Standalone package switcher did not control the widget'
+  )
+  return { id: 'standalone-desktop-switcher', mode: 'deposit/withdraw', switcher: 'built-in' }
 }
 
 async function main(): Promise<void> {
@@ -138,6 +185,7 @@ async function main(): Promise<void> {
     results.push(await verifyDesktopYBold(desktopPage))
     results.push(await verifyDesktopMigration(desktopPage))
     results.push(await verifyDesktopRewards(desktopPage))
+    results.push(await verifyStandaloneSwitcher(desktopPage))
     await desktopPage.close()
 
     const mobilePage = await context.newPage()
@@ -146,8 +194,8 @@ async function main(): Promise<void> {
     results.push(await verifyMobileYBold(mobilePage))
     await mobilePage.close()
   } finally {
-    await context.close()
-    await browser.close()
+    await context.close().catch(() => undefined)
+    await browser.close().catch(() => undefined)
   }
 
   invariant(tenderlyRequests.length === 0, 'Cutover QA attempted to contact Tenderly')

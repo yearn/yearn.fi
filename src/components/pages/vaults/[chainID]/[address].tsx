@@ -1674,6 +1674,8 @@ function Index(): ReactElement | null {
     )
   }
   const packagedVaultKind: PackagedVaultKind = isYBold ? 'ybold' : isYvUsd ? 'yvusd' : isYvBtc ? 'yvbtc' : 'generic'
+  const canShowPackagedRewards =
+    shouldUsePackagedVaultWidget && (chainId === 747474 || (resolvedCurrentVault.staking.rewards?.length ?? 0) > 0)
   const packagedEstimatedAprByVariant = isYvUsd
     ? { locked: yvUsdMetrics.locked.apy, unlocked: yvUsdMetrics.unlocked.apy }
     : isYvBtc
@@ -1932,8 +1934,9 @@ function Index(): ReactElement | null {
                   onYvUsdApyVariantChange={(): void => undefined}
                   isWidgetWalletOpen={isWidgetWalletOpen}
                   onWidgetWalletOpen={(): void => undefined}
+                  isWidgetRewardsOpen={isWidgetRewardsOpen}
+                  onWidgetRewardsOpen={canShowPackagedRewards ? (): void => undefined : undefined}
                   onWidgetCloseOverlays={(): void => undefined}
-                  showHostWidgetControls={!shouldUsePackagedVaultWidget}
                   includeTourAttributes={false}
                 />
               </div>
@@ -1966,8 +1969,9 @@ function Index(): ReactElement | null {
             onYvUsdApyVariantChange={setYvUsdApyVariant}
             isWidgetWalletOpen={isWidgetWalletOpen}
             onWidgetWalletOpen={openWidgetWallet}
+            isWidgetRewardsOpen={isWidgetRewardsOpen}
+            onWidgetRewardsOpen={canShowPackagedRewards ? openWidgetRewards : undefined}
             onWidgetCloseOverlays={closeWidgetOverlays}
-            showHostWidgetControls={!shouldUsePackagedVaultWidget}
             onCompressionChange={setIsHeaderCompressed}
             onCompressionStateChange={({ isCompressed, isForceCompressed }): void => {
               setIsHeaderCompressed(isCompressed)

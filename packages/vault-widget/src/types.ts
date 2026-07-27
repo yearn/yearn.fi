@@ -3,6 +3,7 @@ import type { Address, Hash, Hex, PublicClient } from 'viem'
 
 export type VaultWidgetMode = 'deposit' | 'withdraw' | 'migrate' | 'rewards' | 'info'
 export type VaultWidgetTransactionMode = Exclude<VaultWidgetMode, 'info'>
+export type VaultWidgetSwitcherMode = 'built-in' | 'external'
 
 export type VaultWidgetToken = {
   address: Address
@@ -351,7 +352,7 @@ export type VaultWidgetProps = {
   onSettingsOpenChange?: (open: boolean) => void
   className?: string
   style?: CSSProperties
-  showNavigation?: boolean
+  switcher?: VaultWidgetSwitcherMode
   viewport?: 'auto' | 'desktop' | 'mobile'
   headerActions?: ReactNode
   renderPanel?: (mode: Exclude<VaultWidgetMode, 'deposit' | 'withdraw'>) => ReactNode

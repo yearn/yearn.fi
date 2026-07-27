@@ -170,7 +170,7 @@ function ConfiguredVaultWidget({
   slots,
   className,
   style,
-  showNavigation = true,
+  switcher = 'built-in',
   viewport = 'auto',
   headerActions,
   renderPanel,
@@ -205,6 +205,7 @@ function ConfiguredVaultWidget({
   const TokenIcon = slots?.TokenIcon ?? DefaultTokenIcon
   const Header = slots?.Header
   const Details = slots?.Details
+  const hasBuiltInSwitcher = switcher === 'built-in'
   const isTransactionMode = controller.mode === 'deposit' || controller.mode === 'withdraw'
   const transactionMode = controller.mode === 'withdraw' ? 'withdraw' : 'deposit'
   const quote = controller.quote
@@ -297,12 +298,12 @@ function ConfiguredVaultWidget({
     <section
       className={['yv-widget', className].filter(Boolean).join(' ')}
       style={style}
-      data-navigation={showNavigation ? 'full' : 'none'}
+      data-switcher={switcher}
       data-settings-open={settingsOpen}
       data-viewport={viewport}
       aria-label={`${config.name} vault actions`}
     >
-      {showNavigation ? (
+      {hasBuiltInSwitcher ? (
         <div className="yv-widget__navigation">
           {Header ? (
             <Header mode={controller.mode} name={config.name} />
@@ -367,11 +368,11 @@ function ConfiguredVaultWidget({
       {controller.mode === 'info' ? (
         <div
           aria-hidden={settingsOpen || undefined}
-          aria-labelledby={showNavigation ? `${navigationId}-info-tab` : undefined}
+          aria-labelledby={hasBuiltInSwitcher ? `${navigationId}-info-tab` : undefined}
           className="yv-widget__panel"
-          id={showNavigation ? `${navigationId}-info` : undefined}
+          id={hasBuiltInSwitcher ? `${navigationId}-info` : undefined}
           inert={settingsOpen || undefined}
-          role={showNavigation ? 'tabpanel' : undefined}
+          role={hasBuiltInSwitcher ? 'tabpanel' : undefined}
         >
           {headerActions ? <div className="yv-widget__panel-actions">{headerActions}</div> : null}
           {renderPanel?.(controller.mode) ?? (
@@ -393,11 +394,11 @@ function ConfiguredVaultWidget({
       {controller.mode === 'migrate' ? (
         <div
           aria-hidden={settingsOpen || undefined}
-          aria-labelledby={showNavigation ? `${navigationId}-migrate-tab` : undefined}
+          aria-labelledby={hasBuiltInSwitcher ? `${navigationId}-migrate-tab` : undefined}
           className="yv-widget__panel"
-          id={showNavigation ? `${navigationId}-migrate` : undefined}
+          id={hasBuiltInSwitcher ? `${navigationId}-migrate` : undefined}
           inert={settingsOpen || undefined}
-          role={showNavigation ? 'tabpanel' : undefined}
+          role={hasBuiltInSwitcher ? 'tabpanel' : undefined}
         >
           {headerActions ? <div className="yv-widget__panel-actions">{headerActions}</div> : null}
           {renderPanel?.(controller.mode) ?? (
@@ -419,11 +420,11 @@ function ConfiguredVaultWidget({
       {controller.mode === 'rewards' ? (
         <div
           aria-hidden={settingsOpen || undefined}
-          aria-labelledby={showNavigation ? `${navigationId}-rewards-tab` : undefined}
+          aria-labelledby={hasBuiltInSwitcher ? `${navigationId}-rewards-tab` : undefined}
           className="yv-widget__panel"
-          id={showNavigation ? `${navigationId}-rewards` : undefined}
+          id={hasBuiltInSwitcher ? `${navigationId}-rewards` : undefined}
           inert={settingsOpen || undefined}
-          role={showNavigation ? 'tabpanel' : undefined}
+          role={hasBuiltInSwitcher ? 'tabpanel' : undefined}
         >
           {headerActions ? <div className="yv-widget__panel-actions">{headerActions}</div> : null}
           {renderPanel?.(controller.mode) ?? (
@@ -444,13 +445,13 @@ function ConfiguredVaultWidget({
 
       {isTransactionMode ? (
         <div
-          aria-labelledby={showNavigation ? `${navigationId}-${controller.mode}-tab` : undefined}
+          aria-labelledby={hasBuiltInSwitcher ? `${navigationId}-${controller.mode}-tab` : undefined}
           className="yv-widget__body"
           data-token-selector-open={tokenSelectorOpen}
           aria-hidden={settingsOpen || undefined}
-          id={showNavigation ? `${navigationId}-${controller.mode}` : undefined}
+          id={hasBuiltInSwitcher ? `${navigationId}-${controller.mode}` : undefined}
           inert={settingsOpen || undefined}
-          role={showNavigation ? 'tabpanel' : undefined}
+          role={hasBuiltInSwitcher ? 'tabpanel' : undefined}
         >
           <div className="yv-widget__body-heading">
             <h3 className="yv-widget__body-title">{getModeLabel(controller.mode, config.display?.modeLabels)}</h3>

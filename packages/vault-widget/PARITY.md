@@ -19,16 +19,19 @@ row below is complete.
 | yvBTC locked/unlocked | Complete for current production behavior | Unlocked cbBTC ERC-4626 preset, family selector, and connected desktop/mobile state parity complete; plan validation confirms the live vault asset while stateful deposits remain unavailable because `maxDeposit=0`; locked remains explicitly unavailable while its address is the legacy zero-address placeholder |
 | Permit and approval migration | In progress | Kong target discovery, destination metadata, full-balance panel, registry-compatible migrator/router/zap selectors, EOA permit detection/signing with nonce-read failure handling, normalized recovery IDs, account/chain/token/value binding, and deadline invalidation, multi-approval and chain-aware allowance planning, Safe approval batching, V2/V3 calls, shared execution, activity persistence, a dedicated permit-signature confirmation overlay, tests, stateful approval migration QA, a stateful signed V3 EIP-2612 migration, and connected legacy/package mode parity against a live V2 holder complete; live wallet-confirmation prompt QA pending |
 | Merkle and staking rewards | In progress | Allowlisted Merkl and source-compatible VeYFI/Juiced/OP Boost staking discovery, browser-safe fetch behavior, bounded claimed-total RPC reads with a validated API fallback, cumulative-proof calldata with claimable outcome accounting, claims preserved after a staking program finishes, per-token formatted activity persistence, styled claim rows with the shared widget-bounded transaction overlay, shared execution, chain-switch/Safe plans, tests, a stateful Juiced reward discovery/claim, and connected legacy/package parity for live claimable Juiced AJNA, VeYFI dYFI, and Katana Merkl KAT positions complete. A current Kong inventory of all 35 staking-enabled vaults contains 12 Juiced, 7 V3 Staking, and 16 VeYFI sources, with no live OP Boost source; stateful Merkl and VeYFI wallet-confirmation/execution QA remains |
-| Full styled My Info/settings/activity parity | In progress | Combined family positions, vault-filtered recent activity, reload reconciliation for EOA/Safe/cross-chain execution, preset defaults that preserve stored host preferences, controlled settings and copy, mobile settings popover, fully reachable My Info, roving keyboard tabs with tabpanel relationships, widget-constrained token and transaction overlays with focus containment/restoration, component/service tests, an automated 18-case connected legacy/package desktop/mobile matrix including every currently live reward source, a 24-case deterministic desktop/mobile transaction-state matrix, and a four-case production-route cutover matrix proving package-owned navigation, settings, My Info, migration, rewards, and mobile drawer chrome complete; live wallet-confirmation QA remains tracked in its workflow rows |
+| Full styled My Info/settings/activity parity | In progress | Combined family positions, vault-filtered recent activity, reload reconciliation for EOA/Safe/cross-chain execution, preset defaults that preserve stored host preferences, controlled settings and copy, mobile settings popover, fully reachable My Info, roving keyboard tabs with tabpanel relationships, external controlled-switcher support, widget-constrained token and transaction overlays with focus containment/restoration, component/service tests, an automated 18-case connected legacy/package desktop/mobile matrix including every currently live reward source, a 24-case deterministic desktop/mobile transaction-state matrix, and a five-case production-route cutover matrix proving yearn.fi header integration, package-owned settings, My Info, migration, rewards, standalone navigation, and mobile drawer chrome complete; live wallet-confirmation QA remains tracked in its workflow rows |
 | Tenderly transaction-family QA | In progress | Reproducible snapshot/revert harness executes 27 transactions across ERC-4626 yvUSD, locked yvUSD cooldown/nested redemption, yBOLD zap, V3 deposit, V2 approval migration, signed V3 EIP-2612 migration, Juiced rewards, same-chain Enso, and an Optimism-to-mainnet Enso source route. yvBTC is plan-only while the live vault reports `maxDeposit=0`; staking is partial-stateful because the stale VNet gauge reward callback reverts; isolated cross-chain QA cannot deliver the destination leg without a bridge relayer. Live Safe iframe and destination-delivery QA remain |
 
 Current rollout state:
 
 - `NEXT_PUBLIC_VAULT_WIDGET_ENABLED=true` switches the complete yearn.fi vault
   widget surface to the package for generic V2/ERC-4626 vaults, staking vaults,
-  yBOLD, yvUSD, and yvBTC. The package owns the summary, action navigation,
+  yBOLD, yvUSD, and yvBTC. On desktop, the existing vault header owns the
+  deposits summary and controlled action switcher while the package renders the
+  selected workflow with `switcher="external"`. The mobile drawer and
+  standalone consumers use the package's built-in switcher. The package owns
   settings, My Info, rewards, transaction panels, overlays, and responsive
-  widget chrome. The host retains only the page grid/mobile drawer,
+  workflow chrome. The host retains the page grid/mobile drawer,
   wallet-provider setup, page-level navigation, family-aware refresh callbacks,
   analytics event bridging, live per-variant display metrics, and design-token
   mapping.
@@ -73,7 +76,8 @@ Current rollout state:
   terminal reset, and fails if the page makes any Tenderly request.
 - `bun run qa:vault-widget:cutover` drives the actual feature-flagged yearn.fi
   vault routes for yBOLD, a connected V2 migration, and connected rewards on
-  desktop plus the yBOLD mobile drawer. It requires full package navigation and
-  verifies settings, My Info, migration, rewards, package-owned mobile
-  header/close controls, and the absence of visible legacy widget controls.
-  Tenderly traffic is blocked and treated as a failure.
+  desktop plus the yBOLD mobile drawer. It requires the desktop widget to use
+  the existing header's controlled switcher, verifies aligned header and widget
+  geometry, settings, My Info, migration, rewards, and package-owned mobile
+  header/close controls, then confirms the standalone harness retains built-in
+  navigation. Tenderly traffic is blocked and treated as a failure.

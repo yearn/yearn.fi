@@ -42,6 +42,7 @@ export type {
   VaultWidgetRewardToken,
   VaultWidgetRouteAdapter,
   VaultWidgetSlots,
+  VaultWidgetSwitcherMode,
   VaultWidgetToken,
   VaultWidgetTokenReference,
   VaultWidgetTokenSelectorChain,

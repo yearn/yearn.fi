@@ -380,22 +380,22 @@ describe('VaultDetailsHeaderPresentation', () => {
     expect(html).not.toContain('EXPIRED COOLDOWN')
   })
 
-  it('removes host widget controls when the package owns the complete surface', () => {
+  it('keeps the host switcher beside the overview for an externally controlled widget', () => {
     const html = renderToStaticMarkup(
       <VaultDetailsHeaderPresentation
         currentVault={YVUSD_VAULT as never}
         depositedValue={0n}
         isCompressed={false}
         onWidgetModeChange={vi.fn()}
-        showHostWidgetControls={false}
         widgetActions={[WidgetActionType.Deposit, WidgetActionType.Withdraw]}
         widgetMode={WidgetActionType.Deposit}
       />
     )
 
-    expect(html).not.toContain('Your Deposits')
-    expect(html).not.toContain('Widget Tabs')
-    expect(html).toContain('md:col-span-20')
+    expect(html).toContain('Your Deposits')
+    expect(html).toContain('Widget Tabs')
+    expect(html).toContain('md:col-span-13')
+    expect(html).toContain('md:col-span-7')
   })
 
   it('does not enable locked yvBTC user-data reads while the locked address is a placeholder', () => {

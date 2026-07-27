@@ -1109,8 +1109,9 @@ type TVaultDetailsHeaderBaseProps = {
   onYvUsdApyVariantChange?: (variant: TYvUsdVariant) => void
   onWidgetWalletOpen?: () => void
   isWidgetWalletOpen?: boolean
+  onWidgetRewardsOpen?: () => void
+  isWidgetRewardsOpen?: boolean
   onWidgetCloseOverlays?: () => void
-  showHostWidgetControls?: boolean
 }
 
 type TVaultDetailsHeaderPresentationProps = TVaultDetailsHeaderBaseProps & {
@@ -1132,8 +1133,9 @@ export function VaultDetailsHeaderPresentation({
   onYvUsdApyVariantChange,
   onWidgetWalletOpen,
   isWidgetWalletOpen,
+  onWidgetRewardsOpen,
+  isWidgetRewardsOpen,
   onWidgetCloseOverlays,
-  showHostWidgetControls = true,
   isCompressed,
   includeTourAttributes = true
 }: TVaultDetailsHeaderPresentationProps): ReactElement {
@@ -1165,7 +1167,7 @@ export function VaultDetailsHeaderPresentation({
         <span className={'font-medium text-text-primary'}>{getVaultName(currentVault)}</span>
       </div>
       {isCompressed ? (
-        <div className={cl(showHostWidgetControls ? 'md:col-span-13' : 'md:col-span-20', 'md:row-start-2 pt-4')}>
+        <div className={'md:col-span-13 md:row-start-2 pt-4'}>
           <div
             className={cl(
               'rounded-lg border border-border bg-surface'
@@ -1227,7 +1229,7 @@ export function VaultDetailsHeaderPresentation({
               includeTourAttributes={includeTourAttributes}
             />
           )}
-          <div className={cl(showHostWidgetControls ? 'md:col-span-13' : 'md:col-span-20', 'md:row-start-3')}>
+          <div className={'md:col-span-13 md:row-start-3'}>
             {' '}
             {/* step 2 should be here*/}
             <div className={'flex flex-col'}>
@@ -1255,37 +1257,35 @@ export function VaultDetailsHeaderPresentation({
         </>
       )}
 
-      {showHostWidgetControls ? (
-        <div
-          className={cl(
-            'flex flex-col pt-4',
-            isCompressed
-              ? 'md:col-span-7 md:col-start-14 md:row-start-2'
-              : 'md:col-span-7 md:col-start-14 md:row-start-3'
-          )}
-        >
-          <UserHoldingsCard
-            currentVault={currentVault}
-            depositedValue={depositedValue}
-            tokenPrice={tokenPrice}
-            isCompressed={isCompressed}
-            includeTourAttributes={includeTourAttributes}
+      <div
+        className={cl(
+          'flex flex-col pt-4',
+          isCompressed ? 'md:col-span-7 md:col-start-14 md:row-start-2' : 'md:col-span-7 md:col-start-14 md:row-start-3'
+        )}
+      >
+        <UserHoldingsCard
+          currentVault={currentVault}
+          depositedValue={depositedValue}
+          tokenPrice={tokenPrice}
+          isCompressed={isCompressed}
+          includeTourAttributes={includeTourAttributes}
+        />
+        {widgetActions.length > 0 && widgetMode && onWidgetModeChange ? (
+          <WidgetTabs
+            actions={widgetActions}
+            activeAction={widgetMode}
+            onActionChange={handleWidgetModeChange}
+            className={isCompressed ? '-mt-px rounded-t-none' : undefined}
+            onOpenWallet={handleWidgetWalletOpen}
+            isWalletOpen={isWidgetWalletOpen}
+            onOpenRewards={onWidgetRewardsOpen}
+            isRewardsOpen={isWidgetRewardsOpen}
+            onCloseOverlays={handleWidgetCloseOverlays}
+            dataTour={includeTourAttributes ? 'vault-detail-widget-tabs' : undefined}
+            walletDataTour={includeTourAttributes ? 'vault-detail-widget-my-info' : undefined}
           />
-          {widgetActions.length > 0 && widgetMode && onWidgetModeChange ? (
-            <WidgetTabs
-              actions={widgetActions}
-              activeAction={widgetMode}
-              onActionChange={handleWidgetModeChange}
-              className={isCompressed ? '-mt-px rounded-t-none' : undefined}
-              onOpenWallet={handleWidgetWalletOpen}
-              isWalletOpen={isWidgetWalletOpen}
-              onCloseOverlays={handleWidgetCloseOverlays}
-              dataTour={includeTourAttributes ? 'vault-detail-widget-tabs' : undefined}
-              walletDataTour={includeTourAttributes ? 'vault-detail-widget-my-info' : undefined}
-            />
-          ) : null}
-        </div>
-      ) : null}
+        ) : null}
+      </div>
     </div>
   )
 }

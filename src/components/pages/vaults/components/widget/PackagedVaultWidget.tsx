@@ -234,8 +234,8 @@ export function PackagedVaultWidget({
     onSuccess,
     onViewAllActivity: (): void => router.push('/portfolio?tab=activity'),
     settingsOpen,
-    showNavigation: true,
     slots: { TransactionLink },
+    switcher: viewport === 'desktop' ? 'external' : 'built-in',
     viewport
   } as const
 

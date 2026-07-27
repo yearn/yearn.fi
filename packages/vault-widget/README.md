@@ -17,6 +17,29 @@ import '@yearn/vault-widget/styles.css'
 />
 ```
 
+The styled widget includes its summary and action switcher by default. A host
+that already has action navigation can keep the package in controlled mode and
+render only the active workflow:
+
+```tsx
+const [mode, setMode] = useState<VaultWidgetMode>('deposit')
+
+<HostVaultSwitcher mode={mode} onModeChange={setMode} />
+<VaultWidget
+  chainId={1}
+  vaultAddress={vaultAddress}
+  mode={mode}
+  onModeChange={setMode}
+  switcher="external"
+  onConnectWallet={openConnectModal}
+/>
+```
+
+Use `switcher="built-in"` explicitly when a standalone integration should own
+its navigation. It is the default. With `switcher="external"`, the host is
+responsible only for selecting the controlled `mode`; transaction logic,
+settings, activity, rewards, and overlays remain package-owned.
+
 `chainId` and `vaultAddress` are the primary integration. The default service
 resolves V2/ERC-4626 metadata from Kong, recognizes package presets such as
 yBOLD, and decorates generic vaults with the supported Enso token catalog,
