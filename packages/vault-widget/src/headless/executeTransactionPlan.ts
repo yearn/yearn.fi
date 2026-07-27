@@ -34,6 +34,25 @@ export type ExecuteVaultWidgetPlanParams = {
   plan: VaultWidgetTransactionPlan
 }
 
+function isUserActionStep(step: VaultWidgetTransactionPlan['steps'][number]): boolean {
+  return step.kind !== 'refresh' && step.kind !== 'wait-cross-chain'
+}
+
+function getUserActionProgress(
+  plan: VaultWidgetTransactionPlan,
+  planStepIndex: number
+): Pick<Extract<VaultWidgetExecutionState, { step: unknown }>, 'stepCount' | 'stepIndex'> {
+  const userActionCount = plan.steps.filter(isUserActionStep).length
+  const completedUserActionCount = plan.steps.slice(0, planStepIndex).filter(isUserActionStep).length
+  const currentStep = plan.steps[planStepIndex]
+  const userActionIndex =
+    currentStep && isUserActionStep(currentStep) ? completedUserActionCount : completedUserActionCount - 1
+  return {
+    stepCount: userActionCount,
+    stepIndex: Math.max(0, userActionIndex)
+  }
+}
+
 export async function executeVaultWidgetPlan(
   params: ExecuteVaultWidgetPlanParams,
   index = 0,
@@ -41,12 +60,12 @@ export async function executeVaultWidgetPlan(
 ): Promise<VaultWidgetPlanOutcome> {
   const step = params.plan.steps[index]
   if (!step) return outcome
+  const userActionProgress = getUserActionProgress(params.plan, index)
 
   params.onExecution({
     status: 'confirming',
     step,
-    stepIndex: index,
-    stepCount: params.plan.steps.length
+    ...userActionProgress
   })
   params.onEvent?.({ type: 'transaction_step', step })
   const isFinalTransaction = !params.plan.steps
@@ -80,8 +99,7 @@ export async function executeVaultWidgetPlan(
     params.onExecution({
       status: 'pending',
       step,
-      stepIndex: index,
-      stepCount: params.plan.steps.length,
+      ...userActionProgress,
       proposalId
     })
     params.onEvent?.({ type: 'transaction_step', step, proposalId })
@@ -100,8 +118,7 @@ export async function executeVaultWidgetPlan(
     params.onExecution({
       status: 'submitted',
       step,
-      stepIndex: index,
-      stepCount: params.plan.steps.length,
+      ...userActionProgress,
       hash: outcome.hash,
       proposalId: outcome.proposalId
     })
@@ -137,8 +154,7 @@ export async function executeVaultWidgetPlan(
   params.onExecution({
     status: 'pending',
     step,
-    stepIndex: index,
-    stepCount: params.plan.steps.length,
+    ...userActionProgress,
     hash
   })
   params.onEvent?.({ type: 'transaction_step', step, hash })

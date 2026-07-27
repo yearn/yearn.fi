@@ -41,7 +41,7 @@ export function createStakingPreset(options: CreateStakingPresetOptions): VaultW
       submitDeposit: 'Stake',
       submitWithdraw: 'Unstake',
       unstakeAndRedeem: 'You will unstake',
-      youWillDeposit: 'You Will Stake'
+      youWillDeposit: 'You will stake'
     },
     display: {
       approvalSpenderName: { deposit: options.stakingToken.symbol },

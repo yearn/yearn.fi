@@ -24,17 +24,20 @@ const DEFAULT_COPY: VaultWidgetCopy = {
   maximumLoss: 'Maximum loss',
   solver: 'Route provider',
   autoStake: 'Stake Automatically',
+  autoStakeDisabledTitle: 'Automatic staking off.',
+  autoStakeDisabledDescription: 'If this is not intentional, turn it on with the toggle.',
+  enableAutoStake: 'Turn on automatic staking',
   submitDeposit: 'Deposit',
   submitWithdraw: 'Withdraw',
   findingRoute: 'Finding best route…',
   approveAndDeposit: 'Approve & Deposit',
   approveAndWithdraw: 'Approve & Withdraw',
   noRoute: 'No route is available for this amount.',
-  youWillDeposit: 'You Will Deposit',
-  youWillReceive: 'You Will Receive',
+  youWillDeposit: 'You will deposit',
+  youWillReceive: 'You will receive',
   vaultShareValue: 'Vault share value',
-  estimatedAnnualReturn: 'Est. Annual Return',
-  existingApproval: 'Existing Approval',
+  estimatedAnnualReturn: 'Est. annual return',
+  existingApproval: 'Existing approval',
   unstakeAndRedeem: 'You will redeem',
   ...DEFAULT_TRANSACTION_OVERLAY_COPY
 }
@@ -121,6 +124,15 @@ export function getNextVaultActionTabIndex(key: string, index: number, tabCount:
   if (key === 'Home') return 0
   if (key === 'End') return tabCount - 1
   return undefined
+}
+
+export function hasStakingDepositFlow(config: VaultWidgetConfig): boolean {
+  const positionSources = [...(config.positionSources ?? []), ...(config.infoPositionSources ?? [])]
+  return (
+    positionSources.some(({ id }) => id.toLowerCase() === 'staked') ||
+    config.adapters.some(({ id }) => id === 'deposit-and-stake') ||
+    config.display?.modeLabels?.deposit?.toLowerCase() === 'stake'
+  )
 }
 
 function formatInputAmount(value: string): string {
@@ -230,6 +242,8 @@ function ConfiguredVaultWidget({
     (transactionMode === 'withdraw' ? controller.selectedPositionSource.token : controller.selectedToken)
   const approvalSpenderName = config.display?.approvalSpenderName?.[transactionMode]
   const allowanceFormatted = formatWidgetAllowance(controller.allowance, approvalToken.decimals)
+  const showAutoStakeWarning =
+    transactionMode === 'deposit' && !controller.settings.autoStake && hasStakingDepositFlow(config)
 
   const setMode = (nextMode: VaultWidgetMode): void => {
     setSelectedPercentage(null)
@@ -522,10 +536,20 @@ function ConfiguredVaultWidget({
             <div className="yv-widget__amount-footer">
               <span>{formatUsd(inputUsd)}</span>
               {controller.account && controller.balance > 0n ? (
-                <span>
+                <button
+                  aria-label={`Use full ${
+                    transactionMode === 'withdraw' ? assetToken.symbol : controller.selectedToken.symbol
+                  } balance`}
+                  className="yv-widget__balance-button"
+                  type="button"
+                  onClick={() => {
+                    setSelectedPercentage(100)
+                    controller.setPercentage(100)
+                  }}
+                >
                   {copy.balance}: {formatWalletBalance(controller.balance, controller.balanceDecimals)}{' '}
                   {transactionMode === 'withdraw' ? assetToken.symbol : controller.selectedToken.symbol}
-                </span>
+                </button>
               ) : !controller.account ? (
                 <button type="button" onClick={() => onConnectWallet?.()}>
                   Connect wallet
@@ -639,6 +663,24 @@ function ConfiguredVaultWidget({
           {controller.error ? (
             <div className="yv-widget__notice yv-widget__notice--error" role="alert">
               {controller.error.message || copy.noRoute}
+            </div>
+          ) : null}
+          {showAutoStakeWarning ? (
+            <div className="yv-widget__notice yv-widget__notice--auto-stake" role="status">
+              <div>
+                <strong>{copy.autoStakeDisabledTitle}</strong>
+                <small>{copy.autoStakeDisabledDescription}</small>
+              </div>
+              <button
+                aria-checked="false"
+                aria-label={copy.enableAutoStake}
+                className="yv-widget__auto-stake-warning-toggle"
+                role="switch"
+                type="button"
+                onClick={() => controller.setSettings({ ...controller.settings, autoStake: true })}
+              >
+                <span />
+              </button>
             </div>
           ) : null}
           <div className="yv-widget__action-row">

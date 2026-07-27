@@ -47,7 +47,7 @@ const PREVIEWS = [
     vault: 'ybold'
   },
   {
-    description: 'Switch to destination chain (1/5)',
+    description: 'Switch to destination chain (1/4)',
     dismissible: false,
     preview: 'chain-switch',
     state: 'rewards',
@@ -56,7 +56,7 @@ const PREVIEWS = [
     vault: 'merkl-rewards'
   },
   {
-    description: 'Reset token approval (2/5)',
+    description: 'Reset token approval (2/4)',
     dismissible: false,
     preview: 'reset-approval',
     state: 'deposit',
@@ -65,7 +65,7 @@ const PREVIEWS = [
     vault: 'ybold'
   },
   {
-    description: 'Approve token (3/5)',
+    description: 'Approve token (3/4)',
     dismissible: false,
     preview: 'approval',
     state: 'deposit',
@@ -74,7 +74,7 @@ const PREVIEWS = [
     vault: 'v3-staking'
   },
   {
-    description: 'Sign migration permit (2/4)',
+    description: 'Sign migration permit (2/3)',
     dismissible: false,
     preview: 'permit',
     state: 'migrate',

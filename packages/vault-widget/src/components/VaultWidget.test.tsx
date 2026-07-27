@@ -5,7 +5,7 @@ import { fireEvent, render, screen } from '@testing-library/react'
 import type { CSSProperties, ReactElement } from 'react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { VaultWidgetConfig, VaultWidgetExecutionState, VaultWidgetToken } from '../types'
-import { getNextVaultActionTabIndex, VaultWidget } from './VaultWidget'
+import { getNextVaultActionTabIndex, hasStakingDepositFlow, VaultWidget } from './VaultWidget'
 
 const { useController } = vi.hoisted(() => ({
   useController: vi.fn()
@@ -268,6 +268,101 @@ describe('VaultWidget', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Close token selector' }))
     expect(screen.queryByRole('dialog', { name: 'Select deposit token' })).toBeNull()
     expect(document.activeElement).toBe(tokenButton)
+  })
+
+  it('uses the full balance, shows sentence-case deposit details, and restores the auto-stake warning', () => {
+    const setPercentage = vi.fn()
+    const setSettings = vi.fn()
+    const stakingConfig: VaultWidgetConfig = {
+      ...config,
+      infoPositionSources: [{ ...positionSource, id: 'staked' }],
+      display: {
+        approvalSpenderName: { deposit: 'Test Zap' },
+        estimatedApr: 0.05,
+        positionLabel: 'Staked shares'
+      }
+    }
+    useController.mockReturnValue(
+      createController({
+        account: '0x3333333333333333333333333333333333333333',
+        allowance: 0n,
+        amount: '7.58',
+        approvalTarget: {
+          spender: '0x4444444444444444444444444444444444444444',
+          token: asset
+        },
+        balance: 7_580_000_000_000_000_000n,
+        quote: {
+          adapterId: 'deposit-and-stake',
+          amountIn: 7_580_000_000_000_000_000n,
+          assetValue: 7_580_000_000_000_000_000n,
+          expectedOut: 6_990_000_000_000_000_000n,
+          minExpectedOut: 6_990_000_000_000_000_000n,
+          positionAmount: 6_990_000_000_000_000_000n,
+          transaction: {
+            chainId: 1,
+            data: '0x1234',
+            to: '0x4444444444444444444444444444444444444444'
+          }
+        },
+        setPercentage,
+        setSettings,
+        settings: {
+          autoStake: false,
+          maxLossBps: 100,
+          slippagePercent: 0.5,
+          solver: 'enso'
+        }
+      })
+    )
+
+    renderWidget(<VaultWidget chainId={1} config={stakingConfig} vaultAddress={stakingConfig.vaultAddress} />)
+
+    expect(screen.getByText('You will deposit')).toBeTruthy()
+    expect(screen.getByText('You will receive')).toBeTruthy()
+    expect(screen.getByText('Vault share value')).toBeTruthy()
+    expect(screen.getByText('Est. annual return')).toBeTruthy()
+    expect(screen.getByText('Existing approval (Test Zap)')).toBeTruthy()
+    expect(screen.queryByText('You Will Deposit')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Use full ASSET balance' }))
+    expect(setPercentage).toHaveBeenCalledWith(100)
+
+    expect(hasStakingDepositFlow(stakingConfig)).toBe(true)
+    expect(screen.getByText('Automatic staking off.')).toBeTruthy()
+    fireEvent.click(screen.getByRole('switch', { name: 'Turn on automatic staking' }))
+    expect(setSettings).toHaveBeenCalledWith(expect.objectContaining({ autoStake: true }))
+  })
+
+  it('uses the full position balance and sentence-case labels when withdrawing', () => {
+    const setPercentage = vi.fn()
+    useController.mockReturnValue(
+      createController({
+        account: '0x3333333333333333333333333333333333333333',
+        amount: '2',
+        balance: 2_000_000_000_000_000_000n,
+        mode: 'withdraw',
+        quote: {
+          adapterId: 'direct',
+          amountIn: 2_000_000_000_000_000_000n,
+          expectedOut: 2_000_000_000_000_000_000n,
+          minExpectedOut: 2_000_000_000_000_000_000n,
+          positionAmount: 2_000_000_000_000_000_000n,
+          transaction: {
+            chainId: 1,
+            data: '0x1234',
+            to: '0x4444444444444444444444444444444444444444'
+          }
+        },
+        setPercentage
+      })
+    )
+
+    renderWidget(<VaultWidget chainId={1} config={config} vaultAddress={config.vaultAddress} />)
+
+    expect(screen.getByText('You will redeem')).toBeTruthy()
+    expect(screen.getByText('You will receive')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Use full ASSET balance' }))
+    expect(setPercentage).toHaveBeenCalledWith(100)
   })
 
   it.each<{

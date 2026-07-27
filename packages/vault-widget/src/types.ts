@@ -289,6 +289,9 @@ export type VaultWidgetCopy = {
   maximumLoss: string
   solver: string
   autoStake: string
+  autoStakeDisabledTitle: string
+  autoStakeDisabledDescription: string
+  enableAutoStake: string
   submitDeposit: string
   submitWithdraw: string
   findingRoute: string

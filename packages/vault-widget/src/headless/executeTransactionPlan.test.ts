@@ -104,6 +104,7 @@ describe('executeVaultWidgetPlan', () => {
     const approvalHash = `0x${'44'.repeat(32)}` as const
     const executionHash = `0x${'55'.repeat(32)}` as const
     const execute = vi.fn().mockResolvedValueOnce(approvalHash).mockResolvedValueOnce(executionHash)
+    const onExecution = vi.fn()
     const onProgress = vi.fn().mockResolvedValue(undefined)
     const multiStepPlan: VaultWidgetTransactionPlan = {
       ...plan,
@@ -118,7 +119,7 @@ describe('executeVaultWidgetPlan', () => {
       account,
       config: {} as Config,
       execution: { execute, waitForReceipt: vi.fn().mockResolvedValue(undefined) },
-      onExecution: vi.fn(),
+      onExecution,
       onProgress,
       onRefresh: vi.fn().mockResolvedValue(undefined),
       plan: multiStepPlan
@@ -131,6 +132,30 @@ describe('executeVaultWidgetPlan', () => {
     expect(onProgress).toHaveBeenNthCalledWith(
       2,
       expect.objectContaining({ hash: executionHash, isFinalTransaction: true, stepIndex: 1 })
+    )
+    expect(onExecution).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'confirming',
+        step: expect.objectContaining({ kind: 'approve' }),
+        stepCount: 2,
+        stepIndex: 0
+      })
+    )
+    expect(onExecution).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'confirming',
+        step: expect.objectContaining({ kind: 'execute' }),
+        stepCount: 2,
+        stepIndex: 1
+      })
+    )
+    expect(onExecution).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'confirming',
+        step: expect.objectContaining({ kind: 'refresh' }),
+        stepCount: 2,
+        stepIndex: 1
+      })
     )
   })
 
@@ -243,6 +268,7 @@ describe('executeVaultWidgetPlan', () => {
     const destinationHash = `0x${'66'.repeat(32)}` as const
     const order: string[] = []
     const onEvent = vi.fn()
+    const onExecution = vi.fn()
     const safeBridgePlan: VaultWidgetTransactionPlan = {
       ...plan,
       walletType: 'safe',
@@ -301,7 +327,7 @@ describe('executeVaultWidgetPlan', () => {
           })
         },
         onEvent,
-        onExecution: vi.fn(),
+        onExecution,
         onRefresh: vi.fn(async () => {
           order.push('refresh')
         }),
@@ -317,6 +343,22 @@ describe('executeVaultWidgetPlan', () => {
       expect.objectContaining({
         type: 'bridge_status',
         status: expect.objectContaining({ status: 'delivered', destinationTxHash: destinationHash })
+      })
+    )
+    expect(onExecution).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'submitted',
+        step: expect.objectContaining({ kind: 'wait-cross-chain' }),
+        stepCount: 1,
+        stepIndex: 0
+      })
+    )
+    expect(onExecution).toHaveBeenCalledWith(
+      expect.objectContaining({
+        status: 'confirming',
+        step: expect.objectContaining({ kind: 'refresh' }),
+        stepCount: 1,
+        stepIndex: 0
       })
     )
   })

@@ -191,7 +191,7 @@ function createExecutionPreview(
     return {
       status: 'confirming',
       step: { ...executeStep, id: 'preview-switch-chain', kind: 'switch-chain', label: 'Switch to destination chain' },
-      stepCount: 5,
+      stepCount: 4,
       stepIndex: 0
     }
   }
@@ -199,7 +199,7 @@ function createExecutionPreview(
     return {
       status: 'confirming',
       step: { ...executeStep, id: 'preview-reset-approval', kind: 'reset-approval', label: 'Reset token approval' },
-      stepCount: 5,
+      stepCount: 4,
       stepIndex: 1
     }
   }
@@ -207,7 +207,7 @@ function createExecutionPreview(
     return {
       status: 'confirming',
       step: { ...executeStep, id: 'preview-approval', kind: 'approve', label: 'Approve token' },
-      stepCount: 5,
+      stepCount: 4,
       stepIndex: 2
     }
   }
@@ -215,7 +215,7 @@ function createExecutionPreview(
     return {
       status: 'confirming',
       step: { ...executeStep, id: 'preview-permit', kind: 'permit', label: 'Sign migration permit' },
-      stepCount: 4,
+      stepCount: 3,
       stepIndex: 1
     }
   }
