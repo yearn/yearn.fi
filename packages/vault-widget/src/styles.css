@@ -955,6 +955,21 @@
   transform: translateX(1.5rem);
 }
 
+.yv-widget__settings-version {
+  margin-top: 1rem;
+  border-top: 1px solid var(--yv-widget-border);
+  padding-top: 0.75rem;
+  color: var(--yv-widget-text-secondary);
+  font-size: 0.6875rem;
+  font-variant-numeric: tabular-nums;
+  line-height: 1rem;
+  text-align: right;
+}
+
+.yv-widget__settings-version small {
+  font: inherit;
+}
+
 .yv-widget__notice {
   display: flex;
   align-items: center;

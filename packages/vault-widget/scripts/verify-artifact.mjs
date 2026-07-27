@@ -88,13 +88,16 @@ try {
     `
       import { existsSync } from 'node:fs'
       import { fileURLToPath } from 'node:url'
-      import { VaultWidget, createYBoldPreset } from '@yearn/vault-widget'
+      import { VAULT_WIDGET_VERSION, VaultWidget, createYBoldPreset } from '@yearn/vault-widget'
       import { buildTransactionPlan } from '@yearn/vault-widget/headless'
       import { createBrowserActivityStore } from '@yearn/vault-widget/services'
       import { createEnsoRouteHandler } from '@yearn/vault-widget/server'
 
       const stylesPath = fileURLToPath(import.meta.resolve('@yearn/vault-widget/styles.css'))
       if (typeof VaultWidget !== 'function') throw new Error('Main component export is unavailable')
+      if (VAULT_WIDGET_VERSION !== ${JSON.stringify(manifest.version)}) {
+        throw new Error('Package version export does not match the manifest')
+      }
       if (typeof createYBoldPreset !== 'function') throw new Error('Preset export is unavailable')
       if (typeof buildTransactionPlan !== 'function') throw new Error('Headless export is unavailable')
       if (typeof createBrowserActivityStore !== 'function') throw new Error('Service export is unavailable')

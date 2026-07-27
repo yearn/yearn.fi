@@ -52,3 +52,4 @@ export type {
   VaultWidgetVariant,
   VaultWidgetWalletType
 } from './types'
+export { VAULT_WIDGET_VERSION } from './version'

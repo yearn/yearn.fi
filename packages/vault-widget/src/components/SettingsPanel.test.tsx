@@ -13,6 +13,13 @@ const settings: VaultWidgetSettings = {
 }
 
 describe('SettingsPanel', () => {
+  it('shows the package version at the bottom of the panel', () => {
+    render(<SettingsPanel onChange={vi.fn()} onClose={vi.fn()} settings={settings} title="Transaction Settings" />)
+
+    const version = screen.getByText('@yearn/vault-widget v0.1.0')
+    expect(version.closest('footer')?.className).toBe('yv-widget__settings-version')
+  })
+
   it('saves a valid slippage change when Escape closes the panel', () => {
     const onChange = vi.fn()
     const onClose = vi.fn()

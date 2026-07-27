@@ -8,6 +8,7 @@ import {
   SLIPPAGE_RISK_ACKNOWLEDGEMENT_TEXT
 } from '../headless/settings'
 import type { VaultWidgetSettings } from '../services'
+import { VAULT_WIDGET_VERSION } from '../version'
 
 type SettingsPanelProps = {
   autoStakeLabel?: string
@@ -149,6 +150,10 @@ export function SettingsPanel({
             <span />
           </button>
         </section>
+
+        <footer className="yv-widget__settings-version">
+          <small>@yearn/vault-widget v{VAULT_WIDGET_VERSION}</small>
+        </footer>
       </div>
     </div>
   )

@@ -1,4 +1,5 @@
-import { chromium, type Page } from 'playwright'
+import { VAULT_WIDGET_VERSION } from '@yearn/vault-widget'
+import { chromium, type Locator, type Page } from 'playwright'
 
 type CutoverResult = {
   id: string
@@ -12,6 +13,7 @@ const V2_MIGRATION_VAULT = '0xa354F35829Ae975e850e23e9615b11Da1B3dC4DE'
 const V2_USDC_HOLDER = '0xC4080c19DE69c2362d01B20F071D4046364A0226'
 const JUICED_REWARD_VAULT = '0xe24BA27551aBE96Ca401D39761cA2319Ea14e3CB'
 const JUICED_REWARD_ACCOUNT = '0x719b3d3bbb9207e301ee9abf7574a4a756e0c2e3'
+const SETTINGS_VERSION = `@yearn/vault-widget v${VAULT_WIDGET_VERSION}`
 
 function invariant(condition: unknown, message: string): asserts condition {
   if (!condition) throw new Error(message)
@@ -47,6 +49,12 @@ async function waitForCompleteWidget(page: Page): Promise<void> {
   )
 }
 
+async function verifySettingsVersion(widget: Locator): Promise<void> {
+  const version = widget.locator('.yv-widget__settings-version')
+  await version.waitFor({ state: 'visible' })
+  invariant((await version.textContent())?.trim() === SETTINGS_VERSION, 'Package settings version is incorrect')
+}
+
 async function verifyDesktopYBold(page: Page): Promise<CutoverResult> {
   await page.goto(vaultUrl(1, YBOLD_VAULT), { waitUntil: 'domcontentloaded' })
   await waitForCompleteWidget(page)
@@ -54,6 +62,7 @@ async function verifyDesktopYBold(page: Page): Promise<CutoverResult> {
   await widget.locator('.yv-widget__summary-desktop').filter({ hasText: 'Your deposits' }).waitFor({ state: 'visible' })
   await widget.locator('.yv-widget__settings-button--action').click()
   await widget.locator('.yv-widget__settings').waitFor({ state: 'visible' })
+  await verifySettingsVersion(widget)
   await widget.getByRole('button', { exact: true, name: 'Close settings' }).click()
   await widget.locator('.yv-widget__settings').waitFor({ state: 'hidden' })
   await widget.getByRole('tab', { exact: true, name: 'My Info' }).click()
@@ -100,6 +109,9 @@ async function verifyMobileYBold(page: Page): Promise<CutoverResult> {
     (await drawer.locator('button[aria-label="Close drawer"]').count()) === 0,
     'Host drawer header remained visible'
   )
+  await widget.getByRole('button', { exact: true, name: 'Transaction Settings' }).click()
+  await verifySettingsVersion(widget)
+  await widget.getByRole('button', { exact: true, name: 'Close settings' }).click()
   await widget.getByRole('tab', { exact: true, name: 'My Info' }).click()
   invariant(
     (await widget.getByRole('tab', { exact: true, name: 'My Info' }).getAttribute('aria-selected')) === 'true',
@@ -107,7 +119,7 @@ async function verifyMobileYBold(page: Page): Promise<CutoverResult> {
   )
   await widget.getByRole('button', { exact: true, name: 'Close' }).click()
   await widget.waitFor({ state: 'hidden' })
-  return { id: 'ybold-mobile-complete-surface', mode: 'info/close', navigation: 'full' }
+  return { id: 'ybold-mobile-complete-surface', mode: 'settings/info/close', navigation: 'full' }
 }
 
 async function main(): Promise<void> {
