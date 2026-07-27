@@ -80,7 +80,8 @@ const nextConfig: NextConfig = {
       { source: '/medium', destination: 'https://medium.com/iearn', permanent: false },
       { source: '/governance', destination: 'https://gov.yearn.fi/', permanent: false },
       { source: '/snapshot', destination: 'https://snapshot.org/#/styfi.eth', permanent: false },
-      { source: '/github', destination: 'https://github.com/yearn/yearn.fi', permanent: false }
+      { source: '/github', destination: 'https://github.com/yearn/yearn.fi', permanent: false },
+      { source: '/security.txt', destination: '/.well-known/security.txt', permanent: false }
     ]
   },
   async rewrites() {
