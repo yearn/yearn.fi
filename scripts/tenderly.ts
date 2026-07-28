@@ -1,6 +1,7 @@
 /// <reference types="node" />
 
 import { getAddress } from 'viem'
+import { buildTenderlyRevertResponse } from '@/config/tenderlyServer'
 
 type TParsedCliArgs = {
   command?: string
@@ -231,6 +232,10 @@ function formatResult(result: unknown): string {
   return JSON.stringify(result, null, 2)
 }
 
+export function assertTenderlyRevertSucceeded(result: unknown, snapshotId: string): void {
+  buildTenderlyRevertResponse(result, snapshotId)
+}
+
 async function runCommand(parsedArgs: TParsedCliArgs): Promise<void> {
   const { command, flags } = parsedArgs
   const canonicalChainId = getCanonicalChainId(flags)
@@ -287,6 +292,7 @@ async function runCommand(parsedArgs: TParsedCliArgs): Promise<void> {
     case 'revert': {
       const snapshotId = requireFlag(flags, 'id')
       const result = await callAdminRpc(canonicalChainId, 'evm_revert', [snapshotId])
+      assertTenderlyRevertSucceeded(result, snapshotId)
       console.log(`Revert result on canonical chain ${canonicalChainId}: ${formatResult(result)}`)
       return
     }
