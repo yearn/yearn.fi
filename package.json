@@ -31,7 +31,7 @@
     "ethers": "5.7.2",
     "framer-motion": "12.34.0",
     "graphql": "16.12.0",
-    "next": "16.2.6",
+    "next": "16.2.11",
     "react": "19.2.6",
     "react-dom": "19.2.6",
     "react-hot-toast": "2.6.0",
