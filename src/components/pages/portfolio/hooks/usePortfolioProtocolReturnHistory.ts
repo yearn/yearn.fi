@@ -30,11 +30,14 @@ export function usePortfolioProtocolReturnHistory(timeframe: TPortfolioHistoryTi
     return `/api/holdings/protocol-return/history?address=${address}&timeframe=${timeframe}&fetchType=parallel&progressId=${encodeURIComponent(progressId)}`
   }, [address, enabled, progressId, timeframe])
   const cacheKey = useMemo(
-    () => (address && enabled ? ['fetch', 'portfolio-protocol-history', address.toLowerCase(), timeframe] : undefined),
+    () =>
+      address && enabled
+        ? ['fetch', `/api/holdings/protocol-return/history?address=${address.toLowerCase()}&timeframe=${timeframe}`]
+        : undefined,
     [address, enabled, timeframe]
   )
 
-  const { data, isLoading, isFetching, error } = useFetch<TPortfolioProtocolReturnHistoryResponse>({
+  const { data, isLoading, isFetching, error, refetch } = useFetch<TPortfolioProtocolReturnHistoryResponse>({
     endpoint,
     schema: portfolioProtocolReturnHistoryResponseSchema,
     config: {
@@ -89,9 +92,11 @@ export function usePortfolioProtocolReturnHistory(timeframe: TPortfolioHistoryTi
     summary,
     familySeries,
     timeframe,
+    isFetching,
     isLoading: isLoadingState,
     progress,
     error: visibleError,
-    isEmpty
+    isEmpty,
+    refetch
   }
 }

@@ -230,6 +230,9 @@ export async function GET(request: Request): Promise<Response> {
         version,
         denomination,
         timeframe,
+        ...(holdings.protocolReturnCacheInvalidatedAt
+          ? { protocolReturnCacheInvalidatedAt: holdings.protocolReturnCacheInvalidatedAt }
+          : {}),
         dataPoints: holdings.dataPoints.map((dp) => ({
           date: dp.date,
           value: dp.value

@@ -544,6 +544,7 @@ Cache behavior:
 - Vault-filtered history skips aggregate daily total cache because the cache is user/version scoped, not vault-filter scoped.
 - Cache staleness is checked against `holdings:vault-invalidated:<chainId>:<vaultAddress>` only after the request has enough cached daily totals to potentially serve from cache.
 - If any relevant vault was invalidated after the oldest cached row was written, the user's cached totals for that version are cleared and recomputed.
+- Clearing stale totals also deletes the wallet/version's unfiltered `1y` and `all` protocol-return snapshots. The balance response signals the portfolio client to refetch protocol return once its current request settles.
 - Recalculated totals are not cached when any token price batch failed, because partial price data can undercount chart totals.
 
 ### Protocol Return History Snapshots

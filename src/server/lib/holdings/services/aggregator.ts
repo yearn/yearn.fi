@@ -42,6 +42,7 @@ export interface HoldingsHistoryResponse {
   periodDays: number
   timeframe: HoldingsHistoryTimeframe
   hasActivity: boolean
+  protocolReturnCacheInvalidatedAt?: number
   dataPoints: Array<{ date: string; timestamp: number; totalUsdValue: number }>
 }
 
@@ -55,6 +56,7 @@ export interface HoldingsHistoryChartResponse {
   timeframe: HoldingsHistoryTimeframe
   denomination: HoldingsHistoryDenomination
   hasActivity: boolean
+  protocolReturnCacheInvalidatedAt?: number
   dataPoints: Array<{ date: string; timestamp: number; value: number }>
 }
 
@@ -247,6 +249,8 @@ export async function getHistoricalHoldings(
   })
   reportHoldingsProgress(44, 'Resolved vault metadata', `${vaults.length} vaults`)
 
+  const cacheInvalidation: Pick<HoldingsHistoryResponse, 'protocolReturnCacheInvalidatedAt'> = {}
+
   // Check if any vaults have been invalidated since cache was written
   if (shouldReadCache && cachedTotals.length > 0 && vaults.length > 0) {
     const vaultIdentifiers = vaults.map((v) => ({ address: v.vaultAddress, chainId: v.chainId }))
@@ -262,6 +266,7 @@ export async function getHistoricalHoldings(
     if (isStale) {
       console.log(`[Aggregator] Cache stale for ${userAddress}, clearing and recalculating`)
       await clearUserCache(userAddress, cacheVersion)
+      cacheInvalidation.protocolReturnCacheInvalidatedAt = Date.now()
       cachedTotals = []
       oldestUpdatedAt = null
       cachedByDate = new Map()
@@ -289,6 +294,7 @@ export async function getHistoricalHoldings(
       periodDays,
       timeframe,
       hasActivity,
+      ...cacheInvalidation,
       dataPoints
     }
   }
@@ -316,6 +322,7 @@ export async function getHistoricalHoldings(
         periodDays,
         timeframe,
         hasActivity,
+        ...cacheInvalidation,
         dataPoints: timestamps.map((ts) => ({
           date: timestampToDateString(ts),
           timestamp: toSettledDayTimestamp(ts),
@@ -333,6 +340,7 @@ export async function getHistoricalHoldings(
         periodDays,
         timeframe,
         hasActivity,
+        ...cacheInvalidation,
         dataPoints: timestamps.map((ts) => ({
           date: timestampToDateString(ts),
           timestamp: toSettledDayTimestamp(ts),
@@ -503,6 +511,7 @@ export async function getHistoricalHoldings(
     periodDays,
     timeframe,
     hasActivity,
+    ...cacheInvalidation,
     dataPoints
   }
 }
@@ -532,6 +541,9 @@ export async function getHistoricalHoldingsChart(
       timeframe: holdings.timeframe,
       denomination,
       hasActivity: holdings.hasActivity,
+      ...(holdings.protocolReturnCacheInvalidatedAt
+        ? { protocolReturnCacheInvalidatedAt: holdings.protocolReturnCacheInvalidatedAt }
+        : {}),
       dataPoints: holdings.dataPoints.map((point) => ({
         date: point.date,
         timestamp: point.timestamp,
@@ -550,6 +562,9 @@ export async function getHistoricalHoldingsChart(
     timeframe: holdings.timeframe,
     denomination,
     hasActivity: holdings.hasActivity,
+    ...(holdings.protocolReturnCacheInvalidatedAt
+      ? { protocolReturnCacheInvalidatedAt: holdings.protocolReturnCacheInvalidatedAt }
+      : {}),
     dataPoints: holdings.dataPoints.map((point) => {
       const ethPriceUsd = ethPrices ? getPriceAtTimestamp(ethPrices, point.timestamp) : 0
       return {

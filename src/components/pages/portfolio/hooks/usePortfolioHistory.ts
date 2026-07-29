@@ -37,7 +37,12 @@ export function usePortfolioHistory(
   }, [address, denomination, enabled, progressId, timeframe])
   const cacheKey = useMemo(
     () =>
-      address && enabled ? ['fetch', 'portfolio-history', address.toLowerCase(), denomination, timeframe] : undefined,
+      address && enabled
+        ? [
+            'fetch',
+            `/api/holdings/history?address=${address.toLowerCase()}&denomination=${denomination}&timeframe=${timeframe}`
+          ]
+        : undefined,
     [address, denomination, enabled, timeframe]
   )
 
@@ -94,6 +99,7 @@ export function usePortfolioHistory(
     data,
     denomination,
     timeframe,
+    protocolReturnCacheInvalidatedAt: rawData?.protocolReturnCacheInvalidatedAt,
     isLoading: isLoadingState,
     progress,
     error: visibleError,

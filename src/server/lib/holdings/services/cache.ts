@@ -360,9 +360,20 @@ export async function clearUserCache(userAddress: string, version?: string): Pro
   }
 
   try {
-    const keys = version
+    const totalsKeys = version
       ? [getTotalsKey(userAddressHash, version)]
       : await scanRedisKeys(getTotalsKeyPattern(userAddressHash))
+    const protocolReturnVersions = version ? [version] : ['all', 'v2', 'v3']
+    const protocolReturnKeys = protocolReturnVersions.flatMap((cacheVersion) =>
+      ['1y', 'all'].map((timeframe) =>
+        getProtocolReturnHistoryCacheKey({
+          userAddress,
+          version: cacheVersion,
+          timeframe
+        })
+      )
+    )
+    const keys = [...totalsKeys, ...protocolReturnKeys]
     const deletedCount = keys.length > 0 ? await redis.del(...keys) : 0
     console.log(
       `[Cache] Cleared ${deletedCount} Redis cached entries for user ${userAddress}${version ? ` (${version})` : ''}`

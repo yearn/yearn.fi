@@ -64,6 +64,7 @@ export const portfolioHistorySimpleResponseSchema = z.object({
   address: z.string(),
   denomination: z.enum(['usd', 'eth']).optional().default('usd'),
   timeframe: z.enum(['1y', 'all']).optional().default('1y'),
+  protocolReturnCacheInvalidatedAt: z.number().optional(),
   dataPoints: z.array(portfolioHistorySimpleDataPointSchema)
 })
 

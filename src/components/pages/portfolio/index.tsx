@@ -3171,6 +3171,7 @@ function PortfolioPage(): ReactElement {
   const varsRef = useRef<HTMLDivElement>(null)
   const breadcrumbsRef = useRef<HTMLDivElement>(null)
   const tabsRef = useRef<HTMLDivElement>(null)
+  const handledProtocolReturnInvalidationRef = useRef<number | null>(null)
   const historyFetchTimeframe: TPortfolioHistoryTimeframe = historyTimeframe === 'all' ? 'all' : '1y'
   const { onRefresh } = useWalletActions()
 
@@ -3198,7 +3199,8 @@ function PortfolioPage(): ReactElement {
     isLoading: historyLoading,
     progress: historyProgress,
     error: historyError,
-    isEmpty: historyEmpty
+    isEmpty: historyEmpty,
+    protocolReturnCacheInvalidatedAt
   } = usePortfolioHistory(
     historyDenomination,
     historyFetchTimeframe,
@@ -3212,8 +3214,29 @@ function PortfolioPage(): ReactElement {
     isLoading: protocolReturnHistoryLoading,
     progress: protocolReturnHistoryProgress,
     error: protocolReturnHistoryError,
-    isEmpty: protocolReturnHistoryEmpty
+    isEmpty: protocolReturnHistoryEmpty,
+    isFetching: protocolReturnHistoryFetching,
+    refetch: refetchProtocolReturnHistory
   } = usePortfolioProtocolReturnHistory(historyFetchTimeframe, shouldLoadPositionsHistory)
+  // The requests stay parallel, so refetch imperatively only after a stale protocol request has settled.
+  useEffect(() => {
+    if (
+      !shouldLoadPositionsHistory ||
+      !protocolReturnCacheInvalidatedAt ||
+      protocolReturnHistoryFetching ||
+      handledProtocolReturnInvalidationRef.current === protocolReturnCacheInvalidatedAt
+    ) {
+      return
+    }
+
+    handledProtocolReturnInvalidationRef.current = protocolReturnCacheInvalidatedAt
+    void refetchProtocolReturnHistory({ cancelRefetch: true })
+  }, [
+    protocolReturnCacheInvalidatedAt,
+    protocolReturnHistoryFetching,
+    refetchProtocolReturnHistory,
+    shouldLoadPositionsHistory
+  ])
   const annualizedProtocolReturnPct = protocolReturnHistoryData?.at(-1)?.annualizedProtocolReturnPct
   const resolvedGrowthDisplayMode = resolvePortfolioGrowthDisplayMode(
     historyGrowthDisplayModeOverride ?? protocolReturnHistorySummary?.recommendedGrowthDisplay ?? 'index',
