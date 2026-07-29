@@ -87,6 +87,7 @@ const TRANSFERS_OUT_QUERY = `
 
 const BATCH_SIZE = 1000
 const SINGLE_QUERY_LIMIT = 50000
+const SUPPORTED_CHAIN_IDS = new Set(SUPPORTED_CHAINS.map((chain) => chain.id))
 
 // V2 Vault Queries (with optional maxTimestamp filter)
 const V2_DEPOSITS_QUERY = `
@@ -864,6 +865,12 @@ type AddressEventResults = [
   TransferEvent[]
 ]
 
+function filterSupportedAddressEventResults(eventResults: AddressEventResults): AddressEventResults {
+  return eventResults.map((events) =>
+    events.filter((event) => SUPPORTED_CHAIN_IDS.has(event.chainId))
+  ) as AddressEventResults
+}
+
 const inFlightAddressScopedEventFetches = new Map<string, Promise<AddressEventResults>>()
 
 function sortByBlock<T extends { blockTimestamp: number; blockNumber: number; logIndex: number }>(events: T[]): T[] {
@@ -1168,11 +1175,11 @@ async function fetchAddressScopedEvents(
     return existing
   }
 
-  const request = fetchAddressScopedEventsUncached(addressLower, maxTimestamp, fetchType, paginationMode).finally(
-    () => {
+  const request = fetchAddressScopedEventsUncached(addressLower, maxTimestamp, fetchType, paginationMode)
+    .then(filterSupportedAddressEventResults)
+    .finally(() => {
       inFlightAddressScopedEventFetches.delete(key)
-    }
-  )
+    })
 
   inFlightAddressScopedEventFetches.set(key, request)
   return request
@@ -1244,7 +1251,7 @@ export async function fetchRecentAddressScopedActivityEvents(
   const boundedLimit = Math.max(1, limitPerSource)
   const boundedOffset = Math.max(0, offsetPerSource)
 
-  const [v3Deposits, v3Withdrawals, v2DepositsRaw, v2WithdrawalsRaw, transfersIn, transfersOut] = await Promise.all([
+  const addressEventResults: AddressEventResults = await Promise.all([
     fetchRecentLimited<DepositEvent>(
       RECENT_DEPOSITS_QUERY,
       'owner',
@@ -1300,11 +1307,20 @@ export async function fetchRecentAddressScopedActivityEvents(
       maxTimestamp
     )
   ])
-
-  const deposits = sortByBlockDesc(getDepositsByVersion(v3Deposits, v2DepositsRaw, version))
-  const withdrawals = sortByBlockDesc(getWithdrawalsByVersion(v3Withdrawals, v2WithdrawalsRaw, version))
-  const sortedTransfersIn = sortByBlockDesc(transfersIn)
-  const sortedTransfersOut = sortByBlockDesc(transfersOut)
+  const [v3Deposits, v3Withdrawals, v2DepositsRaw, v2WithdrawalsRaw, transfersIn, transfersOut] = addressEventResults
+  const supportedEventGroups = filterSupportedAddressEventResults(addressEventResults)
+  const [
+    supportedV3Deposits,
+    supportedV3Withdrawals,
+    supportedV2Deposits,
+    supportedV2Withdrawals,
+    supportedTransfersIn,
+    supportedTransfersOut
+  ] = supportedEventGroups
+  const deposits = sortByBlockDesc(getDepositsByVersion(supportedV3Deposits, supportedV2Deposits, version))
+  const withdrawals = sortByBlockDesc(getWithdrawalsByVersion(supportedV3Withdrawals, supportedV2Withdrawals, version))
+  const sortedTransfersIn = sortByBlockDesc(supportedTransfersIn)
+  const sortedTransfersOut = sortByBlockDesc(supportedTransfersOut)
   const hasMoreDeposits =
     version === 'v3'
       ? v3Deposits.length === boundedLimit
@@ -1353,35 +1369,38 @@ export async function fetchActivityEventsByTransactionHashes(
   version: VaultVersion = 'all',
   maxTimestamp?: number
 ): Promise<TransactionActivityEvents> {
+  const supportedTransactionHashesByChain = new Map(
+    Array.from(transactionHashesByChain).filter(([chainId]) => SUPPORTED_CHAIN_IDS.has(chainId))
+  )
   const [txHashV3Deposits, txHashV3Withdrawals, txHashV2DepositsRaw, txHashV2WithdrawalsRaw, txHashTransfers] =
     await Promise.all([
       fetchAllByTransactionHashes<DepositEvent>(
         DEPOSITS_BY_TX_HASHES_QUERY,
-        transactionHashesByChain,
+        supportedTransactionHashesByChain,
         'Deposit',
         maxTimestamp
       ),
       fetchAllByTransactionHashes<WithdrawEvent>(
         WITHDRAWALS_BY_TX_HASHES_QUERY,
-        transactionHashesByChain,
+        supportedTransactionHashesByChain,
         'Withdraw',
         maxTimestamp
       ),
       fetchAllByTransactionHashes<V2DepositEvent>(
         V2_DEPOSITS_BY_TX_HASHES_QUERY,
-        transactionHashesByChain,
+        supportedTransactionHashesByChain,
         'V2Deposit',
         maxTimestamp
       ),
       fetchAllByTransactionHashes<V2WithdrawEvent>(
         V2_WITHDRAWALS_BY_TX_HASHES_QUERY,
-        transactionHashesByChain,
+        supportedTransactionHashesByChain,
         'V2Withdraw',
         maxTimestamp
       ),
       fetchAllByTransactionHashes<TransferEvent>(
         TRANSFERS_BY_TX_HASHES_QUERY,
-        transactionHashesByChain,
+        supportedTransactionHashesByChain,
         'Transfer',
         maxTimestamp
       )
