@@ -111,10 +111,6 @@ function filterVaultsByAuthoritativeVersion<
   return vaults.filter((vault) => {
     const metadata = vaultMetadata.get(toVaultKey(vault.chainId, vault.vaultAddress))
 
-    if (metadata?.isHidden) {
-      return false
-    }
-
     if (version === 'all') {
       return true
     }

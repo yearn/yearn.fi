@@ -23,7 +23,6 @@ import { isNonYearnErc4626Vault } from '@pages/vaults/domain/vaultWarnings'
 import { type TPossibleSortBy, useSortVaults } from '@pages/vaults/hooks/useSortVaults'
 import { useYvUsdCharts } from '@pages/vaults/hooks/useYvUsdCharts'
 import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
-import { usePersistedShowHiddenVaults } from '@pages/vaults/hooks/vaultsFiltersStorage'
 import { deriveListKind, isAllocatorVaultOverride } from '@pages/vaults/utils/vaultListFacets'
 import {
   getYvUsdPositionApyBreakdown,
@@ -204,7 +203,6 @@ export function usePortfolioModel(): TPortfolioModel {
   const { listVault: yvUsdVault, unlockedVault: yvUsdUnlockedVault, lockedVault: yvUsdLockedVault } = useYvUsdVaults()
   const { apyData: yvUsdHistoricalApyData } = useYvUsdCharts()
   const { shouldHideDust } = useAppSettings()
-  const showHiddenVaults = usePersistedShowHiddenVaults()
   const [sortBy, setSortBy] = useState<TPossibleSortBy>('deposited')
   const [sortDirection, setSortDirection] = useState<TSortDirection>('desc')
   const governancePositions = useGovernancePositions(isActive)
@@ -344,11 +342,11 @@ export function usePortfolioModel(): TPortfolioModel {
 
   const visibleHoldingsVaults = useMemo(
     () =>
-      filterVisiblePortfolioHoldings(holdingsVaults, showHiddenVaults, {
+      filterVisiblePortfolioHoldings(holdingsVaults, true, {
         shouldHideDust,
         getVaultValue
       }),
-    [getVaultValue, holdingsVaults, shouldHideDust, showHiddenVaults]
+    [getVaultValue, holdingsVaults, shouldHideDust]
   )
 
   const vaultFlags = useMemo(() => {

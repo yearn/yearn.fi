@@ -230,6 +230,7 @@ type TVaultsListRowProps = {
   onToggleFeeStructure?: (feeStructureKey: string) => void
   showStrategies?: boolean
   shouldCollapseChips?: boolean
+  showHiddenTag?: boolean
   isExpanded?: boolean
   onExpandedChange?: (vaultKey: string, next: boolean) => void
   showAllocatorChip?: boolean
@@ -267,6 +268,7 @@ function VaultsListRowPresentationComponent({
   onToggleFeeStructure,
   showStrategies = false,
   shouldCollapseChips = false,
+  showHiddenTag = true,
   isExpanded: isExpandedProp,
   onExpandedChange,
   showHoldingsChipOverride,
@@ -405,6 +407,7 @@ function VaultsListRowPresentationComponent({
   }, [vaultAddress, chainID, queryClient])
 
   const isHiddenVault = Boolean(flags?.isHidden)
+  const shouldShowHiddenTag = showHiddenTag && isHiddenVault
   const kindType = getVaultKindType(vaultKind, listKind)
   const kindLabel = getVaultKindLabel(kindType, vaultKind)
   const activeChainIds = activeChains ?? []
@@ -701,7 +704,7 @@ function VaultsListRowPresentationComponent({
                     onHoverChange={handleInteractiveHoverChange}
                   />
                 ) : null}
-                {isHiddenVault ? (
+                {shouldShowHiddenTag ? (
                   <VaultsListChip
                     label={'Hidden'}
                     icon={<IconEyeOff className={'size-3.5'} />}
@@ -987,7 +990,7 @@ function VaultsListRowPresentationComponent({
             onExpandedViewChange={setExpandedView}
             onNavigateToVault={() => router.push(href)}
             showKindTag={showKindChip}
-            showHiddenTag={isHiddenVault}
+            showHiddenTag={shouldShowHiddenTag}
             isHidden={isHiddenVault}
             showUserViews={showUserViews}
             chartVariant={expandedChartVariant}

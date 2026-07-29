@@ -1254,13 +1254,6 @@ function getVaultIdentifiers(events: TResolvedActivityEvent[]): Array<{ chainId:
     }, [])
 }
 
-function filterVisibleActivityEvents(
-  events: TResolvedActivityEvent[],
-  metadata: Map<string, VaultMetadata>
-): TResolvedActivityEvent[] {
-  return events.filter((event) => !metadata.get(toVaultKey(event.chainId, event.vaultAddress))?.isHidden)
-}
-
 function toHoldingsActivityEntry(
   event: TResolvedActivityEvent,
   metadata: Map<string, VaultMetadata>
@@ -1311,8 +1304,7 @@ async function buildActivityEntries(
 ): Promise<{ entries: HoldingsActivityEntry[]; metadata: Map<string, VaultMetadata> }> {
   const vaultIdentifiers = getVaultIdentifiers(events)
   const metadata = vaultIdentifiers.length > 0 ? await fetchMultipleVaultsMetadata(vaultIdentifiers) : new Map()
-  const visibleEvents = filterVisibleActivityEvents(events, metadata)
-  const enrichedEvents = await enrichActivityInputAssets(visibleEvents, userAddress, metadata)
+  const enrichedEvents = await enrichActivityInputAssets(events, userAddress, metadata)
 
   return {
     entries: enrichedEvents.map((event) => toHoldingsActivityEntry(event, metadata)),
@@ -1392,7 +1384,7 @@ async function getFilteredHoldingsActivity(
     const matchingEvents = classifiedEvents.filter((event) => matchesActivityFilters(event, filters))
     const vaultIdentifiers = getVaultIdentifiers(matchingEvents)
     metadata = vaultIdentifiers.length > 0 ? await fetchMultipleVaultsMetadata(vaultIdentifiers) : new Map()
-    filteredEvents = filterVisibleActivityEvents(matchingEvents, metadata)
+    filteredEvents = matchingEvents
     hasUnscannedTransactions = hasPotentialMore
 
     if (

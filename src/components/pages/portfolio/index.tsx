@@ -3003,6 +3003,7 @@ function PortfolioHoldingsSection({
                       activeProductType="all"
                       showStrategies
                       showAllocatorChip={false}
+                      showHiddenTag={false}
                       showProductTypeChipOverride={true}
                       showHoldingsChipOverride={false}
                       mobileSecondaryMetric="holdings"

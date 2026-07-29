@@ -84,7 +84,7 @@ Transfers are also indexed to account for share movement not represented by dire
 - Burn transfers are excluded when withdraw events already cover the vault.
 - Transfer-only vaults keep mint/burn transfers because there may be no indexed deposit/withdraw events.
 - Staking vaults are mapped to the underlying family vault through Kong metadata and local staking mappings.
-- Vaults marked `isHidden=true` in authoritative Kong metadata are excluded from holdings totals, breakdown rows, activity rows, and protocol-return history.
+- `isHidden=true` controls vault discovery only. Indexed held vaults remain included in holdings totals, breakdown rows, activity rows, and protocol-return history.
 
 ## Price Provider
 

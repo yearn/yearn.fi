@@ -125,10 +125,6 @@ export function filterEventsByAuthoritativeVersion(
   return events.filter((event) => {
     const eventMetadata = metadata.get(toVaultKey(event.chainId, event.familyVaultAddress))
 
-    if (eventMetadata?.isHidden) {
-      return false
-    }
-
     if (version === 'all') {
       return true
     }
