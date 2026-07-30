@@ -32,6 +32,30 @@ query DebtUpdatesForVault(
 }
 `
 
+const HISTORICAL_STRATEGY_UNIVERSE_QUERY = `
+query HistoricalStrategyUniverse(
+  $vaultAddress: String!,
+  $chainId: Int!,
+  $toTs: Int!,
+  $limit: Int!
+) {
+  strategyChanges: StrategyChanged(
+    where: {
+      vaultAddress: { _ilike: $vaultAddress },
+      chainId: { _eq: $chainId },
+      blockTimestamp: { _lte: $toTs }
+    }
+    order_by: { blockNumber: asc, logIndex: asc }
+    limit: $limit
+  ) {
+    strategy
+    change_type
+    blockNumber
+    blockTimestamp
+  }
+}
+`
+
 export interface DebtUpdatedEvent {
   transactionHash: string
   strategy: string
@@ -55,6 +79,21 @@ interface StrategyDebtRatio {
   strategy: string
   currentRatio: number
   targetRatio: number
+}
+
+interface RawStrategyChangedEvent {
+  strategy?: string | null
+  change_type?: string | number | null
+  blockNumber?: string | number | null
+  blockTimestamp?: string | number | null
+}
+
+export interface HistoricalStrategyUniverse {
+  strategyAddresses: string[]
+  firstSeenTimestampByAddress: Record<string, number>
+  complete: boolean
+  source: 'envio-strategy-changed'
+  eventCount: number
 }
 
 const ADDRESS_PATTERN = /^0x[a-fA-F0-9]{40}$/i
@@ -93,19 +132,24 @@ async function graphqlPost(
   query: string,
   variables: Record<string, unknown>
 ): Promise<Record<string, unknown>> {
-  const headers: Record<string, string> = {
+  const publicHeaders: Record<string, string> = {
     'Content-Type': 'application/json',
     Accept: 'application/json'
   }
-  if (process.env.ENVIO_PASSWORD) {
-    headers.Authorization = `Bearer ${process.env.ENVIO_PASSWORD}`
-  }
-
-  const response = await fetch(url, {
-    method: 'POST',
-    headers,
-    body: JSON.stringify({ query, variables })
-  })
+  const request = (headers: Record<string, string>) =>
+    fetch(url, {
+      method: 'POST',
+      headers,
+      body: JSON.stringify({ query, variables })
+    })
+  const publicResponse = await request(publicHeaders)
+  const response =
+    (publicResponse.status === 401 || publicResponse.status === 403) && process.env.ENVIO_PASSWORD
+      ? await request({
+          ...publicHeaders,
+          Authorization: `Bearer ${process.env.ENVIO_PASSWORD}`
+        })
+      : publicResponse
 
   if (!response.ok) {
     throw new Error(`Envio GraphQL request failed: HTTP ${response.status}`)
@@ -216,4 +260,50 @@ export async function fetchAlignedEvents(
   }
 
   return matched
+}
+
+export async function fetchHistoricalStrategyUniverse(
+  envioUrl: string,
+  vault: string,
+  chainId: number,
+  timestamp: number,
+  optimizerStrategyAddresses: readonly string[],
+  limit = 1000
+): Promise<HistoricalStrategyUniverse> {
+  const data = await graphqlPost(envioUrl, HISTORICAL_STRATEGY_UNIVERSE_QUERY, {
+    vaultAddress: vault,
+    chainId,
+    toTs: timestamp,
+    limit
+  })
+  const events = Array.isArray(data.strategyChanges)
+    ? (data.strategyChanges as RawStrategyChangedEvent[]).filter(
+        (event) => typeof event.strategy === 'string' && isAddress(event.strategy)
+      )
+    : []
+  const firstEventByAddress = events.reduce((firstEvents, event) => {
+    const address = event.strategy!.toLowerCase()
+    if (!firstEvents.has(address)) {
+      firstEvents.set(address, event)
+    }
+    return firstEvents
+  }, new Map<string, RawStrategyChangedEvent>())
+  const strategyAddresses = Array.from(firstEventByAddress.keys())
+  const firstSeenTimestampByAddress = Object.fromEntries(
+    Array.from(firstEventByAddress, ([address, event]) => [address, Number(event.blockTimestamp)])
+  )
+  const everyLifecycleStartsWithAdd = Array.from(firstEventByAddress.values()).every(
+    (event) => String(event.change_type) === '1'
+  )
+  const optimizerStrategiesCovered = optimizerStrategyAddresses.every((address) =>
+    firstEventByAddress.has(address.toLowerCase())
+  )
+
+  return {
+    strategyAddresses,
+    firstSeenTimestampByAddress,
+    complete: events.length > 0 && events.length < limit && everyLifecycleStartsWithAdd && optimizerStrategiesCovered,
+    source: 'envio-strategy-changed',
+    eventCount: events.length
+  }
 }

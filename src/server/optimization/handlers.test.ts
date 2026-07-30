@@ -8,7 +8,10 @@ const {
   findVaultOptimizationMock,
   getVaultDecimalsMock,
   parseExplainMetadataMock,
-  readOptimizationsMock
+  readOptimizationsMock,
+  enrichOptimizationRecordMock,
+  enrichOptimizationRecordsMock,
+  addFallbackAllocationSnapshotsMock
 } = vi.hoisted(() => {
   class MockRedisAuthenticationError extends Error {}
   class MockRedisConnectivityError extends Error {}
@@ -21,7 +24,10 @@ const {
     findVaultOptimizationMock: vi.fn(),
     getVaultDecimalsMock: vi.fn(),
     parseExplainMetadataMock: vi.fn(),
-    readOptimizationsMock: vi.fn()
+    readOptimizationsMock: vi.fn(),
+    enrichOptimizationRecordMock: vi.fn(async (record: unknown) => record),
+    enrichOptimizationRecordsMock: vi.fn(async (records: unknown) => records),
+    addFallbackAllocationSnapshotsMock: vi.fn((records: unknown) => records)
   }
 })
 
@@ -45,6 +51,12 @@ vi.mock('./_lib/redis', () => ({
   isRedisAuthenticationError: (error: unknown) => error instanceof MockRedisAuthenticationError,
   isRedisConnectivityError: (error: unknown) => error instanceof MockRedisConnectivityError,
   readOptimizations: readOptimizationsMock
+}))
+
+vi.mock('./_lib/reconcile', () => ({
+  addFallbackAllocationSnapshots: addFallbackAllocationSnapshotsMock,
+  enrichOptimizationRecord: enrichOptimizationRecordMock,
+  enrichOptimizationRecords: enrichOptimizationRecordsMock
 }))
 
 vi.mock('./_lib/rpc', () => ({
@@ -199,6 +211,21 @@ describe('optimization handlers', () => {
         }
       }
     ])
+    const enrichedHistory = targetHistory.map((optimization, index) => ({
+      ...optimization,
+      allocationSnapshot: {
+        timestampUtc: optimization.source.latestMatchedTimestampUtc ?? optimization.source.timestampUtc,
+        blockNumber: index === 0 ? 123 : null,
+        blockTimestampUtc: index === 0 ? '2026-04-22 09:59:59 UTC' : null,
+        source: index === 0 ? 'archive-rpc' : null,
+        strategyUniverseSource: index === 0 ? 'envio-strategy-changed' : null,
+        complete: index === 0,
+        strategies: [],
+        unallocatedBps: index === 0 ? 250 : null,
+        unallocatedSource: index === 0 ? 'same-timestamp-onchain' : null
+      }
+    }))
+    enrichOptimizationRecordsMock.mockResolvedValue(enrichedHistory)
     const response = await changeHandler(
       createGetRequest('/api/optimization/change', {
         vault: targetVault,
@@ -209,8 +236,9 @@ describe('optimization handlers', () => {
     expect(response.status).toBe(200)
     expect(response.headers.get('Access-Control-Allow-Origin')).toBe('*')
     expectPublicCdnCacheHeaders(response, 'public, s-maxage=600, stale-while-revalidate=60')
-    await expect(response.json()).resolves.toEqual(targetHistory)
+    await expect(response.json()).resolves.toEqual(enrichedHistory)
     expect(findVaultOptimizationMock).not.toHaveBeenCalled()
+    expect(enrichOptimizationRecordsMock).toHaveBeenCalledWith(targetHistory)
   })
 
   it('keeps split CDN and browser cache headers on alignment responses', async () => {

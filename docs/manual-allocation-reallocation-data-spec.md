@@ -1,6 +1,6 @@
 # Manual Allocation And Reallocation Data Spec
 
-Initial pass as of 2026-04-24.
+Initial pass as of 2026-04-24. Optimization coverage contract revised 2026-07-28.
 
 ## Goal
 
@@ -50,6 +50,40 @@ type DoaOptimizationRecord = {
     timestampUtc: string | null
     latestMatchedTimestampUtc: string | null
   }
+  allocationCoverage: {
+    currentIncludedBps: number
+    targetIncludedBps: number
+    currentResidualBps: number
+    targetResidualBps: number
+    currentComplete: boolean
+    targetComplete: boolean
+    classification: 'complete' | 'partial-optimizer-scope' | 'unknown'
+    unallocatedBps: number | null
+    unallocatedSource: 'same-timestamp-onchain' | 'same-timestamp-indexed' | null
+  }
+  freshness: {
+    optimizationTimestampUtc: string | null
+    latestAvailableTimestampUtc: string | null
+  }
+  allocationSnapshot: {
+    timestampUtc: string | null
+    blockNumber: number | null
+    blockTimestampUtc: string | null
+    source: 'archive-rpc' | null
+    strategyUniverseSource: 'envio-strategy-changed' | null
+    complete: boolean
+    strategies: Array<{
+      address: `0x${string}`
+      name: string | null
+      nameSource: 'optimizer' | 'current-metadata-catalog' | null
+      currentBps: number
+      targetBps: number | null
+      optimizerScope: 'optimized' | 'outside-optimizer-scope' | 'unknown'
+      targetSource: 'optimizer' | 'unchanged-outside-scope' | 'unavailable'
+    }>
+    unallocatedBps: number | null
+    unallocatedSource: 'same-timestamp-onchain' | null
+  }
 }
 ```
 
@@ -59,6 +93,142 @@ What it means:
 - `currentRatio` is the optimizer's observed starting state.
 - `targetRatio` is the optimizer's proposed target.
 - It is not proof that a vault debt update happened on-chain.
+
+Allocation coverage semantics:
+
+- `currentIncludedBps` and `targetIncludedBps` are independent sums of the raw `strategyDebtRatios`.
+- `currentResidualBps` and `targetResidualBps` describe how much of 10,000 bps is not represented in that optimizer payload. A residual does not establish why allocation is absent from the payload.
+- Totals within 5 bps of 10,000 are complete. A small overflow is retained in the included total and its residual is clamped to zero. Totals above 10,005 bps are invalid.
+- `classification` is `complete` only when both current and target totals are complete, `unknown` when both totals are zero, and `partial-optimizer-scope` otherwise.
+- `unallocatedBps` remains `null` and `unallocatedSource` remains `null` for DOA-only records. They may only be populated from authoritative vault state at the same timestamp, from either on-chain reads or an indexed state snapshot.
+- Therefore `currentResidualBps` and `targetResidualBps` must not be presented as confirmed unallocated capital.
+
+Freshness semantics:
+
+- `optimizationTimestampUtc` is the individual record's source timestamp. For a `latest` alias, it is the newest timestamped Redis payload whose raw content matches that alias; it is `null` when no match exists.
+- `latestAvailableTimestampUtc` is the newest known optimization timestamp for the same vault and chain in the current Redis read. Consumers can compare it with their own freshness policy, but the API does not declare a record stale using a hard-coded age.
+- History records retain their own `optimizationTimestampUtc`; current live vault state is never copied into historical optimizer records.
+
+Historical allocation reconciliation:
+
+- Envio `StrategyChanged` lifecycle events establish the strategy-address universe at the optimizer timestamp. Coverage is accepted only when each observed lifecycle starts with an add event, every optimizer strategy is represented, and the query is not truncated.
+- Archive RPC resolves the last block at or before the optimizer timestamp, then reads `totalAssets()` and every known `strategies(address)` entry in one Multicall request. These block-aligned values own `currentBps` and true `unallocatedBps`.
+- Kong's current snapshot composition may supply a useful strategy name, but never an allocation value. Such names are marked `nameSource: 'current-metadata-catalog'`.
+- A strategy in `strategyDebtRatios` is `optimized`, and its `targetBps` retains the optimizer target.
+- A strategy omitted from today's DOA payload is `unknown` with `targetBps: null`. The current payload has no machine-readable exclusion contract, so omission alone does not prove `outside-optimizer-scope`.
+- `outside-optimizer-scope` and `targetSource: 'unchanged-outside-scope'` are reserved for a future authoritative scope input that explicitly guarantees the strategy remains unchanged.
+- If Envio lifecycle coverage, timestamp resolution, or archive RPC is unavailable, `allocationSnapshot.complete` is `false`, its strategy list is empty, and the aggregate `allocationCoverage` residual remains the honest fallback.
+- Requested-vault history enrichment resolves block timestamps in batched search rounds, batches archive multicalls, retries transient rate limits, and caches by vault/timestamp/optimizer-address set. The unscoped all-vault response gets the explicit fallback shape without archive fan-out.
+- Production deployments may configure `OPTIMIZATION_ARCHIVE_RPC_URL_<chainId>` (for example `OPTIMIZATION_ARCHIVE_RPC_URL_1`) to put a dedicated archive provider ahead of the existing public RPC fallbacks. Large histories should not depend on public-provider rate limits.
+
+Source authority:
+
+| Data | Authority | Notes |
+| --- | --- | --- |
+| Optimizer intent, included strategies, and targets | DOA Redis payload | Raw fields are preserved unchanged. Omission is not an exclusion guarantee. |
+| Historical current allocations | Archive RPC at the last block at or before the optimizer timestamp | Envio supplies and validates the historical strategy universe. |
+| True historical unallocated capital | Same archive-RPC snapshot | Calculated from `totalAssets - sum(strategy current debt)` at the same block. |
+| Strategy names | Optimizer payload, then current Kong metadata catalog | Kong names are convenience metadata with explicit current-catalog provenance. |
+| Current/live allocation | Kong or live RPC | Must not be copied into a historical optimizer record. |
+
+### yvWETH-1 Example: Successful Historical Enrichment
+
+Read-only validation for the `2026-07-25 00:15:29 UTC` recommendation resolved Ethereum block `25,606,129`, whose timestamp is `2026-07-25 00:15:23 UTC`:
+
+```json
+{
+  "allocationCoverage": {
+    "currentIncludedBps": 4157,
+    "targetIncludedBps": 4157,
+    "currentResidualBps": 5843,
+    "targetResidualBps": 5843,
+    "currentComplete": false,
+    "targetComplete": false,
+    "classification": "partial-optimizer-scope",
+    "unallocatedBps": 2,
+    "unallocatedSource": "same-timestamp-onchain"
+  },
+  "allocationSnapshot": {
+    "timestampUtc": "2026-07-25 00:15:29 UTC",
+    "blockNumber": 25606129,
+    "blockTimestampUtc": "2026-07-25 00:15:23 UTC",
+    "source": "archive-rpc",
+    "strategyUniverseSource": "envio-strategy-changed",
+    "complete": true,
+    "strategies": [
+      {
+        "address": "0x470e0e048f85cfd72eef325895e02c8d297e7435",
+        "name": "stETH Accumulator",
+        "nameSource": "current-metadata-catalog",
+        "currentBps": 4722,
+        "targetBps": null,
+        "optimizerScope": "unknown",
+        "targetSource": "unavailable"
+      },
+      {
+        "address": "0xe89371eaaac6d46d4c3ed23453241987916224fc",
+        "name": "Yearn OG WETH",
+        "nameSource": "current-metadata-catalog",
+        "currentBps": 178,
+        "targetBps": 91,
+        "optimizerScope": "optimized",
+        "targetSource": "optimizer"
+      },
+      {
+        "address": "0x68a14629cb07c74259f481382fe8b6cfd8970121",
+        "name": "wstETH/WETH Spark Looper",
+        "nameSource": "current-metadata-catalog",
+        "currentBps": 1152,
+        "targetBps": null,
+        "optimizerScope": "unknown",
+        "targetSource": "unavailable"
+      },
+      {
+        "address": "0xfca3f21d60d5bc8b4c5c35f169bb5b6402510151",
+        "name": "Spark WETH Lender",
+        "nameSource": "current-metadata-catalog",
+        "currentBps": 3947,
+        "targetBps": 4066,
+        "optimizerScope": "optimized",
+        "targetSource": "optimizer"
+      }
+    ],
+    "unallocatedBps": 2,
+    "unallocatedSource": "same-timestamp-onchain"
+  }
+}
+```
+
+The strategy bps values are independently rounded against same-block `totalAssets`, so their displayed sum plus unallocated may differ from 10,000 by a few bps. Raw debts and optimizer ratios are not rescaled.
+
+### yvWETH-1 Example: Supported Fallback
+
+```json
+{
+  "allocationCoverage": {
+    "currentIncludedBps": 4157,
+    "targetIncludedBps": 4157,
+    "currentResidualBps": 5843,
+    "targetResidualBps": 5843,
+    "classification": "partial-optimizer-scope",
+    "unallocatedBps": null,
+    "unallocatedSource": null
+  },
+  "allocationSnapshot": {
+    "timestampUtc": "2026-07-25 00:15:29 UTC",
+    "blockNumber": null,
+    "blockTimestampUtc": null,
+    "source": null,
+    "strategyUniverseSource": null,
+    "complete": false,
+    "strategies": [],
+    "unallocatedBps": null,
+    "unallocatedSource": null
+  }
+}
+```
+
+In fallback mode, Powerglove should render the raw optimizer strategies and an aggregate “Outside optimizer scope / composition unavailable” residual. It must not label that residual `Unallocated`.
 
 ### Current Kong Vault Snapshot
 
@@ -220,6 +390,16 @@ Suggested DOA matching signals:
 - `DebtUpdated` transaction sender or wrapper is a known DOA keeper/applicator path.
 
 If DOA exists but no matching on-chain transition exists, it should be modeled as a proposal/pending annotation, not as an executed allocation state.
+
+## Downstream Normalization Dependency
+
+The private `optimization-visualizer` repository has a separate `lib/normalize.ts` implementation that rescales or synthesizes missing allocation and an on-chain patching path in `app/hooks/useOptimizations.ts`. It must adopt this coverage contract separately. That repository is intentionally out of scope for this change.
+
+Until that follow-up is complete, consumers should use `allocationCoverage` from this API and must not infer `Unallocated` as `10,000 - sum(strategyDebtRatios)`.
+
+## Upstream Publisher Dependency
+
+The API can only report the newest DOA snapshot present under `doa:optimizations:*`; it does not repair or infer missing optimizer history. Ethereum yvUSDC-1 (`0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204`) had no July 2026 records when this contract was revised, despite later vault strategy-state changes. Restoring that missing history is a separate DOA Redis publisher investigation. Consumers should use `freshness.latestAvailableTimestampUtc` to apply their own stale-recommendation warning policy.
 
 ## Classification
 
