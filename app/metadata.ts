@@ -61,7 +61,7 @@ function isValidVaultMetadataParams(chainID: string, address: string): boolean {
 
 const VAULT_METADATA_TIMEOUT_MS = 7000
 
-const fetchVaultMetadataSnapshot = cache(async function fetchVaultMetadataSnapshot(
+export const fetchVaultMetadataSnapshot = cache(async function fetchVaultMetadataSnapshot(
   chainID: string,
   address: string
 ): Promise<TKongVaultSnapshot | null> {
