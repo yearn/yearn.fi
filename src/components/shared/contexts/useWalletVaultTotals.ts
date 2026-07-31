@@ -3,6 +3,7 @@ import { useAppSettings } from '@pages/vaults/contexts/useAppSettings'
 import {
   getVaultAddress,
   getVaultChainID,
+  getVaultInfo,
   getVaultStaking,
   getVaultVersion
 } from '@pages/vaults/domain/kongVaultSelectors'
@@ -70,6 +71,9 @@ export function useWalletVaultTotals(): TWalletVaultTotals {
         }
 
         if (!vaultDetails) {
+          continue
+        }
+        if (getVaultInfo(vaultDetails).isHidden) {
           continue
         }
         const vaultKey = `${getVaultChainID(vaultDetails)}/${toAddress(getVaultAddress(vaultDetails))}`
