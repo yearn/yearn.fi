@@ -40,6 +40,7 @@ import {
 import { isNonYearnErc4626Vault, NON_YEARN_ERC4626_WARNING_MESSAGE } from '@pages/vaults/domain/vaultWarnings'
 import { useEnsureVaultListFetch } from '@pages/vaults/hooks/useEnsureVaultListFetch'
 import { usePendingTimelockStrategies } from '@pages/vaults/hooks/usePendingTimelockStrategies'
+import { useTenderlyVaultBalanceOverrides } from '@pages/vaults/hooks/useTenderlyVaultBalanceOverrides'
 import { useVaultApyData } from '@pages/vaults/hooks/useVaultApyData'
 import { useVaultSnapshot } from '@pages/vaults/hooks/useVaultSnapshot'
 import { useVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
@@ -63,6 +64,7 @@ import { useMediaQuery } from '@react-hookz/web'
 import { Breadcrumbs } from '@shared/components/Breadcrumbs'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { Tooltip } from '@shared/components/Tooltip'
+import { useTenderlyPanel } from '@shared/contexts/useTenderlyPanel'
 import { useWalletActions, useWalletStatus, useWalletTokens } from '@shared/contexts/useWallet'
 import { useYearn } from '@shared/contexts/useYearn'
 import { useYearnSpotPrices } from '@shared/hooks/useYearnSpotPrices'
@@ -503,6 +505,7 @@ function Index(): ReactElement | null {
   const chainId = Number(params.chainID)
   const { getBalance } = useWalletTokens()
   const { onRefresh } = useWalletActions()
+  const { stateRevision: tenderlyStateRevision } = useTenderlyPanel()
   const { isLoading: isWalletLoading } = useWalletStatus()
   const { address } = useWeb3()
   const { vaults, allVaults, isLoadingVaultList, enableVaultListFetch } = useYearn()
@@ -761,6 +764,12 @@ function Index(): ReactElement | null {
     ? toAddress(currentVault?.staking?.address)
     : undefined
   const disableDepositStaking = shouldDisableStakingForDeposit || !currentVault?.staking?.available
+  useTenderlyVaultBalanceOverrides({
+    account: address,
+    currentVault,
+    refreshRevision: tenderlyStateRevision,
+    stakingAddress
+  })
 
   const vaultUserData = useVaultUserData({
     vaultAddress: toAddress(currentVault?.address ?? '0x'),

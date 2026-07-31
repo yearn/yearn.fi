@@ -10,9 +10,19 @@ import {
 import { usePlausible } from '@hooks/usePlausible'
 import { mergeChainMerkleData } from '@pages/portfolio/claimRewards.helpers'
 import { EmptySectionCard } from '@pages/portfolio/components/EmptySectionCard'
+import { GovernancePositionRow } from '@pages/portfolio/components/GovernancePositionRow'
+import { GovernanceRewardRow } from '@pages/portfolio/components/GovernanceRewardRow'
+import { ProtocolPositionRow } from '@pages/portfolio/components/ProtocolPositionRow'
+import { YcrvRewardRow } from '@pages/portfolio/components/YcrvRewardRow'
+import { GOVERNANCE_CHAIN_ID } from '@pages/portfolio/governance/constants'
+import type { TGovernanceReward } from '@pages/portfolio/governance/types'
+import { useGovernancePositions } from '@pages/portfolio/governance/useGovernancePositions'
 import { usePortfolioEntryRefresh } from '@pages/portfolio/hooks/usePortfolioEntryRefresh'
 import { type TPortfolioModel, usePortfolioModel } from '@pages/portfolio/hooks/usePortfolioModel'
 import { useVaultWithStakingRewards } from '@pages/portfolio/hooks/useVaultWithStakingRewards'
+import { YCRV_CHAIN_ID } from '@pages/portfolio/ycrv/constants'
+import type { TYcrvReward } from '@pages/portfolio/ycrv/types'
+import { useYcrvPosition } from '@pages/portfolio/ycrv/useYcrvPosition'
 import { type TVaultsChainButton, VaultsChainSelector } from '@pages/vaults/components/filters/VaultsChainSelector'
 import { VaultsListChip } from '@pages/vaults/components/list/VaultsListChip'
 import { VaultsListHead } from '@pages/vaults/components/list/VaultsListHead'
@@ -1613,7 +1623,7 @@ function PortfolioHeaderSection({
   const metrics: TMetricBlock[] = [
     {
       key: 'total-balance',
-      header: <MetricHeader label="Total Balance" tooltip="Total USD value of all your vault deposits." />,
+      header: <MetricHeader label="Total Vault Balance" tooltip="Total USD value of all your vault deposits." />,
       value: (
         <span className={METRIC_VALUE_CLASS}>
           {isSearchingBalances || isHoldingsLoading ? metricSpinner : currencyFormatter.format(totalPortfolioValue)}
@@ -1682,10 +1692,12 @@ function PortfolioHeaderSection({
 
 function PortfolioTabSelector({
   activeTab,
+  hasClaimableRewards,
   onSelectTab,
   mergeWithHeader
 }: {
   activeTab: TPortfolioTabKey
+  hasClaimableRewards: boolean
   onSelectTab: (tab: TPortfolioTabKey) => void
   mergeWithHeader?: boolean
 }): ReactElement {
@@ -1711,7 +1723,10 @@ function PortfolioTabSelector({
             )}
             aria-pressed={activeTab === tab.key}
           >
-            {tab.label}
+            <span>{tab.label}</span>
+            {tab.key === 'claim-rewards' && hasClaimableRewards ? (
+              <span className="ml-2 size-2 rounded-full bg-blue-500" aria-label="Claimable rewards over one dollar" />
+            ) : null}
           </button>
         ))}
       </div>
@@ -2325,6 +2340,8 @@ type TChainRewardData = {
     stakingSource: string
     rewards: TStakingReward[]
   }>
+  governanceRewards: TGovernanceReward[]
+  ycrvRewards: TYcrvReward[]
   merkleRewards: TGroupedMerkleReward[]
   refetchStaking: () => void
   refetchMerkle: () => void
@@ -2439,6 +2456,14 @@ function ChainMerkleRewardsFetcher({
 function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioClaimRewardsProps): ReactElement {
   const { address: userAddress } = useWeb3()
   const { vaults } = useYearn()
+  const {
+    governanceReward,
+    isLoading: isGovernanceLoading,
+    refetch: refetchGovernance
+  } = useGovernancePositions(isActive)
+  const governanceRewards = useMemo(() => (governanceReward ? [governanceReward] : []), [governanceReward])
+  const { reward: ycrvReward, isLoading: isYcrvLoading, refetch: refetchYcrv } = useYcrvPosition(isActive)
+  const ycrvRewards = useMemo(() => (ycrvReward ? [ycrvReward] : []), [ycrvReward])
   const trackEvent = usePlausible()
   const stakingVaults = useMemo(
     () => Object.values(vaults).filter((vault) => !isZeroAddress(getVaultStaking(vault).address)),
@@ -2527,27 +2552,44 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
 
       const stakingRewardCount = staking?.rewards.reduce((sum, r) => sum + r.rewards.length, 0) ?? 0
       const merkleRewardCount = merkle?.rewards.length ?? 0
+      const chainGovernanceRewards = chainId === GOVERNANCE_CHAIN_ID ? governanceRewards : []
+      const chainYcrvRewards = chainId === YCRV_CHAIN_ID ? ycrvRewards : []
       const stakingUsd =
         staking?.rewards.reduce((sum, r) => sum + r.rewards.reduce((s, rw) => s + rw.usdValue, 0), 0) ?? 0
       const merkleUsd = merkle?.rewards.reduce((sum, r) => sum + r.totalUsdValue, 0) ?? 0
+      const governanceUsd = chainGovernanceRewards.reduce((sum, reward) => sum + reward.usdValue, 0)
+      const ycrvUsd = chainYcrvRewards.reduce((sum, reward) => sum + reward.usdValue, 0)
 
       const hasStakingVaultsOnChain = stakingVaults.some((v) => getVaultChainID(v) === chainId)
       const stakingIsLoading = hasStakingVaultsOnChain ? (staking?.isLoading ?? false) : false
       const merkleIsLoading = merkle?.isLoading ?? false
+      const governanceIsLoading = chainId === GOVERNANCE_CHAIN_ID && isGovernanceLoading
+      const ycrvIsLoading = chainId === YCRV_CHAIN_ID && isYcrvLoading
 
       return {
         chainId,
         chainName,
-        rewardCount: stakingRewardCount + merkleRewardCount,
-        totalUsd: stakingUsd + merkleUsd,
-        isLoading: stakingIsLoading || merkleIsLoading,
+        rewardCount: stakingRewardCount + merkleRewardCount + chainGovernanceRewards.length + chainYcrvRewards.length,
+        totalUsd: stakingUsd + merkleUsd + governanceUsd + ycrvUsd,
+        isLoading: stakingIsLoading || merkleIsLoading || governanceIsLoading || ycrvIsLoading,
         stakingRewards: staking?.rewards ?? [],
+        governanceRewards: chainGovernanceRewards,
+        ycrvRewards: chainYcrvRewards,
         merkleRewards: merkle?.rewards ?? [],
         refetchStaking: staking?.refetch ?? (() => {}),
         refetchMerkle: merkle?.refetch ?? (() => {})
       }
     })
-  }, [chainIds, chainMerkleData, chainStakingData, stakingVaults])
+  }, [
+    chainIds,
+    chainMerkleData,
+    chainStakingData,
+    governanceRewards,
+    isGovernanceLoading,
+    isYcrvLoading,
+    stakingVaults,
+    ycrvRewards
+  ])
 
   const totalRewardCount = useMemo(
     () => chainRewardsData.reduce((sum, c) => sum + c.rewardCount, 0),
@@ -2586,10 +2628,15 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
       }))
     }
 
-    await Promise.all(
-      chainRewardsData.flatMap((chainRewardData) => [chainRewardData.refetchStaking(), chainRewardData.refetchMerkle()])
-    )
-  }, [activeMerkleClaim, chainRewardsData])
+    await Promise.all([
+      refetchGovernance(),
+      refetchYcrv(),
+      ...chainRewardsData.flatMap((chainRewardData) => [
+        chainRewardData.refetchStaking(),
+        chainRewardData.refetchMerkle()
+      ])
+    ])
+  }, [activeMerkleClaim, chainRewardsData, refetchGovernance, refetchYcrv])
 
   const handleClaimComplete = useCallback(() => {
     trackEvent(PLAUSIBLE_EVENTS.CLAIM, {
@@ -2652,6 +2699,28 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
                 <span className="text-sm font-semibold text-text-primary">{chainData.chainName}</span>
               </div>
             )}
+            {chainData.governanceRewards.map((reward, rewardIdx) => (
+              <GovernanceRewardRow
+                key={`governance-${reward.tokenAddress}`}
+                reward={reward}
+                userAddress={userAddress}
+                onStartClaim={handleStartClaim}
+                isFirst={rewardIdx === 0}
+                isAllChainsView={isAllChainsView}
+                onSwitchChain={() => switchChainAsync({ chainId: chainData.chainId })}
+              />
+            ))}
+            {chainData.ycrvRewards.map((reward, rewardIdx) => (
+              <YcrvRewardRow
+                key={`ycrv-${reward.tokenAddress}`}
+                reward={reward}
+                userAddress={userAddress}
+                onStartClaim={handleStartClaim}
+                isFirst={chainData.governanceRewards.length === 0 && rewardIdx === 0}
+                isAllChainsView={isAllChainsView}
+                onSwitchChain={() => switchChainAsync({ chainId: chainData.chainId })}
+              />
+            ))}
             {chainData.stakingRewards.flatMap((sr, srIdx) =>
               sr.rewards.map((reward, rewardIdx) => (
                 <StakingRewardRow
@@ -2663,7 +2732,12 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
                   onStartClaim={(step, merkleRewardRoots) =>
                     handleStartClaim(step, merkleRewardRoots, chainData.chainId)
                   }
-                  isFirst={srIdx === 0 && rewardIdx === 0}
+                  isFirst={
+                    chainData.governanceRewards.length === 0 &&
+                    chainData.ycrvRewards.length === 0 &&
+                    srIdx === 0 &&
+                    rewardIdx === 0
+                  }
                   isAllChainsView={isAllChainsView}
                   onSwitchChain={() => switchChainAsync({ chainId: chainData.chainId })}
                 />
@@ -2676,7 +2750,12 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
                 userAddress={userAddress!}
                 chainId={chainData.chainId}
                 onStartClaim={(step, merkleRewardRoots) => handleStartClaim(step, merkleRewardRoots, chainData.chainId)}
-                isFirst={idx === 0 && chainData.stakingRewards.length === 0}
+                isFirst={
+                  idx === 0 &&
+                  chainData.governanceRewards.length === 0 &&
+                  chainData.ycrvRewards.length === 0 &&
+                  chainData.stakingRewards.length === 0
+                }
                 isAllChainsView={isAllChainsView}
                 onSwitchChain={() => switchChainAsync({ chainId: chainData.chainId })}
               />
@@ -2836,68 +2915,33 @@ function PortfolioHoldingsSection({
   setSortDirection,
   vaultFlags
 }: TPortfolioHoldingsProps): ReactElement {
+  const vaultRows = holdingsRows.filter((row) => row.type === 'vault')
+  const otherPositionRows = holdingsRows.filter((row) => row.type !== 'vault')
+
   function handleSort(newSortBy: string, newDirection: TSortDirection): void {
     setSortBy(newSortBy as TPossibleSortBy)
     setSortDirection(newDirection)
   }
 
-  function renderHoldingsContent(): ReactElement {
-    if (isHoldingsLoading) {
-      return (
-        <div className="flex flex-col items-center justify-center gap-3 px-4 py-12 text-sm text-text-secondary sm:px-6 sm:py-16">
-          <YearnLogoSpinner className="size-12" logoClassName="size-8" />
-          <span>{'Searching for Yearn balances...'}</span>
-        </div>
-      )
-    }
-    if (!hasHoldings) {
-      return (
-        <EmptySectionCard
-          title="No vault positions yet"
-          description="Deposit into a Yearn vault to see it here."
-          ctaLabel="Explore Vaults"
-          ctaClassName="yearn--button--nextgen min-h-[44px] px-6"
-          href="/vaults"
-        />
-      )
-    }
-    return (
-      <div className="flex flex-col gap-px bg-border">
-        {holdingsRows.map((row) => (
-          <VaultsListRow
-            key={row.key}
-            currentVault={row.vault}
-            flags={vaultFlags[row.key]}
-            hrefOverride={row.hrefOverride}
-            yvUsdPositionApy={row.yvUsdPositionApy}
-            showBoostDetails={false}
-            activeProductType="all"
-            showStrategies
-            showAllocatorChip={false}
-            showProductTypeChipOverride={true}
-            showHoldingsChipOverride={false}
-            mobileSecondaryMetric="holdings"
-            expandedChartVariant="portfolio-user-tvl-overlay"
-            clickEventName={PLAUSIBLE_EVENTS.VAULT_CLICK_PORTFOLIO_LIST_ROW}
-          />
-        ))}
-      </div>
-    )
-  }
+  function renderHoldingsTable({
+    description,
+    nameLabel,
+    rows,
+    title
+  }: {
+    description?: string
+    nameLabel: string
+    rows: typeof holdingsRows
+    title: string
+  }): ReactElement | null {
+    if (rows.length === 0) return null
 
-  return (
-    <section className="flex flex-col gap-2">
-      {!isActive ? (
-        <div className="flex flex-col gap-2">
-          <EmptySectionCard
-            title="Connect a wallet to view your portfolio."
-            ctaLabel="Connect wallet"
-            onClick={openLoginModal}
-            secondaryCtaLabel="Explore Vaults"
-            secondaryCtaHref="/vaults"
-          />
+    return (
+      <section className="flex flex-col gap-2">
+        <div>
+          <h2 className="text-lg font-semibold text-text-primary">{title}</h2>
+          {description ? <p className="text-sm text-text-secondary">{description}</p> : null}
         </div>
-      ) : (
         <div className="rounded-lg">
           <div className="flex flex-col">
             <div
@@ -2916,7 +2960,7 @@ function PortfolioHoldingsSection({
                 items={[
                   {
                     type: 'sort',
-                    label: 'Vault Name',
+                    label: nameLabel,
                     value: 'vault',
                     sortable: false,
                     className: 'col-span-12'
@@ -2945,11 +2989,87 @@ function PortfolioHoldingsSection({
                 ]}
               />
             </div>
-            <div className="overflow-hidden rounded-lg md:rounded-t-none border-x border-b border-border">
-              {renderHoldingsContent()}
+            <div className="overflow-hidden rounded-lg border-x border-b border-border md:rounded-t-none">
+              <div className="flex flex-col gap-px bg-border">
+                {rows.map((row) =>
+                  row.type === 'vault' ? (
+                    <VaultsListRow
+                      key={row.key}
+                      currentVault={row.vault}
+                      flags={vaultFlags[row.key]}
+                      hrefOverride={row.hrefOverride}
+                      yvUsdPositionApy={row.yvUsdPositionApy}
+                      showBoostDetails={false}
+                      activeProductType="all"
+                      showStrategies
+                      showAllocatorChip={false}
+                      showProductTypeChipOverride={true}
+                      showHoldingsChipOverride={false}
+                      mobileSecondaryMetric="holdings"
+                      expandedChartVariant="portfolio-user-tvl-overlay"
+                      clickEventName={PLAUSIBLE_EVENTS.VAULT_CLICK_PORTFOLIO_LIST_ROW}
+                    />
+                  ) : row.type === 'governance' ? (
+                    <GovernancePositionRow key={row.key} position={row.position} />
+                  ) : (
+                    <ProtocolPositionRow key={row.key} position={row.position} />
+                  )
+                )}
+              </div>
             </div>
           </div>
         </div>
+      </section>
+    )
+  }
+
+  function renderHoldingsContent(): ReactElement {
+    if (isHoldingsLoading) {
+      return (
+        <div className="flex flex-col items-center justify-center gap-3 px-4 py-12 text-sm text-text-secondary sm:px-6 sm:py-16">
+          <YearnLogoSpinner className="size-12" logoClassName="size-8" />
+          <span>{'Searching for portfolio balances...'}</span>
+        </div>
+      )
+    }
+    if (!hasHoldings) {
+      return (
+        <EmptySectionCard
+          title="No portfolio positions yet"
+          description="Deposit into a Yearn vault, stake YFI, or stake yCRV to see it here."
+          ctaLabel="Explore Vaults"
+          ctaClassName="yearn--button--nextgen min-h-[44px] px-6"
+          href="/vaults"
+        />
+      )
+    }
+    return (
+      <div className="flex flex-col gap-6">
+        {renderHoldingsTable({ nameLabel: 'Vault Name', rows: vaultRows, title: 'Vaults' })}
+        {renderHoldingsTable({
+          description: 'Balances not included in charts and totals above',
+          nameLabel: 'Position',
+          rows: otherPositionRows,
+          title: 'Other Positions'
+        })}
+      </div>
+    )
+  }
+
+  return (
+    <section className="flex flex-col gap-2">
+      {!isActive ? (
+        <div className="flex flex-col gap-2">
+          <EmptySectionCard
+            title="Connect a wallet to view your portfolio."
+            ctaLabel="Connect wallet"
+            onClick={openLoginModal}
+            secondaryCtaLabel="Explore Vaults"
+            secondaryCtaHref="/vaults"
+          />
+        </div>
+      ) : (
+        renderHoldingsContent()
       )}
     </section>
   )
@@ -3299,7 +3419,11 @@ function PortfolioPage(): ReactElement {
           className="sticky z-30 bg-app pb-2"
           style={{ top: 'calc(var(--header-height) + var(--portfolio-breadcrumbs-height))' }}
         >
-          <PortfolioTabSelector activeTab={activeTab} onSelectTab={handleTabSelect} />
+          <PortfolioTabSelector
+            activeTab={activeTab}
+            hasClaimableRewards={model.hasClaimableRewards}
+            onSelectTab={handleTabSelect}
+          />
         </div>
         <div className={'pt-4'} key={activeTab}>
           {renderTabContent()}
