@@ -2,10 +2,11 @@ import type { TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import type { QueryKey } from '@tanstack/react-query'
 import { useQueryClient } from '@tanstack/react-query'
 import type { ReactElement } from 'react'
-import { createContext, memo, useCallback, useContext, useDeferredValue, useMemo, useRef } from 'react'
+import { createContext, memo, useCallback, useContext, useDeferredValue, useMemo, useRef, useState } from 'react'
+import { isTenderlyModeEnabled } from '@/config/tenderly'
 import { env } from '@/env'
 import type { TUseBalancesTokens } from '../hooks/useBalances.multichains'
-import { useBalancesCombined } from '../hooks/useBalancesCombined'
+import { mergeBalanceSources, useBalancesCombined } from '../hooks/useBalancesCombined'
 import { useBalancesWithQuery } from '../hooks/useBalancesWithQuery'
 import type { TFetchQueryKey } from '../hooks/useFetch'
 import { useStakingAssetConversions } from '../hooks/useStakingAssetConversions'
@@ -16,7 +17,8 @@ import {
   applyTokenListMetadataToBalances,
   hasWalletBalanceSnapshot,
   shouldExposeWalletLoading,
-  shouldUpdateVisibleBalanceSnapshot
+  shouldUpdateVisibleBalanceSnapshot,
+  shouldUseEnsoWalletBalances
 } from './useWallet.helpers'
 import { useWeb3 } from './useWeb3'
 import { useYearn } from './useYearn'
@@ -26,6 +28,7 @@ import { useTokenList } from './WithTokenList'
 const USE_ENSO_BALANCES = env.NEXT_PUBLIC_BALANCE_SOURCE !== 'multicall'
 
 type TTokenAndChain = { address: TAddress; chainID: number }
+type TBalanceOverrideRefresher = () => Promise<TChainTokens>
 
 type TWalletContext = {
   getToken: ({ address, chainID }: TTokenAndChain) => TToken
@@ -39,12 +42,18 @@ type TWalletContext = {
     shouldSaveInStorage?: boolean,
     shouldForceFetch?: boolean
   ) => Promise<TChainTokens>
+  clearBalanceOverride: (scopeId: string) => void
+  registerBalanceOverrideRefresher: (scopeId: string, refresher: TBalanceOverrideRefresher) => void
+  setBalanceOverride: (scopeId: string, balances: TChainTokens) => void
 }
 
 type TWalletTokensContext = Pick<TWalletContext, 'getToken' | 'getBalance' | 'balances'>
 type TWalletStatusContext = Pick<TWalletContext, 'isLoading' | 'hasCompletedBalanceLoad'>
 type TWalletHoldingsContext = Pick<TWalletContext, 'getVaultHoldingsUsd'>
-type TWalletActionsContext = Pick<TWalletContext, 'onRefresh'>
+type TWalletActionsContext = Pick<
+  TWalletContext,
+  'clearBalanceOverride' | 'onRefresh' | 'registerBalanceOverrideRefresher' | 'setBalanceOverride'
+>
 
 const defaultProps = {
   getToken: (): TToken => DEFAULT_ERC20,
@@ -53,7 +62,10 @@ const defaultProps = {
   balances: {},
   isLoading: true,
   hasCompletedBalanceLoad: false,
-  onRefresh: async (): Promise<TChainTokens> => ({})
+  onRefresh: async (): Promise<TChainTokens> => ({}),
+  clearBalanceOverride: (): void => undefined,
+  registerBalanceOverrideRefresher: (): void => undefined,
+  setBalanceOverride: (): void => undefined
 }
 
 /*******************************************************************************
@@ -79,7 +91,14 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
     isEnabled: Boolean(userAddress)
   })
   const { getToken: getTokenListToken, tokenLists } = useTokenList()
-  const useBalancesHook = USE_ENSO_BALANCES ? useBalancesCombined : useBalancesWithQuery
+  const [balanceOverrides, setBalanceOverrides] = useState<Record<string, TChainTokens>>({})
+  const balanceOverrideRefreshersRef = useRef(new Map<string, TBalanceOverrideRefresher>())
+  const useBalancesHook = shouldUseEnsoWalletBalances({
+    isTenderlyMode: isTenderlyModeEnabled(),
+    prefersEnso: USE_ENSO_BALANCES
+  })
+    ? useBalancesCombined
+    : useBalancesWithQuery
   const {
     data: tokensRaw, // Expected to be TDict<TNormalizedBN | undefined>
     onUpdate,
@@ -116,13 +135,25 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
   }
   const visibleTokensRaw = settledTokensRawRef.current
   const deferredTokensRaw = useDeferredValue(visibleTokensRaw)
-  const balances = useMemo(
+  const canonicalBalances = useMemo(
     (): TNDict<TDict<TToken>> =>
       applyTokenListMetadataToBalances({
         balances: deferredTokensRaw as TYChainTokens,
         tokenLists
       }),
     [deferredTokensRaw, tokenLists]
+  )
+  const balancesWithOverrides = useMemo(
+    () => mergeBalanceSources(deferredTokensRaw as TChainTokens, ...Object.values(balanceOverrides)),
+    [balanceOverrides, deferredTokensRaw]
+  )
+  const balances = useMemo(
+    (): TNDict<TDict<TToken>> =>
+      applyTokenListMetadataToBalances({
+        balances: balancesWithOverrides as TYChainTokens,
+        tokenLists
+      }),
+    [balancesWithOverrides, tokenLists]
   )
   const isBalancesPending = deferredTokensRaw !== visibleTokensRaw
   const hasVisibleBalances = hasWalletBalanceSnapshot(visibleTokensRaw)
@@ -148,6 +179,30 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
     onUpdateSome,
     userAddress
   }
+
+  const setBalanceOverride = useCallback((scopeId: string, nextBalances: TChainTokens): void => {
+    setBalanceOverrides((currentOverrides) => ({
+      ...currentOverrides,
+      [scopeId]: nextBalances
+    }))
+  }, [])
+
+  const registerBalanceOverrideRefresher = useCallback(
+    (scopeId: string, refresher: TBalanceOverrideRefresher): void => {
+      balanceOverrideRefreshersRef.current.set(scopeId, refresher)
+    },
+    []
+  )
+
+  const clearBalanceOverride = useCallback((scopeId: string): void => {
+    balanceOverrideRefreshersRef.current.delete(scopeId)
+    setBalanceOverrides((currentOverrides) => {
+      if (!(scopeId in currentOverrides)) {
+        return currentOverrides
+      }
+      return Object.fromEntries(Object.entries(currentOverrides).filter(([key]) => key !== scopeId))
+    })
+  }, [])
 
   const onRefresh = useCallback(
     async (tokenToUpdate?: TUseBalancesTokens[]): Promise<TYChainTokens> => {
@@ -180,6 +235,17 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
         })
       }
 
+      if (isTenderlyModeEnabled()) {
+        const { onUpdate } = refreshSourcesRef.current
+        const overrideRefreshers = [...balanceOverrideRefreshersRef.current.values()]
+        const [canonicalBalances, refreshedOverrides] = await Promise.all([
+          onUpdate(tokenToUpdate === undefined),
+          Promise.all(overrideRefreshers.map(async (refreshOverride) => await refreshOverride()))
+        ])
+        await invalidateHoldingsQueries()
+        return mergeBalanceSources(canonicalBalances, ...refreshedOverrides) as TYChainTokens
+      }
+
       if (tokenToUpdate) {
         const { onUpdateSome } = refreshSourcesRef.current
         const updatedBalances = await onUpdateSome(tokenToUpdate)
@@ -204,16 +270,19 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
     ({ address, chainID }: TTokenAndChain): TToken => {
       const cacheKey = `${userAddress || 'disconnected'}-${chainID || 1}-${address}`
       const token = balances?.[chainID || 1]?.[address]
+      const canonicalToken = canonicalBalances?.[chainID || 1]?.[address]
 
-      // If we have a valid token from balances, update the cache
+      // Route-scoped overrides are returned to the active workflow but never persisted beyond its lifetime.
       if (token && token.address !== DEFAULT_ERC20.address) {
-        tokenCache.current[cacheKey] = token
+        if (canonicalToken && canonicalToken.address !== DEFAULT_ERC20.address) {
+          tokenCache.current[cacheKey] = canonicalToken
+        }
         return token
       }
       // If balances is empty (during refetch), return cached token if available
       return tokenCache.current[cacheKey] || getTokenListToken({ address, chainID })
     },
-    [balances, userAddress, getTokenListToken]
+    [balances, canonicalBalances, userAddress, getTokenListToken]
   )
 
   /**************************************************************************
@@ -268,9 +337,12 @@ export const WalletContextApp = memo(function WalletContextApp(props: {
   )
   const actionsValue = useMemo(
     (): TWalletActionsContext => ({
-      onRefresh
+      clearBalanceOverride,
+      onRefresh,
+      registerBalanceOverrideRefresher,
+      setBalanceOverride
     }),
-    [onRefresh]
+    [clearBalanceOverride, onRefresh, registerBalanceOverrideRefresher, setBalanceOverride]
   )
 
   return (

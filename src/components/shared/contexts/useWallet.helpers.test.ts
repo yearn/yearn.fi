@@ -5,7 +5,8 @@ import {
   applyTokenListMetadataToBalances,
   hasWalletBalanceSnapshot,
   shouldExposeWalletLoading,
-  shouldUpdateVisibleBalanceSnapshot
+  shouldUpdateVisibleBalanceSnapshot,
+  shouldUseEnsoWalletBalances
 } from './useWallet.helpers'
 
 const TOKEN_BALANCE_SNAPSHOT = {
@@ -24,6 +25,11 @@ const TOKEN_BALANCE_SNAPSHOT = {
 const TOKEN_LIST_METADATA_ADDRESS = '0x0000000000000000000000000000000000000123'
 
 describe('useWallet.helpers', () => {
+  it('forces the Enso balance path in Tenderly mode even when multicall is configured', () => {
+    expect(shouldUseEnsoWalletBalances({ isTenderlyMode: true, prefersEnso: false })).toBe(true)
+    expect(shouldUseEnsoWalletBalances({ isTenderlyMode: false, prefersEnso: false })).toBe(false)
+  })
+
   it('overlays token-list metadata without changing wallet balance data', () => {
     const balances = {
       1: {

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseCliArgs, parseDecimalAmount, toHexQuantity } from './tenderly'
+import { assertTenderlyRevertSucceeded, parseCliArgs, parseDecimalAmount, toHexQuantity } from './tenderly'
 
 describe('tenderly script helpers', () => {
   it('parses command-line flags and positionals', () => {
@@ -44,5 +44,10 @@ describe('tenderly script helpers', () => {
   it('converts bigint values to JSON-RPC hex quantities', () => {
     expect(toHexQuantity(0n)).toBe('0x0')
     expect(toHexQuantity(255n)).toBe('0xff')
+  })
+
+  it('fails when Tenderly rejects a snapshot revert', () => {
+    expect(() => assertTenderlyRevertSucceeded(false, '0xdead')).toThrow('Tenderly rejected revert for snapshot 0xdead')
+    expect(() => assertTenderlyRevertSucceeded(true, '0x1')).not.toThrow()
   })
 })
