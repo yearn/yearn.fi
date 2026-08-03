@@ -24,19 +24,12 @@ const STANDARD_V3_VAULT = {
 const DUSD_FRXUSD_CURVE_VAULT = {
   version: '0.4.6',
   chainID: 1,
-  address: '0xb53b70cb960feeaf2093df3c733e368f6d254898',
   name: 'Curve frxUSDDUSD Factory yVault',
   symbol: 'yvCurve-frxUSDDUSD-f',
   category: 'Curve',
-  kind: 'Legacy',
   token: {
-    address: '0x104d6a1b97a6cef88d905d7b865a378d90be932a',
     name: 'Curve DUSD-frxUSD LP',
-    symbol: 'frxUSDDUSD-f',
-    decimals: 18
-  },
-  info: {
-    riskLevel: 2
+    symbol: 'frxUSDDUSD-f'
   }
 } as unknown as TKongVaultInput
 
