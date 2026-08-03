@@ -6,23 +6,29 @@ Yearn Finance vaults interface — Next.js 16 App Router + React 19 + TypeScript
 
 ```bash
 bun install                              # Install dependencies
-bun run dev                              # Next dev server on 127.0.0.1:3000
-bun run preview                          # Next production server on 127.0.0.1:3000 after a build
-bun run build                            # Next production build
-bun run test                             # Full Vitest suite
-bunx vitest run src/path/to/test.ts      # Single test file
+bun run dev                              # Yearn dev server on 127.0.0.1:3000
+bun run dev:ybold                        # yBOLD dev server on 127.0.0.1:3002
+bun run preview                          # Yearn production server after a build
+bun run build                            # Yearn production build
+bun run build:all                        # Build the widget and both apps
+bun run test                             # Yearn Vitest suite
+bun run test:all                         # Widget and both app suites
+bun run --cwd apps/yearn test src/path/to/test.ts  # Single Yearn test file
 bun run lint:fix                         # Biome format and fix
-bun run tslint                           # TypeScript type check only
+bun run tslint                           # Yearn TypeScript check
+bun run tslint:all                       # Type-check every workspace
+bun run check:workspaces                 # Full widget and app validation
 ```
 
 ## Verification
 
 IMPORTANT: After making code changes, always verify:
-1. `bun run tslint` — type check passes
+1. Run the scoped type check (`bun run tslint:yearn`, `bun run tslint:widget`, or `bun run tslint:ybold`)
 2. `bun run lint:fix` — code is formatted
 3. Run relevant test file if one exists
+4. For widget changes, run `bun run check:vault-widget-boundary`
 
-Husky runs `lint-staged` + `bun run tslint` on every commit.
+Use `bun run check:workspaces` when a change crosses package/app boundaries. Husky runs `lint-staged`, the client/server boundary check, and `bun run tslint` on every commit.
 
 ## Code Style
 
@@ -62,26 +68,34 @@ When writing a new `useEffect`, add a brief comment explaining why an alternativ
 
 **Tech stack:** Next.js 16 App Router, React 19, Tailwind CSS 4, TanStack Query, Wagmi/Viem/RainbowKit
 
-**Path aliases** (defined in tsconfig.json and next.config.ts):
-- `@/*` → `src/*`
-- `@shared/*` → `src/components/shared/*`
-- `@pages/*` → `src/components/pages/*`
-- `@components/*` → `src/components/*`
+**Workspace dependency direction:** `apps/*` may import `packages/*`; packages must not import apps. Both apps consume `@yearn/vault-widget` with `workspace:*`, and each Next config transpiles its TypeScript source.
+
+**Yearn path aliases** (defined in `apps/yearn/tsconfig.json`):
+- `@/*` → `apps/yearn/src/*`
+- `@shared/*` → `apps/yearn/src/components/shared/*`
+- `@pages/*` → `apps/yearn/src/components/pages/*`
+- `@components/*` → `apps/yearn/src/components/*`
+- `@hooks/*` → `apps/yearn/src/hooks/*`
+
+The yBOLD app uses `@ybold/*` for files under `apps/ybold`. Package code uses its `@yearn/vault-widget/*` exports and must not use either app's aliases.
 
 **Key directories:**
-- `app/` — Next App Router pages, route handlers, metadata, redirects, and root layout
-- `src/components/shared/` — shared library (contexts, hooks, utils, types, contracts)
-- `src/components/pages/` — route pages (landing, portfolio, vaults)
-- `src/server/` — focused API endpoint implementations and shared server-side helpers used by `app/api/**/route.ts`
+- `apps/yearn/app/` — main Next App Router pages, route handlers, metadata, redirects, and root layout
+- `apps/yearn/src/` — Yearn product UI, data, server code, and host-specific adapters
+- `apps/ybold/` — standalone yBOLD Next app and its host-specific adapters
+- `packages/vault-widget/` — reusable widget UI, transaction flows, hooks, contracts, types, presets, and styles
+- `scripts/` — repository-wide checks and operational scripts
 
 **Key patterns:**
-- Context provider chain defined in `App.tsx` — read that file for the full order
-- Next route wrappers in `app/**/page.tsx` own route-level metadata and render client page components from `src/components/pages/`
-- `src/navigation/` provides small client helpers backed by Next navigation context
-- `/api/*` is served by explicit Next route handlers under `app/api/**/route.ts`; there is no catch-all API dispatcher
+- Context provider chain defined in `apps/yearn/src/App.tsx` — read that file for the full order
+- Next route wrappers in `apps/yearn/app/**/page.tsx` own route-level metadata and render client page components from `apps/yearn/src/components/pages/`
+- `apps/yearn/src/navigation/` provides small client helpers backed by Next navigation context
+- `/api/*` is served by explicit Next route handlers under `apps/yearn/app/api/**/route.ts`; there is no catch-all API dispatcher
 - Vault data flows through `useYearn` context → filtered/sorted via hooks in `@shared/hooks/`
+- Apps mount Wagmi and TanStack Query themselves, then adapt wallet, chains, prices, notifications, analytics, assets, routing, and policy through `VaultWidgetRuntimeProvider`
+- `bun run check:vault-widget-boundary` enforces that widget source never reaches into a host app or outside its package
 
 ## Multi-Chain
 
-Supported chains configured in `src/components/shared/utils/constants.tsx`:
+Supported chains configured in `apps/yearn/src/components/shared/utils/constants.tsx`:
 Ethereum (1), Optimism (10), Polygon (137), Fantom (250), Base (8453), Arbitrum (42161), Sonic (146), Katana (747474)

@@ -45,7 +45,8 @@
   "css": {
     "parser": {
       "cssModules": false,
-      "allowWrongLineComments": false
+      "allowWrongLineComments": false,
+      "tailwindDirectives": true
     }
   },
   "javascript": {
@@ -74,11 +75,10 @@
       "!**/generated",
       "!**/wagmi.ts",
       "!**/wagmi.d.ts",
-      "!next-env.d.ts",
+      "!**/next-env.d.ts",
       "!**/bun.lock",
-      "!style.css",
-      "!**/yearn.fi-worktree-*",
-      "!**/apps/lib/style.css"
+      "!apps/yearn/style.css",
+      "!**/yearn.fi-worktree-*"
     ]
   }
 }
