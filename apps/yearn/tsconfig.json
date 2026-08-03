@@ -1,0 +1,35 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "rootDirs": ["."],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "@shared/*": ["src/components/shared/*"],
+      "@pages/*": ["src/components/pages/*"],
+      "@components/*": ["src/components/*"],
+      "@hooks/*": ["src/hooks/*"],
+      "/src/*": ["src/*"]
+    },
+    "incremental": true,
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ]
+  },
+  "exclude": ["node_modules", "_app", "worktrees", "vitest.config.mts", "src/server/**/*.test.ts"],
+  "include": [
+    "**/*.css",
+    "**/*.ts",
+    "**/*.tsx",
+    "**/*.d.tsx",
+    "app",
+    "next-env.d.ts",
+    "public",
+    "postcss.config.js",
+    "next.config.ts",
+    ".next/types/**/*.ts",
+    ".next/dev/types/**/*.ts"
+  ]
+}

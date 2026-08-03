@@ -1,7 +1,7 @@
 /// <reference types="node" />
 
 import { getAddress } from 'viem'
-import { buildTenderlyRevertResponse } from '@/config/tenderlyServer'
+import { buildTenderlyRevertResponse } from '../apps/yearn/src/config/tenderlyServer'
 
 type TParsedCliArgs = {
   command?: string
