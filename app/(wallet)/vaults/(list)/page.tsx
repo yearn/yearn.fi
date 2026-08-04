@@ -1,7 +1,7 @@
 import { buildInitialVaultsQuerySnapshot, DEFAULT_VAULT_QUERY_DEFAULTS } from '@pages/vaults/utils/vaultsQueryState'
 import type { ReactElement } from 'react'
 import { getVaultsPageInitialPayload } from '@/server/ssr/publicDataHydration'
-import { vaultsMetadata } from '../../metadata'
+import { vaultsMetadata } from '../../../metadata'
 import VaultsPageClient from './page-client'
 
 export const metadata = vaultsMetadata
