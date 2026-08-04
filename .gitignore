@@ -43,6 +43,7 @@ _app
 /docs/plans
 /docs/temp
 /docs/performance
+/docs/benchmark
 
 # playwright
 .playwright-mcp

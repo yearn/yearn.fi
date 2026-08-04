@@ -9,7 +9,7 @@ import {
   buildVaultStructuredDataFromInput,
   fetchVaultMetadataSnapshot,
   yearnOrganizationJsonLd
-} from '../../../metadata'
+} from '../../../../metadata'
 import VaultsDetailPageClient from './page-client'
 
 export const revalidate = 21600

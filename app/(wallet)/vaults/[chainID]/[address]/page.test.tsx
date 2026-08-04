@@ -23,7 +23,7 @@ vi.mock('@/server/ssr/publicDataHydration', () => ({
   getVaultDetailPageDehydratedState: mockGetVaultDetailPageDehydratedState
 }))
 
-vi.mock('../../../metadata', () => ({
+vi.mock('../../../../metadata', () => ({
   buildVaultMetadataFromInput: mockBuildVaultMetadataFromInput,
   buildVaultStructuredDataFromInput: mockBuildVaultStructuredDataFromInput,
   fetchVaultMetadataSnapshot: mockFetchVaultMetadataSnapshot,

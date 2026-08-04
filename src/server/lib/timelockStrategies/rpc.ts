@@ -78,7 +78,7 @@ const resolveRpcUrl = (chainId: number): string | undefined =>
 function createTimelockClient(chainId: number, rpcUrl: string): TTimelockPublicClient {
   return createPublicClient({
     chain: CHAINS_BY_ID.get(chainId),
-    transport: http(rpcUrl)
+    transport: http(rpcUrl, { batch: true })
   }) as TTimelockPublicClient
 }
 
