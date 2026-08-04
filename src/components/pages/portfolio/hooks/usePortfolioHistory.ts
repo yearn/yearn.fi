@@ -33,7 +33,7 @@ export function usePortfolioHistory(
     if (!address || !enabled || !progressId) {
       return null
     }
-    return `/api/holdings/history?address=${address}&denomination=${denomination}&timeframe=${timeframe}&fetchType=parallel&progressId=${encodeURIComponent(progressId)}`
+    return `/api/holdings/history?address=${address}&denomination=${denomination}&timeframe=${timeframe}&fetchType=seq&progressId=${encodeURIComponent(progressId)}`
   }, [address, denomination, enabled, progressId, timeframe])
   const cacheKey = useMemo(
     () =>
