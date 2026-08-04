@@ -20,11 +20,11 @@ function createInMemoryGraphqlResponse(data: Record<string, unknown>): Response 
   } as unknown as Response
 }
 
-function createTransferEvent(id: string, blockNumber: number) {
+function createTransferEvent(id: string, blockNumber: number, chainId = 1) {
   return {
     id,
     vaultAddress: VAULT,
-    chainId: 1,
+    chainId,
     blockNumber,
     blockTimestamp: 200 + blockNumber,
     logIndex: blockNumber,
@@ -264,6 +264,45 @@ describe('fetchUserEvents', () => {
         String((init as RequestInit | undefined)?.body ?? '').includes('GetUserEventCountsAggregate')
       )
     ).toBe(false)
+  })
+
+  it('filters events from unsupported chains', async () => {
+    const fetchStub = vi.fn(async (_input: string | URL | Request, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body ?? '{}')) as {
+        query: string
+      }
+      const query = body.query
+
+      if (query.includes('GetTransfersIn')) {
+        return createGraphqlResponse({
+          Transfer: [createTransferEvent('ethereum-transfer', 1), createTransferEvent('berachain-transfer', 2, 80094)]
+        })
+      }
+
+      if (
+        query.includes('GetDeposits(') ||
+        query.includes('GetWithdrawals(') ||
+        query.includes('GetTransfersOut') ||
+        query.includes('GetV2Deposits(') ||
+        query.includes('GetV2Withdrawals(')
+      ) {
+        return createGraphqlResponse({ [getEmptyResultKey(query)]: [] })
+      }
+
+      throw new Error(`Unexpected query: ${query}`)
+    })
+
+    vi.stubGlobal('fetch', fetchStub)
+
+    const { fetchUserEvents } = await importGraphqlModule()
+    const events = await fetchUserEvents(USER, 'all', undefined, 'parallel', 'all')
+
+    expect(events.transfersIn).toEqual([
+      expect.objectContaining({
+        id: 'ethereum-transfer',
+        chainId: 1
+      })
+    ])
   })
 
   it('reuses in-flight address-scoped fetches for matching requests', async () => {
