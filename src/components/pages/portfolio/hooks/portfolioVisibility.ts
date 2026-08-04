@@ -1,4 +1,9 @@
-import { getVaultInfo, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
+import {
+  getVaultAddress,
+  getVaultChainID,
+  getVaultInfo,
+  type TKongVaultInput
+} from '@pages/vaults/domain/kongVaultSelectors'
 
 export const PORTFOLIO_DUST_USD_THRESHOLD = 0.01
 
@@ -25,4 +30,19 @@ export function filterVisiblePortfolioHoldings<T extends TKongVaultInput>(
 
     return isPortfolioDustValueVisible(options.getVaultValue?.(vault) ?? 0, true)
   })
+}
+
+export function filterVisiblePortfolioVaultSeries<TSeries extends { chainId: number; vaultAddress: string }>(
+  series: TSeries[],
+  vaults: TKongVaultInput[]
+): TSeries[] {
+  const hiddenVaultKeys = new Set(
+    vaults
+      .filter((vault) => getVaultInfo(vault).isHidden)
+      .map((vault) => `${getVaultChainID(vault)}:${getVaultAddress(vault).toLowerCase()}`)
+  )
+
+  return series.filter(
+    (vaultSeries) => !hiddenVaultKeys.has(`${vaultSeries.chainId}:${vaultSeries.vaultAddress.toLowerCase()}`)
+  )
 }

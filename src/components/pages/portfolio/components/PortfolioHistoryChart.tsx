@@ -28,6 +28,7 @@ import type { ReactElement } from 'react'
 import { useEffect, useId, useMemo, useState } from 'react'
 import { Area, CartesianGrid, ComposedChart, Line, XAxis, YAxis } from 'recharts'
 import type { AxisDomain } from 'recharts/types/util/types'
+import { filterVisiblePortfolioVaultSeries } from '../hooks/portfolioVisibility'
 import type {
   TPortfolioHistoryChartData,
   TPortfolioHistoryDenomination,
@@ -749,6 +750,10 @@ export function PortfolioHistoryChart({
       return labels
     }, {})
   }, [allVaults])
+  const visibleProtocolReturnFamilySeries = useMemo(
+    () => filterVisiblePortfolioVaultSeries(protocolReturnFamilySeries, Object.values(allVaults)),
+    [allVaults, protocolReturnFamilySeries]
+  )
 
   const activeData =
     activeTab === 'balance'
@@ -1055,7 +1060,7 @@ export function PortfolioHistoryChart({
   }
 
   if (activeTab === 'index') {
-    const vaultGrowthSeries = buildPortfolioVaultGrowthSeries(protocolReturnFamilySeries, familyLabelByVaultKey)
+    const vaultGrowthSeries = buildPortfolioVaultGrowthSeries(visibleProtocolReturnFamilySeries, familyLabelByVaultKey)
 
     return (
       <section className={cl(sectionClassName, className)}>
