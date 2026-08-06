@@ -256,16 +256,22 @@ function DepositNotificationContent({ notification }: { notification: TNotificat
           </p>
           {notification.toTokenName && notification.toAddress && (
             <>
-              <p>{'To vault:'}</p>
+              <p>
+                {notification.type === 'swap' || notification.type === 'crosschain swap' ? 'Receive:' : 'To vault:'}
+              </p>
               <p className={'text-right font-bold'}>
                 <Link
                   href={`${toChainExplorerBaseURI}/address/${notification.toAddress}`}
                   target={'_blank'}
                   rel={'noopener noreferrer'}
-                  aria-label={`View vault ${notification.toTokenName} on explorer`}
+                  aria-label={`View token ${notification.toTokenName} on explorer`}
                   className={'text-text-primary hover:text-text-secondary'}
                 >
-                  <button className={'text-xs font-medium underline'}>{notification.toTokenName}</button>
+                  <button className={'text-xs font-medium underline'}>
+                    {notification.toAmount
+                      ? `${notification.toAmount} ${notification.toTokenName}`
+                      : notification.toTokenName}
+                  </button>
                 </Link>
               </p>
             </>
@@ -505,7 +511,11 @@ function NotificationContent({ notification }: { notification: TNotification }):
     return <CooldownNotificationContent notification={notification} />
   }
 
-  if (['deposit', 'stake', 'zap', 'crosschain zap', 'deposit and stake'].includes(notification.type)) {
+  if (
+    ['deposit', 'stake', 'zap', 'crosschain zap', 'swap', 'crosschain swap', 'deposit and stake'].includes(
+      notification.type
+    )
+  ) {
     return <DepositNotificationContent notification={notification} />
   }
 
@@ -571,6 +581,10 @@ export const Notification = memo(function Notification({
         return 'Zap'
       case 'crosschain zap':
         return 'Cross-chain Zap'
+      case 'swap':
+        return 'Swap'
+      case 'crosschain swap':
+        return 'Cross-chain Swap'
       case 'withdraw zap':
         return 'Withdraw Zap'
       case 'crosschain withdraw zap':

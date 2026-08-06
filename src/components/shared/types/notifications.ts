@@ -13,6 +13,8 @@ export type TNotificationType =
   | 'crosschain zap'
   | 'withdraw zap'
   | 'crosschain withdraw zap'
+  | 'swap'
+  | 'crosschain swap'
   | 'deposit and stake'
   | 'stake'
   | 'unstake'

@@ -21,3 +21,8 @@ export function isVaultsListPathname(pathname: string): boolean {
 export function shouldLoadAppTokenLists(pathname: string): boolean {
   return !isVaultDetailPathname(pathname) && !isVaultsListPathname(pathname)
 }
+
+export function shouldLoadAppVaultList(pathname: string): boolean {
+  const [section] = getPathSegments(pathname)
+  return section === 'portfolio' || section === 'swap'
+}

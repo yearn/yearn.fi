@@ -287,6 +287,16 @@ function AppHeader(): ReactElement {
                         {'Portfolio'}
                       </span>
                     </Link>
+
+                    <Link href={'/swap'} prefetch={false}>
+                      <span
+                        className={
+                          'text-base font-medium text-text-secondary transition-colors hover:text-text-primary'
+                        }
+                      >
+                        {'Swap'}
+                      </span>
+                    </Link>
                   </div>
                   <button
                     className={
