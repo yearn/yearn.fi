@@ -31,6 +31,7 @@ interface ApprovalOverlayProps {
   chainId: number
   currentAllowance: string
   approvalWarning?: string
+  actionLabel?: string
 }
 
 export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
@@ -44,7 +45,8 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
   spenderName,
   chainId,
   currentAllowance,
-  approvalWarning
+  approvalWarning,
+  actionLabel = 'depositing'
 }) => {
   const [txState, setTxState] = useState<TxState>('idle')
   const [errorMessage, setErrorMessage] = useState('')
@@ -247,7 +249,7 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
                 <p className="text-sm text-text-secondary">
                   Token approval allows a smart contract to transfer your{' '}
                   <span className="font-semibold text-text-primary">{tokenSymbol}</span> up to a set limit. This is
-                  required before depositing.
+                  required before {actionLabel}.
                 </p>
                 {disableSetUnlimited && (
                   <p className="text-sm text-text-secondary">

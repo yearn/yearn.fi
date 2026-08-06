@@ -1,36 +1,43 @@
 'use client'
 
+import { ApprovalOverlay } from '@pages/vaults/components/widget/deposit/ApprovalOverlay'
 import { InputTokenAmount } from '@pages/vaults/components/widget/InputTokenAmount'
 import { SettingsPanel } from '@pages/vaults/components/widget/SettingsPanel'
 import { PriceImpactWarning } from '@pages/vaults/components/widget/shared/PriceImpactWarning'
 import { TokenSelectorOverlay } from '@pages/vaults/components/widget/shared/TokenSelectorOverlay'
 import { TransactionOverlay, type TransactionStep } from '@pages/vaults/components/widget/shared/TransactionOverlay'
 import { useProtectedEnsoQuoteState } from '@pages/vaults/components/widget/shared/useProtectedEnsoQuoteState'
-import { formatWidgetPreciseValue } from '@pages/vaults/components/widget/shared/valueDisplay'
+import { formatWidgetAllowance, formatWidgetPreciseValue } from '@pages/vaults/components/widget/shared/valueDisplay'
 import { getTokenLogoSources } from '@pages/vaults/components/widget/tokenLogo.utils'
 import {
   getVaultAddress,
+  getVaultAPR,
   getVaultChainID,
   getVaultDecimals,
   getVaultInfo,
   getVaultName,
-  getVaultSymbol
+  getVaultSymbol,
+  getVaultToken,
+  getVaultTVL
 } from '@pages/vaults/domain/kongVaultSelectors'
 import { useSolverEnso } from '@pages/vaults/hooks/solvers/useSolverEnso'
 import { useDebouncedInput } from '@pages/vaults/hooks/useDebouncedInput'
 import { useEnsoEnabled } from '@pages/vaults/hooks/useEnsoEnabled'
 import { useEnsoOrder } from '@pages/vaults/hooks/useEnsoOrder'
 import { fetchTokenData, useTokens } from '@pages/vaults/hooks/useTokens'
+import { getKnownEnsoRouterAddress } from '@pages/vaults/utils/ensoRouters'
 import { Button } from '@shared/components/Button'
 import { TokenLogoV2 } from '@shared/components/TokenLogoV2'
 import { useWalletActions, useWalletTokens } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import { useTokenList } from '@shared/contexts/WithTokenList'
+import { useYearnSpotPrices } from '@shared/hooks/useYearnSpotPrices'
 import { IconSettings } from '@shared/icons/IconSettings'
 import type { TToken } from '@shared/types'
 import type { TCreateNotificationParams } from '@shared/types/notifications'
 import { cl, ETH_TOKEN_ADDRESS, formatTAmount, toAddress, toNormalizedBN } from '@shared/utils'
+import { requiresAllowanceResetBeforeApproval } from '@shared/utils/approve'
 import { formatUSD } from '@shared/utils/format'
 import { toBasisPoints } from '@shared/utils/slippage'
 import { getNetwork } from '@shared/utils/wagmi'
@@ -40,8 +47,11 @@ import { type Address, formatUnits, isAddressEqual } from 'viem'
 import { useConfig } from 'wagmi'
 import { resolveExecutionChainId } from '@/config/tenderly'
 import { isSwapChainId, MAJOR_SWAP_TOKENS } from './constants'
+import { SwapVaultAnnualReturnRow, SwapVaultWorthRow } from './SwapVaultDetails'
 import { SwapWalletPanel } from './SwapWalletPanel'
 import { buildSwapSearchParams, parseSwapSelection, type TSwapSelection } from './swapParams'
+import { resolveSwapTokenPrice } from './swapTokenPrice'
+import { getSwapVaultEstimate } from './swapVaultEstimate'
 
 type TSwapTab = 'swap' | 'wallet'
 type TSelectorTarget = 'from' | 'to' | null
@@ -50,25 +60,40 @@ function useResolvedSwapToken(address: Address, chainId: number): { token: TToke
   const { address: account } = useWeb3()
   const { balances, getToken: getWalletToken } = useWalletTokens()
   const { getToken: getListedToken } = useTokenList()
-  const { allVaults, getPrice } = useYearn()
+  const { allVaults } = useYearn()
   const isNative = isAddressEqual(address, ETH_TOKEN_ADDRESS)
-  const { tokens } = useTokens([isNative ? undefined : address], chainId, account)
-  const rpcToken = tokens[0]
   const normalizedAddress = toAddress(address)
-  const walletToken = balances[chainId]?.[normalizedAddress] ?? getWalletToken({ address, chainID: chainId })
-  const listedToken = getListedToken({ address, chainID: chainId })
   const vault = Object.values(allVaults).find(
     (candidate) =>
       getVaultChainID(candidate) === chainId &&
       !getVaultInfo(candidate).isHidden &&
       isAddressEqual(toAddress(getVaultAddress(candidate)), normalizedAddress)
   )
+  const vaultUnderlying = vault ? getVaultToken(vault) : undefined
+  const { getPrice } = useYearnSpotPrices([
+    { address: normalizedAddress, chainID: chainId },
+    vaultUnderlying ? { address: vaultUnderlying.address, chainID: chainId } : undefined
+  ])
+  const { tokens } = useTokens([isNative ? undefined : address], chainId, account)
+  const rpcToken = tokens[0]
+  const walletToken = balances[chainId]?.[normalizedAddress] ?? getWalletToken({ address, chainID: chainId })
+  const listedToken = getListedToken({ address, chainID: chainId })
   const network = getNetwork(chainId)
-  const price = getPrice({ address: normalizedAddress, chainID: chainId }).normalized
   const balance =
     walletToken.address && isAddressEqual(walletToken.address, normalizedAddress)
       ? walletToken.balance
       : toNormalizedBN(0n, rpcToken?.decimals ?? (isNative ? network.nativeCurrency.decimals : 18))
+  const vaultApr = vault ? getVaultAPR(vault) : undefined
+  const price = resolveSwapTokenPrice({
+    contextPrice: getPrice({ address: normalizedAddress, chainID: chainId }).normalized,
+    walletValue: walletToken.value,
+    walletBalance: walletToken.balance.normalized,
+    vaultUnderlyingPrice:
+      vault && vaultUnderlying
+        ? getPrice({ address: vaultUnderlying.address, chainID: chainId }).normalized || getVaultTVL(vault).price
+        : undefined,
+    vaultPricePerShare: vaultApr?.pricePerShare.today
+  })
   const nativeToken: TToken | undefined = isNative
     ? {
         address: ETH_TOKEN_ADDRESS,
@@ -210,15 +235,43 @@ export default function SwapPage(): ReactElement {
   const [activeTab, setActiveTab] = useState<TSwapTab>('swap')
   const [selectorTarget, setSelectorTarget] = useState<TSelectorTarget>(null)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
+  const [isApprovalOpen, setIsApprovalOpen] = useState(false)
   const [customRecipient, setCustomRecipient] = useState<Address | undefined>()
   const [requestedSlippage, setRequestedSlippage] = useState(0)
   const { address: account, openLoginModal } = useWeb3()
   const wagmiConfig = useConfig()
   const { onRefresh } = useWalletActions()
-  const { zapSlippage } = useYearn()
+  const { allVaults, zapSlippage } = useYearn()
   const ensoEnabled = useEnsoEnabled()
   const { token: fromToken, price: fromTokenPrice } = useResolvedSwapToken(selection.fromToken, selection.fromChainId)
   const { token: toToken, price: toTokenPrice } = useResolvedSwapToken(selection.toToken, selection.toChainId)
+  const destinationVault = useMemo(
+    () =>
+      Object.values(allVaults).find(
+        (vault) =>
+          getVaultChainID(vault) === selection.toChainId &&
+          !getVaultInfo(vault).isHidden &&
+          !getVaultInfo(vault).isRetired &&
+          isAddressEqual(toAddress(getVaultAddress(vault)), selection.toToken)
+      ),
+    [allVaults, selection.toChainId, selection.toToken]
+  )
+  const destinationVaultMetadata = useMemo(() => {
+    if (!destinationVault) return undefined
+
+    const apr = getVaultAPR(destinationVault)
+    const underlying = getVaultToken(destinationVault)
+    const vaultTvlPrice = getVaultTVL(destinationVault).price
+    const underlyingPrice =
+      toTokenPrice > 0 && apr.pricePerShare.today > 0 ? toTokenPrice / apr.pricePerShare.today : vaultTvlPrice
+
+    return {
+      annualRate: apr.forwardAPR.type ? apr.forwardAPR.netAPR : undefined,
+      pricePerShare: apr.pricePerShare.today,
+      underlyingPrice: underlyingPrice > 0 ? underlyingPrice : undefined,
+      underlyingSymbol: underlying.symbol
+    }
+  }, [destinationVault, toTokenPrice])
   const input = useDebouncedInput(fromToken.decimals)
   const [inputValue, , setInputValue] = input
   const receiver = customRecipient ?? account
@@ -270,6 +323,7 @@ export default function SwapPage(): ReactElement {
 
   useEffect(() => {
     setRequestedSlippage(0)
+    setIsApprovalOpen(false)
   }, [routeKey])
 
   const solver = useSolverEnso({
@@ -307,6 +361,20 @@ export default function SwapPage(): ReactElement {
 
   const expectedOut = solver.periphery.expectedOut.raw
   const minExpectedOut = solver.periphery.minExpectedOut.raw
+  const destinationVaultEstimate = useMemo(
+    () =>
+      destinationVaultMetadata
+        ? getSwapVaultEstimate({
+            expectedShares: expectedOut,
+            minimumShares: minExpectedOut,
+            shareDecimals: toToken.decimals,
+            pricePerShare: destinationVaultMetadata.pricePerShare,
+            underlyingPrice: destinationVaultMetadata.underlyingPrice,
+            annualRate: destinationVaultMetadata.annualRate
+          })
+        : undefined,
+    [destinationVaultMetadata, expectedOut, minExpectedOut, toToken.decimals]
+  )
   const inputUsd = inputValue.debouncedSimple * fromTokenPrice
   const expectedOutUsd = Number(formatUnits(expectedOut, toToken.decimals)) * toTokenPrice
   const minExpectedOutUsd = Number(formatUnits(minExpectedOut, toToken.decimals)) * toTokenPrice
@@ -359,6 +427,11 @@ export default function SwapPage(): ReactElement {
   })
   const isCrossChain = selection.fromChainId !== selection.toChainId
   const needsApproval = !solver.periphery.isAllowanceSufficient
+  const isNativeInput = isAddressEqual(fromToken.address, ETH_TOKEN_ADDRESS)
+  const approvalSpenderAddress = solver.periphery.approvalWarning
+    ? undefined
+    : (solver.periphery.routerAddress ?? getKnownEnsoRouterAddress(selection.fromChainId))
+  const allowanceDisplay = formatWidgetAllowance(solver.periphery.allowance, fromToken.decimals) ?? '0'
 
   const approveNotification = useMemo<TCreateNotificationParams | undefined>(
     () =>
@@ -554,7 +627,7 @@ export default function SwapPage(): ReactElement {
         </div>
 
         {activeTab === 'wallet' ? (
-          <div id="swap-wallet-panel" role="tabpanel" aria-labelledby="swap-wallet-tab">
+          <div id="swap-wallet-panel" role="tabpanel" aria-labelledby="swap-wallet-tab" className="h-[600px]">
             <SwapWalletPanel
               onSelectToken={(address, chainId) => {
                 if (!isSwapChainId(chainId)) return
@@ -564,8 +637,13 @@ export default function SwapPage(): ReactElement {
             />
           </div>
         ) : (
-          <div id="swap-swap-panel" role="tabpanel" aria-labelledby="swap-swap-tab" className="relative">
-            <div className="flex items-center justify-between px-6 pt-4">
+          <div
+            id="swap-swap-panel"
+            role="tabpanel"
+            aria-labelledby="swap-swap-tab"
+            className="relative flex h-[600px] flex-col overflow-y-auto"
+          >
+            <div className="flex shrink-0 items-center justify-between px-6 pt-4">
               <div>
                 <h1 className="text-base font-semibold text-text-primary">Swap</h1>
                 <p className="text-xs text-text-secondary">Best available route, powered by Enso.</p>
@@ -574,7 +652,7 @@ export default function SwapPage(): ReactElement {
                 <span className="rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary">Cross-chain</span>
               ) : null}
             </div>
-            <div className="flex flex-col gap-3 p-6 pt-3">
+            <div className="flex min-h-0 flex-1 flex-col gap-3 p-6 pt-3">
               <InputTokenAmount
                 input={input}
                 title="You pay"
@@ -618,7 +696,7 @@ export default function SwapPage(): ReactElement {
                 tokenPrice={toTokenPrice}
               />
 
-              <div className="space-y-2 border-t border-border pt-3">
+              <div className="min-h-[201px] space-y-2 border-t border-border pt-3">
                 <DetailRow
                   label="Minimum received"
                   value={
@@ -627,6 +705,13 @@ export default function SwapPage(): ReactElement {
                       : 'Unavailable'
                   }
                 />
+                {destinationVaultEstimate && destinationVaultMetadata ? (
+                  <SwapVaultWorthRow
+                    estimate={destinationVaultEstimate}
+                    underlyingSymbol={destinationVaultMetadata.underlyingSymbol}
+                    isLoading={protectedQuote.isDisplayLoading}
+                  />
+                ) : null}
                 <DetailRow
                   label="Est. / Worst price impact"
                   value={
@@ -635,12 +720,48 @@ export default function SwapPage(): ReactElement {
                       : 'Unavailable'
                   }
                 />
+                {destinationVaultEstimate && destinationVaultMetadata ? (
+                  <SwapVaultAnnualReturnRow
+                    estimate={destinationVaultEstimate}
+                    underlyingSymbol={destinationVaultMetadata.underlyingSymbol}
+                    annualRate={destinationVaultMetadata.annualRate}
+                    isLoading={protectedQuote.isDisplayLoading}
+                  />
+                ) : null}
                 <DetailRow label="Routing" value="Enso" />
                 {customRecipient ? (
                   <DetailRow
                     label="Recipient"
                     value={`${customRecipient.slice(0, 6)}...${customRecipient.slice(-4)}`}
                   />
+                ) : null}
+                {account && !isNativeInput && approvalSpenderAddress ? (
+                  <div className="flex items-start justify-between gap-4 text-sm">
+                    <button
+                      type="button"
+                      onClick={() => setIsApprovalOpen(true)}
+                      className="yearn--link-dots text-left text-text-secondary transition-colors hover:text-text-primary"
+                    >
+                      Existing Approval (Enso Router)
+                    </button>
+                    {solver.periphery.isLoadingAllowance ? (
+                      <span className="inline-block h-4 w-20 animate-pulse rounded bg-surface-secondary" />
+                    ) : solver.periphery.allowance > 0n && allowanceDisplay !== 'Unlimited' ? (
+                      <button
+                        type="button"
+                        onClick={() => setInputValue(formatUnits(solver.periphery.allowance, fromToken.decimals))}
+                        className="text-right font-semibold text-text-primary transition-colors hover:text-primary"
+                      >
+                        {allowanceDisplay} {fromToken.symbol}
+                      </button>
+                    ) : (
+                      <span className="text-right font-semibold text-text-primary">
+                        {allowanceDisplay === 'Unlimited'
+                          ? allowanceDisplay
+                          : `${allowanceDisplay} ${fromToken.symbol}`}
+                      </span>
+                    )}
+                  </div>
                 ) : null}
               </div>
 
@@ -669,7 +790,7 @@ export default function SwapPage(): ReactElement {
                 </p>
               ) : null}
 
-              <div className="flex items-center gap-2">
+              <div className="mt-auto flex items-center gap-2">
                 <div className="flex-1">
                   {!account ? (
                     <Button
@@ -734,25 +855,47 @@ export default function SwapPage(): ReactElement {
             resolveCustomToken={resolveCustomToken}
           />
         ) : null}
-      </div>
 
-      <TransactionOverlay
-        isOpen={isTransactionOpen}
-        onClose={() => setIsTransactionOpen(false)}
-        step={currentStep}
-        isLastStep={!needsApproval}
-        autoContinueToNextStep
-        autoContinueStepLabels={['Approve']}
-        onStepSuccess={(label) => {
-          if (label === 'Approve') void solver.periphery.refetchAllowance()
-        }}
-        onBeforeSuccess={async () => {
-          await onRefresh()
-        }}
-        onAllComplete={() => {
-          setInputValue('')
-        }}
-      />
+        {approvalSpenderAddress && !isNativeInput ? (
+          <ApprovalOverlay
+            isOpen={isApprovalOpen}
+            onClose={() => setIsApprovalOpen(false)}
+            onDone={async () => {
+              await solver.periphery.refetchAllowance()
+            }}
+            disableSetUnlimited={
+              solver.periphery.allowance > 0n && requiresAllowanceResetBeforeApproval(fromToken.address)
+            }
+            tokenSymbol={fromToken.symbol}
+            tokenAddress={toAddress(fromToken.address)}
+            tokenDecimals={fromToken.decimals}
+            spenderAddress={approvalSpenderAddress}
+            spenderName="Enso Router"
+            chainId={selection.fromChainId}
+            currentAllowance={allowanceDisplay}
+            approvalWarning={solver.periphery.approvalWarning}
+            actionLabel="swapping"
+          />
+        ) : null}
+
+        <TransactionOverlay
+          isOpen={isTransactionOpen}
+          onClose={() => setIsTransactionOpen(false)}
+          step={currentStep}
+          isLastStep={!needsApproval}
+          autoContinueToNextStep
+          autoContinueStepLabels={['Approve']}
+          onStepSuccess={(label) => {
+            if (label === 'Approve') void solver.periphery.refetchAllowance()
+          }}
+          onBeforeSuccess={async () => {
+            await onRefresh()
+          }}
+          onAllComplete={() => {
+            setInputValue('')
+          }}
+        />
+      </div>
     </div>
   )
 }

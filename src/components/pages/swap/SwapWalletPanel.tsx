@@ -11,7 +11,7 @@ import { useWalletStatus, useWalletTokens } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import { useTokenList } from '@shared/contexts/WithTokenList'
-import { cl, formatTAmount, toAddress } from '@shared/utils'
+import { formatTAmount, toAddress } from '@shared/utils'
 import { formatUSD } from '@shared/utils/format'
 import { getNetwork } from '@shared/utils/wagmi'
 import { type ReactElement, useMemo, useState } from 'react'
@@ -143,29 +143,8 @@ export function SwapWalletPanel({ onSelectToken }: TSwapWalletPanelProps): React
   const visibleAssetCount = Object.values(assetsByChain).reduce((count, assets) => count + assets.length, 0)
 
   return (
-    <div className="flex min-h-[430px] flex-col">
-      <div className="space-y-3 border-b border-border p-5">
-        <div className="flex items-center justify-between gap-3">
-          <div>
-            <h3 className="text-base font-semibold text-text-primary">Wallet balances</h3>
-            <p className="text-xs text-text-secondary">Verified assets and Yearn vault shares across all networks.</p>
-          </div>
-          {unverifiedCount > 0 ? (
-            <button
-              type="button"
-              onClick={() => setShowUnverified((current) => !current)}
-              aria-pressed={showUnverified}
-              className={cl(
-                'shrink-0 rounded-md border px-2.5 py-1.5 text-xs font-medium transition-colors',
-                showUnverified
-                  ? 'border-border bg-surface-secondary text-text-primary'
-                  : 'border-transparent text-text-secondary hover:bg-surface-secondary hover:text-text-primary'
-              )}
-            >
-              {showUnverified ? 'Hide unverified' : `Show unverified (${unverifiedCount})`}
-            </button>
-          ) : null}
-        </div>
+    <div className="flex h-full min-h-0 flex-col">
+      <div className="space-y-2 border-b border-border p-5">
         <input
           type="search"
           value={search}
@@ -173,9 +152,19 @@ export function SwapWalletPanel({ onSelectToken }: TSwapWalletPanelProps): React
           placeholder="Search wallet assets"
           className="w-full rounded-md border border-border bg-surface px-3 py-2 text-sm text-text-primary outline-none placeholder:text-text-tertiary focus:border-text-secondary"
         />
+        <label className="inline-flex min-h-6 cursor-pointer items-center gap-2 text-xs text-text-secondary">
+          <input
+            type="checkbox"
+            checked={showUnverified}
+            disabled={unverifiedCount === 0}
+            onChange={(event) => setShowUnverified(event.target.checked)}
+            className="size-4 cursor-pointer accent-primary disabled:cursor-not-allowed disabled:opacity-50"
+          />
+          <span>Show unverified assets</span>
+        </label>
       </div>
 
-      <div className="max-h-[520px] flex-1 overflow-y-auto p-3">
+      <div className="min-h-0 flex-1 overflow-y-auto p-3">
         {isLoading || isLoadingVaultList ? (
           <div className="flex min-h-64 items-center justify-center text-sm text-text-secondary">
             Loading balances...
@@ -203,7 +192,7 @@ export function SwapWalletPanel({ onSelectToken }: TSwapWalletPanelProps): React
                     />
                     <span>{network.name}</span>
                   </div>
-                  {assets.map(({ token, isMajor, isYearn, isVerified }) => {
+                  {assets.map(({ token, isYearn, isVerified }) => {
                     const logo = getTokenLogoSources({
                       address: token.address,
                       chainId,
@@ -233,11 +222,7 @@ export function SwapWalletPanel({ onSelectToken }: TSwapWalletPanelProps): React
                               <span className="truncate text-sm font-semibold text-text-primary">{token.symbol}</span>
                               {isYearn ? (
                                 <span className="rounded bg-primary/10 px-1.5 py-0.5 text-[10px] font-medium text-primary">
-                                  Yearn
-                                </span>
-                              ) : isMajor ? (
-                                <span className="rounded bg-surface-tertiary px-1.5 py-0.5 text-[10px] font-medium text-text-secondary">
-                                  Major
+                                  Yearn Vault
                                 </span>
                               ) : !isVerified ? (
                                 <span className="rounded bg-red-500/10 px-1.5 py-0.5 text-[10px] font-medium text-red-500">
