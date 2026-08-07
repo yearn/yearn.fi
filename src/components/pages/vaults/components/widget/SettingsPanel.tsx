@@ -8,29 +8,53 @@ import {
   ZAP_SLIPPAGE_RISK_ACKNOWLEDGEMENT_TEXT
 } from '@shared/utils/slippage'
 import { type FC, useCallback, useEffect, useId, useState } from 'react'
+import type { Address } from 'viem'
+import { getSettingsRecipientState } from './settingsRecipient'
 
 type SettingsPanelProps = {
   isActive: boolean
   onClose?: () => void
   variant?: 'panel' | 'overlay'
+  description?: string
+  showAutoStaking?: boolean
+  defaultRecipient?: Address
+  recipient?: Address
+  onRecipientChange?: (recipient: Address | undefined) => void
 }
 
-export const SettingsPanel: FC<SettingsPanelProps> = ({ isActive, onClose, variant = 'panel' }) => {
+export const SettingsPanel: FC<SettingsPanelProps> = ({
+  isActive,
+  onClose,
+  variant = 'panel',
+  description = 'Applies site-wide across all vaults. Route impact consumes part of this tolerance; the remainder is used as execution buffer.',
+  showAutoStaking = true,
+  defaultRecipient,
+  recipient,
+  onRecipientChange
+}) => {
   const { zapSlippage, setZapSlippage, isAutoStakingEnabled, setIsAutoStakingEnabled } = useYearn()
   const [localSlippage, setLocalSlippage] = useState(zapSlippage)
   const [riskAcknowledgement, setRiskAcknowledgement] = useState('')
+  const [localRecipient, setLocalRecipient] = useState(recipient ?? '')
   const slippageId = useId()
   const riskAcknowledgementId = useId()
   const maximizeYieldId = useId()
+  const recipientId = useId()
 
   useEffect(() => {
     if (!isActive) {
       setLocalSlippage(zapSlippage)
       setRiskAcknowledgement('')
+      setLocalRecipient(recipient ?? '')
     }
-  }, [isActive, zapSlippage])
+  }, [isActive, recipient, zapSlippage])
 
   const handleClose = useCallback(() => {
+    const recipientState = getSettingsRecipientState(localRecipient, defaultRecipient)
+    if (onRecipientChange && recipientState.error) {
+      return
+    }
+
     const { sanitizedSlippage, isSlippageDirty, hasValidRiskAcknowledgement } = getZapSlippageSaveState({
       localSlippage,
       currentSlippage: zapSlippage,
@@ -44,8 +68,21 @@ export const SettingsPanel: FC<SettingsPanelProps> = ({ isActive, onClose, varia
       setRiskAcknowledgement('')
     }
 
+    if (onRecipientChange) {
+      onRecipientChange(recipientState.recipient)
+    }
+
     onClose?.()
-  }, [localSlippage, onClose, riskAcknowledgement, setZapSlippage, zapSlippage])
+  }, [
+    defaultRecipient,
+    localRecipient,
+    localSlippage,
+    onClose,
+    onRecipientChange,
+    riskAcknowledgement,
+    setZapSlippage,
+    zapSlippage
+  ])
 
   if (!isActive) {
     return null
@@ -58,6 +95,7 @@ export const SettingsPanel: FC<SettingsPanelProps> = ({ isActive, onClose, varia
   })
   const riskAcknowledgementMessage =
     needsRiskAcknowledgement && !hasValidRiskAcknowledgement ? 'Sentence does not match exactly.' : null
+  const recipientError = getSettingsRecipientState(localRecipient, defaultRecipient).error
 
   const panelClass =
     variant === 'overlay'
@@ -76,10 +114,7 @@ export const SettingsPanel: FC<SettingsPanelProps> = ({ isActive, onClose, varia
         <div className="flex items-start justify-between gap-4 px-6 py-4 border-b border-border">
           <div className="flex flex-col gap-1">
             <h3 className="text-base font-semibold text-text-primary">Transaction Settings</h3>
-            <p className="text-xs text-text-secondary">
-              Applies site-wide across all vaults. Route impact consumes part of this tolerance; the remainder is used
-              as execution buffer.
-            </p>
+            <p className="text-xs text-text-secondary">{description}</p>
           </div>
           {onClose ? (
             <button
@@ -175,32 +210,68 @@ export const SettingsPanel: FC<SettingsPanelProps> = ({ isActive, onClose, varia
                 ) : null}
               </div>
 
-              <div className="flex items-center justify-between pt-2 border-t border-border">
-                <div className="space-y-0.5">
-                  <label htmlFor={maximizeYieldId} className="text-sm text-text-primary">
-                    Stake Automatically
-                  </label>
-                  <p className="text-xs text-text-secondary">Automatically stake to maximize APY.</p>
-                  <p className="text-xs text-text-secondary">No assets will be locked.</p>
-                </div>
-                <button
-                  id={maximizeYieldId}
-                  role="switch"
-                  aria-checked={isAutoStakingEnabled}
-                  onClick={() => setIsAutoStakingEnabled(!isAutoStakingEnabled)}
-                  className={cl(
-                    'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
-                    isAutoStakingEnabled ? 'bg-blue-600' : 'bg-surface-tertiary'
-                  )}
-                >
-                  <span
-                    className={cl(
-                      'inline-block h-4 w-4 transform rounded-full bg-surface border border-border shadow-sm transition-transform',
-                      isAutoStakingEnabled ? 'translate-x-6' : 'translate-x-1'
-                    )}
+              {onRecipientChange ? (
+                <div className="space-y-2 border-t border-border pt-4">
+                  <div className="space-y-0.5">
+                    <label htmlFor={recipientId} className="text-sm text-text-primary">
+                      Recipient (advanced)
+                    </label>
+                    <p className="text-xs text-text-secondary">
+                      Leave blank to receive in the connected wallet. Only change this if you control the destination.
+                    </p>
+                  </div>
+                  <input
+                    id={recipientId}
+                    type="text"
+                    value={localRecipient}
+                    onChange={(event) => setLocalRecipient(event.target.value)}
+                    className="w-full rounded-md border border-border bg-surface px-3 py-2 text-xs text-text-primary"
+                    placeholder={defaultRecipient ?? '0x...'}
+                    spellCheck={false}
+                    autoComplete="off"
+                    aria-invalid={Boolean(recipientError)}
                   />
-                </button>
-              </div>
+                  {recipientError ? <p className="text-xs text-red-500">{recipientError}</p> : null}
+                  {localRecipient ? (
+                    <button
+                      type="button"
+                      onClick={() => setLocalRecipient('')}
+                      className="text-xs font-medium text-text-secondary underline transition-colors hover:text-text-primary"
+                    >
+                      Use connected wallet
+                    </button>
+                  ) : null}
+                </div>
+              ) : null}
+
+              {showAutoStaking ? (
+                <div className="flex items-center justify-between pt-2 border-t border-border">
+                  <div className="space-y-0.5">
+                    <label htmlFor={maximizeYieldId} className="text-sm text-text-primary">
+                      Stake Automatically
+                    </label>
+                    <p className="text-xs text-text-secondary">Automatically stake to maximize APY.</p>
+                    <p className="text-xs text-text-secondary">No assets will be locked.</p>
+                  </div>
+                  <button
+                    id={maximizeYieldId}
+                    role="switch"
+                    aria-checked={isAutoStakingEnabled}
+                    onClick={() => setIsAutoStakingEnabled(!isAutoStakingEnabled)}
+                    className={cl(
+                      'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
+                      isAutoStakingEnabled ? 'bg-blue-600' : 'bg-surface-tertiary'
+                    )}
+                  >
+                    <span
+                      className={cl(
+                        'inline-block h-4 w-4 transform rounded-full bg-surface border border-border shadow-sm transition-transform',
+                        isAutoStakingEnabled ? 'translate-x-6' : 'translate-x-1'
+                      )}
+                    />
+                  </button>
+                </div>
+              ) : null}
             </div>
           </div>
         </div>

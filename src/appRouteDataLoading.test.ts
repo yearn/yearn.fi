@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { isVaultDetailPathname, isVaultsListPathname, shouldLoadAppTokenLists } from '@/appRouteDataLoading'
+import {
+  isVaultDetailPathname,
+  isVaultsListPathname,
+  shouldLoadAppTokenLists,
+  shouldLoadAppVaultList
+} from '@/appRouteDataLoading'
 
 describe('app route data loading', () => {
   it('identifies vault list routes', () => {
@@ -20,5 +25,11 @@ describe('app route data loading', () => {
     expect(shouldLoadAppTokenLists('/vaults')).toBe(false)
     expect(shouldLoadAppTokenLists('/vaults/1/0x0000000000000000000000000000000000000001')).toBe(false)
     expect(shouldLoadAppTokenLists('/portfolio')).toBe(true)
+  })
+
+  it('loads vault metadata for portfolio and swap surfaces', () => {
+    expect(shouldLoadAppVaultList('/portfolio')).toBe(true)
+    expect(shouldLoadAppVaultList('/swap?fromChain=1')).toBe(true)
+    expect(shouldLoadAppVaultList('/vaults')).toBe(false)
   })
 })

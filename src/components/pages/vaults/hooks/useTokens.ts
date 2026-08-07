@@ -15,7 +15,7 @@ export interface Token {
   balance: TNormalizedBN
 }
 
-async function fetchTokenData(
+export async function fetchTokenData(
   config: any,
   addresses: Address[],
   canonicalChainId: number,

@@ -8,9 +8,10 @@ const VAULT_TOKEN_ADDRESS = '0x0000000000000000000000000000000000000002' as cons
 const STAKING_TOKEN_ADDRESS = '0x0000000000000000000000000000000000000003' as const
 const LEGACY_USDAF_ADDRESS = '0x85E30b8b263bC64d94b827ed450F2EdFEE8579dA' as const
 
-const { mockUseWallet, mockUseYearn } = vi.hoisted(() => ({
+const { mockUseWallet, mockUseYearn, mockUseTokenList } = vi.hoisted(() => ({
   mockUseWallet: vi.fn(),
-  mockUseYearn: vi.fn()
+  mockUseYearn: vi.fn(),
+  mockUseTokenList: vi.fn()
 }))
 
 vi.mock('@shared/contexts/useWallet', () => ({
@@ -33,9 +34,7 @@ vi.mock('@shared/contexts/useWallet', () => ({
 }))
 
 vi.mock('@shared/contexts/WithTokenList', () => ({
-  useTokenList: () => ({
-    tokenLists: {}
-  })
+  useTokenList: mockUseTokenList
 }))
 
 vi.mock('@shared/contexts/useYearn', () => ({
@@ -61,6 +60,7 @@ function buildToken(overrides: Partial<TToken> = {}): TToken {
 }
 
 describe('TokenSelector', () => {
+  mockUseTokenList.mockReturnValue({ tokenLists: {}, addCustomToken: vi.fn() })
   mockUseYearn.mockReturnValue({
     allVaults: {},
     getPrice: () => ({ normalized: 0 })
@@ -464,6 +464,132 @@ describe('TokenSelector', () => {
     expect(html).toContain('Base Token')
     expect(html).not.toContain('kpdWETH')
     expect(html).not.toContain('stkWETH')
+  })
+
+  it('excludes retired vaults only when selecting a swap destination', () => {
+    const retiredVault = {
+      chainID: 1,
+      version: '3.0.0',
+      address: VAULT_TOKEN_ADDRESS,
+      name: 'Retired Vault',
+      symbol: 'yvOLD',
+      decimals: 18,
+      token: {
+        address: BASE_TOKEN_ADDRESS,
+        symbol: 'BASE',
+        name: 'Base Token',
+        description: '',
+        decimals: 18
+      },
+      staking: {
+        address: STAKING_TOKEN_ADDRESS,
+        available: true,
+        source: '',
+        rewards: null
+      },
+      info: {
+        sourceURL: '',
+        riskLevel: 0,
+        riskScore: [],
+        riskScoreComment: '',
+        uiNotice: '',
+        isRetired: true,
+        isBoosted: false,
+        isHighlighted: false,
+        isHidden: false
+      }
+    }
+    mockUseWallet.mockReturnValue({
+      isLoading: false,
+      balances: {
+        1: {
+          [VAULT_TOKEN_ADDRESS]: buildToken({
+            address: VAULT_TOKEN_ADDRESS,
+            name: 'Retired Vault',
+            symbol: 'yvOLD'
+          })
+        }
+      },
+      getToken: ({ address }: { address: string }) =>
+        address === VAULT_TOKEN_ADDRESS
+          ? buildToken({ address: VAULT_TOKEN_ADDRESS, name: 'Retired Vault', symbol: 'yvOLD' })
+          : buildToken()
+    })
+    mockUseYearn.mockReturnValue({
+      allVaults: { [VAULT_TOKEN_ADDRESS]: retiredVault },
+      getPrice: () => ({ normalized: 0 })
+    })
+
+    const sourceHtml = renderToStaticMarkup(
+      <TokenSelector value={VAULT_TOKEN_ADDRESS} onChange={() => undefined} chainId={1} mode="swap" />
+    )
+    const destinationHtml = renderToStaticMarkup(
+      <TokenSelector
+        value={BASE_TOKEN_ADDRESS}
+        onChange={() => undefined}
+        chainId={1}
+        mode="swap"
+        excludeRetiredVaults
+      />
+    )
+
+    expect(sourceHtml).toContain('yvOLD')
+    expect(destinationHtml).not.toContain('yvOLD')
+  })
+
+  it('shows only positive wallet balances when balance-only selection is enabled', () => {
+    const heldToken = buildToken({ name: 'Held Token', symbol: 'HELD' })
+    const emptyToken = buildToken({
+      address: VAULT_TOKEN_ADDRESS,
+      name: 'Empty Token',
+      symbol: 'EMPTY',
+      balance: { raw: 0n, normalized: 0, display: '0', decimals: 18 }
+    })
+    mockUseWallet.mockReturnValue({
+      isLoading: false,
+      balances: { 1: { [BASE_TOKEN_ADDRESS]: heldToken, [VAULT_TOKEN_ADDRESS]: emptyToken } },
+      getToken: ({ address }: { address: string }) => (address === VAULT_TOKEN_ADDRESS ? emptyToken : heldToken)
+    })
+    mockUseYearn.mockReturnValue({
+      allVaults: {},
+      getPrice: () => ({ normalized: 0 })
+    })
+
+    const html = renderToStaticMarkup(
+      <TokenSelector value={BASE_TOKEN_ADDRESS} onChange={() => undefined} chainId={1} mode="swap" balanceOnly />
+    )
+
+    expect(html).toContain('Held Token')
+    expect(html).not.toContain('Empty Token')
+  })
+
+  it('does not render the full application token registry for swaps', () => {
+    const registryToken = buildToken({
+      address: VAULT_TOKEN_ADDRESS,
+      name: 'Registry Only Token',
+      symbol: 'REGISTRY',
+      balance: { raw: 0n, normalized: 0, display: '0', decimals: 18 }
+    })
+    mockUseTokenList.mockReturnValue({
+      tokenLists: { 1: { [VAULT_TOKEN_ADDRESS]: registryToken } },
+      addCustomToken: vi.fn()
+    })
+    mockUseWallet.mockReturnValue({
+      isLoading: false,
+      balances: { 1: {} },
+      getToken: () => buildToken()
+    })
+    mockUseYearn.mockReturnValue({
+      allVaults: {},
+      getPrice: () => ({ normalized: 0 })
+    })
+
+    const html = renderToStaticMarkup(
+      <TokenSelector value={BASE_TOKEN_ADDRESS} onChange={() => undefined} chainId={1} mode="swap" />
+    )
+
+    expect(html).not.toContain('Registry Only Token')
+    mockUseTokenList.mockReturnValue({ tokenLists: {}, addCustomToken: vi.fn() })
   })
 
   it('keeps the hidden vault share token available only for explicit unstake selection', () => {

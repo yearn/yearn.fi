@@ -91,6 +91,33 @@ describe('InputTokenAmount', () => {
     expect(html).toContain('Balance: 4 yvUSD')
   })
 
+  it('caps an opted-in token selector and exposes its full name', async () => {
+    const InputTokenAmount = await loadInputTokenAmount()
+    const html = renderToStaticMarkup(
+      <InputTokenAmount
+        input={
+          [
+            {
+              formValue: '1',
+              activity: [false, vi.fn()],
+              decimals: 18
+            },
+            vi.fn(),
+            vi.fn()
+          ] as never
+        }
+        symbol={'yvCurve-RSUP-WETH-f'}
+        tokenName={'Curve RSUP-WETH Factory yVault'}
+        showTokenSelector
+        limitTokenSelectorWidth
+      />
+    )
+
+    expect(html).toContain('max-w-[60%]')
+    expect(html).toContain('overflow-hidden')
+    expect(html).toContain('title="Curve RSUP-WETH Factory yVault (yvCurve-RSUP-WETH-f)"')
+  })
+
   it('renders zap output USD from raw quote amounts instead of compact display text', async () => {
     const InputTokenAmount = await loadInputTokenAmount()
     const html = renderToStaticMarkup(

@@ -233,3 +233,19 @@ export function shouldRunDeferredCompletion(params: {
 
   return false
 }
+
+export async function runBeforeSuccessSafely({
+  onBeforeSuccess,
+  label,
+  onError
+}: {
+  onBeforeSuccess: (label: string) => Promise<void>
+  label: string
+  onError: (error: unknown) => void
+}): Promise<void> {
+  try {
+    await onBeforeSuccess(label)
+  } catch (error) {
+    onError(error)
+  }
+}

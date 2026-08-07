@@ -512,6 +512,14 @@ export function MobileNavMenu({
                     >
                       <span>{'Portfolio'}</span>
                     </Link>
+                    <Link
+                      href={'/swap'}
+                      prefetch={false}
+                      onClick={onClose}
+                      className={navItemClass(pathname.startsWith('/swap'), false)}
+                    >
+                      <span>{'Swap'}</span>
+                    </Link>
                   </div>
 
                   <div className={'h-px w-full bg-border'} />

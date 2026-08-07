@@ -144,7 +144,7 @@ export const useEnsoOrder = ({
 
   return {
     prepareEnsoOrder,
-    receiptSuccess,
+    receiptSuccess: receiptSuccess && receipt?.status === 'success',
     txHash
   }
 }

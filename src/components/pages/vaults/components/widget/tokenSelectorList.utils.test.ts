@@ -148,6 +148,31 @@ describe('filterAndSortTokenSelectorTokens', () => {
     expect(filtered.map((token) => token.address)).toEqual([TOKEN_A])
   })
 
+  it('keeps positive wallet balances available for swaps even when they are not curated', () => {
+    const filtered = filterAndSortTokenSelectorTokens({
+      tokens: [
+        buildToken({
+          address: TOKEN_A,
+          name: 'Wallet Token',
+          symbol: 'WALLET',
+          normalizedBalance: 10,
+          rawBalance: 10n
+        }),
+        buildToken({
+          address: TOKEN_B,
+          name: 'Unknown Empty Token',
+          symbol: 'EMPTY'
+        })
+      ],
+      mode: 'swap',
+      yearnKnownTokenAddresses: new Set<string>(),
+      explicitTokenAddresses: new Set<string>(),
+      getTokenUsdValue: () => 0
+    })
+
+    expect(filtered.map((token) => token.address)).toEqual([TOKEN_A])
+  })
+
   it('still hides known deposit-token dust when a valid price puts it below the minimum threshold', () => {
     const filtered = filterAndSortTokenSelectorTokens({
       tokens: [

@@ -303,3 +303,11 @@ export const portfolioMetadata: Metadata = {
     canonical: '/portfolio'
   }
 }
+export const swapMetadata: Metadata = {
+  ...vaultsMetadata,
+  title: 'Yearn Swap',
+  description: 'Swap tokens across supported networks with Enso routing.',
+  alternates: {
+    canonical: '/swap'
+  }
+}

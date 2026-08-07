@@ -30,6 +30,7 @@ import {
   resolveOverlayConnectedChainId,
   resolvePendingSafeOverlayState,
   resolveTransactionReceiptOutcome,
+  runBeforeSuccessSafely,
   shouldAutoContinueFromSuccessState,
   shouldAutoContinuePermitSuccess,
   shouldRefetchNextStepAfterReceipt,
@@ -150,6 +151,10 @@ function isUserRejectionError(error: any): boolean {
     error?.message?.toLowerCase().includes('denied') ||
     error?.code === 4001
   )
+}
+
+function isCrossChainNotification(type: TCreateNotificationParams['type'] | undefined): boolean {
+  return type === 'crosschain zap' || type === 'crosschain swap'
 }
 
 function getTransactionErrorMessage(error: any): string {
@@ -657,7 +662,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       }
 
       const isEnsoOrder = Boolean(request.__isEnsoOrder)
-      const isCrossChain = currentStep.notification?.type === 'crosschain zap'
+      const isCrossChain = isCrossChainNotification(currentStep.notification?.type)
 
       try {
         if (isEnsoOrder) {
@@ -825,7 +830,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     overlayState === 'pending' && receiptOutcome === 'success' && !wasLastStepRef.current && executedStepAutoContinues
   const isSuccessButtonBusy = !isTerminalSuccess && (!isStepReady || isAutoContinuing)
   const successButtonLabel = getSuccessButtonLabel({
-    isCrossChainNotification: successStep?.notification?.type === 'crosschain zap',
+    isCrossChainNotification: isCrossChainNotification(successStep?.notification?.type),
     isTerminalSuccess,
     isAutoContinuing,
     executedStepAutoContinues,
@@ -992,7 +997,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       const completedAllSteps = executedStepRef.current?.completesFlow ?? wasLastStepRef.current
       const capturedStep = executedStepRef.current
       const capturedReceipt = receipt.data
-      const capturedStatus = capturedStep?.notification?.type === 'crosschain zap' ? 'submitted' : 'success'
+      const capturedStatus = isCrossChainNotification(capturedStep?.notification?.type) ? 'submitted' : 'success'
       autoContinueNonceRef.current += 1
       setIsAutoContinuing(false)
       setIsWaitingForNextStep(false)
@@ -1005,7 +1010,13 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       if (completedAllSteps && onBeforeSuccess) {
         setOverlayState('refreshing')
         void (async () => {
-          await onBeforeSuccess(capturedStep?.label ?? '')
+          await runBeforeSuccessSafely({
+            onBeforeSuccess,
+            label: capturedStep?.label ?? '',
+            onError: (error) => {
+              console.error('[TransactionOverlay] Post-confirmation refresh failed', error)
+            }
+          })
           await new Promise((resolve) => setTimeout(resolve, 500))
           finalizeSuccessState(completedAllSteps, capturedStep)
           if (capturedStep?.showConfetti) {

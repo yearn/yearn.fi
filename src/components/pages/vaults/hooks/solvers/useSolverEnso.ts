@@ -1,7 +1,7 @@
 import { type AppUseSimulateContractReturnType, useSimulateContract } from '@shared/hooks/useAppWagmi'
 import type { TNormalizedBN } from '@shared/types'
-import { isZeroAddress, toNormalizedBN } from '@shared/utils'
-import { getApproveAbi } from '@shared/utils/approve'
+import { ETH_TOKEN_ADDRESS, isZeroAddress, toAddress, toNormalizedBN } from '@shared/utils'
+import { getApproveAbi, requiresAllowanceResetForApproval } from '@shared/utils/approve'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Address } from 'viem'
 import { env } from '@/env'
@@ -42,6 +42,7 @@ interface UseSolverEnsoReturn {
     priceImpact: number | null | undefined
     allowance: bigint
     isAllowanceSufficient: boolean
+    needsAllowanceResetBeforeApproval: boolean
     route: EnsoRouteResponse | undefined
     routeHasSwap: boolean
     error: EnsoError | undefined
@@ -83,6 +84,7 @@ export const useSolverEnso = ({
   const routeAbortControllerRef = useRef<AbortController | null>(null)
 
   const isCrossChain = destinationChainId !== undefined && destinationChainId !== chainId
+  const isNativeToken = toAddress(tokenIn) === ETH_TOKEN_ADDRESS
   const requestedRoute = resolvedRequestKey === requestKey ? route : undefined
   const requestedRouterAddress = requestedRoute?.tx?.to
   const routerAddress = getValidatedEnsoRouterAddress({
@@ -118,7 +120,7 @@ export const useSolverEnso = ({
     spender: allowanceSpender,
     watch: true,
     chainId,
-    enabled: !!allowanceSpender
+    enabled: !!allowanceSpender && !isNativeToken
   })
 
   const getRoute = useCallback(async () => {
@@ -260,8 +262,19 @@ export const useSolverEnso = ({
   const hasCurrentRoute = resolvedRequestKey === requestKey
   const hasCurrentError = errorRequestKey === requestKey
   const isLoadingCurrentRequest = isLoadingRoute || (canRequestRoute && !hasCurrentRoute && !hasCurrentError)
-  const isAllowanceSufficient = !allowanceSpender || allowance >= amountIn
-  const prepareApproveEnabled = routerAddress && !isAllowanceSufficient && isValidInput && enabled
+  const isAllowanceSufficient = isNativeToken || !allowanceSpender || allowance >= amountIn
+  const needsAllowanceResetBeforeApproval = requiresAllowanceResetForApproval({
+    tokenAddress: tokenIn,
+    currentAllowance: allowance,
+    requiredAmount: amountIn
+  })
+  const prepareApproveEnabled =
+    !isNativeToken &&
+    routerAddress &&
+    !isAllowanceSufficient &&
+    !needsAllowanceResetBeforeApproval &&
+    isValidInput &&
+    enabled
   const prepareApprove: AppUseSimulateContractReturnType = useSimulateContract({
     abi: getApproveAbi(tokenIn),
     functionName: 'approve',
@@ -288,6 +301,7 @@ export const useSolverEnso = ({
       priceImpact: visibleRoute?.priceImpact,
       allowance,
       isAllowanceSufficient,
+      needsAllowanceResetBeforeApproval,
       route: visibleRoute,
       routeHasSwap: visibleRouteHasSwap,
       error: visibleError,

@@ -12,6 +12,7 @@ import { usePathname } from 'next/navigation'
 import type { ReactElement } from 'react'
 import { createContext, memo, useCallback, useContext, useEffect, useState } from 'react'
 import { deserialize, serialize } from 'wagmi'
+import { shouldLoadAppVaultList } from '@/appRouteDataLoading'
 import { env } from '@/env'
 
 export const DEFAULT_SLIPPAGE = 0.5
@@ -87,8 +88,7 @@ export const YearnContextApp = memo(function YearnContextApp({ children }: { chi
     }
   )
 
-  const isPortfolioRoute = pathname.startsWith('/portfolio')
-  const shouldEnableVaultList = isPortfolioRoute
+  const shouldEnableVaultList = shouldLoadAppVaultList(pathname)
   const [isManuallyEnabled, setIsManuallyEnabled] = useState(false)
   const isVaultListEnabled = shouldEnableVaultList || isManuallyEnabled
   const sanitizedZapSlippage = clampZapSlippage(zapSlippage ?? DEFAULT_SLIPPAGE)
