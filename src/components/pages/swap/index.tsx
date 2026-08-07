@@ -627,7 +627,7 @@ export default function SwapPage(): ReactElement {
         </div>
 
         {activeTab === 'wallet' ? (
-          <div id="swap-wallet-panel" role="tabpanel" aria-labelledby="swap-wallet-tab" className="h-[600px]">
+          <div id="swap-wallet-panel" role="tabpanel" aria-labelledby="swap-wallet-tab" className="h-[640px]">
             <SwapWalletPanel
               onSelectToken={(address, chainId) => {
                 if (!isSwapChainId(chainId)) return
@@ -641,7 +641,7 @@ export default function SwapPage(): ReactElement {
             id="swap-swap-panel"
             role="tabpanel"
             aria-labelledby="swap-swap-tab"
-            className="relative flex h-[600px] flex-col overflow-hidden"
+            className="relative flex h-[640px] flex-col overflow-hidden"
           >
             <div className="flex shrink-0 items-center justify-between px-6 pt-4">
               <p className="text-xs text-text-secondary">Best available route, powered by Enso.</p>
