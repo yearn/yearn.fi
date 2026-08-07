@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { filterVisiblePortfolioHoldings, isPortfolioDustValueVisible } from './portfolioVisibility'
+import {
+  filterVisiblePortfolioHoldings,
+  filterVisiblePortfolioVaultSeries,
+  isPortfolioDustValueVisible
+} from './portfolioVisibility'
 
 function makeVault(address: string, isHidden: boolean) {
   return {
@@ -131,5 +135,30 @@ describe('filterVisiblePortfolioHoldings', () => {
   it('treats one cent as visible portfolio value', () => {
     expect(isPortfolioDustValueVisible(0.009, true)).toBe(false)
     expect(isPortfolioDustValueVisible(0.01, true)).toBe(true)
+  })
+})
+
+describe('filterVisiblePortfolioVaultSeries', () => {
+  it('removes explicitly hidden vaults from chart series', () => {
+    const visible = makeVault('0x1111111111111111111111111111111111111111', false)
+    const hidden = makeVault('0x2222222222222222222222222222222222222222', true)
+    const series = [
+      { chainId: 1, vaultAddress: visible.address, symbol: 'VISIBLE' },
+      { chainId: 1, vaultAddress: hidden.address.toUpperCase(), symbol: 'HIDDEN' }
+    ]
+
+    expect(filterVisiblePortfolioVaultSeries(series, [visible, hidden])).toEqual([series[0]])
+  })
+
+  it('keeps chart series whose vault metadata is unavailable', () => {
+    const series = [
+      {
+        chainId: 1,
+        vaultAddress: '0x3333333333333333333333333333333333333333',
+        symbol: 'UNKNOWN'
+      }
+    ]
+
+    expect(filterVisiblePortfolioVaultSeries(series, [])).toEqual(series)
   })
 })

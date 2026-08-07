@@ -45,6 +45,7 @@ const KNOWN_STABLECOIN_SYMBOLS = new Set([
   'USDC',
   'USDT',
   'DAI',
+  'DUSD',
   'FRAX',
   'LUSD',
   'TUSD',

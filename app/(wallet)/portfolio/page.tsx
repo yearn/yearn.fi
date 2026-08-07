@@ -1,5 +1,5 @@
 import type { ReactElement } from 'react'
-import { portfolioMetadata } from '../metadata'
+import { portfolioMetadata } from '../../metadata'
 import PortfolioPageClient from './page-client'
 
 export const metadata = portfolioMetadata
