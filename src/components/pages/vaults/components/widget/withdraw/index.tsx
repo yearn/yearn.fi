@@ -16,6 +16,8 @@ import { ApprovalOverlay } from '../deposit/ApprovalOverlay'
 import { InputTokenAmount } from '../InputTokenAmount'
 import { SettingsPanel } from '../SettingsPanel'
 import { PriceImpactWarning } from '../shared/PriceImpactWarning'
+import { getProtectedEnsoQuoteError } from '../shared/protectedEnsoQuoteError'
+import { isProtectedEnsoTransactionStepEnabled } from '../shared/protectedEnsoTransaction'
 import { TokenSelectorOverlay } from '../shared/TokenSelectorOverlay'
 import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
 import { useProtectedEnsoQuoteState } from '../shared/useProtectedEnsoQuoteState'
@@ -564,6 +566,7 @@ export function WidgetWithdraw({
   const protectedEnsoQuote = useProtectedEnsoQuoteState({
     stateKey: ensoSlippageCalibrationKey,
     isEnsoRoute,
+    isCrossChain,
     amount: flowRequiredShares,
     requestedSlippage: ensoQuoteSlippage,
     setRequestedSlippage: setEnsoQuoteSlippage,
@@ -587,6 +590,7 @@ export function WidgetWithdraw({
     isPreparing: isPreparingEnsoQuote,
     isDisplayLoading: isDisplayLoadingEnsoQuote,
     isWaitingForProtectedQuote: isWaitingForProtectedEnsoQuote,
+    canExecute: canExecuteProtectedEnsoQuote,
     executableTx: executableEnsoTx
   } = protectedEnsoQuote
 
@@ -674,11 +678,13 @@ export function WidgetWithdraw({
     zapSlippage
   ])
 
-  const unpricedEnsoWithdrawError =
-    protectedEnsoQuote.hasUnpricedQuoteError && !withdrawAmount.isDebouncing
-      ? 'Unable to estimate zap price impact for the selected token. Withdraw the base asset or swap elsewhere.'
-      : null
-  const effectiveWithdrawError = baseWithdrawError || unpricedEnsoWithdrawError
+  const protectedEnsoWithdrawError = getProtectedEnsoQuoteError({
+    blockedReason: protectedEnsoQuote.blockedReason,
+    hasUnpricedQuoteError: protectedEnsoQuote.hasUnpricedQuoteError,
+    isDebouncing: withdrawAmount.isDebouncing,
+    flow: 'withdraw'
+  })
+  const effectiveWithdrawError = baseWithdrawError || protectedEnsoWithdrawError
 
   const canOpenTokenSelector = ensoEnabled && !disableTokenSelector
   const shouldShowZapUi = !isBaseWithdrawToken
@@ -802,7 +808,10 @@ export function WidgetWithdraw({
         withdrawNotificationParams,
         safeWithdrawBatch,
         prepareApproveEnabled: !isWaitingForProtectedEnsoQuote && Boolean(activeFlow.periphery.prepareApproveEnabled),
-        prepareWithdrawEnabled: !isWaitingForProtectedEnsoQuote && Boolean(activeFlow.periphery.prepareWithdrawEnabled),
+        prepareWithdrawEnabled: isProtectedEnsoTransactionStepEnabled({
+          canExecute: canExecuteProtectedEnsoQuote,
+          prepareEnabled: Boolean(activeFlow.periphery.prepareWithdrawEnabled)
+        }),
         directUnstakePrepareEnabled: Boolean(directUnstakeFlow.periphery.prepareWithdrawEnabled),
         directWithdrawPrepareEnabled: Boolean(directWithdrawFlow.periphery.prepareWithdrawEnabled)
       }),
@@ -830,7 +839,8 @@ export function WidgetWithdraw({
       safeWithdrawBatch,
       activeFlow.periphery.prepareApproveEnabled,
       activeFlow.periphery.prepareWithdrawEnabled,
-      isWaitingForProtectedEnsoQuote
+      isWaitingForProtectedEnsoQuote,
+      canExecuteProtectedEnsoQuote
     ]
   )
 

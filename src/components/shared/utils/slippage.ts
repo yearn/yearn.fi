@@ -1,5 +1,6 @@
 export const ZAP_SLIPPAGE_RISK_ACKNOWLEDGEMENT_THRESHOLD = 1
 export const ZAP_SLIPPAGE_HARD_CAP = 5
+export const MIN_CROSS_CHAIN_ENSO_SLIPPAGE_BPS = 1
 export const ZAP_SLIPPAGE_RISK_ACKNOWLEDGEMENT_TEXT = 'I accept the risk that I may lose money doing this'
 
 function sanitizeNumber(value: number): number {

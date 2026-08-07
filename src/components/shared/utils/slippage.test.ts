@@ -69,4 +69,19 @@ describe('slippage utils', () => {
       })
     ).toBe(0)
   })
+
+  it('never rounds final Enso slippage above sub-basis-point user tolerance', () => {
+    expect(
+      calculateRemainingEnsoSlippagePercentage({
+        userTolerancePercentage: 0.009,
+        quoteImpactPercentage: 0
+      })
+    ).toBe(0)
+    expect(
+      calculateRemainingEnsoSlippagePercentage({
+        userTolerancePercentage: 0.01,
+        quoteImpactPercentage: 0
+      })
+    ).toBe(0.01)
+  })
 })
