@@ -251,6 +251,36 @@ export default function SwapPage(): ReactElement {
   const ensoEnabled = useEnsoEnabled()
   const { token: fromToken, price: fromTokenPrice } = useResolvedSwapToken(selection.fromToken, selection.fromChainId)
   const { token: toToken, price: toTokenPrice } = useResolvedSwapToken(selection.toToken, selection.toChainId)
+  const swapBalanceRefreshTokens = useMemo(
+    () => [
+      {
+        address: fromToken.address,
+        chainID: selection.fromChainId,
+        decimals: fromToken.decimals,
+        name: fromToken.name,
+        symbol: fromToken.symbol
+      },
+      {
+        address: toToken.address,
+        chainID: selection.toChainId,
+        decimals: toToken.decimals,
+        name: toToken.name,
+        symbol: toToken.symbol
+      }
+    ],
+    [
+      fromToken.address,
+      fromToken.decimals,
+      fromToken.name,
+      fromToken.symbol,
+      selection.fromChainId,
+      selection.toChainId,
+      toToken.address,
+      toToken.decimals,
+      toToken.name,
+      toToken.symbol
+    ]
+  )
   const destinationVault = useMemo(
     () =>
       Object.values(allVaults).find(
@@ -956,7 +986,7 @@ export default function SwapPage(): ReactElement {
             if (label === 'Approve') void solver.periphery.refetchAllowance()
           }}
           onBeforeSuccess={async () => {
-            await onRefresh()
+            await onRefresh(swapBalanceRefreshTokens)
           }}
           onAllComplete={() => {
             setInputValue('')
