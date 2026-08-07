@@ -2,6 +2,7 @@ import { type AppUseSimulateContractReturnType, useSimulateContract } from '@sha
 import type { TNormalizedBN } from '@shared/types'
 import { isZeroAddress, toNormalizedBN } from '@shared/utils'
 import { getApproveAbi } from '@shared/utils/approve'
+import { MIN_CROSS_CHAIN_ENSO_SLIPPAGE_BPS } from '@shared/utils/slippage'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import type { Address } from 'viem'
 import { env } from '@/env'
@@ -15,6 +16,11 @@ import { type EnsoError, type EnsoRouteResponse, normalizeEnsoRouteResponse, rou
 
 const ENSO_ROUTE_PROXY = '/api/enso/route'
 export type EnsoRoutingStrategy = 'router' | 'delegate' | 'router-legacy' | 'delegate-legacy' | 'ensowallet'
+
+export function getEffectiveEnsoRequestSlippage(requestedSlippage: number, isCrossChain: boolean): number {
+  const normalizedSlippage = Number.isFinite(requestedSlippage) ? Math.max(0, Math.floor(requestedSlippage)) : 0
+  return isCrossChain && normalizedSlippage === 0 ? MIN_CROSS_CHAIN_ENSO_SLIPPAGE_BPS : normalizedSlippage
+}
 
 interface UseSolverEnsoProps {
   tokenIn: Address
@@ -125,6 +131,7 @@ export const useSolverEnso = ({
     if (!enabled || !fromAddress || amountIn <= 0n) return
     if (isZeroAddress(tokenIn) || isZeroAddress(tokenOut)) return
     const normalizedSlippage = Number.isFinite(slippage) ? Math.max(0, Math.floor(slippage)) : 0
+    const effectiveSlippage = getEffectiveEnsoRequestSlippage(normalizedSlippage, isCrossChain)
 
     const requestId = routeRequestIdRef.current + 1
     routeRequestIdRef.current = requestId
@@ -140,7 +147,7 @@ export const useSolverEnso = ({
         tokenIn,
         tokenOut,
         amountIn: amountIn.toString(),
-        slippage: normalizedSlippage.toString(),
+        slippage: effectiveSlippage.toString(),
         ...(routingStrategy && { routingStrategy }),
         ...(isCrossChain && { destinationChainId: destinationChainId!.toString() }),
         ...(receiver && { receiver })

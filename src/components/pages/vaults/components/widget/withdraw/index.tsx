@@ -564,6 +564,7 @@ export function WidgetWithdraw({
   const protectedEnsoQuote = useProtectedEnsoQuoteState({
     stateKey: ensoSlippageCalibrationKey,
     isEnsoRoute,
+    isCrossChain,
     amount: flowRequiredShares,
     requestedSlippage: ensoQuoteSlippage,
     setRequestedSlippage: setEnsoQuoteSlippage,
@@ -674,11 +675,16 @@ export function WidgetWithdraw({
     zapSlippage
   ])
 
-  const unpricedEnsoWithdrawError =
-    protectedEnsoQuote.hasUnpricedQuoteError && !withdrawAmount.isDebouncing
-      ? 'Unable to estimate zap price impact for the selected token. Withdraw the base asset or swap elsewhere.'
-      : null
-  const effectiveWithdrawError = baseWithdrawError || unpricedEnsoWithdrawError
+  const protectedEnsoWithdrawError = !withdrawAmount.isDebouncing
+    ? protectedEnsoQuote.blockedReason === 'cross-chain-minimum-slippage'
+      ? 'Cross-chain routes require at least 0.01% slippage.'
+      : protectedEnsoQuote.blockedReason === 'no-protected-tolerance'
+        ? 'No protected slippage remains after estimated price impact. Increase your tolerance or withdraw the base asset.'
+        : protectedEnsoQuote.hasUnpricedQuoteError
+          ? 'Unable to estimate zap price impact for the selected token. Withdraw the base asset or swap elsewhere.'
+          : null
+    : null
+  const effectiveWithdrawError = baseWithdrawError || protectedEnsoWithdrawError
 
   const canOpenTokenSelector = ensoEnabled && !disableTokenSelector
   const shouldShowZapUi = !isBaseWithdrawToken

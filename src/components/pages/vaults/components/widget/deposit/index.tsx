@@ -541,6 +541,7 @@ export function WidgetDeposit({
   const protectedEnsoQuote = useProtectedEnsoQuoteState({
     stateKey: ensoSlippageCalibrationKey,
     isEnsoRoute,
+    isCrossChain,
     amount: depositAmount.debouncedBn,
     requestedSlippage: ensoQuoteSlippage,
     setRequestedSlippage: setEnsoQuoteSlippage,
@@ -658,11 +659,16 @@ export function WidgetDeposit({
     zapSlippage
   ])
 
-  const unpricedEnsoDepositError =
-    protectedEnsoQuote.hasUnpricedQuoteError && !depositAmount.isDebouncing
-      ? 'Unable to estimate zap price impact for the selected token. Use the base asset flow or swap elsewhere.'
-      : null
-  const effectiveDepositError = depositError || unpricedEnsoDepositError
+  const protectedEnsoDepositError = !depositAmount.isDebouncing
+    ? protectedEnsoQuote.blockedReason === 'cross-chain-minimum-slippage'
+      ? 'Cross-chain routes require at least 0.01% slippage.'
+      : protectedEnsoQuote.blockedReason === 'no-protected-tolerance'
+        ? 'No protected slippage remains after estimated price impact. Increase your tolerance or use the base asset flow.'
+        : protectedEnsoQuote.hasUnpricedQuoteError
+          ? 'Unable to estimate zap price impact for the selected token. Use the base asset flow or swap elsewhere.'
+          : null
+    : null
+  const effectiveDepositError = depositError || protectedEnsoDepositError
 
   const {
     spenderAddress: approvalSpenderAddress,
