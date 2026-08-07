@@ -1,3 +1,9 @@
+export type {
+  THoldingsAggregationCacheMode,
+  THoldingsAggregationOptions,
+  THoldingsEventSource,
+  THoldingsEventSourceRequest
+} from '@/server/lib/holdings/services/eventSource'
 export { holdingsConfig, validateConfig } from './config'
 export {
   getHoldingsActivity,

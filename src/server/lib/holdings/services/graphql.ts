@@ -1,4 +1,5 @@
 import { getAddress } from 'viem'
+import type { TLedgerSixStreams } from '@/server/lib/holdings/services/ledger/types'
 import { holdingsConfig } from '../config'
 import {
   type DepositEvent,
@@ -1222,6 +1223,23 @@ export async function fetchUserEvents(
   return processed
 }
 
+export async function fetchUserLedgerSourceEvents(
+  userAddress: string,
+  maxTimestamp?: number
+): Promise<TLedgerSixStreams> {
+  const address = getGraphqlAddress(userAddress)
+  const [v3Deposits, v3Withdrawals, v2Deposits, v2Withdrawals, transfersIn, transfersOut] =
+    await fetchAddressScopedEvents(address, maxTimestamp, 'seq', 'paged')
+  return {
+    v3Deposits,
+    v3Withdrawals,
+    v2Deposits,
+    v2Withdrawals,
+    transfersIn,
+    transfersOut
+  } as unknown as TLedgerSixStreams
+}
+
 export interface RecentAddressActivityEvents {
   deposits: DepositEvent[]
   withdrawals: WithdrawEvent[]
@@ -1498,4 +1516,16 @@ function processEvents(
     transfersIn: filteredTransfersIn,
     transfersOut: filteredTransfersOut
   }
+}
+
+export function processLedgerSourceEvents(streams: TLedgerSixStreams, version: VaultVersion = 'all'): UserEvents {
+  return processEvents(
+    [...streams.v3Deposits],
+    [...streams.v3Withdrawals],
+    [...streams.v2Deposits],
+    [...streams.v2Withdrawals],
+    [...streams.transfersIn],
+    [...streams.transfersOut],
+    version
+  )
 }

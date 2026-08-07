@@ -20,6 +20,15 @@ export const ADMIN_POST_CORS_HEADERS = {
   'Access-Control-Allow-Headers': 'Content-Type, x-admin-secret'
 } as const
 
+export const LEDGER_ADMIN_CORS_HEADERS = {
+  'Access-Control-Allow-Origin': '*',
+  'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+  'Access-Control-Allow-Headers': 'Content-Type, x-admin-secret',
+  'Access-Control-Expose-Headers':
+    'X-Holdings-Ledger-Snapshot, X-Holdings-Ledger-Revision, X-Holdings-Ledger-Source-Generation, X-Holdings-Ledger-Runtime-Fingerprint',
+  'Cache-Control': WALLET_SCOPED_CACHE_CONTROL
+} as const
+
 function mergeHeaders(...headerRecords: Array<HeadersInit | undefined>): Headers {
   const headers = new Headers()
   headerRecords.forEach((headerRecord) => {

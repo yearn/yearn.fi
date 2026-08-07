@@ -124,4 +124,40 @@ describe('holdings history route', () => {
       timeframe: 'all'
     })
   })
+
+  it('accepts a pinned ledger source without requiring the full-wallet Envio source', async () => {
+    delete process.env.ENVIO_GRAPHQL_URL
+    getHistoricalHoldingsChartMock.mockResolvedValue({
+      address: TEST_WALLET_ADDRESS,
+      periodDays: 365,
+      timeframe: '1y',
+      denomination: 'usd',
+      hasActivity: true,
+      dataPoints: [{ date: '2026-04-21', timestamp: 1776815999, value: 1 }]
+    })
+    const options = {
+      eventSource: {
+        key: 'ledger-source',
+        latestSettledDayTimestamp: 1776729600,
+        eventUpperTimestamp: 1776816000,
+        load: vi.fn()
+      },
+      cacheMode: 'bypass' as const
+    }
+
+    const { handleHoldingsHistoryRequest } = await import('@/server/holdings/history')
+    const response = await handleHoldingsHistoryRequest(createRequest({ address: TEST_WALLET_ADDRESS }), options)
+
+    expect(response.status).toBe(200)
+    expect(getHistoricalHoldingsChartMock).toHaveBeenCalledWith(
+      TEST_WALLET_ADDRESS,
+      'all',
+      'seq',
+      'paged',
+      'usd',
+      '1y',
+      undefined,
+      options
+    )
+  })
 })

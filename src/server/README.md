@@ -127,9 +127,14 @@ Required env for a configured chain:
 | `YEARN_PRICES_API_KEY` | holdings | Bearer token for yearn-prices |
 | `API_KEY_PORTFOLIO` | holdings | Fallback bearer token for yearn-prices |
 | `DEFILLAMA_API_KEY` | holdings | Enables DefiLlama Pro |
-| `ADMIN_SECRET` | holdings admin | Required for `/api/admin/invalidate-cache` |
+| `ADMIN_SECRET` | holdings admin | Required for cache invalidation and non-loopback or non-development `/api/holdings/ledger/*` requests |
 | `UPSTASH_REDIS_REST_URL_PORTFOLIO` | holdings | Upstash Redis REST URL for holdings cache/progress |
 | `UPSTASH_REDIS_REST_TOKEN_PORTFOLIO` | holdings | Upstash Redis REST token for holdings storage |
+| `HOLDINGS_LEDGER_MODE` | holdings | Canonical event-ledger mode: `off`, `shadow`, or `read-write` |
+| `HOLDINGS_LEDGER_CHAIN_IDS` | holdings | Explicit Envio chain scope required for complete ledger coverage |
+| `HOLDINGS_LEDGER_OVERLAP_BLOCKS` | holdings | Per-chain block rewind for warm ledger synchronization |
+| `HOLDINGS_LEDGER_RECONCILE_INTERVAL_SECONDS` | holdings | Interval between full ledger reconciliations |
+| `HOLDINGS_LEDGER_SOURCE_REVISION` | holdings | Non-secret deployment/reindex marker used to trigger a ledger source reset |
 | `UPSTASH_REDIS_REST_URL` | optimization | Upstash Redis REST URL for optimization payloads |
 | `UPSTASH_REDIS_REST_TOKEN` | optimization | Upstash Redis REST token for optimization payloads |
 | `HOLDINGS_DEBUG` | holdings | Enables holdings debug logs |

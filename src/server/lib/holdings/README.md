@@ -482,6 +482,11 @@ Response:
 | `ENVIO_PASSWORD` | No | `''` | Envio Hasura admin secret; skipped when empty or `testing` |
 | `UPSTASH_REDIS_REST_URL_PORTFOLIO` | No | `null` | Upstash Redis REST URL for holdings cache, progress, and invalidations |
 | `UPSTASH_REDIS_REST_TOKEN_PORTFOLIO` | No | `null` | Upstash Redis REST token for holdings storage |
+| `HOLDINGS_LEDGER_MODE` | No | `off` | Canonical event-ledger rollout mode: `off`, `shadow`, or `read-write` |
+| `HOLDINGS_LEDGER_KEY_NAMESPACE` | No | `''` | Optional isolated ledger Redis namespace; accepts 1-64 ASCII letters, digits, `_`, or `-` |
+| `HOLDINGS_LEDGER_CHAIN_IDS` | No | `1,10,137,250,8453,42161,747474` | Explicit Envio chain scope; changing it is a source-generation migration |
+| `HOLDINGS_LEDGER_OVERLAP_BLOCKS` | No | `50000` | Inclusive per-chain rewind used by warm event synchronization |
+| `HOLDINGS_LEDGER_RECONCILE_INTERVAL_SECONDS` | No | `604800` | Seconds between full event-ledger reconciliations |
 | `RPC_URI_FOR_<id>` | No | `NEXT_PUBLIC_RPC_URI_FOR_<id>` | Optional server-only chain RPC URL for activity receipt and transaction enrichment |
 | `HOLDINGS_PRICE_PROVIDER` | No | `auto` | `auto`, `yearn-prices`, or `defillama` |
 | `YEARN_PRICES_BASE_URL` | No | `https://prices.yearn.dev` | Base URL for yearn-prices; `/api/prices/...` is appended automatically |
@@ -489,7 +494,7 @@ Response:
 | `YEARN_PRICES_API_KEY` | No | `API_KEY_PORTFOLIO` fallback | Bearer token for yearn-prices |
 | `API_KEY_PORTFOLIO` | No | `''` | Shared portfolio API key used as the yearn-prices fallback token |
 | `DEFILLAMA_API_KEY` | No | `''` | Enables DefiLlama Pro GET route |
-| `ADMIN_SECRET` | Admin only | `null` | Secret for `/api/admin/invalidate-cache` |
+| `ADMIN_SECRET` | Admin only | `null` | Secret for cache invalidation and canonical ledger requests outside loopback development |
 | `HOLDINGS_DEBUG` | No | `false` | Enables holdings debug logs |
 
 Hardcoded service bases:
@@ -518,6 +523,79 @@ If aggregates are unavailable, the code falls back to sequential pagination. For
 ## Caching
 
 Server-side cache is optional. When `UPSTASH_REDIS_REST_URL_PORTFOLIO` or `UPSTASH_REDIS_REST_TOKEN_PORTFOLIO` is absent, the APIs still work but recompute history and refetch prices/PPS on each request.
+
+### Canonical Ledger (Phases 1–3)
+
+The versioned `holdings:ledger:v1:{walletHash}:...` namespace is isolated from the legacy caches. Setting `HOLDINGS_LEDGER_KEY_NAMESPACE=benchmark_01` selects the separate `holdings:ledger:v1:{walletHash}:namespace:benchmark_01:...` keyspace while preserving the wallet hash tag used by atomic Redis scripts. An unset or empty value keeps every existing key byte-for-byte unchanged. Non-empty values must contain 1-64 ASCII letters, digits, underscores, or hyphens; invalid values fail closed when a ledger key is constructed. Changing the namespace selects an independent ledger and does not migrate or delete keys in another namespace.
+
+`HOLDINGS_LEDGER_MODE` defaults to `off`, so Phase 1 does not change the existing portfolio data path unless a rollout mode is explicitly selected. `shadow` permits parity population while legacy results remain authoritative; `read-write` is reserved for enabling validated ledger reads during a later rollout.
+
+Phase 1 has these operational constraints:
+
+- Immutable ledger chunks and index shards intentionally have no TTL. A future reference-aware garbage collector must be available before they can expire; an active manifest must never reference expiring data.
+- Upstash Lua updates make each lock or head commit atomic, but cross-worker reads and lock observations are not treated as fully linearizable. A future ledger reader must validate the head, manifest, referenced chunks and indexes, and checksums as one complete revision.
+- Mixed reused/new revisions must pass the manifest-bound `decodeLedgerRevision` verifier before head CAS. The verifier requires the exact blob set, reconstructs the identity index from decoded chunks, and binds every six-stream coverage count, checksum, cursor, and chain scope to the canonical records.
+- When a revision is missing, corrupt, or temporarily inconsistent, a reader must retry before falling back to the previous head and then the legacy source path. It must not expose a partial revision as complete.
+- Rollback is configuration-only: set `HOLDINGS_LEDGER_MODE=off`. Ledger keys can remain in Redis and do not need to be deleted.
+
+The Phase 1 codec was measured against the sanitized Wallet 1 fixture captured as 25 sequential Envio pages. The fixture contains 20,070 logical source records and 9,063,846 bytes of GraphQL responses. The lossless canonical representation round-tripped every record with this active footprint:
+
+| Component | Count | Encoded bytes |
+| --- | ---: | ---: |
+| Family/chain/month chunks | 100 | 2,577,544 |
+| Identity-to-chunk index shards | 64 | 387,996 |
+| Revision manifest | 1 | 124,493 |
+| **Complete active revision** |  | **3,090,033** |
+
+The largest chunk was 128,600 bytes, and the complete decoded footprint was 14,599,075 bytes. The result stays below the 256 KiB encoded/4 MiB decoded per-blob, 256 KiB manifest, and 4 MiB encoded/32 MiB decoded active-revision guards. A later live benchmark wallet with 19,931 records required a 136,514-byte unnamespaced manifest because its 100 chunk refs, 64 index refs, and 280 dependencies exceeded the original 128 KiB guard; a maximum-length isolated namespace raises that manifest to 148,814 bytes. The manifest guard is therefore 256 KiB while the aggregate active-revision limits remain unchanged. The identity index intentionally maps a stable identity to its immutable chunk; correction comparison and old ordering are recovered by reading that chunk instead of duplicating a per-record checksum and order in the index. Cold blob publication must use the batched writer so the 164 immutable blobs are sent in one `SET NX` pipeline, plus at most one `GET` pipeline to verify already-present keys, rather than as serial REST requests. This is a storage and local-codec gate only; production shadow traffic must still establish end-to-end Redis latency and parity before ledger reads can be enabled.
+
+Phase 2 adds two isolated portfolio API routes. They are admin-only outside loopback development, return `Cache-Control: private, no-store`, and do not replace the legacy portfolio fetch path:
+
+- `POST /api/holdings/ledger/sync` accepts exactly `{ "address": "0x...", "forceRebuild"?: boolean, "compareLegacy"?: boolean }`. It bootstraps or incrementally refreshes the six raw Envio streams, verifies the complete immutable revision, then atomically advances the wallet head. Lock contention returns `202` with `Retry-After: 2`.
+- `GET /api/holdings/ledger/status?address=0x...` fully verifies the active revision and returns only aggregate storage, coverage, dirty-range, and worker status fields. If the active revision is incomplete or corrupt, the read can report a verified previous-head fallback without exposing chunks, events, cursors, checksums, source URLs, or wallet hashes. `sync.matchesHead` explicitly reports whether the stored worker status describes the verified head being summarized.
+
+Successful status responses also expose `X-Holdings-Ledger-Runtime-Fingerprint`, a one-way fingerprint of the effective Redis credentials, optional key namespace, and ledger/source configuration. Local destructive benchmark tooling uses it as a preflight guard so an API server cannot write one ledger scope while its cleanup process targets another; raw credentials and configuration values are never returned.
+
+Ledger synchronization uses sequential keyset pagination because the current Envio indexer does not expose aggregate query roots. It fetches one event family and chain window at a time, follows full pages with the strict `(blockTimestamp, blockNumber, logIndex, id)` cursor, and stops on the first short page. It never requests `Deposit_aggregate`, `Withdraw_aggregate`, `V2Deposit_aggregate`, `V2Withdraw_aggregate`, or `Transfer_aggregate`; the retained `validationQueries` response field is therefore always `0`.
+
+Phase 3 adds an isolated snapshot reader without changing the existing public holdings routes:
+
+- `POST /api/holdings/ledger/snapshot` accepts exactly `{ "address": "0x...", "refresh"?: boolean, "forceRebuild"?: boolean, "compareLegacy"?: boolean }`. `refresh` defaults to `true`, requires every configured Envio chain to report ready, synchronizes once, and then returns a server-issued snapshot ID pinned to the fully verified active revision. `refresh: false` explicitly returns `freshness: "last-known-good"`, permits a verified previous head, and does not contact the full-wallet Envio source.
+- `GET /api/holdings/ledger/history?address=0x...&snapshotId=snapshot_...` returns the existing balance-history response shape from the pinned ledger.
+- `GET /api/holdings/ledger/breakdown?address=0x...&snapshotId=snapshot_...` returns the existing dated breakdown response shape from the same pinned ledger.
+- `GET /api/holdings/ledger/protocol-return/history?address=0x...&snapshotId=snapshot_...` performs the existing full protocol-return replay from the same pinned ledger.
+
+All four Phase 3 routes are private/no-store and coexist with the legacy APIs. Development requests whose URL host is `localhost`, `127.0.0.1`, or `::1` do not require `x-admin-secret`; every non-loopback or non-development request remains admin-protected. Snapshot IDs expire 30 minutes after synchronization and verification complete. Reads verify the exact pinned head, immutable manifest, chunks, indexes, calculation version, and complete supported-chain scope. Missing, expired, corrupt, or incompatible snapshots fail closed; a route never fills missing ledger data from legacy Envio. Ledger reads bypass the revisionless daily-total and protocol-response caches. The three derived responses expose `X-Holdings-Ledger-Snapshot`, `X-Holdings-Ledger-Revision`, and `X-Holdings-Ledger-Source-Generation` headers so callers can assert that independently requested results used the same wallet-event revision. Last-known-good cutoffs are capped by the verified head's update time, and dated breakdowns after the pinned settled day are rejected.
+
+Protocol-return history now sources its six wallet event streams from the snapshot, but still requires Envio for live transaction-hash companion-event enrichment and uses live Kong metadata/PPS and price providers. The revision headers therefore identify the immutable wallet-event input, not every enrichment response. Phase 3 deliberately performs a full FIFO replay on a derived-cache miss; incremental protocol checkpoints and correction-aware enrichment snapshots remain later work.
+
+Warm synchronization rewinds each chain by `HOLDINGS_LEDGER_OVERLAP_BLOCKS`; a correction or deletion inside that inclusive window replaces the cached range. A periodic reconciliation starts again at each configured chain start block. Coverage is advanced only through Envio's transactionally written `progressBlock`, never through wall-clock time or the upstream chain head. Source/config changes start a new source generation, and `forceRebuild` provides the explicit full-ledger rebuild path. If the active head is corrupt, a forced rebuild first restores the exact fully verified previous revision and its `syncing` status in one fenced Redis transaction. Failed and stale workers cannot replace the last-known-good manifest.
+
+`HOLDINGS_LEDGER_SOURCE_REVISION` is a non-secret operator marker included in the hashed source fingerprint. Bump it after an in-place Envio redeploy, reindex, or repair whose URL and configured chain bounds did not change; the next sync will detect a new source generation and rebuild from the configured start blocks. It defaults to `default` and accepts 1–96 ASCII letters, digits, `.`, `_`, or `-`. Do not place credentials, source URLs, or other secrets in it.
+
+For local or dev shadow testing, set `HOLDINGS_LEDGER_MODE=shadow` and use placeholders rather than committing credentials:
+
+```bash
+curl -sS -X POST "$PORTFOLIO_API_BASE_URL/api/holdings/ledger/sync" \
+  -H "Content-Type: application/json" \
+  --data "{\"address\":\"$WALLET_ADDRESS\",\"compareLegacy\":true}"
+
+curl -sS "$PORTFOLIO_API_BASE_URL/api/holdings/ledger/status?address=$WALLET_ADDRESS"
+
+curl -sS -X POST "$PORTFOLIO_API_BASE_URL/api/holdings/ledger/snapshot" \
+  -H "Content-Type: application/json" \
+  --data "{\"address\":\"$WALLET_ADDRESS\"}"
+
+curl -sS "$PORTFOLIO_API_BASE_URL/api/holdings/ledger/history?address=$WALLET_ADDRESS&snapshotId=$SNAPSHOT_ID"
+
+curl -sS "$PORTFOLIO_API_BASE_URL/api/holdings/ledger/breakdown?address=$WALLET_ADDRESS&snapshotId=$SNAPSHOT_ID"
+
+curl -sS "$PORTFOLIO_API_BASE_URL/api/holdings/ledger/protocol-return/history?address=$WALLET_ADDRESS&snapshotId=$SNAPSHOT_ID"
+```
+
+Copy `snapshotId` from the snapshot response into `SNAPSHOT_ID` before calling the three derived routes. Run the same sync a second time to exercise the overlap-only warm path. Use `forceRebuild: true` only when intentionally testing a full rebuild. `compareLegacy` performs an additional complete legacy event fetch, so it should be enabled selectively during shadow parity sampling.
+
+Append `debug=1` to any sync, snapshot, or derived ledger route to print request-correlated timings in the local server terminal without changing the response shape. For example, use `/api/holdings/ledger/snapshot?debug=1` for the complete refresh-and-pin flow or add `&debug=1` to a derived GET. Logs use the existing `[HoldingsDebug][requestId][+elapsedMs][scope]` format and cover lock acquisition, current-revision reads, metadata and Envio loading, merge/parity/encoding, immutable Redis writes, head commit, snapshot pin verification, pinned-revision loading, and the final holdings calculation. The new ledger-stage payloads contain statuses and aggregate counts only; wallet, snapshot, revision, Redis key, event, transaction, source URL, and credential values are omitted.
 
 ### Cache Layers
 

@@ -1,4 +1,5 @@
 import { formatUnits } from 'viem'
+import { getHoldingsEventSourceKey, type THoldingsAggregationOptions } from '@/server/lib/holdings/services/eventSource'
 import { selectProtocolReturnFamilySeriesCandidates } from '@/server/lib/holdings/services/protocolReturnFamilySeries'
 import { holdingsConfig } from '../config'
 import type { VaultMetadata } from '../types'
@@ -241,7 +242,8 @@ type TProtocolReturnPriceFetchResult<TPriceData> = {
   failedBatches: number
 }
 
-const SECONDS_PER_YEAR = 365 * 24 * 60 * 60
+const SECONDS_PER_DAY = 24 * 60 * 60
+const SECONDS_PER_YEAR = 365 * SECONDS_PER_DAY
 
 type TProtocolReturnVaultFilter = { chainId: number; vaultAddress: string }
 
@@ -1600,7 +1602,22 @@ function normalizeStakingWrapperEvents(txFamilyEvents: TRawPnlEvent[], userAddre
   return remainingEvents
 }
 
-function getProtocolReturnTimestamps(events: TRawPnlEvent[], timeframe: '1y' | 'all'): number[] {
+function getProtocolReturnTimestamps(
+  events: TRawPnlEvent[],
+  timeframe: '1y' | 'all',
+  pinnedLatestSettledDayTimestamp?: number
+): number[] {
+  if (pinnedLatestSettledDayTimestamp !== undefined) {
+    const startTimestamp =
+      timeframe === 'all'
+        ? holdingsConfig.historyStartTimestamp
+        : pinnedLatestSettledDayTimestamp - (holdingsConfig.historyDays - 1) * SECONDS_PER_DAY
+
+    return generateDailyTimestampsFromRange(startTimestamp, pinnedLatestSettledDayTimestamp).map((timestamp) =>
+      toSettledDayTimestamp(timestamp)
+    )
+  }
+
   if (timeframe === '1y') {
     return generateDailyTimestamps(holdingsConfig.historyDays, 1).map((timestamp) => toSettledDayTimestamp(timestamp))
   }
@@ -1616,9 +1633,10 @@ function getProtocolReturnTimestamps(events: TRawPnlEvent[], timeframe: '1y' | '
   )
 }
 
-function getLatestProtocolReturnSettledDate(): string {
-  const timestamps = generateDailyTimestamps(holdingsConfig.historyDays, 1)
-  const latestTimestamp = timestamps[timestamps.length - 1] ?? 0
+function getLatestProtocolReturnSettledDate(pinnedLatestSettledDayTimestamp?: number): string {
+  const timestamps =
+    pinnedLatestSettledDayTimestamp === undefined ? generateDailyTimestamps(holdingsConfig.historyDays, 1) : []
+  const latestTimestamp = pinnedLatestSettledDayTimestamp ?? timestamps[timestamps.length - 1] ?? 0
   return timestampToDateString(toSettledDayTimestamp(latestTimestamp))
 }
 
@@ -2180,7 +2198,8 @@ async function calculateHoldingsProtocolReturnHistory(
   paginationMode: HoldingsEventPaginationMode = 'paged',
   timeframe: '1y' | 'all' = '1y',
   requestedVaultFilters?: Array<{ chainId: number; vaultAddress: string }> | string,
-  legacyVaultChainId?: number
+  legacyVaultChainId?: number,
+  options: THoldingsAggregationOptions = {}
 ): Promise<TProtocolReturnHistoryCalculation> {
   debugLog('protocol-return-history', 'starting holdings protocol return history calculation', {
     version,
@@ -2198,7 +2217,8 @@ async function calculateHoldingsProtocolReturnHistory(
     fetchType,
     paginationMode,
     requestedVault: singleRequestedVault,
-    vaultIdentifiers: requestedVaults
+    vaultIdentifiers: requestedVaults,
+    eventSource: options.eventSource
   })
   const selectedEvents = filterEventsByRequestedVaults(settledContext.selectedEvents, requestedVaults)
   reportHoldingsProgress(
@@ -2209,7 +2229,7 @@ async function calculateHoldingsProtocolReturnHistory(
   const rawEvents = await enrichSimpleHistoryRawEvents({
     events: selectedEvents,
     version,
-    maxTimestamp: settledContext.maxTimestamp
+    maxTimestamp: options.eventSource?.eventUpperTimestamp ?? settledContext.maxTimestamp
   })
   reportHoldingsProgress(40, 'Enriched historical wallet events', `${rawEvents.length} events`)
   const effectiveEvents = rawEvents
@@ -2250,7 +2270,11 @@ async function calculateHoldingsProtocolReturnHistory(
     }
   }
 
-  const timestamps = getProtocolReturnTimestamps(effectiveEvents, timeframe)
+  const timestamps = getProtocolReturnTimestamps(
+    effectiveEvents,
+    timeframe,
+    options.eventSource ? settledContext.latestSettledDayTimestamp : undefined
+  )
   const latestTimestamp = timestamps[timestamps.length - 1] ?? settledContext.maxTimestamp
   const baseReceiptPriceRequests = buildReceiptPriceRequests({
     events: effectiveEvents,
@@ -2380,7 +2404,8 @@ export async function getHoldingsProtocolReturnHistory(
   paginationMode: HoldingsEventPaginationMode = 'paged',
   timeframe: '1y' | 'all' = '1y',
   requestedVaultFilters?: Array<{ chainId: number; vaultAddress: string }> | string,
-  legacyVaultChainId?: number
+  legacyVaultChainId?: number,
+  options: THoldingsAggregationOptions = {}
 ): Promise<HoldingsPnLSimpleHistoryResponse> {
   const requestedVaults = normalizeProtocolReturnVaultFilters(requestedVaultFilters, legacyVaultChainId)
   const cacheIdentity = getProtocolReturnHistoryCacheIdentity({
@@ -2390,8 +2415,10 @@ export async function getHoldingsProtocolReturnHistory(
     requestedVaults
   })
   const cacheKey = getProtocolReturnHistoryCacheKey(cacheIdentity)
-  const settledDate = getLatestProtocolReturnSettledDate()
-  const inFlightKey = `${cacheKey}:${settledDate}`
+  const bypassCache = options.cacheMode === 'bypass' || options.eventSource !== undefined
+  const sourceKey = getHoldingsEventSourceKey(options.eventSource)
+  const settledDate = getLatestProtocolReturnSettledDate(options.eventSource?.latestSettledDayTimestamp)
+  const inFlightKey = `${cacheKey}:${settledDate}:${sourceKey}:${bypassCache ? 'bypass' : 'default'}`
   const inFlightRequest = inFlightProtocolReturnHistoryRequests.get(inFlightKey)
 
   if (inFlightRequest) {
@@ -2401,10 +2428,9 @@ export async function getHoldingsProtocolReturnHistory(
   }
 
   const request = (async () => {
-    const cachedResponse = await getCachedProtocolReturnHistory<HoldingsPnLSimpleHistoryResponse>(
-      cacheIdentity,
-      settledDate
-    )
+    const cachedResponse = bypassCache
+      ? null
+      : await getCachedProtocolReturnHistory<HoldingsPnLSimpleHistoryResponse>(cacheIdentity, settledDate)
 
     if (cachedResponse) {
       reportHoldingsProgress(
@@ -2430,7 +2456,8 @@ export async function getHoldingsProtocolReturnHistory(
       paginationMode,
       timeframe,
       requestedVaultFilters,
-      legacyVaultChainId
+      legacyVaultChainId,
+      options
     )
 
     const compactResponse = {
@@ -2443,7 +2470,9 @@ export async function getHoldingsProtocolReturnHistory(
     const failedUpstreamFetches =
       calculation.failedPriceBatches + calculation.failedPpsVaults + calculation.failedMetadataVaults
 
-    if (compactResponse.summary.totalVaults > 0 && failedUpstreamFetches === 0) {
+    if (bypassCache) {
+      debugLog('protocol-return-history', 'bypassing protocol return history cache save')
+    } else if (compactResponse.summary.totalVaults > 0 && failedUpstreamFetches === 0) {
       await saveCachedProtocolReturnHistory(
         cacheIdentity,
         settledDate,

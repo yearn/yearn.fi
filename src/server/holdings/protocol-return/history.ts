@@ -1,3 +1,4 @@
+import type { THoldingsAggregationOptions } from '@/server/lib/holdings/services/eventSource'
 import { GET_CORS_HEADERS, json, noContent, queryValue, WALLET_SCOPED_CACHE_CONTROL } from '../../http'
 import type {
   HoldingsEventFetchType,
@@ -95,7 +96,10 @@ export function OPTIONS(): Response {
   return noContent(GET_CORS_HEADERS)
 }
 
-export async function GET(request: Request): Promise<Response> {
+export async function handleHoldingsProtocolReturnHistoryRequest(
+  request: Request,
+  options?: THoldingsAggregationOptions
+): Promise<Response> {
   try {
     await ensureHoldingsStorageInitialized()
   } catch (error) {
@@ -104,7 +108,7 @@ export async function GET(request: Request): Promise<Response> {
   }
 
   const envioUrl = process.env.ENVIO_GRAPHQL_URL
-  if (!envioUrl) {
+  if (!envioUrl && !options?.eventSource) {
     return json(
       {
         error: 'Holdings protocol return history API not configured',
@@ -176,14 +180,25 @@ export async function GET(request: Request): Promise<Response> {
         })
 
         try {
-          const response = await getHoldingsProtocolReturnHistory(
-            address,
-            version,
-            fetchType,
-            paginationMode,
-            timeframe,
-            vaultFilters
-          )
+          const response = options
+            ? await getHoldingsProtocolReturnHistory(
+                address,
+                version,
+                fetchType,
+                paginationMode,
+                timeframe,
+                vaultFilters,
+                undefined,
+                options
+              )
+            : await getHoldingsProtocolReturnHistory(
+                address,
+                version,
+                fetchType,
+                paginationMode,
+                timeframe,
+                vaultFilters
+              )
           debugLog('route', 'completed holdings protocol return history request', {
             version,
             timeframe,
@@ -254,6 +269,10 @@ export async function GET(request: Request): Promise<Response> {
       { status: 502, headers: GET_CORS_HEADERS }
     )
   }
+}
+
+export async function GET(request: Request): Promise<Response> {
+  return handleHoldingsProtocolReturnHistoryRequest(request)
 }
 
 export default GET

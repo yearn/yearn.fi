@@ -1,3 +1,7 @@
+import { SUPPORTED_CHAINS } from '@/server/lib/holdings/types'
+
+export type HoldingsLedgerMode = 'off' | 'shadow' | 'read-write'
+
 export interface HoldingsConfig {
   readonly envioGraphqlUrl: string
   readonly envioPassword: string
@@ -11,10 +15,45 @@ export interface HoldingsConfig {
   readonly defillamaApiKey: string
   readonly historyDays: number
   readonly historyStartTimestamp: number
+  readonly ledgerMode: HoldingsLedgerMode
+  readonly ledgerChainIds: readonly number[]
+  readonly ledgerOverlapBlocks: number
+  readonly ledgerReconcileIntervalMs: number
+  readonly ledgerSourceRevision: string
 }
 
 const HISTORY_START_TIMESTAMP = 1_704_067_200 // 2024-01-01T00:00:00Z
 const YEARN_PRICES_BASE_URL = 'https://prices.yearn.dev'
+const DEFAULT_LEDGER_OVERLAP_BLOCKS = 50_000
+const DEFAULT_LEDGER_RECONCILE_INTERVAL_SECONDS = 7 * 24 * 60 * 60
+const DEFAULT_LEDGER_CHAIN_IDS = SUPPORTED_CHAINS.map(({ id }) => id).toSorted((left, right) => left - right)
+const DEFAULT_LEDGER_SOURCE_REVISION = 'default'
+const LEDGER_SOURCE_REVISION_PATTERN = /^[A-Za-z0-9._-]{1,96}$/
+
+function parseBoundedPositiveInteger(value: string | undefined, fallback: number, maximum: number): number {
+  const parsed = value && /^\d+$/.test(value.trim()) ? Number(value.trim()) : Number.NaN
+  return Number.isSafeInteger(parsed) && parsed > 0 && parsed <= maximum ? parsed : fallback
+}
+
+export function parseHoldingsLedgerMode(value: string | undefined): HoldingsLedgerMode {
+  const normalized = value?.trim().toLowerCase()
+  return normalized === 'shadow' || normalized === 'read-write' ? normalized : 'off'
+}
+
+export function parseHoldingsLedgerSourceRevision(value: string | undefined): string {
+  const normalized = value?.trim()
+  return normalized && LEDGER_SOURCE_REVISION_PATTERN.test(normalized) ? normalized : DEFAULT_LEDGER_SOURCE_REVISION
+}
+
+function parseHoldingsLedgerChainIds(value: string | undefined): readonly number[] {
+  if (!value?.trim()) {
+    return DEFAULT_LEDGER_CHAIN_IDS
+  }
+  const parsed = value.split(',').map((entry) => (/^\d+$/.test(entry.trim()) ? Number(entry.trim()) : Number.NaN))
+  return parsed.length > 0 && parsed.every((chainId) => Number.isSafeInteger(chainId) && chainId > 0)
+    ? Array.from(new Set(parsed)).toSorted((left, right) => left - right)
+    : DEFAULT_LEDGER_CHAIN_IDS
+}
 
 export const holdingsConfig: HoldingsConfig = {
   get envioGraphqlUrl() {
@@ -44,7 +83,32 @@ export const holdingsConfig: HoldingsConfig = {
     return process.env.DEFILLAMA_API_KEY?.trim() ?? ''
   },
   historyDays: 365,
-  historyStartTimestamp: HISTORY_START_TIMESTAMP
+  historyStartTimestamp: HISTORY_START_TIMESTAMP,
+  get ledgerMode() {
+    return parseHoldingsLedgerMode(process.env.HOLDINGS_LEDGER_MODE)
+  },
+  get ledgerChainIds() {
+    return parseHoldingsLedgerChainIds(process.env.HOLDINGS_LEDGER_CHAIN_IDS)
+  },
+  get ledgerOverlapBlocks() {
+    return parseBoundedPositiveInteger(
+      process.env.HOLDINGS_LEDGER_OVERLAP_BLOCKS,
+      DEFAULT_LEDGER_OVERLAP_BLOCKS,
+      10_000_000
+    )
+  },
+  get ledgerReconcileIntervalMs() {
+    return (
+      parseBoundedPositiveInteger(
+        process.env.HOLDINGS_LEDGER_RECONCILE_INTERVAL_SECONDS,
+        DEFAULT_LEDGER_RECONCILE_INTERVAL_SECONDS,
+        365 * 24 * 60 * 60
+      ) * 1000
+    )
+  },
+  get ledgerSourceRevision() {
+    return parseHoldingsLedgerSourceRevision(process.env.HOLDINGS_LEDGER_SOURCE_REVISION)
+  }
 }
 
 export function validateConfig(): void {

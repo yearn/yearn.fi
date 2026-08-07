@@ -69,4 +69,32 @@ describe('holdings protocol return history route', () => {
       undefined
     )
   })
+
+  it('passes a pinned ledger source as the options argument without requiring full-wallet Envio', async () => {
+    delete process.env.ENVIO_GRAPHQL_URL
+    const options = {
+      eventSource: {
+        key: 'ledger-source',
+        latestSettledDayTimestamp: 1776729600,
+        eventUpperTimestamp: 1776816000,
+        load: vi.fn()
+      },
+      cacheMode: 'bypass' as const
+    }
+    const { handleHoldingsProtocolReturnHistoryRequest } = await import('@/server/holdings/protocol-return/history')
+
+    const response = await handleHoldingsProtocolReturnHistoryRequest(createRequest({ address: TEST_ADDRESS }), options)
+
+    expect(response.status).toBe(200)
+    expect(getHoldingsProtocolReturnHistoryMock).toHaveBeenCalledWith(
+      TEST_ADDRESS,
+      'all',
+      'seq',
+      'paged',
+      '1y',
+      undefined,
+      undefined,
+      options
+    )
+  })
 })

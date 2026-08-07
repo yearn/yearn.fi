@@ -779,4 +779,117 @@ describe('getHistoricalHoldings', () => {
     expect(response.timestamp).toBe(101)
     expect(response.summary.totalUsdValue).toBe(60)
   })
+
+  it('loads fixed-snapshot history through an injected source and bypasses persistent derived caches', async () => {
+    const userAddress = '0x93a62da5a14c80f265dabc077fcee437b1a0efde'
+    const eventSource = {
+      key: 'ledger:revision-1',
+      latestSettledDayTimestamp: 31_449_600,
+      eventUpperTimestamp: 31_536_001,
+      load: vi.fn().mockResolvedValue({
+        deposits: [],
+        withdrawals: [],
+        transfersIn: [],
+        transfersOut: []
+      })
+    }
+
+    generateDailyTimestampsFromRangeMock.mockReturnValue([31_449_600])
+    timestampToDateStringMock.mockImplementation((timestamp: number) => `date-${timestamp}`)
+    buildPositionTimelineMock.mockReturnValue([])
+    getUniqueVaultsMock.mockReturnValue([])
+
+    const { getHistoricalHoldings } = await import('@/server/lib/holdings/services/aggregator')
+    const response = await getHistoricalHoldings(userAddress, 'all', 'seq', 'paged', '1y', undefined, {
+      eventSource
+    })
+
+    expect(eventSource.load).toHaveBeenCalledWith({
+      userAddress,
+      version: 'all',
+      maxTimestamp: 31_536_001,
+      fetchType: 'seq',
+      paginationMode: 'paged'
+    })
+    expect(fetchUserEventsMock).not.toHaveBeenCalled()
+    expect(generateDailyTimestampsFromRangeMock).toHaveBeenCalledWith(0, 31_449_600)
+    expect(getCachedTotalsWithTimestampMock).not.toHaveBeenCalled()
+    expect(checkCacheStalenessMock).not.toHaveBeenCalled()
+    expect(clearUserCacheMock).not.toHaveBeenCalled()
+    expect(saveCachedTotalsMock).not.toHaveBeenCalled()
+    expect(response).toEqual({
+      address: userAddress,
+      periodDays: 1,
+      timeframe: '1y',
+      hasActivity: false,
+      dataPoints: [{ date: 'date-31449600', timestamp: 31_449_601, totalUsdValue: 0 }]
+    })
+  })
+
+  it('supports explicit persistent derived-cache bypass with the legacy event source', async () => {
+    const userAddress = '0x93a62da5a14c80f265dabc077fcee437b1a0efde'
+
+    generateDailyTimestampsMock.mockReturnValue([100])
+    timestampToDateStringMock.mockImplementation((timestamp: number) => `date-${timestamp}`)
+    fetchUserEventsMock.mockResolvedValue({
+      deposits: [],
+      withdrawals: [],
+      transfersIn: [],
+      transfersOut: []
+    })
+    buildPositionTimelineMock.mockReturnValue([])
+    generateDailyTimestampsFromRangeMock.mockReturnValue([])
+
+    const { getHistoricalHoldings } = await import('@/server/lib/holdings/services/aggregator')
+    await getHistoricalHoldings(userAddress, 'all', 'seq', 'paged', '1y', undefined, {
+      cacheMode: 'bypass'
+    })
+
+    expect(fetchUserEventsMock).toHaveBeenCalled()
+    expect(getCachedTotalsWithTimestampMock).not.toHaveBeenCalled()
+    expect(checkCacheStalenessMock).not.toHaveBeenCalled()
+    expect(clearUserCacheMock).not.toHaveBeenCalled()
+    expect(saveCachedTotalsMock).not.toHaveBeenCalled()
+  })
+
+  it('uses an injected source fixed date for the default breakdown request', async () => {
+    const userAddress = '0x93a62da5a14c80f265dabc077fcee437b1a0efde'
+    const eventSource = {
+      key: 'ledger:revision-1',
+      latestSettledDayTimestamp: 300,
+      eventUpperTimestamp: 86_700,
+      load: vi.fn().mockResolvedValue({
+        deposits: [],
+        withdrawals: [],
+        transfersIn: [],
+        transfersOut: []
+      })
+    }
+
+    timestampToDateStringMock.mockImplementation((timestamp: number) => `date-${timestamp}`)
+    buildPositionTimelineMock.mockReturnValue([])
+
+    const { getHoldingsBreakdown } = await import('@/server/lib/holdings/services/aggregator')
+    const response = await getHoldingsBreakdown(userAddress, 'all', 'seq', 'paged', undefined, {
+      eventSource,
+      cacheMode: 'bypass'
+    })
+
+    expect(eventSource.load).toHaveBeenCalledWith({
+      userAddress,
+      version: 'all',
+      maxTimestamp: 86_700,
+      fetchType: 'seq',
+      paginationMode: 'paged'
+    })
+    expect(fetchUserEventsMock).not.toHaveBeenCalled()
+    expect(generateDailyTimestampsMock).not.toHaveBeenCalled()
+    expect(response).toMatchObject({
+      address: userAddress,
+      version: 'all',
+      date: 'date-301',
+      timestamp: 301,
+      message: 'No events found'
+    })
+  })
 })

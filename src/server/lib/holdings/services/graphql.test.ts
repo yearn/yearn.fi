@@ -59,6 +59,30 @@ describe('fetchUserEvents', () => {
     vi.unstubAllGlobals()
   })
 
+  it('uses checksum address variables for the raw ledger parity source', async () => {
+    const requests: Array<{ query: string; variables: Record<string, unknown> }> = []
+    const fetchStub = vi.fn(async (_input: string | URL | Request, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body ?? '{}')) as {
+        query: string
+        variables: Record<string, unknown>
+      }
+      requests.push(body)
+      return createGraphqlResponse({ [getEmptyResultKey(body.query)]: [] })
+    })
+    vi.stubGlobal('fetch', fetchStub)
+
+    const { fetchUserLedgerSourceEvents } = await importGraphqlModule()
+    const streams = await fetchUserLedgerSourceEvents(USER)
+
+    expect(Object.values(streams).every((events) => events.length === 0)).toBe(true)
+    expect(requests).toHaveLength(6)
+    expect(
+      requests.every(({ variables }) =>
+        ['owner', 'recipient', 'receiver', 'sender'].some((field) => variables[field] === getAddress(USER))
+      )
+    ).toBe(true)
+  })
+
   it('falls back to one count-free bulk page when aggregate counts are unavailable', async () => {
     const transferEvents = [
       createTransferEvent('aggregate-transfer-in-first', 1),

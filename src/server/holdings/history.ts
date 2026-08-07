@@ -1,3 +1,4 @@
+import type { THoldingsAggregationOptions } from '@/server/lib/holdings/services/eventSource'
 import { GET_CORS_HEADERS, json, noContent, queryValue, WALLET_SCOPED_CACHE_CONTROL } from '../http'
 import type {
   HoldingsEventFetchType,
@@ -96,7 +97,10 @@ export function OPTIONS(): Response {
   return noContent(GET_CORS_HEADERS)
 }
 
-export async function GET(request: Request): Promise<Response> {
+export async function handleHoldingsHistoryRequest(
+  request: Request,
+  options?: THoldingsAggregationOptions
+): Promise<Response> {
   try {
     await ensureHoldingsStorageInitialized()
   } catch (error) {
@@ -106,7 +110,7 @@ export async function GET(request: Request): Promise<Response> {
 
   // Check if Envio is configured
   const envioUrl = process.env.ENVIO_GRAPHQL_URL
-  if (!envioUrl) {
+  if (!envioUrl && !options?.eventSource) {
     return json(
       {
         error: 'Holdings history API not configured',
@@ -182,15 +186,26 @@ export async function GET(request: Request): Promise<Response> {
         })
 
         try {
-          const response = await getHistoricalHoldingsChart(
-            address,
-            version,
-            fetchType,
-            paginationMode,
-            denomination,
-            timeframe,
-            vaultFilters
-          )
+          const response = options
+            ? await getHistoricalHoldingsChart(
+                address,
+                version,
+                fetchType,
+                paginationMode,
+                denomination,
+                timeframe,
+                vaultFilters,
+                options
+              )
+            : await getHistoricalHoldingsChart(
+                address,
+                version,
+                fetchType,
+                paginationMode,
+                denomination,
+                timeframe,
+                vaultFilters
+              )
           debugLog('route', 'completed holdings history request', {
             version,
             fetchType,
@@ -265,6 +280,10 @@ export async function GET(request: Request): Promise<Response> {
 
     return json({ error: 'Failed to fetch historical holdings' }, { status: 502, headers: GET_CORS_HEADERS })
   }
+}
+
+export async function GET(request: Request): Promise<Response> {
+  return handleHoldingsHistoryRequest(request)
 }
 
 export default GET

@@ -1,3 +1,4 @@
+import { getHoldingsEventSourceKey, type THoldingsEventSource } from '@/server/lib/holdings/services/eventSource'
 import { holdingsConfig } from '../config'
 import type { UserEvents, VaultMetadata } from '../types'
 import { debugLog } from './debug'
@@ -34,6 +35,7 @@ type TPositionTimeline = ReturnType<typeof buildPositionTimeline>
 
 export interface TSettledAddressScopedContext {
   address: string
+  eventSourceKey: string
   latestSettledDayTimestamp: number
   maxTimestamp: number
   events: UserEvents
@@ -63,6 +65,7 @@ const CURRENT_DAY_LOOKAHEAD_SECONDS = 24 * 60 * 60
 
 function getContextKey(args: {
   userAddress: string
+  eventSourceKey: string
   version?: VaultVersion
   fetchType: HoldingsEventFetchType
   paginationMode: HoldingsEventPaginationMode
@@ -80,6 +83,7 @@ function getContextKey(args: {
 
   return [
     lowerCaseAddress(args.userAddress),
+    args.eventSourceKey,
     args.version ?? 'all',
     args.fetchType,
     args.paginationMode,
@@ -185,27 +189,36 @@ export async function getSettledAddressScopedContext(args: {
   userAddress: string
   fetchType: HoldingsEventFetchType
   paginationMode: HoldingsEventPaginationMode
+  eventSource?: THoldingsEventSource
 }): Promise<TSettledAddressScopedContext> {
-  const key = getContextKey(args)
+  const eventSourceKey = getHoldingsEventSourceKey(args.eventSource)
+  const key = getContextKey({
+    userAddress: args.userAddress,
+    eventSourceKey,
+    fetchType: args.fetchType,
+    paginationMode: args.paginationMode
+  })
   const existing = inFlightSettledAddressScopedContexts.get(key)
 
   if (existing) {
-    debugLog('holdings-context', 'reusing in-flight settled address-scoped context', { key })
+    debugLog('holdings-context', 'reusing in-flight settled address-scoped context')
     return existing
   }
 
   const request = (async () => {
-    const settledTimestamps = generateDailyTimestamps(holdingsConfig.historyDays, 1)
-    const latestSettledDayTimestamp = settledTimestamps[settledTimestamps.length - 1] ?? 0
+    const latestSettledDayTimestamp =
+      args.eventSource?.latestSettledDayTimestamp ?? generateDailyTimestamps(holdingsConfig.historyDays, 1).at(-1) ?? 0
     const maxTimestamp = toSettledDayTimestamp(latestSettledDayTimestamp)
     const activityMaxTimestamp = maxTimestamp + CURRENT_DAY_LOOKAHEAD_SECONDS
-    const events = await fetchUserEvents(
-      args.userAddress,
-      'all',
-      activityMaxTimestamp,
-      args.fetchType,
-      args.paginationMode
-    )
+    const events = args.eventSource
+      ? await args.eventSource.load({
+          userAddress: args.userAddress,
+          version: 'all',
+          maxTimestamp: activityMaxTimestamp,
+          fetchType: args.fetchType,
+          paginationMode: args.paginationMode
+        })
+      : await fetchUserEvents(args.userAddress, 'all', activityMaxTimestamp, args.fetchType, args.paginationMode)
     const timeline = buildPositionTimeline(events.deposits, events.withdrawals, events.transfersIn, events.transfersOut)
     const rawEvents = buildAddressScopedRawPnlEvents(events)
     const rawVaultIdentifiers = timeline.length > 0 ? getUniqueVaults(timeline) : getVaultIdentifiers(rawEvents)
@@ -216,6 +229,7 @@ export async function getSettledAddressScopedContext(args: {
 
     return {
       address: lowerCaseAddress(args.userAddress),
+      eventSourceKey,
       latestSettledDayTimestamp,
       maxTimestamp,
       events,
@@ -242,12 +256,22 @@ export async function getSettledVersionedPpsContext(args: {
   requestedVault?: TRequestedVault
   vaultIdentifiers?: TVaultIdentifier[]
   context?: TSettledAddressScopedContext
+  eventSource?: THoldingsEventSource
 }): Promise<TSettledVersionedPpsContext> {
-  const key = getContextKey(args)
+  const eventSourceKey = args.context?.eventSourceKey ?? getHoldingsEventSourceKey(args.eventSource)
+  const key = getContextKey({
+    userAddress: args.userAddress,
+    eventSourceKey,
+    version: args.version,
+    fetchType: args.fetchType,
+    paginationMode: args.paginationMode,
+    requestedVault: args.requestedVault,
+    vaultIdentifiers: args.vaultIdentifiers
+  })
   const existing = inFlightSettledVersionedPpsContexts.get(key)
 
   if (existing) {
-    debugLog('holdings-context', 'reusing in-flight settled versioned PPS context', { key })
+    debugLog('holdings-context', 'reusing in-flight settled versioned PPS context')
     return existing
   }
 
@@ -257,7 +281,8 @@ export async function getSettledVersionedPpsContext(args: {
       (await getSettledAddressScopedContext({
         userAddress: args.userAddress,
         fetchType: args.fetchType,
-        paginationMode: args.paginationMode
+        paginationMode: args.paginationMode,
+        eventSource: args.eventSource
       }))
     const selection = selectVersionedEvents(context, args.version, args.requestedVault)
     const selectedVaultIdentifiers = args.vaultIdentifiers ?? selection.vaultIdentifiers

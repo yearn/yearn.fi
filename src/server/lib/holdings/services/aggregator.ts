@@ -1,3 +1,4 @@
+import type { THoldingsAggregationOptions } from '@/server/lib/holdings/services/eventSource'
 import { holdingsConfig } from '../config'
 import type { VaultMetadata } from '../types'
 import type { CachedTotal } from './cache'
@@ -59,6 +60,7 @@ export interface HoldingsHistoryChartResponse {
 }
 
 const ETHEREUM_WETH_ADDRESS = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
+const SECONDS_PER_DAY = 24 * 60 * 60
 
 export interface HoldingsBreakdownVaultResponse {
   chainId: number
@@ -172,17 +174,24 @@ export async function getHistoricalHoldings(
   fetchType: HoldingsEventFetchType = 'seq',
   paginationMode: HoldingsEventPaginationMode = 'paged',
   timeframe: HoldingsHistoryTimeframe = '1y',
-  requestedVaults?: HoldingsVaultFilter[]
+  requestedVaults?: HoldingsVaultFilter[],
+  options: THoldingsAggregationOptions = {}
 ): Promise<HoldingsHistoryResponse> {
   const defaultDays = holdingsConfig.historyDays
   const baseContext = await getSettledAddressScopedContext({
     userAddress,
     fetchType,
-    paginationMode
+    paginationMode,
+    eventSource: options.eventSource
   })
   reportHoldingsProgress(18, 'Loaded wallet events', null)
-  const dayTimestamps = generateDailyTimestamps(defaultDays, 1)
   const latestSettledDayTimestamp = baseContext.latestSettledDayTimestamp
+  const dayTimestamps = options.eventSource
+    ? generateDailyTimestampsFromRange(
+        latestSettledDayTimestamp - Math.max(defaultDays - 1, 0) * SECONDS_PER_DAY,
+        latestSettledDayTimestamp
+      )
+    : generateDailyTimestamps(defaultDays, 1)
   const timestamps =
     timeframe === 'all'
       ? generateDailyTimestampsFromRange(holdingsConfig.historyStartTimestamp, latestSettledDayTimestamp)
@@ -202,8 +211,9 @@ export async function getHistoricalHoldings(
   let cachedTotals: CachedTotal[] = []
   let oldestUpdatedAt: Date | null = null
   const cacheVersion = getHoldingsTotalsCacheVersion(version)
-  const shouldReadCache = timestamps.length > 0 && !requestedVaults?.length
-  const shouldWriteCache = timestamps.length > 0 && !requestedVaults?.length
+  const usePersistentDerivedCache = (options.cacheMode ?? 'default') === 'default' && !options.eventSource
+  const shouldReadCache = usePersistentDerivedCache && timestamps.length > 0 && !requestedVaults?.length
+  const shouldWriteCache = usePersistentDerivedCache && timestamps.length > 0 && !requestedVaults?.length
   if (shouldReadCache) {
     const startDate = timestampToDateString(timestamps[0])
     const endDate = timestampToDateString(timestamps[timestamps.length - 1])
@@ -350,7 +360,8 @@ export async function getHistoricalHoldings(
         fetchType,
         paginationMode,
         vaultIdentifiers: vaults,
-        context: baseContext
+        context: baseContext,
+        eventSource: options.eventSource
       })
       reportHoldingsProgress(62, 'Loaded vault share price history', `${vaults.length} vaults`)
       const underlyingTokens = Array.from(
@@ -518,7 +529,8 @@ export async function getHistoricalHoldingsChart(
   paginationMode: HoldingsEventPaginationMode = 'paged',
   denomination: HoldingsHistoryDenomination = 'usd',
   timeframe: HoldingsHistoryTimeframe = '1y',
-  requestedVaults?: HoldingsVaultFilter[]
+  requestedVaults?: HoldingsVaultFilter[],
+  options: THoldingsAggregationOptions = {}
 ): Promise<HoldingsHistoryChartResponse> {
   const holdings = await getHistoricalHoldings(
     userAddress,
@@ -526,7 +538,8 @@ export async function getHistoricalHoldingsChart(
     fetchType,
     paginationMode,
     timeframe,
-    requestedVaults
+    requestedVaults,
+    options
   )
 
   if (denomination === 'usd') {
@@ -570,10 +583,14 @@ export async function getHoldingsBreakdown(
   version: VaultVersion = 'all',
   fetchType: HoldingsEventFetchType = 'seq',
   paginationMode: HoldingsEventPaginationMode = 'paged',
-  targetTimestamp?: number
+  targetTimestamp?: number,
+  options: THoldingsAggregationOptions = {}
 ): Promise<HoldingsBreakdownResponse> {
-  const timestamps = generateDailyTimestamps(holdingsConfig.historyDays, 1)
-  const breakdownDayTimestamp = targetTimestamp ?? timestamps[timestamps.length - 1]
+  const breakdownDayTimestamp =
+    targetTimestamp ??
+    options.eventSource?.latestSettledDayTimestamp ??
+    generateDailyTimestamps(holdingsConfig.historyDays, 1).at(-1) ??
+    0
   const breakdownTimestamp = toSettledDayTimestamp(breakdownDayTimestamp)
   const breakdownDate = timestampToDateString(breakdownTimestamp)
   const breakdownPriceTimestamp = breakdownTimestamp
@@ -586,8 +603,16 @@ export async function getHoldingsBreakdown(
     priceTimestamp: breakdownPriceTimestamp
   })
 
-  const maxTimestamp = breakdownDayTimestamp + 86400
-  const events = await fetchUserEvents(userAddress, 'all', maxTimestamp, fetchType, paginationMode)
+  const maxTimestamp = breakdownDayTimestamp + SECONDS_PER_DAY
+  const events = options.eventSource
+    ? await options.eventSource.load({
+        userAddress,
+        version: 'all',
+        maxTimestamp,
+        fetchType,
+        paginationMode
+      })
+    : await fetchUserEvents(userAddress, 'all', maxTimestamp, fetchType, paginationMode)
   const timeline = buildPositionTimeline(events.deposits, events.withdrawals, events.transfersIn, events.transfersOut)
   debugLog('breakdown', 'built position timeline for breakdown', {
     version,
