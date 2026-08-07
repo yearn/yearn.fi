@@ -42,20 +42,10 @@ const RPC_CONFIG: Record<number, RpcConfig> = {
   }
 }
 
-export function getRpcConfig(chainId: number): RpcConfig | undefined {
-  return RPC_CONFIG[chainId]
-}
-
 export function getAllRpcEndpoints(chainId: number): string[] {
   const config = RPC_CONFIG[chainId]
   if (!config) return []
   return [config.primary, ...config.fallbacks]
-}
-
-export function getRandomRpcEndpoint(chainId: number): string | undefined {
-  const endpoints = getAllRpcEndpoints(chainId)
-  if (endpoints.length === 0) return undefined
-  return endpoints[Math.floor(Math.random() * endpoints.length)]
 }
 
 const MULTICALL3_ADDRESS = '0xcA11bde05977b3631167028862bE2a173976CA11'

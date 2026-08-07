@@ -437,19 +437,9 @@ export const getVaultType = (vault: TKongVaultInput, snapshot?: TKongVaultSnapsh
   return 'Standard'
 }
 
-export const isStandardVault = (vault: TKongVaultInput, snapshot?: TKongVaultSnapshot): boolean => {
-  const type = getVaultType(vault, snapshot)
-  return type === 'Standard' || type === 'Yearn Vault'
-}
-
 export const isAutomatedVault = (vault: TKongVaultInput, snapshot?: TKongVaultSnapshot): boolean => {
   const type = getVaultType(vault, snapshot)
   return type === 'Automated' || type === 'Automated Yearn Vault'
-}
-
-export const isExperimentalVault = (vault: TKongVaultInput, snapshot?: TKongVaultSnapshot): boolean => {
-  const type = getVaultType(vault, snapshot)
-  return type === 'Experimental' || type === 'Experimental Yearn Vault'
 }
 
 export const getVaultName = (vault: TKongVaultInput, snapshot?: TKongVaultSnapshot): string => {
@@ -945,6 +935,3 @@ export const getVaultView = (vault: TKongVaultInput, snapshot?: TKongVaultSnapsh
     info: getVaultInfo(vault, snapshot)
   }
 }
-
-export const getVaultKey = (vault: TKongVaultInput): string =>
-  `${getVaultChainID(vault)}_${toAddress(getVaultAddress(vault))}`

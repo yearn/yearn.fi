@@ -177,15 +177,3 @@ export function VaultsListEmpty({
     />
   )
 }
-
-export function VaultListEmptyExternalMigration(): ReactElement {
-  return (
-    <EmptyState
-      title="We looked under the cushions..."
-      description="Looks like you don't have any tokens to migrate."
-      size="lg"
-      unstyled
-      className="mx-auto h-96 w-full md:w-3/4"
-    />
-  )
-}

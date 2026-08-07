@@ -8,10 +8,8 @@ export const V3_SUPPORTED_CHAINS = [1, 747474, 8453]
 export const AVAILABLE_TOGGLE_VALUE = 'available'
 export const V3_PRIMARY_CHAIN_IDS = [1, 747474]
 export const V3_DEFAULT_SECONDARY_CHAIN_IDS = [8453]
-export const V2_DEFAULT_TYPES = ['factory']
 export const AGGRESSIVENESS_OPTIONS: TVaultAggressiveness[] = ['Conservative', 'Moderate', 'Aggressive']
 export const V3_ASSET_CATEGORIES = [ALL_VAULTSV3_CATEGORIES.Stablecoin, ALL_VAULTSV3_CATEGORIES.Volatile]
-export const V2_ASSET_CATEGORIES = ['Stablecoin', 'Volatile']
 export const DEFAULT_MIN_TVL = 500
 
 export function toggleInArray<T>(current: T[] | null, next: T): T[] {

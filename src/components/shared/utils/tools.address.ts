@@ -1,6 +1,5 @@
 import { getAddress, zeroAddress } from 'viem'
-import { env } from '@/env'
-import type { TAddress, TAddressLike, TAddressSmol, TDict } from '../types'
+import type { TAddress, TAddressLike, TAddressSmol } from '../types'
 import { isTAddress, isZeroAddress } from './tools.is'
 
 /******************************************************************************
@@ -14,30 +13,6 @@ export function toAddress(address?: TAddressLike | null): TAddress {
   }
   const trimmedAddress = address.trim()
   return getAddress(toChecksumAddress(trimmedAddress)?.valueOf())
-}
-
-/******************************************************************************
- * safeAddress - Returns a string that is safe to display as an address.
- *****************************************************************************/
-export function toSafeAddress(props: {
-  address?: TAddress
-  ens?: string
-  placeholder?: string
-  addrOverride?: string
-}): string {
-  if (props.ens) {
-    return props.ens
-  }
-  if (!isZeroAddress(props.address) && props.addrOverride) {
-    return props.addrOverride
-  }
-  if (!isZeroAddress(props.address)) {
-    return truncateHex(props.address, 5)
-  }
-  if (!props.address) {
-    return props.placeholder || ''
-  }
-  return toAddress(props.address)
 }
 
 /******************************************************************************
@@ -85,41 +60,4 @@ export function truncateHex(address: string | undefined, size: number): string {
     return zeroAddress
   }
   return `0x${zeroAddress.slice(2, size)}...${zeroAddress.slice(-size)}`
-}
-
-/******************************************************************************
- ** getColorFromAdddress - Used to generate a color from an address. This color
- ** is used as background color for the avatar.
- *****************************************************************************/
-export function getColorFromAdddress({ address }: { address: TAddress }): string {
-  if (!address) {
-    return '#000000'
-  }
-  const hash = Array.from(address).reduce((h, char) => char.charCodeAt(0) + ((h << 5) - h), 0)
-  const color =
-    '#' +
-    Array.from({ length: 3 }, (_, i) => {
-      const value = (hash >> (i * 8)) & 0xff
-      return value.toString(16).padStart(2, '0')
-    }).join('')
-  return color
-}
-
-/***************************************************************************
- ** toENS is used to find the ENS name of an address. It will return the
- ** address if no ENS name is found.
- **************************************************************************/
-export function toENS(address: string | null | undefined, format?: boolean, size?: number): string {
-  if (!address) {
-    return address || ''
-  }
-  const _address = toAddress(address)
-  const knownENS = env.NEXT_PUBLIC_KNOWN_ENS as unknown as TDict<string>
-  if (knownENS?.[_address]) {
-    return knownENS[_address]
-  }
-  if (format) {
-    return truncateHex(_address, size || 4)
-  }
-  return address
 }

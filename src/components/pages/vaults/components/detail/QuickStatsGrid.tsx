@@ -1,7 +1,6 @@
 import type { TVaultForwardAPYHandle } from '@pages/vaults/components/table/VaultForwardAPY'
 import { VaultForwardAPY } from '@pages/vaults/components/table/VaultForwardAPY'
-import { getVaultAPR, getVaultToken, getVaultTVL, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
-import { useVaultApyData } from '@pages/vaults/hooks/useVaultApyData'
+import { getVaultToken, getVaultTVL, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import type { TYvUsdVariant } from '@pages/vaults/utils/yvUsd'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { IconInfinifiPoints } from '@shared/icons/IconInfinifiPoints'
@@ -10,24 +9,6 @@ import { IconLockOpen } from '@shared/icons/IconLockOpen'
 import { cl, formatApyDisplay, toNormalizedBN } from '@shared/utils'
 import type { KeyboardEvent, ReactElement, ReactNode } from 'react'
 import { useRef, useState } from 'react'
-
-interface StatCardProps {
-  label: string
-  value: string | number
-  subValue?: string
-}
-
-function StatCard({ label, value, subValue }: StatCardProps): ReactElement {
-  return (
-    <div
-      className={cl('rounded-lg bg-surface-secondary border border-border p-2 min-[375px]:p-3 min-w-0 overflow-hidden')}
-    >
-      <p className={'text-[10px] min-[375px]:text-xs text-text-secondary mb-0.5 min-[375px]:mb-1 truncate'}>{label}</p>
-      <p className={'text-xs min-[375px]:text-sm md:text-base font-semibold text-text-primary truncate'}>{value}</p>
-      {subValue && <p className={'text-[10px] min-[375px]:text-xs text-text-secondary mt-0.5 truncate'}>{subValue}</p>}
-    </div>
-  )
-}
 
 interface CompactStatBoxProps {
   label: string
@@ -73,28 +54,6 @@ function formatUSD(value: number): string {
     return `$${(value / 1_000).toFixed(2)}K`
   }
   return `$${value.toFixed(2)}`
-}
-
-interface VaultMetricsGridProps {
-  currentVault: TKongVaultInput
-}
-
-export function VaultMetricsGrid({ currentVault }: VaultMetricsGridProps): ReactElement {
-  const apyData = useVaultApyData(currentVault)
-  const apr = getVaultAPR(currentVault)
-  const tvl = getVaultTVL(currentVault)
-  const forwardAPY =
-    apyData.mode === 'katana' && apyData.katanaEstApr !== undefined ? apyData.katanaEstApr : apr.forwardAPR.netAPR
-
-  return (
-    <div className="md:hidden">
-      {/* Top row: TVL, Forward APY */}
-      <div className="grid grid-cols-2 gap-1.5 min-[375px]:gap-2">
-        <StatCard label="TVL" value={formatUSD(tvl.tvl)} />
-        <StatCard label="Est. APY" value={formatApyDisplay(forwardAPY)} />
-      </div>
-    </div>
-  )
 }
 
 const MOBILE_SECTIONS = [

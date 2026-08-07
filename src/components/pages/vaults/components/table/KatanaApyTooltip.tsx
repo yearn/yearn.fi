@@ -1,6 +1,5 @@
 import { getVaultChainID, getVaultToken, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { ImageWithFallback } from '@shared/components/ImageWithFallback'
-import { Tooltip } from '@shared/components/Tooltip'
 import { cl, formatApyDisplay } from '@shared/utils'
 import type { ReactElement } from 'react'
 import { env } from '@/env'
@@ -141,13 +140,5 @@ export function KatanaApyTooltipContent({
         ) : null}
       </div>
     </div>
-  )
-}
-
-export function KatanaApyTooltip(props: TKatanaTooltipProps): ReactElement {
-  return (
-    <Tooltip className={cl('gap-0 h-auto', props.className)} tooltip={<KatanaApyTooltipContent {...props} />}>
-      {props.children as ReactElement}
-    </Tooltip>
   )
 }

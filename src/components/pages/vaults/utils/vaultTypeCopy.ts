@@ -25,10 +25,6 @@ export function getVaultTypeLabel(vaultType: TVaultType): string {
   return VAULT_TYPE_COPY[vaultType].label
 }
 
-export function getVaultTypeEmoji(vaultType: TVaultType): string {
-  return VAULT_TYPE_COPY[vaultType].emoji
-}
-
 export function getVaultTypeDescription(vaultType: TVaultType): string | null {
   return VAULT_TYPE_DESCRIPTION[vaultType]
 }
