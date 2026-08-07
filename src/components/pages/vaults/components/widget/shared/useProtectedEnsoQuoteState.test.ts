@@ -51,6 +51,7 @@ describe('resolveProtectedEnsoQuoteView', () => {
 
     expect(view.routeState).toBe('protecting')
     expect(view.isPreparing).toBe(true)
+    expect(view.canExecute).toBe(false)
     expect(view.isDisplayLoading).toBe(true)
     expect(view.display.amount).toBe(0n)
     expect(view.display.routeHasSwap).toBe(false)
@@ -106,6 +107,33 @@ describe('resolveProtectedEnsoQuoteView', () => {
     expect(view.executableTx).toBeUndefined()
   })
 
+  it('blocks a calibration when positive configured tolerance is exhausted', () => {
+    const view = resolveProtectedEnsoQuoteView({
+      isEnsoRoute: true,
+      isCrossChain: true,
+      amount: 1000n,
+      requestedSlippage: 0,
+      isLoadingQuote: false,
+      hasCurrentQuote: true,
+      currentSnapshot: {
+        ...snapshot(990n, true),
+        estimatedPriceImpactPercentage: 1,
+        worstCaseRouteImpactPercentage: 1
+      },
+      desiredSlippage: 0,
+      userTolerancePercentage: 1,
+      fallbackDisplay: { amount: 0n, routeHasSwap: false },
+      fallbackEstimatedPriceImpactPercentage: 1,
+      fallbackWorstCaseRouteImpactPercentage: 1,
+      tx: TX
+    })
+
+    expect(view.routeState).toBe('blocked')
+    expect(view.blockedReason).toBe('no-protected-tolerance')
+    expect(view.canExecute).toBe(false)
+    expect(view.executableTx).toBeUndefined()
+  })
+
   it('preserves existing price-impact and hard-cap blocking', () => {
     const view = resolveProtectedEnsoQuoteView({
       isEnsoRoute: true,
@@ -135,6 +163,37 @@ describe('resolveProtectedEnsoQuoteView', () => {
 })
 
 describe('useProtectedEnsoQuoteState', () => {
+  it('does not request pass two when positive tolerance is exhausted by calibration impact', () => {
+    const setRequestedSlippage = vi.fn()
+    const { result } = renderHook(() =>
+      useProtectedEnsoQuoteState({
+        stateKey: 'exhausted-cross-chain-deposit',
+        isEnsoRoute: true,
+        isCrossChain: true,
+        amount: 1000n,
+        requestedSlippage: 0,
+        setRequestedSlippage,
+        isLoadingQuote: false,
+        userTolerancePercentage: 1,
+        localPriceImpactPercentage: 1,
+        localWorstCasePriceImpactPercentage: 1,
+        hasIncompleteUsdValuation: false,
+        ensoPriceImpact: 100,
+        expectedOut: 990n,
+        minExpectedOut: 990n,
+        tx: TX,
+        display: { amount: 990n, routeHasSwap: true }
+      })
+    )
+
+    expect(result.current.desiredSlippage).toBe(0)
+    expect(result.current.routeState).toBe('blocked')
+    expect(result.current.blockedReason).toBe('no-protected-tolerance')
+    expect(result.current.canExecute).toBe(false)
+    expect(result.current.executableTx).toBeUndefined()
+    expect(setRequestedSlippage).not.toHaveBeenCalled()
+  })
+
   it('requests a second protected quote and only exposes its transaction', async () => {
     const setRequestedSlippage = vi.fn()
     const initialProps = {
@@ -160,6 +219,7 @@ describe('useProtectedEnsoQuoteState', () => {
     })
 
     expect(result.current.executableTx).toBeUndefined()
+    expect(result.current.canExecute).toBe(false)
     await waitFor(() => expect(setRequestedSlippage).toHaveBeenCalledWith(0.5))
 
     const protectedTx: ProtectedEnsoTx = { ...TX, data: '0x1234' }
@@ -173,6 +233,7 @@ describe('useProtectedEnsoQuoteState', () => {
     })
 
     expect(result.current.routeState).toBe('ready')
+    expect(result.current.canExecute).toBe(true)
     expect(result.current.executableTx).toEqual(protectedTx)
     expect(result.current.desiredSlippage).toBeLessThanOrEqual(initialProps.userTolerancePercentage)
   })

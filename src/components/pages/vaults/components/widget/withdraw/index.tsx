@@ -16,6 +16,8 @@ import { ApprovalOverlay } from '../deposit/ApprovalOverlay'
 import { InputTokenAmount } from '../InputTokenAmount'
 import { SettingsPanel } from '../SettingsPanel'
 import { PriceImpactWarning } from '../shared/PriceImpactWarning'
+import { getProtectedEnsoQuoteError } from '../shared/protectedEnsoQuoteError'
+import { isProtectedEnsoTransactionStepEnabled } from '../shared/protectedEnsoTransaction'
 import { TokenSelectorOverlay } from '../shared/TokenSelectorOverlay'
 import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
 import { useProtectedEnsoQuoteState } from '../shared/useProtectedEnsoQuoteState'
@@ -588,6 +590,7 @@ export function WidgetWithdraw({
     isPreparing: isPreparingEnsoQuote,
     isDisplayLoading: isDisplayLoadingEnsoQuote,
     isWaitingForProtectedQuote: isWaitingForProtectedEnsoQuote,
+    canExecute: canExecuteProtectedEnsoQuote,
     executableTx: executableEnsoTx
   } = protectedEnsoQuote
 
@@ -675,15 +678,12 @@ export function WidgetWithdraw({
     zapSlippage
   ])
 
-  const protectedEnsoWithdrawError = !withdrawAmount.isDebouncing
-    ? protectedEnsoQuote.blockedReason === 'cross-chain-minimum-slippage'
-      ? 'Cross-chain routes require at least 0.01% slippage.'
-      : protectedEnsoQuote.blockedReason === 'no-protected-tolerance'
-        ? 'No protected slippage remains after estimated price impact. Increase your tolerance or withdraw the base asset.'
-        : protectedEnsoQuote.hasUnpricedQuoteError
-          ? 'Unable to estimate zap price impact for the selected token. Withdraw the base asset or swap elsewhere.'
-          : null
-    : null
+  const protectedEnsoWithdrawError = getProtectedEnsoQuoteError({
+    blockedReason: protectedEnsoQuote.blockedReason,
+    hasUnpricedQuoteError: protectedEnsoQuote.hasUnpricedQuoteError,
+    isDebouncing: withdrawAmount.isDebouncing,
+    flow: 'withdraw'
+  })
   const effectiveWithdrawError = baseWithdrawError || protectedEnsoWithdrawError
 
   const canOpenTokenSelector = ensoEnabled && !disableTokenSelector
@@ -808,7 +808,10 @@ export function WidgetWithdraw({
         withdrawNotificationParams,
         safeWithdrawBatch,
         prepareApproveEnabled: !isWaitingForProtectedEnsoQuote && Boolean(activeFlow.periphery.prepareApproveEnabled),
-        prepareWithdrawEnabled: !isWaitingForProtectedEnsoQuote && Boolean(activeFlow.periphery.prepareWithdrawEnabled),
+        prepareWithdrawEnabled: isProtectedEnsoTransactionStepEnabled({
+          canExecute: canExecuteProtectedEnsoQuote,
+          prepareEnabled: Boolean(activeFlow.periphery.prepareWithdrawEnabled)
+        }),
         directUnstakePrepareEnabled: Boolean(directUnstakeFlow.periphery.prepareWithdrawEnabled),
         directWithdrawPrepareEnabled: Boolean(directWithdrawFlow.periphery.prepareWithdrawEnabled)
       }),
@@ -836,7 +839,8 @@ export function WidgetWithdraw({
       safeWithdrawBatch,
       activeFlow.periphery.prepareApproveEnabled,
       activeFlow.periphery.prepareWithdrawEnabled,
-      isWaitingForProtectedEnsoQuote
+      isWaitingForProtectedEnsoQuote,
+      canExecuteProtectedEnsoQuote
     ]
   )
 

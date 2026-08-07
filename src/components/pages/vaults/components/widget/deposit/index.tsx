@@ -21,6 +21,8 @@ import { formatUnits, isAddressEqual } from 'viem'
 import { env } from '@/env'
 import { SettingsPanel } from '../SettingsPanel'
 import { PriceImpactWarning } from '../shared/PriceImpactWarning'
+import { getProtectedEnsoQuoteError } from '../shared/protectedEnsoQuoteError'
+import { isProtectedEnsoTransactionStepEnabled } from '../shared/protectedEnsoTransaction'
 import { TokenSelectorOverlay } from '../shared/TokenSelectorOverlay'
 import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
 import { useProtectedEnsoQuoteState } from '../shared/useProtectedEnsoQuoteState'
@@ -565,6 +567,7 @@ export function WidgetDeposit({
     isPreparing: isPreparingEnsoQuote,
     isDisplayLoading: isDisplayLoadingEnsoQuote,
     isWaitingForProtectedQuote: isWaitingForProtectedEnsoQuote,
+    canExecute: canExecuteProtectedEnsoQuote,
     executableTx: executableEnsoTx
   } = protectedEnsoQuote
 
@@ -659,15 +662,12 @@ export function WidgetDeposit({
     zapSlippage
   ])
 
-  const protectedEnsoDepositError = !depositAmount.isDebouncing
-    ? protectedEnsoQuote.blockedReason === 'cross-chain-minimum-slippage'
-      ? 'Cross-chain routes require at least 0.01% slippage.'
-      : protectedEnsoQuote.blockedReason === 'no-protected-tolerance'
-        ? 'No protected slippage remains after estimated price impact. Increase your tolerance or use the base asset flow.'
-        : protectedEnsoQuote.hasUnpricedQuoteError
-          ? 'Unable to estimate zap price impact for the selected token. Use the base asset flow or swap elsewhere.'
-          : null
-    : null
+  const protectedEnsoDepositError = getProtectedEnsoQuoteError({
+    blockedReason: protectedEnsoQuote.blockedReason,
+    hasUnpricedQuoteError: protectedEnsoQuote.hasUnpricedQuoteError,
+    isDebouncing: depositAmount.isDebouncing,
+    flow: 'deposit'
+  })
   const effectiveDepositError = depositError || protectedEnsoDepositError
 
   const {
@@ -794,7 +794,10 @@ export function WidgetDeposit({
         confirmMessage: `${progressLabel} ${formattedDepositAmount} ${inputToken?.symbol || ''}`,
         successTitle: 'Transaction Submitted',
         successMessage: `Your cross-chain ${actionLabel.toLowerCase()} has been submitted.\nIt may take a few minutes to complete on the destination chain.`,
-        isEnabled: !isWaitingForProtectedEnsoQuote && activeFlow.periphery.prepareDepositEnabled,
+        isEnabled: isProtectedEnsoTransactionStepEnabled({
+          canExecute: canExecuteProtectedEnsoQuote,
+          prepareEnabled: activeFlow.periphery.prepareDepositEnabled
+        }),
         completesFlow: true,
         showConfetti: true,
         notification: depositNotificationParams
@@ -807,7 +810,10 @@ export function WidgetDeposit({
       confirmMessage: `${progressLabel} ${formattedDepositAmount} ${inputToken?.symbol || ''}`,
       successTitle: `${actionLabel} successful!`,
       successMessage: `You have ${pastTenseLabel} ${formattedDepositAmount} ${inputToken?.symbol || ''} into ${vaultSymbol}.`,
-      isEnabled: !isWaitingForProtectedEnsoQuote && activeFlow.periphery.prepareDepositEnabled,
+      isEnabled: isProtectedEnsoTransactionStepEnabled({
+        canExecute: canExecuteProtectedEnsoQuote,
+        prepareEnabled: activeFlow.periphery.prepareDepositEnabled
+      }),
       completesFlow: true,
       showConfetti: true,
       notification: depositNotificationParams
@@ -826,7 +832,8 @@ export function WidgetDeposit({
     approveNotificationParams,
     depositNotificationParams,
     isCrossChain,
-    isWaitingForProtectedEnsoQuote
+    isWaitingForProtectedEnsoQuote,
+    canExecuteProtectedEnsoQuote
   ])
 
   const { fetchMaxQuote, isFetching: isFetchingMaxQuote } = useFetchMaxQuote({

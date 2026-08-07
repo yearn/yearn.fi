@@ -129,10 +129,12 @@ export function resolveProtectedEnsoQuoteView<TDisplay>({
     : priceImpactInfo.isBlocking || priceImpactInfo.isAboveTolerance
       ? 'price-impact'
       : undefined
+  const canExecute = !isEnsoRoute || routeState === 'ready'
 
   return {
     routeState,
     blockedReason,
+    canExecute,
     display: snapshot?.display ?? fallbackDisplay,
     isPreparing,
     isDisplayLoading,
@@ -141,7 +143,7 @@ export function resolveProtectedEnsoQuoteView<TDisplay>({
     estimatedPriceImpactPercentage: displayedEstimatedPriceImpactPercentage,
     worstCaseRouteImpactPercentage: displayedWorstCaseRouteImpactPercentage,
     priceImpactInfo,
-    executableTx: isEnsoRoute && routeState !== 'ready' ? undefined : tx
+    executableTx: canExecute ? tx : undefined
   }
 }
 
