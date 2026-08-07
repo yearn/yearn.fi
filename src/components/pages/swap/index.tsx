@@ -644,10 +644,7 @@ export default function SwapPage(): ReactElement {
             className="relative flex h-[600px] flex-col overflow-y-auto"
           >
             <div className="flex shrink-0 items-center justify-between px-6 pt-4">
-              <div>
-                <h1 className="text-base font-semibold text-text-primary">Swap</h1>
-                <p className="text-xs text-text-secondary">Best available route, powered by Enso.</p>
-              </div>
+              <p className="text-xs text-text-secondary">Best available route, powered by Enso.</p>
               {isCrossChain ? (
                 <span className="rounded-md bg-primary/10 px-2 py-1 text-xs font-medium text-primary">Cross-chain</span>
               ) : null}
@@ -696,7 +693,7 @@ export default function SwapPage(): ReactElement {
                 tokenPrice={toTokenPrice}
               />
 
-              <div className="min-h-[201px] space-y-2 border-t border-border pt-3">
+              <div className="min-h-[201px] space-y-2 pt-3">
                 <DetailRow
                   label="Minimum received"
                   value={
