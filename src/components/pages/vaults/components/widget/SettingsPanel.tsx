@@ -8,7 +8,8 @@ import {
   ZAP_SLIPPAGE_RISK_ACKNOWLEDGEMENT_TEXT
 } from '@shared/utils/slippage'
 import { type FC, useCallback, useEffect, useId, useState } from 'react'
-import { type Address, getAddress, isAddress } from 'viem'
+import type { Address } from 'viem'
+import { getSettingsRecipientState } from './settingsRecipient'
 
 type SettingsPanelProps = {
   isActive: boolean
@@ -49,8 +50,8 @@ export const SettingsPanel: FC<SettingsPanelProps> = ({
   }, [isActive, recipient, zapSlippage])
 
   const handleClose = useCallback(() => {
-    const normalizedRecipient = localRecipient.trim()
-    if (onRecipientChange && normalizedRecipient && !isAddress(normalizedRecipient)) {
+    const recipientState = getSettingsRecipientState(localRecipient, defaultRecipient)
+    if (onRecipientChange && recipientState.error) {
       return
     }
 
@@ -68,8 +69,7 @@ export const SettingsPanel: FC<SettingsPanelProps> = ({
     }
 
     if (onRecipientChange) {
-      const nextRecipient = normalizedRecipient ? getAddress(normalizedRecipient) : undefined
-      onRecipientChange(nextRecipient === defaultRecipient ? undefined : nextRecipient)
+      onRecipientChange(recipientState.recipient)
     }
 
     onClose?.()
@@ -95,8 +95,7 @@ export const SettingsPanel: FC<SettingsPanelProps> = ({
   })
   const riskAcknowledgementMessage =
     needsRiskAcknowledgement && !hasValidRiskAcknowledgement ? 'Sentence does not match exactly.' : null
-  const recipientError =
-    localRecipient.trim() && !isAddress(localRecipient.trim()) ? 'Enter a valid EVM address.' : null
+  const recipientError = getSettingsRecipientState(localRecipient, defaultRecipient).error
 
   const panelClass =
     variant === 'overlay'

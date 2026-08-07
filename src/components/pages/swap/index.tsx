@@ -1,6 +1,7 @@
 'use client'
 
 import { ApprovalOverlay } from '@pages/vaults/components/widget/deposit/ApprovalOverlay'
+import { ApprovalResetWarning } from '@pages/vaults/components/widget/deposit/ApprovalResetWarning'
 import { InputTokenAmount } from '@pages/vaults/components/widget/InputTokenAmount'
 import { SettingsPanel } from '@pages/vaults/components/widget/SettingsPanel'
 import { PriceImpactWarning } from '@pages/vaults/components/widget/shared/PriceImpactWarning'
@@ -50,6 +51,7 @@ import { isSwapChainId, MAJOR_SWAP_TOKENS } from './constants'
 import { SwapVaultAnnualReturnRow, SwapVaultWorthRow } from './SwapVaultDetails'
 import { SwapWalletPanel } from './SwapWalletPanel'
 import { buildSwapSearchParams, parseSwapSelection, type TSwapSelection } from './swapParams'
+import { buildSwapVaultPolicyEntries, getSwapSelectionPolicy } from './swapPolicy'
 import { resolveSwapTokenPrice } from './swapTokenPrice'
 import { getSwapVaultEstimate } from './swapVaultEstimate'
 
@@ -239,12 +241,13 @@ export default function SwapPage(): ReactElement {
   const [selectorTarget, setSelectorTarget] = useState<TSelectorTarget>(null)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isApprovalOpen, setIsApprovalOpen] = useState(false)
+  const [selectionPolicyNotice, setSelectionPolicyNotice] = useState<string | undefined>()
   const [customRecipient, setCustomRecipient] = useState<Address | undefined>()
   const [requestedSlippage, setRequestedSlippage] = useState(0)
   const { address: account, openLoginModal } = useWeb3()
   const wagmiConfig = useConfig()
   const { onRefresh } = useWalletActions()
-  const { allVaults, zapSlippage } = useYearn()
+  const { allVaults, isLoadingVaultList, zapSlippage } = useYearn()
   const ensoEnabled = useEnsoEnabled()
   const { token: fromToken, price: fromTokenPrice } = useResolvedSwapToken(selection.fromToken, selection.fromChainId)
   const { token: toToken, price: toTokenPrice } = useResolvedSwapToken(selection.toToken, selection.toChainId)
@@ -288,12 +291,33 @@ export default function SwapPage(): ReactElement {
     receiver,
     inputValue.debouncedBn
   ].join(':')
+  const vaultPolicyEntries = useMemo(() => buildSwapVaultPolicyEntries(allVaults), [allVaults])
+  const selectionPolicy = useMemo(
+    () =>
+      getSwapSelectionPolicy({
+        entries: vaultPolicyEntries,
+        isLoading: isLoadingVaultList,
+        selection
+      }),
+    [isLoadingVaultList, selection, vaultPolicyEntries]
+  )
 
   const updateSelection = useCallback(
     (nextSelection: TSwapSelection): void => {
+      const nextPolicy = getSwapSelectionPolicy({
+        entries: vaultPolicyEntries,
+        isLoading: isLoadingVaultList,
+        selection: nextSelection
+      })
+      if (!nextPolicy.isAllowed) {
+        setSelectionPolicyNotice(nextPolicy.message ?? 'Vault data is still loading. Try again shortly.')
+        return
+      }
+
+      setSelectionPolicyNotice(undefined)
       router.replace(`${pathname}?${buildSwapSearchParams(nextSelection).toString()}`, { scroll: false })
     },
-    [pathname, router]
+    [isLoadingVaultList, pathname, router, vaultPolicyEntries]
   )
 
   const resolveCustomToken = useCallback(
@@ -327,6 +351,7 @@ export default function SwapPage(): ReactElement {
   useEffect(() => {
     setRequestedSlippage(0)
     setIsApprovalOpen(false)
+    setSelectionPolicyNotice(undefined)
   }, [routeKey])
 
   const solver = useSolverEnso({
@@ -340,11 +365,19 @@ export default function SwapPage(): ReactElement {
     slippage: toBasisPoints(requestedSlippage),
     requestKey: `${routeKey}:${requestedSlippage}`,
     decimalsOut: toToken.decimals,
-    enabled: ensoEnabled && !isSameToken && fromToken.symbol !== '???' && toToken.symbol !== '???'
+    enabled:
+      ensoEnabled && selectionPolicy.isAllowed && !isSameToken && fromToken.symbol !== '???' && toToken.symbol !== '???'
   })
 
   useEffect(() => {
-    if (!account || !receiver || inputValue.debouncedBn <= 0n || isSameToken || !ensoEnabled) {
+    if (
+      !account ||
+      !receiver ||
+      inputValue.debouncedBn <= 0n ||
+      isSameToken ||
+      !ensoEnabled ||
+      !selectionPolicy.isAllowed
+    ) {
       solver.methods.resetRoute()
       return
     }
@@ -358,6 +391,7 @@ export default function SwapPage(): ReactElement {
     receiver,
     routeKey,
     requestedSlippage,
+    selectionPolicy.isAllowed,
     solver.methods.getRoute,
     solver.methods.resetRoute
   ])
@@ -430,6 +464,10 @@ export default function SwapPage(): ReactElement {
   })
   const isCrossChain = selection.fromChainId !== selection.toChainId
   const needsApproval = !solver.periphery.isAllowanceSufficient
+  const inputExceedsBalance = inputValue.bn > fromToken.balance.raw
+  const hasSyncedInput = !inputValue.isDebouncing && inputValue.bn === inputValue.debouncedBn
+  const shouldBlockApprovalForAllowanceReset =
+    hasSyncedInput && !inputExceedsBalance && needsApproval && solver.periphery.needsAllowanceResetBeforeApproval
   const isNativeInput = isAddressEqual(fromToken.address, ETH_TOKEN_ADDRESS)
   const approvalSpenderAddress = solver.periphery.approvalWarning
     ? undefined
@@ -532,16 +570,22 @@ export default function SwapPage(): ReactElement {
   ])
 
   const [isTransactionOpen, setIsTransactionOpen] = useState(false)
-  const inputExceedsBalance = inputValue.bn > fromToken.balance.raw
+  const selectionPolicyError = selectionPolicy.message ?? selectionPolicyNotice
   const isQuoteBlocked =
     protectedQuote.priceImpactInfo.isBlocking ||
     protectedQuote.priceImpactInfo.isAboveTolerance ||
     protectedQuote.hasUnpricedQuoteError
-  const isPreparing = inputValue.isDebouncing || protectedQuote.isPreparing || solver.periphery.isLoadingAllowance
+  const isPreparing =
+    !selectionPolicy.isReady ||
+    inputValue.isDebouncing ||
+    protectedQuote.isPreparing ||
+    solver.periphery.isLoadingAllowance
   const isActionDisabled =
     inputValue.bn <= 0n ||
     inputExceedsBalance ||
     isSameToken ||
+    !selectionPolicy.isAllowed ||
+    shouldBlockApprovalForAllowanceReset ||
     isQuoteBlocked ||
     isPreparing ||
     Boolean(solver.periphery.error) ||
@@ -580,17 +624,23 @@ export default function SwapPage(): ReactElement {
 
   const actionLabel = !account
     ? 'Connect Wallet'
-    : inputValue.bn <= 0n
-      ? 'Enter an amount'
-      : inputExceedsBalance
-        ? `Insufficient ${fromToken.symbol} balance`
-        : isSameToken
-          ? 'Choose different assets'
-          : isPreparing
-            ? 'Finding best route'
-            : needsApproval
-              ? `Approve ${fromToken.symbol}`
-              : 'Swap'
+    : !selectionPolicy.isReady
+      ? 'Loading vault data'
+      : selectionPolicyError
+        ? 'Choose different assets'
+        : inputValue.bn <= 0n
+          ? 'Enter an amount'
+          : inputExceedsBalance
+            ? `Insufficient ${fromToken.symbol} balance`
+            : isSameToken
+              ? 'Choose different assets'
+              : isPreparing
+                ? 'Finding best route'
+                : shouldBlockApprovalForAllowanceReset
+                  ? `Reset ${fromToken.symbol} approval`
+                  : needsApproval
+                    ? `Approve ${fromToken.symbol}`
+                    : 'Swap'
 
   const selectedToken = selectorTarget === 'from' ? selection.fromToken : selection.toToken
   const selectedChainId = selectorTarget === 'from' ? selection.fromChainId : selection.toChainId
@@ -770,6 +820,17 @@ export default function SwapPage(): ReactElement {
               </div>
 
               <div className="max-h-60 shrink-0 space-y-3 overflow-y-auto empty:hidden" aria-live="polite">
+                {selectionPolicyError ? (
+                  <p className="break-words rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-500">
+                    {selectionPolicyError}
+                  </p>
+                ) : null}
+                {shouldBlockApprovalForAllowanceReset ? (
+                  <ApprovalResetWarning
+                    tokenSymbol={fromToken.symbol}
+                    onManageApproval={() => setIsApprovalOpen(true)}
+                  />
+                ) : null}
                 <PriceImpactWarning
                   percentage={protectedQuote.worstCaseRouteImpactPercentage}
                   userTolerancePercentage={zapSlippage}
