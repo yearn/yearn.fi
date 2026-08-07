@@ -38,14 +38,14 @@ import { useYearnSpotPrices } from '@shared/hooks/useYearnSpotPrices'
 import { IconSettings } from '@shared/icons/IconSettings'
 import type { TToken } from '@shared/types'
 import type { TCreateNotificationParams } from '@shared/types/notifications'
-import { cl, ETH_TOKEN_ADDRESS, formatTAmount, toAddress, toNormalizedBN } from '@shared/utils'
+import { cl, ETH_TOKEN_ADDRESS, formatTAmount, toAddress } from '@shared/utils'
 import { requiresAllowanceResetBeforeApproval } from '@shared/utils/approve'
 import { formatUSD } from '@shared/utils/format'
 import { toBasisPoints } from '@shared/utils/slippage'
 import { getNetwork } from '@shared/utils/wagmi'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
-import { type ReactElement, useCallback, useEffect, useMemo, useState } from 'react'
-import { type Address, formatUnits, isAddressEqual } from 'viem'
+import { type ReactElement, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { type Address, formatUnits, type Hash, isAddressEqual } from 'viem'
 import { useConfig } from 'wagmi'
 import { resolveExecutionChainId } from '@/config/tenderly'
 import { isSwapChainId, MAJOR_SWAP_TOKENS } from './constants'
@@ -54,6 +54,12 @@ import { SwapWalletPanel } from './SwapWalletPanel'
 import { buildSwapSearchParams, parseSwapSelection, type TSwapSelection } from './swapParams'
 import { buildSwapVaultPolicyEntries, getSwapSelectionPolicy } from './swapPolicy'
 import { resolveSwapTokenPrice } from './swapTokenPrice'
+import {
+  getSwapSuccessMessage,
+  getSwapWorstCaseImpact,
+  hasExecutableSwapMinimum,
+  resolveSwapTokenBalance
+} from './swapTransaction'
 import { getSwapVaultEstimate } from './swapVaultEstimate'
 
 type TSwapTab = 'swap' | 'wallet'
@@ -79,13 +85,17 @@ function useResolvedSwapToken(address: Address, chainId: number): { token: TToke
   ])
   const { tokens } = useTokens([isNative ? undefined : address], chainId, account)
   const rpcToken = tokens[0]
-  const walletToken = balances[chainId]?.[normalizedAddress] ?? getWalletToken({ address, chainID: chainId })
+  const walletBalanceToken = balances[chainId]?.[normalizedAddress]
+  const walletToken = walletBalanceToken ?? getWalletToken({ address, chainID: chainId })
   const listedToken = getListedToken({ address, chainID: chainId })
   const network = getNetwork(chainId)
-  const balance =
-    walletToken.address && isAddressEqual(walletToken.address, normalizedAddress)
-      ? walletToken.balance
-      : toNormalizedBN(0n, rpcToken?.decimals ?? (isNative ? network.nativeCurrency.decimals : 18))
+  const balance = resolveSwapTokenBalance({
+    address: normalizedAddress,
+    walletBalanceToken,
+    rpcToken,
+    fallbackWalletToken: walletToken,
+    fallbackDecimals: isNative ? network.nativeCurrency.decimals : 18
+  })
   const vaultApr = vault ? getVaultAPR(vault) : undefined
   const price = resolveSwapTokenPrice({
     contextPrice: getPrice({ address: normalizedAddress, chainID: chainId }).normalized,
@@ -312,6 +322,7 @@ export default function SwapPage(): ReactElement {
   const input = useDebouncedInput(fromToken.decimals)
   const [inputValue, , setInputValue] = input
   const receiver = customRecipient ?? account
+  const isCrossChain = selection.fromChainId !== selection.toChainId
   const isSameToken =
     selection.fromChainId === selection.toChainId && isAddressEqual(selection.fromToken, selection.toToken)
   const routeKey = [
@@ -448,8 +459,8 @@ export default function SwapPage(): ReactElement {
   const minExpectedOutUsd = Number(formatUnits(minExpectedOut, toToken.decimals)) * toTokenPrice
   const localPriceImpact =
     inputUsd > 0 && expectedOutUsd > 0 ? Math.max(0, ((inputUsd - expectedOutUsd) / inputUsd) * 100) : 0
-  const localWorstCaseImpact =
-    inputUsd > 0 && minExpectedOutUsd > 0 ? Math.max(0, ((inputUsd - minExpectedOutUsd) / inputUsd) * 100) : 0
+  const localWorstCaseImpact = getSwapWorstCaseImpact({ inputUsd, expectedOutUsd, minExpectedOutUsd })
+  const hasSafeMinimumOutput = hasExecutableSwapMinimum(expectedOut, minExpectedOut)
   const protectedQuote = useProtectedEnsoQuoteState({
     stateKey: routeKey,
     isEnsoRoute: true,
@@ -464,7 +475,7 @@ export default function SwapPage(): ReactElement {
     ensoPriceImpact: solver.periphery.priceImpact,
     expectedOut,
     minExpectedOut,
-    tx: solver.periphery.route?.tx,
+    tx: hasSafeMinimumOutput ? solver.periphery.route?.tx : undefined,
     display: { expectedOut, minExpectedOut }
   })
   const getProtectedTransaction = useCallback(
@@ -477,23 +488,64 @@ export default function SwapPage(): ReactElement {
         : undefined,
     [protectedQuote.executableTx, selection.fromChainId, solver.periphery.route?.tx.chainId]
   )
-  const { prepareEnsoOrder } = useEnsoOrder({
+  const {
+    prepareEnsoOrder,
+    receiptSuccess: ensoReceiptSuccess,
+    txHash: ensoTxHash
+  } = useEnsoOrder({
     getEnsoTransaction: getProtectedTransaction,
     enabled: Boolean(protectedQuote.executableTx && solver.periphery.isAllowanceSufficient),
     chainId: selection.fromChainId
   })
+
+  const crossChainSourceRefreshRef = useRef<
+    | {
+        txHash: Hash
+        token: (typeof swapBalanceRefreshTokens)[number]
+        refreshed: boolean
+      }
+    | undefined
+  >(undefined)
+
+  // Cross-chain completion is external to this page, so refresh only the source asset when its on-chain receipt lands.
+  useEffect(() => {
+    if (!ensoTxHash) {
+      return
+    }
+
+    const existingRefresh =
+      crossChainSourceRefreshRef.current?.txHash === ensoTxHash ? crossChainSourceRefreshRef.current : undefined
+    if (!existingRefresh && !isCrossChain) {
+      return
+    }
+
+    const trackedRefresh = existingRefresh ?? {
+      txHash: ensoTxHash,
+      token: swapBalanceRefreshTokens[0],
+      refreshed: false
+    }
+    crossChainSourceRefreshRef.current = trackedRefresh
+
+    if (!ensoReceiptSuccess || trackedRefresh.refreshed) {
+      return
+    }
+
+    trackedRefresh.refreshed = true
+    void onRefresh([trackedRefresh.token]).catch((error) => {
+      console.error('[SwapPage] Cross-chain source balance refresh failed', error)
+    })
+  }, [ensoReceiptSuccess, ensoTxHash, isCrossChain, onRefresh, swapBalanceRefreshTokens])
 
   const formattedInput = formatTAmount({
     value: inputValue.debouncedBn,
     decimals: fromToken.decimals,
     options: { maximumFractionDigits: 8 }
   })
-  const formattedOutput = formatTAmount({
-    value: minExpectedOut,
+  const formattedExpectedOutput = formatTAmount({
+    value: expectedOut,
     decimals: toToken.decimals,
     options: { maximumFractionDigits: 8 }
   })
-  const isCrossChain = selection.fromChainId !== selection.toChainId
   const needsApproval = !solver.periphery.isAllowanceSufficient
   const inputExceedsBalance = inputValue.bn > fromToken.balance.raw
   const hasSyncedInput = !inputValue.isDebouncing && inputValue.bn === inputValue.debouncedBn
@@ -538,7 +590,8 @@ export default function SwapPage(): ReactElement {
             fromChainId: selection.fromChainId,
             toAddress: selection.toToken,
             toSymbol: toToken.symbol,
-            toAmount: formattedOutput,
+            toAmount: formattedExpectedOutput,
+            toAmountType: 'expected',
             toChainId: isCrossChain ? selection.toChainId : undefined
           }
         : undefined,
@@ -546,7 +599,7 @@ export default function SwapPage(): ReactElement {
       account,
       expectedOut,
       formattedInput,
-      formattedOutput,
+      formattedExpectedOutput,
       fromToken.symbol,
       isCrossChain,
       selection.fromChainId,
@@ -576,9 +629,13 @@ export default function SwapPage(): ReactElement {
       label: 'Swap',
       confirmMessage: `Swapping ${formattedInput} ${fromToken.symbol}`,
       successTitle: isCrossChain ? 'Swap submitted' : 'Swap successful',
-      successMessage: isCrossChain
-        ? `Your cross-chain swap to ${toToken.symbol} has been submitted. It may take a few minutes to arrive.`
-        : `Swapped ${formattedInput} ${fromToken.symbol} for ${formattedOutput} ${toToken.symbol}.`,
+      successMessage: getSwapSuccessMessage({
+        formattedInput,
+        fromSymbol: fromToken.symbol,
+        formattedExpectedOutput,
+        toSymbol: toToken.symbol,
+        isCrossChain
+      }),
       isEnabled: Boolean(protectedQuote.executableTx && prepareEnsoOrder.isSuccess),
       completesFlow: true,
       showConfetti: true,
@@ -587,7 +644,7 @@ export default function SwapPage(): ReactElement {
   }, [
     approveNotification,
     formattedInput,
-    formattedOutput,
+    formattedExpectedOutput,
     fromToken.symbol,
     isCrossChain,
     needsApproval,
@@ -603,6 +660,7 @@ export default function SwapPage(): ReactElement {
   const [isTransactionOpen, setIsTransactionOpen] = useState(false)
   const selectionPolicyError = selectionPolicy.message ?? selectionPolicyNotice
   const isQuoteBlocked =
+    !hasSafeMinimumOutput ||
     protectedQuote.priceImpactInfo.isBlocking ||
     protectedQuote.priceImpactInfo.isAboveTolerance ||
     protectedQuote.hasUnpricedQuoteError
@@ -667,11 +725,15 @@ export default function SwapPage(): ReactElement {
               ? 'Choose different assets'
               : isPreparing
                 ? 'Finding best route'
-                : shouldBlockApprovalForAllowanceReset
-                  ? `Reset ${fromToken.symbol} approval`
-                  : needsApproval
-                    ? `Approve ${fromToken.symbol}`
-                    : 'Swap'
+                : !hasSafeMinimumOutput
+                  ? expectedOut > 0n
+                    ? 'Route unavailable'
+                    : 'Finding best route'
+                  : shouldBlockApprovalForAllowanceReset
+                    ? `Reset ${fromToken.symbol} approval`
+                    : needsApproval
+                      ? `Approve ${fromToken.symbol}`
+                      : 'Swap'
 
   const selectedToken = selectorTarget === 'from' ? selection.fromToken : selection.toToken
   const selectedChainId = selectorTarget === 'from' ? selection.fromChainId : selection.toChainId
@@ -876,6 +938,11 @@ export default function SwapPage(): ReactElement {
                     Price impact cannot be verified for this pair, so execution is blocked.
                   </p>
                 ) : null}
+                {expectedOut > 0n && !hasSafeMinimumOutput ? (
+                  <p className="break-words rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-500">
+                    This route has no enforceable minimum output, so execution is blocked.
+                  </p>
+                ) : null}
                 {routeError ? (
                   <p className="break-words rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-500">
                     {routeError}
@@ -986,9 +1053,13 @@ export default function SwapPage(): ReactElement {
           onStepSuccess={(label) => {
             if (label === 'Approve') void solver.periphery.refetchAllowance()
           }}
-          onBeforeSuccess={async () => {
-            await onRefresh(swapBalanceRefreshTokens)
-          }}
+          onBeforeSuccess={
+            isCrossChain
+              ? undefined
+              : async () => {
+                  await onRefresh(swapBalanceRefreshTokens)
+                }
+          }
           onAllComplete={() => {
             setInputValue('')
           }}

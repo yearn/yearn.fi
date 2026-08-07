@@ -30,6 +30,7 @@ import {
   resolveOverlayConnectedChainId,
   resolvePendingSafeOverlayState,
   resolveTransactionReceiptOutcome,
+  runBeforeSuccessSafely,
   shouldAutoContinueFromSuccessState,
   shouldAutoContinuePermitSuccess,
   shouldRefetchNextStepAfterReceipt,
@@ -1009,7 +1010,13 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       if (completedAllSteps && onBeforeSuccess) {
         setOverlayState('refreshing')
         void (async () => {
-          await onBeforeSuccess(capturedStep?.label ?? '')
+          await runBeforeSuccessSafely({
+            onBeforeSuccess,
+            label: capturedStep?.label ?? '',
+            onError: (error) => {
+              console.error('[TransactionOverlay] Post-confirmation refresh failed', error)
+            }
+          })
           await new Promise((resolve) => setTimeout(resolve, 500))
           finalizeSuccessState(completedAllSteps, capturedStep)
           if (capturedStep?.showConfetti) {

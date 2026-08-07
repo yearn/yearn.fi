@@ -2,6 +2,7 @@ import type { Hash, TransactionReceipt } from 'viem'
 import type { TAddress } from './address'
 
 export type TNotificationStatus = 'pending' | 'submitted' | 'success' | 'error'
+export type TNotificationAmountType = 'actual' | 'expected' | 'minimum'
 
 export type TNotificationType =
   | 'approve'
@@ -38,7 +39,8 @@ export type TNotification = {
   fromAmount?: string
   toAddress?: TAddress // Vault token to receive
   toTokenName?: string
-  toAmount?: string // Expected output amount for deposits/withdrawals
+  toAmount?: string // Output amount; semantics are explicit in toAmountType when needed
+  toAmountType?: TNotificationAmountType
   txHash?: Hash
   timeFinished?: number
   blockNumber?: bigint
@@ -67,7 +69,8 @@ export type TCreateNotificationParams = {
   executionChainId?: number
   toAddress?: TAddress // optional for approve/claim
   toSymbol?: string
-  toAmount?: string // expected output amount for deposits/withdrawals
+  toAmount?: string // output amount; set toAmountType when it is not an observed amount
+  toAmountType?: TNotificationAmountType
   toChainId?: number // only when cross-chain
 }
 

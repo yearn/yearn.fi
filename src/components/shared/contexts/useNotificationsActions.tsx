@@ -34,6 +34,7 @@ export const WithNotificationsActions = ({ children }: { children: React.ReactEl
         toAddress: params.toAddress ? toAddress(params.toAddress) : undefined,
         toTokenName: params.toSymbol,
         toAmount: params.toAmount,
+        toAmountType: params.toAmountType,
         toChainId: params.toChainId !== params.fromChainId ? params.toChainId : undefined,
         // For approve notifications, use toAddress/toSymbol as spender
         spenderAddress: params.type === 'approve' ? toAddress(params.toAddress) : undefined,

@@ -13,6 +13,7 @@ import Link from 'next/link'
 import type { ReactElement } from 'react'
 import { memo, useCallback, useMemo, useState } from 'react'
 import { env } from '@/env'
+import { getNotificationReceiveLabel } from './notificationAmount'
 
 const NETWORK_BY_CHAIN_ID = new Map(SUPPORTED_NETWORKS.map((network) => [network.id, network] as const)) as ReadonlyMap<
   number,
@@ -257,7 +258,9 @@ function DepositNotificationContent({ notification }: { notification: TNotificat
           {notification.toTokenName && notification.toAddress && (
             <>
               <p>
-                {notification.type === 'swap' || notification.type === 'crosschain swap' ? 'Receive:' : 'To vault:'}
+                {notification.type === 'swap' || notification.type === 'crosschain swap'
+                  ? getNotificationReceiveLabel(notification)
+                  : 'To vault:'}
               </p>
               <p className={'text-right font-bold'}>
                 <Link
