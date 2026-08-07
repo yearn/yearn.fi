@@ -1,5 +1,6 @@
 import { GET_CORS_HEADERS, json, noContent, queryValue } from '../http'
 import { getVercelCdnCacheHeaders } from '../lib/cacheHeaders'
+import { addFallbackAllocationSnapshots, enrichOptimizationRecord, enrichOptimizationRecords } from './_lib/reconcile'
 import {
   findVaultOptimization,
   isRedisAuthenticationError,
@@ -48,7 +49,7 @@ export async function GET(request: Request): Promise<Response> {
           )
         }
 
-        return json(selectedHistory, { headers: RESPONSE_HEADERS })
+        return json(await enrichOptimizationRecords(selectedHistory), { headers: RESPONSE_HEADERS })
       }
 
       const selected = findVaultOptimization(optimizations, requestedVault)
@@ -59,10 +60,10 @@ export async function GET(request: Request): Promise<Response> {
         )
       }
 
-      return json(selected, { headers: RESPONSE_HEADERS })
+      return json(await enrichOptimizationRecord(selected), { headers: RESPONSE_HEADERS })
     }
 
-    return json(optimizations, { headers: RESPONSE_HEADERS })
+    return json(addFallbackAllocationSnapshots(optimizations), { headers: RESPONSE_HEADERS })
   } catch (error) {
     if (isRedisAuthenticationError(error)) {
       return json({ error: REDIS_AUTHENTICATION_ERROR_MESSAGE }, { status: 500, headers: GET_CORS_HEADERS })

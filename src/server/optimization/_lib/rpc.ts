@@ -48,8 +48,9 @@ export function getRpcConfig(chainId: number): RpcConfig | undefined {
 
 export function getAllRpcEndpoints(chainId: number): string[] {
   const config = RPC_CONFIG[chainId]
-  if (!config) return []
-  return [config.primary, ...config.fallbacks]
+  const configuredArchiveEndpoint = process.env[`OPTIMIZATION_ARCHIVE_RPC_URL_${chainId}`]
+  if (!config) return configuredArchiveEndpoint ? [configuredArchiveEndpoint] : []
+  return [...(configuredArchiveEndpoint ? [configuredArchiveEndpoint] : []), config.primary, ...config.fallbacks]
 }
 
 export function getRandomRpcEndpoint(chainId: number): string | undefined {
@@ -133,13 +134,17 @@ interface JsonRpcResponse<T = unknown> {
   error?: { code: number; message: string }
 }
 
-async function jsonRpcCall<T>(endpoint: string, method: string, params: unknown[]): Promise<T> {
+async function jsonRpcCall<T>(endpoint: string, method: string, params: unknown[], attempt = 0): Promise<T> {
   const response = await fetch(endpoint, {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
     body: JSON.stringify({ jsonrpc: '2.0', id: 1, method, params })
   })
 
+  if ((response.status === 429 || response.status === 503) && attempt < 3) {
+    await new Promise((resolve) => setTimeout(resolve, 200 * 2 ** attempt))
+    return jsonRpcCall(endpoint, method, params, attempt + 1)
+  }
   if (!response.ok) {
     throw new Error(`RPC HTTP ${response.status}`)
   }
@@ -156,6 +161,52 @@ async function jsonRpcCall<T>(endpoint: string, method: string, params: unknown[
   return data.result
 }
 
+async function jsonRpcBatchCall<T>(
+  endpoint: string,
+  calls: Array<{ method: string; params: unknown[] }>,
+  attempt = 0
+): Promise<T[]> {
+  const response = await fetch(endpoint, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify(
+      calls.map((call, index) => ({
+        jsonrpc: '2.0',
+        id: index + 1,
+        method: call.method,
+        params: call.params
+      }))
+    )
+  })
+  if ((response.status === 429 || response.status === 503) && attempt < 3) {
+    await new Promise((resolve) => setTimeout(resolve, 200 * 2 ** attempt))
+    return jsonRpcBatchCall(endpoint, calls, attempt + 1)
+  }
+  if (!response.ok) {
+    throw new Error(`RPC HTTP ${response.status}`)
+  }
+
+  const payload = (await response.json()) as JsonRpcResponse<T>[]
+  if (!Array.isArray(payload)) {
+    throw new Error('RPC batch returned a non-array response')
+  }
+  const responseById = new Map(payload.map((item) => [item.id, item]))
+
+  return calls.map((_call, index) => {
+    const item = responseById.get(index + 1)
+    if (!item) {
+      throw new Error(`RPC batch response missing id ${index + 1}`)
+    }
+    if (item.error) {
+      throw new Error(`RPC error ${item.error.code}: ${item.error.message}`)
+    }
+    if (item.result === undefined) {
+      throw new Error(`RPC batch response ${index + 1} returned undefined result`)
+    }
+    return item.result
+  })
+}
+
 function decodeUint256(hex: string): bigint {
   return BigInt(hex)
 }
@@ -169,7 +220,8 @@ function extractCurrentDebtFromStrategiesResult(hex: string): bigint {
 async function fetchVaultStateViaMulticall(
   endpoint: string,
   vaultAddress: string,
-  strategyAddresses: string[]
+  strategyAddresses: string[],
+  blockTag = 'latest'
 ): Promise<{ totalAssets: bigint; strategyDebts: Map<string, bigint> }> {
   const calls = [
     { target: vaultAddress, callData: VAULT_SELECTORS.totalAssets },
@@ -180,7 +232,7 @@ async function fetchVaultStateViaMulticall(
   ]
 
   const calldata = encodeMulticallAggregate(calls)
-  const result = await jsonRpcCall<string>(endpoint, 'eth_call', [{ to: MULTICALL3_ADDRESS, data: calldata }, 'latest'])
+  const result = await jsonRpcCall<string>(endpoint, 'eth_call', [{ to: MULTICALL3_ADDRESS, data: calldata }, blockTag])
 
   const decoded = decodeMulticallAggregateResult(result)
 
@@ -261,6 +313,238 @@ export async function fetchVaultOnChainState(
   throw lastError ?? new Error('All RPC endpoints failed')
 }
 
+interface RpcBlock {
+  number: string
+  timestamp: string
+}
+
+export interface HistoricalVaultState {
+  blockNumber: number
+  blockTimestamp: number
+  totalAssets: bigint
+  strategyDebts: Map<string, bigint>
+  unallocatedBps: number
+}
+
+export interface HistoricalVaultStateRequest {
+  timestamp: number
+  strategyAddresses: string[]
+}
+
+function toBlockTag(blockNumber: number): string {
+  return `0x${blockNumber.toString(16)}`
+}
+
+interface BlockSearch {
+  timestamp: number
+  lowBlock: number
+  highBlock: number
+}
+
+function chunkItems<T>(items: readonly T[], chunkSize: number): T[][] {
+  return Array.from({ length: Math.ceil(items.length / chunkSize) }, (_value, index) =>
+    items.slice(index * chunkSize, index * chunkSize + chunkSize)
+  )
+}
+
+async function fetchBlockHeaders(endpoint: string, blockNumbers: readonly number[]): Promise<Map<number, RpcBlock>> {
+  const uniqueBlockNumbers = Array.from(new Set(blockNumbers))
+  const chunks = chunkItems(uniqueBlockNumbers, 100)
+  const chunkResults = await chunks.reduce<Promise<Array<readonly [number, RpcBlock]>>>(
+    async (allResultsPromise, chunk) => {
+      const allResults = await allResultsPromise
+      const blocks = await jsonRpcBatchCall<RpcBlock>(
+        endpoint,
+        chunk.map((blockNumber) => ({
+          method: 'eth_getBlockByNumber',
+          params: [toBlockTag(blockNumber), false]
+        }))
+      )
+      return [...allResults, ...blocks.map((block, index) => [chunk[index], block] as const)]
+    },
+    Promise.resolve([])
+  )
+  return new Map(chunkResults)
+}
+
+async function resolveBlockSearches(endpoint: string, searches: readonly BlockSearch[]): Promise<BlockSearch[]> {
+  const unresolvedSearches = searches.filter((search) => search.lowBlock < search.highBlock)
+  if (unresolvedSearches.length === 0) {
+    return [...searches]
+  }
+
+  const midpoints = unresolvedSearches.map((search) => Math.ceil((search.lowBlock + search.highBlock) / 2))
+  const blocksByNumber = await fetchBlockHeaders(endpoint, midpoints)
+  const nextSearches = searches.map((search) => {
+    if (search.lowBlock >= search.highBlock) {
+      return search
+    }
+
+    const midpoint = Math.ceil((search.lowBlock + search.highBlock) / 2)
+    const block = blocksByNumber.get(midpoint)
+    if (!block) {
+      throw new Error(`Missing block header for ${midpoint}`)
+    }
+
+    return Number(BigInt(block.timestamp)) <= search.timestamp
+      ? { ...search, lowBlock: midpoint }
+      : { ...search, highBlock: midpoint - 1 }
+  })
+  return resolveBlockSearches(endpoint, nextSearches)
+}
+
+async function fetchHistoricalStatesFromEndpoint(
+  endpoint: string,
+  chainId: number,
+  vaultAddress: string,
+  requests: readonly HistoricalVaultStateRequest[]
+): Promise<HistoricalVaultState[]> {
+  const latestBlock = await jsonRpcCall<RpcBlock>(endpoint, 'eth_getBlockByNumber', ['latest', false])
+  const latestBlockNumber = Number(BigInt(latestBlock.number))
+  const latestTimestamp = Number(BigInt(latestBlock.timestamp))
+  const estimatedBlockNumbers =
+    chainId === 1
+      ? requests.map((request) =>
+          Math.max(0, latestBlockNumber - Math.floor(Math.max(0, latestTimestamp - request.timestamp) / 12))
+        )
+      : []
+  const estimatedBlocks =
+    estimatedBlockNumbers.length > 0 ? await fetchBlockHeaders(endpoint, estimatedBlockNumbers) : new Map()
+  const searches = requests.map((request, index) => {
+    if (request.timestamp >= latestTimestamp) {
+      return {
+        timestamp: request.timestamp,
+        lowBlock: latestBlockNumber,
+        highBlock: latestBlockNumber
+      }
+    }
+
+    const estimatedBlockNumber = estimatedBlockNumbers[index]
+    const estimatedBlock = estimatedBlocks.get(estimatedBlockNumber)
+    if (!estimatedBlock) {
+      return {
+        timestamp: request.timestamp,
+        lowBlock: 0,
+        highBlock: latestBlockNumber
+      }
+    }
+
+    const estimatedTimestamp = Number(BigInt(estimatedBlock.timestamp))
+    const estimatedDistance = Math.ceil(Math.abs(request.timestamp - estimatedTimestamp) / 12) + 8
+    return estimatedTimestamp <= request.timestamp
+      ? {
+          timestamp: request.timestamp,
+          lowBlock: estimatedBlockNumber,
+          highBlock: Math.min(latestBlockNumber, estimatedBlockNumber + estimatedDistance)
+        }
+      : {
+          timestamp: request.timestamp,
+          lowBlock: Math.max(0, estimatedBlockNumber - estimatedDistance),
+          highBlock: estimatedBlockNumber - 1
+        }
+  })
+  const resolvedSearches = await resolveBlockSearches(endpoint, searches)
+  const resolvedBlocks = await fetchBlockHeaders(
+    endpoint,
+    resolvedSearches.map((search) => search.lowBlock)
+  )
+  const ethCallChunks = chunkItems(
+    requests.map((request, index) => {
+      const blockNumber = resolvedSearches[index].lowBlock
+      const calls = [
+        { target: vaultAddress, callData: VAULT_SELECTORS.totalAssets },
+        ...request.strategyAddresses.map((address) => ({
+          target: vaultAddress,
+          callData: VAULT_SELECTORS.strategies + encodeAddressParam(address)
+        }))
+      ]
+      return {
+        blockNumber,
+        request,
+        call: {
+          method: 'eth_call',
+          params: [{ to: MULTICALL3_ADDRESS, data: encodeMulticallAggregate(calls) }, toBlockTag(blockNumber)]
+        }
+      }
+    }),
+    5
+  )
+  const states = await ethCallChunks.reduce<Promise<HistoricalVaultState[]>>(async (allStatesPromise, chunk) => {
+    const allStates = await allStatesPromise
+    const results = await jsonRpcBatchCall<string>(
+      endpoint,
+      chunk.map((item) => item.call)
+    )
+    const states = chunk.map((item, index) => {
+      const decoded = decodeMulticallAggregateResult(results[index])
+      if (decoded.results.length !== item.request.strategyAddresses.length + 1) {
+        throw new Error('Historical multicall returned an unexpected result count')
+      }
+
+      const strategyDebts = new Map(
+        item.request.strategyAddresses.map((address, strategyIndex) => [
+          address.toLowerCase(),
+          extractCurrentDebtFromStrategiesResult(decoded.results[strategyIndex + 1])
+        ])
+      )
+      const block = resolvedBlocks.get(item.blockNumber)
+      if (!block) {
+        throw new Error(`Missing resolved block ${item.blockNumber}`)
+      }
+
+      return {
+        blockNumber: item.blockNumber,
+        blockTimestamp: Number(BigInt(block.timestamp)),
+        ...computeUnallocated(decodeUint256(decoded.results[0]), strategyDebts)
+      }
+    })
+    return [...allStates, ...states]
+  }, Promise.resolve([]))
+  return states
+}
+
+async function tryHistoricalBatchEndpoints(
+  endpoints: readonly string[],
+  chainId: number,
+  vaultAddress: string,
+  requests: readonly HistoricalVaultStateRequest[],
+  lastError?: Error
+): Promise<HistoricalVaultState[]> {
+  const [endpoint, ...remainingEndpoints] = endpoints
+  if (!endpoint) {
+    throw lastError ?? new Error('All RPC endpoints failed')
+  }
+
+  try {
+    return await fetchHistoricalStatesFromEndpoint(endpoint, chainId, vaultAddress, requests)
+  } catch (error) {
+    return tryHistoricalBatchEndpoints(
+      remainingEndpoints,
+      chainId,
+      vaultAddress,
+      requests,
+      error instanceof Error ? error : new Error(String(error))
+    )
+  }
+}
+
+export async function fetchVaultOnChainStatesAtTimestamps(
+  chainId: number,
+  vaultAddress: string,
+  requests: readonly HistoricalVaultStateRequest[]
+): Promise<HistoricalVaultState[]> {
+  if (requests.length === 0) {
+    return []
+  }
+
+  const endpoints = getAllRpcEndpoints(chainId)
+  if (endpoints.length === 0) {
+    throw new Error(`No RPC endpoints configured for chain ${chainId}`)
+  }
+
+  return tryHistoricalBatchEndpoints(endpoints, chainId, vaultAddress, requests)
+}
+
 function computeUnallocated(
   totalAssets: bigint,
   strategyDebts: Map<string, bigint>
@@ -269,7 +553,7 @@ function computeUnallocated(
 
   let unallocatedBps: number
   if (totalAssets > BigInt(0)) {
-    const unallocated = totalAssets - totalAllocated
+    const unallocated = totalAssets > totalAllocated ? totalAssets - totalAllocated : 0n
     unallocatedBps = Number((unallocated * BigInt(10000)) / totalAssets)
   } else {
     unallocatedBps = 10000

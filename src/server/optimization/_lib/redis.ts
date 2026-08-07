@@ -1,4 +1,5 @@
 import { Redis } from '@upstash/redis'
+import { type AllocationCoverage, calculateAllocationCoverage } from './allocationCoverage'
 import type { VaultOptimization } from './schema'
 import { parseVaultOptimizations } from './schema'
 
@@ -36,8 +37,15 @@ export interface OptimizationSourceMeta {
   latestMatchedTimestampUtc: string | null
 }
 
+export interface OptimizationFreshness {
+  optimizationTimestampUtc: string | null
+  latestAvailableTimestampUtc: string | null
+}
+
 export type VaultOptimizationRecord = VaultOptimization & {
   source: OptimizationSourceMeta
+  allocationCoverage: AllocationCoverage
+  freshness: OptimizationFreshness
 }
 
 interface ReadOptimizationsCache {
@@ -264,7 +272,7 @@ async function fetchOptimizationsFromRedis(): Promise<VaultOptimizationRecord[] 
     })
   }
 
-  const optimizations: VaultOptimizationRecord[] = []
+  const optimizations: Array<VaultOptimization & { source: OptimizationSourceMeta }> = []
   for (const [index, rawPayload] of rawPayloads.entries()) {
     if (!rawPayload) {
       continue
@@ -293,7 +301,40 @@ async function fetchOptimizationsFromRedis(): Promise<VaultOptimizationRecord[] 
     }
   }
 
-  return optimizations.length > 0 ? optimizations : null
+  return optimizations.length > 0 ? attachOptimizationMetadata(optimizations) : null
+}
+
+function getOptimizationTimestamp(source: OptimizationSourceMeta): string | null {
+  return source.isLatestAlias ? source.latestMatchedTimestampUtc : source.timestampUtc
+}
+
+function getVaultChainKey(optimization: VaultOptimization & { source: OptimizationSourceMeta }): string {
+  return `${optimization.source.chainId ?? 'unknown'}:${optimization.vault.toLowerCase()}`
+}
+
+export function attachOptimizationMetadata(
+  optimizations: readonly (VaultOptimization & { source: OptimizationSourceMeta })[]
+): VaultOptimizationRecord[] {
+  const latestTimestampByVaultChain = optimizations.reduce((timestamps, optimization) => {
+    const timestamp = getOptimizationTimestamp(optimization.source)
+    const key = getVaultChainKey(optimization)
+    const previousTimestamp = timestamps.get(key)
+
+    if (timestamp !== null && (previousTimestamp === undefined || timestamp > previousTimestamp)) {
+      timestamps.set(key, timestamp)
+    }
+
+    return timestamps
+  }, new Map<string, string>())
+
+  return optimizations.map((optimization) => ({
+    ...optimization,
+    allocationCoverage: calculateAllocationCoverage(optimization.strategyDebtRatios),
+    freshness: {
+      optimizationTimestampUtc: getOptimizationTimestamp(optimization.source),
+      latestAvailableTimestampUtc: latestTimestampByVaultChain.get(getVaultChainKey(optimization)) ?? null
+    }
+  }))
 }
 
 export async function readOptimizations(): Promise<VaultOptimizationRecord[] | null> {
