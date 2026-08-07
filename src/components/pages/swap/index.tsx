@@ -641,7 +641,7 @@ export default function SwapPage(): ReactElement {
             id="swap-swap-panel"
             role="tabpanel"
             aria-labelledby="swap-swap-tab"
-            className="relative flex h-[600px] flex-col overflow-y-auto"
+            className="relative flex h-[600px] flex-col overflow-hidden"
           >
             <div className="flex shrink-0 items-center justify-between px-6 pt-4">
               <p className="text-xs text-text-secondary">Best available route, powered by Enso.</p>
@@ -650,144 +650,148 @@ export default function SwapPage(): ReactElement {
               ) : null}
             </div>
             <div className="flex min-h-0 flex-1 flex-col gap-3 p-6 pt-3">
-              <InputTokenAmount
-                input={input}
-                title="You pay"
-                placeholder="0.00"
-                balance={fromToken.balance.raw}
-                decimals={fromToken.decimals}
-                symbol={fromToken.symbol}
-                onMaxClick={handleMax}
-                errorMessage={inputExceedsBalance ? `Insufficient ${fromToken.symbol} balance` : undefined}
-                showTokenSelector
-                inputTokenUsdPrice={fromTokenPrice}
-                tokenAddress={fromToken.address}
-                tokenChainId={fromToken.chainID}
-                tokenLogoURI={fromToken.logoURI}
-                onTokenSelectorClick={() => setSelectorTarget('from')}
-              />
-
-              <div className="relative h-0">
-                <button
-                  type="button"
-                  onClick={reversePair}
-                  aria-label="Reverse swap direction"
-                  className="absolute left-1/2 top-1/2 z-10 flex size-9 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-surface text-text-secondary shadow-sm transition-colors hover:text-text-primary"
-                >
-                  <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
-                    <path
-                      d="M8 4v14m0 0-3-3m3 3 3-3M16 20V6m0 0-3 3m3-3 3 3"
-                      strokeWidth="1.8"
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
-                    />
-                  </svg>
-                </button>
-              </div>
-
-              <SwapOutputField
-                amount={protectedQuote.display.expectedOut}
-                isLoading={protectedQuote.isDisplayLoading}
-                onSelect={() => setSelectorTarget('to')}
-                token={toToken}
-                tokenPrice={toTokenPrice}
-              />
-
-              <div className="min-h-[201px] space-y-2 pt-3">
-                <DetailRow
-                  label="Minimum received"
-                  value={
-                    minExpectedOut > 0n
-                      ? `${formatWidgetPreciseValue(minExpectedOut, toToken.decimals)} ${toToken.symbol}`
-                      : 'Unavailable'
-                  }
+              <div className="min-h-0 flex-1 space-y-3 overflow-y-auto">
+                <InputTokenAmount
+                  input={input}
+                  title="You pay"
+                  placeholder="0.00"
+                  balance={fromToken.balance.raw}
+                  decimals={fromToken.decimals}
+                  symbol={fromToken.symbol}
+                  onMaxClick={handleMax}
+                  errorMessage={inputExceedsBalance ? `Insufficient ${fromToken.symbol} balance` : undefined}
+                  showTokenSelector
+                  inputTokenUsdPrice={fromTokenPrice}
+                  tokenAddress={fromToken.address}
+                  tokenChainId={fromToken.chainID}
+                  tokenLogoURI={fromToken.logoURI}
+                  onTokenSelectorClick={() => setSelectorTarget('from')}
                 />
-                {destinationVaultEstimate && destinationVaultMetadata ? (
-                  <SwapVaultWorthRow
-                    estimate={destinationVaultEstimate}
-                    underlyingSymbol={destinationVaultMetadata.underlyingSymbol}
-                    isLoading={protectedQuote.isDisplayLoading}
-                  />
-                ) : null}
-                <DetailRow
-                  label="Est. / Worst price impact"
-                  value={
-                    expectedOut > 0n
-                      ? `${protectedQuote.estimatedPriceImpactPercentage.toFixed(2)}% | ${protectedQuote.worstCaseRouteImpactPercentage.toFixed(2)}%`
-                      : 'Unavailable'
-                  }
+
+                <div className="relative h-0">
+                  <button
+                    type="button"
+                    onClick={reversePair}
+                    aria-label="Reverse swap direction"
+                    className="absolute left-1/2 top-1/2 z-10 flex size-9 -translate-x-1/2 -translate-y-1/2 items-center justify-center rounded-full border border-border bg-surface text-text-secondary shadow-sm transition-colors hover:text-text-primary"
+                  >
+                    <svg className="size-4" viewBox="0 0 24 24" fill="none" stroke="currentColor" aria-hidden="true">
+                      <path
+                        d="M8 4v14m0 0-3-3m3 3 3-3M16 20V6m0 0-3 3m3-3 3 3"
+                        strokeWidth="1.8"
+                        strokeLinecap="round"
+                        strokeLinejoin="round"
+                      />
+                    </svg>
+                  </button>
+                </div>
+
+                <SwapOutputField
+                  amount={protectedQuote.display.expectedOut}
+                  isLoading={protectedQuote.isDisplayLoading}
+                  onSelect={() => setSelectorTarget('to')}
+                  token={toToken}
+                  tokenPrice={toTokenPrice}
                 />
-                {destinationVaultEstimate && destinationVaultMetadata ? (
-                  <SwapVaultAnnualReturnRow
-                    estimate={destinationVaultEstimate}
-                    underlyingSymbol={destinationVaultMetadata.underlyingSymbol}
-                    annualRate={destinationVaultMetadata.annualRate}
-                    isLoading={protectedQuote.isDisplayLoading}
-                  />
-                ) : null}
-                <DetailRow label="Routing" value="Enso" />
-                {customRecipient ? (
+
+                <div className="min-h-[201px] space-y-2 pt-3">
                   <DetailRow
-                    label="Recipient"
-                    value={`${customRecipient.slice(0, 6)}...${customRecipient.slice(-4)}`}
+                    label="Minimum received"
+                    value={
+                      minExpectedOut > 0n
+                        ? `${formatWidgetPreciseValue(minExpectedOut, toToken.decimals)} ${toToken.symbol}`
+                        : 'Unavailable'
+                    }
                   />
-                ) : null}
-                {account && !isNativeInput && approvalSpenderAddress ? (
-                  <div className="flex items-start justify-between gap-4 text-sm">
-                    <button
-                      type="button"
-                      onClick={() => setIsApprovalOpen(true)}
-                      className="yearn--link-dots text-left text-text-secondary transition-colors hover:text-text-primary"
-                    >
-                      Existing Approval (Enso Router)
-                    </button>
-                    {solver.periphery.isLoadingAllowance ? (
-                      <span className="inline-block h-4 w-20 animate-pulse rounded bg-surface-secondary" />
-                    ) : solver.periphery.allowance > 0n && allowanceDisplay !== 'Unlimited' ? (
+                  {destinationVaultEstimate && destinationVaultMetadata ? (
+                    <SwapVaultWorthRow
+                      estimate={destinationVaultEstimate}
+                      underlyingSymbol={destinationVaultMetadata.underlyingSymbol}
+                      isLoading={protectedQuote.isDisplayLoading}
+                    />
+                  ) : null}
+                  <DetailRow
+                    label="Est. / Worst price impact"
+                    value={
+                      expectedOut > 0n
+                        ? `${protectedQuote.estimatedPriceImpactPercentage.toFixed(2)}% | ${protectedQuote.worstCaseRouteImpactPercentage.toFixed(2)}%`
+                        : 'Unavailable'
+                    }
+                  />
+                  {destinationVaultEstimate && destinationVaultMetadata ? (
+                    <SwapVaultAnnualReturnRow
+                      estimate={destinationVaultEstimate}
+                      underlyingSymbol={destinationVaultMetadata.underlyingSymbol}
+                      annualRate={destinationVaultMetadata.annualRate}
+                      isLoading={protectedQuote.isDisplayLoading}
+                    />
+                  ) : null}
+                  <DetailRow label="Routing" value="Enso" />
+                  {customRecipient ? (
+                    <DetailRow
+                      label="Recipient"
+                      value={`${customRecipient.slice(0, 6)}...${customRecipient.slice(-4)}`}
+                    />
+                  ) : null}
+                  {account && !isNativeInput && approvalSpenderAddress ? (
+                    <div className="flex items-start justify-between gap-4 text-sm">
                       <button
                         type="button"
-                        onClick={() => setInputValue(formatUnits(solver.periphery.allowance, fromToken.decimals))}
-                        className="text-right font-semibold text-text-primary transition-colors hover:text-primary"
+                        onClick={() => setIsApprovalOpen(true)}
+                        className="yearn--link-dots text-left text-text-secondary transition-colors hover:text-text-primary"
                       >
-                        {allowanceDisplay} {fromToken.symbol}
+                        Existing Approval (Enso Router)
                       </button>
-                    ) : (
-                      <span className="text-right font-semibold text-text-primary">
-                        {allowanceDisplay === 'Unlimited'
-                          ? allowanceDisplay
-                          : `${allowanceDisplay} ${fromToken.symbol}`}
-                      </span>
-                    )}
-                  </div>
+                      {solver.periphery.isLoadingAllowance ? (
+                        <span className="inline-block h-4 w-20 animate-pulse rounded bg-surface-secondary" />
+                      ) : solver.periphery.allowance > 0n && allowanceDisplay !== 'Unlimited' ? (
+                        <button
+                          type="button"
+                          onClick={() => setInputValue(formatUnits(solver.periphery.allowance, fromToken.decimals))}
+                          className="text-right font-semibold text-text-primary transition-colors hover:text-primary"
+                        >
+                          {allowanceDisplay} {fromToken.symbol}
+                        </button>
+                      ) : (
+                        <span className="text-right font-semibold text-text-primary">
+                          {allowanceDisplay === 'Unlimited'
+                            ? allowanceDisplay
+                            : `${allowanceDisplay} ${fromToken.symbol}`}
+                        </span>
+                      )}
+                    </div>
+                  ) : null}
+                </div>
+              </div>
+
+              <div className="max-h-60 shrink-0 space-y-3 overflow-y-auto empty:hidden" aria-live="polite">
+                <PriceImpactWarning
+                  percentage={protectedQuote.worstCaseRouteImpactPercentage}
+                  userTolerancePercentage={zapSlippage}
+                  isBlocking={protectedQuote.priceImpactInfo.isBlocking}
+                  isLoading={protectedQuote.isPreparing}
+                  isDebouncing={inputValue.isDebouncing}
+                  isAmountSynced={inputValue.bn === inputValue.debouncedBn}
+                  hasAmount={inputValue.bn > 0n}
+                />
+                {protectedQuote.hasUnpricedQuoteError ? (
+                  <p className="break-words rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-500">
+                    Price impact cannot be verified for this pair, so execution is blocked.
+                  </p>
+                ) : null}
+                {routeError ? (
+                  <p className="break-words rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-500">
+                    {routeError}
+                  </p>
+                ) : null}
+                {!ensoEnabled ? (
+                  <p className="break-words rounded-md border border-border bg-surface-secondary px-3 py-2 text-xs text-text-secondary">
+                    Enso routing is temporarily unavailable.
+                  </p>
                 ) : null}
               </div>
 
-              <PriceImpactWarning
-                percentage={protectedQuote.worstCaseRouteImpactPercentage}
-                userTolerancePercentage={zapSlippage}
-                isBlocking={protectedQuote.priceImpactInfo.isBlocking}
-                isLoading={protectedQuote.isPreparing}
-                isDebouncing={inputValue.isDebouncing}
-                isAmountSynced={inputValue.bn === inputValue.debouncedBn}
-                hasAmount={inputValue.bn > 0n}
-              />
-              {protectedQuote.hasUnpricedQuoteError ? (
-                <p className="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-500">
-                  Price impact cannot be verified for this pair, so execution is blocked.
-                </p>
-              ) : null}
-              {routeError ? (
-                <p className="rounded-md border border-red-500/30 bg-red-500/10 px-3 py-2 text-xs text-red-500">
-                  {routeError}
-                </p>
-              ) : null}
-              {!ensoEnabled ? (
-                <p className="rounded-md border border-border bg-surface-secondary px-3 py-2 text-xs text-text-secondary">
-                  Enso routing is temporarily unavailable.
-                </p>
-              ) : null}
-
-              <div className="mt-auto flex items-center gap-2">
+              <div className="mt-auto flex shrink-0 items-center gap-2">
                 <div className="flex-1">
                   {!account ? (
                     <Button
