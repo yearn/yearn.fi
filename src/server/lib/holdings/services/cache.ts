@@ -195,16 +195,6 @@ async function scanRedisKeys(pattern: string, cursor = '0', collectedKeys: strin
   return nextCursor === '0' ? nextKeys : scanRedisKeys(pattern, nextCursor, nextKeys)
 }
 
-export async function getCachedTotals(
-  userAddress: string,
-  version: string,
-  startDate: string,
-  endDate: string
-): Promise<CachedTotal[]> {
-  const result = await getCachedTotalsWithTimestamp(userAddress, version, startDate, endDate)
-  return result.totals
-}
-
 export async function saveCachedTotals(userAddress: string, version: string, totals: CachedTotal[]): Promise<boolean> {
   const userAddressHash = getUserAddressCacheKey(userAddress)
 

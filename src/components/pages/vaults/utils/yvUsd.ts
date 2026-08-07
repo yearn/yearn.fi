@@ -11,7 +11,6 @@ export const YVUSD_LOCKED_ZAP_ADDRESS = toAddress('0x7ba61c8e19414dcB8fe769a7Be6
 
 export const YVUSD_LOCKED_COOLDOWN_DAYS = 14
 export const YVUSD_WITHDRAW_WINDOW_DAYS = 5
-export const YVUSD_ANNOUNCEMENT_URL = '#'
 export const YVUSD_LEARN_MORE_URL = 'https://docs.yearn.fi/getting-started/products/yvaults/yvusd'
 
 function getYvUsdAprServiceEndpoint(): string {
@@ -56,12 +55,6 @@ export function isYvUsdAddress(address?: string | null): boolean {
 export function isYvUsdVault(vault?: TKongVaultInput | null): boolean {
   if (!vault) return false
   return isYvUsdAddress(vault.address)
-}
-
-export function getYvUsdAssetPrice(vault?: TKongVaultInput | null): number {
-  if (!vault) return 0
-  const view = getVaultView(vault)
-  return view.tvl.price || 0
 }
 
 export function getYvUsdSharePrice(vault?: TKongVaultInput | null, fallbackAssetPrice = 0): number {

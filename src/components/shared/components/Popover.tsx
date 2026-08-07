@@ -50,5 +50,3 @@ export const Popover: FC<PopoverProps> = ({ trigger, children, className, align 
 export const PopoverContent: FC<{ children: ReactNode; className?: string }> = ({ children, className }) => {
   return <div className={cl('p-4', className)}>{children}</div>
 }
-
-export const PopoverTrigger = PopoverButton

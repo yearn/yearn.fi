@@ -1,4 +1,4 @@
-import { ethers } from 'ethers'
+import { encodeAbiParameters } from 'viem'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { fetchVaultOnChainState } from './rpc'
 
@@ -11,18 +11,24 @@ describe('fetchVaultOnChainState', () => {
   })
 
   it('decodes multicall bytes[] results from the array body offsets', async () => {
-    const totalAssets = ethers.BigNumber.from(1000)
-    const firstDebt = ethers.BigNumber.from(250)
-    const secondDebt = ethers.BigNumber.from(150)
+    const totalAssets = 1000n
+    const firstDebt = 250n
+    const secondDebt = 150n
 
-    const result = ethers.utils.defaultAbiCoder.encode(
-      ['uint256', 'bytes[]'],
+    const result = encodeAbiParameters(
+      [{ type: 'uint256' }, { type: 'bytes[]' }],
       [
-        123,
+        123n,
         [
-          ethers.utils.defaultAbiCoder.encode(['uint256'], [totalAssets]),
-          ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256', 'uint256', 'uint256'], [0, 0, firstDebt, 0]),
-          ethers.utils.defaultAbiCoder.encode(['uint256', 'uint256', 'uint256', 'uint256'], [0, 0, secondDebt, 0])
+          encodeAbiParameters([{ type: 'uint256' }], [totalAssets]),
+          encodeAbiParameters(
+            [{ type: 'uint256' }, { type: 'uint256' }, { type: 'uint256' }, { type: 'uint256' }],
+            [0n, 0n, firstDebt, 0n]
+          ),
+          encodeAbiParameters(
+            [{ type: 'uint256' }, { type: 'uint256' }, { type: 'uint256' }, { type: 'uint256' }],
+            [0n, 0n, secondDebt, 0n]
+          )
         ]
       ]
     )

@@ -14,10 +14,6 @@ export function isKelpVault(vault: TKongVaultInput): boolean {
   return toAddress(getVaultAddress(vault)) === toAddress(VAULT_ADDRESSES.KELP)
 }
 
-export function sumApr(values: number[]): number {
-  return values.reduce((acc, v) => acc + v, 0)
-}
-
 export function projectVeYfiRange(vault: TKongVaultInput): [number, number] {
   const apr = getVaultAPR(vault)
   const sumOfRewardsAPY = apr.extra.stakingRewardsAPR + apr.extra.gammaRewardAPR

@@ -72,20 +72,6 @@ export function getHoldingsDebugContext(): HoldingsDebugContext | undefined {
   return storage.getStore()
 }
 
-export function getHoldingsDebugFilters(): {
-  lotsEnabled: boolean
-  vaultFilter: string | null
-  txFilter: string | null
-} {
-  const context = getHoldingsDebugContext()
-
-  return {
-    lotsEnabled: context?.lotsEnabled ?? false,
-    vaultFilter: context?.vaultFilter ?? null,
-    txFilter: context?.txFilter ?? null
-  }
-}
-
 export function debugLog(scope: string, message: string, payload?: Record<string, unknown>): void {
   const context = getHoldingsDebugContext()
 
@@ -122,16 +108,4 @@ export function debugError(scope: string, message: string, error: unknown, paylo
     ...payload,
     error: errorMessage
   })
-}
-
-export function debugTable(scope: string, message: string, rows: Array<Record<string, unknown>>): void {
-  const context = getHoldingsDebugContext()
-
-  if (!context?.enabled) {
-    return
-  }
-
-  const elapsedMs = Date.now() - context.startedAt
-  console.log(`[HoldingsDebug][${context.requestId}][+${elapsedMs}ms][${scope}] ${message}`)
-  console.table(rows)
 }

@@ -1,7 +1,6 @@
-import { Tooltip } from '@shared/components/Tooltip'
 import { formatAmount, formatApyDisplay } from '@shared/utils'
 
-import type { FC, ReactElement } from 'react'
+import type { ReactElement } from 'react'
 
 type TAPYTooltipProps = {
   baseAPY: number
@@ -110,8 +109,4 @@ export function APYTooltipContent({
       </div>
     </div>
   )
-}
-
-export const APYTooltip: FC<TAPYTooltipProps> = ({ children, ...rest }) => {
-  return <Tooltip tooltip={<APYTooltipContent {...rest} />}>{children as ReactElement}</Tooltip>
 }
