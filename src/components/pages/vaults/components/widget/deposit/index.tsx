@@ -1,3 +1,4 @@
+import { handleDepositStepSuccess } from '@pages/vaults/components/widget/deposit/depositStepSuccess'
 import { buildSafeDepositBatch } from '@pages/vaults/components/widget/deposit/safeDepositBatch'
 import { InputTokenAmount } from '@pages/vaults/components/widget/InputTokenAmount'
 import { YBOLD_STAKING_ADDRESS, YBOLD_VAULT_ADDRESS } from '@pages/vaults/domain/normalizeVault'
@@ -880,16 +881,18 @@ export function WidgetDeposit({
     [isCrossChain, depositRefreshTargets, refreshWalletBalances, refetchVaultUserData]
   )
 
-  const handleDepositStepSuccess = useCallback(
-    (label: string) => {
-      if (label === 'Approve' || label === 'Sign Permit') {
-        setCompletedApprovalFlowKey(approvalFlowKey)
-      }
-    },
-    [approvalFlowKey]
+  const refetchActiveAllowance = activeFlow.periphery.refetchAllowance
+  const handleTransactionStepSuccess = useCallback(
+    (label: string) =>
+      handleDepositStepSuccess({
+        label,
+        approvalFlowKey,
+        refetchAllowance: refetchActiveAllowance,
+        completeApprovalFlow: setCompletedApprovalFlowKey
+      }),
+    [approvalFlowKey, refetchActiveAllowance]
   )
 
-  const refetchActiveAllowance = activeFlow.periphery.refetchAllowance
   const handleApprovalOverlayDone = useCallback(async () => {
     try {
       await refetchActiveAllowance?.()
@@ -1368,7 +1371,7 @@ export function WidgetDeposit({
         deferOnAllCompleteUntilConfettiEnd={deferSuccessEffectsUntilConfettiEnd}
         autoContinueToNextStep
         autoContinueStepLabels={['Approve', 'Sign Permit']}
-        onStepSuccess={handleDepositStepSuccess}
+        onStepSuccess={handleTransactionStepSuccess}
         onBeforeSuccess={handleDepositTransactionSuccess}
         onAllComplete={handleDepositSuccess}
       />

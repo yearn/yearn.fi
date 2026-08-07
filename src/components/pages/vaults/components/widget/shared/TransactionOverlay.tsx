@@ -165,7 +165,7 @@ type TransactionOverlayProps = {
   onAllComplete?: () => void
   deferOnAllCompleteUntilClose?: boolean
   deferOnAllCompleteUntilConfettiEnd?: boolean
-  onStepSuccess?: (label: string) => void
+  onStepSuccess?: (label: string) => void | Promise<void>
   /**
    * Called after the final transaction is confirmed, before the success screen
    * is shown. The overlay stays in a "refreshing" state while this resolves.
@@ -296,6 +296,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   const [isAutoContinuing, setIsAutoContinuing] = useState(false)
   const [confettiRequestNonce, setConfettiRequestNonce] = useState(0)
   const [isWaitingForNextStep, setIsWaitingForNextStep] = useState(false)
+  const [failedStepSuccessLabel, setFailedStepSuccessLabel] = useState<string | null>(null)
 
   useEffect(() => {
     writeContractResetRef.current = writeContract.reset
@@ -332,6 +333,26 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     colors: ['#3B82F6', '#10B981', '#F59E0B', '#EF4444', '#8B5CF6', '#EC4899'],
     onAnimationComplete: () => runAllCompleteIfPending('confetti')
   })
+
+  const reportStepSuccess = useCallback(
+    async (label: string): Promise<boolean> => {
+      try {
+        await onStepSuccess?.(label)
+        setFailedStepSuccessLabel(null)
+        return true
+      } catch (error) {
+        console.error('[TransactionOverlay] Failed to prepare the next transaction step', {
+          step: label,
+          error: (error as Error)?.message || error
+        })
+        setFailedStepSuccessLabel(label)
+        setOverlayState('error')
+        setErrorMessage('Transaction confirmed, but the next step could not be prepared. Please try again.')
+        return false
+      }
+    },
+    [onStepSuccess]
+  )
 
   const requestConfetti = useCallback(() => {
     setConfettiRequestNonce((nonce) => nonce + 1)
@@ -447,6 +468,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       autoContinueNonceRef.current += 1
       setIsAutoContinuing(false)
       setIsWaitingForNextStep(false)
+      setFailedStepSuccessLabel(null)
       handledConfettiRequestRef.current = 0
       setConfettiRequestNonce(0)
     }
@@ -529,7 +551,8 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
         const completedAllSteps = currentStep.completesFlow ?? isLastStep
         if (!hasReportedStepSuccessRef.current && currentStep.label) {
           hasReportedStepSuccessRef.current = true
-          onStepSuccess?.(currentStep.label)
+          const didReportSuccess = await reportStepSuccess(currentStep.label)
+          if (!didReportSuccess) return
         }
         finalizeSuccessState(completedAllSteps, currentStep)
 
@@ -550,7 +573,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       finalizeSuccessState,
       isLastStep,
       onClose,
-      onStepSuccess,
+      reportStepSuccess,
       requestConfetti,
       setStepExecutionContext,
       signTypedDataAsync
@@ -843,9 +866,16 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   }, [isAutoContinuing, isTerminalSuccess, onClose, advanceToNextStep])
 
   const handleRetry = useCallback(() => {
+    if (failedStepSuccessLabel) {
+      setOverlayState('pending')
+      setErrorMessage('')
+      void reportStepSuccess(failedStepSuccessLabel)
+      return
+    }
+
     resetTxState()
     executeStep()
-  }, [resetTxState, executeStep])
+  }, [executeStep, failedStepSuccessLabel, reportStepSuccess, resetTxState])
 
   const handleClose = useCallback(() => {
     onClose()
@@ -922,7 +952,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       const executedStepLabel = executedStepRef.current?.label
       if (!hasReportedStepSuccessRef.current && executedStepLabel) {
         hasReportedStepSuccessRef.current = true
-        onStepSuccess?.(executedStepLabel)
+        void reportStepSuccess(executedStepLabel)
       }
     }
 
@@ -1025,7 +1055,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     overlayState,
     requestConfetti,
     handleUpdateNotification,
-    onStepSuccess,
+    reportStepSuccess,
     onBeforeSuccess,
     isStepReady,
     step?.label,
@@ -1256,7 +1286,9 @@ Execution may happen separately after the required confirmations are collected.`
           {overlayState === 'error' && (
             <>
               <ErrorIcon />
-              <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">Transaction failed</h3>
+              <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">
+                {failedStepSuccessLabel ? 'Next step unavailable' : 'Transaction failed'}
+              </h3>
               <p className="text-sm text-text-secondary mb-6">{errorMessage}</p>
               <Button
                 onClick={handleRetry}
@@ -1264,7 +1296,7 @@ Execution may happen separately after the required confirmations are collected.`
                 className="w-full max-w-xs"
                 classNameOverride="yearn--button--nextgen w-full"
               >
-                Try Again
+                {failedStepSuccessLabel ? 'Retry next step' : 'Try Again'}
               </Button>
             </>
           )}
