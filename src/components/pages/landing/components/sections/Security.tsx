@@ -18,13 +18,13 @@ const Cards: {
 } = {
   [SecurityCardType.Audits]: {
     title: 'Audits',
-    description: 'Yearn Contracts are audited thoroughly by a variety of auditors.',
+    description: 'Yearn contracts are audited thoroughly by a variety of auditors.',
     href: 'https://docs.yearn.fi/developers/security/',
     imageSrc: '/landing/yearn-apps-logo.png',
     bgColor: 'bg-gradient-to-br from-[#0657F9] to-[#0B4DD0]'
   },
   [SecurityCardType.BugBounties]: {
-    title: 'Bug Bounties',
+    title: 'Bug bounties',
     description: 'Security is our top priority. Report vulnerabilities and get rewarded.',
     href: 'https://immunefi.com/bug-bounty/yearnfinance',
     imageSrc: '/landing/integrations.png',
@@ -50,7 +50,7 @@ const SecurityCard: FC<{
               'flex min-h-[48px] items-center text-base text-white/90 transition-colors duration-300 group-hover:text-white sm:min-h-0 sm:text-inherit'
             }
           >
-            {'Learn More →'}
+            {'Learn more →'}
           </div>
         </div>
       </div>
@@ -66,7 +66,7 @@ export const Security: FC = () => (
           <SectionHeader
             align={'center'}
             tagline={'Audited, secure'}
-            title={'Security First'}
+            title={'Security first'}
             description={'Yearn prioritizes security to protect your assets.'}
           />
         </div>
