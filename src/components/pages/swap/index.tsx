@@ -178,6 +178,7 @@ function SwapOutputField({
     size: 32
   })
   const normalizedAmount = Number(formatUnits(amount, token.decimals))
+  const tokenSelectorTitle = token.name !== token.symbol ? `${token.name} (${token.symbol})` : token.symbol
 
   return (
     <div className="rounded-md border border-border px-3 py-2">
@@ -192,7 +193,9 @@ function SwapOutputField({
         <button
           type="button"
           onClick={onSelect}
-          className="flex min-h-11 items-center gap-2 rounded-lg px-2 py-1 text-xl font-medium text-text-primary transition-colors hover:bg-surface-secondary"
+          data-token-selector-button
+          title={tokenSelectorTitle}
+          className="flex min-h-11 max-w-[50%] shrink-0 items-center gap-2 overflow-hidden rounded-lg px-2 py-1 text-xl font-medium text-text-primary transition-colors hover:bg-surface-secondary"
         >
           <TokenLogoV2
             src={logo.src}
@@ -202,10 +205,10 @@ function SwapOutputField({
             chainId={token.chainID}
             width={32}
             height={32}
-            className="rounded-full"
+            className="shrink-0 rounded-full"
           />
-          <span>{token.symbol}</span>
-          <svg className="size-5" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
+          <span className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap scrollbar-none">{token.symbol}</span>
+          <svg className="size-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m19 9-7 7-7-7" />
           </svg>
         </button>
@@ -658,9 +661,11 @@ export default function SwapPage(): ReactElement {
                   balance={fromToken.balance.raw}
                   decimals={fromToken.decimals}
                   symbol={fromToken.symbol}
+                  tokenName={fromToken.name}
                   onMaxClick={handleMax}
                   errorMessage={inputExceedsBalance ? `Insufficient ${fromToken.symbol} balance` : undefined}
                   showTokenSelector
+                  limitTokenSelectorWidth
                   inputTokenUsdPrice={fromTokenPrice}
                   tokenAddress={fromToken.address}
                   tokenChainId={fromToken.chainID}

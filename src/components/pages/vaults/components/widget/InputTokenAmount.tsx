@@ -17,6 +17,7 @@ interface Props {
   displayBalance?: bigint
   decimals?: number
   symbol?: string
+  tokenName?: string
   placeholder?: string
   title?: string
   disabled?: boolean
@@ -25,6 +26,7 @@ interface Props {
   onInputChange?: (value: bigint) => void
   onMaxClick?: () => Promise<void> | void // Optional callback when MAX is clicked
   showTokenSelector?: boolean
+  limitTokenSelectorWidth?: boolean
   onTokenSelectorClick?: () => void
   // USD prices
   inputTokenUsdPrice?: number
@@ -54,6 +56,7 @@ export const InputTokenAmount: FC<Props> = ({
   displayBalance,
   decimals,
   symbol,
+  tokenName,
   placeholder,
   disabled: _disabled,
   isMaxButtonLoading = false,
@@ -62,6 +65,7 @@ export const InputTokenAmount: FC<Props> = ({
   onMaxClick,
   title = 'Amount',
   showTokenSelector = false,
+  limitTokenSelectorWidth = false,
   onTokenSelectorClick,
   inputTokenUsdPrice = 0,
   outputTokenUsdPrice = 0,
@@ -118,6 +122,8 @@ export const InputTokenAmount: FC<Props> = ({
     () => getTokenLogoSources({ address: tokenAddress, chainId: tokenChainId, logoURI: tokenLogoURI, size: 32 }),
     [tokenAddress, tokenChainId, tokenLogoURI]
   )
+  const tokenSelectorTitle =
+    tokenName && tokenName !== symbol ? `${tokenName} (${symbol ?? 'Select Token'})` : (symbol ?? 'Select Token')
 
   // Calculate percentage amounts
   const handlePercentageClick = async (percentage: number) => {
@@ -240,11 +246,13 @@ export const InputTokenAmount: FC<Props> = ({
               type="button"
               onClick={handleTokenButtonClick}
               data-token-selector-button
+              title={tokenSelectorTitle}
               disabled={!showTokenSelector && disabled}
               className={cl(
-                'px-2 py-1.5 md:py-1 rounded-lg flex items-center gap-1.5 md:gap-2',
+                'px-2 py-1.5 md:py-1 rounded-lg flex items-center gap-1.5 md:gap-2 overflow-hidden',
                 'text-text-primary text-base md:text-xl font-medium',
                 'min-h-[44px]',
+                limitTokenSelectorWidth ? 'max-w-[50%] shrink-0' : undefined,
                 showTokenSelector
                   ? 'bg-transparent hover:bg-surface-secondary active:bg-surface-secondary'
                   : disabled
@@ -261,12 +269,20 @@ export const InputTokenAmount: FC<Props> = ({
                   chainId={tokenChainId}
                   width={32}
                   height={32}
-                  className="rounded-full"
+                  className="shrink-0 rounded-full"
                 />
               )}
-              <span>{symbol ?? 'Select Token'}</span>
+              <span
+                className={cl(
+                  limitTokenSelectorWidth
+                    ? 'min-w-0 flex-1 overflow-x-auto whitespace-nowrap scrollbar-none'
+                    : undefined
+                )}
+              >
+                {symbol ?? 'Select Token'}
+              </span>
               {showTokenSelector && (
-                <svg className="w-5 h-5 ml-1" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                <svg className="ml-1 size-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
                 </svg>
               )}
