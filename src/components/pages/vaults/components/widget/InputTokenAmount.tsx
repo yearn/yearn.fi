@@ -1,5 +1,6 @@
 import type { useDebouncedInput } from '@pages/vaults/hooks/useDebouncedInput'
 import type { useInput } from '@pages/vaults/hooks/useInput'
+import { OverflowMarqueeText } from '@shared/components/OverflowMarqueeText'
 import { TokenLogoV2 } from '@shared/components/TokenLogoV2'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { cl, formatTAmount, simpleToExact } from '@shared/utils'
@@ -252,7 +253,7 @@ export const InputTokenAmount: FC<Props> = ({
                 'px-2 py-1.5 md:py-1 rounded-lg flex items-center gap-1.5 md:gap-2 overflow-hidden',
                 'text-text-primary text-base md:text-xl font-medium',
                 'min-h-[44px]',
-                limitTokenSelectorWidth ? 'max-w-[50%] shrink-0' : undefined,
+                limitTokenSelectorWidth ? 'max-w-[60%] shrink-0' : undefined,
                 showTokenSelector
                   ? 'bg-transparent hover:bg-surface-secondary active:bg-surface-secondary'
                   : disabled
@@ -272,15 +273,11 @@ export const InputTokenAmount: FC<Props> = ({
                   className="shrink-0 rounded-full"
                 />
               )}
-              <span
-                className={cl(
-                  limitTokenSelectorWidth
-                    ? 'min-w-0 flex-1 overflow-x-auto whitespace-nowrap scrollbar-none'
-                    : undefined
-                )}
-              >
-                {symbol ?? 'Select Token'}
-              </span>
+              {limitTokenSelectorWidth ? (
+                <OverflowMarqueeText>{symbol ?? 'Select Token'}</OverflowMarqueeText>
+              ) : (
+                <span>{symbol ?? 'Select Token'}</span>
+              )}
               {showTokenSelector && (
                 <svg className="ml-1 size-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
                   <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />

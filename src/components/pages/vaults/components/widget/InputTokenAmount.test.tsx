@@ -113,8 +113,8 @@ describe('InputTokenAmount', () => {
       />
     )
 
-    expect(html).toContain('max-w-[50%]')
-    expect(html).toContain('overflow-x-auto')
+    expect(html).toContain('max-w-[60%]')
+    expect(html).toContain('overflow-hidden')
     expect(html).toContain('title="Curve RSUP-WETH Factory yVault (yvCurve-RSUP-WETH-f)"')
   })
 

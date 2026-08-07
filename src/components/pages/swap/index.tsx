@@ -28,6 +28,7 @@ import { useEnsoOrder } from '@pages/vaults/hooks/useEnsoOrder'
 import { fetchTokenData, useTokens } from '@pages/vaults/hooks/useTokens'
 import { getKnownEnsoRouterAddress } from '@pages/vaults/utils/ensoRouters'
 import { Button } from '@shared/components/Button'
+import { OverflowMarqueeText } from '@shared/components/OverflowMarqueeText'
 import { TokenLogoV2 } from '@shared/components/TokenLogoV2'
 import { useWalletActions, useWalletTokens } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
@@ -197,7 +198,7 @@ function SwapOutputField({
           onClick={onSelect}
           data-token-selector-button
           title={tokenSelectorTitle}
-          className="flex min-h-11 max-w-[50%] shrink-0 items-center gap-2 overflow-hidden rounded-lg px-2 py-1 text-xl font-medium text-text-primary transition-colors hover:bg-surface-secondary"
+          className="flex min-h-11 max-w-[60%] shrink-0 items-center gap-2 overflow-hidden rounded-lg px-2 py-1 text-xl font-medium text-text-primary transition-colors hover:bg-surface-secondary"
         >
           <TokenLogoV2
             src={logo.src}
@@ -209,7 +210,7 @@ function SwapOutputField({
             height={32}
             className="shrink-0 rounded-full"
           />
-          <span className="min-w-0 flex-1 overflow-x-auto whitespace-nowrap scrollbar-none">{token.symbol}</span>
+          <OverflowMarqueeText>{token.symbol}</OverflowMarqueeText>
           <svg className="size-5 shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor" aria-hidden="true">
             <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="m19 9-7 7-7-7" />
           </svg>
