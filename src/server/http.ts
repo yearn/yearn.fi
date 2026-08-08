@@ -25,7 +25,7 @@ export const LEDGER_ADMIN_CORS_HEADERS = {
   'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
   'Access-Control-Allow-Headers': 'Content-Type, x-admin-secret',
   'Access-Control-Expose-Headers':
-    'X-Holdings-Ledger-Snapshot, X-Holdings-Ledger-Revision, X-Holdings-Ledger-Source-Generation, X-Holdings-Ledger-Runtime-Fingerprint',
+    'X-Holdings-Ledger-Snapshot, X-Holdings-Ledger-Revision, X-Holdings-Ledger-Source-Generation, X-Holdings-Ledger-Calculation-Version, X-Holdings-Ledger-Runtime-Fingerprint',
   'Cache-Control': WALLET_SCOPED_CACHE_CONTROL
 } as const
 

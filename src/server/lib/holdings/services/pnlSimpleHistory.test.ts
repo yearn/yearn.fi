@@ -383,6 +383,36 @@ describe('getHoldingsProtocolReturnHistory', () => {
     )
   })
 
+  it('uses only address-scoped ledger events when transaction enrichment is disabled', async () => {
+    const eventSource = createEventSource('ledger:revision-address-only')
+    getSettledVersionedPpsContextMock.mockResolvedValue({
+      ...settledContext,
+      eventSourceKey: eventSource.key,
+      latestSettledDayTimestamp: eventSource.latestSettledDayTimestamp,
+      maxTimestamp: eventSource.latestSettledDayTimestamp + 86_399
+    })
+    fetchActivityEventsByTransactionHashesMock.mockRejectedValue(new Error('Envio is unavailable'))
+
+    const { getHoldingsProtocolReturnHistory } = await import('@/server/lib/holdings/services/pnlSimple')
+    const response = await getHoldingsProtocolReturnHistory(
+      USER,
+      'all',
+      'parallel',
+      'paged',
+      '1y',
+      undefined,
+      undefined,
+      {
+        eventSource,
+        cacheMode: 'bypass',
+        protocolReturnEventEnrichment: 'address-only'
+      }
+    )
+
+    expect(response.summary.totalVaults).toBe(1)
+    expect(fetchActivityEventsByTransactionHashesMock).not.toHaveBeenCalled()
+  })
+
   it('isolates in-flight protocol history calculations by event source identity', async () => {
     const firstEventSource = createEventSource('ledger:revision-1')
     const secondEventSource = createEventSource('ledger:revision-2')

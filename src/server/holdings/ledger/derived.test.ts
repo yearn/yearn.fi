@@ -1,5 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { THoldingsEventSource } from '@/server/lib/holdings/services/eventSource'
+import { LEDGER_CALCULATION_VERSION } from '@/server/lib/holdings/services/ledger/state'
 
 const SNAPSHOT_ID = `snapshot_${'a'.repeat(32)}`
 const ADDRESS = '0x1111111111111111111111111111111111111111'
@@ -119,6 +120,7 @@ describe('ledger derived route coordinator', () => {
     expect(response.headers.get('X-Holdings-Ledger-Snapshot')).toBe(SNAPSHOT_ID)
     expect(response.headers.get('X-Holdings-Ledger-Revision')).toBe('revision-1')
     expect(response.headers.get('X-Holdings-Ledger-Source-Generation')).toBe('3')
+    expect(response.headers.get('X-Holdings-Ledger-Calculation-Version')).toBe(LEDGER_CALCULATION_VERSION)
   })
 
   it('emits opt-in coordinator timings without logging wallet or snapshot identifiers', async () => {

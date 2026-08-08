@@ -7,8 +7,15 @@ export function OPTIONS(): Response {
 }
 
 export async function GET(request: Request): Promise<Response> {
-  return handleLedgerDerivedRequest(request, handleHoldingsProtocolReturnHistoryRequest, {
-    requiresEnvio: true,
-    debugRoute: 'ledger-protocol-return-history'
-  })
+  return handleLedgerDerivedRequest(
+    request,
+    (derivedRequest, options) =>
+      handleHoldingsProtocolReturnHistoryRequest(derivedRequest, {
+        ...options,
+        protocolReturnEventEnrichment: 'address-only'
+      }),
+    {
+      debugRoute: 'ledger-protocol-return-history'
+    }
+  )
 }

@@ -46,6 +46,7 @@ type TProtocolReturnIssue = 'missing_metadata' | 'missing_pps' | 'missing_receip
 
 type TProtocolReturnReceiptKind = 'deposit' | 'transfer_in'
 type TProtocolReturnExitKind = 'withdrawal' | 'transfer_out'
+type TProtocolReturnValuationMode = 'event-assets' | 'pps'
 
 const RECEIPT_PRICE_BUCKET_SECONDS = 24 * 60 * 60
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
@@ -600,12 +601,13 @@ function valueDepositOrWithdrawalEvent(
     assetDecimals: number
     shareDecimals: number
     ppsMap: Map<number, number> | undefined
+    valuationMode: TProtocolReturnValuationMode
   }
 ): {
   underlying: number
   missingPps: boolean
 } {
-  if (!isKnownStakingWrapperEvent(event)) {
+  if (args.valuationMode === 'event-assets' && !isKnownStakingWrapperEvent(event)) {
     return {
       underlying: formatAmount(event.assets, args.assetDecimals),
       missingPps: false
@@ -852,6 +854,7 @@ function processEvent(
     ppsData: Map<string, Map<number, number>>
     priceData: Map<string, Map<number, number>>
     ethPriceData: Map<number, number>
+    valuationMode: TProtocolReturnValuationMode
   }
 ): Map<string, TProtocolReturnLedger> {
   const vaultKey = toVaultKey(event.chainId, event.familyVaultAddress)
@@ -870,7 +873,8 @@ function processEvent(
     const valuation = valueDepositOrWithdrawalEvent(event, {
       assetDecimals,
       shareDecimals,
-      ppsMap
+      ppsMap,
+      valuationMode: args.valuationMode
     })
     ledgers.set(
       vaultKey,
@@ -891,7 +895,8 @@ function processEvent(
     const valuation = valueDepositOrWithdrawalEvent(event, {
       assetDecimals,
       shareDecimals,
-      ppsMap
+      ppsMap,
+      valuationMode: args.valuationMode
     })
     ledgers.set(
       vaultKey,
@@ -1720,6 +1725,7 @@ export function buildProtocolReturnLedgers(args: {
   priceData: Map<string, Map<number, number>>
   ethPriceData?: Map<number, number>
   currentTimestamp?: number
+  valuationMode?: TProtocolReturnValuationMode
 }): Map<string, TProtocolReturnLedger> {
   const userAddress = lowerCaseAddress(args.userAddress)
   const effectiveEvents = buildEffectiveSimpleEvents(args.events, userAddress)
@@ -1731,7 +1737,8 @@ export function buildProtocolReturnLedgers(args: {
           metadata: args.metadata,
           ppsData: args.ppsData,
           priceData: args.priceData,
-          ethPriceData: args.ethPriceData ?? new Map()
+          ethPriceData: args.ethPriceData ?? new Map(),
+          valuationMode: args.valuationMode ?? 'event-assets'
         })
       })
     })
@@ -1975,6 +1982,7 @@ export function buildProtocolReturnHistorySeries(args: {
   timestamps: number[]
   selectedVaultKey?: string
   selectedVaultKeys?: string[]
+  valuationMode?: TProtocolReturnValuationMode
 }): HoldingsPnLSimpleHistoryPoint[] {
   const userAddress = lowerCaseAddress(args.userAddress)
   const effectiveEvents = buildEffectiveSimpleEvents(args.events, userAddress)
@@ -1998,7 +2006,8 @@ export function buildProtocolReturnHistorySeries(args: {
             metadata: args.metadata,
             ppsData: args.ppsData,
             priceData: args.priceData,
-            ethPriceData: args.ethPriceData ?? new Map()
+            ethPriceData: args.ethPriceData ?? new Map(),
+            valuationMode: args.valuationMode ?? 'event-assets'
           })
         })
       })
@@ -2068,6 +2077,7 @@ export function buildProtocolReturnFamilyHistorySeries(args: {
   ethPriceData?: Map<number, number>
   timestamps: number[]
   selectedVaults: HoldingsPnLSimpleVault[]
+  valuationMode?: TProtocolReturnValuationMode
 }): HoldingsPnLSimpleHistoryFamilySeries[] {
   if (args.selectedVaults.length === 0) {
     return []
@@ -2120,7 +2130,8 @@ export function buildProtocolReturnFamilyHistorySeries(args: {
             metadata: args.metadata,
             ppsData: args.ppsData,
             priceData: args.priceData,
-            ethPriceData: args.ethPriceData ?? new Map()
+            ethPriceData: args.ethPriceData ?? new Map(),
+            valuationMode: args.valuationMode ?? 'event-assets'
           })
         })
       })
@@ -2201,11 +2212,15 @@ async function calculateHoldingsProtocolReturnHistory(
   legacyVaultChainId?: number,
   options: THoldingsAggregationOptions = {}
 ): Promise<TProtocolReturnHistoryCalculation> {
+  const eventEnrichment = options.protocolReturnEventEnrichment ?? 'transaction'
+  const valuationMode: TProtocolReturnValuationMode = eventEnrichment === 'address-only' ? 'pps' : 'event-assets'
   debugLog('protocol-return-history', 'starting holdings protocol return history calculation', {
     version,
     fetchType,
     paginationMode,
-    timeframe
+    timeframe,
+    eventEnrichment,
+    valuationMode
   })
   reportHoldingsProgress(12, 'Fetching historical user data', 'Starting protocol return history')
 
@@ -2226,12 +2241,20 @@ async function calculateHoldingsProtocolReturnHistory(
     'Loaded wallet events and vault share prices',
     `${settledContext.selectedEvents.length} events`
   )
-  const rawEvents = await enrichSimpleHistoryRawEvents({
-    events: selectedEvents,
-    version,
-    maxTimestamp: options.eventSource?.eventUpperTimestamp ?? settledContext.maxTimestamp
-  })
-  reportHoldingsProgress(40, 'Enriched historical wallet events', `${rawEvents.length} events`)
+  const rawEvents =
+    eventEnrichment === 'transaction'
+      ? await enrichSimpleHistoryRawEvents({
+          events: selectedEvents,
+          version,
+          maxTimestamp: options.eventSource?.eventUpperTimestamp ?? settledContext.maxTimestamp
+        })
+      : selectedEvents
+  if (eventEnrichment === 'address-only') {
+    debugLog('protocol-return-history', 'using address-scoped events without live transaction enrichment', {
+      addressEvents: selectedEvents.length
+    })
+  }
+  reportHoldingsProgress(40, 'Prepared historical wallet events', `${rawEvents.length} events`)
   const effectiveEvents = rawEvents
   const filteredVaultIdentifiers = filterVaultIdentifiersByRequestedVaults(
     getVaultIdentifiers(effectiveEvents),
@@ -2317,7 +2340,8 @@ async function calculateHoldingsProtocolReturnHistory(
     ppsData: settledContext.ppsData,
     priceData,
     ethPriceData,
-    currentTimestamp: latestTimestamp
+    currentTimestamp: latestTimestamp,
+    valuationMode
   })
   const finalVaults = materializeProtocolReturnVaults({
     ledgers: finalLedgers,
@@ -2335,6 +2359,7 @@ async function calculateHoldingsProtocolReturnHistory(
     priceData,
     ethPriceData,
     timestamps,
+    valuationMode,
     selectedVaultKeys: requestedVaults
       ? filteredVaultIdentifiers.map((vault) => toVaultKey(vault.chainId, vault.vaultAddress))
       : undefined
@@ -2347,7 +2372,8 @@ async function calculateHoldingsProtocolReturnHistory(
     priceData,
     ethPriceData,
     timestamps,
-    selectedVaults: requestedVaults ? [] : eligibleHistoryFamilies
+    selectedVaults: requestedVaults ? [] : eligibleHistoryFamilies,
+    valuationMode
   })
   reportHoldingsProgress(92, 'Built historical chart series', `${history.length} chart points`)
   const openBaselineCompositionUsd = buildOpenBaselineCompositionUsd({
@@ -2368,6 +2394,7 @@ async function calculateHoldingsProtocolReturnHistory(
     addressTransfersOut: settledContext.events.transfersOut.length,
     ppsResolved: settledContext.ppsData.size,
     ppsRequested: settledContext.ppsIdentifiers.length,
+    valuationMode,
     recommendedGrowthDisplay,
     recommendedGrowthDisplayReason
   })
@@ -2407,6 +2434,7 @@ export async function getHoldingsProtocolReturnHistory(
   legacyVaultChainId?: number,
   options: THoldingsAggregationOptions = {}
 ): Promise<HoldingsPnLSimpleHistoryResponse> {
+  const eventEnrichment = options.protocolReturnEventEnrichment ?? 'transaction'
   const requestedVaults = normalizeProtocolReturnVaultFilters(requestedVaultFilters, legacyVaultChainId)
   const cacheIdentity = getProtocolReturnHistoryCacheIdentity({
     userAddress,
@@ -2415,10 +2443,11 @@ export async function getHoldingsProtocolReturnHistory(
     requestedVaults
   })
   const cacheKey = getProtocolReturnHistoryCacheKey(cacheIdentity)
-  const bypassCache = options.cacheMode === 'bypass' || options.eventSource !== undefined
+  const bypassCache =
+    options.cacheMode === 'bypass' || options.eventSource !== undefined || eventEnrichment === 'address-only'
   const sourceKey = getHoldingsEventSourceKey(options.eventSource)
   const settledDate = getLatestProtocolReturnSettledDate(options.eventSource?.latestSettledDayTimestamp)
-  const inFlightKey = `${cacheKey}:${settledDate}:${sourceKey}:${bypassCache ? 'bypass' : 'default'}`
+  const inFlightKey = `${cacheKey}:${settledDate}:${sourceKey}:${eventEnrichment}:${bypassCache ? 'bypass' : 'default'}`
   const inFlightRequest = inFlightProtocolReturnHistoryRequests.get(inFlightKey)
 
   if (inFlightRequest) {

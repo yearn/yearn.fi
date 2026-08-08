@@ -21,10 +21,12 @@ export interface THoldingsEventSource {
 }
 
 export type THoldingsAggregationCacheMode = 'default' | 'bypass'
+export type TProtocolReturnEventEnrichment = 'transaction' | 'address-only'
 
 export interface THoldingsAggregationOptions {
   readonly eventSource?: THoldingsEventSource
   readonly cacheMode?: THoldingsAggregationCacheMode
+  readonly protocolReturnEventEnrichment?: TProtocolReturnEventEnrichment
 }
 
 export function getHoldingsEventSourceKey(eventSource?: THoldingsEventSource): string {

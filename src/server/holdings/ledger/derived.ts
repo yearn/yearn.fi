@@ -29,6 +29,7 @@ function getSnapshotResponseHeaders(args: {
   headers.set('X-Holdings-Ledger-Snapshot', args.snapshotId)
   headers.set('X-Holdings-Ledger-Revision', args.revision)
   headers.set('X-Holdings-Ledger-Source-Generation', String(args.sourceGeneration))
+  headers.set('X-Holdings-Ledger-Calculation-Version', LEDGER_CALCULATION_VERSION)
   return headers
 }
 

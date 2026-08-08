@@ -3,6 +3,7 @@ import { createHash, randomUUID } from 'node:crypto'
 import { mkdir, readFile, writeFile } from 'node:fs/promises'
 import { dirname, resolve } from 'node:path'
 import type { Redis } from '@upstash/redis'
+import { portfolioProtocolReturnHistoryResponseSchema } from '@/components/pages/portfolio/types/api'
 import { handleHoldingsBreakdownRequest } from '@/server/holdings/breakdown'
 import { handleHoldingsHistoryRequest } from '@/server/holdings/history'
 import { handleHoldingsProtocolReturnHistoryRequest } from '@/server/holdings/protocol-return/history'
@@ -30,7 +31,11 @@ import {
 import { acquireLedgerLock, releaseLedgerLock } from '@/server/lib/holdings/services/ledger/lock'
 import { compareLedgerOrder } from '@/server/lib/holdings/services/ledger/order'
 import { readVerifiedLedgerRevision } from '@/server/lib/holdings/services/ledger/revision'
-import { createLedgerCoverage, createLedgerDependencies } from '@/server/lib/holdings/services/ledger/state'
+import {
+  createLedgerCoverage,
+  createLedgerDependencies,
+  LEDGER_CALCULATION_VERSION
+} from '@/server/lib/holdings/services/ledger/state'
 import {
   commitVerifiedLedgerRevision,
   readLedgerValue,
@@ -79,6 +84,7 @@ interface TPortfolioFlowMeasurement {
   readonly protocolReturnStatus: number
   readonly historySnapshot: string | null
   readonly protocolReturnSnapshot: string | null
+  readonly protocolReturnValidation?: TProtocolReturnValidation
 }
 
 interface TRevisionParityMeasurement {
@@ -128,6 +134,12 @@ interface TComparisonResult {
   readonly mismatches: readonly string[]
 }
 
+interface TProtocolReturnValidation {
+  readonly valid: boolean
+  readonly statuses: readonly number[]
+  readonly issues: readonly string[]
+}
+
 interface TStaleFixtureResult {
   readonly cutoffTimestamp: number
   readonly cutoffBlocks: Readonly<Record<number, number>>
@@ -151,6 +163,7 @@ interface TDerivedBenchmark {
     readonly ledger: readonly THttpMeasurement[]
     readonly legacyBypass: THttpMeasurement
     readonly comparison: TComparisonResult
+    readonly validation?: TProtocolReturnValidation
   }
   readonly breakdown: {
     readonly ledger: THttpMeasurement
@@ -328,6 +341,7 @@ async function requestJson(args: TBenchmarkArgs, path: string, init: RequestInit
       snapshot: response.headers.get('x-holdings-ledger-snapshot'),
       revision: response.headers.get('x-holdings-ledger-revision'),
       sourceGeneration: response.headers.get('x-holdings-ledger-source-generation'),
+      calculationVersion: response.headers.get('x-holdings-ledger-calculation-version'),
       runtimeFingerprint: response.headers.get('x-holdings-ledger-runtime-fingerprint')
     }
   }
@@ -827,7 +841,8 @@ function compactWalletArtifact(wallet: TWalletBenchmark): TWalletBenchmark {
       protocolReturn: {
         ledger: derived.protocolReturn.ledger.map(compactHttpMeasurement),
         legacyBypass: compactHttpMeasurement(derived.protocolReturn.legacyBypass),
-        comparison: compactComparison(derived.protocolReturn.comparison)
+        comparison: compactComparison(derived.protocolReturn.comparison),
+        validation: derived.protocolReturn.validation
       },
       breakdown: {
         ledger: compactHttpMeasurement(derived.breakdown.ledger),
@@ -911,12 +926,12 @@ function compareJson(left: THttpMeasurement, right: THttpMeasurement): TComparis
   }
 }
 
-function compareHttpSeries(samples: readonly THttpMeasurement[], oracle: THttpMeasurement): TComparisonResult {
+function compareHttpSeries(samples: readonly THttpMeasurement[], reference: THttpMeasurement): TComparisonResult {
   const first = samples[0]
   if (!first) {
     throw new Error('Cannot compare an empty HTTP measurement series')
   }
-  const comparison = compareJson(first, oracle)
+  const comparison = compareJson(first, reference)
   const seriesMismatches = samples.flatMap((sample, index) => {
     const validStatus = sample.status === 200 || sample.status === 404
     return validStatus && sample.status === first.status
@@ -928,6 +943,60 @@ function compareHttpSeries(samples: readonly THttpMeasurement[], oracle: THttpMe
     match: comparison.match && seriesMismatches.length === 0,
     mismatches: [...comparison.mismatches, ...seriesMismatches].slice(0, 30)
   }
+}
+
+function validateProtocolReturnMeasurement(measurement: THttpMeasurement, index: number): readonly string[] {
+  if (measurement.status === 200) {
+    const result = portfolioProtocolReturnHistoryResponseSchema.safeParse(measurement.body)
+    return result.success
+      ? []
+      : result.error.issues.slice(0, 10).map((issue) => {
+          const path = issue.path.length > 0 ? `.${issue.path.join('.')}` : ''
+          return `http.series[${index}].schema${path}: ${issue.message}`
+        })
+  }
+  if (measurement.status === 404) {
+    const body = measurement.body
+    const bodyRecord =
+      body !== null && !Array.isArray(body) && typeof body === 'object'
+        ? (body as Readonly<Record<string, TJsonValue>>)
+        : null
+    const validNoHoldingsBody =
+      bodyRecord !== null &&
+      Object.keys(bodyRecord).length === 1 &&
+      bodyRecord.error === 'No holdings found for address'
+    return validNoHoldingsBody ? [] : [`http.series[${index}].schema: expected the exact no-holdings 404 response`]
+  }
+  return [`http.series[${index}].status: ${measurement.status} (expected 200/404)`]
+}
+
+function validateProtocolReturnSeries(samples: readonly THttpMeasurement[]): TProtocolReturnValidation {
+  const issues = samples.flatMap(validateProtocolReturnMeasurement)
+  return {
+    valid: samples.length > 0 && issues.length === 0,
+    statuses: samples.map(({ status }) => status),
+    issues: samples.length > 0 ? issues.slice(0, 30) : ['http.series: no protocol-return samples recorded']
+  }
+}
+
+function getProtocolReturnValidation(protocolReturn: TDerivedBenchmark['protocolReturn']): TProtocolReturnValidation {
+  return (
+    protocolReturn.validation ?? {
+      valid: false,
+      statuses: protocolReturn.ledger.map(({ status }) => status),
+      issues: ['schema validation was not recorded in this benchmark artifact']
+    }
+  )
+}
+
+function getPortfolioProtocolReturnValidation(flow: TPortfolioFlowMeasurement): TProtocolReturnValidation {
+  return (
+    flow.protocolReturnValidation ?? {
+      valid: false,
+      statuses: [flow.protocolReturnStatus],
+      issues: ['concurrent protocol-return schema validation was not recorded in this benchmark artifact']
+    }
+  )
 }
 
 async function measureHandler(handler: () => Promise<Response>): Promise<THttpMeasurement> {
@@ -943,6 +1012,7 @@ async function measureHandler(handler: () => Promise<Response>): Promise<THttpMe
       snapshot: response.headers.get('x-holdings-ledger-snapshot'),
       revision: response.headers.get('x-holdings-ledger-revision'),
       sourceGeneration: response.headers.get('x-holdings-ledger-source-generation'),
+      calculationVersion: response.headers.get('x-holdings-ledger-calculation-version'),
       runtimeFingerprint: response.headers.get('x-holdings-ledger-runtime-fingerprint')
     }
   }
@@ -963,22 +1033,28 @@ async function requestPortfolioFlow(
     requestJson(args, historyPath),
     requestJson(args, protocolReturnPath)
   ])
-  if (history.headers.snapshot !== expectedSnapshotId || protocolReturn.headers.snapshot !== expectedSnapshotId) {
-    throw new Error('Concurrent portfolio flow did not use the expected live snapshot')
-  }
+  requirePinnedMeasurement(history, expectedSnapshotId, 'concurrent portfolio history')
+  requirePinnedMeasurement(protocolReturn, expectedSnapshotId, 'concurrent portfolio protocol return')
+  const protocolReturnValidation = validateProtocolReturnSeries([protocolReturn])
   return {
     durationMs: round(performance.now() - startedAt),
     bytes: history.bytes + protocolReturn.bytes,
     historyStatus: history.status,
     protocolReturnStatus: protocolReturn.status,
     historySnapshot: history.headers.snapshot,
-    protocolReturnSnapshot: protocolReturn.headers.snapshot
+    protocolReturnSnapshot: protocolReturn.headers.snapshot,
+    protocolReturnValidation
   }
 }
 
 function requirePinnedMeasurement(measurement: THttpMeasurement, snapshotId: string, label: string): void {
   if (measurement.headers.snapshot !== snapshotId) {
     throw new Error(`${label} did not use the expected live snapshot`)
+  }
+  if (measurement.headers.calculationVersion !== LEDGER_CALCULATION_VERSION) {
+    throw new Error(
+      `${label} used calculation version ${String(measurement.headers.calculationVersion)} instead of ${LEDGER_CALCULATION_VERSION}`
+    )
   }
 }
 
@@ -1046,7 +1122,8 @@ async function benchmarkDerivedTimeframe(
     protocolReturn: {
       ledger: ledgerProtocol,
       legacyBypass: legacyProtocol,
-      comparison: compareHttpSeries(ledgerProtocol, legacyProtocol)
+      comparison: compareHttpSeries(ledgerProtocol, legacyProtocol),
+      validation: validateProtocolReturnSeries(ledgerProtocol)
     },
     breakdown: {
       ledger: ledgerBreakdown,
@@ -1105,7 +1182,7 @@ async function benchmarkWallet(args: TBenchmarkArgs, redis: Redis, address: stri
     address,
     expectedRevision: tailRevision
   })
-  console.log(`[benchmark] ${address}: 1y/all derived calculations and correctness`)
+  console.log(`[benchmark] ${address}: 1y/all derived calculations and validation`)
   const derived = await mapSeries(['1y', 'all'] as const, (timeframe) =>
     benchmarkDerivedTimeframe(args, address, timeframe)
   )
@@ -1149,20 +1226,19 @@ function getParityStatus(measurement: THttpMeasurement): string {
 }
 
 function getWalletCorrectnessStatus(wallet: TWalletBenchmark): 'PASS' | 'FAIL' {
-  const derivedMatches = wallet.derived.every(
+  const derivedChecksPass = wallet.derived.every(
     ({ history, protocolReturn, breakdown }) =>
-      history.comparison.match && protocolReturn.comparison.match && breakdown.comparison.match
+      history.comparison.match && getProtocolReturnValidation(protocolReturn).valid && breakdown.comparison.match
   )
   const flowStatusesAreValid = wallet.derived.every(({ portfolioFlow }) =>
     portfolioFlow.every(
-      ({ historyStatus, protocolReturnStatus }) =>
-        (historyStatus === 200 || historyStatus === 404) &&
-        (protocolReturnStatus === 200 || protocolReturnStatus === 404)
+      (flow) =>
+        (flow.historyStatus === 200 || flow.historyStatus === 404) && getPortfolioProtocolReturnValidation(flow).valid
     )
   )
   return getParityStatus(wallet.rawParitySync) === 'match' &&
     wallet.postRepairParity.status === 'match' &&
-    derivedMatches &&
+    derivedChecksPass &&
     flowStatusesAreValid
     ? 'PASS'
     : 'FAIL'
@@ -1195,7 +1271,7 @@ function renderReport(args: TBenchmarkArgs, wallets: readonly TWalletBenchmark[]
 - One-week fixture: ${wallet.staleFixture.originalRecords.toLocaleString()} → ${wallet.staleFixture.staleRecords.toLocaleString()} records (${wallet.staleFixture.removedRecords.toLocaleString()} removed), ${formatBytes(wallet.staleFixture.fixtureEncodedBytes)} active.
 - Tail repair: ${wallet.tailRepairSync.durationMs} ms wall, type \`${tailType}\`, ${tailPages} pages / ${tailRows} rows.
 - Tail fixture kind: ${wallet.staleFixture.removedRecords > 0 ? 'true tail restoration' : 'overlap-only (no events existed in the removed week)'}; repaired revision has ${wallet.repairedStorage.activeRecords.toLocaleString()} records.
-- Raw-event parity before fixture: \`${getParityStatus(wallet.rawParitySync)}\`; exact timed revision after repair: \`${wallet.postRepairParity.status}\` (${wallet.postRepairParity.durationMs} ms oracle check).`
+- Raw-event parity before fixture: \`${getParityStatus(wallet.rawParitySync)}\`; exact timed revision after repair: \`${wallet.postRepairParity.status}\` (${wallet.postRepairParity.durationMs} ms parity check).`
     })
     .join('\n\n')
   const derivedRows = wallets
@@ -1205,21 +1281,25 @@ function renderReport(args: TBenchmarkArgs, wallets: readonly TWalletBenchmark[]
         const validProtocolReturn = derived.protocolReturn.ledger.filter(
           ({ status }) => status === 200 || status === 404
         )
+        const protocolValidation = getProtocolReturnValidation(derived.protocolReturn)
+        const protocolSemanticResult = derived.protocolReturn.comparison.match
+          ? 'same normalized body'
+          : 'semantic delta'
         return [
-          `| \`${wallet.address}\` | ${derived.timeframe} | balance history (prepared ledger) | ${summarizeTimings(validHistory.length > 0 ? validHistory : derived.history.ledger).medianMs} ms | ${derived.history.ledger.map(({ status }) => status).join('/')} | ${derived.history.legacyBypass.durationMs} ms | ${derived.history.comparison.match ? 'PASS' : 'FAIL'} |`,
-          `| \`${wallet.address}\` | ${derived.timeframe} | protocol return (prepared ledger) | ${summarizeTimings(validProtocolReturn.length > 0 ? validProtocolReturn : derived.protocolReturn.ledger).medianMs} ms | ${derived.protocolReturn.ledger.map(({ status }) => status).join('/')} | ${derived.protocolReturn.legacyBypass.durationMs} ms | ${derived.protocolReturn.comparison.match ? 'PASS' : 'FAIL'} |`,
-          `| \`${wallet.address}\` | after ${derived.timeframe} suite | settled-date breakdown repetition | ${derived.breakdown.ledger.durationMs} ms | ${derived.breakdown.ledger.status} | ${derived.breakdown.legacyBypass.durationMs} ms | ${derived.breakdown.comparison.match ? 'PASS' : 'FAIL'} |`,
+          `| \`${wallet.address}\` | ${derived.timeframe} | balance history (prepared ledger) | ${summarizeTimings(validHistory.length > 0 ? validHistory : derived.history.ledger).medianMs} ms | ${derived.history.ledger.map(({ status }) => status).join('/')} | ${derived.history.legacyBypass.durationMs} ms (${derived.history.legacyBypass.status}) | ${derived.history.comparison.match ? 'PASS; same body' : 'FAIL; mismatch'} |`,
+          `| \`${wallet.address}\` | ${derived.timeframe} | protocol return (prepared ledger) | ${summarizeTimings(validProtocolReturn.length > 0 ? validProtocolReturn : derived.protocolReturn.ledger).medianMs} ms | ${derived.protocolReturn.ledger.map(({ status }) => status).join('/')} | ${derived.protocolReturn.legacyBypass.durationMs} ms (${derived.protocolReturn.legacyBypass.status}) | ${protocolValidation.valid ? 'PASS' : 'FAIL'}; ${protocolSemanticResult} |`,
+          `| \`${wallet.address}\` | after ${derived.timeframe} suite | settled-date breakdown repetition | ${derived.breakdown.ledger.durationMs} ms | ${derived.breakdown.ledger.status} | ${derived.breakdown.legacyBypass.durationMs} ms (${derived.breakdown.legacyBypass.status}) | ${derived.breakdown.comparison.match ? 'PASS; same body' : 'FAIL; mismatch'} |`,
           `| \`${wallet.address}\` | ${derived.timeframe} | concurrent prepared-ledger balance + return (excludes sync/pin) | ${median(derived.portfolioFlow.map(({ durationMs }) => durationMs))} ms | ${derived.portfolioFlow.map(({ historyStatus, protocolReturnStatus }) => `${historyStatus}/${protocolReturnStatus}`).join(', ')} | — | N/A |`
         ]
       })
     )
     .join('\n')
-  const mismatchDetails = wallets
+  const validationFailureDetails = wallets
     .flatMap((wallet) =>
-      wallet.derived.flatMap((derived) =>
-        [
+      wallet.derived.flatMap((derived) => {
+        const protocolValidation = getProtocolReturnValidation(derived.protocolReturn)
+        const strictFailures = [
           ['history', derived.history.comparison],
-          ['protocol return', derived.protocolReturn.comparison],
           ['breakdown', derived.breakdown.comparison]
         ]
           .filter(([, comparison]) => !(comparison as TComparisonResult).match)
@@ -1227,21 +1307,46 @@ function renderReport(args: TBenchmarkArgs, wallets: readonly TWalletBenchmark[]
             ([label, comparison]) =>
               `- \`${wallet.address}\` ${derived.timeframe} ${label}: ${JSON.stringify((comparison as TComparisonResult).mismatches.slice(0, 5))}`
           )
+        const protocolFailures = protocolValidation.valid
+          ? []
+          : [
+              `- \`${wallet.address}\` ${derived.timeframe} protocol-return availability/schema: ${JSON.stringify(protocolValidation.issues.slice(0, 5))}`
+            ]
+        const flowFailures = derived.portfolioFlow.flatMap((flow, index) => {
+          const validation = getPortfolioProtocolReturnValidation(flow)
+          return validation.valid
+            ? []
+            : [
+                `- \`${wallet.address}\` ${derived.timeframe} concurrent protocol-return run ${index + 1}: ${JSON.stringify(validation.issues.slice(0, 5))}`
+              ]
+        })
+        return [...strictFailures, ...protocolFailures, ...flowFailures]
+      })
+    )
+    .join('\n')
+  const protocolSemanticDeltaDetails = wallets
+    .flatMap((wallet) =>
+      wallet.derived.flatMap((derived) =>
+        derived.protocolReturn.comparison.match
+          ? []
+          : [
+              `- \`${wallet.address}\` ${derived.timeframe}: ${JSON.stringify(derived.protocolReturn.comparison.mismatches.slice(0, 5))}`
+            ]
       )
     )
     .join('\n')
-  const comparisonGroups = wallets.flatMap((wallet) =>
-    wallet.derived.flatMap((derived) => [
-      derived.history.comparison,
-      derived.protocolReturn.comparison,
-      derived.breakdown.comparison
-    ])
+  const strictComparisonGroups = wallets.flatMap((wallet) =>
+    wallet.derived.flatMap((derived) => [derived.history.comparison, derived.breakdown.comparison])
   )
-  const strictComparisonPasses = comparisonGroups.filter(({ match }) => match).length
-  const equalHashComparisons = comparisonGroups.filter(({ leftHash, rightHash }) => leftHash === rightHash).length
-  const zeroDeltaComparisons = comparisonGroups.filter(
+  const protocolSemanticComparisons = wallets.flatMap((wallet) =>
+    wallet.derived.map((derived) => derived.protocolReturn.comparison)
+  )
+  const strictComparisonPasses = strictComparisonGroups.filter(({ match }) => match).length
+  const equalHashComparisons = strictComparisonGroups.filter(({ leftHash, rightHash }) => leftHash === rightHash).length
+  const zeroDeltaComparisons = strictComparisonGroups.filter(
     ({ maximumAbsoluteDelta, maximumRelativeDelta }) => maximumAbsoluteDelta === 0 && maximumRelativeDelta === 0
   ).length
+  const matchingProtocolSemantics = protocolSemanticComparisons.filter(({ match }) => match).length
   const derivedResponseStatuses = wallets.flatMap((wallet) =>
     wallet.derived.flatMap((derived) => [
       ...derived.history.ledger.map(({ status }) => status),
@@ -1261,6 +1366,13 @@ function renderReport(args: TBenchmarkArgs, wallets: readonly TWalletBenchmark[]
   )
     .map(([status, count]) => `${status} × ${count}`)
     .join(', ')
+  const protocolResponseValidations = wallets.flatMap((wallet) =>
+    wallet.derived.flatMap((derived) => [
+      getProtocolReturnValidation(derived.protocolReturn),
+      ...derived.portfolioFlow.map(getPortfolioProtocolReturnValidation)
+    ])
+  )
+  const validProtocolResponseGroups = protocolResponseValidations.filter(({ valid }) => valid).length
   const storageRows = wallets
     .flatMap((wallet) =>
       [
@@ -1308,13 +1420,13 @@ Redis namespace: isolated benchmark namespace (cleaned after the run)
 
 ## Executive summary
 
-| Wallet | Cold refresh | Hot refresh median | 7d tail repair | Records | Active logical data | Final namespace data | Correctness |
+| Wallet | Cold refresh | Hot refresh median | 7d tail repair | Records | Active logical data | Final namespace data | Validation |
 | --- | ---: | ---: | ---: | ---: | ---: | ---: | --- |
 ${summaryRows}
 
 ## Correctness and tail-fixture validity
 
-${zeroEventWallets.length === 0 ? `Both requested wallets produced populated ledgers. Raw six-stream parity and every derived comparison must still pass independently for a wallet to receive an overall \`PASS\`.` : inconsistentEmptyWallets.length === 0 ? `${validEmptyWallets.length} requested wallet(s) produced zero-record ledgers whose raw and derived results were consistent with the comparison adapter and oracle.` : `${inconsistentEmptyWallets.length} zero-record wallet(s) failed raw or derived correctness and must not be treated as valid performance samples; ${validEmptyWallets.length} other zero-record wallet(s) remained consistent with the comparison adapter and oracle. Raw parity uses a separate adapter over the same Envio indexer, so it is useful cross-implementation evidence but not an independent upstream data source.`}
+${zeroEventWallets.length === 0 ? `Both requested wallets produced populated ledgers. An overall \`PASS\` requires raw six-stream parity, strict balance-history and breakdown equality, and valid ledger protocol-return availability/schema. Protocol-return equality with legacy is intentionally excluded because the two routes use different return semantics.` : inconsistentEmptyWallets.length === 0 ? `${validEmptyWallets.length} requested wallet(s) produced zero-record ledgers that passed raw parity, strict comparable-surface checks, and protocol-return availability/schema validation.` : `${inconsistentEmptyWallets.length} zero-record wallet(s) failed raw parity or a required derived validation and must not be treated as valid performance samples; ${validEmptyWallets.length} other zero-record wallet(s) passed. Raw parity uses a separate adapter over the same Envio indexer, so it is useful cross-implementation evidence but not an independent upstream data source.`}
 
 ${trueTailWallets.length === wallets.length ? `The seven-day fixture removed records from every wallet, so each tail timing measures restoration of a valid historical revision plus the configured overlap scan.` : trueTailWallets.length === 0 ? `The seven-day fixture removed zero records from every wallet. Tail timing therefore measures a warm overlap scan only; no requested wallet had an event in the removed week.` : `${trueTailWallets.length} of ${wallets.length} wallet(s) had events in the removed week and exercised true tail restoration; the remaining tail timing(s) measure warm overlap scans only.`}
 
@@ -1322,21 +1434,23 @@ ${trueTailWallets.length === wallets.length ? `The seven-day fixture removed rec
 
 ${refreshDetails}
 
-## Prepared-ledger calculation timing and correctness
+## Prepared-ledger calculation timing and validation
 
 This section measures calculation after an event source is available. The ledger side starts from an already synchronized and pinned Redis revision; synchronization and snapshot creation are excluded. The legacy side is one direct in-process calculation with persistent derived-result caches bypassed and a fresh full wallet-event replay from Envio. The ratios therefore estimate the amortized benefit of reusing wallet events. They are not complete page-load speedups or a controlled cold-versus-cold comparison.
 
-History and protocol ledger timings are medians of up to ${args.runs} valid 200/404 runs; invalid samples remain visible in the HTTP column and strict correctness result. Breakdown is one request per suite position and has no 1y/ALL timeframe. Legacy bypass is one sample used as the correctness oracle. Numeric comparisons use max(1e-6 absolute, 1e-8 relative) tolerance; protocol \`generatedAt\` is ignored.
+History and protocol ledger timings are medians of up to ${args.runs} valid 200/404 runs; invalid samples remain visible in the HTTP column. Breakdown is one request per suite position and has no 1y/ALL timeframe. The legacy bypass is a reference sample: body equality remains a strict check for balance history and breakdown, but protocol return is compared only to expose the semantic delta between legacy exact-assets accounting and ledger v2 PPS/share-exposure accounting. Ledger protocol-return availability and client response schema are the correctness gate. Numeric body comparisons use max(1e-6 absolute, 1e-8 relative) tolerance; protocol \`generatedAt\` is ignored.
 
-| Wallet | Range/suite position | Surface | Prepared-ledger timing | HTTP samples | Fresh legacy replay | Correctness |
+| Wallet | Range/suite position | Surface | Prepared-ledger timing | HTTP samples | Fresh legacy reference | Validation / reference delta |
 | --- | --- | --- | ---: | ---: | ---: | --- |
 ${derivedRows}
 
-${mismatchDetails ? `### Mismatch samples\n\n${mismatchDetails}` : 'All normalized derived comparisons passed.'}
+${validationFailureDetails ? `### Validation failures\n\n${validationFailureDetails}` : 'All required derived validations passed.'}
 
-Strict comparison groups passed: ${strictComparisonPasses}/${comparisonGroups.length}. Representative normalized hashes matched in ${equalHashComparisons}/${comparisonGroups.length} groups, and ${zeroDeltaComparisons}/${comparisonGroups.length} had zero numeric delta. Across ${derivedResponseStatuses.length} standalone and concurrent ledger-derived responses, ${validDerivedResponses} returned a valid 200/404 (${round((validDerivedResponses / Math.max(derivedResponseStatuses.length, 1)) * 100)}%); invalid statuses: ${invalidStatusSummary || 'none'}. A strict group can therefore fail because of availability even when every successful response body matches the oracle.
+Strict comparable-surface groups passed: ${strictComparisonPasses}/${strictComparisonGroups.length}. Representative normalized hashes matched in ${equalHashComparisons}/${strictComparisonGroups.length} strict groups, and ${zeroDeltaComparisons}/${strictComparisonGroups.length} had zero numeric delta. Protocol-return availability/schema groups passed: ${validProtocolResponseGroups}/${protocolResponseValidations.length}. Protocol-return semantic-reference bodies aligned in ${matchingProtocolSemantics}/${protocolSemanticComparisons.length} groups; a delta is informational and does not fail validation. Across ${derivedResponseStatuses.length} standalone and concurrent ledger-derived responses, ${validDerivedResponses} returned a valid 200/404 (${round((validDerivedResponses / Math.max(derivedResponseStatuses.length, 1)) * 100)}%); invalid statuses: ${invalidStatusSummary || 'none'}.
 
-Raw six-stream event parity is checked through \`compareLegacy:true\` before the stale fixture, then recomputed non-mutating against the exact timed repair revision. Derived legacy comparisons include Fantom while this ledger benchmark uses the configured six-chain scope without Fantom; a mismatch may therefore represent an intentional scope difference. Only 200/200 data responses or 404/404 no-holdings responses are eligible to pass a derived comparison.
+${protocolSemanticDeltaDetails ? `### Protocol-return semantic deltas\n\n${protocolSemanticDeltaDetails}` : 'No normalized protocol-return semantic delta was observed against the legacy reference.'}
+
+Raw six-stream event parity is checked through \`compareLegacy:true\` before the stale fixture, then recomputed non-mutating against the exact timed repair revision. Derived legacy references include Fantom while this ledger benchmark uses the configured six-chain scope without Fantom; a strict balance-history or breakdown mismatch may therefore represent an intentional scope difference. Ledger protocol-return validation accepts only schema-valid 200 data responses or schema-valid 404 no-holdings responses; legacy protocol-return status and body equality remain informational reference evidence.
 
 ## Redis storage
 
@@ -1380,12 +1494,13 @@ There is no production ledger garbage collector. Immutable manifests and blobs h
 - The benchmark sets reconciliation interval above seven days so the stale test exercises warm tailing. With the current seven-day default, exactly seven days selects a full \`reconcile\` scan.
 - Warm tailing also includes the configured 50,000-block overlap on every chain.
 - Balance history and breakdown consume pinned ledger events, then fetch live metadata/PPS/prices.
-- Protocol return additionally performs live Envio companion-event enrichment, so it is not a Redis-only calculation.
+- Ledger protocol return uses only pinned address-scoped events; the legacy comparator still performs live Envio companion-event enrichment.
+- Every ledger-derived sample must expose the expected snapshot ID and calculation version ${LEDGER_CALCULATION_VERSION}.
 - External Envio, Kong, price, and Redis latency are part of these wall-clock results.
 - The 1y suite runs before ALL in one long-lived Next process. ALL can reuse warmed in-memory Kong metadata; both still perform their normal live PPS/price work.
 - The concurrent portfolio-flow row starts balance history and protocol return together against one pinned snapshot.
 - Prepared-ledger calculation rows exclude synchronization and snapshot creation; the benchmark did not measure a concurrent legacy page flow.
-- Legacy calculation oracles are single direct-handler samples, while ledger history/protocol reads use up to three HTTP samples.
+- Legacy calculation references are single direct-handler samples, while ledger history/protocol reads use up to three HTTP samples. Legacy protocol return is a semantic reference rather than a strict comparison gate.
 - Breakdown has no timeframe; its two rows are repetitions after the 1y and ALL suites.
 - The local API and harness runtime scope (Redis credentials, namespace, ledger/source configuration) was matched by a one-way fingerprint before mutation.
 - Cold and tail-repair measurements are single destructive-isolated samples; hot and derived figures use medians.

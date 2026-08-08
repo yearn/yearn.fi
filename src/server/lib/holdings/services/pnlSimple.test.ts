@@ -76,6 +76,7 @@ function materializeVault(args: {
   ppsData: Map<string, Map<number, number>>
   priceData: Map<string, Map<number, number>>
   currentTimestamp?: number
+  valuationMode?: 'event-assets' | 'pps'
 }): HoldingsPnLSimpleVault {
   const currentTimestamp = args.currentTimestamp ?? 300
   const ledgers = buildProtocolReturnLedgers({
@@ -84,7 +85,8 @@ function materializeVault(args: {
     metadata,
     ppsData: args.ppsData,
     priceData: args.priceData,
-    currentTimestamp
+    currentTimestamp,
+    valuationMode: args.valuationMode
   })
   return materializeProtocolReturnVaults({
     ledgers,
@@ -2157,7 +2159,90 @@ describe('pnl simple protocol return', () => {
     expect(vault.sharesFormatted).toBeCloseTo(90)
   })
 
-  it('closes positions when a user transfer-out is paired with a tx-scoped intermediary withdrawal', () => {
+  it('values address-only transfer exits from PPS without router execution context', () => {
+    const vault = materializeVault({
+      events: [
+        baseEvent({
+          kind: 'deposit',
+          id: 'deposit',
+          blockTimestamp: 100,
+          shares: 100n * ONE,
+          assets: 100n * ONE,
+          owner: USER,
+          sender: USER
+        }),
+        baseEvent({
+          kind: 'transfer',
+          id: 'user-transfer-out',
+          blockTimestamp: 200,
+          blockNumber: 2,
+          transactionHash: '0xrouter-exit',
+          sender: USER,
+          receiver: OTHER,
+          shares: 100n * ONE
+        })
+      ],
+      ppsData: new Map([
+        [
+          VAULT_KEY,
+          new Map([
+            [100, 1],
+            [200, 1.1],
+            [300, 1.1]
+          ])
+        ]
+      ]),
+      priceData: new Map([[ASSET_PRICE_KEY, new Map([[100, 1]])]])
+    })
+
+    expect(vault.sharesFormatted).toBeCloseTo(0)
+    expect(vault.realizedBaselineUnderlying).toBeCloseTo(100)
+    expect(vault.realizedGrowthUnderlying).toBeCloseTo(10)
+  })
+
+  it('values direct receipts and exits consistently from PPS in address-only mode', () => {
+    const vault = materializeVault({
+      events: [
+        baseEvent({
+          kind: 'deposit',
+          id: 'deposit',
+          blockTimestamp: 100,
+          shares: 100n * ONE,
+          assets: 95n * ONE,
+          owner: USER,
+          sender: USER
+        }),
+        baseEvent({
+          kind: 'withdrawal',
+          id: 'withdrawal',
+          blockTimestamp: 200,
+          blockNumber: 2,
+          transactionHash: '0xdirect-exit',
+          owner: USER,
+          shares: 100n * ONE,
+          assets: 103n * ONE
+        })
+      ],
+      ppsData: new Map([
+        [
+          VAULT_KEY,
+          new Map([
+            [100, 1],
+            [200, 1.1],
+            [300, 1.1]
+          ])
+        ]
+      ]),
+      priceData: new Map([[ASSET_PRICE_KEY, new Map([[100, 1]])]]),
+      valuationMode: 'pps'
+    })
+
+    expect(vault.sharesFormatted).toBeCloseTo(0)
+    expect(vault.realizedBaselineUnderlying).toBeCloseTo(100)
+    expect(vault.realizedGrowthUnderlying).toBeCloseTo(10)
+  })
+
+  it('uses exact proceeds when transaction enrichment supplies an intermediary withdrawal', () => {
     const vault = materializeVault({
       events: [
         baseEvent({
@@ -2191,7 +2276,7 @@ describe('pnl simple protocol return', () => {
           transactionHash: '0xrouter-exit',
           owner: OTHER,
           shares: 100n * ONE,
-          assets: 110n * ONE,
+          assets: 105n * ONE,
           scopes: {
             address: false,
             tx: true
@@ -2214,7 +2299,7 @@ describe('pnl simple protocol return', () => {
     expect(vault.sharesFormatted).toBeCloseTo(0)
     expect(vault.currentUnderlying).toBeCloseTo(0)
     expect(vault.realizedBaselineUnderlying).toBeCloseTo(100)
-    expect(vault.realizedGrowthUnderlying).toBeCloseTo(10)
+    expect(vault.realizedGrowthUnderlying).toBeCloseTo(5)
     expect(vault.unrealizedBaselineUnderlying).toBeCloseTo(0)
   })
 })
