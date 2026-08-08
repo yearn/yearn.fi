@@ -8,6 +8,8 @@ const VISIBLE_VAULT_ADDRESS = '0x0000000000000000000000000000000000000001' as co
 const HIDDEN_VAULT_ADDRESS = '0x0000000000000000000000000000000000000002' as const
 const HIDDEN_STAKING_ADDRESS = '0x0000000000000000000000000000000000000003' as const
 const ASSET_ADDRESS = '0x0000000000000000000000000000000000000004' as const
+const STAKED_VISIBLE_VAULT_ADDRESS = '0x0000000000000000000000000000000000000005' as const
+const STAKED_VISIBLE_STAKING_ADDRESS = '0x0000000000000000000000000000000000000006' as const
 
 const { mockGetVaultHoldingsUsd, mockUseWalletTokens, mockUseYearn } = vi.hoisted(() => ({
   mockGetVaultHoldingsUsd: vi.fn(),
@@ -136,6 +138,7 @@ describe('useWalletVaultTotals', () => {
     )
   })
 
+
   it('excludes direct hidden vault balances from wallet totals', () => {
     mockUseWalletTokens.mockReturnValue({
       balances: {
@@ -153,6 +156,7 @@ describe('useWalletVaultTotals', () => {
     })
   })
 
+
   it('excludes balances mapped through a hidden vault staking token', () => {
     mockUseWalletTokens.mockReturnValue({
       balances: {
@@ -165,4 +169,36 @@ describe('useWalletVaultTotals', () => {
 
     expect(renderTotals().totalValue).toBe(19.31)
   })
+
+  // Regression test for #1013 ("Bug: Incorrect Portfolio total balance"): when a wallet
+  // holds both the raw vault-share token AND the staking token for the SAME visible
+  // vault, the vault's holdings value must be counted exactly once, not twice.
+  it('counts a visible vault only once when both its vault token and staking token are held', () => {
+    const stakedVisibleVault = makeVault({
+      address: STAKED_VISIBLE_VAULT_ADDRESS,
+      isHidden: false,
+      stakingAddress: STAKED_VISIBLE_STAKING_ADDRESS
+    })
+
+    mockUseYearn.mockReturnValue({
+      allVaults: {
+        [VISIBLE_VAULT_ADDRESS]: makeVault({ address: VISIBLE_VAULT_ADDRESS, isHidden: false }),
+        [STAKED_VISIBLE_VAULT_ADDRESS]: stakedVisibleVault
+      }
+    })
+    mockGetVaultHoldingsUsd.mockImplementation((vault: TKongVault) =>
+      vault.address === STAKED_VISIBLE_VAULT_ADDRESS ? 500 : 0
+    )
+    mockUseWalletTokens.mockReturnValue({
+      balances: {
+        1: {
+          [STAKED_VISIBLE_VAULT_ADDRESS]: makeToken(STAKED_VISIBLE_VAULT_ADDRESS, 500),
+          [STAKED_VISIBLE_STAKING_ADDRESS]: makeToken(STAKED_VISIBLE_STAKING_ADDRESS, 500)
+        }
+      }
+    })
+
+    expect(renderTotals().totalValue).toBe(500)
+  })
+
 })
