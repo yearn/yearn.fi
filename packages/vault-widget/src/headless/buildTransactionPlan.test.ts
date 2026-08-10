@@ -143,7 +143,7 @@ describe('buildTransactionPlan', () => {
     })
   })
 
-  it('creates one Safe proposal per contiguous same-chain group', () => {
+  it('rejects multi-chain Safe plans because a Safe connection is fixed to one chain', () => {
     const calls: VaultWidgetTransactionIntent['calls'] = [
       intent.calls[0]!,
       {
@@ -165,18 +165,11 @@ describe('buildTransactionPlan', () => {
         }
       }
     ]
-    const plan = buildTransactionPlan({
-      intent: { ...intent, approvals: [], calls },
-      walletType: 'safe'
-    })
-
-    expect(plan.steps.map(({ id, kind, ...step }) => [id, kind, 'chainId' in step ? step.chainId : undefined])).toEqual(
-      [
-        ['safe-proposal-1-0', 'safe-proposal', 1],
-        ['safe-proposal-10-1', 'safe-proposal', 10],
-        ['safe-proposal-1-2', 'safe-proposal', 1],
-        ['refresh', 'refresh', undefined]
-      ]
-    )
+    expect(() =>
+      buildTransactionPlan({
+        intent: { ...intent, approvals: [], calls },
+        walletType: 'safe'
+      })
+    ).toThrow('Safe transaction plans must use a single chain')
   })
 })
