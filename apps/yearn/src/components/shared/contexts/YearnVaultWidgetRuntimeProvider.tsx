@@ -37,6 +37,7 @@ import {
   type VaultWidgetTokenReference,
   type VaultWidgetWalletRuntime
 } from '@yearn/vault-widget/runtime'
+import { createWagmiVaultWidgetExecutionAdapter } from '@yearn/vault-widget/wagmi'
 import { type ReactElement, type ReactNode, useCallback, useMemo } from 'react'
 import { isAddressEqual, zeroAddress } from 'viem'
 import { useAccount } from 'wagmi'
@@ -46,10 +47,15 @@ import {
   resolveCanonicalChainId,
   resolveExecutionChainId
 } from '@/config/tenderly'
+import { wagmiConfig } from '@/config/wagmi'
 import { env } from '@/env'
 
 const DEFAULT_YEARN_ASSETS_BASE_URI = 'https://cdn.jsdelivr.net/gh/yearn/tokenassets@main'
 const YEARN_ASSETS_BASE_URI = env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI || DEFAULT_YEARN_ASSETS_BASE_URI
+const VAULT_WIDGET_EXECUTION = createWagmiVaultWidgetExecutionAdapter({
+  config: wagmiConfig,
+  resolveExecutionChainId
+})
 
 const SAFE_STATUS_BY_HOST_STATUS: Record<SafeTransactionStatus, VaultWidgetSafeTransactionDetails['status']> = {
   AWAITING_CONFIRMATIONS: 'awaiting-confirmations',
@@ -310,6 +316,7 @@ export function YearnVaultWidgetRuntimeProvider({ children }: { children: ReactN
         resolveCanonicalChainId,
         resolveExecutionChainId
       },
+      execution: VAULT_WIDGET_EXECUTION,
       notifications: {
         create: createRuntimeNotification,
         update: updateRuntimeNotification

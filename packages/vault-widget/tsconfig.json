@@ -14,6 +14,7 @@
       "@yearn/vault-widget/internal/*": ["src/*"],
       "@yearn/vault-widget/runtime": ["src/runtime.tsx"],
       "@yearn/vault-widget/types": ["src/types.ts"],
+      "@yearn/vault-widget/wagmi": ["src/adapters/wagmiExecutionAdapter.ts"],
       "@yearn/vault-widget/ybold": ["src/ybold.ts"]
     },
     "plugins": [],

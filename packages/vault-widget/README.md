@@ -57,6 +57,36 @@ The consuming app owns:
 
 The app maps those services into `VaultWidgetRuntimeOverrides`. Every override is optional so a constrained preset can use safe disconnected defaults for services it does not need.
 
+## Execute a headless plan with Wagmi
+
+The optional Wagmi adapter maps the canonical chain IDs retained in a transaction plan to the host's configured execution chains at every wallet and RPC boundary:
+
+```ts
+import { buildTransactionPlan, executeTransactionPlan } from '@yearn/vault-widget/headless'
+import { createWagmiVaultWidgetExecutionAdapter } from '@yearn/vault-widget/wagmi'
+
+const adapter = createWagmiVaultWidgetExecutionAdapter({
+  config: wagmiConfig,
+  resolveExecutionChainId
+})
+
+const plan = buildTransactionPlan({
+  intent,
+  allowances,
+  connectedChainId: resolveCanonicalChainId(connectedWalletChainId),
+  walletType
+})
+
+const outcome = await executeTransactionPlan({
+  account,
+  adapter,
+  plan,
+  refresh
+})
+```
+
+EOA requests are simulated before the wallet is invoked. Safe requests are simulated as an atomic ordered batch when the RPC supports `eth_simulateV1`, submitted with atomic execution required, and tracked with a bounded polling timeout. A Safe plan must target the chain on which that Safe is open because Safe connectors cannot switch chains programmatically.
+
 Run the import boundary guard from the repository root:
 
 ```bash
@@ -82,6 +112,7 @@ Keep the dependency direction `apps/* -> packages/vault-widget`. Do not add a pa
 - `@yearn/vault-widget/headless` — pure transaction intent, plan builder, and injectable plan executor
 - `@yearn/vault-widget/runtime` — runtime contracts and provider utilities
 - `@yearn/vault-widget/types` — widget data and prop types
+- `@yearn/vault-widget/wagmi` — React-independent Wagmi execution adapter for headless plans
 - `@yearn/vault-widget/ybold` — yBOLD addresses and preset policy
 - `@yearn/vault-widget/advanced` — lower-level composition API
 - `@yearn/vault-widget/styles.css` — widget styles
