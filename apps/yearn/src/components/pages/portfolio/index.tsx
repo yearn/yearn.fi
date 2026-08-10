@@ -32,7 +32,6 @@ import { SuggestedVaultCard } from '@pages/vaults/components/SuggestedVaultCard'
 import { MerkleRewardRow } from '@pages/vaults/components/widget/rewards/MerkleRewardRow'
 import { StakingRewardRow } from '@pages/vaults/components/widget/rewards/StakingRewardRow'
 import type { TGroupedMerkleReward, TStakingReward } from '@pages/vaults/components/widget/rewards/types'
-import { TransactionOverlay, type TransactionStep } from '@pages/vaults/components/widget/shared/TransactionOverlay'
 import {
   getVaultAddress,
   getVaultChainID,
@@ -82,6 +81,7 @@ import { formatUSD } from '@shared/utils/format'
 import { copyToClipboard } from '@shared/utils/helpers'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import { getNetwork } from '@shared/utils/wagmi'
+import { TransactionOverlay, type TransactionStep } from '@yearn/vault-widget/advanced'
 import Link from 'next/link'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import type { CSSProperties, ReactElement } from 'react'

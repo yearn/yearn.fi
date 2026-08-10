@@ -7,8 +7,7 @@ import { cl } from '@shared/utils'
 import type { ReactElement, ReactNode } from 'react'
 import { useState } from 'react'
 import { useAccount } from 'wagmi'
-import { WidgetDeposit } from '../deposit'
-import { WidgetWithdraw } from '../withdraw'
+import { WidgetDeposit, WidgetWithdraw } from '../advanced'
 import { YvUsdVariantToggle } from '../yvUSD/YvUsdVariantToggle'
 
 interface Props {

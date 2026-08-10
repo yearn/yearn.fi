@@ -1,4 +1,3 @@
-import * as IconsModule from '@pages/vaults/components/widget/shared/Icons'
 import * as IconAddToMetamaskModule from '@shared/icons/IconAddToMetamask'
 import * as IconAlertCriticalModule from '@shared/icons/IconAlertCritical'
 import * as IconAlertErrorModule from '@shared/icons/IconAlertError'
@@ -76,9 +75,10 @@ import * as LogoYearnOutlineModule from '@shared/icons/LogoYearnOutline'
 import * as TypeMarkYearnModule from '@shared/icons/TypeMarkYearn'
 import * as TypeMarkYearnNaughtyModule from '@shared/icons/TypeMarkYearn-naughty'
 import * as TypeMarkYearnTextOnlyModule from '@shared/icons/TypeMarkYearn-text-only'
+import * as IconsModule from '@yearn/vault-widget/icons'
 
 export const ICON_MODULES: Record<string, Record<string, unknown>> = {
-  '/src/components/pages/vaults/components/widget/shared/Icons.tsx': IconsModule,
+  '/packages/vault-widget/src/components/widget/shared/Icons.tsx': IconsModule,
   '/src/components/shared/icons/IconAddToMetamask.tsx': IconAddToMetamaskModule,
   '/src/components/shared/icons/IconAlertCritical.tsx': IconAlertCriticalModule,
   '/src/components/shared/icons/IconAlertError.tsx': IconAlertErrorModule,

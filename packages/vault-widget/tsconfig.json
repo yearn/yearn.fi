@@ -1,0 +1,23 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "incremental": false,
+    "noEmit": true,
+    "paths": {
+      "@yearn/vault-widget": ["src/index.tsx"],
+      "@yearn/vault-widget/internal/components/widget": ["src/components/widget/index.tsx"],
+      "@yearn/vault-widget/internal/components/widget/deposit": ["src/components/widget/deposit/index.tsx"],
+      "@yearn/vault-widget/internal/components/widget/withdraw": ["src/components/widget/withdraw/index.tsx"],
+      "@yearn/vault-widget/internal/utils": ["src/utils/index.ts"],
+      "@yearn/vault-widget/internal/*": ["src/*"],
+      "@yearn/vault-widget/runtime": ["src/runtime.tsx"],
+      "@yearn/vault-widget/types": ["src/types.ts"],
+      "@yearn/vault-widget/ybold": ["src/ybold.ts"]
+    },
+    "plugins": [],
+    "rootDir": "src"
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "exclude": ["node_modules"]
+}

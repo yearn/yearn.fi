@@ -1,23 +1,22 @@
+import { WidgetMigrate } from '@pages/vaults/components/widget/migrate'
 import {
-  getVaultAPR,
-  getVaultInfo,
-  getVaultMigration,
-  getVaultStaking,
-  getVaultSymbol,
-  getVaultToken,
-  getVaultVersion,
-  type TKongVaultInput
-} from '@pages/vaults/domain/kongVaultSelectors'
+  normalizeVaultForWidget,
+  normalizeVaultUserDataForWidget
+} from '@pages/vaults/components/widget/vaultWidgetAdapter'
+import type { TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import type { VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { WidgetActionType as ActionType } from '@pages/vaults/types'
 import type { TAddress } from '@shared/types'
-import { cl, isZeroAddress, toAddress } from '@shared/utils'
-import { type ForwardedRef, forwardRef, type ReactElement, type ReactNode, useImperativeHandle, useState } from 'react'
-import { WidgetDeposit } from './deposit'
-import { WidgetMigrate } from './migrate'
-import { WidgetWithdraw } from './withdraw'
+import { isZeroAddress, toAddress } from '@shared/utils'
+import {
+  WidgetActionType as SharedActionType,
+  Widget as SharedVaultWidget,
+  WidgetTabs as SharedWidgetTabs,
+  type TWidgetRef as TSharedWidgetRef
+} from '@yearn/vault-widget'
+import { type ForwardedRef, forwardRef, type ReactElement, useImperativeHandle, useMemo, useRef } from 'react'
 
-interface Props {
+export interface VaultWidgetProps {
   currentVault: TKongVaultInput
   vaultAddress?: TAddress
   gaugeAddress?: TAddress
@@ -44,24 +43,41 @@ interface Props {
   hideTabSelector?: boolean
   disableBorderRadius?: boolean
   collapseDetails?: boolean
+  disableTokenSelector?: boolean
+  withdrawalSource?: 'vault' | 'staking'
 }
 
 export type TWidgetRef = {
   setMode: (mode: ActionType) => void
 }
 
-const getActionLabel = (action: ActionType): string => {
+const toSharedAction = (action: ActionType): SharedActionType => {
   switch (action) {
     case ActionType.Deposit:
-      return 'Deposit'
+      return SharedActionType.Deposit
     case ActionType.Withdraw:
-      return 'Withdraw'
+      return SharedActionType.Withdraw
     case ActionType.Migrate:
-      return 'Migrate'
+      return SharedActionType.Migrate
   }
 }
 
-export const Widget = forwardRef<TWidgetRef, Props>(function Widget(
+const toYearnAction = (action: SharedActionType): ActionType => {
+  switch (action) {
+    case SharedActionType.Deposit:
+      return ActionType.Deposit
+    case SharedActionType.Withdraw:
+      return ActionType.Withdraw
+    case SharedActionType.Migrate:
+      return ActionType.Migrate
+  }
+}
+
+const resolveOptionalAddress = (address?: TAddress): TAddress | undefined => {
+  return address && !isZeroAddress(address) ? toAddress(address) : undefined
+}
+
+export const Widget = forwardRef<TWidgetRef, VaultWidgetProps>(function Widget(
   {
     currentVault,
     vaultAddress,
@@ -83,134 +99,75 @@ export const Widget = forwardRef<TWidgetRef, Props>(function Widget(
     onDepositUserTokenSelectionChange,
     hideTabSelector,
     disableBorderRadius,
-    collapseDetails
-  }: Props,
+    collapseDetails,
+    disableTokenSelector,
+    withdrawalSource
+  }: VaultWidgetProps,
   ref: ForwardedRef<TWidgetRef>
 ): ReactElement {
-  const [internalMode, setInternalMode] = useState<ActionType>(actions[0])
-  const currentMode = mode ?? internalMode
-  const setMode = onModeChange ?? setInternalMode
-  const assetToken = getVaultToken(currentVault).address
-  const vaultAPR = getVaultAPR(currentVault)
-  const vaultSymbol = getVaultSymbol(currentVault)
-  const vaultStaking = getVaultStaking(currentVault)
-  const vaultVersion = getVaultVersion(currentVault)
-  const vaultInfo = getVaultInfo(currentVault)
-  const vaultMigration = getVaultMigration(currentVault)
-  const resolvedStakingAddress = isZeroAddress(gaugeAddress) ? undefined : toAddress(gaugeAddress)
+  const sharedWidgetRef = useRef<TSharedWidgetRef>(null)
+  const normalizedVault = useMemo(() => normalizeVaultForWidget(currentVault), [currentVault])
+  const normalizedUserData = useMemo(
+    () => normalizeVaultUserDataForWidget(vaultUserData, chainId),
+    [chainId, vaultUserData]
+  )
+  const sharedActions = useMemo(() => actions.map(toSharedAction), [actions])
+  const resolvedVaultAddress = toAddress(vaultAddress ?? normalizedVault.address)
+  const resolvedStakingAddress = resolveOptionalAddress(gaugeAddress ?? normalizedVault.staking?.address)
 
   useImperativeHandle(ref, () => ({
     setMode(newMode: ActionType): void {
-      if (actions.includes(newMode)) {
-        setMode(newMode)
-      }
+      sharedWidgetRef.current?.setMode(toSharedAction(newMode))
     }
   }))
 
-  // Render-time state adjustment: keep internal mode valid when actions change
-  if (mode === undefined && !actions.includes(internalMode)) {
-    setInternalMode(actions[0])
-  }
+  return (
+    <SharedVaultWidget
+      ref={sharedWidgetRef}
+      currentVault={normalizedVault}
+      vaultAddress={resolvedVaultAddress}
+      gaugeAddress={resolvedStakingAddress}
+      disableDepositStaking={disableDepositStaking}
+      actions={sharedActions}
+      chainId={chainId}
+      vaultUserData={normalizedUserData}
+      handleSuccess={handleSuccess}
+      mode={mode === undefined ? undefined : toSharedAction(mode)}
+      onModeChange={onModeChange ? (nextMode) => onModeChange(toYearnAction(nextMode)) : undefined}
+      showTabs={showTabs}
+      onOpenSettings={onOpenSettings}
+      isSettingsOpen={isSettingsOpen}
+      depositPrefill={depositPrefill}
+      onDepositPrefillConsumed={onDepositPrefillConsumed}
+      forceDepositStake={forceDepositStake}
+      depositTitleOverride={depositTitleOverride}
+      onDepositUserTokenSelectionChange={onDepositUserTokenSelectionChange}
+      hideTabSelector={hideTabSelector}
+      disableBorderRadius={disableBorderRadius}
+      collapseDetails={collapseDetails}
+      disableTokenSelector={disableTokenSelector}
+      withdrawalSource={withdrawalSource}
+      renderAction={(action) => {
+        if (action !== SharedActionType.Migrate) {
+          return null
+        }
 
-  function renderSelectedComponent(): ReactElement {
-    switch (currentMode) {
-      case ActionType.Deposit:
-        return (
-          <WidgetDeposit
-            vaultAddress={toAddress(vaultAddress)}
-            assetAddress={toAddress(assetToken)}
-            stakingAddress={resolvedStakingAddress}
-            disableDepositStaking={disableDepositStaking}
-            chainId={chainId}
-            vaultAPR={vaultAPR?.forwardAPR?.netAPR || 0}
-            vaultSymbol={vaultSymbol || ''}
-            stakingSource={vaultStaking?.source}
-            vaultUserData={vaultUserData}
-            handleDepositSuccess={handleSuccess}
-            prefill={depositPrefill ?? undefined}
-            onPrefillApplied={onDepositPrefillConsumed}
-            forceStake={forceDepositStake}
-            titleOverride={depositTitleOverride}
-            onUserTokenSelectionChange={onDepositUserTokenSelectionChange}
-            onOpenSettings={onOpenSettings}
-            isSettingsOpen={isSettingsOpen}
-            hideSettings={hideTabSelector}
-            disableBorderRadius={disableBorderRadius}
-            collapseDetails={collapseDetails}
-          />
-        )
-      case ActionType.Withdraw:
-        return (
-          <WidgetWithdraw
-            vaultAddress={toAddress(vaultAddress)}
-            assetAddress={toAddress(assetToken)}
-            stakingAddress={resolvedStakingAddress}
-            chainId={chainId}
-            vaultSymbol={vaultSymbol || ''}
-            stakingSource={vaultStaking?.source}
-            vaultVersion={vaultVersion}
-            isVaultRetired={Boolean(vaultInfo?.isRetired)}
-            vaultUserData={vaultUserData}
-            handleWithdrawSuccess={handleSuccess}
-            onOpenSettings={onOpenSettings}
-            isSettingsOpen={isSettingsOpen}
-            hideSettings={hideTabSelector}
-            disableBorderRadius={disableBorderRadius}
-            collapseDetails={collapseDetails}
-          />
-        )
-      case ActionType.Migrate:
         return (
           <WidgetMigrate
-            vaultAddress={toAddress(vaultAddress)}
-            assetAddress={toAddress(assetToken)}
+            vaultAddress={resolvedVaultAddress}
+            assetAddress={normalizedVault.asset.address}
             stakingAddress={resolvedStakingAddress}
             chainId={chainId}
-            vaultSymbol={vaultSymbol || ''}
-            vaultVersion={vaultVersion}
-            migrationTarget={toAddress(vaultMigration?.address)}
-            migrationContract={toAddress(vaultMigration?.contract)}
+            vaultSymbol={normalizedVault.symbol}
+            vaultVersion={normalizedVault.version}
+            migrationTarget={toAddress(normalizedVault.migration?.address)}
+            migrationContract={toAddress(normalizedVault.migration?.contract)}
             vaultUserData={vaultUserData}
             handleMigrateSuccess={handleSuccess}
           />
         )
-    }
-  }
-
-  const selectedComponent = renderSelectedComponent()
-
-  if (hideTabSelector) {
-    return (
-      <div className="flex flex-col gap-0 w-full h-full">
-        <div
-          className={cl('bg-surface relative w-full min-w-0', {
-            'rounded-lg': !disableBorderRadius
-          })}
-        >
-          {selectedComponent}
-        </div>
-      </div>
-    )
-  }
-
-  return (
-    <div className="flex flex-col gap-0 w-full h-full flex-1">
-      <div
-        className={cl('bg-app overflow-hidden relative w-full min-w-0 flex flex-col flex-1', {
-          'rounded-b-lg': !disableBorderRadius
-        })}
-      >
-        {showTabs ? (
-          <WidgetTabs
-            actions={actions}
-            activeAction={currentMode}
-            onActionChange={setMode}
-            disableBorderRadius={disableBorderRadius}
-          />
-        ) : null}
-        <div className="bg-surface flex-1 flex flex-col [&>div]:flex-1 [&>div]:h-full">{selectedComponent}</div>
-      </div>
-    </div>
+      }}
+    />
   )
 })
 
@@ -227,80 +184,13 @@ type WidgetTabsProps = {
   walletDataTour?: string
 }
 
-export function WidgetTabs({
-  actions,
-  activeAction,
-  onActionChange,
-  className,
-  onOpenWallet,
-  isWalletOpen,
-  onCloseOverlays,
-  disableBorderRadius,
-  dataTour,
-  walletDataTour
-}: WidgetTabsProps): ReactElement {
-  const isWalletTabActive = !!isWalletOpen
-
+export function WidgetTabs({ actions, activeAction, onActionChange, ...props }: WidgetTabsProps): ReactElement {
   return (
-    <div
-      className={cl('bg-surface-secondary border border-border gap-2 flex min-h-9 p-1', className, {
-        'rounded-b-lg': !disableBorderRadius
-      })}
-      data-tour={dataTour}
-    >
-      {actions.map((action) => (
-        <TabButton
-          key={action}
-          isActive={!isWalletTabActive && activeAction === action}
-          onClick={() => {
-            onCloseOverlays?.()
-            onActionChange(action)
-          }}
-        >
-          {getActionLabel(action)}
-        </TabButton>
-      ))}
-      {onOpenWallet ? (
-        <TabButton
-          isActive={isWalletTabActive}
-          onClick={() => {
-            onCloseOverlays?.()
-            onOpenWallet()
-          }}
-          dataTour={walletDataTour}
-        >
-          {'My Info'}
-        </TabButton>
-      ) : null}
-    </div>
-  )
-}
-
-type TabButtonProps = {
-  className?: string
-  children: ReactNode
-  onClick: () => void
-  isActive: boolean
-  dataTour?: string
-}
-
-function TabButton({ children, onClick, isActive, className, dataTour }: TabButtonProps): ReactElement {
-  return (
-    <button
-      type="button"
-      onClick={onClick}
-      data-tour={dataTour}
-      className={cl(
-        'flex-1 px-3 py-3 md:py-2.5 text-sm min-h-9 md:text-xs font-semibold transition-all duration-200',
-        'border border-transparent focus-visible:outline-none focus-visible:ring-0',
-        'rounded-md ',
-        isActive
-          ? 'bg-surface text-text-primary !border-border'
-          : 'bg-surface-secondary text-text-secondary hover:text-text-primary',
-        className
-      )}
-    >
-      {children}
-    </button>
+    <SharedWidgetTabs
+      {...props}
+      actions={actions.map(toSharedAction)}
+      activeAction={toSharedAction(activeAction)}
+      onActionChange={(action) => onActionChange(toYearnAction(action))}
+    />
   )
 }

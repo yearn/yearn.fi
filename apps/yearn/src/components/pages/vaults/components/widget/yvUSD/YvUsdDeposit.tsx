@@ -8,11 +8,12 @@ import {
 } from '@pages/vaults/utils/yvUsd'
 import type { TToken } from '@shared/types'
 import { toAddress, zeroNormalizedBN } from '@shared/utils'
+import { getDefaultTokenLogoSrc } from '@yearn/vault-widget/advanced'
+import { useVaultWidgetRuntime } from '@yearn/vault-widget/runtime'
 import type { ReactElement } from 'react'
 import { useState } from 'react'
 import { useAccount } from 'wagmi'
-import { WidgetDeposit } from '../deposit'
-import { getDefaultTokenLogoSrc } from '../tokenLogo.utils'
+import { WidgetDeposit } from '../advanced'
 import { getYvUsdDepositTypeItems, scheduleAdditionalYvUsdDepositRefetch } from './YvUsdDeposit.helpers'
 import { YvUsdVariantToggle } from './YvUsdVariantToggle'
 
@@ -125,6 +126,7 @@ export function YvUsdDeposit({
   collapseDetails,
   onVariantChange
 }: Props): ReactElement {
+  const { assets } = useVaultWidgetRuntime()
   const { address: account } = useAccount()
   const { unlockedVault, lockedVault, metrics, isLoading } = useYvUsdVaults()
   const [variant, setVariant] = useState<TYvUsdVariant>('locked')
@@ -150,6 +152,7 @@ export function YvUsdDeposit({
   const selectedVaultUserData = isLockedVariant ? lockedUserData : unlockedUserData
   const lockedDepositLogoURI = getDefaultTokenLogoSrc({
     address: unlockedAssetAddress,
+    assets,
     chainId,
     size: 32
   })

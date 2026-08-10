@@ -2,10 +2,10 @@ import type { TDict } from '@shared/types'
 import { toAddress } from '@shared/utils'
 import type { TKongVaultListItem } from '@shared/utils/schemas/kongVaultListSchema'
 import type { TKongVaultSnapshot } from '@shared/utils/schemas/kongVaultSnapshotSchema'
+import { YBOLD_STAKING_ADDRESS, YBOLD_VAULT_ADDRESS } from '@yearn/vault-widget/ybold'
 import { type Address, zeroAddress } from 'viem'
 
-export const YBOLD_VAULT_ADDRESS: Address = '0x9F4330700a36B29952869fac9b33f45EEdd8A3d8'
-export const YBOLD_STAKING_ADDRESS: Address = '0x23346B04a7f55b8760E5860AA5A77383D63491cD'
+export { YBOLD_STAKING_ADDRESS, YBOLD_VAULT_ADDRESS }
 
 const YBOLD_PRODUCT_ADDRESSES = new Set([toAddress(YBOLD_VAULT_ADDRESS), toAddress(YBOLD_STAKING_ADDRESS)])
 

@@ -1,10 +1,10 @@
 import { useClaimStakingRewards } from '@pages/vaults/hooks/rewards/useClaimStakingRewards'
 import { useChainId } from '@shared/hooks/useAppWagmi'
 import { toNormalizedValue } from '@shared/utils'
+import type { TransactionStep } from '@yearn/vault-widget/advanced'
 import type { ReactElement } from 'react'
 import { useCallback, useMemo } from 'react'
 import { useWriteContract } from 'wagmi'
-import type { TransactionStep } from '../shared/TransactionOverlay'
 import { RewardRow } from './RewardRow'
 import type { TStakingReward } from './types'
 
