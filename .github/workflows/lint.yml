@@ -34,3 +34,12 @@ jobs:
 
       - name: Lint
         run: bun run lint
+
+      - name: Check reusable package boundaries
+        run: bun run check:vault-widget-boundary
+
+      - name: Type-check workspaces
+        run: bun run tslint:all
+
+      - name: Test workspaces
+        run: bun run test:all
