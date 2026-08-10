@@ -18,7 +18,11 @@ import { GOVERNANCE_CHAIN_ID } from '@pages/portfolio/governance/constants'
 import type { TGovernanceReward } from '@pages/portfolio/governance/types'
 import { useGovernancePositions } from '@pages/portfolio/governance/useGovernancePositions'
 import { usePortfolioEntryRefresh } from '@pages/portfolio/hooks/usePortfolioEntryRefresh'
-import { type TPortfolioModel, usePortfolioModel } from '@pages/portfolio/hooks/usePortfolioModel'
+import {
+  type TPortfolioModel,
+  type TPortfolioSortBy,
+  usePortfolioModel
+} from '@pages/portfolio/hooks/usePortfolioModel'
 import { useVaultWithStakingRewards } from '@pages/portfolio/hooks/useVaultWithStakingRewards'
 import { YCRV_CHAIN_ID } from '@pages/portfolio/ycrv/constants'
 import type { TYcrvReward } from '@pages/portfolio/ycrv/types'
@@ -44,7 +48,6 @@ import {
 } from '@pages/vaults/domain/kongVaultSelectors'
 import { useMerkleRewards } from '@pages/vaults/hooks/rewards/useMerkleRewards'
 import { useStakingRewards } from '@pages/vaults/hooks/rewards/useStakingRewards'
-import type { TPossibleSortBy } from '@pages/vaults/hooks/useSortVaults'
 import { resolveNextSingleChainSelection } from '@pages/vaults/utils/chainSelection'
 import { Breadcrumbs } from '@shared/components/Breadcrumbs'
 import { METRIC_VALUE_CLASS, MetricHeader, type TMetricBlock } from '@shared/components/MetricsCard'
@@ -115,13 +118,14 @@ import {
   useLocalActivityReceiptStatuses
 } from './hooks/useLocalActivityReceiptStatuses'
 import { usePortfolioActivity } from './hooks/usePortfolioActivity'
-import { usePortfolioHistory } from './hooks/usePortfolioHistory'
-import { usePortfolioProtocolReturnHistory } from './hooks/usePortfolioProtocolReturnHistory'
+import { usePortfolioHistoryCoordinator } from './hooks/usePortfolioHistoryCoordinator'
+import { comparePortfolioLedgerGrowthVaults, toPortfolioLedgerGrowthDisplay } from './hooks/usePortfolioLedgerGrowth'
 import type {
   TPortfolioActivityEntry,
   TPortfolioActivityTypeFilter,
   TPortfolioHistoryDenomination,
-  TPortfolioHistoryTimeframe
+  TPortfolioHistoryTimeframe,
+  TPortfolioLedgerGrowthVault
 } from './types/api'
 
 const currencyFormatter = new Intl.NumberFormat('en-US', {
@@ -163,7 +167,9 @@ type TPortfolioHoldingsProps = Pick<
   | 'setSortBy'
   | 'setSortDirection'
   | 'vaultFlags'
->
+> & {
+  growthVaultsByKey: ReadonlyMap<string, TPortfolioLedgerGrowthVault>
+}
 
 type TPortfolioSuggestedProps = Pick<TPortfolioModel, 'hasHoldings' | 'isActive' | 'suggestedRows'>
 
@@ -2904,6 +2910,7 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
 }
 
 function PortfolioHoldingsSection({
+  growthVaultsByKey,
   hasHoldings,
   holdingsRows,
   isActive,
@@ -2915,11 +2922,21 @@ function PortfolioHoldingsSection({
   setSortDirection,
   vaultFlags
 }: TPortfolioHoldingsProps): ReactElement {
-  const vaultRows = holdingsRows.filter((row) => row.type === 'vault')
+  const unsortedVaultRows = holdingsRows.filter((row) => row.type === 'vault')
+  const vaultRows =
+    sortBy === 'growth'
+      ? unsortedVaultRows.toSorted((left, right) =>
+          comparePortfolioLedgerGrowthVaults(
+            growthVaultsByKey.get(left.key),
+            growthVaultsByKey.get(right.key),
+            sortDirection
+          )
+        )
+      : unsortedVaultRows
   const otherPositionRows = holdingsRows.filter((row) => row.type !== 'vault')
 
   function handleSort(newSortBy: string, newDirection: TSortDirection): void {
-    setSortBy(newSortBy as TPossibleSortBy)
+    setSortBy(newSortBy as TPortfolioSortBy)
     setSortDirection(newDirection)
   }
 
@@ -2927,14 +2944,18 @@ function PortfolioHoldingsSection({
     description,
     nameLabel,
     rows,
+    showGrowthColumn = false,
     title
   }: {
     description?: string
     nameLabel: string
     rows: typeof holdingsRows
+    showGrowthColumn?: boolean
     title: string
   }): ReactElement | null {
     if (rows.length === 0) return null
+
+    const metricColumnSpan = showGrowthColumn ? 'col-span-3' : 'col-span-4'
 
     return (
       <section className="flex flex-col gap-2">
@@ -2957,6 +2978,8 @@ function PortfolioHoldingsSection({
                 onSort={handleSort}
                 wrapperClassName="relative z-10 rounded-t-lg border border-border bg-surface-secondary"
                 containerClassName="relative z-10 rounded-t-lg bg-surface-secondary"
+                leftColumnClassName={showGrowthColumn ? 'col-span-9' : undefined}
+                rightColumnClassName={showGrowthColumn ? 'col-span-15' : undefined}
                 items={[
                   {
                     type: 'sort',
@@ -2970,21 +2993,32 @@ function PortfolioHoldingsSection({
                     label: 'Est. APY',
                     value: 'estAPY',
                     sortable: true,
-                    className: 'col-span-4'
+                    className: metricColumnSpan
                   },
                   {
                     type: 'sort',
                     label: 'TVL',
                     value: 'tvl',
                     sortable: true,
-                    className: 'col-span-4'
+                    className: metricColumnSpan
                   },
+                  ...(showGrowthColumn
+                    ? [
+                        {
+                          type: 'sort' as const,
+                          label: 'Growth',
+                          value: 'growth',
+                          sortable: true,
+                          className: metricColumnSpan
+                        }
+                      ]
+                    : []),
                   {
                     type: 'sort',
                     label: 'Your Holdings',
                     value: 'deposited',
                     sortable: true,
-                    className: 'col-span-4 justify-end'
+                    className: `${metricColumnSpan} justify-end`
                   }
                 ]}
               />
@@ -2998,6 +3032,7 @@ function PortfolioHoldingsSection({
                       currentVault={row.vault}
                       flags={vaultFlags[row.key]}
                       hrefOverride={row.hrefOverride}
+                      portfolioGrowth={toPortfolioLedgerGrowthDisplay(growthVaultsByKey.get(row.key))}
                       yvUsdPositionApy={row.yvUsdPositionApy}
                       showBoostDetails={false}
                       activeProductType="all"
@@ -3045,7 +3080,12 @@ function PortfolioHoldingsSection({
     }
     return (
       <div className="flex flex-col gap-6">
-        {renderHoldingsTable({ nameLabel: 'Vault Name', rows: vaultRows, title: 'Vaults' })}
+        {renderHoldingsTable({
+          nameLabel: 'Vault Name',
+          rows: vaultRows,
+          showGrowthColumn: true,
+          title: 'Vaults'
+        })}
         {renderHoldingsTable({
           description: 'Balances not included in charts and totals above',
           nameLabel: 'Position',
@@ -3191,6 +3231,12 @@ function PortfolioPage(): ReactElement {
     return 'positions'
   }, [searchParams])
   const shouldLoadPositionsHistory = activeTab === 'positions' && model.isActive && !model.isHoldingsLoading
+  const portfolioHistory = usePortfolioHistoryCoordinator(
+    historyDenomination,
+    historyFetchTimeframe,
+    shouldLoadPositionsHistory,
+    model.liveBalanceSnapshot
+  )
   const {
     data: historyData,
     denomination: resolvedHistoryDenomination,
@@ -3198,12 +3244,7 @@ function PortfolioPage(): ReactElement {
     progress: historyProgress,
     error: historyError,
     isEmpty: historyEmpty
-  } = usePortfolioHistory(
-    historyDenomination,
-    historyFetchTimeframe,
-    shouldLoadPositionsHistory,
-    model.liveBalanceSnapshot
-  )
+  } = portfolioHistory.balance
   const {
     data: protocolReturnHistoryData,
     summary: protocolReturnHistorySummary,
@@ -3212,7 +3253,7 @@ function PortfolioPage(): ReactElement {
     progress: protocolReturnHistoryProgress,
     error: protocolReturnHistoryError,
     isEmpty: protocolReturnHistoryEmpty
-  } = usePortfolioProtocolReturnHistory(historyFetchTimeframe, shouldLoadPositionsHistory)
+  } = portfolioHistory.protocolReturn
   const annualizedProtocolReturnPct = protocolReturnHistoryData?.at(-1)?.annualizedProtocolReturnPct
   const resolvedGrowthDisplayMode = resolvePortfolioGrowthDisplayMode(
     historyGrowthDisplayModeOverride ?? protocolReturnHistorySummary?.recommendedGrowthDisplay ?? 'index',
@@ -3367,6 +3408,7 @@ function PortfolioPage(): ReactElement {
               </div>
             ) : null}
             <PortfolioHoldingsSection
+              growthVaultsByKey={portfolioHistory.growth.vaultsByKey}
               hasHoldings={model.hasHoldings}
               holdingsRows={model.holdingsRows}
               isActive={model.isActive}

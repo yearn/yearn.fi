@@ -12,6 +12,7 @@ function createVaultListResponse(): Response {
         chainId: 1,
         symbol: 'yvUSDC',
         decimals: 6,
+        pricePerShare: '1050000',
         v3: true,
         asset: {
           address: '0xA0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
@@ -40,6 +41,9 @@ function createVaultSnapshotResponse(): Response {
       symbol: 'yvUSDC',
       decimals: 6,
       v3: true,
+      apy: {
+        pricePerShare: '1040000'
+      },
       asset: {
         address: '0xA0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
         symbol: 'USDC',
@@ -83,6 +87,7 @@ describe('fetchMultipleVaultsMetadata', () => {
 
     expect(fetchStub).toHaveBeenCalledTimes(2)
     expect(metadata.get(`1:${UNDERLYING_VAULT}`)?.token.symbol).toBe('USDC')
+    expect(metadata.get(`1:${UNDERLYING_VAULT}`)?.currentPricePerShare).toBeCloseTo(1.05)
   })
 
   it('falls back to per-vault snapshots when the global list endpoint is unavailable', async () => {
@@ -107,6 +112,7 @@ describe('fetchMultipleVaultsMetadata', () => {
     const metadata = await fetchMultipleVaultsMetadata([{ chainId: 1, vaultAddress: UNDERLYING_VAULT }])
 
     expect(metadata.get(`1:${UNDERLYING_VAULT}`)?.token.address).toBe('0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48')
+    expect(metadata.get(`1:${UNDERLYING_VAULT}`)?.currentPricePerShare).toBeCloseTo(1.04)
     expect(fetchStub).toHaveBeenCalledTimes(4)
   })
 

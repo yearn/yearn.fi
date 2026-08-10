@@ -42,6 +42,40 @@ const portfolioProtocolReturnHistoryFamilySeriesSchema = z.object({
   dataPoints: z.array(portfolioProtocolReturnHistoryFamilyPointSchema)
 })
 
+const portfolioLedgerGrowthVaultSchema = z.object({
+  chainId: z.number(),
+  vaultAddress: z.string(),
+  status: z.enum(['ok', 'missing_metadata', 'missing_pps', 'partial']),
+  issues: z.array(z.enum(['missing_metadata', 'missing_pps', 'unmatched_exit'])),
+  shares: z.string(),
+  sharesFormatted: z.number(),
+  pricePerShare: z.number(),
+  currentUnderlying: z.number(),
+  baselineUnderlying: z.number(),
+  realizedBaselineUnderlying: z.number(),
+  unrealizedBaselineUnderlying: z.number(),
+  realizedGrowthUnderlying: z.number(),
+  unrealizedGrowthUnderlying: z.number(),
+  growthUnderlying: z.number(),
+  growthPct: z.number().nullable(),
+  baselineExposureUnderlyingYears: z.number(),
+  annualizedProtocolReturnPct: z.number().nullable(),
+  receiptCount: z.number(),
+  exitCount: z.number(),
+  deposits: z.number(),
+  withdrawals: z.number(),
+  transfersIn: z.number(),
+  transfersOut: z.number(),
+  unmatchedExitShares: z.string(),
+  unmatchedExitSharesFormatted: z.number(),
+  metadata: z.object({
+    symbol: z.string().nullable(),
+    decimals: z.number(),
+    assetDecimals: z.number(),
+    tokenAddress: z.string().nullable()
+  })
+})
+
 const portfolioBreakdownVaultSchema = z.object({
   chainId: z.number(),
   vaultAddress: z.string(),
@@ -73,6 +107,45 @@ export const portfolioProtocolReturnHistoryResponseSchema = z.object({
   summary: portfolioProtocolReturnHistorySummarySchema,
   dataPoints: z.array(portfolioProtocolReturnHistoryDataPointSchema),
   familySeries: z.array(portfolioProtocolReturnHistoryFamilySeriesSchema).optional().default([])
+})
+
+export const portfolioLedgerSnapshotResponseSchema = z.object({
+  status: z.literal('ready'),
+  snapshotId: z.string().regex(/^snapshot_[a-f0-9]{32}$/),
+  revision: z.string(),
+  sourceGeneration: z.number().int().nonnegative(),
+  headSource: z.enum(['active', 'previous']),
+  freshness: z.enum(['refreshed', 'last-known-good']),
+  latestSettledDayTimestamp: z.number().int().nonnegative(),
+  eventUpperTimestamp: z.number().int().nonnegative(),
+  expiresAtMs: z.number().int().nonnegative()
+})
+
+export const portfolioLedgerHistoryResponseSchema = z.object({
+  address: z.string(),
+  version: z.enum(['all', 'v2', 'v3']),
+  denomination: z.enum(['usd', 'eth']),
+  timeframe: z.enum(['1y', 'all']),
+  balance: portfolioHistorySimpleResponseSchema,
+  protocolReturn: portfolioProtocolReturnHistoryResponseSchema
+})
+
+export const portfolioLedgerGrowthResponseSchema = z.object({
+  address: z.string(),
+  version: z.enum(['all', 'v2', 'v3']),
+  generatedAt: z.string(),
+  summary: z.object({
+    totalVaults: z.number(),
+    completeVaults: z.number(),
+    partialVaults: z.number(),
+    historicalPpsRequirements: z.number(),
+    historicalPpsCacheHits: z.number(),
+    historicalPpsFetched: z.number(),
+    historicalPpsMissing: z.number(),
+    currentPpsFallbackVaults: z.number(),
+    isComplete: z.boolean()
+  }),
+  vaults: z.array(portfolioLedgerGrowthVaultSchema)
 })
 
 export const portfolioHistoryProgressResponseSchema = z.object({
@@ -168,6 +241,10 @@ export const portfolioActivityFacetsResponseSchema = z.object({
 
 export type TPortfolioHistorySimpleResponse = z.infer<typeof portfolioHistorySimpleResponseSchema>
 export type TPortfolioProtocolReturnHistoryResponse = z.infer<typeof portfolioProtocolReturnHistoryResponseSchema>
+export type TPortfolioLedgerSnapshotResponse = z.infer<typeof portfolioLedgerSnapshotResponseSchema>
+export type TPortfolioLedgerHistoryResponse = z.infer<typeof portfolioLedgerHistoryResponseSchema>
+export type TPortfolioLedgerGrowthResponse = z.infer<typeof portfolioLedgerGrowthResponseSchema>
+export type TPortfolioLedgerGrowthVault = z.infer<typeof portfolioLedgerGrowthVaultSchema>
 export type TPortfolioHistoryProgressResponse = z.infer<typeof portfolioHistoryProgressResponseSchema>
 export type TPortfolioProtocolReturnHistorySummary = z.infer<typeof portfolioProtocolReturnHistorySummarySchema>
 export type TPortfolioBreakdownResponse = z.infer<typeof portfolioBreakdownResponseSchema>

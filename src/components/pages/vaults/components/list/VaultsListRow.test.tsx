@@ -9,19 +9,25 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 import { VaultsListRow } from './VaultsListRow'
 
-const { mockRouterPush, mockUseMediaQuery, mockUseYvUsdVaults, mockUseVaultSnapshot, mockVaultForwardAPY } = vi.hoisted(
-  () => ({
-    mockRouterPush: vi.fn(),
-    mockUseMediaQuery: vi.fn(() => false),
-    mockUseYvUsdVaults: vi.fn((): any => ({
-      metrics: undefined,
-      unlockedVault: undefined,
-      lockedVault: undefined
-    })),
-    mockUseVaultSnapshot: vi.fn((): any => ({ data: undefined })),
-    mockVaultForwardAPY: vi.fn((_props?: unknown) => <div>{'APY'}</div>)
-  })
-)
+const {
+  mockRouterPush,
+  mockUseMediaQuery,
+  mockUseWeb3,
+  mockUseYvUsdVaults,
+  mockUseVaultSnapshot,
+  mockVaultForwardAPY
+} = vi.hoisted(() => ({
+  mockRouterPush: vi.fn(),
+  mockUseMediaQuery: vi.fn(() => false),
+  mockUseWeb3: vi.fn((): { address: string | undefined } => ({ address: undefined })),
+  mockUseYvUsdVaults: vi.fn((): any => ({
+    metrics: undefined,
+    unlockedVault: undefined,
+    lockedVault: undefined
+  })),
+  mockUseVaultSnapshot: vi.fn((): any => ({ data: undefined })),
+  mockVaultForwardAPY: vi.fn((_props?: unknown) => <div>{'APY'}</div>)
+}))
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
@@ -53,9 +59,7 @@ vi.mock('@shared/contexts/useWallet', () => ({
 }))
 
 vi.mock('@shared/contexts/useWeb3', () => ({
-  useWeb3: () => ({
-    address: undefined
-  })
+  useWeb3: mockUseWeb3
 }))
 
 vi.mock('@hooks/usePlausible', () => ({
@@ -101,6 +105,7 @@ function renderRowHtml(vault: TKongVaultInput, props?: Partial<ComponentProps<ty
 describe('VaultsListRow', () => {
   beforeEach(() => {
     mockUseMediaQuery.mockReturnValue(false)
+    mockUseWeb3.mockReturnValue({ address: undefined })
     mockUseYvUsdVaults.mockReturnValue({
       metrics: undefined,
       unlockedVault: undefined,
@@ -136,6 +141,84 @@ describe('VaultsListRow', () => {
     const html = renderRowHtml(vault)
 
     expect(html).toContain('tvl-subline-tooltip')
+  })
+
+  it('renders signed underlying growth in its own dotted-underlined portfolio column', () => {
+    mockUseWeb3.mockReturnValue({ address: '0x1111111111111111111111111111111111111111' })
+    const vault = {
+      version: '3.0.0',
+      chainID: 1,
+      address: '0x0000000000000000000000000000000000000001',
+      name: 'Test Vault',
+      category: 'Test Category',
+      kind: 'Multi Strategy',
+      token: {
+        address: '0x0000000000000000000000000000000000000002',
+        symbol: 'USDC',
+        decimals: 6
+      },
+      tvl: { tvl: 1234, totalAssets: 1234567 },
+      info: { riskLevel: 3 }
+    } as unknown as TKongVaultInput
+
+    const html = renderRowHtml(vault, {
+      portfolioGrowth: { amount: 0.234567, percent: 20, annualizedPercent: 40, symbol: 'USDC', decimals: 6 }
+    })
+
+    expect(html).toContain('aria-label="Growth +0.23 USDC; total protocol return +20.00%; Real APY +40.00%"')
+    expect(html).toContain('text-success')
+    expect(html).toContain('growth-subline-tooltip')
+    expect(html).toContain('decoration-dotted')
+    expect(html).toContain('>+0.23 USDC</span>')
+    expect(html).not.toContain('>(+20.00%)</span>')
+    expect(html).toContain('tvl-subline-tooltip')
+  })
+
+  it('renders unavailable growth as a dash rather than zero', () => {
+    mockUseWeb3.mockReturnValue({ address: '0x1111111111111111111111111111111111111111' })
+    const vault = {
+      version: '3.0.0',
+      chainID: 1,
+      address: '0x0000000000000000000000000000000000000001',
+      name: 'Test Vault',
+      token: {
+        address: '0x0000000000000000000000000000000000000002',
+        symbol: 'USDC',
+        decimals: 6
+      },
+      tvl: { tvl: 1234, totalAssets: 1234567 },
+      info: { riskLevel: 3 }
+    } as unknown as TKongVaultInput
+
+    const html = renderRowHtml(vault, { portfolioGrowth: null })
+
+    expect(html).toContain('aria-label="Growth unavailable"')
+    expect(html).not.toContain('growth-subline-tooltip')
+    expect(html).not.toContain('Growth 0.00')
+  })
+
+  it('keeps a complete zero-growth result distinct from unavailable growth', () => {
+    mockUseWeb3.mockReturnValue({ address: '0x1111111111111111111111111111111111111111' })
+    const vault = {
+      version: '3.0.0',
+      chainID: 1,
+      address: '0x0000000000000000000000000000000000000001',
+      name: 'Test Vault',
+      token: {
+        address: '0x0000000000000000000000000000000000000002',
+        symbol: 'USDC',
+        decimals: 6
+      },
+      tvl: { tvl: 1234, totalAssets: 1234567 },
+      info: { riskLevel: 3 }
+    } as unknown as TKongVaultInput
+
+    const html = renderRowHtml(vault, {
+      portfolioGrowth: { amount: 0, percent: 0, annualizedPercent: 0, symbol: 'USDC', decimals: 6 }
+    })
+
+    expect(html).toContain('aria-label="Growth 0.00 USDC; total protocol return 0.00%; Real APY 0.00%"')
+    expect(html).not.toContain('aria-label="Growth unavailable"')
   })
 
   it('shows an asterisk beside the yvUSD mobile APY value', () => {

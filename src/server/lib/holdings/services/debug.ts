@@ -12,6 +12,8 @@ export interface HoldingsDebugContext {
     | 'ledger-snapshot'
     | 'ledger-history'
     | 'ledger-breakdown'
+    | 'ledger-growth'
+    | 'ledger-portfolio-history'
     | 'ledger-protocol-return-history'
   address: string
   startedAt: number

@@ -7,7 +7,9 @@ import {
   buildProtocolReturnFamilyHistorySeries,
   buildProtocolReturnHistorySeries,
   buildProtocolReturnLedgers,
+  buildProtocolReturnVaultRowSummaries,
   buildReceiptPriceRequests,
+  getProtocolReturnHistoricalPpsRequirements,
   type HoldingsPnLSimpleVault,
   materializeProtocolReturnVaults
 } from './pnlSimple'
@@ -2159,7 +2161,7 @@ describe('pnl simple protocol return', () => {
     expect(vault.sharesFormatted).toBeCloseTo(90)
   })
 
-  it('values address-only transfer exits from PPS without router execution context', () => {
+  it('uses emitted deposit assets and event PPS only for an unmatched transfer exit', () => {
     const vault = materializeVault({
       events: [
         baseEvent({
@@ -2167,7 +2169,7 @@ describe('pnl simple protocol return', () => {
           id: 'deposit',
           blockTimestamp: 100,
           shares: 100n * ONE,
-          assets: 100n * ONE,
+          assets: 95n * ONE,
           owner: USER,
           sender: USER
         }),
@@ -2196,8 +2198,222 @@ describe('pnl simple protocol return', () => {
     })
 
     expect(vault.sharesFormatted).toBeCloseTo(0)
-    expect(vault.realizedBaselineUnderlying).toBeCloseTo(100)
-    expect(vault.realizedGrowthUnderlying).toBeCloseTo(10)
+    expect(vault.realizedBaselineUnderlying).toBeCloseTo(95)
+    expect(vault.realizedGrowthUnderlying).toBeCloseTo(15)
+  })
+
+  it('reports PPS requirements only for transfers left after deposit and withdrawal matching', () => {
+    const events = [
+      baseEvent({
+        kind: 'deposit',
+        id: 'direct-deposit',
+        transactionHash: '0xdirect-deposit',
+        shares: 100n * ONE,
+        assets: 95n * ONE,
+        owner: USER,
+        sender: USER
+      }),
+      baseEvent({
+        kind: 'transfer',
+        id: 'deposit-mint',
+        transactionHash: '0xdirect-deposit',
+        logIndex: 1,
+        sender: ZERO_ADDRESS,
+        receiver: USER,
+        shares: 100n * ONE
+      }),
+      baseEvent({
+        kind: 'transfer',
+        id: 'genuine-transfer-out',
+        blockNumber: 2,
+        blockTimestamp: 200,
+        transactionHash: '0xtransfer-out',
+        sender: USER,
+        receiver: OTHER,
+        shares: 20n * ONE
+      })
+    ]
+
+    expect(getProtocolReturnHistoricalPpsRequirements(events, USER)).toEqual([
+      {
+        key: `${VAULT_KEY}:2:0:0xtransfer-out`,
+        reason: 'transfer',
+        eventKind: 'transfer',
+        chainId: 1,
+        vaultAddress: VAULT,
+        blockNumber: 2,
+        blockTimestamp: 200,
+        logIndex: 0,
+        transactionHash: '0xtransfer-out'
+      }
+    ])
+  })
+
+  it('builds every current vault row from event assets and sparse PPS values', () => {
+    const events = [
+      baseEvent({
+        kind: 'deposit',
+        id: 'deposit',
+        shares: 100n * ONE,
+        assets: 95n * ONE,
+        owner: USER,
+        sender: USER
+      }),
+      baseEvent({
+        kind: 'transfer',
+        id: 'genuine-transfer-out',
+        blockNumber: 2,
+        blockTimestamp: 200,
+        transactionHash: '0xtransfer-out',
+        sender: USER,
+        receiver: OTHER,
+        shares: 20n * ONE
+      })
+    ]
+    const [requirement] = getProtocolReturnHistoricalPpsRequirements(events, USER)
+    const [vault] = buildProtocolReturnVaultRowSummaries({
+      events,
+      userAddress: USER,
+      metadata,
+      currentTimestamp: 300,
+      currentPps: [{ chainId: 1, vaultAddress: VAULT, pricePerShare: 1.2 }],
+      historicalPps: [{ key: requirement!.key, pricePerShare: 1.1 }]
+    })
+
+    expect(vault?.status).toBe('ok')
+    expect(vault?.sharesFormatted).toBeCloseTo(80)
+    expect(vault?.currentUnderlying).toBeCloseTo(96)
+    expect(vault?.baselineUnderlying).toBeCloseTo(95)
+    expect(vault?.growthUnderlying).toBeCloseTo(23)
+    expect(vault?.growthPct).toBeCloseTo((23 / 95) * 100)
+    const expectedExposureYears = (95 * 100 + 76 * 100) / (365 * 24 * 60 * 60)
+    expect(vault?.baselineExposureUnderlyingYears).toBeCloseTo(expectedExposureYears)
+    expect(vault?.annualizedProtocolReturnPct).toBeCloseTo((23 / expectedExposureYears) * 100)
+  })
+
+  it('does not substitute current PPS when an exact transfer PPS is missing', () => {
+    const events = [
+      baseEvent({
+        kind: 'deposit',
+        id: 'deposit',
+        shares: 100n * ONE,
+        assets: 95n * ONE,
+        owner: USER,
+        sender: USER
+      }),
+      baseEvent({
+        kind: 'transfer',
+        id: 'genuine-transfer-out',
+        blockNumber: 2,
+        blockTimestamp: 200,
+        transactionHash: '0xtransfer-out',
+        sender: USER,
+        receiver: OTHER,
+        shares: 20n * ONE
+      })
+    ]
+    const [vault] = buildProtocolReturnVaultRowSummaries({
+      events,
+      userAddress: USER,
+      metadata,
+      currentTimestamp: 300,
+      currentPps: [{ chainId: 1, vaultAddress: VAULT, pricePerShare: 1.2 }],
+      historicalPps: []
+    })
+
+    expect(vault?.status).toBe('missing_pps')
+    expect(vault?.issues).toContain('missing_pps')
+    expect(vault?.annualizedProtocolReturnPct).toBeNull()
+    expect(vault?.transfersOut).toBe(0)
+  })
+
+  it('leaves annualized row return unavailable when capital has no elapsed exposure', () => {
+    const [vault] = buildProtocolReturnVaultRowSummaries({
+      events: [
+        baseEvent({
+          kind: 'deposit',
+          id: 'deposit-at-cutoff',
+          blockTimestamp: 300,
+          shares: 100n * ONE,
+          assets: 100n * ONE,
+          owner: USER,
+          sender: USER
+        })
+      ],
+      userAddress: USER,
+      metadata,
+      currentTimestamp: 300,
+      currentPps: [{ chainId: 1, vaultAddress: VAULT, pricePerShare: 1.1 }],
+      historicalPps: []
+    })
+
+    expect(vault?.status).toBe('ok')
+    expect(vault?.baselineExposureUnderlyingYears).toBe(0)
+    expect(vault?.annualizedProtocolReturnPct).toBeNull()
+  })
+
+  it('reports and consumes an exact family PPS for staking-wrapper events', () => {
+    const underlyingVault = '0x182863131F9a4630fF9E27830d945B1413e347E8'
+    const stakingVault = '0xd57aea3686d623da2dcebc87010a4f2f38ac7b15'
+    const stakingVaultKey = toVaultKey(1, underlyingVault)
+    const stakingMetadata = new Map<string, VaultMetadata>([
+      [
+        stakingVaultKey,
+        {
+          address: underlyingVault,
+          chainId: 1,
+          version: 'v3',
+          category: 'stable',
+          token: {
+            address: ASSET,
+            symbol: 'TST',
+            decimals: 18
+          },
+          decimals: 18
+        }
+      ]
+    ])
+    const events = [
+      baseEvent({
+        kind: 'deposit',
+        id: 'staking-deposit',
+        vaultAddress: stakingVault,
+        familyVaultAddress: underlyingVault,
+        isStakingVault: true,
+        shares: 100n * ONE,
+        assets: 100n * ONE,
+        owner: USER,
+        sender: USER
+      })
+    ]
+    const [requirement] = getProtocolReturnHistoricalPpsRequirements(events, USER)
+
+    expect(requirement).toEqual({
+      key: `${stakingVaultKey}:1:0:0xstaking-deposit`,
+      reason: 'staking-wrapper',
+      eventKind: 'deposit',
+      chainId: 1,
+      vaultAddress: underlyingVault,
+      blockNumber: 1,
+      blockTimestamp: 100,
+      logIndex: 0,
+      transactionHash: '0xstaking-deposit'
+    })
+
+    const [vault] = buildProtocolReturnVaultRowSummaries({
+      events,
+      userAddress: USER,
+      metadata: stakingMetadata,
+      currentTimestamp: 300,
+      currentPps: [{ chainId: 1, vaultAddress: underlyingVault, pricePerShare: 1.2 }],
+      historicalPps: [{ key: requirement!.key, pricePerShare: 1.1 }]
+    })
+
+    expect(vault?.status).toBe('ok')
+    expect(vault?.baselineUnderlying).toBeCloseTo(110)
+    expect(vault?.currentUnderlying).toBeCloseTo(120)
+    expect(vault?.growthUnderlying).toBeCloseTo(10)
+    expect(vault?.growthPct).toBeCloseTo((10 / 110) * 100)
   })
 
   it('values direct receipts and exits consistently from PPS in address-only mode', () => {

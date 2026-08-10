@@ -9,6 +9,7 @@ interface KongVault {
   chainId: number
   symbol: string
   decimals: number
+  pricePerShare?: string | number | null
   v3?: boolean
   category?: string | null
   isHidden?: boolean
@@ -33,6 +34,9 @@ interface KongVaultSnapshot {
   meta?: {
     category?: string | null
     isHidden?: boolean
+  } | null
+  apy?: {
+    pricePerShare?: string | number | null
   } | null
   asset?: {
     address: string
@@ -162,6 +166,18 @@ function resolveVaultCategory(args: {
   return normalizeVaultCategory(args.category) ?? deriveVaultCategory([args.assetSymbol, args.vaultSymbol])
 }
 
+function normalizeCurrentPricePerShare(
+  value: string | number | null | undefined,
+  decimals: number
+): number | undefined {
+  if (value === null || value === undefined || !Number.isInteger(decimals) || decimals < 0) {
+    return undefined
+  }
+
+  const normalized = Number(value) / 10 ** decimals
+  return Number.isFinite(normalized) && normalized > 0 ? normalized : undefined
+}
+
 function wait(delayMs: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, delayMs))
 }
@@ -192,6 +208,7 @@ function buildMetadataMaps(vaults: KongVault[]): {
   }>(
     (maps, vault) => {
       const version = inferVaultVersion(vault)
+      const currentPricePerShare = normalizeCurrentPricePerShare(vault.pricePerShare, vault.asset.decimals)
       const metadata: VaultMetadata = {
         address: vault.address.toLowerCase(),
         chainId: vault.chainId,
@@ -202,6 +219,7 @@ function buildMetadataMaps(vaults: KongVault[]): {
           assetSymbol: vault.asset.symbol,
           vaultSymbol: vault.symbol
         }),
+        ...(currentPricePerShare === undefined ? {} : { currentPricePerShare }),
         token: {
           address: vault.asset.address.toLowerCase(),
           symbol: vault.asset.symbol,
@@ -277,6 +295,8 @@ function buildMetadataFromSnapshot(snapshot: KongVaultSnapshot): VaultMetadata |
     return null
   }
 
+  const currentPricePerShare = normalizeCurrentPricePerShare(snapshot.apy?.pricePerShare, snapshot.asset.decimals)
+
   return {
     address: snapshot.address.toLowerCase(),
     chainId: snapshot.chainId,
@@ -287,6 +307,7 @@ function buildMetadataFromSnapshot(snapshot: KongVaultSnapshot): VaultMetadata |
       assetSymbol: snapshot.asset.symbol,
       vaultSymbol: snapshot.symbol
     }),
+    ...(currentPricePerShare === undefined ? {} : { currentPricePerShare }),
     token: {
       address: snapshot.asset.address.toLowerCase(),
       symbol: snapshot.asset.symbol,

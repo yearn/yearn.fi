@@ -15,7 +15,7 @@ import {
   type TLedgerStreamCoverageV1
 } from '@/server/lib/holdings/services/ledger/types'
 
-export const LEDGER_CALCULATION_VERSION = 'canonical-envio-ledger-v2'
+export const LEDGER_CALCULATION_VERSION = 'canonical-envio-ledger-v3'
 export const LEDGER_ENVIO_QUERY_VERSION = 'envio-block-keyset-v1'
 
 export type TLedgerSyncType = 'bootstrap' | 'warm' | 'reconcile' | 'forced-reset' | 'source-reset'

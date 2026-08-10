@@ -384,6 +384,7 @@ describe('getHoldingsProtocolReturnHistory', () => {
   })
 
   it('uses only address-scoped ledger events when transaction enrichment is disabled', async () => {
+    getPPSMock.mockReturnValue(1.1)
     const eventSource = createEventSource('ledger:revision-address-only')
     getSettledVersionedPpsContextMock.mockResolvedValue({
       ...settledContext,
@@ -410,6 +411,7 @@ describe('getHoldingsProtocolReturnHistory', () => {
     )
 
     expect(response.summary.totalVaults).toBe(1)
+    expect(response.dataPoints.at(-1)?.protocolReturnPct).toBeCloseTo(10)
     expect(fetchActivityEventsByTransactionHashesMock).not.toHaveBeenCalled()
   })
 

@@ -230,6 +230,63 @@ export interface HoldingsPnLSimpleHistoryResponse {
   familySeries: HoldingsPnLSimpleHistoryFamilySeries[]
 }
 
+export type TProtocolReturnHistoricalPpsReason = 'transfer' | 'staking-wrapper'
+
+export interface TProtocolReturnHistoricalPpsRequirement {
+  key: string
+  reason: TProtocolReturnHistoricalPpsReason
+  eventKind: TRawPnlEvent['kind']
+  chainId: number
+  vaultAddress: string
+  blockNumber: number
+  blockTimestamp: number
+  logIndex: number
+  transactionHash: string
+}
+
+export interface TProtocolReturnHistoricalPpsValue {
+  key: string
+  pricePerShare: number
+}
+
+export interface TProtocolReturnCurrentPpsValue {
+  chainId: number
+  vaultAddress: string
+  pricePerShare: number
+}
+
+export type THoldingsProtocolReturnVaultRowStatus = 'ok' | 'missing_metadata' | 'missing_pps' | 'partial'
+export type THoldingsProtocolReturnVaultRowIssue = 'missing_metadata' | 'missing_pps' | 'unmatched_exit'
+
+export interface HoldingsProtocolReturnVaultRowSummary {
+  chainId: number
+  vaultAddress: string
+  status: THoldingsProtocolReturnVaultRowStatus
+  issues: THoldingsProtocolReturnVaultRowIssue[]
+  shares: string
+  sharesFormatted: number
+  pricePerShare: number
+  currentUnderlying: number
+  baselineUnderlying: number
+  realizedBaselineUnderlying: number
+  unrealizedBaselineUnderlying: number
+  realizedGrowthUnderlying: number
+  unrealizedGrowthUnderlying: number
+  growthUnderlying: number
+  growthPct: number | null
+  baselineExposureUnderlyingYears: number
+  annualizedProtocolReturnPct: number | null
+  receiptCount: number
+  exitCount: number
+  deposits: number
+  withdrawals: number
+  transfersIn: number
+  transfersOut: number
+  unmatchedExitShares: string
+  unmatchedExitSharesFormatted: number
+  metadata: HoldingsPnLSimpleVault['metadata']
+}
+
 type TProtocolReturnHistoryCalculation = {
   response: HoldingsPnLSimpleHistoryResponse
   vaults: TProtocolReturnVaultFilter[]
@@ -590,6 +647,22 @@ function getEventPps(ppsMap: Map<number, number> | undefined, timestamp: number)
   return ppsMap ? getPPS(ppsMap, timestamp) : null
 }
 
+function normalizePricePerShare(value: number | undefined): number | null {
+  return value !== undefined && Number.isFinite(value) && value > 0 ? value : null
+}
+
+export function getProtocolReturnHistoricalPpsKey(
+  event: Pick<TRawPnlEvent, 'chainId' | 'familyVaultAddress' | 'blockNumber' | 'logIndex' | 'transactionHash'>
+): string {
+  return [
+    event.chainId,
+    lowerCaseAddress(event.familyVaultAddress),
+    event.blockNumber,
+    event.logIndex,
+    lowerCaseAddress(event.transactionHash)
+  ].join(':')
+}
+
 function isKnownStakingWrapperEvent(event: TRawPnlEvent): boolean {
   const stakingVaultAddress = getStakingVaultAddress(event.chainId, event.familyVaultAddress)
   return stakingVaultAddress !== null && lowerCaseAddress(event.vaultAddress) === stakingVaultAddress
@@ -602,6 +675,7 @@ function valueDepositOrWithdrawalEvent(
     shareDecimals: number
     ppsMap: Map<number, number> | undefined
     valuationMode: TProtocolReturnValuationMode
+    historicalPpsByEvent?: ReadonlyMap<string, number>
   }
 ): {
   underlying: number
@@ -614,7 +688,9 @@ function valueDepositOrWithdrawalEvent(
     }
   }
 
-  const pps = getEventPps(args.ppsMap, event.blockTimestamp)
+  const pps = args.historicalPpsByEvent
+    ? normalizePricePerShare(args.historicalPpsByEvent.get(getProtocolReturnHistoricalPpsKey(event)))
+    : getEventPps(args.ppsMap, event.blockTimestamp)
   if (pps === null) {
     return {
       underlying: formatAmount(event.assets, args.assetDecimals),
@@ -855,6 +931,7 @@ function processEvent(
     priceData: Map<string, Map<number, number>>
     ethPriceData: Map<number, number>
     valuationMode: TProtocolReturnValuationMode
+    historicalPpsByEvent?: ReadonlyMap<string, number>
   }
 ): Map<string, TProtocolReturnLedger> {
   const vaultKey = toVaultKey(event.chainId, event.familyVaultAddress)
@@ -874,7 +951,8 @@ function processEvent(
       assetDecimals,
       shareDecimals,
       ppsMap,
-      valuationMode: args.valuationMode
+      valuationMode: args.valuationMode,
+      historicalPpsByEvent: args.historicalPpsByEvent
     })
     ledgers.set(
       vaultKey,
@@ -896,7 +974,8 @@ function processEvent(
       assetDecimals,
       shareDecimals,
       ppsMap,
-      valuationMode: args.valuationMode
+      valuationMode: args.valuationMode,
+      historicalPpsByEvent: args.historicalPpsByEvent
     })
     ledgers.set(
       vaultKey,
@@ -914,7 +993,9 @@ function processEvent(
     return ledgers
   }
 
-  const pps = getEventPps(ppsMap, event.blockTimestamp)
+  const pps = args.historicalPpsByEvent
+    ? normalizePricePerShare(args.historicalPpsByEvent.get(getProtocolReturnHistoricalPpsKey(event)))
+    : getEventPps(ppsMap, event.blockTimestamp)
   if (pps === null) {
     ledgers.set(vaultKey, { ...currentLedger, missingPps: true })
     return ledgers
@@ -1607,6 +1688,60 @@ function normalizeStakingWrapperEvents(txFamilyEvents: TRawPnlEvent[], userAddre
   return remainingEvents
 }
 
+function buildProcessableProtocolReturnEvents(events: TRawPnlEvent[], userAddress: string): TRawPnlEvent[] {
+  const normalizedUserAddress = lowerCaseAddress(userAddress)
+  return groupEventsByTransaction(buildEffectiveSimpleEvents(events, normalizedUserAddress)).flatMap((txEvents) =>
+    groupTransactionEventsByFamily(txEvents).flatMap((txFamilyEvents) =>
+      normalizeStakingWrapperEvents(txFamilyEvents, normalizedUserAddress)
+    )
+  )
+}
+
+export function getProtocolReturnHistoricalPpsRequirements(
+  events: TRawPnlEvent[],
+  userAddress: string
+): TProtocolReturnHistoricalPpsRequirement[] {
+  const normalizedUserAddress = lowerCaseAddress(userAddress)
+  const requirements = buildProcessableProtocolReturnEvents(events, normalizedUserAddress).reduce<
+    Map<string, TProtocolReturnHistoricalPpsRequirement>
+  >((byKey, event) => {
+    const isStakingWrapper =
+      (event.kind === 'deposit' || event.kind === 'withdrawal') && isKnownStakingWrapperEvent(event)
+    if (event.kind !== 'transfer' && !isStakingWrapper) {
+      return byKey
+    }
+
+    if (event.kind === 'transfer') {
+      const sender = lowerCaseAddress(event.sender)
+      const receiver = lowerCaseAddress(event.receiver)
+      if (
+        (sender !== normalizedUserAddress && receiver !== normalizedUserAddress) ||
+        (sender === normalizedUserAddress && receiver === normalizedUserAddress)
+      ) {
+        return byKey
+      }
+    }
+
+    const key = getProtocolReturnHistoricalPpsKey(event)
+    if (!byKey.has(key)) {
+      byKey.set(key, {
+        key,
+        reason: event.kind === 'transfer' ? 'transfer' : 'staking-wrapper',
+        eventKind: event.kind,
+        chainId: event.chainId,
+        vaultAddress: event.familyVaultAddress,
+        blockNumber: event.blockNumber,
+        blockTimestamp: event.blockTimestamp,
+        logIndex: event.logIndex,
+        transactionHash: event.transactionHash
+      })
+    }
+    return byKey
+  }, new Map())
+
+  return Array.from(requirements.values())
+}
+
 function getProtocolReturnTimestamps(
   events: TRawPnlEvent[],
   timeframe: '1y' | 'all',
@@ -1726,6 +1861,7 @@ export function buildProtocolReturnLedgers(args: {
   ethPriceData?: Map<number, number>
   currentTimestamp?: number
   valuationMode?: TProtocolReturnValuationMode
+  historicalPpsByEvent?: ReadonlyMap<string, number>
 }): Map<string, TProtocolReturnLedger> {
   const userAddress = lowerCaseAddress(args.userAddress)
   const effectiveEvents = buildEffectiveSimpleEvents(args.events, userAddress)
@@ -1738,7 +1874,8 @@ export function buildProtocolReturnLedgers(args: {
           ppsData: args.ppsData,
           priceData: args.priceData,
           ethPriceData: args.ethPriceData ?? new Map(),
-          valuationMode: args.valuationMode ?? 'event-assets'
+          valuationMode: args.valuationMode ?? 'event-assets',
+          historicalPpsByEvent: args.historicalPpsByEvent
         })
       })
     })
@@ -1870,13 +2007,18 @@ export function materializeProtocolReturnVaults(args: {
   metadata: Map<string, VaultMetadata>
   ppsData: Map<string, Map<number, number>>
   currentTimestamp: number
+  currentPpsByVault?: ReadonlyMap<string, number>
 }): HoldingsPnLSimpleVault[] {
   return Array.from(args.ledgers.values()).map((ledger) => {
     const vaultKey = toVaultKey(ledger.chainId, ledger.vaultAddress)
     const metadata = args.metadata.get(vaultKey)
     const shareDecimals = metadata?.decimals ?? 18
     const ppsMap = args.ppsData.get(vaultKey)
-    const currentPps = ppsMap ? getPPS(ppsMap, args.currentTimestamp) : null
+    const currentPps = args.currentPpsByVault
+      ? normalizePricePerShare(args.currentPpsByVault.get(vaultKey))
+      : ppsMap
+        ? getPPS(ppsMap, args.currentTimestamp)
+        : null
     const currentShares = ledger.lots.reduce((total, lot) => total + lot.shares, ZERO)
     const sharesFormatted = formatAmount(currentShares, shareDecimals)
     const currentUnderlying = currentPps === null ? 0 : sharesFormatted * currentPps
@@ -1935,6 +2077,89 @@ export function materializeProtocolReturnVaults(args: {
         assetDecimals: metadata?.token.decimals ?? 18,
         tokenAddress: metadata?.token.address ?? null
       }
+    }
+  })
+}
+
+/**
+ * Builds current per-vault growth rows without loading a daily PPS timeline.
+ * Deposit and withdrawal basis comes from emitted assets, so no historical
+ * token prices are required. Transfer and staking-wrapper PPS values are exact,
+ * event-keyed inputs; missing values remain visible as missing_pps.
+ */
+export function buildProtocolReturnVaultRowSummaries(args: {
+  events: TRawPnlEvent[]
+  userAddress: string
+  metadata: Map<string, VaultMetadata>
+  currentTimestamp: number
+  currentPps: readonly TProtocolReturnCurrentPpsValue[]
+  historicalPps: readonly TProtocolReturnHistoricalPpsValue[]
+}): HoldingsProtocolReturnVaultRowSummary[] {
+  const currentPpsByVault = new Map(
+    args.currentPps.map((value) => [toVaultKey(value.chainId, value.vaultAddress), value.pricePerShare] as const)
+  )
+  const historicalPpsByEvent = new Map(args.historicalPps.map((value) => [value.key, value.pricePerShare] as const))
+  const ppsData = new Map<string, Map<number, number>>()
+  const ledgers = buildProtocolReturnLedgers({
+    events: args.events,
+    userAddress: args.userAddress,
+    metadata: args.metadata,
+    ppsData,
+    priceData: new Map(),
+    currentTimestamp: args.currentTimestamp,
+    valuationMode: 'event-assets',
+    historicalPpsByEvent
+  })
+
+  return materializeProtocolReturnVaults({
+    ledgers,
+    metadata: args.metadata,
+    ppsData,
+    currentTimestamp: args.currentTimestamp,
+    currentPpsByVault
+  }).map((vault) => {
+    const issues = vault.issues.filter(
+      (issue): issue is THoldingsProtocolReturnVaultRowIssue => issue !== 'missing_receipt_price'
+    )
+    const status: THoldingsProtocolReturnVaultRowStatus = issues.includes('missing_metadata')
+      ? 'missing_metadata'
+      : issues.includes('missing_pps')
+        ? 'missing_pps'
+        : issues.includes('unmatched_exit')
+          ? 'partial'
+          : 'ok'
+    const rowAnnualizedProtocolReturnPct =
+      status === 'ok'
+        ? annualizedProtocolReturnPct(vault.growthUnderlying, vault.baselineExposureUnderlyingYears)
+        : null
+
+    return {
+      chainId: vault.chainId,
+      vaultAddress: vault.vaultAddress,
+      status,
+      issues,
+      shares: vault.shares,
+      sharesFormatted: vault.sharesFormatted,
+      pricePerShare: vault.pricePerShare,
+      currentUnderlying: vault.currentUnderlying,
+      baselineUnderlying: vault.baselineUnderlying,
+      realizedBaselineUnderlying: vault.realizedBaselineUnderlying,
+      unrealizedBaselineUnderlying: vault.unrealizedBaselineUnderlying,
+      realizedGrowthUnderlying: vault.realizedGrowthUnderlying,
+      unrealizedGrowthUnderlying: vault.unrealizedGrowthUnderlying,
+      growthUnderlying: vault.growthUnderlying,
+      growthPct: protocolReturnPct(vault.growthUnderlying, vault.baselineUnderlying),
+      baselineExposureUnderlyingYears: vault.baselineExposureUnderlyingYears,
+      annualizedProtocolReturnPct: rowAnnualizedProtocolReturnPct,
+      receiptCount: vault.receiptCount,
+      exitCount: vault.exitCount,
+      deposits: vault.deposits,
+      withdrawals: vault.withdrawals,
+      transfersIn: vault.transfersIn,
+      transfersOut: vault.transfersOut,
+      unmatchedExitShares: vault.unmatchedExitShares,
+      unmatchedExitSharesFormatted: vault.unmatchedExitSharesFormatted,
+      metadata: vault.metadata
     }
   })
 }
@@ -2213,7 +2438,7 @@ async function calculateHoldingsProtocolReturnHistory(
   options: THoldingsAggregationOptions = {}
 ): Promise<TProtocolReturnHistoryCalculation> {
   const eventEnrichment = options.protocolReturnEventEnrichment ?? 'transaction'
-  const valuationMode: TProtocolReturnValuationMode = eventEnrichment === 'address-only' ? 'pps' : 'event-assets'
+  const valuationMode: TProtocolReturnValuationMode = 'event-assets'
   debugLog('protocol-return-history', 'starting holdings protocol return history calculation', {
     version,
     fetchType,

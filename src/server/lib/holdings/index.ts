@@ -40,10 +40,19 @@ export {
   type VaultVersion
 } from './services/graphql'
 export {
+  buildProtocolReturnVaultRowSummaries,
   getHoldingsProtocolReturnHistory,
+  getProtocolReturnHistoricalPpsRequirements,
   type HoldingsPnLSimpleHistoryPoint,
   type HoldingsPnLSimpleHistoryResponse,
-  type THoldingsPnLSimpleStatus
+  type HoldingsProtocolReturnVaultRowSummary,
+  type THoldingsPnLSimpleStatus,
+  type THoldingsProtocolReturnVaultRowIssue,
+  type THoldingsProtocolReturnVaultRowStatus,
+  type TProtocolReturnCurrentPpsValue,
+  type TProtocolReturnHistoricalPpsReason,
+  type TProtocolReturnHistoricalPpsRequirement,
+  type TProtocolReturnHistoricalPpsValue
 } from './services/pnlSimple'
 export {
   ensureHoldingsStorageInitialized,

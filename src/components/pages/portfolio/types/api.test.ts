@@ -1,5 +1,11 @@
 import { describe, expect, it } from 'vitest'
-import { portfolioActivityFacetsResponseSchema, portfolioActivityResponseSchema } from './api'
+import {
+  portfolioActivityFacetsResponseSchema,
+  portfolioActivityResponseSchema,
+  portfolioLedgerGrowthResponseSchema,
+  portfolioLedgerHistoryResponseSchema,
+  portfolioLedgerSnapshotResponseSchema
+} from './api'
 
 describe('portfolioActivityResponseSchema', () => {
   it('accepts transfer activity entries with a direction', () => {
@@ -139,5 +145,123 @@ describe('portfolioActivityFacetsResponseSchema', () => {
     })
 
     expect(parsed.facets.chainIds).toEqual([1, 8453])
+  })
+})
+
+describe('portfolio ledger schemas', () => {
+  it('accepts a ready server-issued snapshot', () => {
+    const parsed = portfolioLedgerSnapshotResponseSchema.parse({
+      status: 'ready',
+      snapshotId: `snapshot_${'a'.repeat(32)}`,
+      revision: 'revision-1',
+      sourceGeneration: 2,
+      headSource: 'active',
+      freshness: 'refreshed',
+      latestSettledDayTimestamp: 1_786_060_800,
+      eventUpperTimestamp: 1_786_147_200,
+      expiresAtMs: 1_786_149_000_000
+    })
+
+    expect(parsed.snapshotId).toBe(`snapshot_${'a'.repeat(32)}`)
+  })
+
+  it('composes existing balance and protocol-return contracts in one response', () => {
+    const parsed = portfolioLedgerHistoryResponseSchema.parse({
+      address: '0x2222222222222222222222222222222222222222',
+      version: 'all',
+      denomination: 'usd',
+      timeframe: '1y',
+      balance: {
+        address: '0x2222222222222222222222222222222222222222',
+        denomination: 'usd',
+        timeframe: '1y',
+        dataPoints: [{ date: '2026-08-07', value: 125 }]
+      },
+      protocolReturn: {
+        address: '0x2222222222222222222222222222222222222222',
+        timeframe: '1y',
+        summary: {
+          totalVaults: 1,
+          completeVaults: 1,
+          partialVaults: 0,
+          recommendedGrowthDisplay: 'usd',
+          recommendedGrowthDisplayReason: 'stable_dominant',
+          openBaselineCompositionUsd: { stable: 100, ethFamily: 0, other: 0 },
+          isComplete: true
+        },
+        dataPoints: [
+          {
+            date: '2026-08-07',
+            growthWeightUsd: 25,
+            growthWeightEth: null,
+            protocolReturnPct: 25,
+            annualizedProtocolReturnPct: 30,
+            growthIndex: 125
+          }
+        ],
+        familySeries: []
+      }
+    })
+
+    expect(parsed.balance.dataPoints).toHaveLength(1)
+    expect(parsed.protocolReturn.dataPoints).toHaveLength(1)
+  })
+
+  it('accepts fast underlying growth rows', () => {
+    const parsed = portfolioLedgerGrowthResponseSchema.parse({
+      address: '0x2222222222222222222222222222222222222222',
+      version: 'all',
+      generatedAt: '2026-08-08T12:00:00.000Z',
+      summary: {
+        totalVaults: 1,
+        completeVaults: 1,
+        partialVaults: 0,
+        historicalPpsRequirements: 1,
+        historicalPpsCacheHits: 1,
+        historicalPpsFetched: 0,
+        historicalPpsMissing: 0,
+        currentPpsFallbackVaults: 0,
+        isComplete: true
+      },
+      vaults: [
+        {
+          chainId: 1,
+          vaultAddress: '0x3333333333333333333333333333333333333333',
+          status: 'ok',
+          issues: [],
+          shares: '1000000',
+          sharesFormatted: 1,
+          pricePerShare: 1.25,
+          currentUnderlying: 1.25,
+          baselineUnderlying: 1,
+          realizedBaselineUnderlying: 0,
+          unrealizedBaselineUnderlying: 1,
+          realizedGrowthUnderlying: 0,
+          unrealizedGrowthUnderlying: 0.25,
+          growthUnderlying: 0.25,
+          growthPct: 25,
+          baselineExposureUnderlyingYears: 1,
+          annualizedProtocolReturnPct: 25,
+          receiptCount: 1,
+          exitCount: 0,
+          deposits: 1,
+          withdrawals: 0,
+          transfersIn: 0,
+          transfersOut: 0,
+          unmatchedExitShares: '0',
+          unmatchedExitSharesFormatted: 0,
+          metadata: {
+            symbol: 'USDC',
+            decimals: 6,
+            assetDecimals: 6,
+            tokenAddress: '0x4444444444444444444444444444444444444444'
+          }
+        }
+      ]
+    })
+
+    expect(parsed.vaults[0]?.growthUnderlying).toBe(0.25)
+    expect(parsed.vaults[0]?.growthPct).toBe(25)
+    expect(parsed.vaults[0]?.annualizedProtocolReturnPct).toBe(25)
   })
 })

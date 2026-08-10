@@ -18,7 +18,12 @@ import type { TLedgerPipelineRedis } from '@/server/lib/holdings/services/ledger
 import { getHoldingsLedgerRedisClient } from '@/server/lib/holdings/storage/ledgerRedis'
 
 type TLedgerDerivedHandler = (request: Request, options: THoldingsAggregationOptions) => Promise<Response>
-type TLedgerDerivedDebugRoute = 'ledger-history' | 'ledger-breakdown' | 'ledger-protocol-return-history'
+type TLedgerDerivedDebugRoute =
+  | 'ledger-history'
+  | 'ledger-breakdown'
+  | 'ledger-growth'
+  | 'ledger-protocol-return-history'
+  | 'ledger-portfolio-history'
 
 function getSnapshotResponseHeaders(args: {
   readonly snapshotId: string
