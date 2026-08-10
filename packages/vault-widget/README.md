@@ -123,7 +123,12 @@ The headless entry point has no React or Wagmi dependency. It converts plain
 deposit or withdrawal intents into ordered approval, chain-switch, execution,
 Safe proposal, and refresh steps. `executeTransactionPlan` runs the result
 through an injected `VaultWidgetExecutionAdapter`, waits for every receipt,
-reports progress, and preserves partial outcomes in typed errors. Hosts can
-therefore inspect, simulate, or execute the same plan with their wallet stack
-while the styled widget continues using the existing production flow during
-the incremental migration.
+reports progress, and preserves partial outcomes in typed errors.
+
+The styled widget already uses this path for ready, same-chain, single-request
+EOA deposits and withdrawals when the host supplies a complete execution
+adapter. Approval, Safe, Enso, cross-chain, chain-switch, and dynamic
+unstake-then-withdraw flows intentionally retain the established production
+state machine until their confirmation and resume semantics are represented by
+the public plan contract. If no complete execution adapter is configured, all
+flows continue through that legacy path.

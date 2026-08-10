@@ -2,6 +2,7 @@ import type { VaultWidgetExecutionAdapter } from '@yearn/vault-widget/headless'
 import {
   createVaultWidgetRuntime,
   DEFAULT_VAULT_WIDGET_RUNTIME,
+  isVaultWidgetExecutionConfigured,
   useVaultWidgetRuntime,
   type VaultWidgetRuntime,
   VaultWidgetRuntimeProvider
@@ -38,6 +39,7 @@ describe('createVaultWidgetRuntime', () => {
     expect(runtime.routing.isEnsoEnabled({ chainId: 1 })).toBe(false)
     expect(runtime.prices.getUsdPrice(TOKEN)).toBe(0)
     expect(runtime.assets.getTokenLogoUrl(TOKEN)).toBeUndefined()
+    expect(isVaultWidgetExecutionConfigured(runtime)).toBe(false)
     expect(
       await runtime.notifications.create({
         amount: '1',
@@ -94,6 +96,7 @@ describe('createVaultWidgetRuntime', () => {
 
     await expect(runtime.execution.execute({ account: ACCOUNT, request: REQUEST })).resolves.toBe(HASH)
     expect(runtime.execution.execute).toBe(execute)
+    expect(isVaultWidgetExecutionConfigured(runtime)).toBe(false)
     await expect(runtime.execution.switchChain({ chainId: 1 })).rejects.toThrow(
       'Vault widget transaction execution is not configured'
     )
@@ -162,6 +165,7 @@ describe('createVaultWidgetRuntime', () => {
     expect(observed.current?.execution.execute).toBe(childExecute)
     expect(observed.current?.execution.switchChain).toBe(switchChain)
     expect(observed.current?.execution.waitForReceipt).toBe(waitForReceipt)
+    expect(observed.current && isVaultWidgetExecutionConfigured(observed.current)).toBe(true)
     expect(parentExecute).not.toHaveBeenCalled()
   })
 })

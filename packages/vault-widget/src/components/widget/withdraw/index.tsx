@@ -1,4 +1,6 @@
+import type { VaultWidgetTransactionPlan } from '@yearn/vault-widget/headless'
 import { Button } from '@yearn/vault-widget/internal/components/shared/Button'
+import { buildEligibleStyledWidgetPlan } from '@yearn/vault-widget/internal/components/widget/shared/plannedTransaction'
 import { useDebouncedInput } from '@yearn/vault-widget/internal/hooks/useDebouncedInput'
 import { useVaultWidgetSpotPrices } from '@yearn/vault-widget/internal/hooks/useVaultWidgetSpotPrices'
 import { IconChevron } from '@yearn/vault-widget/internal/icons/IconChevron'
@@ -6,7 +8,7 @@ import { IconCross } from '@yearn/vault-widget/internal/icons/IconCross'
 import { IconSettings } from '@yearn/vault-widget/internal/icons/IconSettings'
 import { cl, formatTAmount, toAddress, toNormalizedBN } from '@yearn/vault-widget/internal/utils'
 import { toBasisPoints } from '@yearn/vault-widget/internal/utils/slippage'
-import { useVaultWidgetRuntime } from '@yearn/vault-widget/runtime'
+import { isVaultWidgetExecutionConfigured, useVaultWidgetRuntime } from '@yearn/vault-widget/runtime'
 import type { ReactElement, ReactNode } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { formatUnits } from 'viem'
@@ -148,6 +150,7 @@ export function WidgetWithdraw({
   const [showWithdrawDetailsModal, setShowWithdrawDetailsModal] = useState(false)
   const [showApprovalOverlay, setShowApprovalOverlay] = useState(false)
   const [showTransactionOverlay, setShowTransactionOverlay] = useState(false)
+  const [activeTransactionPlan, setActiveTransactionPlan] = useState<VaultWidgetTransactionPlan | undefined>()
   const [internalWithdrawalSource, setWithdrawalSource] = useState<WithdrawalSource>(stakingAddress ? null : 'vault')
   const withdrawalSource = forcedWithdrawalSource ?? internalWithdrawalSource
   const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false)
@@ -833,6 +836,48 @@ export function WidgetWithdraw({
     ]
   )
 
+  const eligibleTransactionPlan = useMemo(
+    () =>
+      buildEligibleStyledWidgetPlan({
+        canonicalChainId: chainId,
+        connectedCanonicalChainId: runtime.chains.resolveCanonicalChainId(runtime.wallet.chainId),
+        hasBatch: Boolean(currentStep?.batch),
+        id: [
+          'withdraw',
+          routeType,
+          sourceToken,
+          withdrawToken,
+          destinationChainId,
+          withdrawAmount.debouncedBn.toString()
+        ].join(':'),
+        isCrossChain,
+        isEnabled: currentStep?.isEnabled,
+        isExecutionConfigured: isVaultWidgetExecutionConfigured(runtime),
+        isPermit: Boolean(currentStep?.isPermit),
+        isWalletSafe,
+        label: currentStep?.label ?? 'Withdraw',
+        mode: 'withdraw',
+        needsApproval: approvalState.needsApproval,
+        prepare: currentStep?.prepare,
+        routeType
+      }),
+    [
+      approvalState.needsApproval,
+      chainId,
+      currentStep,
+      destinationChainId,
+      isCrossChain,
+      isWalletSafe,
+      routeType,
+      runtime.chains,
+      runtime.execution,
+      runtime.wallet.chainId,
+      sourceToken,
+      withdrawAmount.debouncedBn,
+      withdrawToken
+    ]
+  )
+
   const isLastStep = useMemo(
     () =>
       isWithdrawLastStep({
@@ -877,8 +922,14 @@ export function WidgetWithdraw({
     if (routeType === 'DIRECT_UNSTAKE_WITHDRAW' && fallbackStep === 'unstake' && isMaxWithdraw) {
       setVaultSharesBeforeUnstake(vault?.balance.raw ?? 0n)
     }
+    setActiveTransactionPlan(eligibleTransactionPlan)
     setShowTransactionOverlay(true)
-  }, [routeType, fallbackStep, isMaxWithdraw, vault?.balance.raw])
+  }, [eligibleTransactionPlan, routeType, fallbackStep, isMaxWithdraw, vault?.balance.raw])
+
+  const handleCloseTransactionOverlay = useCallback(() => {
+    setShowTransactionOverlay(false)
+    setActiveTransactionPlan(undefined)
+  }, [])
 
   // Called by TransactionOverlay after the final tx confirms, while the overlay
   // is in "refreshing" state. Awaiting the balance refetch ensures the success
@@ -1181,7 +1232,8 @@ export function WidgetWithdraw({
       {/* Transaction Overlay */}
       <TransactionOverlay
         isOpen={showTransactionOverlay}
-        onClose={() => setShowTransactionOverlay(false)}
+        onClose={handleCloseTransactionOverlay}
+        plan={activeTransactionPlan}
         step={currentStep}
         isLastStep={isLastStep}
         autoContinueToNextStep
