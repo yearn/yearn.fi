@@ -115,28 +115,23 @@ function addChainSwitchSteps(
 }
 
 function buildSafeProposalSteps(steps: readonly VaultWidgetRequestStep[]): VaultWidgetExecutionStep[] {
-  function groupByChain(remaining: readonly VaultWidgetRequestStep[], proposalIndex = 0): VaultWidgetExecutionStep[] {
-    const first = remaining[0]
-    if (!first) return []
+  const first = steps[0]
+  if (!first) return []
 
-    const nextChainBoundary = remaining.slice(1).findIndex(({ chainId }) => chainId !== first.chainId)
-    const groupLength = nextChainBoundary === -1 ? remaining.length : nextChainBoundary + 1
-    const group = remaining.slice(0, groupLength)
-    const requests = group.map(({ request }) => request)
-
-    return [
-      {
-        id: `safe-proposal-${first.chainId}-${proposalIndex}`,
-        kind: 'safe-proposal',
-        label: requests.length === 1 ? 'Propose transaction' : `Propose ${requests.length} transactions`,
-        chainId: first.chainId,
-        requests
-      },
-      ...groupByChain(remaining.slice(groupLength), proposalIndex + 1)
-    ]
+  if (steps.some(({ chainId }) => chainId !== first.chainId)) {
+    throw new Error('Safe transaction plans must use a single chain')
   }
 
-  return groupByChain(steps)
+  const requests = steps.map(({ request }) => request)
+  return [
+    {
+      id: `safe-proposal-${first.chainId}-0`,
+      kind: 'safe-proposal',
+      label: requests.length === 1 ? 'Propose transaction' : `Propose ${requests.length} transactions`,
+      chainId: first.chainId,
+      requests
+    }
+  ]
 }
 
 export function buildTransactionPlan({
