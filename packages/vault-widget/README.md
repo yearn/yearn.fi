@@ -79,6 +79,7 @@ Keep the dependency direction `apps/* -> packages/vault-widget`. Do not add a pa
 ## Entry points
 
 - `@yearn/vault-widget` — supported components, presets, runtime provider, and common types
+- `@yearn/vault-widget/headless` — pure transaction intent and plan types plus the plan builder
 - `@yearn/vault-widget/runtime` — runtime contracts and provider utilities
 - `@yearn/vault-widget/types` — widget data and prop types
 - `@yearn/vault-widget/ybold` — yBOLD addresses and preset policy
@@ -86,3 +87,9 @@ Keep the dependency direction `apps/* -> packages/vault-widget`. Do not add a pa
 - `@yearn/vault-widget/styles.css` — widget styles
 
 Paths under `@yearn/vault-widget/internal/*` are migration seams for the Yearn host and are not a stable API for new consumers.
+
+The headless entry point has no React or Wagmi dependency. It converts plain
+deposit or withdrawal intents into ordered approval, chain-switch, execution,
+Safe proposal, and refresh steps. A host can inspect or execute those plans
+with its own wallet integration while the styled widget continues using the
+existing production flow during the incremental migration.
