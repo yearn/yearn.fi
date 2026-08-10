@@ -9,6 +9,8 @@ bun install                                      # Install all workspace depende
 bun run dev                                      # Yearn dev server on 127.0.0.1:3000
 bun run preview                                  # Yearn production server after a build
 bun run build                                    # Build the Yearn app
+bun run dev:ybold                                # yBOLD dev server on 127.0.0.1:3002
+bun run build:ybold                              # Build the yBOLD app
 bun run test                                     # Run the Yearn Vitest suite
 bun run --cwd apps/yearn test -- src/path.test.ts # Run one Yearn test file
 bun run lint:fix                                 # Biome format and fix
@@ -73,6 +75,7 @@ The repository is a Bun workspace. The production application lives in
 
 **Key directories:**
 - `apps/yearn/app/` — Next App Router pages, route handlers, metadata, redirects, and root layout
+- `apps/ybold/` — standalone yBOLD app and second shared-widget consumer
 - `apps/yearn/src/components/shared/` — shared library (contexts, hooks, utils, types, contracts)
 - `apps/yearn/src/components/pages/` — route pages (landing, portfolio, vaults)
 - `apps/yearn/src/server/` — API implementations used by `apps/yearn/app/api/**/route.ts`

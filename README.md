@@ -37,9 +37,12 @@
 
 ### Install and run
 
-1. Run `bun install` from the repository root
-2. Run `bun run dev` (or `bun run dev:yearn`)
-3. Open the browser and navigate to `http://localhost:3000`
+1. Run `bun install` from the repository root.
+2. Run `bun run dev` (or `bun run dev:yearn`) for Yearn at `http://localhost:3000`.
+3. Run `bun run dev:ybold` for yBOLD at `http://localhost:3002`.
+
+Both apps consume the private `@yearn/vault-widget` source package from this
+workspace. No registry publish is required.
 
 ### Per-vault Enso denylist (disable zaps)
 
