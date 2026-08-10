@@ -47,7 +47,19 @@ function createUpdatedResult() {
     sourceGeneration: 3,
     events: { cached: 10, fetched: 2, added: 1, replaced: 1, deleted: 0, total: 11 },
     streams: { privateEvent: 'private-event-payload' },
-    envio: { pages: 2, rows: 12, chains: 2, validationQueries: 2, readyChains: 1, laggingChains: 1 },
+    envio: {
+      pages: 12,
+      rows: 12,
+      chains: 2,
+      validationQueries: 0,
+      strategy: 'warm-batched',
+      requests: 2,
+      presenceRequests: 0,
+      batchedRequests: 2,
+      continuationRequests: 0,
+      readyChains: 1,
+      laggingChains: 1
+    },
     storage: { chunks: 3, indexShards: 64, encodedBytes: 1_024, newBlobs: 2 },
     dirty: {
       fromTimestamp: 1_700_000_000,
@@ -95,6 +107,8 @@ describe('holdings ledger sync admin handler', () => {
     expect(output).toContain('completed holdings ledger sync request')
     expect(output).toContain('"durationMs":')
     expect(output).toContain('"totalEvents":11')
+    expect(output).toContain('"strategy":"warm-batched"')
+    expect(output).toContain('"requests":2')
     ;[
       ADDRESS,
       'revision_01',
@@ -163,7 +177,19 @@ describe('holdings ledger sync admin handler', () => {
       revision: 'revision_01',
       sourceGeneration: 3,
       eventCounts: { cached: 10, fetched: 2, added: 1, replaced: 1, deleted: 0, total: 11 },
-      envio: { pages: 2, rows: 12, chains: 2, validationQueries: 2, readyChains: 1, laggingChains: 1 },
+      envio: {
+        pages: 12,
+        rows: 12,
+        chains: 2,
+        validationQueries: 0,
+        strategy: 'warm-batched',
+        requests: 2,
+        presenceRequests: 0,
+        batchedRequests: 2,
+        continuationRequests: 0,
+        readyChains: 1,
+        laggingChains: 1
+      },
       storage: { chunks: 3, indexShards: 64, encodedBytes: 1_024, newBlobs: 2 },
       dirty: { fromTimestamp: 1_700_000_000, fromDate: '2023-11-14', reasons: ['tail_append'] },
       parity: { status: 'match', reasonCode: null },

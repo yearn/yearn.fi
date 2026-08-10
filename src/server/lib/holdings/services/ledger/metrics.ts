@@ -41,6 +41,10 @@ export interface TLedgerMetric {
   redisRequestCount?: number
   envioPages?: number
   envioRows?: number
+  envioRequestCount?: number
+  envioPresenceRequestCount?: number
+  envioBatchedRequestCount?: number
+  envioContinuationRequestCount?: number
   dirtyFromDate?: string
   dirtyReason?: TLedgerDirtyReasonCode
   syncReason?: 'bootstrap' | 'warm' | 'reconcile' | 'forced-reset'
@@ -107,6 +111,10 @@ export function reportLedgerMetric(metric: TLedgerMetric, logger: TLedgerMetricL
       redisRequestCount: metric.redisRequestCount,
       envioPages: metric.envioPages,
       envioRows: metric.envioRows,
+      envioRequestCount: metric.envioRequestCount,
+      envioPresenceRequestCount: metric.envioPresenceRequestCount,
+      envioBatchedRequestCount: metric.envioBatchedRequestCount,
+      envioContinuationRequestCount: metric.envioContinuationRequestCount,
       dirtyFromDate: metric.dirtyFromDate,
       dirtyReason: metric.dirtyReason,
       syncReason: metric.syncReason,

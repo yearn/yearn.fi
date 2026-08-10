@@ -14,6 +14,7 @@ import {
   fetchEnvioLedgerSource,
   rereadEnvioLedgerMetadata,
   type TEnvioLedgerFetchStats,
+  type TEnvioLedgerFetchStrategy,
   type TEnvioLedgerMetadata
 } from '@/server/lib/holdings/services/ledger/envio'
 import {
@@ -101,6 +102,11 @@ export interface TLedgerEnvioResponseStats {
   readonly rows: number
   readonly chains: number
   readonly validationQueries: number
+  readonly strategy: TEnvioLedgerFetchStrategy
+  readonly requests: number
+  readonly presenceRequests: number
+  readonly batchedRequests: number
+  readonly continuationRequests: number
   readonly readyChains: number
   readonly laggingChains: number
 }
@@ -356,6 +362,11 @@ function getEnvioResponseStats(
     rows: stats.totalRows,
     chains: stats.chainCount,
     validationQueries: stats.validationQueries,
+    strategy: stats.strategy,
+    requests: stats.totalRequests,
+    presenceRequests: stats.presenceRequests,
+    batchedRequests: stats.batchedRequests,
+    continuationRequests: stats.continuationRequests,
     readyChains,
     laggingChains: metadata.length - readyChains
   }
@@ -574,20 +585,26 @@ async function performLedgerSync(args: {
     walletHash: args.walletHash,
     lock: args.lock
   })
+  const fetchStrategy: TEnvioLedgerFetchStrategy = syncType === 'warm' ? 'warm-batched' : 'faceted-batched'
   const getSourceFetchDurationMs = startHoldingsDebugTimer()
   const fetched = await fetchEnvioLedgerSource({
     address: args.address,
     metadata: initialMetadata,
     lowerBlockByChain,
+    strategy: fetchStrategy,
     onPage: heartbeat
   })
   debugLog('ledger-sync', 'fetched authoritative Envio event windows', {
     durationMs: getSourceFetchDurationMs(),
-    fetchType: 'seq',
+    strategy: fetched.stats.strategy,
     paginationMode: 'paged',
     pages: fetched.stats.totalPages,
     rows: fetched.stats.totalRows,
     chains: fetched.stats.chainCount,
+    requests: fetched.stats.totalRequests,
+    presenceRequests: fetched.stats.presenceRequests,
+    batchedRequests: fetched.stats.batchedRequests,
+    continuationRequests: fetched.stats.continuationRequests,
     validationQueries: fetched.stats.validationQueries
   })
   const getMetadataRevalidationDurationMs = startHoldingsDebugTimer()
@@ -639,7 +656,11 @@ async function performLedgerSync(args: {
       durationMs: Date.now() - args.startedAtMs,
       parityReason: parity.reasonCode ?? undefined,
       envioPages: fetched.stats.totalPages,
-      envioRows: fetched.stats.totalRows
+      envioRows: fetched.stats.totalRows,
+      envioRequestCount: fetched.stats.totalRequests,
+      envioPresenceRequestCount: fetched.stats.presenceRequests,
+      envioBatchedRequestCount: fetched.stats.batchedRequests,
+      envioContinuationRequestCount: fetched.stats.continuationRequests
     })
   }
   const getEncodingDurationMs = startHoldingsDebugTimer()
@@ -700,6 +721,10 @@ async function performLedgerSync(args: {
       encodedBytes: current.manifest.activeEncodedBytes,
       envioPages: fetched.stats.totalPages,
       envioRows: fetched.stats.totalRows,
+      envioRequestCount: fetched.stats.totalRequests,
+      envioPresenceRequestCount: fetched.stats.presenceRequests,
+      envioBatchedRequestCount: fetched.stats.batchedRequests,
+      envioContinuationRequestCount: fetched.stats.continuationRequests,
       dirtyFromDate: current.manifest.dirtyFromDate ?? undefined,
       dirtyReason: current.manifest.dirtyReasons[0],
       syncReason: getMetricSyncReason(syncType),
@@ -814,6 +839,10 @@ async function performLedgerSync(args: {
     encodedBytes: candidate.activeEncodedBytes,
     envioPages: fetched.stats.totalPages,
     envioRows: fetched.stats.totalRows,
+    envioRequestCount: fetched.stats.totalRequests,
+    envioPresenceRequestCount: fetched.stats.presenceRequests,
+    envioBatchedRequestCount: fetched.stats.batchedRequests,
+    envioContinuationRequestCount: fetched.stats.continuationRequests,
     dirtyFromDate: candidate.dirtyFromDate ?? undefined,
     dirtyReason: candidate.dirtyReasons[0],
     syncReason: getMetricSyncReason(syncType),

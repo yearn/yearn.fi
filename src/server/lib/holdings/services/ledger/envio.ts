@@ -24,6 +24,8 @@ export const ENVIO_LEDGER_MAX_RESPONSE_BYTES = 8 * 1024 * 1024
 
 const ENVIO_LEDGER_REQUEST_TIMEOUT_MS = 30_000
 
+export type TEnvioLedgerFetchStrategy = 'sequential' | 'warm-batched' | 'faceted-batched'
+
 const ENVIO_META_QUERY = `
   query LedgerIndexerMeta {
     _meta {
@@ -102,6 +104,11 @@ export interface TEnvioLedgerFetchStats {
   readonly totalRows: number
   readonly chainCount: number
   readonly validationQueries: number
+  readonly strategy: TEnvioLedgerFetchStrategy
+  readonly totalRequests: number
+  readonly presenceRequests: number
+  readonly batchedRequests: number
+  readonly continuationRequests: number
 }
 
 export interface TEnvioLedgerStreamsResult {
@@ -110,6 +117,7 @@ export interface TEnvioLedgerStreamsResult {
 }
 
 export interface TFetchEnvioLedgerStreamsOptions {
+  readonly strategy?: TEnvioLedgerFetchStrategy
   readonly onPage?: () => Promise<void>
   readonly budgetLimits?: Readonly<{
     readonly maximumRows?: number
@@ -126,6 +134,7 @@ export interface TFetchEnvioLedgerSourceInput {
   readonly address: string
   readonly metadata?: readonly TEnvioLedgerMetadata[]
   readonly lowerBlockByChain?: TEnvioLedgerLowerBlocks
+  readonly strategy?: TEnvioLedgerFetchStrategy
   readonly onPage?: () => Promise<void>
 }
 
@@ -404,6 +413,74 @@ const TRANSFERS_OUT_SPEC: TEnvioLedgerStreamSpec<'transfersOut'> = {
   selection: TRANSFERS_IN_SPEC.selection,
   parseEvent: parseTransfer
 }
+
+const ENVIO_LEDGER_STREAM_SPECS: readonly TEnvioLedgerStreamSpec<TLedgerStream>[] = [
+  V3_DEPOSITS_SPEC,
+  V3_WITHDRAWALS_SPEC,
+  V2_DEPOSITS_SPEC,
+  V2_WITHDRAWALS_SPEC,
+  TRANSFERS_IN_SPEC,
+  TRANSFERS_OUT_SPEC
+]
+
+function createAliasedFirstPageField<TStream extends TLedgerStream>(spec: TEnvioLedgerStreamSpec<TStream>): string {
+  return `
+    ${spec.stream}: ${spec.entity}(
+      where: {
+        ${spec.addressField}: { _eq: $address }
+        chainId: { _eq: $chainId }
+        blockNumber: { _gte: $lowerBlock, _lte: $upperBlock }
+      }
+      order_by: [
+        { blockTimestamp: asc }
+        { blockNumber: asc }
+        { logIndex: asc }
+        { id: asc }
+      ]
+      limit: $limit
+    ) {
+      ${spec.selection}
+    }
+  `
+}
+
+function createAliasedPresenceField<TStream extends TLedgerStream>(spec: TEnvioLedgerStreamSpec<TStream>): string {
+  return `
+    ${spec.stream}: ${spec.entity}(
+      where: {
+        ${spec.addressField}: { _eq: $address }
+        chainId: { _eq: $chainId }
+        blockNumber: { _gte: $lowerBlock, _lte: $upperBlock }
+      }
+      limit: 1
+    ) {
+      id
+    }
+  `
+}
+
+const ENVIO_LEDGER_BATCHED_FIRST_PAGES_QUERY = `
+  query LedgerBatchedFirstPages(
+    $address: String!
+    $chainId: Int!
+    $lowerBlock: Int!
+    $upperBlock: Int!
+    $limit: Int!
+  ) {
+    ${ENVIO_LEDGER_STREAM_SPECS.map(createAliasedFirstPageField).join('\n')}
+  }
+`
+
+const ENVIO_LEDGER_FACETED_PRESENCE_QUERY = `
+  query LedgerFacetedPresence(
+    $address: String!
+    $chainId: Int!
+    $lowerBlock: Int!
+    $upperBlock: Int!
+  ) {
+    ${ENVIO_LEDGER_STREAM_SPECS.map(createAliasedPresenceField).join('\n')}
+  }
+`
 
 function createFirstPageQuery<TStream extends TLedgerStream>(spec: TEnvioLedgerStreamSpec<TStream>): string {
   return `
@@ -739,16 +816,23 @@ async function fetchStreamPages<TStream extends TLedgerStream>(
   address: string,
   window: TEnvioLedgerChainWindow,
   budget: TEnvioLedgerFetchBudget,
-  onPage?: () => Promise<void>
-): Promise<{ readonly events: readonly TEnvioLedgerEventByStream[TStream][]; readonly pages: number }> {
+  onPage?: () => Promise<void>,
+  initialPage?: readonly TEnvioLedgerEventByStream[TStream][]
+): Promise<{
+  readonly events: readonly TEnvioLedgerEventByStream[TStream][]
+  readonly pages: number
+  readonly continuationRequests: number
+}> {
+  const initialCursorEvent = initialPage?.at(-1)
   const state = {
-    events: [] as TEnvioLedgerEventByStream[TStream][],
-    cursor: null as TEnvioLedgerCursor | null,
-    pages: 0
+    events: [...(initialPage ?? [])] as TEnvioLedgerEventByStream[TStream][],
+    cursor: initialPage?.length === ENVIO_LEDGER_PAGE_SIZE && initialCursorEvent ? getCursor(initialCursorEvent) : null,
+    pages: initialPage === undefined ? 0 : 1
   }
   const fetchNextPage = async (): Promise<{
     readonly events: readonly TEnvioLedgerEventByStream[TStream][]
     readonly pages: number
+    readonly continuationRequests: number
   }> => {
     if (state.pages >= ENVIO_LEDGER_MAX_PAGES_PER_STREAM_CHAIN) {
       throw new Error('Envio ledger source page limit exceeded')
@@ -775,7 +859,11 @@ async function fetchStreamPages<TStream extends TLedgerStream>(
     state.pages += 1
     await onPage?.()
     if (events.length < ENVIO_LEDGER_PAGE_SIZE) {
-      return { events: state.events, pages: state.pages }
+      return {
+        events: state.events,
+        pages: state.pages,
+        continuationRequests: Math.max(0, state.pages - 1)
+      }
     }
 
     const nextCursor = events.at(-1)
@@ -785,7 +873,9 @@ async function fetchStreamPages<TStream extends TLedgerStream>(
     state.cursor = getCursor(nextCursor)
     return fetchNextPage()
   }
-  return fetchNextPage()
+  return initialPage !== undefined && initialPage.length < ENVIO_LEDGER_PAGE_SIZE
+    ? { events: state.events, pages: 1, continuationRequests: 0 }
+    : fetchNextPage()
 }
 
 async function fetchStream<TStream extends TLedgerStream>(
@@ -797,9 +887,16 @@ async function fetchStream<TStream extends TLedgerStream>(
 ): Promise<{
   readonly events: readonly TEnvioLedgerEventByStream[TStream][]
   readonly stats: TEnvioLedgerStreamStats
+  readonly continuationRequests: number
 }> {
   const results = await windows.reduce<
-    Promise<Array<{ readonly events: readonly TEnvioLedgerEventByStream[TStream][]; readonly pages: number }>>
+    Promise<
+      Array<{
+        readonly events: readonly TEnvioLedgerEventByStream[TStream][]
+        readonly pages: number
+        readonly continuationRequests: number
+      }>
+    >
   >(async (pendingResults, window) => {
     const resolvedResults = await pendingResults
     const result = await fetchStreamPages(spec, address, window, budget, onPage)
@@ -811,7 +908,188 @@ async function fetchStream<TStream extends TLedgerStream>(
     stats: {
       pages: results.reduce((total, result) => total + result.pages, 0),
       rows: events.length
-    }
+    },
+    continuationRequests: results.reduce((total, result) => total + result.continuationRequests, 0)
+  }
+}
+
+interface TEnvioLedgerBatchedChainResult {
+  readonly streams: TLedgerSixStreams
+  readonly byStream: Readonly<Record<TLedgerStream, TEnvioLedgerStreamStats>>
+  readonly continuationRequests: number
+}
+
+async function settleConcurrent<T>(requests: readonly Promise<T>[]): Promise<T[]> {
+  const settled = await Promise.allSettled(requests)
+  const failure = settled.find((result): result is PromiseRejectedResult => result.status === 'rejected')
+  if (failure) {
+    throw failure.reason
+  }
+  return settled.map((result) => (result as PromiseFulfilledResult<T>).value)
+}
+
+function validatePresencePage(value: unknown): boolean {
+  if (!Array.isArray(value) || value.length > 1) {
+    throw new Error('Envio ledger source response is invalid')
+  }
+  const valid = value.every(
+    (row) => isRecord(row) && typeof row.id === 'string' && row.id.length > 0 && Object.keys(row).length === 1
+  )
+  if (!valid) {
+    throw new Error('Envio ledger source response is invalid')
+  }
+  return value.length === 1
+}
+
+function getBatchedVariables(
+  address: string,
+  window: TEnvioLedgerChainWindow,
+  includeLimit: boolean
+): Readonly<Record<string, unknown>> {
+  return {
+    address,
+    chainId: window.chainId,
+    lowerBlock: window.lowerBlock,
+    upperBlock: window.upperBlock,
+    ...(includeLimit ? { limit: ENVIO_LEDGER_PAGE_SIZE } : {})
+  }
+}
+
+async function fetchChainPresence(
+  address: string,
+  window: TEnvioLedgerChainWindow,
+  onPage?: () => Promise<void>
+): Promise<boolean> {
+  const data = await executeEnvioQuery(ENVIO_LEDGER_FACETED_PRESENCE_QUERY, getBatchedVariables(address, window, false))
+  const hasPresence = ENVIO_LEDGER_STREAM_SPECS.map((spec) => validatePresencePage(data[spec.stream])).some(Boolean)
+  await onPage?.()
+  return hasPresence
+}
+
+async function fetchBatchedChain(
+  address: string,
+  window: TEnvioLedgerChainWindow,
+  budget: TEnvioLedgerFetchBudget,
+  onPage?: () => Promise<void>
+): Promise<TEnvioLedgerBatchedChainResult> {
+  const data = await executeEnvioQuery(
+    ENVIO_LEDGER_BATCHED_FIRST_PAGES_QUERY,
+    getBatchedVariables(address, window, true)
+  )
+  const firstPages = Object.fromEntries(
+    ENVIO_LEDGER_STREAM_SPECS.map((spec) => {
+      const events = validatePage(spec, data[spec.stream], window, null, address)
+      consumeFetchBudget(budget, events)
+      return [spec.stream, events]
+    })
+  ) as unknown as TLedgerSixStreams
+  await onPage?.()
+
+  const continued = await ENVIO_LEDGER_STREAM_SPECS.reduce<
+    Promise<
+      Array<
+        readonly [
+          TLedgerStream,
+          {
+            readonly events: readonly TEnvioLedgerEventByStream[TLedgerStream][]
+            readonly pages: number
+            readonly continuationRequests: number
+          }
+        ]
+      >
+    >
+  >(async (pendingResults, spec) => {
+    const resolvedResults = await pendingResults
+    const result = await fetchStreamPages(
+      spec,
+      address,
+      window,
+      budget,
+      onPage,
+      firstPages[spec.stream] as readonly TEnvioLedgerEventByStream[TLedgerStream][]
+    )
+    return [...resolvedResults, [spec.stream, result] as const]
+  }, Promise.resolve([]))
+  const streams = Object.fromEntries(
+    continued.map(([stream, result]) => [stream, result.events])
+  ) as unknown as TLedgerSixStreams
+  const byStream = Object.fromEntries(
+    continued.map(([stream, result]) => [
+      stream,
+      {
+        pages: result.pages,
+        rows: result.events.length
+      }
+    ])
+  ) as Record<TLedgerStream, TEnvioLedgerStreamStats>
+
+  return {
+    streams,
+    byStream,
+    continuationRequests: continued.reduce((total, [, result]) => total + result.continuationRequests, 0)
+  }
+}
+
+function combineBatchedChainResults(results: readonly TEnvioLedgerBatchedChainResult[]): {
+  readonly streams: TLedgerSixStreams
+  readonly byStream: Readonly<Record<TLedgerStream, TEnvioLedgerStreamStats>>
+  readonly continuationRequests: number
+} {
+  return {
+    streams: Object.fromEntries(
+      LEDGER_STREAMS.map((stream) => [
+        stream,
+        results.flatMap((result) => result.streams[stream] as readonly TEnvioLedgerEventByStream[TLedgerStream][])
+      ])
+    ) as unknown as TLedgerSixStreams,
+    byStream: Object.fromEntries(
+      LEDGER_STREAMS.map((stream) => [
+        stream,
+        {
+          pages: results.reduce((total, result) => total + result.byStream[stream].pages, 0),
+          rows: results.reduce((total, result) => total + result.byStream[stream].rows, 0)
+        }
+      ])
+    ) as Record<TLedgerStream, TEnvioLedgerStreamStats>,
+    continuationRequests: results.reduce((total, result) => total + result.continuationRequests, 0)
+  }
+}
+
+async function fetchBatchedStreams(args: {
+  readonly strategy: Exclude<TEnvioLedgerFetchStrategy, 'sequential'>
+  readonly address: string
+  readonly windows: readonly TEnvioLedgerChainWindow[]
+  readonly budget: TEnvioLedgerFetchBudget
+  readonly onPage?: () => Promise<void>
+}): Promise<{
+  readonly streams: TLedgerSixStreams
+  readonly byStream: Readonly<Record<TLedgerStream, TEnvioLedgerStreamStats>>
+  readonly presenceRequests: number
+  readonly batchedRequests: number
+  readonly continuationRequests: number
+}> {
+  const activeWindows =
+    args.strategy === 'faceted-batched'
+      ? (
+          await settleConcurrent(
+            args.windows.map(async (window) => ({
+              window,
+              hasPresence: await fetchChainPresence(args.address, window, args.onPage)
+            }))
+          )
+        )
+          .filter(({ hasPresence }) => hasPresence)
+          .map(({ window }) => window)
+      : args.windows
+  const results = await settleConcurrent(
+    activeWindows.map((window) => fetchBatchedChain(args.address, window, args.budget, args.onPage))
+  )
+  const combined = combineBatchedChainResults(results)
+
+  return {
+    ...combined,
+    presenceRequests: args.strategy === 'faceted-batched' ? args.windows.length : 0,
+    batchedRequests: activeWindows.length
   }
 }
 
@@ -850,6 +1128,40 @@ export async function fetchEnvioLedgerStreams(
   const normalizedAddress = normalizeAddress(address)
   const validatedWindows = validateWindows(windows)
   const budget = createFetchBudget(options.budgetLimits)
+  const strategy = options.strategy ?? 'sequential'
+
+  if (strategy !== 'sequential') {
+    const batched = await fetchBatchedStreams({
+      strategy,
+      address: normalizedAddress,
+      windows: validatedWindows,
+      budget,
+      onPage: options.onPage
+    })
+    assertSelfTransferSymmetry(
+      normalizedAddress.toLowerCase(),
+      batched.streams.transfersIn,
+      batched.streams.transfersOut
+    )
+    const totalPages = LEDGER_STREAMS.reduce((total, stream) => total + batched.byStream[stream].pages, 0)
+    const totalRows = LEDGER_STREAMS.reduce((total, stream) => total + batched.byStream[stream].rows, 0)
+    return {
+      streams: batched.streams,
+      stats: {
+        byStream: batched.byStream,
+        totalPages,
+        totalRows,
+        chainCount: validatedWindows.length,
+        validationQueries: batched.presenceRequests,
+        strategy,
+        totalRequests: batched.presenceRequests + batched.batchedRequests + batched.continuationRequests,
+        presenceRequests: batched.presenceRequests,
+        batchedRequests: batched.batchedRequests,
+        continuationRequests: batched.continuationRequests
+      }
+    }
+  }
+
   const v3Deposits = await fetchStream(V3_DEPOSITS_SPEC, normalizedAddress, validatedWindows, budget, options.onPage)
   const v3Withdrawals = await fetchStream(
     V3_WITHDRAWALS_SPEC,
@@ -901,7 +1213,18 @@ export async function fetchEnvioLedgerStreams(
       totalPages,
       totalRows,
       chainCount: validatedWindows.length,
-      validationQueries: 0
+      validationQueries: 0,
+      strategy,
+      totalRequests: totalPages,
+      presenceRequests: 0,
+      batchedRequests: 0,
+      continuationRequests:
+        v3Deposits.continuationRequests +
+        v3Withdrawals.continuationRequests +
+        v2Deposits.continuationRequests +
+        v2Withdrawals.continuationRequests +
+        transfersIn.continuationRequests +
+        transfersOut.continuationRequests
     }
   }
 }
@@ -910,11 +1233,12 @@ export async function fetchEnvioLedgerSource({
   address,
   metadata,
   lowerBlockByChain,
+  strategy,
   onPage
 }: TFetchEnvioLedgerSourceInput): Promise<TEnvioLedgerSourceResult> {
   const resolvedMetadata = metadata ? parseSupportedMetadata(metadata) : await fetchEnvioLedgerMetadata()
   const windows = createEnvioLedgerChainWindows(resolvedMetadata, lowerBlockByChain)
-  const result = await fetchEnvioLedgerStreams(address, windows, { onPage })
+  const result = await fetchEnvioLedgerStreams(address, windows, { strategy, onPage })
   return {
     metadata: resolvedMetadata,
     windows,

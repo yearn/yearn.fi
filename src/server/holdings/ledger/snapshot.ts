@@ -156,6 +156,11 @@ export async function POST(request: Request): Promise<Response> {
                   totalEvents: syncResult.events.total,
                   pages: syncResult.envio.pages,
                   rows: syncResult.envio.rows,
+                  strategy: syncResult.envio.strategy,
+                  requests: syncResult.envio.requests,
+                  presenceRequests: syncResult.envio.presenceRequests,
+                  batchedRequests: syncResult.envio.batchedRequests,
+                  continuationRequests: syncResult.envio.continuationRequests,
                   laggingChains: syncResult.envio.laggingChains
                 })
           })

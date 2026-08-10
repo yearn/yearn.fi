@@ -140,6 +140,18 @@ function getEntityResult(query: string): Record<string, unknown> {
   throw new Error('Unexpected test query')
 }
 
+function createAliasedStreamData(overrides: Record<string, unknown> = {}): Record<string, unknown> {
+  return {
+    v3Deposits: [],
+    v3Withdrawals: [],
+    v2Deposits: [],
+    v2Withdrawals: [],
+    transfersIn: [],
+    transfersOut: [],
+    ...overrides
+  }
+}
+
 describe('Envio ledger source', () => {
   afterEach(() => {
     vi.restoreAllMocks()
@@ -296,7 +308,12 @@ describe('Envio ledger source', () => {
       totalPages: 6,
       totalRows: 6,
       chainCount: 1,
-      validationQueries: 0
+      validationQueries: 0,
+      strategy: 'sequential',
+      totalRequests: 6,
+      presenceRequests: 0,
+      batchedRequests: 0,
+      continuationRequests: 0
     })
     expect(requests).toHaveLength(6)
     expect(
@@ -467,8 +484,350 @@ describe('Envio ledger source', () => {
       totalPages: 12,
       totalRows: 0,
       chainCount: 2,
-      validationQueries: 0
+      validationQueries: 0,
+      strategy: 'sequential',
+      totalRequests: 12,
+      presenceRequests: 0,
+      batchedRequests: 0,
+      continuationRequests: 0
     })
+  })
+
+  it('batches all six first pages per chain and starts chain requests concurrently', async () => {
+    const requests: TGraphqlRequestBody[] = []
+    const concurrency = { active: 0, maximum: 0 }
+    const onPage = vi.fn(async () => undefined)
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_input: string | URL | Request, init?: RequestInit) => {
+        const body = parseRequestBody(init)
+        requests.push(body)
+        concurrency.active += 1
+        concurrency.maximum = Math.max(concurrency.maximum, concurrency.active)
+        await Promise.resolve()
+        concurrency.active -= 1
+        return createGraphqlResponse(createAliasedStreamData())
+      })
+    )
+
+    const result = await fetchEnvioLedgerStreams(
+      USER,
+      [
+        { chainId: 10, lowerBlock: 500, upperBlock: 600 },
+        { chainId: 1, lowerBlock: 100, upperBlock: 200 }
+      ],
+      { strategy: 'warm-batched', onPage }
+    )
+
+    expect(requests).toHaveLength(2)
+    expect(concurrency.maximum).toBe(2)
+    expect(onPage).toHaveBeenCalledTimes(2)
+    expect(requests.map(({ variables }) => variables.chainId)).toEqual([1, 10])
+    expect(
+      requests.every(
+        ({ query, variables }) =>
+          query.includes('query LedgerBatchedFirstPages') &&
+          query.includes('v3Deposits: Deposit(') &&
+          query.includes('v3Withdrawals: Withdraw(') &&
+          query.includes('v2Deposits: V2Deposit(') &&
+          query.includes('v2Withdrawals: V2Withdraw(') &&
+          query.includes('transfersIn: Transfer(') &&
+          query.includes('transfersOut: Transfer(') &&
+          query.includes('assets') &&
+          query.includes('amount') &&
+          query.includes('value') &&
+          query.includes('limit: $limit') &&
+          variables.address === CHECKSUM_USER &&
+          variables.limit === ENVIO_LEDGER_PAGE_SIZE
+      )
+    ).toBe(true)
+    expect(result.stats).toEqual({
+      byStream: {
+        v3Deposits: { pages: 2, rows: 0 },
+        v3Withdrawals: { pages: 2, rows: 0 },
+        v2Deposits: { pages: 2, rows: 0 },
+        v2Withdrawals: { pages: 2, rows: 0 },
+        transfersIn: { pages: 2, rows: 0 },
+        transfersOut: { pages: 2, rows: 0 }
+      },
+      totalPages: 12,
+      totalRows: 0,
+      chainCount: 2,
+      validationQueries: 0,
+      strategy: 'warm-batched',
+      totalRequests: 2,
+      presenceRequests: 0,
+      batchedRequests: 2,
+      continuationRequests: 0
+    })
+  })
+
+  it('waits for every started chain batch to settle before surfacing a failure', async () => {
+    const slowState: { completed: boolean; release: () => void } = {
+      completed: false,
+      release: () => undefined
+    }
+    const slowResponse = new Promise<Response>((resolve) => {
+      slowState.release = () => {
+        slowState.completed = true
+        resolve(createGraphqlResponse(createAliasedStreamData()))
+      }
+    })
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_input: string | URL | Request, init?: RequestInit) => {
+        const { variables } = parseRequestBody(init)
+        return variables.chainId === 1 ? new Response('', { status: 502 }) : slowResponse
+      })
+    )
+
+    const request = fetchEnvioLedgerStreams(
+      USER,
+      [
+        { chainId: 1, lowerBlock: 100, upperBlock: 200 },
+        { chainId: 10, lowerBlock: 500, upperBlock: 600 }
+      ],
+      { strategy: 'warm-batched' }
+    )
+    const observed = { rejected: false }
+    void request.catch(() => {
+      observed.rejected = true
+    })
+    await Promise.resolve()
+    await Promise.resolve()
+
+    expect(observed.rejected).toBe(false)
+    slowState.release()
+    await expect(request).rejects.toThrow('Envio ledger source request was unsuccessful')
+    expect(slowState.completed).toBe(true)
+  })
+
+  it('uses concurrent id-only facets to skip data requests for empty chains', async () => {
+    const requests: TGraphqlRequestBody[] = []
+    const concurrency = { active: 0, maximum: 0 }
+    const onPage = vi.fn(async () => undefined)
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_input: string | URL | Request, init?: RequestInit) => {
+        const body = parseRequestBody(init)
+        requests.push(body)
+        concurrency.active += 1
+        concurrency.maximum = Math.max(concurrency.maximum, concurrency.active)
+        await Promise.resolve()
+        concurrency.active -= 1
+        return createGraphqlResponse(createAliasedStreamData())
+      })
+    )
+
+    const result = await fetchEnvioLedgerStreams(
+      USER,
+      [
+        { chainId: 1, lowerBlock: 100, upperBlock: 200 },
+        { chainId: 10, lowerBlock: 500, upperBlock: 600 }
+      ],
+      { strategy: 'faceted-batched', onPage }
+    )
+
+    expect(requests).toHaveLength(2)
+    expect(concurrency.maximum).toBe(2)
+    expect(onPage).toHaveBeenCalledTimes(2)
+    expect(
+      requests.every(
+        ({ query, variables }) =>
+          query.includes('query LedgerFacetedPresence') &&
+          query.includes('limit: 1') &&
+          query.includes('blockNumber: { _gte: $lowerBlock, _lte: $upperBlock }') &&
+          !query.includes('assets') &&
+          !query.includes('shares') &&
+          !query.includes('value') &&
+          variables.lowerBlock !== undefined &&
+          variables.upperBlock !== undefined &&
+          variables.limit === undefined
+      )
+    ).toBe(true)
+    expect(result.streams).toEqual(createAliasedStreamData())
+    expect(result.stats).toEqual({
+      byStream: {
+        v3Deposits: { pages: 0, rows: 0 },
+        v3Withdrawals: { pages: 0, rows: 0 },
+        v2Deposits: { pages: 0, rows: 0 },
+        v2Withdrawals: { pages: 0, rows: 0 },
+        transfersIn: { pages: 0, rows: 0 },
+        transfersOut: { pages: 0, rows: 0 }
+      },
+      totalPages: 0,
+      totalRows: 0,
+      chainCount: 2,
+      validationQueries: 2,
+      strategy: 'faceted-batched',
+      totalRequests: 2,
+      presenceRequests: 2,
+      batchedRequests: 0,
+      continuationRequests: 0
+    })
+  })
+
+  it('validates every presence alias even when an earlier stream is present', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        createGraphqlResponse(
+          createAliasedStreamData({
+            v3Deposits: [{ id: 'present' }],
+            transfersOut: [{ unexpected: 'malformed' }]
+          })
+        )
+      )
+    )
+
+    await expect(
+      fetchEnvioLedgerStreams(USER, [{ chainId: 1, lowerBlock: 100, upperBlock: 200 }], {
+        strategy: 'faceted-batched'
+      })
+    ).rejects.toThrow('Envio ledger source response is invalid')
+  })
+
+  it('fetches a full six-stream batch only for facet-positive chains and retains every source window', async () => {
+    const requests: TGraphqlRequestBody[] = []
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_input: string | URL | Request, init?: RequestInit) => {
+        const body = parseRequestBody(init)
+        requests.push(body)
+        if (body.query.includes('LedgerFacetedPresence')) {
+          return createGraphqlResponse(
+            createAliasedStreamData({
+              v3Deposits: body.variables.chainId === 1 ? [{ id: 'present' }] : []
+            })
+          )
+        }
+        if (body.query.includes('LedgerBatchedFirstPages')) {
+          return createGraphqlResponse(createAliasedStreamData({ v3Deposits: [createV3Deposit('v3-deposit')] }))
+        }
+        throw new Error('Unexpected test query')
+      })
+    )
+
+    const result = await fetchEnvioLedgerSource({
+      address: USER,
+      metadata: [createMetadata(1), createMetadata(10)],
+      lowerBlockByChain: { 1: 125, 10: 500 },
+      strategy: 'faceted-batched'
+    })
+
+    expect(result.windows).toEqual([
+      { chainId: 1, lowerBlock: 125, upperBlock: 1_000 },
+      { chainId: 10, lowerBlock: 500, upperBlock: 1_000 }
+    ])
+    expect(result.streams.v3Deposits.map(({ id }) => id)).toEqual(['v3-deposit'])
+    expect(requests.filter(({ query }) => query.includes('LedgerFacetedPresence'))).toHaveLength(2)
+    expect(requests.filter(({ query }) => query.includes('LedgerBatchedFirstPages'))).toHaveLength(1)
+    expect(requests.find(({ query }) => query.includes('LedgerBatchedFirstPages'))?.variables.chainId).toBe(1)
+    expect(result.stats).toEqual({
+      byStream: {
+        v3Deposits: { pages: 1, rows: 1 },
+        v3Withdrawals: { pages: 1, rows: 0 },
+        v2Deposits: { pages: 1, rows: 0 },
+        v2Withdrawals: { pages: 1, rows: 0 },
+        transfersIn: { pages: 1, rows: 0 },
+        transfersOut: { pages: 1, rows: 0 }
+      },
+      totalPages: 6,
+      totalRows: 1,
+      chainCount: 2,
+      validationQueries: 2,
+      strategy: 'faceted-batched',
+      totalRequests: 3,
+      presenceRequests: 2,
+      batchedRequests: 1,
+      continuationRequests: 0
+    })
+  })
+
+  it('continues only full aliases from their strict keyset cursor without refetching the first page', async () => {
+    const firstPage = Array.from({ length: ENVIO_LEDGER_PAGE_SIZE }, (_, index) =>
+      createTransfer(`transfer-${index.toString().padStart(4, '0')}`)
+    )
+    const requests: TGraphqlRequestBody[] = []
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_input: string | URL | Request, init?: RequestInit) => {
+        const body = parseRequestBody(init)
+        requests.push(body)
+        if (body.query.includes('LedgerBatchedFirstPages')) {
+          return createGraphqlResponse(createAliasedStreamData({ transfersIn: firstPage }))
+        }
+        if (body.query.includes('LedgerTransfersInNextPage')) {
+          return createGraphqlResponse({ Transfer: [createTransfer('transfer-1000')] })
+        }
+        throw new Error('Unexpected test query')
+      })
+    )
+
+    const result = await fetchEnvioLedgerStreams(USER, [{ chainId: 1, lowerBlock: 100, upperBlock: 200 }], {
+      strategy: 'warm-batched'
+    })
+
+    expect(requests).toHaveLength(2)
+    expect(requests[0]?.query).toContain('LedgerBatchedFirstPages')
+    expect(requests[1]?.query).toContain('LedgerTransfersInNextPage')
+    expect(requests[1]?.query).toContain('_or: [')
+    expect(requests[1]?.variables).toEqual(
+      expect.objectContaining({
+        receiver: CHECKSUM_USER,
+        cursorTimestamp: 1_000,
+        cursorBlock: 150,
+        cursorLogIndex: 4,
+        cursorId: 'transfer-0999',
+        limit: ENVIO_LEDGER_PAGE_SIZE
+      })
+    )
+    expect(result.streams.transfersIn).toHaveLength(1_001)
+    expect(result.stats.byStream.transfersIn).toEqual({ pages: 2, rows: 1_001 })
+    expect(result.stats.totalPages).toBe(7)
+    expect(result.stats.totalRequests).toBe(2)
+    expect(result.stats.batchedRequests).toBe(1)
+    expect(result.stats.continuationRequests).toBe(1)
+  })
+
+  it('preserves self-transfer symmetry validation for batched responses', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        createGraphqlResponse(
+          createAliasedStreamData({
+            transfersIn: [createTransfer('self-transfer', { sender: USER, receiver: USER })]
+          })
+        )
+      )
+    )
+
+    await expect(
+      fetchEnvioLedgerStreams(USER, [{ chainId: 1, lowerBlock: 100, upperBlock: 200 }], {
+        strategy: 'warm-batched'
+      })
+    ).rejects.toThrow('Envio ledger source self-transfer streams are inconsistent')
+  })
+
+  it('enforces the shared row budget across aliases in one batched response', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () =>
+        createGraphqlResponse(
+          createAliasedStreamData({
+            v3Deposits: [createV3Deposit('budget-deposit')],
+            v3Withdrawals: [createV3Withdrawal('budget-withdrawal')]
+          })
+        )
+      )
+    )
+
+    await expect(
+      fetchEnvioLedgerStreams(USER, [{ chainId: 1, lowerBlock: 100, upperBlock: 200 }], {
+        strategy: 'warm-batched',
+        budgetLimits: { maximumRows: 1 }
+      })
+    ).rejects.toThrow('Envio ledger source fetch budget exceeded')
   })
 
   it('enforces one row budget across every stream and chain window', async () => {

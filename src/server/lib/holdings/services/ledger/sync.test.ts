@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createHoldingsDebugContext, withHoldingsDebugContext } from '@/server/lib/holdings/services/debug'
-import type { TEnvioLedgerMetadata } from '@/server/lib/holdings/services/ledger/envio'
+import type { TEnvioLedgerFetchStrategy, TEnvioLedgerMetadata } from '@/server/lib/holdings/services/ledger/envio'
 import { hashLedgerWalletAddress } from '@/server/lib/holdings/services/ledger/keys'
 import { HoldingsLedgerSyncError, syncHoldingsLedger } from '@/server/lib/holdings/services/ledger/sync'
 import {
@@ -19,7 +19,8 @@ const testState = vi.hoisted(() => ({
   currentRead: { status: 'empty' } as unknown,
   metadataProgressBlock: 100_000,
   metadataEventsProcessed: 10_000,
-  lastLowerBlockByChain: null as Readonly<Record<number, number>> | null
+  lastLowerBlockByChain: null as Readonly<Record<number, number>> | null,
+  lastFetchStrategy: null as TEnvioLedgerFetchStrategy | null
 }))
 
 const mocks = vi.hoisted(() => ({
@@ -121,11 +122,22 @@ function createStreams(): TLedgerSixStreams {
   }
 }
 
-function createFetchStats() {
+function createFetchStats(strategy: TEnvioLedgerFetchStrategy) {
   const byStream = Object.fromEntries(
     LEDGER_STREAMS.map((stream) => [stream, { pages: 1, rows: stream === 'v3Deposits' ? 1 : 0 }])
   )
-  return { byStream, totalPages: LEDGER_STREAMS.length, totalRows: 1, chainCount: 1, validationQueries: 1 }
+  return {
+    byStream,
+    totalPages: LEDGER_STREAMS.length,
+    totalRows: 1,
+    chainCount: 1,
+    validationQueries: strategy === 'faceted-batched' ? 1 : 0,
+    strategy,
+    totalRequests: strategy === 'faceted-batched' ? 2 : 1,
+    presenceRequests: strategy === 'faceted-batched' ? 1 : 0,
+    batchedRequests: 1,
+    continuationRequests: 0
+  }
 }
 
 function installSuccessfulMocks(): void {
@@ -135,8 +147,15 @@ function installSuccessfulMocks(): void {
   mocks.readRevision.mockImplementation(() => Promise.resolve(testState.currentRead))
   mocks.fetchMetadata.mockImplementation(() => Promise.resolve(createMetadata()))
   mocks.fetchSource.mockImplementation(
-    ({ lowerBlockByChain }: { readonly lowerBlockByChain: Readonly<Record<number, number>> }) => {
+    ({
+      lowerBlockByChain,
+      strategy
+    }: {
+      readonly lowerBlockByChain: Readonly<Record<number, number>>
+      readonly strategy: TEnvioLedgerFetchStrategy
+    }) => {
       testState.lastLowerBlockByChain = lowerBlockByChain
+      testState.lastFetchStrategy = strategy
       const metadata = createMetadata()
       return Promise.resolve({
         metadata,
@@ -148,7 +167,7 @@ function installSuccessfulMocks(): void {
           }
         ],
         streams: createStreams(),
-        stats: createFetchStats()
+        stats: createFetchStats(strategy)
       })
     }
   )
@@ -189,6 +208,7 @@ describe('holdings ledger synchronization', () => {
     testState.metadataProgressBlock = 100_000
     testState.metadataEventsProcessed = 10_000
     testState.lastLowerBlockByChain = null
+    testState.lastFetchStrategy = null
     installSuccessfulMocks()
   })
 
@@ -203,6 +223,7 @@ describe('holdings ledger synchronization', () => {
     expect(cold.status).toBe('updated')
     expect(cold.status === 'updated' && cold.syncType).toBe('bootstrap')
     expect(testState.lastLowerBlockByChain).toEqual({ 1: 1 })
+    expect(testState.lastFetchStrategy).toBe('faceted-batched')
     expect(mocks.commitRevision).toHaveBeenCalledTimes(1)
 
     testState.metadataProgressBlock = 100_010
@@ -212,6 +233,7 @@ describe('holdings ledger synchronization', () => {
     expect(warm.status).toBe('updated')
     expect(warm.status === 'updated' && warm.syncType).toBe('warm')
     expect(testState.lastLowerBlockByChain).toEqual({ 1: 50_000 })
+    expect(testState.lastFetchStrategy).toBe('warm-batched')
     expect(mocks.commitRevision).toHaveBeenCalledTimes(2)
 
     const unchanged = await syncHoldingsLedger({ address: USER_ADDRESS })
@@ -241,6 +263,9 @@ describe('holdings ledger synchronization', () => {
       expect(output).toContain('[ledger-sync] released wallet synchronization lock')
       expect(output).toContain('"pages":6')
       expect(output).toContain('"rows":1')
+      expect(output).toContain('"strategy":"faceted-batched"')
+      expect(output).toContain('"requests":2')
+      expect(output).toContain('"presenceRequests":1')
       expect(output).not.toContain(USER_ADDRESS)
       expect(output).not.toContain(hashLedgerWalletAddress(USER_ADDRESS))
       expect(output).not.toContain(VAULT_ADDRESS)

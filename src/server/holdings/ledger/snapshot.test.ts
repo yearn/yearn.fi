@@ -53,7 +53,12 @@ function createUnchangedSyncResult(laggingChains = 0) {
       pages: 2,
       rows: 12,
       chains: 2,
-      validationQueries: 2,
+      validationQueries: 0,
+      strategy: 'warm-batched',
+      requests: 2,
+      presenceRequests: 0,
+      batchedRequests: 2,
+      continuationRequests: 0,
       readyChains: 2 - laggingChains,
       laggingChains
     },
@@ -114,6 +119,8 @@ describe('holdings ledger snapshot route', () => {
     expect(output).toContain('completed verified snapshot pin operation')
     expect(output).toContain('completed holdings ledger snapshot request')
     expect(output).toContain('"durationMs":')
+    expect(output).toContain('"strategy":"warm-batched"')
+    expect(output).toContain('"requests":2')
     ;[ADDRESS, SNAPSHOT_ID, 'revision-1', 'private-sync-revision'].forEach((secret) => {
       expect(output.toLowerCase()).not.toContain(secret.toLowerCase())
     })
