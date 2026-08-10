@@ -1,0 +1,6 @@
+export {
+  BOLD_ADDRESS as BOLD,
+  YBOLD_STAKING_ADDRESS as ST_YBOLD,
+  YBOLD_VAULT_ADDRESS as YBOLD,
+  YEARN_YBOLD_VAULT_URL as YEARN_VAULT_URL
+} from '@yearn/vault-widget/ybold'
