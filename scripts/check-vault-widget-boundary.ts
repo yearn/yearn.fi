@@ -6,6 +6,7 @@ import * as ts from 'typescript'
 const REPOSITORY_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const PACKAGE_ROOT = path.join(REPOSITORY_ROOT, 'packages', 'vault-widget')
 const SOURCE_ROOT = path.join(PACKAGE_ROOT, 'src')
+const HEADLESS_ROOT = path.join(SOURCE_ROOT, 'headless')
 const APPS_ROOT = path.join(REPOSITORY_ROOT, 'apps')
 const SOURCE_EXTENSIONS = new Set(['.cts', '.js', '.jsx', '.mts', '.ts', '.tsx'])
 
@@ -20,6 +21,16 @@ type TViolation = TImportReference & {
 }
 
 const FORBIDDEN_APP_ALIAS_PREFIXES = ['@/', '@shared', '@pages', '@hooks', '@components', '/src'] as const
+const FORBIDDEN_HEADLESS_DEPENDENCY_PREFIXES = [
+  '@rainbow-me/rainbowkit',
+  '@tanstack/react-query',
+  '@wagmi/core',
+  'next',
+  'react',
+  'react-dom',
+  'react-rewards',
+  'wagmi'
+] as const
 
 function toDisplayPath(filePath: string): string {
   return path.relative(REPOSITORY_ROOT, filePath).split(path.sep).join('/')
@@ -115,6 +126,10 @@ function matchesForbiddenAlias(specifier: string, prefix: (typeof FORBIDDEN_APP_
   return specifier === prefix || specifier.startsWith(`${prefix}/`)
 }
 
+function matchesPackageImport(specifier: string, packageName: string): boolean {
+  return specifier === packageName || specifier.startsWith(`${packageName}/`)
+}
+
 function getViolationReason({
   filePath,
   specifier,
@@ -124,6 +139,15 @@ function getViolationReason({
   specifier: string
   appPackageNames: ReadonlySet<string>
 }): string | undefined {
+  if (isInsideDirectory(filePath, HEADLESS_ROOT)) {
+    const forbiddenDependency = FORBIDDEN_HEADLESS_DEPENDENCY_PREFIXES.find((packageName) =>
+      matchesPackageImport(specifier, packageName)
+    )
+    if (forbiddenDependency) {
+      return `imports framework dependency "${forbiddenDependency}" from the headless entrypoint`
+    }
+  }
+
   const forbiddenAlias = FORBIDDEN_APP_ALIAS_PREFIXES.find((prefix) => matchesForbiddenAlias(specifier, prefix))
   if (forbiddenAlias) {
     return `uses host-app alias "${forbiddenAlias}"`
