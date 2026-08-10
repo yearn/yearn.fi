@@ -1,5 +1,5 @@
 import path from 'path'
-import { defineConfig } from 'vitest/config'
+import { configDefaults, defineConfig } from 'vitest/config'
 
 export default defineConfig({
   esbuild: {
@@ -14,13 +14,14 @@ export default defineConfig({
       '@hooks': path.resolve(__dirname, './src/hooks'),
       '@plausible-analytics/tracker': path.resolve(
         __dirname,
-        './node_modules/@plausible-analytics/tracker/plausible.js'
+        '../../node_modules/@plausible-analytics/tracker/plausible.js'
       )
     }
   },
   test: {
     globals: true,
     environment: 'node',
+    exclude: [...configDefaults.exclude],
     server: {
       deps: {
         inline: ['@shared']
