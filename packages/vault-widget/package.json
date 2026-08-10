@@ -9,6 +9,7 @@
   "exports": {
     ".": "./src/index.tsx",
     "./advanced": "./src/advanced.ts",
+    "./headless": "./src/headless/index.ts",
     "./icons": "./src/components/widget/shared/Icons.tsx",
     "./internal/components/widget": "./src/components/widget/index.tsx",
     "./internal/components/widget/deposit": "./src/components/widget/deposit/index.tsx",

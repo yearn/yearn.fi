@@ -6,6 +6,7 @@
     "noEmit": true,
     "paths": {
       "@yearn/vault-widget": ["src/index.tsx"],
+      "@yearn/vault-widget/headless": ["src/headless/index.ts"],
       "@yearn/vault-widget/internal/components/widget": ["src/components/widget/index.tsx"],
       "@yearn/vault-widget/internal/components/widget/deposit": ["src/components/widget/deposit/index.tsx"],
       "@yearn/vault-widget/internal/components/widget/withdraw": ["src/components/widget/withdraw/index.tsx"],
