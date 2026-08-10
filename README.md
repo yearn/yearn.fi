@@ -1,6 +1,6 @@
 # yearn.fi
 
-![](./public/og.png)
+![](./apps/yearn/public/og.png)
 
 ### Initial Setup
 
@@ -26,7 +26,7 @@
 - Optional: Create a `.env` file in the repo root, copy `.env.example`, and replace values with your own keys. Client-readable values must use the `NEXT_PUBLIC_` prefix; server-only secrets must stay unprefixed.
 
     ``` bash
-    cp .env.example .env
+    cp apps/yearn/.env.example .env
     ```
 
 - Optional: Install Husky for pre-commit scripts.
@@ -37,15 +37,15 @@
 
 ### Install and run
 
-1. Run `bun install`
-2. Run `bun run dev`
+1. Run `bun install` from the repository root
+2. Run `bun run dev` (or `bun run dev:yearn`)
 3. Open the browser and navigate to `http://localhost:3000`
 
 ### Per-vault Enso denylist (disable zaps)
 
 To disable Enso routing for specific vaults, edit:
 
-`src/components/pages/vaults/constants/ensoDisabledVaults.ts`
+`apps/yearn/src/components/pages/vaults/constants/ensoDisabledVaults.ts`
 
 Add vault addresses under their chain ID:
 

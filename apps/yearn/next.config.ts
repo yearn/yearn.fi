@@ -1,4 +1,9 @@
+import { fileURLToPath } from 'node:url'
+import { loadEnvConfig } from '@next/env'
 import type { NextConfig } from 'next'
+
+const WORKSPACE_ROOT = fileURLToPath(new URL('../..', import.meta.url))
+loadEnvConfig(WORKSPACE_ROOT, process.env.NODE_ENV !== 'production', console, true)
 
 const CSP_REPORT_URI =
   'https://o4510960324837376.ingest.us.sentry.io/api/4510960614375424/security/?sentry_key=6b1b2932f1532eff2227d01a122adbb4'
@@ -47,7 +52,7 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   turbopack: {
     resolveAlias: {
-      '@safe-global/safe-apps-sdk': './node_modules/@safe-global/safe-apps-sdk/dist/esm'
+      '@safe-global/safe-apps-sdk': '../../node_modules/@safe-global/safe-apps-sdk/dist/esm'
     }
   },
   images: {
