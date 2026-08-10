@@ -40,22 +40,17 @@ import {
 import { createWagmiVaultWidgetExecutionAdapter } from '@yearn/vault-widget/wagmi'
 import { type ReactElement, type ReactNode, useCallback, useMemo } from 'react'
 import { isAddressEqual, zeroAddress } from 'viem'
-import { useAccount } from 'wagmi'
+import { useAccount, useConfig } from 'wagmi'
 import {
   getCanonicalChain,
   isConnectedToExecutionChain,
   resolveCanonicalChainId,
   resolveExecutionChainId
 } from '@/config/tenderly'
-import { wagmiConfig } from '@/config/wagmi'
 import { env } from '@/env'
 
 const DEFAULT_YEARN_ASSETS_BASE_URI = 'https://cdn.jsdelivr.net/gh/yearn/tokenassets@main'
 const YEARN_ASSETS_BASE_URI = env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI || DEFAULT_YEARN_ASSETS_BASE_URI
-const VAULT_WIDGET_EXECUTION = createWagmiVaultWidgetExecutionAdapter({
-  config: wagmiConfig,
-  resolveExecutionChainId
-})
 
 const SAFE_STATUS_BY_HOST_STATUS: Record<SafeTransactionStatus, VaultWidgetSafeTransactionDetails['status']> = {
   AWAITING_CONFIRMATIONS: 'awaiting-confirmations',
@@ -162,6 +157,7 @@ function toPlausibleProperties(properties?: VaultWidgetAnalyticsProperties): Rec
 
 export function YearnVaultWidgetRuntimeProvider({ children }: { children: ReactNode }): ReactElement {
   const { chainId: connectedExecutionChainId } = useAccount()
+  const wagmiConfig = useConfig()
   const trackEvent = usePlausible()
   const { isEnsoFailed } = useEnsoStatus()
   const { createNotification, updateNotification } = useNotificationsActions()
@@ -186,6 +182,10 @@ export function YearnVaultWidgetRuntimeProvider({ children }: { children: ReactN
   const tokenListsByChain = useMemo(() => toVaultWidgetTokensByChain(tokenLists), [tokenLists])
   const knownVaults = useMemo(() => Object.values(allVaults).map(toVaultWidgetCatalogVault), [allVaults])
   const catalogAssetPrices = useMemo(() => getCatalogAssetPrices(allVaults), [allVaults])
+  const execution = useMemo(
+    () => createWagmiVaultWidgetExecutionAdapter({ config: wagmiConfig, resolveExecutionChainId }),
+    [wagmiConfig]
+  )
 
   const enableCatalog = useCallback((): void => {
     enableTokenListFetch()
@@ -316,7 +316,7 @@ export function YearnVaultWidgetRuntimeProvider({ children }: { children: ReactN
         resolveCanonicalChainId,
         resolveExecutionChainId
       },
-      execution: VAULT_WIDGET_EXECUTION,
+      execution,
       notifications: {
         create: createRuntimeNotification,
         update: updateRuntimeNotification
@@ -357,6 +357,7 @@ export function YearnVaultWidgetRuntimeProvider({ children }: { children: ReactN
       connectedExecutionChainId,
       createRuntimeNotification,
       enableCatalog,
+      execution,
       getChain,
       getRuntimeToken,
       getSafeTransactionDetails,
