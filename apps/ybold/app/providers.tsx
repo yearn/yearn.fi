@@ -5,6 +5,7 @@ import { lightTheme, RainbowKitProvider, useConnectModal } from '@rainbow-me/rai
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { wagmiConfig } from '@ybold/lib/wagmi'
 import { type VaultWidgetRuntimeOverrides, VaultWidgetRuntimeProvider } from '@yearn/vault-widget'
+import { createWagmiVaultWidgetExecutionAdapter } from '@yearn/vault-widget/wagmi'
 import { useMemo, useState } from 'react'
 import { useAccount, WagmiProvider } from 'wagmi'
 
@@ -18,6 +19,12 @@ theme.radii.connectButton = '9999px'
 const queryClient = new QueryClient()
 const YEARN_ASSETS_BASE_URI =
   process.env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI ?? 'https://cdn.jsdelivr.net/gh/yearn/tokenassets@main'
+const resolveExecutionChainId = (requestedChainId: number | undefined): number | undefined =>
+  requestedChainId === 1 ? 1 : undefined
+const VAULT_WIDGET_EXECUTION = createWagmiVaultWidgetExecutionAdapter({
+  config: wagmiConfig,
+  resolveExecutionChainId
+})
 
 function WidgetHostProvider({ children }: { children: React.ReactNode }) {
   const { openConnectModal } = useConnectModal()
@@ -41,8 +48,9 @@ function WidgetHostProvider({ children }: { children: React.ReactNode }) {
             : undefined,
         isConnectedToExecutionChain: (connectedChainId, targetChainId) => connectedChainId === targetChainId,
         resolveCanonicalChainId: (requestedChainId) => (requestedChainId === 1 ? 1 : undefined),
-        resolveExecutionChainId: (requestedChainId) => (requestedChainId === 1 ? 1 : undefined)
+        resolveExecutionChainId
       },
+      execution: VAULT_WIDGET_EXECUTION,
       prices: {
         spotPriceEndpoint: '/api/prices/spot'
       },
