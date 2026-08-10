@@ -17,6 +17,7 @@ import {
 import {
   createLedgerSnapshotId,
   createVerifiedLedgerSnapshot,
+  createVerifiedLedgerSnapshotFromSynchronizedRevision,
   loadVerifiedLedgerSnapshot
 } from '@/server/lib/holdings/services/ledger/snapshot'
 import {
@@ -45,8 +46,10 @@ type TPipelineCommand = Readonly<{ type: 'get'; key: string }>
 class FakeSnapshotRedis implements TLedgerPipelineRedis {
   readonly values = new Map<string, unknown>()
   readonly setOptions = new Map<string, SetCommandOptions | undefined>()
+  readonly getKeys: string[] = []
 
   get<TData>(key: string): Promise<TData | null> {
+    this.getKeys.push(key)
     return Promise.resolve((this.values.get(key) as TData | undefined) ?? null)
   }
 
@@ -208,6 +211,79 @@ describe('verified ledger snapshots', () => {
     await expect(writeLedgerSnapshotPin({ redis, walletHash: WALLET_HASH, pin: result.pin })).resolves.toEqual({
       status: 'exists'
     })
+  })
+
+  it('pins an in-memory verified revision without rereading its head, manifest, or blobs', async () => {
+    const redis = new FakeSnapshotRedis()
+    const fixture = createVerifiedEmptyRevision({
+      revision: 'revision-direct',
+      parentRevision: null,
+      timestampMs: NOW_MS - 1_000
+    })
+
+    installRevision(redis, fixture, true)
+    redis.getKeys.length = 0
+
+    const result = await createVerifiedLedgerSnapshotFromSynchronizedRevision({
+      redis,
+      walletHash: WALLET_HASH,
+      verifiedRevision: fixture.verified,
+      headSource: 'active',
+      expectedCalculationVersion: CALCULATION_VERSION,
+      expectedChainIds: [1],
+      latestSettledDayTimestamp: LATEST_SETTLED_DAY_TIMESTAMP,
+      eventUpperTimestamp: EVENT_UPPER_TIMESTAMP,
+      nowMs: NOW_MS
+    })
+
+    expect(result).toMatchObject({ status: 'ready', head: { revision: 'revision-direct' } })
+    if (result.status !== 'ready') {
+      throw new Error('Expected a ready direct ledger snapshot')
+    }
+    expect(redis.getKeys).toEqual([getLedgerSnapshotKey(WALLET_HASH, result.pin.snapshotId)])
+  })
+
+  it('pins the supplied verified revision even when the active head has already advanced', async () => {
+    const redis = new FakeSnapshotRedis()
+    const first = createVerifiedEmptyRevision({
+      revision: 'revision-direct-1',
+      parentRevision: null,
+      timestampMs: NOW_MS - 2_000
+    })
+    const second = createVerifiedEmptyRevision({
+      revision: 'revision-direct-2',
+      parentRevision: 'revision-direct-1',
+      timestampMs: NOW_MS - 1_000
+    })
+    installRevision(redis, first, false)
+    installRevision(redis, second, true)
+
+    const created = await createVerifiedLedgerSnapshotFromSynchronizedRevision({
+      redis,
+      walletHash: WALLET_HASH,
+      verifiedRevision: first.verified,
+      headSource: 'active',
+      expectedCalculationVersion: CALCULATION_VERSION,
+      expectedChainIds: [1],
+      latestSettledDayTimestamp: LATEST_SETTLED_DAY_TIMESTAMP,
+      eventUpperTimestamp: EVENT_UPPER_TIMESTAMP,
+      nowMs: NOW_MS
+    })
+    if (created.status !== 'ready') {
+      throw new Error('Expected a ready direct ledger snapshot')
+    }
+
+    const loaded = await loadVerifiedLedgerSnapshot({
+      redis,
+      walletHash: WALLET_HASH,
+      snapshotId: created.pin.snapshotId,
+      expectedCalculationVersion: CALCULATION_VERSION,
+      expectedChainIds: [1],
+      nowMs: NOW_MS + 1
+    })
+
+    expect(created.head.revision).toBe('revision-direct-1')
+    expect(loaded).toMatchObject({ status: 'ready', head: { revision: 'revision-direct-1' } })
   })
 
   it('caps last-known-good cutoffs at the verified revision update time', async () => {

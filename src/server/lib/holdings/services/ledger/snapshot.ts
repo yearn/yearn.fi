@@ -1,6 +1,7 @@
 import { randomBytes } from 'node:crypto'
 import { debugLog, startHoldingsDebugTimer } from '@/server/lib/holdings/services/debug'
 import {
+  getVerifiedLedgerRevisionValues,
   isLedgerSnapshotId,
   stringifyCanonicalLedgerValue,
   type TLedgerVerifiedRevisionV1,
@@ -132,16 +133,149 @@ export function createLedgerSnapshotId(): string {
   return snapshotId
 }
 
-export async function createVerifiedLedgerSnapshot(args: {
+interface TLedgerSnapshotCreationArguments {
   readonly redis: TLedgerPipelineRedis
   readonly walletHash: string
   readonly expectedCalculationVersion: string
   readonly expectedChainIds: readonly number[]
   readonly latestSettledDayTimestamp: number
   readonly eventUpperTimestamp: number
-  readonly fallbackToPrevious?: boolean
   readonly nowMs?: number
-}): Promise<TCreateVerifiedLedgerSnapshotResult> {
+}
+
+async function pinVerifiedLedgerSnapshot(
+  args: TLedgerSnapshotCreationArguments & {
+    readonly compatibility: TLedgerSnapshotCompatibility
+    readonly nowMsValue: number
+    readonly verifiedRevision: TLedgerVerifiedRevisionV1
+    readonly headSource: 'active' | 'previous'
+    readonly getTotalDurationMs: () => number
+  }
+): Promise<TCreateVerifiedLedgerSnapshotResult> {
+  const verified = (() => {
+    try {
+      return getVerifiedLedgerRevisionValues(args.verifiedRevision)
+    } catch {
+      return null
+    }
+  })()
+  if (verified === null || verified.head.walletHash !== args.walletHash) {
+    debugLog('ledger-snapshot', 'snapshot creation completed', {
+      durationMs: args.getTotalDurationMs(),
+      status: 'corrupt'
+    })
+    return { status: 'corrupt' }
+  }
+  const incompatibilityReason = getIncompatibilityReason(verified.manifest, args.compatibility)
+  if (incompatibilityReason) {
+    debugLog('ledger-snapshot', 'snapshot creation completed', {
+      durationMs: args.getTotalDurationMs(),
+      status: 'incompatible',
+      reason: incompatibilityReason
+    })
+    return { status: 'incompatible', reason: incompatibilityReason }
+  }
+  const cutoffs = getRevisionBoundCutoffs({
+    head: verified.head,
+    latestSettledDayTimestamp: args.latestSettledDayTimestamp,
+    eventUpperTimestamp: args.eventUpperTimestamp
+  })
+  const pin: TLedgerSnapshotPinV1 = {
+    snapshotVersion: 1,
+    snapshotId: createLedgerSnapshotId(),
+    headSource: args.headSource,
+    head: verified.head,
+    latestSettledDayTimestamp: cutoffs.latestSettledDayTimestamp,
+    eventUpperTimestamp: cutoffs.eventUpperTimestamp,
+    createdAtMs: args.nowMsValue,
+    expiresAtMs: args.nowMsValue + LEDGER_SNAPSHOT_TTL_SECONDS * 1000
+  }
+  validateLedgerSnapshotPin(pin)
+  const getPinWriteDurationMs = startHoldingsDebugTimer()
+  const writeResult = await writeLedgerSnapshotPin({
+    redis: args.redis,
+    walletHash: args.walletHash,
+    pin
+  })
+  debugLog('ledger-snapshot', 'wrote snapshot pointer', {
+    durationMs: getPinWriteDurationMs(),
+    status: writeResult.status,
+    headSource: args.headSource
+  })
+  if (writeResult.status === 'exists') {
+    debugLog('ledger-snapshot', 'snapshot creation completed', {
+      durationMs: args.getTotalDurationMs(),
+      status: 'conflict'
+    })
+    return { status: 'conflict' }
+  }
+  if (writeResult.status === 'corrupt') {
+    debugLog('ledger-snapshot', 'snapshot creation completed', {
+      durationMs: args.getTotalDurationMs(),
+      status: 'corrupt'
+    })
+    return { status: 'corrupt' }
+  }
+  const getPinReadbackDurationMs = startHoldingsDebugTimer()
+  const persisted = await readLedgerSnapshotPin({
+    redis: args.redis,
+    walletHash: args.walletHash,
+    snapshotId: pin.snapshotId
+  })
+  debugLog('ledger-snapshot', 'verified snapshot pointer readback', {
+    durationMs: getPinReadbackDurationMs(),
+    status: persisted.status
+  })
+  if (
+    persisted.status !== 'ok' ||
+    stringifyCanonicalLedgerValue(persisted.pin) !== stringifyCanonicalLedgerValue(pin)
+  ) {
+    debugLog('ledger-snapshot', 'snapshot creation completed', {
+      durationMs: args.getTotalDurationMs(),
+      status: 'corrupt'
+    })
+    return { status: 'corrupt' }
+  }
+  debugLog('ledger-snapshot', 'snapshot creation completed', {
+    durationMs: args.getTotalDurationMs(),
+    status: 'ready',
+    headSource: args.headSource,
+    records: verified.manifest.recordCount,
+    chunks: verified.manifest.chunks.length,
+    indexShards: verified.manifest.indexes.length
+  })
+  return createReadySnapshot({
+    pin: persisted.pin,
+    head: verified.head,
+    manifest: verified.manifest,
+    verified: args.verifiedRevision
+  })
+}
+
+/**
+ * Pins a revision already verified against this Redis wallet while its synchronization lock is held.
+ * Standalone callers must use createVerifiedLedgerSnapshot so storage is read and verified first.
+ */
+export function createVerifiedLedgerSnapshotFromSynchronizedRevision(
+  args: TLedgerSnapshotCreationArguments & {
+    readonly verifiedRevision: TLedgerVerifiedRevisionV1
+    readonly headSource: 'active' | 'previous'
+  }
+): Promise<TCreateVerifiedLedgerSnapshotResult> {
+  const getTotalDurationMs = startHoldingsDebugTimer()
+  return pinVerifiedLedgerSnapshot({
+    ...args,
+    compatibility: normalizeCompatibility(args),
+    nowMsValue: getNowMs(args.nowMs),
+    getTotalDurationMs
+  })
+}
+
+export async function createVerifiedLedgerSnapshot(
+  args: TLedgerSnapshotCreationArguments & {
+    readonly fallbackToPrevious?: boolean
+  }
+): Promise<TCreateVerifiedLedgerSnapshotResult> {
   const getTotalDurationMs = startHoldingsDebugTimer()
   const compatibility = normalizeCompatibility(args)
   const nowMs = getNowMs(args.nowMs)
@@ -164,89 +298,13 @@ export async function createVerifiedLedgerSnapshot(args: {
     })
     return revision
   }
-  const incompatibilityReason = getIncompatibilityReason(revision.manifest, compatibility)
-  if (incompatibilityReason) {
-    debugLog('ledger-snapshot', 'snapshot creation completed', {
-      durationMs: getTotalDurationMs(),
-      status: 'incompatible',
-      reason: incompatibilityReason
-    })
-    return { status: 'incompatible', reason: incompatibilityReason }
-  }
-  const cutoffs = getRevisionBoundCutoffs({
-    head: revision.head,
-    latestSettledDayTimestamp: args.latestSettledDayTimestamp,
-    eventUpperTimestamp: args.eventUpperTimestamp
-  })
-  const pin: TLedgerSnapshotPinV1 = {
-    snapshotVersion: 1,
-    snapshotId: createLedgerSnapshotId(),
+  return pinVerifiedLedgerSnapshot({
+    ...args,
+    compatibility,
+    nowMsValue: nowMs,
+    verifiedRevision: revision.verified,
     headSource: revision.headSource,
-    head: revision.head,
-    latestSettledDayTimestamp: cutoffs.latestSettledDayTimestamp,
-    eventUpperTimestamp: cutoffs.eventUpperTimestamp,
-    createdAtMs: nowMs,
-    expiresAtMs: nowMs + LEDGER_SNAPSHOT_TTL_SECONDS * 1000
-  }
-  validateLedgerSnapshotPin(pin)
-  const getPinWriteDurationMs = startHoldingsDebugTimer()
-  const writeResult = await writeLedgerSnapshotPin({
-    redis: args.redis,
-    walletHash: args.walletHash,
-    pin
-  })
-  debugLog('ledger-snapshot', 'wrote snapshot pointer', {
-    durationMs: getPinWriteDurationMs(),
-    status: writeResult.status,
-    headSource: revision.headSource
-  })
-  if (writeResult.status === 'exists') {
-    debugLog('ledger-snapshot', 'snapshot creation completed', {
-      durationMs: getTotalDurationMs(),
-      status: 'conflict'
-    })
-    return { status: 'conflict' }
-  }
-  if (writeResult.status === 'corrupt') {
-    debugLog('ledger-snapshot', 'snapshot creation completed', {
-      durationMs: getTotalDurationMs(),
-      status: 'corrupt'
-    })
-    return { status: 'corrupt' }
-  }
-  const getPinReadbackDurationMs = startHoldingsDebugTimer()
-  const persisted = await readLedgerSnapshotPin({
-    redis: args.redis,
-    walletHash: args.walletHash,
-    snapshotId: pin.snapshotId
-  })
-  debugLog('ledger-snapshot', 'verified snapshot pointer readback', {
-    durationMs: getPinReadbackDurationMs(),
-    status: persisted.status
-  })
-  if (
-    persisted.status !== 'ok' ||
-    stringifyCanonicalLedgerValue(persisted.pin) !== stringifyCanonicalLedgerValue(pin)
-  ) {
-    debugLog('ledger-snapshot', 'snapshot creation completed', {
-      durationMs: getTotalDurationMs(),
-      status: 'corrupt'
-    })
-    return { status: 'corrupt' }
-  }
-  debugLog('ledger-snapshot', 'snapshot creation completed', {
-    durationMs: getTotalDurationMs(),
-    status: 'ready',
-    headSource: revision.headSource,
-    records: revision.manifest.recordCount,
-    chunks: revision.manifest.chunks.length,
-    indexShards: revision.manifest.indexes.length
-  })
-  return createReadySnapshot({
-    pin: persisted.pin,
-    head: revision.head,
-    manifest: revision.manifest,
-    verified: revision.verified
+    getTotalDurationMs
   })
 }
 

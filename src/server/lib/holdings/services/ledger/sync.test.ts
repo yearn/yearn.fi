@@ -2,7 +2,11 @@ import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { createHoldingsDebugContext, withHoldingsDebugContext } from '@/server/lib/holdings/services/debug'
 import type { TEnvioLedgerFetchStrategy, TEnvioLedgerMetadata } from '@/server/lib/holdings/services/ledger/envio'
 import { hashLedgerWalletAddress } from '@/server/lib/holdings/services/ledger/keys'
-import { HoldingsLedgerSyncError, syncHoldingsLedger } from '@/server/lib/holdings/services/ledger/sync'
+import {
+  HoldingsLedgerSyncError,
+  syncHoldingsLedger,
+  withSynchronizedHoldingsLedgerRevision
+} from '@/server/lib/holdings/services/ledger/sync'
 import {
   LEDGER_STREAMS,
   type TLedgerSixStreams,
@@ -190,6 +194,7 @@ function installSuccessfulMocks(): void {
     }
     testState.currentRead = {
       status: 'ready',
+      headSource: 'active',
       head: verified.head,
       manifest: verified.manifest,
       verified
@@ -225,6 +230,16 @@ describe('holdings ledger synchronization', () => {
     expect(testState.lastLowerBlockByChain).toEqual({ 1: 1 })
     expect(testState.lastFetchStrategy).toBe('faceted-batched')
     expect(mocks.commitRevision).toHaveBeenCalledTimes(1)
+    const coldRevision = testState.currentRead as {
+      readonly status: 'ready'
+      readonly manifest: {
+        readonly chunks: readonly unknown[]
+        readonly indexes: readonly unknown[]
+        readonly chunksChecksum: string
+        readonly indexesChecksum: string
+      }
+    }
+    mocks.writeBlobs.mockClear()
 
     testState.metadataProgressBlock = 100_010
     testState.metadataEventsProcessed = 10_001
@@ -235,6 +250,13 @@ describe('holdings ledger synchronization', () => {
     expect(testState.lastLowerBlockByChain).toEqual({ 1: 50_000 })
     expect(testState.lastFetchStrategy).toBe('warm-batched')
     expect(mocks.commitRevision).toHaveBeenCalledTimes(2)
+    expect(warm.status === 'updated' && warm.storage.newBlobs).toBe(0)
+    const warmRevision = testState.currentRead as typeof coldRevision
+    expect(warmRevision.manifest.chunks).toEqual(coldRevision.manifest.chunks)
+    expect(warmRevision.manifest.indexes).toEqual(coldRevision.manifest.indexes)
+    expect(warmRevision.manifest.chunksChecksum).toBe(coldRevision.manifest.chunksChecksum)
+    expect(warmRevision.manifest.indexesChecksum).toBe(coldRevision.manifest.indexesChecksum)
+    expect(mocks.writeBlobs).not.toHaveBeenCalled()
 
     const unchanged = await syncHoldingsLedger({ address: USER_ADDRESS })
 
@@ -242,6 +264,7 @@ describe('holdings ledger synchronization', () => {
     expect(unchanged.status === 'unchanged' && unchanged.syncType).toBe('warm')
     expect(testState.lastLowerBlockByChain).toEqual({ 1: 50_010 })
     expect(mocks.commitRevision).toHaveBeenCalledTimes(2)
+    expect(mocks.writeBlobs).not.toHaveBeenCalled()
     expect(mocks.writeStatus).toHaveBeenLastCalledWith(
       expect.objectContaining({ status: expect.objectContaining({ state: 'complete' }) })
     )
@@ -291,6 +314,123 @@ describe('holdings ledger synchronization', () => {
     expect(mocks.fetchMetadata).not.toHaveBeenCalled()
     expect(mocks.commitRevision).not.toHaveBeenCalled()
     expect(mocks.releaseLock).not.toHaveBeenCalled()
+  })
+
+  it('does not invoke a synchronized-revision consumer without a completed synchronization', async () => {
+    const consume = vi.fn()
+    mocks.acquireLock.mockResolvedValueOnce({ status: 'busy' })
+
+    await expect(withSynchronizedHoldingsLedgerRevision({ address: USER_ADDRESS }, consume)).resolves.toEqual({
+      kind: 'busy',
+      syncResult: { status: 'syncing', reasonCode: 'lock_busy' }
+    })
+    expect(consume).not.toHaveBeenCalled()
+
+    mocks.acquireLock.mockResolvedValueOnce({ status: 'acquired', lock: { owner: 'test-owner', fence: 2 } })
+    mocks.commitRevision.mockResolvedValueOnce({ status: 'head_conflict' })
+    await expect(withSynchronizedHoldingsLedgerRevision({ address: USER_ADDRESS }, consume)).rejects.toMatchObject({
+      reasonCode: 'cas_rejected',
+      statusCode: 409
+    })
+    expect(consume).not.toHaveBeenCalled()
+  })
+
+  it('exposes the exact synchronized revision to a consumer before releasing the wallet lock', async () => {
+    const consumed = await withSynchronizedHoldingsLedgerRevision({ address: USER_ADDRESS }, async (context) => {
+      expect(mocks.releaseLock).not.toHaveBeenCalled()
+      expect(context.verifiedRevision).toBe(
+        (testState.currentRead as { readonly status: 'ready'; readonly verified: unknown }).verified
+      )
+      expect(context.syncResult.status).toBe('updated')
+      return context.verifiedRevision
+    })
+
+    expect(consumed.kind).toBe('completed')
+    expect(consumed.kind === 'completed' && consumed.consumed).toBe(
+      (testState.currentRead as { readonly status: 'ready'; readonly verified: unknown }).verified
+    )
+    expect(mocks.releaseLock).toHaveBeenCalledTimes(1)
+  })
+
+  it('exposes the existing verified revision when a warm synchronization is unchanged', async () => {
+    await syncHoldingsLedger({ address: USER_ADDRESS })
+    const existing = (testState.currentRead as { readonly status: 'ready'; readonly verified: unknown }).verified
+    mocks.releaseLock.mockClear()
+
+    const synchronized = await withSynchronizedHoldingsLedgerRevision({ address: USER_ADDRESS }, async (context) => {
+      expect(context.syncResult.status).toBe('unchanged')
+      expect(context.verifiedRevision).toBe(existing)
+      expect(mocks.releaseLock).not.toHaveBeenCalled()
+      return context.verifiedRevision
+    })
+
+    expect(synchronized.kind).toBe('completed')
+    expect(synchronized.kind === 'completed' && synchronized.consumed).toBe(existing)
+    expect(mocks.releaseLock).toHaveBeenCalledTimes(1)
+  })
+
+  it('releases the lock without rewriting successful sync state when the consumer fails', async () => {
+    const consumerError = new Error('snapshot pointer write failed')
+
+    await expect(
+      withSynchronizedHoldingsLedgerRevision({ address: USER_ADDRESS }, async () => {
+        throw consumerError
+      })
+    ).rejects.toBe(consumerError)
+
+    expect(mocks.commitRevision).toHaveBeenCalledTimes(1)
+    expect(mocks.writeStatus).not.toHaveBeenCalledWith(
+      expect.objectContaining({ status: expect.objectContaining({ state: 'failed' }) })
+    )
+    expect(mocks.releaseLock).toHaveBeenCalledTimes(1)
+  })
+
+  it('falls back to newly encoded immutable content when a warm event changes', async () => {
+    await syncHoldingsLedger({ address: USER_ADDRESS })
+    const fetchSource = mocks.fetchSource.getMockImplementation()
+    testState.metadataProgressBlock = 100_010
+    testState.metadataEventsProcessed = 10_001
+    mocks.writeBlobs.mockClear()
+    mocks.fetchSource.mockImplementationOnce(async (input) => {
+      const fetched = await fetchSource?.(input)
+      if (!fetched) {
+        throw new Error('Expected the default Envio source mock')
+      }
+      return {
+        ...fetched,
+        streams: {
+          ...fetched.streams,
+          v3Deposits: [{ ...createDeposit(), assets: '101' }]
+        }
+      }
+    })
+
+    const result = await syncHoldingsLedger({ address: USER_ADDRESS })
+
+    expect(result).toMatchObject({ status: 'updated', syncType: 'warm' })
+    expect(result.status === 'updated' && result.storage.newBlobs).toBeGreaterThan(0)
+    expect(mocks.writeBlobs).toHaveBeenCalledWith(
+      expect.objectContaining({ items: expect.arrayContaining([expect.objectContaining({ kind: 'chunk' })]) })
+    )
+  })
+
+  it('uses the full codec path for a forced rebuild even when the fetched events are identical', async () => {
+    await syncHoldingsLedger({ address: USER_ADDRESS })
+    const consoleLog = vi.spyOn(console, 'log').mockImplementation(() => undefined)
+    const context = createHoldingsDebugContext('ledger-sync', USER_ADDRESS, true)
+
+    try {
+      const result = await withHoldingsDebugContext(context, () =>
+        syncHoldingsLedger({ address: USER_ADDRESS, forceRebuild: true })
+      )
+      const output = consoleLog.mock.calls.map(([message]) => String(message)).join('\n')
+
+      expect(result).toMatchObject({ status: 'updated', syncType: 'forced-reset' })
+      expect(output).toContain('"contentMode":"encoded"')
+      expect(output).not.toContain('"contentMode":"reused-verified"')
+    } finally {
+      consoleLog.mockRestore()
+    }
   })
 
   it('renews the fenced lock from a throttled source-page heartbeat', async () => {

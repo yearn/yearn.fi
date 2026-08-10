@@ -14,13 +14,16 @@ import {
   getCanonicalLedgerTupleIdentity,
   getLedgerIndexShard,
   getLedgerSha256,
+  getVerifiedLedgerRevisionValues,
   parseLedgerHead,
   parseLedgerRevisionManifest,
   parseLedgerSyncStatus,
   stringifyCanonicalLedgerValue,
   validateLedgerHeadAgainstManifest,
   validateLedgerRevisionManifest,
-  validateLedgerSyncStatus
+  validateLedgerSyncStatus,
+  verifyLedgerRevision,
+  verifyLedgerRevisionWithReusedContent
 } from '@/server/lib/holdings/services/ledger/codec'
 import { getLedgerChunkKey, getLedgerIndexShardKey } from '@/server/lib/holdings/services/ledger/keys'
 import { compareLedgerOrder } from '@/server/lib/holdings/services/ledger/order'
@@ -800,6 +803,84 @@ describe('portfolio ledger revision manifest', () => {
     expect(nextManifest.indexes).toEqual(baseManifest.indexes)
     expect(nextManifest.chunksChecksum).toBe(baseManifest.chunksChecksum)
     expect(nextManifest.indexesChecksum).toBe(baseManifest.indexesChecksum)
+  })
+
+  it('transitively verifies advanced coverage over unchanged verified content', () => {
+    const base = createStoredRevisionFixture()
+    const previous = verifyLedgerRevision(base.manifest, base.chunks, base.indexes)
+    const nextManifest = createLedgerRevisionManifest({
+      calculationVersion: base.manifest.calculationVersion,
+      walletHash: base.manifest.walletHash,
+      sourceFingerprint: base.manifest.sourceFingerprint,
+      sourceGeneration: base.manifest.sourceGeneration,
+      revision: 'revision_02',
+      parentRevision: base.manifest.revision,
+      chainScope: base.manifest.chainScope,
+      coverage: base.manifest.coverage.map((entry) => ({
+        ...entry,
+        completeThroughTimestamp: entry.completeThroughTimestamp + 1,
+        completeThroughBlock: entry.completeThroughBlock + 1
+      })),
+      chunks: base.manifest.chunks,
+      indexes: base.manifest.indexes,
+      dependencies: base.manifest.dependencies,
+      invalidationEpochs: base.manifest.invalidationEpochs,
+      dirtyFromTimestamp: base.manifest.dirtyFromTimestamp,
+      dirtyFromDate: base.manifest.dirtyFromDate,
+      dirtyReasons: base.manifest.dirtyReasons,
+      createdAtMs: base.manifest.createdAtMs,
+      updatedAtMs: base.manifest.updatedAtMs + 1,
+      reconciledAtMs: base.manifest.reconciledAtMs
+    })
+
+    const reused = verifyLedgerRevisionWithReusedContent(previous, nextManifest)
+
+    expect(getVerifiedLedgerRevisionValues(reused).manifest).toBe(nextManifest)
+    expect(reused.streams).toBe(previous.streams)
+    expect(reused.manifest.chunks).toEqual(previous.manifest.chunks)
+    expect(reused.manifest.indexes).toEqual(previous.manifest.indexes)
+  })
+
+  it('rejects forged parents, changed refs, and coverage that does not describe reused streams', () => {
+    const base = createStoredRevisionFixture()
+    const previous = verifyLedgerRevision(base.manifest, base.chunks, base.indexes)
+    const createNextManifest = (overrides: {
+      readonly chunks?: TLedgerRevisionManifestV1['chunks']
+      readonly indexes?: TLedgerRevisionManifestV1['indexes']
+      readonly coverage?: TLedgerRevisionManifestV1['coverage']
+    }) =>
+      createLedgerRevisionManifest({
+        calculationVersion: base.manifest.calculationVersion,
+        walletHash: base.manifest.walletHash,
+        sourceFingerprint: base.manifest.sourceFingerprint,
+        sourceGeneration: base.manifest.sourceGeneration,
+        revision: 'revision_02',
+        parentRevision: base.manifest.revision,
+        chainScope: base.manifest.chainScope,
+        coverage: overrides.coverage ?? base.manifest.coverage,
+        chunks: overrides.chunks ?? base.manifest.chunks,
+        indexes: overrides.indexes ?? base.manifest.indexes,
+        dependencies: base.manifest.dependencies,
+        invalidationEpochs: base.manifest.invalidationEpochs,
+        dirtyFromTimestamp: base.manifest.dirtyFromTimestamp,
+        dirtyFromDate: base.manifest.dirtyFromDate,
+        dirtyReasons: base.manifest.dirtyReasons,
+        createdAtMs: base.manifest.createdAtMs,
+        updatedAtMs: base.manifest.updatedAtMs + 1,
+        reconciledAtMs: base.manifest.reconciledAtMs
+      })
+    const validNext = createNextManifest({})
+    const different = createStoredRevisionFixture(createStreams({ v3Deposits: [createV3Deposit('different-content')] }))
+    const changedRefs = createNextManifest({ chunks: different.manifest.chunks, indexes: different.manifest.indexes })
+    const invalidCoverage = createNextManifest({
+      coverage: base.manifest.coverage.map((entry, index) =>
+        index === 0 ? { ...entry, count: entry.count + 1 } : entry
+      )
+    })
+
+    expect(() => verifyLedgerRevisionWithReusedContent({ ...previous }, validNext)).toThrow(/verification/i)
+    expect(() => verifyLedgerRevisionWithReusedContent(previous, changedRefs)).toThrow(/identical verified content/i)
+    expect(() => verifyLedgerRevisionWithReusedContent(previous, invalidCoverage)).toThrow(/coverage count/i)
   })
 
   it('accepts manifests between 128 and 256 KiB while enforcing active and manifest limits', () => {

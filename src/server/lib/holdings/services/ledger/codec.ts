@@ -1780,6 +1780,13 @@ export function verifyLedgerRevision(
   storedIndexes: readonly TStoredLedgerIndexShardV1[]
 ): TLedgerVerifiedRevisionV1 {
   const streams = decodeLedgerRevision(manifest, storedChunks, storedIndexes)
+  return createVerifiedLedgerRevision(manifest, streams)
+}
+
+function createVerifiedLedgerRevision(
+  manifest: TLedgerRevisionManifestV1,
+  streams: TLedgerSixStreams
+): TLedgerVerifiedRevisionV1 {
   const head = createLedgerHead(manifest)
   const revision = Object.freeze({
     manifest,
@@ -1790,6 +1797,56 @@ export function verifyLedgerRevision(
   }) as TLedgerVerifiedRevisionV1
   verifiedLedgerRevisions.add(revision)
   return revision
+}
+
+export function verifyLedgerRevisionWithReusedContent(
+  previous: TLedgerVerifiedRevisionV1,
+  manifest: TLedgerRevisionManifestV1
+): TLedgerVerifiedRevisionV1 {
+  const previousValues = getVerifiedLedgerRevisionValues(previous)
+  validateLedgerRevisionManifest(manifest)
+
+  if (
+    manifest.parentRevision !== previousValues.manifest.revision ||
+    manifest.revision === previousValues.manifest.revision
+  ) {
+    throw new Error('Ledger reused revision must directly follow its verified parent')
+  }
+
+  const getStableManifestContent = (value: TLedgerRevisionManifestV1) => ({
+    schemaVersion: value.schemaVersion,
+    codec: value.codec,
+    calculationVersion: value.calculationVersion,
+    walletHash: value.walletHash,
+    sourceFingerprint: value.sourceFingerprint,
+    sourceGeneration: value.sourceGeneration,
+    chainScope: value.chainScope,
+    chunks: value.chunks,
+    indexes: value.indexes,
+    dependencies: value.dependencies,
+    invalidationEpochs: value.invalidationEpochs,
+    dirtyFromTimestamp: value.dirtyFromTimestamp,
+    dirtyFromDate: value.dirtyFromDate,
+    dirtyReasons: value.dirtyReasons,
+    createdAtMs: value.createdAtMs,
+    reconciledAtMs: value.reconciledAtMs,
+    recordCount: value.recordCount,
+    chunksChecksum: value.chunksChecksum,
+    indexesChecksum: value.indexesChecksum
+  })
+  if (
+    stringifyCanonicalLedgerValue(getStableManifestContent(manifest)) !==
+    stringifyCanonicalLedgerValue(getStableManifestContent(previousValues.manifest))
+  ) {
+    throw new Error('Ledger reused revision may only advance coverage over identical verified content')
+  }
+  if (manifest.updatedAtMs < previousValues.manifest.updatedAtMs) {
+    throw new Error('Ledger reused revision timestamp must not move backwards')
+  }
+
+  assertCoverageMatchesLedger(previousValues.manifest.coverage, previousValues.manifest.chainScope, previous.streams)
+  assertCoverageMatchesLedger(manifest.coverage, manifest.chainScope, previous.streams)
+  return createVerifiedLedgerRevision(manifest, previous.streams)
 }
 
 export function getVerifiedLedgerRevisionValues(revision: TLedgerVerifiedRevisionV1): {

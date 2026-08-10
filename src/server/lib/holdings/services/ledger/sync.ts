@@ -7,7 +7,9 @@ import {
   encodeLedgerChunks,
   encodeLedgerIndexShards,
   stringifyCanonicalLedgerValue,
-  verifyLedgerRevision
+  type TLedgerVerifiedRevisionV1,
+  verifyLedgerRevision,
+  verifyLedgerRevisionWithReusedContent
 } from '@/server/lib/holdings/services/ledger/codec'
 import {
   fetchEnvioLedgerMetadata,
@@ -64,6 +66,7 @@ import {
 import {
   LEDGER_SCHEMA_VERSION,
   LEDGER_STREAMS,
+  type TCreateLedgerRevisionManifestInputV1,
   type TLedgerHeadV1,
   type TLedgerRevisionManifestV1,
   type TLedgerSixStreams,
@@ -130,6 +133,33 @@ export type TLedgerSyncResult =
       readonly parity: TLedgerParityResult
       readonly durationMs: number
     }
+
+type TLedgerCompletedSyncResult = Exclude<TLedgerSyncResult, { readonly status: 'syncing' }>
+type TLedgerBusySyncResult = Extract<TLedgerSyncResult, { readonly status: 'syncing' }>
+
+interface TLedgerSyncCompletion {
+  readonly syncResult: TLedgerCompletedSyncResult
+  readonly verifiedRevision: TLedgerVerifiedRevisionV1
+  readonly headSource: 'active' | 'previous'
+}
+
+interface TLedgerSyncArguments {
+  readonly address: string
+  readonly forceRebuild?: boolean
+  readonly compareLegacy?: boolean
+}
+
+export interface TSynchronizedHoldingsLedgerRevision {
+  readonly syncResult: TLedgerCompletedSyncResult
+  readonly verifiedRevision: TLedgerVerifiedRevisionV1
+  readonly headSource: 'active' | 'previous'
+  readonly redis: TLedgerPipelineRedis
+  readonly walletHash: string
+}
+
+export type TWithSynchronizedHoldingsLedgerRevisionResult<TConsumed> =
+  | { readonly kind: 'busy'; readonly syncResult: TLedgerBusySyncResult }
+  | { readonly kind: 'completed'; readonly syncResult: TLedgerCompletedSyncResult; readonly consumed: TConsumed }
 
 export class HoldingsLedgerSyncError extends Error {
   readonly reasonCode: TLedgerSyncReasonCode
@@ -298,8 +328,8 @@ function createCandidateManifest(args: {
   sourceGeneration: number
   nowMs: number
   dirty: TLedgerDirtyMetadata
-  chunks: ReturnType<typeof encodeLedgerChunks>
-  indexes: ReturnType<typeof encodeLedgerIndexShards>
+  chunks: TCreateLedgerRevisionManifestInputV1['chunks']
+  indexes: TCreateLedgerRevisionManifestInputV1['indexes']
 }): TLedgerRevisionManifestV1 {
   const reconciledAtMs = args.syncType === 'warm' && args.current ? args.current.reconciledAtMs : args.nowMs
   return createLedgerRevisionManifest({
@@ -534,7 +564,7 @@ async function performLedgerSync(args: {
   currentRead: TLedgerRevisionReadResult
   attemptState: { sourceGeneration: number }
   startedAtMs: number
-}): Promise<TLedgerSyncResult> {
+}): Promise<TLedgerSyncCompletion> {
   const current = getCurrentRevision(args.currentRead)
   const getMetadataDurationMs = startHoldingsDebugTimer()
   const initialMetadata = selectConfiguredMetadata(await fetchEnvioLedgerMetadata())
@@ -621,14 +651,24 @@ async function performLedgerSync(args: {
     fetched: fetched.streams,
     windows: getAuthoritativeWindows(fetched.windows)
   })
-  const streamsChanged = stringifyCanonicalLedgerValue(current.streams) !== stringifyCanonicalLedgerValue(merge.streams)
-  const dirty = getLedgerDirtyMetadata({
-    current: current.manifest,
-    previousStreams: current.streams,
-    streams: merge.streams,
-    merge,
-    syncType
+  const streamsChanged = LEDGER_STREAMS.some((stream) => {
+    const stats = merge.stats[stream]
+    return stats.added > 0 || stats.replaced > 0 || stats.deleted > 0
   })
+  const dirty =
+    !streamsChanged && syncType === 'warm' && current.manifest
+      ? {
+          dirtyFromTimestamp: current.manifest.dirtyFromTimestamp,
+          dirtyFromDate: current.manifest.dirtyFromDate,
+          dirtyReasons: current.manifest.dirtyReasons
+        }
+      : getLedgerDirtyMetadata({
+          current: current.manifest,
+          previousStreams: current.streams,
+          streams: merge.streams,
+          merge,
+          syncType
+        })
   debugLog('ledger-sync', 'merged authoritative event windows', {
     durationMs: getMergeDurationMs(),
     cachedEvents: LEDGER_STREAMS.reduce((total, stream) => total + merge.stats[stream].cached, 0),
@@ -663,9 +703,23 @@ async function performLedgerSync(args: {
       envioContinuationRequestCount: fetched.stats.continuationRequests
     })
   }
-  const getEncodingDurationMs = startHoldingsDebugTimer()
-  const chunks = encodeLedgerChunks(merge.streams)
-  const indexes = encodeLedgerIndexShards(chunks)
+  const getCandidateDurationMs = startHoldingsDebugTimer()
+  const content =
+    args.currentRead.status === 'ready' && syncType === 'warm' && !streamsChanged
+      ? ({
+          mode: 'reused-verified',
+          chunks: args.currentRead.manifest.chunks,
+          indexes: args.currentRead.manifest.indexes,
+          previous: args.currentRead.verified
+        } as const)
+      : (() => {
+          const chunks = encodeLedgerChunks(merge.streams)
+          return {
+            mode: 'encoded',
+            chunks,
+            indexes: encodeLedgerIndexShards(chunks)
+          } as const
+        })()
   const candidate = createCandidateManifest({
     walletHash: args.walletHash,
     current: current.manifest,
@@ -676,11 +730,12 @@ async function performLedgerSync(args: {
     sourceGeneration,
     nowMs: Date.now(),
     dirty,
-    chunks,
-    indexes
+    chunks: content.chunks,
+    indexes: content.indexes
   })
-  debugLog('ledger-sync', 'encoded candidate chunks, indexes, and manifest', {
-    durationMs: getEncodingDurationMs(),
+  debugLog('ledger-sync', 'prepared candidate revision manifest', {
+    durationMs: getCandidateDurationMs(),
+    contentMode: content.mode,
     records: candidate.recordCount,
     chunks: candidate.chunks.length,
     indexShards: candidate.indexes.length,
@@ -694,7 +749,7 @@ async function performLedgerSync(args: {
   })
   const events = sumStreamStats(merge.stats)
 
-  if (!commitRequired && current.manifest) {
+  if (!commitRequired && current.manifest && args.currentRead.status === 'ready') {
     const statusUpdatedAtMs = Date.now()
     await writeRequiredSyncStatus({
       redis: args.redis,
@@ -748,49 +803,65 @@ async function performLedgerSync(args: {
       indexShards: current.manifest.indexes.length
     })
     return {
-      status: 'unchanged',
-      syncType,
-      revision: current.manifest.revision,
-      sourceGeneration: current.manifest.sourceGeneration,
-      events,
-      streams: merge.stats,
-      envio: getEnvioResponseStats(fetched.stats, initialMetadata),
-      storage: getStorageStats(current.manifest, 0),
-      dirty: {
-        fromTimestamp: current.manifest.dirtyFromTimestamp,
-        fromDate: current.manifest.dirtyFromDate,
-        reasons: current.manifest.dirtyReasons
+      syncResult: {
+        status: 'unchanged',
+        syncType,
+        revision: current.manifest.revision,
+        sourceGeneration: current.manifest.sourceGeneration,
+        events,
+        streams: merge.stats,
+        envio: getEnvioResponseStats(fetched.stats, initialMetadata),
+        storage: getStorageStats(current.manifest, 0),
+        dirty: {
+          fromTimestamp: current.manifest.dirtyFromTimestamp,
+          fromDate: current.manifest.dirtyFromDate,
+          reasons: current.manifest.dirtyReasons
+        },
+        parity,
+        durationMs: completedAtMs - args.startedAtMs
       },
-      parity,
-      durationMs: completedAtMs - args.startedAtMs
+      verifiedRevision: args.currentRead.verified,
+      headSource: args.currentRead.headSource
     }
   }
 
   const getVerificationDurationMs = startHoldingsDebugTimer()
-  const verified = verifyLedgerRevision(
-    candidate,
-    getStoredChunks(args.walletHash, chunks),
-    getStoredIndexes(args.walletHash, indexes)
-  )
-  debugLog('ledger-sync', 'verified complete candidate revision', {
+  const verified =
+    content.mode === 'reused-verified'
+      ? verifyLedgerRevisionWithReusedContent(content.previous, candidate)
+      : verifyLedgerRevision(
+          candidate,
+          getStoredChunks(args.walletHash, content.chunks),
+          getStoredIndexes(args.walletHash, content.indexes)
+        )
+  debugLog('ledger-sync', 'verified candidate revision', {
     durationMs: getVerificationDurationMs(),
+    contentMode: content.mode,
     records: candidate.recordCount,
     chunks: candidate.chunks.length,
     indexShards: candidate.indexes.length
   })
-  const newBlobs = getNewImmutableBlobs({
-    walletHash: args.walletHash,
-    current: current.manifest,
-    chunks,
-    indexes
-  })
+  const newBlobs =
+    content.mode === 'reused-verified'
+      ? []
+      : getNewImmutableBlobs({
+          walletHash: args.walletHash,
+          current: current.manifest,
+          chunks: content.chunks,
+          indexes: content.indexes
+        })
   const getBlobWriteDurationMs = startHoldingsDebugTimer()
-  const blobResults = await writeImmutableLedgerBlobs({ redis: args.redis, items: newBlobs })
+  const blobResults =
+    newBlobs.length === 0 ? [] : await writeImmutableLedgerBlobs({ redis: args.redis, items: newBlobs })
   debugLog('ledger-sync', 'published immutable revision blobs', {
     durationMs: getBlobWriteDurationMs(),
+    contentMode: content.mode,
+    referenced: candidate.chunks.length + candidate.indexes.length,
     attempted: newBlobs.length,
     written: blobResults.filter(({ status }) => status === 'written').length,
-    reused: blobResults.filter(({ status }) => status === 'exists').length
+    verifiedExisting: blobResults.filter(({ status }) => status === 'exists').length,
+    reusedVerifiedReferences:
+      content.mode === 'reused-verified' ? candidate.chunks.length + candidate.indexes.length : 0
   })
   if (blobResults.some(({ status }) => status !== 'written' && status !== 'exists')) {
     throw new HoldingsLedgerSyncError('storage_failed', 500)
@@ -865,33 +936,37 @@ async function performLedgerSync(args: {
     chunks: candidate.chunks.length,
     indexShards: candidate.indexes.length,
     encodedBytes: candidate.activeEncodedBytes,
-    newBlobs: newBlobs.length
+    newBlobs: newBlobs.length,
+    contentMode: content.mode
   })
 
   return {
-    status: 'updated',
-    syncType,
-    revision: candidate.revision,
-    sourceGeneration,
-    events,
-    streams: merge.stats,
-    envio: getEnvioResponseStats(fetched.stats, initialMetadata),
-    storage: getStorageStats(candidate, newBlobs.length),
-    dirty: {
-      fromTimestamp: candidate.dirtyFromTimestamp,
-      fromDate: candidate.dirtyFromDate,
-      reasons: candidate.dirtyReasons
+    syncResult: {
+      status: 'updated',
+      syncType,
+      revision: candidate.revision,
+      sourceGeneration,
+      events,
+      streams: merge.stats,
+      envio: getEnvioResponseStats(fetched.stats, initialMetadata),
+      storage: getStorageStats(candidate, newBlobs.length),
+      dirty: {
+        fromTimestamp: candidate.dirtyFromTimestamp,
+        fromDate: candidate.dirtyFromDate,
+        reasons: candidate.dirtyReasons
+      },
+      parity,
+      durationMs: completedAtMs - args.startedAtMs
     },
-    parity,
-    durationMs: completedAtMs - args.startedAtMs
+    verifiedRevision: verified,
+    headSource: 'active'
   }
 }
 
-export async function syncHoldingsLedger(args: {
-  readonly address: string
-  readonly forceRebuild?: boolean
-  readonly compareLegacy?: boolean
-}): Promise<TLedgerSyncResult> {
+async function runHoldingsLedgerSync<TConsumed>(
+  args: TLedgerSyncArguments,
+  consume: (context: TSynchronizedHoldingsLedgerRevision) => Promise<TConsumed>
+): Promise<TWithSynchronizedHoldingsLedgerRevisionResult<TConsumed>> {
   const startedAtMs = Date.now()
   const getTotalDurationMs = startHoldingsDebugTimer()
   const walletHash = hashLedgerWalletAddress(args.address)
@@ -925,80 +1000,91 @@ export async function syncHoldingsLedger(args: {
       status: 'syncing',
       reasonCode: 'lock_busy'
     })
-    return { status: 'syncing', reasonCode: 'lock_busy' }
+    return { kind: 'busy', syncResult: { status: 'syncing', reasonCode: 'lock_busy' } }
   }
 
   try {
-    const forceRebuild = args.forceRebuild ?? false
-    const getRevisionReadDurationMs = startHoldingsDebugTimer()
-    const currentRead = await readCurrentRevisionForSync({
-      redis,
-      walletHash,
-      lock: lockResult.lock,
-      forceRebuild,
-      startedAtMs
-    })
-    debugLog('ledger-sync', 'read and verified current wallet revision', {
-      durationMs: getRevisionReadDurationMs(),
-      status: currentRead.status,
-      headSource: currentRead.status === 'ready' ? currentRead.headSource : undefined
-    })
-    const current = getCurrentRevision(currentRead)
-    const attemptState = { sourceGeneration: current.manifest?.sourceGeneration ?? 1 }
-    try {
-      const result = await performLedgerSync({
-        address: args.address,
-        forceRebuild,
-        compareLegacy: args.compareLegacy ?? false,
+    const completion = await (async (): Promise<TLedgerSyncCompletion> => {
+      const forceRebuild = args.forceRebuild ?? false
+      const getRevisionReadDurationMs = startHoldingsDebugTimer()
+      const currentRead = await readCurrentRevisionForSync({
         redis,
         walletHash,
         lock: lockResult.lock,
-        currentRead,
-        attemptState,
+        forceRebuild,
         startedAtMs
       })
-      debugLog('ledger-sync', 'completed wallet synchronization', {
-        durationMs: getTotalDurationMs(),
-        status: result.status,
-        syncType: result.status === 'syncing' ? undefined : result.syncType
+      debugLog('ledger-sync', 'read and verified current wallet revision', {
+        durationMs: getRevisionReadDurationMs(),
+        status: currentRead.status,
+        headSource: currentRead.status === 'ready' ? currentRead.headSource : undefined
       })
-      return result
-    } catch (error) {
-      const syncError = normalizeSyncError(error)
-      const failedStatus = getSyncStatus({
-        state: 'failed',
-        sourceGeneration: attemptState.sourceGeneration,
-        revision: current.manifest?.revision ?? null,
-        reasonCode: syncError.reasonCode,
-        updatedAtMs: Date.now()
-      })
-      await writeLedgerSyncStatus({
-        redis,
-        walletHash,
-        lock: lockResult.lock,
-        status: failedStatus
-      }).catch(() => undefined)
-      reportLedgerMetric({
-        name: 'ledger.manifest',
-        outcome:
-          syncError.reasonCode === 'stale_fence'
-            ? 'stale-writer'
-            : syncError.reasonCode === 'cas_rejected'
-              ? 'head-conflict'
-              : 'error',
-        mode: holdingsConfig.ledgerMode,
-        walletHash,
-        durationMs: Date.now() - startedAtMs
-      })
-      debugLog('ledger-sync', 'wallet synchronization failed', {
-        durationMs: getTotalDurationMs(),
-        reasonCode: syncError.reasonCode,
-        errorClass: error instanceof Error ? error.name : 'UnknownError'
-      })
-      throw syncError
-    }
-  } catch (error) {
-    throw normalizeSyncError(error)
+      const current = getCurrentRevision(currentRead)
+      const attemptState = { sourceGeneration: current.manifest?.sourceGeneration ?? 1 }
+      try {
+        const result = await performLedgerSync({
+          address: args.address,
+          forceRebuild,
+          compareLegacy: args.compareLegacy ?? false,
+          redis,
+          walletHash,
+          lock: lockResult.lock,
+          currentRead,
+          attemptState,
+          startedAtMs
+        })
+        debugLog('ledger-sync', 'completed wallet synchronization', {
+          durationMs: getTotalDurationMs(),
+          status: result.syncResult.status,
+          syncType: result.syncResult.syncType
+        })
+        return result
+      } catch (error) {
+        const syncError = normalizeSyncError(error)
+        const failedStatus = getSyncStatus({
+          state: 'failed',
+          sourceGeneration: attemptState.sourceGeneration,
+          revision: current.manifest?.revision ?? null,
+          reasonCode: syncError.reasonCode,
+          updatedAtMs: Date.now()
+        })
+        await writeLedgerSyncStatus({
+          redis,
+          walletHash,
+          lock: lockResult.lock,
+          status: failedStatus
+        }).catch(() => undefined)
+        reportLedgerMetric({
+          name: 'ledger.manifest',
+          outcome:
+            syncError.reasonCode === 'stale_fence'
+              ? 'stale-writer'
+              : syncError.reasonCode === 'cas_rejected'
+                ? 'head-conflict'
+                : 'error',
+          mode: holdingsConfig.ledgerMode,
+          walletHash,
+          durationMs: Date.now() - startedAtMs
+        })
+        debugLog('ledger-sync', 'wallet synchronization failed', {
+          durationMs: getTotalDurationMs(),
+          reasonCode: syncError.reasonCode,
+          errorClass: error instanceof Error ? error.name : 'UnknownError'
+        })
+        throw syncError
+      }
+    })().catch((error) => {
+      throw normalizeSyncError(error)
+    })
+
+    const consumed = await consume({
+      syncResult: completion.syncResult,
+      verifiedRevision: completion.verifiedRevision,
+      headSource: completion.headSource,
+      redis,
+      walletHash
+    })
+    return { kind: 'completed', syncResult: completion.syncResult, consumed }
   } finally {
     const getLockReleaseDurationMs = startHoldingsDebugTimer()
     const release = await releaseLedgerLock({
@@ -1011,4 +1097,16 @@ export async function syncHoldingsLedger(args: {
       status: release.status
     })
   }
+}
+
+export async function syncHoldingsLedger(args: TLedgerSyncArguments): Promise<TLedgerSyncResult> {
+  const result = await runHoldingsLedgerSync(args, async () => undefined)
+  return result.syncResult
+}
+
+export function withSynchronizedHoldingsLedgerRevision<TConsumed>(
+  args: TLedgerSyncArguments,
+  consume: (context: TSynchronizedHoldingsLedgerRevision) => Promise<TConsumed>
+): Promise<TWithSynchronizedHoldingsLedgerRevisionResult<TConsumed>> {
+  return runHoldingsLedgerSync(args, consume)
 }

@@ -11,11 +11,15 @@ import {
 import { hashLedgerWalletAddress } from '@/server/lib/holdings/services/ledger/keys'
 import {
   createVerifiedLedgerSnapshot,
+  createVerifiedLedgerSnapshotFromSynchronizedRevision,
   type TCreateVerifiedLedgerSnapshotResult
 } from '@/server/lib/holdings/services/ledger/snapshot'
 import { LEDGER_CALCULATION_VERSION } from '@/server/lib/holdings/services/ledger/state'
 import type { TLedgerPipelineRedis } from '@/server/lib/holdings/services/ledger/store'
-import { HoldingsLedgerSyncError, syncHoldingsLedger } from '@/server/lib/holdings/services/ledger/sync'
+import {
+  HoldingsLedgerSyncError,
+  withSynchronizedHoldingsLedgerRevision
+} from '@/server/lib/holdings/services/ledger/sync'
 import { getHoldingsLedgerRedisClient } from '@/server/lib/holdings/storage/ledgerRedis'
 
 const SNAPSHOT_BODY_FIELDS = ['address', 'refresh', 'forceRebuild', 'compareLegacy'] as const
@@ -138,19 +142,22 @@ export async function POST(request: Request): Promise<Response> {
       })
 
       try {
-        if (refresh) {
-          const getSyncDurationMs = startHoldingsDebugTimer()
-          const syncResult = await syncHoldingsLedger({
-            address: body.address,
-            forceRebuild: body.forceRebuild,
-            compareLegacy: body.compareLegacy
-          })
-          debugLog('route', 'completed ledger synchronization before snapshot', {
-            durationMs: getSyncDurationMs(),
-            status: syncResult.status,
-            ...(syncResult.status === 'syncing'
-              ? { reasonCode: syncResult.reasonCode }
-              : {
+        const operation = await (async (): Promise<
+          | { readonly kind: 'response'; readonly response: Response }
+          | { readonly kind: 'snapshot'; readonly result: TCreateVerifiedLedgerSnapshotResult }
+        > => {
+          if (refresh) {
+            const getSyncDurationMs = startHoldingsDebugTimer()
+            const synchronized = await withSynchronizedHoldingsLedgerRevision(
+              {
+                address: body.address,
+                forceRebuild: body.forceRebuild,
+                compareLegacy: body.compareLegacy
+              },
+              async ({ syncResult, verifiedRevision, headSource, redis, walletHash }) => {
+                debugLog('route', 'completed ledger synchronization before snapshot', {
+                  durationMs: syncResult.durationMs,
+                  status: syncResult.status,
                   syncType: syncResult.syncType,
                   fetchedEvents: syncResult.events.fetched,
                   totalEvents: syncResult.events.total,
@@ -163,59 +170,108 @@ export async function POST(request: Request): Promise<Response> {
                   continuationRequests: syncResult.envio.continuationRequests,
                   laggingChains: syncResult.envio.laggingChains
                 })
-          })
-          if (syncResult.status === 'syncing') {
-            debugLog('route', 'completed holdings ledger snapshot request', {
-              durationMs: getRequestDurationMs(),
-              status: 'syncing',
-              httpStatus: 202
-            })
-            return json(
-              { status: 'syncing', reasonCode: syncResult.reasonCode },
-              { status: 202, headers: { ...LEDGER_ADMIN_CORS_HEADERS, 'Retry-After': '2' } }
+                if (syncResult.envio.laggingChains > 0) {
+                  return null
+                }
+                const getPinDurationMs = startHoldingsDebugTimer()
+                const result = await createVerifiedLedgerSnapshotFromSynchronizedRevision({
+                  redis,
+                  walletHash,
+                  verifiedRevision,
+                  headSource,
+                  expectedCalculationVersion: LEDGER_CALCULATION_VERSION,
+                  expectedChainIds: holdingsConfig.ledgerChainIds,
+                  latestSettledDayTimestamp: cutoffs.latestSettledDayTimestamp,
+                  eventUpperTimestamp: cutoffs.eventUpperTimestamp,
+                  nowMs: Date.now()
+                })
+                debugLog('route', 'completed verified snapshot pin operation', {
+                  durationMs: getPinDurationMs(),
+                  status: result.status,
+                  revisionSource: 'synchronized'
+                })
+                return result
+              }
             )
+            if (synchronized.kind === 'busy') {
+              const { syncResult } = synchronized
+              debugLog('route', 'completed ledger synchronization before snapshot', {
+                durationMs: getSyncDurationMs(),
+                status: syncResult.status,
+                reasonCode: syncResult.reasonCode
+              })
+              debugLog('route', 'completed holdings ledger snapshot request', {
+                durationMs: getRequestDurationMs(),
+                status: 'syncing',
+                httpStatus: 202
+              })
+              return {
+                kind: 'response',
+                response: json(
+                  { status: 'syncing', reasonCode: syncResult.reasonCode },
+                  { status: 202, headers: { ...LEDGER_ADMIN_CORS_HEADERS, 'Retry-After': '2' } }
+                )
+              }
+            }
+            const { syncResult } = synchronized
+            if (syncResult.envio.laggingChains > 0) {
+              debugLog('route', 'completed holdings ledger snapshot request', {
+                durationMs: getRequestDurationMs(),
+                status: 'source_lagging',
+                httpStatus: 503,
+                laggingChains: syncResult.envio.laggingChains
+              })
+              return {
+                kind: 'response',
+                response: json(
+                  { error: 'Holdings ledger source is not ready', reasonCode: 'source_lagging' },
+                  { status: 503, headers: { ...LEDGER_ADMIN_CORS_HEADERS, 'Retry-After': '30' } }
+                )
+              }
+            }
+            if (synchronized.consumed === null) {
+              throw new Error('Synchronized ledger snapshot result is missing')
+            }
+            return { kind: 'snapshot', result: synchronized.consumed }
           }
-          if (syncResult.envio.laggingChains > 0) {
-            debugLog('route', 'completed holdings ledger snapshot request', {
-              durationMs: getRequestDurationMs(),
-              status: 'source_lagging',
-              httpStatus: 503,
-              laggingChains: syncResult.envio.laggingChains
-            })
-            return json(
-              { error: 'Holdings ledger source is not ready', reasonCode: 'source_lagging' },
-              { status: 503, headers: { ...LEDGER_ADMIN_CORS_HEADERS, 'Retry-After': '30' } }
-            )
-          }
-        }
 
-        const redis = getHoldingsLedgerRedisClient() as TLedgerPipelineRedis | null
-        if (!redis) {
-          debugLog('route', 'completed holdings ledger snapshot request', {
-            durationMs: getRequestDurationMs(),
-            status: 'storage_unavailable',
-            httpStatus: 503
+          const redis = getHoldingsLedgerRedisClient() as TLedgerPipelineRedis | null
+          if (!redis) {
+            debugLog('route', 'completed holdings ledger snapshot request', {
+              durationMs: getRequestDurationMs(),
+              status: 'storage_unavailable',
+              httpStatus: 503
+            })
+            return {
+              kind: 'response',
+              response: json(
+                { error: 'Holdings ledger storage is unavailable' },
+                { status: 503, headers: LEDGER_ADMIN_CORS_HEADERS }
+              )
+            }
+          }
+          const getPinDurationMs = startHoldingsDebugTimer()
+          const result = await createVerifiedLedgerSnapshot({
+            redis,
+            walletHash: hashLedgerWalletAddress(body.address),
+            expectedCalculationVersion: LEDGER_CALCULATION_VERSION,
+            expectedChainIds: holdingsConfig.ledgerChainIds,
+            latestSettledDayTimestamp: cutoffs.latestSettledDayTimestamp,
+            eventUpperTimestamp: cutoffs.eventUpperTimestamp,
+            fallbackToPrevious: true,
+            nowMs: Date.now()
           })
-          return json(
-            { error: 'Holdings ledger storage is unavailable' },
-            { status: 503, headers: LEDGER_ADMIN_CORS_HEADERS }
-          )
+          debugLog('route', 'completed verified snapshot pin operation', {
+            durationMs: getPinDurationMs(),
+            status: result.status,
+            revisionSource: 'last-known-good'
+          })
+          return { kind: 'snapshot', result }
+        })()
+        if (operation.kind === 'response') {
+          return operation.response
         }
-        const getPinDurationMs = startHoldingsDebugTimer()
-        const result = await createVerifiedLedgerSnapshot({
-          redis,
-          walletHash: hashLedgerWalletAddress(body.address),
-          expectedCalculationVersion: LEDGER_CALCULATION_VERSION,
-          expectedChainIds: holdingsConfig.ledgerChainIds,
-          latestSettledDayTimestamp: cutoffs.latestSettledDayTimestamp,
-          eventUpperTimestamp: cutoffs.eventUpperTimestamp,
-          fallbackToPrevious: !refresh,
-          nowMs: Date.now()
-        })
-        debugLog('route', 'completed verified snapshot pin operation', {
-          durationMs: getPinDurationMs(),
-          status: result.status
-        })
+        const { result } = operation
         if (result.status !== 'ready') {
           const response = getSnapshotCreationError(result)
           debugLog('route', 'completed holdings ledger snapshot request', {

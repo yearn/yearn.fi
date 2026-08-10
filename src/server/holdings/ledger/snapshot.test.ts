@@ -9,8 +9,9 @@ const EVENT_UPPER_TIMESTAMP = Math.floor(REQUEST_NOW_MS / 1000)
 const mocks = vi.hoisted(() => ({
   access: vi.fn(),
   createSnapshot: vi.fn(),
+  createSnapshotFromRevision: vi.fn(),
   getRedis: vi.fn(),
-  sync: vi.fn()
+  withSync: vi.fn()
 }))
 
 vi.mock('@/server/holdings/ledger/access', () => ({
@@ -19,12 +20,13 @@ vi.mock('@/server/holdings/ledger/access', () => ({
 }))
 
 vi.mock('@/server/lib/holdings/services/ledger/snapshot', () => ({
-  createVerifiedLedgerSnapshot: mocks.createSnapshot
+  createVerifiedLedgerSnapshot: mocks.createSnapshot,
+  createVerifiedLedgerSnapshotFromSynchronizedRevision: mocks.createSnapshotFromRevision
 }))
 
 vi.mock('@/server/lib/holdings/services/ledger/sync', () => ({
   HoldingsLedgerSyncError: class HoldingsLedgerSyncError extends Error {},
-  syncHoldingsLedger: mocks.sync
+  withSynchronizedHoldingsLedgerRevision: mocks.withSync
 }))
 
 vi.mock('@/server/lib/holdings/storage/ledgerRedis', () => ({
@@ -69,6 +71,44 @@ function createUnchangedSyncResult(laggingChains = 0) {
   }
 }
 
+function createReadySnapshotResult() {
+  return {
+    status: 'ready',
+    pin: {
+      snapshotId: SNAPSHOT_ID,
+      latestSettledDayTimestamp: LATEST_SETTLED_DAY_TIMESTAMP,
+      eventUpperTimestamp: EVENT_UPPER_TIMESTAMP,
+      expiresAtMs: REQUEST_NOW_MS + 30 * 60 * 1000
+    },
+    head: { revision: 'revision-1', sourceGeneration: 2 },
+    headSource: 'active'
+  }
+}
+
+function installSynchronizedResult(syncResult = createUnchangedSyncResult()): void {
+  mocks.withSync.mockImplementation(
+    async (
+      _args: unknown,
+      consume: (context: {
+        syncResult: ReturnType<typeof createUnchangedSyncResult>
+        verifiedRevision: object
+        headSource: 'active'
+        redis: object
+        walletHash: string
+      }) => Promise<unknown>
+    ) => {
+      const consumed = await consume({
+        syncResult,
+        verifiedRevision: { marker: 'verified-revision' },
+        headSource: 'active',
+        redis: { marker: 'sync-redis' },
+        walletHash: 'private-wallet-hash'
+      })
+      return { kind: 'completed', syncResult, consumed }
+    }
+  )
+}
+
 describe('holdings ledger snapshot route', () => {
   beforeEach(() => {
     vi.clearAllMocks()
@@ -77,18 +117,9 @@ describe('holdings ledger snapshot route', () => {
     vi.stubEnv('HOLDINGS_LEDGER_CHAIN_IDS', '1,10')
     mocks.access.mockReturnValue(null)
     mocks.getRedis.mockReturnValue({})
-    mocks.sync.mockResolvedValue(createUnchangedSyncResult())
-    mocks.createSnapshot.mockResolvedValue({
-      status: 'ready',
-      pin: {
-        snapshotId: SNAPSHOT_ID,
-        latestSettledDayTimestamp: LATEST_SETTLED_DAY_TIMESTAMP,
-        eventUpperTimestamp: EVENT_UPPER_TIMESTAMP,
-        expiresAtMs: REQUEST_NOW_MS + 30 * 60 * 1000
-      },
-      head: { revision: 'revision-1', sourceGeneration: 2 },
-      headSource: 'active'
-    })
+    installSynchronizedResult()
+    mocks.createSnapshot.mockResolvedValue(createReadySnapshotResult())
+    mocks.createSnapshotFromRevision.mockResolvedValue(createReadySnapshotResult())
   })
 
   afterEach(() => {
@@ -121,7 +152,7 @@ describe('holdings ledger snapshot route', () => {
     expect(output).toContain('"durationMs":')
     expect(output).toContain('"strategy":"warm-batched"')
     expect(output).toContain('"requests":2')
-    ;[ADDRESS, SNAPSHOT_ID, 'revision-1', 'private-sync-revision'].forEach((secret) => {
+    ;[ADDRESS, SNAPSHOT_ID, 'revision-1', 'private-sync-revision', 'private-wallet-hash'].forEach((secret) => {
       expect(output.toLowerCase()).not.toContain(secret.toLowerCase())
     })
   })
@@ -130,20 +161,26 @@ describe('holdings ledger snapshot route', () => {
     const response = await POST(createRequest({ address: ADDRESS }))
 
     expect(response.status).toBe(201)
-    expect(mocks.sync).toHaveBeenCalledWith({
-      address: ADDRESS,
-      forceRebuild: undefined,
-      compareLegacy: undefined
-    })
-    expect(mocks.createSnapshot).toHaveBeenCalledWith(
+    expect(mocks.withSync).toHaveBeenCalledWith(
+      {
+        address: ADDRESS,
+        forceRebuild: undefined,
+        compareLegacy: undefined
+      },
+      expect.any(Function)
+    )
+    expect(mocks.createSnapshotFromRevision).toHaveBeenCalledWith(
       expect.objectContaining({
+        walletHash: 'private-wallet-hash',
+        verifiedRevision: { marker: 'verified-revision' },
+        headSource: 'active',
         latestSettledDayTimestamp: LATEST_SETTLED_DAY_TIMESTAMP,
         eventUpperTimestamp: EVENT_UPPER_TIMESTAMP,
         expectedChainIds: [1, 10],
-        fallbackToPrevious: false,
         nowMs: REQUEST_NOW_MS
       })
     )
+    expect(mocks.createSnapshot).not.toHaveBeenCalled()
     await expect(response.json()).resolves.toMatchObject({
       status: 'ready',
       snapshotId: SNAPSHOT_ID,
@@ -159,7 +196,8 @@ describe('holdings ledger snapshot route', () => {
 
     expect(response.status).toBe(201)
     expect(mocks.access).toHaveBeenCalledTimes(1)
-    expect(mocks.sync).not.toHaveBeenCalled()
+    expect(mocks.withSync).not.toHaveBeenCalled()
+    expect(mocks.createSnapshotFromRevision).not.toHaveBeenCalled()
     expect(mocks.createSnapshot).toHaveBeenCalledWith(
       expect.objectContaining({ fallbackToPrevious: true, nowMs: REQUEST_NOW_MS })
     )
@@ -170,21 +208,30 @@ describe('holdings ledger snapshot route', () => {
     const response = await POST(createRequest({ address: ADDRESS, refresh: false, forceRebuild: true }))
 
     expect(response.status).toBe(400)
-    expect(mocks.sync).not.toHaveBeenCalled()
+    expect(mocks.withSync).not.toHaveBeenCalled()
     expect(mocks.createSnapshot).not.toHaveBeenCalled()
+    expect(mocks.createSnapshotFromRevision).not.toHaveBeenCalled()
   })
 
   it('starts the 30 minute logical lifetime after synchronization while retaining the request cutoff', async () => {
     const postSyncNowMs = REQUEST_NOW_MS + 5 * 60 * 1000
-    mocks.sync.mockImplementationOnce(async () => {
+    const syncResult = createUnchangedSyncResult()
+    mocks.withSync.mockImplementationOnce(async (_args, consume) => {
       vi.setSystemTime(postSyncNowMs)
-      return createUnchangedSyncResult()
+      const consumed = await consume({
+        syncResult,
+        verifiedRevision: { marker: 'verified-revision' },
+        headSource: 'active',
+        redis: { marker: 'sync-redis' },
+        walletHash: 'private-wallet-hash'
+      })
+      return { kind: 'completed', syncResult, consumed }
     })
 
     const response = await POST(createRequest({ address: ADDRESS }))
 
     expect(response.status).toBe(201)
-    expect(mocks.createSnapshot).toHaveBeenCalledWith(
+    expect(mocks.createSnapshotFromRevision).toHaveBeenCalledWith(
       expect.objectContaining({
         eventUpperTimestamp: EVENT_UPPER_TIMESTAMP,
         nowMs: postSyncNowMs
@@ -193,17 +240,21 @@ describe('holdings ledger snapshot route', () => {
   })
 
   it('returns retry guidance instead of pinning while another sync owns the lock', async () => {
-    mocks.sync.mockResolvedValueOnce({ status: 'syncing', reasonCode: 'lock_busy' })
+    mocks.withSync.mockResolvedValueOnce({
+      kind: 'busy',
+      syncResult: { status: 'syncing', reasonCode: 'lock_busy' }
+    })
 
     const response = await POST(createRequest({ address: ADDRESS }))
 
     expect(response.status).toBe(202)
     expect(response.headers.get('Retry-After')).toBe('2')
     expect(mocks.createSnapshot).not.toHaveBeenCalled()
+    expect(mocks.createSnapshotFromRevision).not.toHaveBeenCalled()
   })
 
   it('does not pin a wall-clock snapshot while an Envio chain is lagging', async () => {
-    mocks.sync.mockResolvedValueOnce(createUnchangedSyncResult(1))
+    installSynchronizedResult(createUnchangedSyncResult(1))
 
     const response = await POST(createRequest({ address: ADDRESS }))
 
@@ -211,6 +262,7 @@ describe('holdings ledger snapshot route', () => {
     expect(response.headers.get('Retry-After')).toBe('30')
     await expect(response.json()).resolves.toMatchObject({ reasonCode: 'source_lagging' })
     expect(mocks.createSnapshot).not.toHaveBeenCalled()
+    expect(mocks.createSnapshotFromRevision).not.toHaveBeenCalled()
   })
 
   it('authenticates before parsing the request body', async () => {
@@ -219,7 +271,8 @@ describe('holdings ledger snapshot route', () => {
     const response = await POST(createRequest({ unexpected: true }))
 
     expect(response.status).toBe(401)
-    expect(mocks.sync).not.toHaveBeenCalled()
+    expect(mocks.withSync).not.toHaveBeenCalled()
     expect(mocks.createSnapshot).not.toHaveBeenCalled()
+    expect(mocks.createSnapshotFromRevision).not.toHaveBeenCalled()
   })
 })
