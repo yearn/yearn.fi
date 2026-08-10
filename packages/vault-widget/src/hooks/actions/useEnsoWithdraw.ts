@@ -1,0 +1,113 @@
+import type { UseWidgetWithdrawFlowReturn } from '@yearn/vault-widget/types'
+import { useEffect, useMemo } from 'react'
+import type { Address } from 'viem'
+import type { EnsoRoutingStrategy } from '../solvers/useSolverEnso'
+import { useSolverEnso } from '../solvers/useSolverEnso'
+import { useEnsoOrder } from '../useEnsoOrder'
+
+interface UseEnsoWithdrawParams {
+  vaultAddress: Address
+  withdrawToken: Address
+  amount: bigint
+  currentAmount?: bigint // Raw undebounced amount for reset triggering
+  account?: Address
+  receiver?: Address
+  chainId: number
+  destinationChainId?: number
+  decimalsOut: number
+  enabled: boolean
+  slippage?: number
+  routingStrategy?: EnsoRoutingStrategy
+}
+
+export function useEnsoWithdraw(params: UseEnsoWithdrawParams): UseWidgetWithdrawFlowReturn {
+  const routeQueryKey = useMemo(
+    () =>
+      [
+        params.chainId,
+        params.destinationChainId ?? 'same-chain',
+        params.vaultAddress,
+        params.withdrawToken,
+        params.account ?? 'no-account',
+        params.receiver ?? 'no-receiver',
+        params.slippage ?? 'default',
+        params.routingStrategy ?? 'default-strategy'
+      ].join(':'),
+    [
+      params.chainId,
+      params.destinationChainId,
+      params.vaultAddress,
+      params.withdrawToken,
+      params.account,
+      params.receiver,
+      params.slippage,
+      params.routingStrategy
+    ]
+  )
+
+  // Get Enso routing flow
+  const ensoFlow = useSolverEnso({
+    tokenIn: params.vaultAddress,
+    tokenOut: params.withdrawToken,
+    amountIn: params.amount,
+    fromAddress: params.account,
+    receiver: params.receiver,
+    chainId: params.chainId,
+    destinationChainId: params.destinationChainId,
+    decimalsOut: params.decimalsOut,
+    slippage: params.slippage,
+    routingStrategy: params.routingStrategy,
+    requestKey: routeQueryKey,
+    enabled: params.enabled
+  })
+
+  // Calculate if allowance is sufficient
+  const isAllowanceSufficient = !ensoFlow.periphery.routerAddress || ensoFlow.periphery.allowance >= params.amount
+
+  useEffect(() => {
+    ensoFlow.methods.resetRoute()
+  }, [params.currentAmount, routeQueryKey, ensoFlow.methods.resetRoute])
+
+  // Re-quote whenever any route-defining input changes, not just the amount.
+  useEffect(() => {
+    if (params.amount > 0n && params.enabled) {
+      void ensoFlow.methods.getRoute()
+    }
+  }, [params.amount, params.enabled, routeQueryKey, ensoFlow.methods.getRoute])
+
+  // Prepare Enso order for withdrawal
+  const canWithdraw = ensoFlow.periphery.route && params.amount > 0n && isAllowanceSufficient
+  const { prepareEnsoOrder } = useEnsoOrder({
+    getEnsoTransaction: ensoFlow.methods.getEnsoTransaction,
+    enabled: canWithdraw,
+    chainId: params.chainId
+  })
+
+  // Adapt ensoFlow to UseWidgetWithdrawFlowReturn interface
+  return useMemo(
+    (): UseWidgetWithdrawFlowReturn => ({
+      actions: {
+        prepareApprove: ensoFlow.actions.prepareApprove,
+        prepareWithdraw: prepareEnsoOrder
+      },
+      periphery: {
+        prepareApproveEnabled: ensoFlow.periphery.prepareApproveEnabled,
+        prepareWithdrawEnabled: !!canWithdraw && !ensoFlow.periphery.isLoadingRoute,
+        isAllowanceSufficient,
+        allowance: ensoFlow.periphery.allowance,
+        expectedOut: ensoFlow.periphery.expectedOut.raw,
+        minExpectedOut: ensoFlow.periphery.minExpectedOut.raw,
+        priceImpact: ensoFlow.periphery.priceImpact,
+        isLoadingRoute: ensoFlow.periphery.isLoadingRoute,
+        isCrossChain: ensoFlow.periphery.isCrossChain,
+        routeHasSwap: ensoFlow.periphery.routeHasSwap,
+        routerAddress: ensoFlow.periphery.routerAddress,
+        error: ensoFlow.periphery.error?.message,
+        tx: ensoFlow.periphery.route?.tx,
+        gas: ensoFlow.periphery.route?.gas,
+        resetQuote: ensoFlow.methods.resetRoute
+      }
+    }),
+    [ensoFlow, prepareEnsoOrder, canWithdraw, isAllowanceSufficient]
+  )
+}

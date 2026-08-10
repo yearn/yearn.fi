@@ -3,8 +3,8 @@ import {
   convertYvUsdUnderlyingRawAmountToLockedAsset
 } from '@pages/vaults/utils/yvUsd'
 import { formatTAmount, toAddress } from '@shared/utils'
+import type { TransactionStep } from '@yearn/vault-widget/advanced'
 import type { Address } from 'viem'
-import type { TransactionStep } from '../shared/TransactionOverlay'
 
 type TLockedWithdrawStepPhase = 'withdraw' | 'redeem'
 export type TYvUsdAmountUnit = 'underlying' | 'shares' | 'other'

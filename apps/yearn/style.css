@@ -6,6 +6,8 @@
 @import 'tailwindcss';
 /* Theme System */
 @import './src/styles/themes.css';
+/* Workspace sources */
+@source '../../packages/vault-widget/src';
 
 @theme {
   /* Font families */

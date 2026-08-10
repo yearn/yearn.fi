@@ -18,13 +18,12 @@ import { type AppUseSimulateContractReturnType, useReadContract, useSimulateCont
 import { useChainTimestamp } from '@shared/hooks/useChainTimestamp'
 import { IconCheck } from '@shared/icons/IconCheck'
 import { formatTAmount, toAddress } from '@shared/utils'
+import { InfoOverlay, TransactionOverlay, type TransactionStep } from '@yearn/vault-widget/advanced'
 import type { ReactElement } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { formatUnits } from 'viem'
 import { useAccount } from 'wagmi'
-import { InfoOverlay } from '../shared/InfoOverlay'
-import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
-import { WidgetWithdraw } from '../withdraw'
+import { WidgetWithdraw } from '../advanced'
 import {
   formatDays,
   formatDuration,

@@ -1,6 +1,11 @@
 {
   "rules": {
-    "prefer-absolute-version-dependencies": "error",
+    "prefer-absolute-version-dependencies": [
+      "error",
+      {
+        "exceptions": ["@yearn/vault-widget"]
+      }
+    ],
     "prefer-absolute-version-devDependencies": "error"
   }
 }
