@@ -1,4 +1,4 @@
-import type { Address, Hex } from 'viem'
+import type { Address, Hash, Hex, TransactionReceipt } from 'viem'
 
 export type VaultWidgetTransactionMode = 'deposit' | 'withdraw'
 
@@ -78,3 +78,59 @@ export type VaultWidgetTransactionPlan = {
   walletType: VaultWidgetWalletType
   steps: readonly VaultWidgetExecutionStep[]
 }
+
+export type VaultWidgetPlanSubmission = {
+  stepId: string
+  chainId: number
+  proposalId?: Hex
+  hash?: Hash
+  receipt?: TransactionReceipt
+}
+
+export type VaultWidgetPlanOutcome = {
+  submissions: readonly VaultWidgetPlanSubmission[]
+}
+
+export type VaultWidgetExecutionAdapter = {
+  switchChain: (params: { chainId: number }) => Promise<void>
+  execute: (params: { account: Address; request: VaultWidgetTransactionRequest }) => Promise<Hash>
+  waitForReceipt: (params: { chainId: number; hash: Hash }) => Promise<TransactionReceipt>
+  proposeSafeBatch?: (params: {
+    account: Address
+    chainId: number
+    requests: readonly VaultWidgetTransactionRequest[]
+  }) => Promise<Hex>
+  waitForSafeExecution?: (params: { chainId: number; proposalId: Hex }) => Promise<Hash>
+}
+
+type VaultWidgetPlanExecutionProgress = {
+  outcome: VaultWidgetPlanOutcome
+  stepIndex: number
+  stepCount: number
+}
+
+export type VaultWidgetPlanExecutionState =
+  | (VaultWidgetPlanExecutionProgress & {
+      status: 'confirming'
+      step: VaultWidgetSwitchChainStep | VaultWidgetRequestStep | VaultWidgetSafeProposalStep
+    })
+  | (VaultWidgetPlanExecutionProgress & {
+      status: 'pending'
+      step: VaultWidgetRequestStep | VaultWidgetSafeProposalStep
+    })
+  | (VaultWidgetPlanExecutionProgress & {
+      status: 'submitted'
+      step: VaultWidgetSafeProposalStep
+    })
+  | (VaultWidgetPlanExecutionProgress & {
+      status: 'refreshing'
+      step: VaultWidgetRefreshStep
+    })
+  | (VaultWidgetPlanExecutionProgress & {
+      status: 'success'
+    })
+  | (VaultWidgetPlanExecutionProgress & {
+      status: 'error'
+      error: Error
+      step: VaultWidgetExecutionStep
+    })

@@ -2,6 +2,9 @@
 
 import { createContext, type ReactElement, type ReactNode, useContext, useMemo } from 'react'
 import type { Address, Hash, TransactionReceipt } from 'viem'
+import type { VaultWidgetExecutionAdapter } from './headless/types'
+
+export type { VaultWidgetExecutionAdapter } from './headless/types'
 
 export type VaultWidgetTokenReference = {
   address: Address
@@ -142,6 +145,7 @@ export type VaultWidgetRuntime = {
   assets: VaultWidgetAssetsRuntime
   catalog: VaultWidgetCatalogRuntime
   chains: VaultWidgetChainsRuntime
+  execution: VaultWidgetExecutionAdapter
   notifications: VaultWidgetNotificationsRuntime
   prices: VaultWidgetPricesRuntime
   routing: VaultWidgetRoutingRuntime
@@ -160,6 +164,7 @@ export type VaultWidgetRuntimeOverrides = {
   assets?: Partial<VaultWidgetAssetsRuntime>
   catalog?: Partial<VaultWidgetCatalogRuntime>
   chains?: Partial<VaultWidgetChainsRuntime>
+  execution?: Partial<VaultWidgetExecutionAdapter>
   notifications?: Partial<VaultWidgetNotificationsRuntime>
   prices?: Partial<VaultWidgetPricesRuntime>
   routing?: Partial<VaultWidgetRoutingRuntime>
@@ -186,6 +191,8 @@ const getZeroPrice = (): number => 0
 const getNoChain = (): undefined => undefined
 const getNoAssetUrl = (): undefined => undefined
 const isEnsoDisabled = (): boolean => false
+const rejectUnavailableExecution = (): Promise<never> =>
+  Promise.reject(new Error('Vault widget transaction execution is not configured'))
 const resolveSameChain = (chainId: number | undefined): number | undefined => chainId
 const isSameExecutionChain = (connectedChainId: number | undefined, targetChainId: number | undefined): boolean =>
   targetChainId !== undefined && connectedChainId === targetChainId
@@ -209,6 +216,11 @@ export const DEFAULT_VAULT_WIDGET_RUNTIME: VaultWidgetRuntime = Object.freeze({
     isConnectedToExecutionChain: isSameExecutionChain,
     resolveCanonicalChainId: resolveSameChain,
     resolveExecutionChainId: resolveSameChain
+  }),
+  execution: Object.freeze({
+    execute: rejectUnavailableExecution,
+    switchChain: rejectUnavailableExecution,
+    waitForReceipt: rejectUnavailableExecution
   }),
   notifications: Object.freeze({
     create: createNoopNotification,
@@ -288,6 +300,10 @@ export function createVaultWidgetRuntime(overrides: VaultWidgetRuntimeOverrides 
         overrides.chains?.resolveCanonicalChainId ?? DEFAULT_VAULT_WIDGET_RUNTIME.chains.resolveCanonicalChainId,
       resolveExecutionChainId
     },
+    execution: {
+      ...DEFAULT_VAULT_WIDGET_RUNTIME.execution,
+      ...overrides.execution
+    },
     notifications: {
       create: overrides.notifications?.create ?? DEFAULT_VAULT_WIDGET_RUNTIME.notifications.create,
       update: overrides.notifications?.update ?? DEFAULT_VAULT_WIDGET_RUNTIME.notifications.update
@@ -346,6 +362,7 @@ export function VaultWidgetRuntimeProvider({ children, value = {} }: VaultWidget
       assets: { ...parent.runtime.assets, ...value.assets },
       catalog: { ...parent.runtime.catalog, ...value.catalog },
       chains: { ...parent.runtime.chains, ...value.chains },
+      execution: { ...parent.runtime.execution, ...value.execution },
       notifications: { ...parent.runtime.notifications, ...value.notifications },
       prices: { ...parent.runtime.prices, ...value.prices },
       routing: { ...parent.runtime.routing, ...value.routing },
