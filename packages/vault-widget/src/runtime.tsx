@@ -258,6 +258,19 @@ export const DEFAULT_VAULT_WIDGET_RUNTIME: VaultWidgetRuntime = Object.freeze({
   })
 })
 
+/**
+ * True only when a host replaced every EOA execution method. Comparing the
+ * resolved runtime methods keeps the marker false for partial overrides while
+ * allowing nested providers to inherit a complete parent adapter.
+ */
+export function isVaultWidgetExecutionConfigured(runtime: Pick<VaultWidgetRuntime, 'execution'>): boolean {
+  return (
+    runtime.execution.execute !== DEFAULT_VAULT_WIDGET_RUNTIME.execution.execute &&
+    runtime.execution.switchChain !== DEFAULT_VAULT_WIDGET_RUNTIME.execution.switchChain &&
+    runtime.execution.waitForReceipt !== DEFAULT_VAULT_WIDGET_RUNTIME.execution.waitForReceipt
+  )
+}
+
 function getTokenLogoUrl(baseUri: string): VaultWidgetAssetsRuntime['getTokenLogoUrl'] {
   return ({ address, chainId, size = 32 }) =>
     baseUri ? `${baseUri}/tokens/${chainId}/${address.toLowerCase()}/logo-${size}.png` : undefined

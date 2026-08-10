@@ -1,6 +1,12 @@
 import { useQuery } from '@tanstack/react-query'
 import { getPublicClient } from '@wagmi/core'
+import type { VaultWidgetTransactionPlan } from '@yearn/vault-widget/headless'
 import { Button } from '@yearn/vault-widget/internal/components/shared/Button'
+import {
+  executePlannedStyledWidgetTransaction,
+  getPlannedTransactionErrorPresentation,
+  type TPlannedTransactionFailureKind
+} from '@yearn/vault-widget/internal/components/widget/shared/plannedTransactionController'
 import { cl } from '@yearn/vault-widget/internal/utils/index'
 import {
   useVaultWidgetRuntime,
@@ -182,6 +188,7 @@ function getTransactionErrorMessage(error: any): string {
 type TransactionOverlayProps = {
   isOpen: boolean
   onClose: () => void
+  plan?: VaultWidgetTransactionPlan
   step?: TransactionStep
   isLastStep?: boolean
   onAllComplete?: () => void
@@ -204,6 +211,7 @@ type TransactionOverlayProps = {
 export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   isOpen,
   onClose,
+  plan,
   step,
   isLastStep = true,
   onAllComplete,
@@ -219,6 +227,8 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   const [errorMessage, setErrorMessage] = useState<string>('')
   const [hasCompletedFlow, setHasCompletedFlow] = useState(false)
   const [completedStepSnapshot, setCompletedStepSnapshot] = useState<TransactionStep | null>(null)
+  const [plannedTxHash, setPlannedTxHash] = useState<`0x${string}` | undefined>()
+  const [plannedFailureKind, setPlannedFailureKind] = useState<TPlannedTransactionFailureKind>('pre-submission')
 
   const runtime = useVaultWidgetRuntime()
   const wagmiConfig = useConfig()
@@ -260,6 +270,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   const executedStepRef = useRef<TransactionStep | null>(null)
 
   const explorerChainId =
+    plan?.intent.calls[0]?.request.chainId ??
     executedStepRef.current?.batch?.chainId ??
     ((executedStepRef.current?.prepare.data?.request as any)?.chainId as number | undefined) ??
     undefined
@@ -310,7 +321,8 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     status: receipt.data?.status
   })
   const blockExplorer = runtime.chains.getChain(canonicalExplorerChainId ?? currentChainId)?.blockExplorerUrl
-  const explorerTxUrl = executionTrackingHash && blockExplorer ? `${blockExplorer}/tx/${executionTrackingHash}` : ''
+  const explorerDisplayHash = plannedTxHash ?? executionTrackingHash
+  const explorerTxUrl = explorerDisplayHash && blockExplorer ? `${blockExplorer}/tx/${explorerDisplayHash}` : ''
 
   // Track if the executed step was the last step (captured at execution time)
   const wasLastStepRef = useRef(false)
@@ -485,6 +497,8 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       setErrorMessage('')
       setHasCompletedFlow(false)
       setCompletedStepSnapshot(null)
+      setPlannedTxHash(undefined)
+      setPlannedFailureKind('pre-submission')
       resetTxState(true)
       hasStartedRef.current = false
       hasAutoContinuedFromStepRef.current = null
@@ -552,6 +566,95 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     },
     [notificationId, updateNotification]
   )
+
+  const executePlannedStep = useCallback(async () => {
+    if (!plan || !step || !account) {
+      setOverlayState('error')
+      setErrorMessage('Transaction not ready. Please try again.')
+      return
+    }
+
+    setStepExecutionContext(step, isLastStep)
+    setOverlayState('confirming')
+    setErrorMessage('')
+    setPlannedTxHash(undefined)
+    setPlannedFailureKind('pre-submission')
+    const canonicalExecutionChainId = plan.intent.calls[0]?.request.chainId
+    const notificationExecutionChainId = runtime.chains.resolveExecutionChainId(canonicalExecutionChainId)
+    const result = await executePlannedStyledWidgetTransaction({
+      account,
+      adapter: runtime.execution,
+      notification: step.notification,
+      notificationExecutionChainId,
+      notifications: {
+        create: createNotification,
+        update: updateNotification
+      },
+      onNotificationError: (error) => console.error('Failed to update transaction notification:', error),
+      onState: (state) => {
+        if (state.status === 'confirming') {
+          setOverlayState('confirming')
+          return
+        }
+        if (state.status === 'pending') {
+          setPlannedTxHash(state.hash)
+          setOverlayState('pending')
+          return
+        }
+        if (state.status === 'refreshing') {
+          setPlannedTxHash(state.hash)
+          setOverlayState('refreshing')
+        }
+      },
+      onTransactionConfirmed: () => {
+        if (hasReportedStepSuccessRef.current || !step.label) return
+        hasReportedStepSuccessRef.current = true
+        onStepSuccess?.(step.label)
+      },
+      plan,
+      refresh: async () => {
+        if (!onBeforeSuccess) return
+        await onBeforeSuccess(step.label)
+        await new Promise((resolve) => setTimeout(resolve, 500))
+      }
+    })
+
+    if (result.status === 'error') {
+      if (isUserRejectionError(result.error) || isUserRejectionError(result.error.cause)) {
+        onClose()
+        return
+      }
+
+      const presentation = getPlannedTransactionErrorPresentation(
+        result.failureKind,
+        getTransactionErrorMessage(result.error)
+      )
+      setPlannedFailureKind(result.failureKind)
+      setErrorMessage(presentation.message)
+      setOverlayState('error')
+      return
+    }
+
+    if (result.hash) setPlannedTxHash(result.hash)
+    const completedAllSteps = step.completesFlow ?? isLastStep
+    finalizeSuccessState(completedAllSteps, step)
+    if (step.showConfetti) requestConfetti()
+  }, [
+    account,
+    createNotification,
+    finalizeSuccessState,
+    isLastStep,
+    onBeforeSuccess,
+    onClose,
+    onStepSuccess,
+    plan,
+    requestConfetti,
+    runtime.chains,
+    runtime.execution,
+    setStepExecutionContext,
+    step,
+    updateNotification
+  ])
 
   const executePermitStep = useCallback(
     async (currentStep: TransactionStep) => {
@@ -930,8 +1033,13 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
 
   const handleRetry = useCallback(() => {
     resetTxState()
+    if (plan) {
+      hasStartedRef.current = true
+      void executePlannedStep()
+      return
+    }
     executeStep()
-  }, [resetTxState, executeStep])
+  }, [executePlannedStep, plan, resetTxState, executeStep])
 
   const handleClose = useCallback(() => {
     onClose()
@@ -939,6 +1047,15 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
 
   // Start step when overlay opens
   useEffect(() => {
+    // A frozen plan is an imperative wallet operation; there is no declarative
+    // React primitive that can start it while retaining the existing overlay.
+    if (plan) {
+      if (!isOpen || !step || hasStartedRef.current || !isWalletConnectionReady || !account) return
+      hasStartedRef.current = true
+      void executePlannedStep()
+      return
+    }
+
     if (
       shouldStartStepOnOpen({
         isOpen,
@@ -953,7 +1070,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       hasStartedRef.current = true
       executeStep()
     }
-  }, [executeStep, isOpen, isStepReady, isWalletConnectionReady, overlayState, step])
+  }, [account, executePlannedStep, executeStep, isOpen, isStepReady, isWalletConnectionReady, overlayState, plan, step])
 
   useEffect(() => {
     if (!isOpen || !isWaitingForNextStep || !step) return
@@ -1198,6 +1315,11 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     }
   }, [isOpen, overlayState, receipt.data?.transactionHash, step?.label, step?.prepare.refetch, isStepReady])
 
+  const transactionErrorPresentation = getPlannedTransactionErrorPresentation(
+    plan ? plannedFailureKind : 'pre-submission',
+    errorMessage
+  )
+
   if (!isOpen) {
     return null
   }
@@ -1342,15 +1464,29 @@ Execution may happen separately after the required confirmations are collected.`
           {overlayState === 'error' && (
             <>
               <ErrorIcon />
-              <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">Transaction failed</h3>
-              <p className="text-sm text-text-secondary mb-6">{errorMessage}</p>
+              <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">
+                {transactionErrorPresentation.title}
+              </h3>
+              <p className={cl('text-sm text-text-secondary', explorerTxUrl ? 'mb-3' : 'mb-6')}>
+                {transactionErrorPresentation.message}
+              </p>
+              {explorerTxUrl ? (
+                <a
+                  href={explorerTxUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mb-6 text-sm font-semibold text-text-primary underline"
+                >
+                  View on block explorer
+                </a>
+              ) : null}
               <Button
-                onClick={handleRetry}
+                onClick={transactionErrorPresentation.canRetry ? handleRetry : handleClose}
                 variant="filled"
                 className="w-full max-w-xs"
                 classNameOverride="yearn--button--nextgen w-full"
               >
-                Try Again
+                {transactionErrorPresentation.actionLabel}
               </Button>
             </>
           )}

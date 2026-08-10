@@ -1,6 +1,8 @@
+import type { VaultWidgetTransactionPlan } from '@yearn/vault-widget/headless'
 import { Button } from '@yearn/vault-widget/internal/components/shared/Button'
 import { buildSafeDepositBatch } from '@yearn/vault-widget/internal/components/widget/deposit/safeDepositBatch'
 import { InputTokenAmount } from '@yearn/vault-widget/internal/components/widget/InputTokenAmount'
+import { buildEligibleStyledWidgetPlan } from '@yearn/vault-widget/internal/components/widget/shared/plannedTransaction'
 import { useDebouncedInput } from '@yearn/vault-widget/internal/hooks/useDebouncedInput'
 import type { VaultUserData } from '@yearn/vault-widget/internal/hooks/useVaultUserData'
 import { useVaultWidgetSpotPrices } from '@yearn/vault-widget/internal/hooks/useVaultWidgetSpotPrices'
@@ -10,7 +12,7 @@ import { IconSettings } from '@yearn/vault-widget/internal/icons/IconSettings'
 import { cl, formatTAmount, toAddress } from '@yearn/vault-widget/internal/utils'
 import { requiresAllowanceResetBeforeApproval } from '@yearn/vault-widget/internal/utils/approve'
 import { ETH_TOKEN_ADDRESS } from '@yearn/vault-widget/internal/utils/constants'
-import { useVaultWidgetRuntime } from '@yearn/vault-widget/runtime'
+import { isVaultWidgetExecutionConfigured, useVaultWidgetRuntime } from '@yearn/vault-widget/runtime'
 import type { TToken } from '@yearn/vault-widget/types'
 import { YBOLD_STAKING_ADDRESS, YBOLD_VAULT_ADDRESS } from '@yearn/vault-widget/ybold'
 import type { ReactElement, ReactNode } from 'react'
@@ -202,6 +204,7 @@ export function WidgetDeposit({
   const [showApprovalOverlay, setShowApprovalOverlay] = useState(false)
   const [disableApprovalOverlaySetUnlimited, setDisableApprovalOverlaySetUnlimited] = useState(false)
   const [showTransactionOverlay, setShowTransactionOverlay] = useState(false)
+  const [activeTransactionPlan, setActiveTransactionPlan] = useState<VaultWidgetTransactionPlan | undefined>()
   const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false)
   const [isYBoldAutoStakeWarningDismissing, setIsYBoldAutoStakeWarningDismissing] = useState(false)
   const [isYBoldAutoStakeWarningExiting, setIsYBoldAutoStakeWarningExiting] = useState(false)
@@ -823,6 +826,48 @@ export function WidgetDeposit({
     isWaitingForProtectedEnsoQuote
   ])
 
+  const eligibleTransactionPlan = useMemo(
+    () =>
+      buildEligibleStyledWidgetPlan({
+        canonicalChainId: chainId,
+        connectedCanonicalChainId: runtime.chains.resolveCanonicalChainId(runtime.wallet.chainId),
+        hasBatch: Boolean(currentStep?.batch),
+        id: `deposit:${approvalFlowKey}`,
+        isCrossChain,
+        isEnabled: currentStep?.isEnabled,
+        isExecutionConfigured: isVaultWidgetExecutionConfigured(runtime),
+        isPermit: Boolean(currentStep?.isPermit),
+        isWalletSafe,
+        label: currentStep?.label ?? 'Deposit',
+        mode: 'deposit',
+        needsApproval: effectiveNeedsApproval,
+        prepare: currentStep?.prepare,
+        routeType
+      }),
+    [
+      approvalFlowKey,
+      chainId,
+      currentStep,
+      effectiveNeedsApproval,
+      isCrossChain,
+      isWalletSafe,
+      routeType,
+      runtime.chains,
+      runtime.execution,
+      runtime.wallet.chainId
+    ]
+  )
+
+  const handleOpenTransactionOverlay = useCallback(() => {
+    setActiveTransactionPlan(eligibleTransactionPlan)
+    setShowTransactionOverlay(true)
+  }, [eligibleTransactionPlan])
+
+  const handleCloseTransactionOverlay = useCallback(() => {
+    setShowTransactionOverlay(false)
+    setActiveTransactionPlan(undefined)
+  }, [])
+
   const { fetchMaxQuote, isFetching: isFetchingMaxQuote } = useFetchMaxQuote({
     isNativeToken,
     account,
@@ -1234,7 +1279,7 @@ export function WidgetDeposit({
             </Button>
           ) : (
             <Button
-              onClick={() => setShowTransactionOverlay(true)}
+              onClick={handleOpenTransactionOverlay}
               variant={isDepositButtonBusy ? 'busy' : 'filled'}
               isBusy={isDepositButtonBusy}
               disabled={isDepositButtonDisabled}
@@ -1349,7 +1394,8 @@ export function WidgetDeposit({
       {/* Transaction Overlay */}
       <TransactionOverlay
         isOpen={showTransactionOverlay}
-        onClose={() => setShowTransactionOverlay(false)}
+        onClose={handleCloseTransactionOverlay}
+        plan={activeTransactionPlan}
         step={currentStep}
         isLastStep={!effectiveNeedsApproval}
         deferOnAllCompleteUntilClose={deferSuccessEffectsUntilClose}
