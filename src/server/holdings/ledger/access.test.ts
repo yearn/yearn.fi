@@ -1,5 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { getLedgerAdminAccessError } from '@/server/holdings/ledger/access'
+import { getLedgerAdminAccessError, getLedgerReadinessError } from '@/server/holdings/ledger/access'
 
 const accessState = vi.hoisted(() => ({
   mode: 'shadow',
@@ -73,6 +73,28 @@ describe('holdings ledger admin access', () => {
 
   it('allows a fully configured authenticated request', () => {
     expect(getLedgerAdminAccessError(createRequest('test-admin-secret'), { requiresEnvio: true })).toBeNull()
+  })
+
+  it('checks public read readiness without requiring the admin secret', () => {
+    vi.stubEnv('ADMIN_SECRET', '')
+
+    expect(getLedgerReadinessError({ requiresEnvio: true })).toBeNull()
+
+    vi.stubEnv('ENVIO_GRAPHQL_URL', '')
+    expect(getLedgerReadinessError({ requiresEnvio: true })).toEqual({
+      error: 'Holdings ledger source is unavailable'
+    })
+  })
+
+  it('keeps shadow mode non-authoritative in production', () => {
+    vi.stubEnv('NODE_ENV', 'production')
+
+    expect(getLedgerReadinessError({ requiresReadWrite: true })).toEqual({
+      error: 'Holdings ledger reads are not enabled'
+    })
+
+    accessState.mode = 'read-write'
+    expect(getLedgerReadinessError({ requiresReadWrite: true })).toBeNull()
   })
 
   it.each([

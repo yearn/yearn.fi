@@ -2,28 +2,22 @@ import { resolvePortfolioHistoryCoordinatorState } from '@pages/portfolio/hooks/
 import { describe, expect, it } from 'vitest'
 
 describe('resolvePortfolioHistoryCoordinatorState', () => {
-  it('keeps legacy disabled while the primary snapshot is pending', () => {
+  it('keeps legacy disabled while the combined request is pending', () => {
     expect(
       resolvePortfolioHistoryCoordinatorState({
         canLoad: true,
-        hasSnapshot: false,
-        snapshotHasError: false,
         ledgerHasResponse: false,
-        ledgerHasError: false,
-        ledgerIsLoading: false
+        ledgerHasError: false
       })
     ).toEqual({ shouldUseLegacy: false, isLedgerPending: true })
   })
 
-  it('enables legacy after a terminal snapshot failure such as 404 or 503', () => {
+  it('enables legacy after a cold terminal combined-request failure', () => {
     expect(
       resolvePortfolioHistoryCoordinatorState({
         canLoad: true,
-        hasSnapshot: false,
-        snapshotHasError: true,
         ledgerHasResponse: false,
-        ledgerHasError: false,
-        ledgerIsLoading: false
+        ledgerHasError: true
       })
     ).toEqual({ shouldUseLegacy: true, isLedgerPending: false })
   })
@@ -32,37 +26,28 @@ describe('resolvePortfolioHistoryCoordinatorState', () => {
     expect(
       resolvePortfolioHistoryCoordinatorState({
         canLoad: true,
-        hasSnapshot: true,
-        snapshotHasError: false,
         ledgerHasResponse: true,
-        ledgerHasError: false,
-        ledgerIsLoading: false
+        ledgerHasError: false
       })
     ).toEqual({ shouldUseLegacy: false, isLedgerPending: false })
   })
 
-  it('falls back when the combined ledger request fails before returning data', () => {
+  it('keeps stale combined data instead of falling back after a background refresh failure', () => {
     expect(
       resolvePortfolioHistoryCoordinatorState({
         canLoad: true,
-        hasSnapshot: true,
-        snapshotHasError: false,
-        ledgerHasResponse: false,
-        ledgerHasError: true,
-        ledgerIsLoading: false
+        ledgerHasResponse: true,
+        ledgerHasError: true
       })
-    ).toEqual({ shouldUseLegacy: true, isLedgerPending: false })
+    ).toEqual({ shouldUseLegacy: false, isLedgerPending: false })
   })
 
   it('does not report loading or start fallback while disconnected', () => {
     expect(
       resolvePortfolioHistoryCoordinatorState({
         canLoad: false,
-        hasSnapshot: false,
-        snapshotHasError: false,
         ledgerHasResponse: false,
-        ledgerHasError: false,
-        ledgerIsLoading: false
+        ledgerHasError: false
       })
     ).toEqual({ shouldUseLegacy: false, isLedgerPending: false })
   })

@@ -1,7 +1,5 @@
 import { usePortfolioHistory } from '@pages/portfolio/hooks/usePortfolioHistory'
-import { usePortfolioLedgerGrowth } from '@pages/portfolio/hooks/usePortfolioLedgerGrowth'
-import { usePortfolioLedgerHistory } from '@pages/portfolio/hooks/usePortfolioLedgerHistory'
-import { usePortfolioLedgerSnapshot } from '@pages/portfolio/hooks/usePortfolioLedgerSnapshot'
+import { usePortfolioLedgerPortfolio } from '@pages/portfolio/hooks/usePortfolioLedgerPortfolio'
 import { usePortfolioProtocolReturnHistory } from '@pages/portfolio/hooks/usePortfolioProtocolReturnHistory'
 import type {
   TPortfolioHistoryDenomination,
@@ -12,17 +10,11 @@ import { useWeb3 } from '@shared/contexts/useWeb3'
 
 export function resolvePortfolioHistoryCoordinatorState(args: {
   canLoad: boolean
-  hasSnapshot: boolean
-  snapshotHasError: boolean
   ledgerHasResponse: boolean
   ledgerHasError: boolean
-  ledgerIsLoading: boolean
 }): { shouldUseLegacy: boolean; isLedgerPending: boolean } {
-  const snapshotFailed = !args.hasSnapshot && args.snapshotHasError
-  const ledgerHistoryFailed = !args.ledgerHasResponse && args.ledgerHasError
-  const shouldUseLegacy = args.canLoad && (snapshotFailed || ledgerHistoryFailed)
-  const isLedgerPending =
-    args.canLoad && !shouldUseLegacy && (!args.hasSnapshot || (!args.ledgerHasResponse && args.ledgerIsLoading))
+  const shouldUseLegacy = args.canLoad && !args.ledgerHasResponse && args.ledgerHasError
+  const isLedgerPending = args.canLoad && !shouldUseLegacy && !args.ledgerHasResponse
 
   return { shouldUseLegacy, isLedgerPending }
 }
@@ -35,17 +27,11 @@ export function usePortfolioHistoryCoordinator(
 ) {
   const { address } = useWeb3()
   const canLoad = Boolean(address) && enabled
-  const snapshot = usePortfolioLedgerSnapshot(canLoad)
-  const snapshotId = snapshot.data?.snapshotId ?? null
-  const ledger = usePortfolioLedgerHistory(denomination, timeframe, snapshotId, canLoad, liveSnapshot)
-  const growth = usePortfolioLedgerGrowth(snapshotId, canLoad)
+  const ledger = usePortfolioLedgerPortfolio(denomination, timeframe, canLoad, liveSnapshot)
   const { shouldUseLegacy, isLedgerPending } = resolvePortfolioHistoryCoordinatorState({
     canLoad,
-    hasSnapshot: Boolean(snapshot.data),
-    snapshotHasError: snapshot.isError,
     ledgerHasResponse: ledger.hasResponse,
-    ledgerHasError: Boolean(ledger.requestError),
-    ledgerIsLoading: ledger.balance.isLoading
+    ledgerHasError: Boolean(ledger.requestError)
   })
   const legacyBalance = usePortfolioHistory(denomination, timeframe, shouldUseLegacy, liveSnapshot)
   const legacyProtocolReturn = usePortfolioProtocolReturnHistory(timeframe, shouldUseLegacy)
@@ -67,8 +53,9 @@ export function usePortfolioHistoryCoordinator(
     balance,
     protocolReturn,
     source: shouldUseLegacy ? ('legacy' as const) : ('ledger' as const),
-    growth,
-    snapshotId,
-    snapshot
+    growth: ledger.growth,
+    ledger: ledger.ledger,
+    snapshotId: null,
+    snapshot: null
   }
 }

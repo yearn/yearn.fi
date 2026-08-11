@@ -571,13 +571,44 @@ All six Phase 3 routes are private/no-store and coexist with the legacy APIs. De
 
 Ledger protocol-return calculations use only the configured address-scoped wallet event streams from the pinned snapshot and do not perform live transaction-hash companion-event enrichment. Ordinary deposits and withdrawals use their emitted `assets` and `shares`, so their underlying-denominated basis and proceeds require neither historical token prices nor historical PPS. Genuine share transfers have no `assets` field, and staking-wrapper events describe wrapper assets rather than final underlying; those exceptional events require a PPS sample at the event time.
 
-The fast growth route resolves only those exceptional PPS requirements, caches successful event-keyed values in Redis for 24 hours, and reads the current PPS from Kong vault metadata. If current PPS is absent from metadata, it fetches the full PPS timeline only for the affected open vault. A missing requirement remains visible as `missing_pps`; it is never replaced with current PPS. Kong's historical feed is daily, so transfer valuation uses the latest daily sample at or before the event rather than a block-exact archive-RPC value. Per-vault `annualizedProtocolReturnPct` is a simple capital-time-weighted annualized return: `growthUnderlying / baselineExposureUnderlyingYears * 100`. It needs no additional upstream data and is `null` for incomplete rows or zero elapsed exposure. The chart routes still use live Kong PPS and price providers, so revision headers identify the immutable wallet-event input and calculation contract rather than every external derived-data response.
+The ledger growth routes resolve only those exceptional PPS requirements and keep the fetched Kong timelines in request memory; historical PPS samples are never persisted to Redis. The response retains `historicalPpsCacheHits` for compatibility, but it is always `0`. They read current PPS from Kong vault metadata. If current PPS is absent from metadata, they fetch the full PPS timeline only for the affected open vault. A missing requirement remains visible as `missing_pps`; it is never replaced with current PPS. Kong's historical feed is daily, so transfer valuation uses the latest daily sample at or before the event rather than a block-exact archive-RPC value. Per-vault `annualizedProtocolReturnPct` is a simple capital-time-weighted annualized return: `growthUnderlying / baselineExposureUnderlyingYears * 100`. It needs no additional upstream data and is `null` for incomplete rows or zero elapsed exposure. The chart routes still use live Kong PPS and price providers, so revision headers identify the immutable wallet-event input and calculation contract rather than every external derived-data response.
 
-The portfolio client now requests a snapshot first, then starts the combined chart request and fast row-growth request from that snapshot. Vault rows render underlying growth in a dedicated sortable column; sorting uses cumulative percentage so unlike asset units are not compared directly, while the dotted-underlined value exposes total return and simple annualized return in a tooltip. If snapshot creation or the combined ledger history fails, the unchanged legacy balance and protocol-return hooks are enabled as a fallback. A growth-request failure does not invalidate otherwise usable ledger charts and never creates a displayed zero. Chains outside `HOLDINGS_LEDGER_CHAIN_IDS` have no ledger growth row and remain visibly unavailable instead of receiving fabricated growth. Phase 3 deliberately performs a full replay on every ledger request; incremental protocol checkpoints remain later work.
+The snapshot routes and their immutable multi-key ledger remain available for isolated testing and fallback work, but they are no longer the portfolio client's primary request path. Vault rows still render underlying growth in a dedicated sortable column; sorting uses cumulative percentage so unlike asset units are not compared directly, while the dotted-underlined value exposes total return and simple annualized return in a tooltip. Chains outside `HOLDINGS_LEDGER_CHAIN_IDS` have no ledger growth row and remain visibly unavailable instead of receiving fabricated growth.
 
 Warm synchronization rewinds each chain by `HOLDINGS_LEDGER_OVERLAP_BLOCKS`; a correction or deletion inside that inclusive window replaces the cached range. When those authoritative windows leave every canonical stream unchanged but advance coverage, the next revision reuses the already-verified immutable chunk and index refs, verifies the new coverage against the decoded streams, and commits only a new manifest/head with zero blob writes. Changed events, reconciliation, source changes, and forced rebuilds retain the full encode/decode/index verification path. A periodic reconciliation starts again at each configured chain start block. Coverage is advanced only through Envio's transactionally written `progressBlock`, never through wall-clock time or the upstream chain head. Source/config changes start a new source generation, and `forceRebuild` provides the explicit full-ledger rebuild path. If the active head is corrupt, a forced rebuild first restores the exact fully verified previous revision and its `syncing` status in one fenced Redis transaction. Failed and stale workers cannot replace the last-known-good manifest.
 
 `HOLDINGS_LEDGER_SOURCE_REVISION` is a non-secret operator marker included in the hashed source fingerprint. Bump it after an in-place Envio redeploy, reindex, or repair whose URL and configured chain bounds did not change; the next sync will detect a new source generation and rebuild from the configured start blocks. It defaults to `default` and accepts 1–96 ASCII letters, digits, `.`, `_`, or `-`. Do not place credentials, source URLs, or other secrets in it.
+
+### Simplified Wallet Ledger (Active Portfolio Path)
+
+The portfolio client now uses one public, wallet-scoped request:
+
+```text
+GET /api/holdings/ledger/portfolio?address=0x...&version=all&denomination=usd&timeframe=1y
+```
+
+The route refreshes or reads one wallet ledger, creates one in-memory event source, then calculates balance history, protocol-return history, and per-vault growth concurrently. Historical PPS needed for transfer valuation is fetched into request memory and never persisted. No snapshot ID is created or sent back to the client. Normal reads do not require an admin secret; `forceRebuild=1` remains admin-protected outside loopback development. Production reads require `HOLDINGS_LEDGER_MODE=read-write`, while local development can exercise the path in `shadow` mode. Responses are private and `no-store`.
+
+Each wallet has one durable Redis value at `holdings:wallet-ledger:v1:{walletHash}`. An optional `HOLDINGS_LEDGER_KEY_NAMESPACE` appends `:namespace:<namespace>`. The only companion key is the temporary `:lock`, which expires automatically and is not ledger data. A non-empty durable value has no TTL; a zero-event negative-cache value expires after 24 hours so arbitrary empty-address lookups cannot consume permanent storage. The value contains one Brotli-compressed, checksummed payload with:
+
+- the calculation version and Envio source fingerprint;
+- per-chain `startBlock`, optional `endBlock`, and `completeThroughBlock` coverage;
+- the six canonical deposit, withdrawal, and directional transfer streams;
+- creation/update timestamps and source generation.
+
+`completeThroughBlock` is the important cursor. It records how far Envio was completely read on each chain even when the wallet had no event there. This prevents an inactive wallet from repeatedly scanning months with no events and distinguishes “no event occurred” from “this range has not been checked.”
+
+Refresh behavior is intentionally small:
+
+1. A value updated less than five minutes ago is returned without contacting Envio.
+2. A cold wallet reads Envio metadata, runs presence facets, and downloads full event pages only for chains with matching events.
+3. A warm wallet starts each chain at `completeThroughBlock - HOLDINGS_LEDGER_OVERLAP_BLOCKS`, fetches the six first pages in batched chain requests, and replaces that overlap window authoritatively. This picks up new events plus recent corrections or deletions.
+4. Coverage advances to the metadata block used for that fetch, including for zero-event chains. The updated payload replaces the previous Redis value in one lock-checked atomic write.
+5. If another worker owns the lock, an existing value is served as `stale`; a cold wallet receives `202` with `Retry-After: 2`. Upstream or Redis failures never overwrite the previous good value.
+
+Corrections older than the configured overlap are intentionally outside the warm path. Bump `HOLDINGS_LEDGER_SOURCE_REVISION` or use the protected `forceRebuild=1` request when a full replay is required.
+
+The client caches each exact wallet/version/denomination/timeframe response for 25 minutes and refreshes stale data on focus. If the combined request has no usable response and fails terminally, the existing legacy balance and protocol-return requests remain the fallback. A cached combined response stays visible during a failed background refresh.
 
 For local or dev shadow testing, set `HOLDINGS_LEDGER_MODE=shadow` and use placeholders rather than committing credentials:
 
@@ -601,18 +632,20 @@ curl -sS "$PORTFOLIO_API_BASE_URL/api/holdings/ledger/protocol-return/history?ad
 curl -sS "$PORTFOLIO_API_BASE_URL/api/holdings/ledger/portfolio-history?address=$WALLET_ADDRESS&snapshotId=$SNAPSHOT_ID&denomination=usd&timeframe=1y"
 
 curl -sS "$PORTFOLIO_API_BASE_URL/api/holdings/ledger/growth?address=$WALLET_ADDRESS&snapshotId=$SNAPSHOT_ID"
+
+curl -sS "$PORTFOLIO_API_BASE_URL/api/holdings/ledger/portfolio?address=$WALLET_ADDRESS&version=all&denomination=usd&timeframe=1y&debug=1"
 ```
 
 Copy `snapshotId` from the snapshot response into `SNAPSHOT_ID` before calling the derived routes. Run the same sync a second time to exercise the overlap-only warm path. Use `forceRebuild: true` only when intentionally testing a full rebuild. `compareLegacy` performs an additional complete legacy event fetch, so it should be enabled selectively during shadow parity sampling.
 
-Append `debug=1` to any sync, snapshot, or derived ledger route to print request-correlated timings in the local server terminal without changing the response shape. For example, use `/api/holdings/ledger/snapshot?debug=1` for the complete refresh-and-pin flow or add `&debug=1` to a derived GET. Logs use the existing `[HoldingsDebug][requestId][+elapsedMs][scope]` format and cover lock acquisition, current-revision reads, metadata and Envio loading, merge/parity/candidate preparation, immutable-content mode (`encoded` or `reused-verified`), Redis writes, head commit, snapshot pin verification, pinned-revision loading, and the final holdings calculation. The new ledger-stage payloads contain statuses and aggregate counts only; wallet, snapshot, revision, Redis key, event, transaction, source URL, and credential values are omitted.
+Append `debug=1` to any sync, snapshot, or derived ledger route to print request-correlated timings in the local server terminal without changing the response shape. For the active path, use `/api/holdings/ledger/portfolio?...&debug=1`; logs separate the wallet read, lock, metadata, Envio requests, merge, encoding/commit, and three portfolio calculations. Logs use the existing `[HoldingsDebug][requestId][+elapsedMs][scope]` format. The wallet-ledger synchronization stages contain statuses, durations, and aggregate counts only; wallet, revision, Redis key, event, transaction, source URL, and credential values are omitted from those new stage payloads.
 
 ### Cache Layers
 
 1. Upstash Redis:
+   - `holdings:wallet-ledger:v1:{addressHash}[:namespace:<namespace>]`: the active one-value wallet event ledger; its temporary synchronization lock uses the same key plus `:lock`.
    - `holdings:totals:<addressHash>:<version>`: daily USD totals per hashed user address, vault version, and date. Hash fields are `YYYY-MM-DD`; values include `usdValue` and `updatedAt`.
    - `holdings:protocol-return-history:v3:<addressHash>:<version>:<timeframe>:<vaultScope>`: successful non-empty protocol-return history snapshots. The payload includes its settled date and relevant vault identifiers for invalidation checks.
-   - `holdings:ledger:historical-pps:v1[:<namespace>]:<chainId>:<vaultAddress>:<eventHash>`: targeted PPS values for genuine transfers and staking-wrapper events. Values expire after 24 hours so corrected Kong history can be picked up.
    - `holdings:vault-invalidated:<chainId>:<vaultAddress>`: per-vault invalidation timestamps for lazy cache clearing.
    - `holdings:progress:<progressId>`: authoritative short-lived progress records keyed by caller-supplied progress ID for long history requests across Vercel function instances.
 2. HTTP cache:
@@ -620,8 +653,11 @@ Append `debug=1` to any sync, snapshot, or derived ledger route to print request
    - This applies to history, breakdown, activity, activity facets, and protocol-return history.
    - Progress: `Cache-Control: no-store`.
 3. Client TanStack Query cache:
-   - Portfolio history and protocol-return history hooks keep chart responses fresh for one hour.
+   - The combined wallet-ledger portfolio query keeps each exact wallet/version/denomination/timeframe response fresh for 25 minutes.
+   - Legacy portfolio history and protocol-return hooks keep chart responses fresh for one hour when fallback is active.
    - Other frontend hooks configure their own durations.
+
+Historical PPS samples are not a Redis cache layer. Ledger growth routes fetch the required Kong timelines into request memory on every calculation.
 
 ### Daily Totals
 
@@ -660,7 +696,6 @@ No schema migration is required. Redis keys are created lazily:
 |-----|------|-----|---------|
 | `holdings:totals:<addressHash>:<version>` | Hash | 30 days from write | Daily holdings chart totals. |
 | `holdings:protocol-return-history:v3:<addressHash>:<version>:<timeframe>:<vaultScope>` | String JSON | 24 hours | Atomic protocol-return history response snapshot. |
-| `holdings:ledger:historical-pps:v1[:<namespace>]:<chainId>:<vaultAddress>:<eventHash>` | String JSON | 24 hours | Targeted historical PPS for transfer or staking-wrapper valuation. |
 | `holdings:vault-invalidated:<chainId>:<vaultAddress>` | String timestamp | None | Lazy invalidation marker for totals cache. |
 | `holdings:progress:<progressId>` | String JSON record | 10 minutes | Progress polling state for long requests. |
 

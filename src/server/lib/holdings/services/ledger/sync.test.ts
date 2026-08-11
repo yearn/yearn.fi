@@ -180,7 +180,7 @@ function installSuccessfulMocks(): void {
     ({
       items
     }: {
-      readonly items: readonly Array<{ readonly kind: string; readonly key: string; readonly checksum: string }>
+      readonly items: ReadonlyArray<{ readonly kind: string; readonly key: string; readonly checksum: string }>
     }) => Promise.resolve(items.map((item) => ({ ...item, status: 'written' })))
   )
   mocks.writeStatus.mockResolvedValue({ status: 'written' })

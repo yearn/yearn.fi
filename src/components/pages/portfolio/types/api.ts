@@ -148,6 +148,24 @@ export const portfolioLedgerGrowthResponseSchema = z.object({
   vaults: z.array(portfolioLedgerGrowthVaultSchema)
 })
 
+export const portfolioLedgerPortfolioResponseSchema = portfolioLedgerHistoryResponseSchema.extend({
+  ledger: z.object({
+    revision: z.string(),
+    freshness: z.enum(['cached', 'refreshed', 'stale']),
+    syncedAtMs: z.number().int().nonnegative(),
+    eventUpperTimestamp: z.number().int().nonnegative(),
+    latestSettledDayTimestamp: z.number().int().nonnegative(),
+    eventCount: z.number().int().nonnegative(),
+    coverageByChain: z.array(
+      z.object({
+        chainId: z.number().int().nonnegative(),
+        progressBlock: z.number().int().nonnegative()
+      })
+    )
+  }),
+  growth: portfolioLedgerGrowthResponseSchema
+})
+
 export const portfolioHistoryProgressResponseSchema = z.object({
   id: z.string(),
   route: z.string(),
@@ -244,6 +262,7 @@ export type TPortfolioProtocolReturnHistoryResponse = z.infer<typeof portfolioPr
 export type TPortfolioLedgerSnapshotResponse = z.infer<typeof portfolioLedgerSnapshotResponseSchema>
 export type TPortfolioLedgerHistoryResponse = z.infer<typeof portfolioLedgerHistoryResponseSchema>
 export type TPortfolioLedgerGrowthResponse = z.infer<typeof portfolioLedgerGrowthResponseSchema>
+export type TPortfolioLedgerPortfolioResponse = z.infer<typeof portfolioLedgerPortfolioResponseSchema>
 export type TPortfolioLedgerGrowthVault = z.infer<typeof portfolioLedgerGrowthVaultSchema>
 export type TPortfolioHistoryProgressResponse = z.infer<typeof portfolioHistoryProgressResponseSchema>
 export type TPortfolioProtocolReturnHistorySummary = z.infer<typeof portfolioProtocolReturnHistorySummarySchema>

@@ -217,7 +217,7 @@ describe('portfolio ledger schemas', () => {
         completeVaults: 1,
         partialVaults: 0,
         historicalPpsRequirements: 1,
-        historicalPpsCacheHits: 1,
+        historicalPpsCacheHits: 0,
         historicalPpsFetched: 0,
         historicalPpsMissing: 0,
         currentPpsFallbackVaults: 0,

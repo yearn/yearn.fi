@@ -1,5 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
-import { getLedgerHistoricalPpsCacheKey, resolveLedgerHistoricalPps } from '@/server/lib/holdings/services/ledger/pps'
+import { resolveLedgerHistoricalPps } from '@/server/lib/holdings/services/ledger/pps'
 import type { TProtocolReturnHistoricalPpsRequirement } from '@/server/lib/holdings/services/pnlSimple'
 
 const VAULT = '0x1111111111111111111111111111111111111111'
@@ -21,57 +21,56 @@ function requirement(
   }
 }
 
-describe('ledger targeted historical PPS cache', () => {
-  it('uses cached event PPS and fetches only missing vault timelines', async () => {
-    const cached = requirement()
-    const missing = requirement({
+describe('ledger targeted historical PPS resolution', () => {
+  it('fetches each required vault timeline once and resolves values in request memory', async () => {
+    const first = requirement()
+    const second = requirement({
       key: `1:${VAULT}:200:1:0x${'b'.repeat(64)}`,
       blockNumber: 200,
       blockTimestamp: 2_000,
       logIndex: 1,
       transactionHash: `0x${'b'.repeat(64)}`
     })
-    const fetchPps = vi.fn().mockResolvedValue(new Map([[`1:${VAULT}`, new Map([[1_500, 1.2]])]]))
-    const writeCached = vi.fn().mockResolvedValue(undefined)
+    const fetchPps = vi.fn().mockResolvedValue(
+      new Map([
+        [
+          `1:${VAULT}`,
+          new Map([
+            [1_000, 1.1],
+            [2_000, 1.2]
+          ])
+        ]
+      ])
+    )
 
-    const result = await resolveLedgerHistoricalPps([cached, missing], {
-      readCached: vi.fn(async (entry) => (entry.key === cached.key ? 1.1 : null)),
-      writeCached,
-      fetchPps
-    })
+    const result = await resolveLedgerHistoricalPps([first, second], { fetchPps })
 
     expect(fetchPps).toHaveBeenCalledWith([{ chainId: 1, vaultAddress: VAULT }])
-    expect(writeCached).toHaveBeenCalledWith(missing, 1.2)
     expect(result).toEqual({
       values: [
-        { key: cached.key, pricePerShare: 1.1 },
-        { key: missing.key, pricePerShare: 1.2 }
+        { key: first.key, pricePerShare: 1.1 },
+        { key: second.key, pricePerShare: 1.2 }
       ],
-      cacheHits: 1,
-      fetched: 1,
+      fetched: 2,
       missing: 0
     })
   })
 
-  it('does not cache unresolved PPS requirements', async () => {
+  it('reports unresolved PPS requirements without persisting them', async () => {
     const unresolved = requirement()
-    const writeCached = vi.fn().mockResolvedValue(undefined)
 
     const result = await resolveLedgerHistoricalPps([unresolved], {
-      readCached: vi.fn().mockResolvedValue(null),
-      writeCached,
       fetchPps: vi.fn().mockResolvedValue(new Map([[`1:${VAULT}`, new Map()]]))
     })
 
-    expect(result).toEqual({ values: [], cacheHits: 0, fetched: 0, missing: 1 })
-    expect(writeCached).not.toHaveBeenCalled()
+    expect(result).toEqual({ values: [], fetched: 0, missing: 1 })
   })
 
-  it('uses a global non-wallet cache key without exposing the transaction hash', () => {
-    const entry = requirement()
-    const key = getLedgerHistoricalPpsCacheKey(entry)
+  it('does not fetch when there are no requirements', async () => {
+    const fetchPps = vi.fn()
+    const result = await resolveLedgerHistoricalPps([], { fetchPps })
 
-    expect(key).toContain(`:${entry.chainId}:${VAULT}:`)
-    expect(key).not.toContain(entry.transactionHash)
+    expect(fetchPps).not.toHaveBeenCalled()
+    expect(result).toEqual({ values: [], fetched: 0, missing: 0 })
   })
 })

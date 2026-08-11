@@ -155,7 +155,7 @@ export async function getLedgerProtocolReturnRows(args: {
     vaults: rows.length,
     completeVaults,
     historicalPpsRequirements: requirements.length,
-    historicalPpsCacheHits: historicalPps.cacheHits,
+    historicalPpsCacheHits: 0,
     historicalPpsFetched: historicalPps.fetched,
     historicalPpsMissing: historicalPps.missing,
     currentPpsFallbackVaults: fallbackCurrentPps.length
@@ -170,7 +170,7 @@ export async function getLedgerProtocolReturnRows(args: {
       completeVaults,
       partialVaults: rows.length - completeVaults,
       historicalPpsRequirements: requirements.length,
-      historicalPpsCacheHits: historicalPps.cacheHits,
+      historicalPpsCacheHits: 0,
       historicalPpsFetched: historicalPps.fetched,
       historicalPpsMissing: historicalPps.missing,
       currentPpsFallbackVaults: fallbackCurrentPps.length,

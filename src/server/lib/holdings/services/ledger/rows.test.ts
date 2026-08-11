@@ -116,7 +116,6 @@ describe('fast ledger growth row orchestration', () => {
     )
     const resolveHistoricalPps = vi.fn().mockResolvedValue({
       values: [],
-      cacheHits: 0,
       fetched: 0,
       missing: 0
     } satisfies TResolvedLedgerHistoricalPps)
@@ -164,7 +163,7 @@ describe('fast ledger growth row orchestration', () => {
     })
   })
 
-  it('uses the targeted historical PPS resolution for a genuine transfer receipt', async () => {
+  it('uses request-memory historical PPS resolution for a genuine transfer receipt', async () => {
     const eventSource = createEventSource(
       createEmptyEvents({
         transfersIn: [
@@ -189,8 +188,7 @@ describe('fast ledger growth row orchestration', () => {
         key: requirement.key,
         pricePerShare: 1
       })),
-      cacheHits: 1,
-      fetched: 0,
+      fetched: 1,
       missing: 0
     }))
     const { dependencies, options } = createOptions(resolveHistoricalPps)
@@ -203,6 +201,7 @@ describe('fast ledger growth row orchestration', () => {
     })
 
     const requirements = resolveHistoricalPps.mock.calls[0]?.[0]
+    expect(resolveHistoricalPps).toHaveBeenCalledWith(requirements)
     expect(requirements).toHaveLength(1)
     expect(requirements[0]).toMatchObject({
       reason: 'transfer',
@@ -218,8 +217,8 @@ describe('fast ledger growth row orchestration', () => {
       totalVaults: 1,
       completeVaults: 1,
       historicalPpsRequirements: 1,
-      historicalPpsCacheHits: 1,
-      historicalPpsFetched: 0,
+      historicalPpsCacheHits: 0,
+      historicalPpsFetched: 1,
       historicalPpsMissing: 0,
       isComplete: true
     })

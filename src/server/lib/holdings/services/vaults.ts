@@ -8,7 +8,7 @@ interface KongVault {
   apiVersion?: string
   chainId: number
   symbol: string
-  decimals: number
+  decimals: number | string
   pricePerShare?: string | number | null
   v3?: boolean
   category?: string | null
@@ -16,7 +16,7 @@ interface KongVault {
   asset: {
     address: string
     symbol: string
-    decimals: number
+    decimals: number | string
   }
   staking?: {
     address: string | null
@@ -29,7 +29,7 @@ interface KongVaultSnapshot {
   apiVersion?: string
   chainId: number
   symbol?: string
-  decimals?: number
+  decimals?: number | string
   v3?: boolean
   meta?: {
     category?: string | null
@@ -41,7 +41,7 @@ interface KongVaultSnapshot {
   asset?: {
     address: string
     symbol: string
-    decimals: number
+    decimals: number | string
   }
   staking?: {
     address?: string | null
@@ -178,6 +178,17 @@ function normalizeCurrentPricePerShare(
   return Number.isFinite(normalized) && normalized > 0 ? normalized : undefined
 }
 
+function normalizeDecimals(value: unknown): number | null {
+  const normalized =
+    typeof value === 'number'
+      ? value
+      : typeof value === 'string' && /^\d+$/.test(value.trim())
+        ? Number(value.trim())
+        : Number.NaN
+
+  return Number.isSafeInteger(normalized) && normalized >= 0 && normalized <= 255 ? normalized : null
+}
+
 function wait(delayMs: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, delayMs))
 }
@@ -207,8 +218,13 @@ function buildMetadataMaps(vaults: KongVault[]): {
     stakingToVaultMap: Map<string, VaultMetadata>
   }>(
     (maps, vault) => {
+      const shareDecimals = normalizeDecimals(vault.decimals)
+      const assetDecimals = normalizeDecimals(vault.asset.decimals)
+      if (shareDecimals === null || assetDecimals === null) {
+        return maps
+      }
       const version = inferVaultVersion(vault)
-      const currentPricePerShare = normalizeCurrentPricePerShare(vault.pricePerShare, vault.asset.decimals)
+      const currentPricePerShare = normalizeCurrentPricePerShare(vault.pricePerShare, assetDecimals)
       const metadata: VaultMetadata = {
         address: vault.address.toLowerCase(),
         chainId: vault.chainId,
@@ -223,9 +239,9 @@ function buildMetadataMaps(vaults: KongVault[]): {
         token: {
           address: vault.asset.address.toLowerCase(),
           symbol: vault.asset.symbol,
-          decimals: vault.asset.decimals
+          decimals: assetDecimals
         },
-        decimals: vault.decimals
+        decimals: shareDecimals
       }
 
       const key = `${vault.chainId}:${vault.address.toLowerCase()}`
@@ -242,9 +258,9 @@ function buildMetadataMaps(vaults: KongVault[]): {
           token: {
             address: vault.address.toLowerCase(),
             symbol: vault.symbol,
-            decimals: vault.decimals
+            decimals: shareDecimals
           },
-          decimals: vault.decimals
+          decimals: shareDecimals
         }
         maps.stakingToVaultMap.set(stakingKey, stakingMetadata)
       }
@@ -295,7 +311,13 @@ function buildMetadataFromSnapshot(snapshot: KongVaultSnapshot): VaultMetadata |
     return null
   }
 
-  const currentPricePerShare = normalizeCurrentPricePerShare(snapshot.apy?.pricePerShare, snapshot.asset.decimals)
+  const assetDecimals = normalizeDecimals(snapshot.asset.decimals)
+  const shareDecimals = snapshot.decimals === undefined ? 18 : normalizeDecimals(snapshot.decimals)
+  if (assetDecimals === null || shareDecimals === null) {
+    return null
+  }
+
+  const currentPricePerShare = normalizeCurrentPricePerShare(snapshot.apy?.pricePerShare, assetDecimals)
 
   return {
     address: snapshot.address.toLowerCase(),
@@ -311,14 +333,19 @@ function buildMetadataFromSnapshot(snapshot: KongVaultSnapshot): VaultMetadata |
     token: {
       address: snapshot.asset.address.toLowerCase(),
       symbol: snapshot.asset.symbol,
-      decimals: snapshot.asset.decimals
+      decimals: assetDecimals
     },
-    decimals: snapshot.decimals ?? 18
+    decimals: shareDecimals
   }
 }
 
 function buildStakingMetadataFromSnapshot(stakingAddress: string, snapshot: KongVaultSnapshot): VaultMetadata | null {
   if (!snapshot.symbol || snapshot.decimals === undefined) {
+    return null
+  }
+
+  const shareDecimals = normalizeDecimals(snapshot.decimals)
+  if (shareDecimals === null) {
     return null
   }
 
@@ -335,9 +362,9 @@ function buildStakingMetadataFromSnapshot(stakingAddress: string, snapshot: Kong
     token: {
       address: snapshot.address.toLowerCase(),
       symbol: snapshot.symbol,
-      decimals: snapshot.decimals
+      decimals: shareDecimals
     },
-    decimals: snapshot.decimals
+    decimals: shareDecimals
   }
 }
 

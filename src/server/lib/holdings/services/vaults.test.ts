@@ -3,7 +3,9 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 const UNDERLYING_VAULT = '0xbe53a109b494e5c9f97b9cd39fe969be68bf6204'
 const STAKING_VAULT = '0x622fa41799406b120f9a40da843d358b7b2cfee3'
 
-function createVaultListResponse(): Response {
+function createVaultListResponse(
+  decimals: { readonly vault: number | string; readonly asset: number | string } = { vault: 6, asset: 6 }
+): Response {
   return new Response(
     JSON.stringify([
       {
@@ -11,13 +13,13 @@ function createVaultListResponse(): Response {
         apiVersion: '3.0.2',
         chainId: 1,
         symbol: 'yvUSDC',
-        decimals: 6,
+        decimals: decimals.vault,
         pricePerShare: '1050000',
         v3: true,
         asset: {
           address: '0xA0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
           symbol: 'USDC',
-          decimals: 6
+          decimals: decimals.asset
         },
         staking: {
           address: '0x622fa41799406b120f9a40da843d358b7b2cfee3',
@@ -32,14 +34,16 @@ function createVaultListResponse(): Response {
   )
 }
 
-function createVaultSnapshotResponse(): Response {
+function createVaultSnapshotResponse(
+  decimals: { readonly vault: number | string; readonly asset: number | string } = { vault: 6, asset: 6 }
+): Response {
   return new Response(
     JSON.stringify({
       address: '0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204',
       apiVersion: '3.0.2',
       chainId: 1,
       symbol: 'yvUSDC',
-      decimals: 6,
+      decimals: decimals.vault,
       v3: true,
       apy: {
         pricePerShare: '1040000'
@@ -47,7 +51,7 @@ function createVaultSnapshotResponse(): Response {
       asset: {
         address: '0xA0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
         symbol: 'USDC',
-        decimals: 6
+        decimals: decimals.asset
       },
       staking: {
         address: '0x622fa41799406b120f9a40da843d358b7b2cfee3',
@@ -88,6 +92,46 @@ describe('fetchMultipleVaultsMetadata', () => {
     expect(fetchStub).toHaveBeenCalledTimes(2)
     expect(metadata.get(`1:${UNDERLYING_VAULT}`)?.token.symbol).toBe('USDC')
     expect(metadata.get(`1:${UNDERLYING_VAULT}`)?.currentPricePerShare).toBeCloseTo(1.05)
+  })
+
+  it('normalizes numeric-string decimals at the Kong boundary', async () => {
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(createVaultListResponse({ vault: '18', asset: '6' })))
+
+    const { fetchMultipleVaultsMetadata } = await importVaultsModule()
+    const metadata = await fetchMultipleVaultsMetadata([{ chainId: 1, vaultAddress: UNDERLYING_VAULT }])
+
+    expect(metadata.get(`1:${UNDERLYING_VAULT}`)).toMatchObject({
+      decimals: 18,
+      token: { decimals: 6 }
+    })
+    expect(metadata.get(`1:${UNDERLYING_VAULT}`)?.currentPricePerShare).toBeCloseTo(1.05)
+  })
+
+  it('normalizes numeric-string decimals from snapshot fallback', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    const fetchStub = vi.fn(async (input: string | URL | Request) => {
+      const url = String(input)
+
+      if (url.includes('/list/vaults?origin=yearn')) {
+        throw Object.assign(new Error('socket closed'), { code: 'ECONNRESET' })
+      }
+
+      if (url.includes(`/snapshot/1/${UNDERLYING_VAULT}`)) {
+        return createVaultSnapshotResponse({ vault: '18', asset: '6' })
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    })
+
+    vi.stubGlobal('fetch', fetchStub)
+
+    const { fetchMultipleVaultsMetadata } = await importVaultsModule()
+    const metadata = await fetchMultipleVaultsMetadata([{ chainId: 1, vaultAddress: UNDERLYING_VAULT }])
+
+    expect(metadata.get(`1:${UNDERLYING_VAULT}`)).toMatchObject({
+      decimals: 18,
+      token: { decimals: 6 }
+    })
   })
 
   it('falls back to per-vault snapshots when the global list endpoint is unavailable', async () => {
