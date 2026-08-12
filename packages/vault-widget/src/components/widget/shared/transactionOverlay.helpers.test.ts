@@ -127,8 +127,8 @@ describe('transactionOverlay.helpers', () => {
         executedStepIsPermit: true,
         executedStepAutoContinues: true,
         executedStepCompletesFlow: false,
-        currentStepLabel: 'Deposit',
-        executedStepLabel: 'Permit',
+        currentStepId: 'deposit',
+        executedStepId: 'permit',
         isStepReady: true,
         hasAdvancedFromStep: null,
         hasAutoContinuedFromStep: null
@@ -141,8 +141,8 @@ describe('transactionOverlay.helpers', () => {
         executedStepIsPermit: true,
         executedStepAutoContinues: true,
         executedStepCompletesFlow: false,
-        currentStepLabel: 'Deposit',
-        executedStepLabel: 'Permit',
+        currentStepId: 'deposit',
+        executedStepId: 'permit',
         isStepReady: true,
         hasAdvancedFromStep: null,
         hasAutoContinuedFromStep: null
@@ -409,8 +409,8 @@ describe('shouldRefetchNextStepAfterReceipt', () => {
         overlayState: 'submitted',
         hasReceiptTransactionHash: true,
         wasLastStep: false,
-        currentStepLabel: 'Deposit',
-        executedStepLabel: 'Approve',
+        currentStepId: 'deposit',
+        executedStepId: 'approve',
         isStepReady: false
       })
     ).toBe(true)
@@ -423,8 +423,8 @@ describe('shouldRefetchNextStepAfterReceipt', () => {
         overlayState: 'submitted',
         hasReceiptTransactionHash: true,
         wasLastStep: false,
-        currentStepLabel: 'Deposit',
-        executedStepLabel: 'Approve',
+        currentStepId: 'deposit',
+        executedStepId: 'approve',
         isStepReady: true
       })
     ).toBe(false)

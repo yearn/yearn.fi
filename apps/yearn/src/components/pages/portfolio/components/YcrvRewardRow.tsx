@@ -55,6 +55,7 @@ export function YcrvRewardRow({
     }
 
     return {
+      id: 'claim-ycrv-reward',
       prepare,
       label: 'Claim',
       confirmMessage: `Claim ${formattedAmount} ${reward.symbol}`,

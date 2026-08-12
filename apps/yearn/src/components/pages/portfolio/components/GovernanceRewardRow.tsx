@@ -45,6 +45,7 @@ export function GovernanceRewardRow({
     }
 
     return {
+      id: 'claim-governance-reward',
       prepare,
       label: 'Claim',
       confirmMessage: `Claim ${formattedAmount} ${reward.symbol}`,

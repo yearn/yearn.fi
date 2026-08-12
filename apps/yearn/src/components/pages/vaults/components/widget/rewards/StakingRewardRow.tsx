@@ -51,6 +51,7 @@ export function StakingRewardRow(props: TStakingRewardRowProps): ReactElement {
       return undefined
     }
     return {
+      id: 'claim-staking-reward',
       prepare,
       label: 'Claim',
       confirmMessage: `Claim ${formattedAmount} ${reward.symbol}`,

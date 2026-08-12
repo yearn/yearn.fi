@@ -82,6 +82,7 @@ export function buildWithdrawTransactionStep({
 }: TBuildWithdrawTransactionStepArgs): TransactionStep | undefined {
   if (needsApproval && approvePrepare && safeWithdrawBatch) {
     return {
+      id: 'withdraw-batch',
       prepare: approvePrepare,
       batch: safeWithdrawBatch,
       label: 'Approve & Withdraw',
@@ -98,6 +99,7 @@ export function buildWithdrawTransactionStep({
 
   if (needsApproval && approvePrepare) {
     return {
+      id: 'approve',
       prepare: approvePrepare,
       label: 'Approve',
       confirmMessage: `Approving ${formattedApprovalAmount} ${approvalTokenSymbol || ''}`,
@@ -114,6 +116,7 @@ export function buildWithdrawTransactionStep({
 
     if (fallbackStep === 'unstake' && directUnstakePrepare) {
       return {
+        id: 'unstake',
         prepare: directUnstakePrepare,
         label: 'Unstake',
         confirmMessage: `Unstaking ${formattedRequiredShares} ${unstakeSymbol}`,
@@ -130,6 +133,7 @@ export function buildWithdrawTransactionStep({
     }
 
     return {
+      id: 'withdraw',
       prepare: directWithdrawPrepare,
       label: 'Withdraw',
       confirmMessage: `Withdrawing ${formattedWithdrawAmount} ${assetTokenSymbol || ''}`,
@@ -150,6 +154,7 @@ export function buildWithdrawTransactionStep({
 
   if (isCrossChain) {
     return {
+      id: routeType === 'DIRECT_UNSTAKE' ? 'unstake' : 'withdraw',
       prepare: activeWithdrawPrepare,
       label: withdrawLabel,
       confirmMessage: `${actionVerb} ${formattedWithdrawAmount} ${assetTokenSymbol || ''}`,
@@ -163,6 +168,7 @@ export function buildWithdrawTransactionStep({
 
   const successAction = routeType === 'DIRECT_UNSTAKE' ? 'unstaked' : 'withdrawn'
   return {
+    id: routeType === 'DIRECT_UNSTAKE' ? 'unstake' : 'withdraw',
     prepare: activeWithdrawPrepare,
     label: withdrawLabel,
     confirmMessage: `${actionVerb} ${formattedWithdrawAmount} ${assetTokenSymbol || ''}`,
@@ -186,7 +192,7 @@ export function isWithdrawLastStep({
   if (!currentStep) return true
   if (needsApproval) return Boolean(currentStep.batch && currentStep.completesFlow)
   if (routeType === 'DIRECT_UNSTAKE_WITHDRAW') {
-    return currentStep.label === 'Withdraw'
+    return currentStep.id === 'withdraw'
   }
   return true
 }

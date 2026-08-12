@@ -148,8 +148,8 @@ export function shouldAutoContinuePermitSuccess(params: {
   executedStepIsPermit?: boolean
   executedStepAutoContinues: boolean
   executedStepCompletesFlow: boolean
-  currentStepLabel?: string
-  executedStepLabel?: string
+  currentStepId?: string
+  executedStepId?: string
   isStepReady: boolean
   hasAdvancedFromStep?: string | null
   hasAutoContinuedFromStep?: string | null
@@ -159,8 +159,8 @@ export function shouldAutoContinuePermitSuccess(params: {
     executedStepIsPermit,
     executedStepAutoContinues,
     executedStepCompletesFlow,
-    currentStepLabel,
-    executedStepLabel,
+    currentStepId,
+    executedStepId,
     isStepReady,
     hasAdvancedFromStep,
     hasAutoContinuedFromStep
@@ -170,10 +170,10 @@ export function shouldAutoContinuePermitSuccess(params: {
   if (!executedStepIsPermit) return false
   if (!executedStepAutoContinues) return false
   if (executedStepCompletesFlow) return false
-  if (!currentStepLabel || currentStepLabel === executedStepLabel) return false
+  if (!currentStepId || currentStepId === executedStepId) return false
   if (!isStepReady) return false
-  if (hasAdvancedFromStep === executedStepLabel) return false
-  if (hasAutoContinuedFromStep === executedStepLabel) return false
+  if (hasAdvancedFromStep === executedStepId) return false
+  if (hasAutoContinuedFromStep === executedStepId) return false
 
   return true
 }
@@ -183,15 +183,15 @@ export function shouldRefetchNextStepAfterReceipt(params: {
   overlayState: OverlayState
   hasReceiptTransactionHash: boolean
   wasLastStep: boolean
-  currentStepLabel?: string
-  executedStepLabel?: string
+  currentStepId?: string
+  executedStepId?: string
   isStepReady: boolean
 }): boolean {
   if (!params.isOpen) return false
   if (params.overlayState !== 'pending' && params.overlayState !== 'submitted') return false
   if (!params.hasReceiptTransactionHash) return false
   if (params.wasLastStep) return false
-  if (!params.currentStepLabel || params.currentStepLabel === params.executedStepLabel) return false
+  if (!params.currentStepId || params.currentStepId === params.executedStepId) return false
   if (params.isStepReady) return false
 
   return true

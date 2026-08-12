@@ -529,6 +529,7 @@ export function YvUsdWithdraw({
       : `Starting cooldown for ${formattedCooldownShares} locked shares`
 
     return {
+      id: 'start-cooldown',
       prepare: prepareStartCooldown,
       label: 'Start Cooldown',
       confirmMessage: cooldownConfirmMessage,
@@ -562,6 +563,7 @@ export function YvUsdWithdraw({
     if (!prepareCancelCooldown.isSuccess || !prepareCancelCooldown.data?.request) return undefined
 
     return {
+      id: 'cancel-cooldown',
       prepare: prepareCancelCooldown,
       label: 'Cancel Cooldown',
       confirmMessage: 'Canceling active cooldown for locked yvUSD shares',
@@ -932,8 +934,8 @@ export function YvUsdWithdraw({
   }, [refetchLockedWithdrawState])
 
   const handleLockedWithdrawStepSuccess = useCallback(
-    (label: string): void => {
-      if (label !== 'Unlock to yvUSD') {
+    (stepId: string): void => {
+      if (stepId !== 'unlock') {
         return
       }
 
@@ -948,7 +950,7 @@ export function YvUsdWithdraw({
   )
 
   const handleLockedWithdrawBeforeSuccess = useCallback(
-    async (_label: string): Promise<void> => {
+    async (_stepId: string): Promise<void> => {
       refetchLockedWithdrawState()
       await refreshWalletBalances([
         { address: YVUSD_LOCKED_ADDRESS, chainID: chainId },
@@ -1321,7 +1323,7 @@ export function YvUsdWithdraw({
         step={lockedReadyWithdrawStep}
         isLastStep={lockedWithdrawMode === 'unlock' || lockedWithdrawPhase === 'redeem'}
         autoContinueToNextStep={lockedWithdrawMode === 'unlock-and-withdraw'}
-        autoContinueStepLabels={['Unlock to yvUSD']}
+        autoContinueStepIds={['unlock']}
         onStepSuccess={handleLockedWithdrawStepSuccess}
         onBeforeSuccess={handleLockedWithdrawBeforeSuccess}
         onAllComplete={handleLockedWithdrawSuccess}

@@ -49,6 +49,9 @@ export type VaultWidgetSafeTransactionDetails = {
 }
 
 export type VaultWidgetNotificationId = number | string
+export type VaultWidgetBridgeProtocol = 'stargate' | 'ccip' | 'relay'
+export type VaultWidgetBridgeStatus = 'pending' | 'inflight' | 'delivered' | 'failed' | 'unknown'
+export type VaultWidgetBridgeTrackingState = 'active' | 'unavailable'
 
 export type VaultWidgetNotificationInput = {
   amount: string
@@ -61,6 +64,7 @@ export type VaultWidgetNotificationInput = {
   toChainId?: number
   toSymbol?: string
   type: string
+  bridgeProtocol?: VaultWidgetBridgeProtocol
 }
 
 export type VaultWidgetNotificationStatus = 'error' | 'pending' | 'submitted' | 'success'
@@ -71,6 +75,17 @@ export type VaultWidgetNotificationUpdate = {
   receipt?: TransactionReceipt
   status?: VaultWidgetNotificationStatus
   txHash?: Hash
+  bridgeStatus?: VaultWidgetBridgeStatus
+}
+
+export type VaultWidgetTrackedNotification = {
+  id: VaultWidgetNotificationId
+  status: VaultWidgetNotificationStatus
+  awaitingExecution?: boolean
+  bridgeStatus?: VaultWidgetBridgeStatus
+  bridgeTrackingState?: VaultWidgetBridgeTrackingState
+  bridgeError?: string
+  destinationTxHash?: Hash
 }
 
 export type VaultWidgetAnalyticsProperties = Record<string, boolean | null | number | string | undefined>
@@ -122,6 +137,7 @@ export type VaultWidgetChainsRuntime = {
 export type VaultWidgetNotificationsRuntime = {
   create: (notification: VaultWidgetNotificationInput) => Promise<VaultWidgetNotificationId | undefined>
   update: (notification: VaultWidgetNotificationUpdate) => Promise<void>
+  get: (id: VaultWidgetNotificationId | undefined) => VaultWidgetTrackedNotification | undefined
 }
 
 export type VaultWidgetAnalyticsRuntime = {
@@ -185,6 +201,7 @@ const noop = (): void => undefined
 const noopAsync = (): Promise<void> => Promise.resolve()
 const noopRefresh = (): Promise<unknown> => Promise.resolve(undefined)
 const createNoopNotification = (): Promise<undefined> => Promise.resolve(undefined)
+const getNoNotification = (): undefined => undefined
 const getNoopSafeTransactionDetails = (): Promise<undefined> => Promise.resolve(undefined)
 const getNoToken = (): undefined => undefined
 const getZeroPrice = (): number => 0
@@ -224,7 +241,8 @@ export const DEFAULT_VAULT_WIDGET_RUNTIME: VaultWidgetRuntime = Object.freeze({
   }),
   notifications: Object.freeze({
     create: createNoopNotification,
-    update: noopAsync
+    update: noopAsync,
+    get: getNoNotification
   }),
   prices: Object.freeze({
     getUsdPrice: getZeroPrice,
@@ -319,7 +337,8 @@ export function createVaultWidgetRuntime(overrides: VaultWidgetRuntimeOverrides 
     },
     notifications: {
       create: overrides.notifications?.create ?? DEFAULT_VAULT_WIDGET_RUNTIME.notifications.create,
-      update: overrides.notifications?.update ?? DEFAULT_VAULT_WIDGET_RUNTIME.notifications.update
+      update: overrides.notifications?.update ?? DEFAULT_VAULT_WIDGET_RUNTIME.notifications.update,
+      get: overrides.notifications?.get ?? DEFAULT_VAULT_WIDGET_RUNTIME.notifications.get
     },
     prices: {
       getUsdPrice: overrides.prices?.getUsdPrice ?? DEFAULT_VAULT_WIDGET_RUNTIME.prices.getUsdPrice,

@@ -13,8 +13,8 @@ describe('shouldAutoContinuePermitSuccess', () => {
         executedStepIsPermit: true,
         executedStepAutoContinues: true,
         executedStepCompletesFlow: false,
-        currentStepLabel: 'Deposit',
-        executedStepLabel: 'Sign Permit',
+        currentStepId: 'deposit',
+        executedStepId: 'permit',
         isStepReady: true,
         hasAdvancedFromStep: null,
         hasAutoContinuedFromStep: null
@@ -29,8 +29,8 @@ describe('shouldAutoContinuePermitSuccess', () => {
         executedStepIsPermit: true,
         executedStepAutoContinues: true,
         executedStepCompletesFlow: false,
-        currentStepLabel: 'Sign Permit',
-        executedStepLabel: 'Sign Permit',
+        currentStepId: 'permit',
+        executedStepId: 'permit',
         isStepReady: false,
         hasAdvancedFromStep: null,
         hasAutoContinuedFromStep: null
@@ -45,8 +45,8 @@ describe('shouldAutoContinuePermitSuccess', () => {
         executedStepIsPermit: true,
         executedStepAutoContinues: true,
         executedStepCompletesFlow: true,
-        currentStepLabel: 'Done',
-        executedStepLabel: 'Sign Permit',
+        currentStepId: 'done',
+        executedStepId: 'permit',
         isStepReady: true,
         hasAdvancedFromStep: null,
         hasAutoContinuedFromStep: null
