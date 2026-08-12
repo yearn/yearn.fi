@@ -16,9 +16,15 @@ import { ApprovalOverlay } from '../deposit/ApprovalOverlay'
 import { InputTokenAmount } from '../InputTokenAmount'
 import { SettingsPanel } from '../SettingsPanel'
 import { PriceImpactWarning } from '../shared/PriceImpactWarning'
+import { getProtectedEnsoQuoteError } from '../shared/protectedEnsoQuoteError'
+import { isProtectedEnsoTransactionStepEnabled } from '../shared/protectedEnsoTransaction'
 import { TokenSelectorOverlay } from '../shared/TokenSelectorOverlay'
 import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
-import { useProtectedEnsoQuoteState } from '../shared/useProtectedEnsoQuoteState'
+import {
+  getProtectedEnsoQuoteCandidate,
+  type ProtectedEnsoQuoteRequest,
+  useProtectedEnsoQuoteState
+} from '../shared/useProtectedEnsoQuoteState'
 import { useResetEnsoSelection } from '../shared/useResetEnsoSelection'
 import { useWidgetContext } from '../shared/useWidgetContext'
 import { formatWidgetAllowance, formatWidgetPreciseValue, formatWidgetValue } from '../shared/valueDisplay'
@@ -159,7 +165,14 @@ export function WidgetWithdraw({
   const [awaitingPostUnstakeShares, setAwaitingPostUnstakeShares] = useState(false)
   const [vaultSharesBeforeUnstake, setVaultSharesBeforeUnstake] = useState<bigint>(0n)
   const [optimisticApprovedShares, setOptimisticApprovedShares] = useState<bigint | null>(null)
-  const [ensoQuoteSlippage, setEnsoQuoteSlippage] = useState(0)
+  const [ensoQuoteRequest, setEnsoQuoteRequest] = useState<ProtectedEnsoQuoteRequest>({
+    purpose: 'calibration',
+    slippagePercentage: 0
+  })
+  const ensoQuoteSlippage = ensoQuoteRequest.slippagePercentage
+  const requestExecutionQuote = useCallback((slippagePercentage: number) => {
+    setEnsoQuoteRequest({ purpose: 'execution', slippagePercentage })
+  }, [])
 
   const {
     assetToken,
@@ -370,6 +383,7 @@ export function WidgetWithdraw({
     outputDecimals: outputToken?.decimals ?? 18,
     pricePerShare,
     slippage: ensoQuoteSlippage,
+    ensoQuotePurpose: ensoQuoteRequest.purpose,
     ensoEnabled,
     withdrawalSource,
     isUnstake,
@@ -421,6 +435,7 @@ export function WidgetWithdraw({
       routeType,
       routerAddress: activeFlow.periphery.routerAddress,
       isCrossChain,
+      bridgeProtocol: activeFlow.periphery.bridgeProtocol,
       withdrawalSource: withdrawalSource || 'vault'
     }
   )
@@ -522,7 +537,7 @@ export function WidgetWithdraw({
   )
 
   useEffect(() => {
-    setEnsoQuoteSlippage(0)
+    setEnsoQuoteRequest({ purpose: 'calibration', slippagePercentage: 0 })
   }, [ensoSlippageCalibrationKey])
 
   useEffect(() => {
@@ -566,9 +581,10 @@ export function WidgetWithdraw({
   const protectedEnsoQuote = useProtectedEnsoQuoteState({
     stateKey: ensoSlippageCalibrationKey,
     isEnsoRoute,
+    isCrossChain,
     amount: flowRequiredShares,
-    requestedSlippage: ensoQuoteSlippage,
-    setRequestedSlippage: setEnsoQuoteSlippage,
+    quoteRequest: ensoQuoteRequest,
+    requestExecutionQuote,
     isLoadingQuote: isFetchingQuote,
     userTolerancePercentage: zapSlippage,
     localPriceImpactPercentage: withdrawValueInfo.priceImpactPercentage,
@@ -577,7 +593,11 @@ export function WidgetWithdraw({
     ensoPriceImpact: activeFlow.periphery.priceImpact,
     expectedOut: activeFlow.periphery.expectedOut,
     minExpectedOut: activeFlow.periphery.minExpectedOut,
-    tx: activeFlow.periphery.tx,
+    quote: getProtectedEnsoQuoteCandidate({
+      isEnsoRoute,
+      purpose: ensoQuoteRequest.purpose,
+      tx: activeFlow.periphery.tx
+    }),
     display: withdrawQuoteDisplay
   })
   const {
@@ -589,6 +609,7 @@ export function WidgetWithdraw({
     isPreparing: isPreparingEnsoQuote,
     isDisplayLoading: isDisplayLoadingEnsoQuote,
     isWaitingForProtectedQuote: isWaitingForProtectedEnsoQuote,
+    canExecute: canExecuteProtectedEnsoQuote,
     executableTx: executableEnsoTx
   } = protectedEnsoQuote
 
@@ -621,7 +642,7 @@ export function WidgetWithdraw({
       destinationTokenSymbol: outputToken?.symbol
     }
 
-    if (ensoQuoteSlippage === 0) {
+    if (ensoQuoteRequest.purpose === 'calibration') {
       const bootstrapLogKey = [
         ensoSlippageCalibrationKey,
         activeFlow.periphery.expectedOut.toString(),
@@ -661,6 +682,7 @@ export function WidgetWithdraw({
     assetToken?.symbol,
     desiredEnsoQuoteSlippage,
     ensoPriceImpactPercentage,
+    ensoQuoteRequest.purpose,
     ensoQuoteSlippage,
     ensoSlippageCalibrationKey,
     estimatedPriceImpactPercentage,
@@ -676,11 +698,13 @@ export function WidgetWithdraw({
     zapSlippage
   ])
 
-  const unpricedEnsoWithdrawError =
-    protectedEnsoQuote.hasUnpricedQuoteError && !withdrawAmount.isDebouncing
-      ? 'Unable to estimate zap price impact for the selected token. Withdraw the base asset or swap elsewhere.'
-      : null
-  const effectiveWithdrawError = baseWithdrawError || unpricedEnsoWithdrawError
+  const protectedEnsoWithdrawError = getProtectedEnsoQuoteError({
+    blockedReason: protectedEnsoQuote.blockedReason,
+    hasUnpricedQuoteError: protectedEnsoQuote.hasUnpricedQuoteError,
+    isDebouncing: withdrawAmount.isDebouncing,
+    flow: 'withdraw'
+  })
+  const effectiveWithdrawError = baseWithdrawError || protectedEnsoWithdrawError
 
   const canOpenTokenSelector = ensoEnabled && !disableTokenSelector
   const shouldShowZapUi = !isBaseWithdrawToken
@@ -804,7 +828,10 @@ export function WidgetWithdraw({
         withdrawNotificationParams,
         safeWithdrawBatch,
         prepareApproveEnabled: !isWaitingForProtectedEnsoQuote && Boolean(activeFlow.periphery.prepareApproveEnabled),
-        prepareWithdrawEnabled: !isWaitingForProtectedEnsoQuote && Boolean(activeFlow.periphery.prepareWithdrawEnabled),
+        prepareWithdrawEnabled: isProtectedEnsoTransactionStepEnabled({
+          canExecute: canExecuteProtectedEnsoQuote,
+          prepareEnabled: Boolean(activeFlow.periphery.prepareWithdrawEnabled)
+        }),
         directUnstakePrepareEnabled: Boolean(directUnstakeFlow.periphery.prepareWithdrawEnabled),
         directWithdrawPrepareEnabled: Boolean(directWithdrawFlow.periphery.prepareWithdrawEnabled)
       }),
@@ -832,7 +859,8 @@ export function WidgetWithdraw({
       safeWithdrawBatch,
       activeFlow.periphery.prepareApproveEnabled,
       activeFlow.periphery.prepareWithdrawEnabled,
-      isWaitingForProtectedEnsoQuote
+      isWaitingForProtectedEnsoQuote,
+      canExecuteProtectedEnsoQuote
     ]
   )
 
@@ -889,8 +917,8 @@ export function WidgetWithdraw({
   )
 
   const handleTransactionStepSuccess = useCallback(
-    (label: string) => {
-      if (routeType === 'DIRECT_UNSTAKE_WITHDRAW' && label === 'Unstake') {
+    (stepId: string) => {
+      if (routeType === 'DIRECT_UNSTAKE_WITHDRAW' && stepId === 'unstake') {
         setFallbackStep('withdraw')
         setWithdrawalSource('vault')
         setAwaitingPostUnstakeShares(isMaxWithdraw)
@@ -901,7 +929,7 @@ export function WidgetWithdraw({
         }
         void refreshWalletBalances(tokensToRefresh)
         refetchVaultUserData()
-      } else if (label === 'Approve') {
+      } else if (stepId === 'approve') {
         setOptimisticApprovedShares(effectiveSourceShares)
       }
     },
@@ -935,7 +963,8 @@ export function WidgetWithdraw({
   // is in "refreshing" state. Awaiting the balance refetch ensures the success
   // screen appears only once balances are fresh.
   const handleWithdrawTransactionSuccess = useCallback(
-    async (_label: string) => {
+    async (_stepId: string) => {
+      if (isCrossChain) return
       const tokensToRefresh = [
         { address: withdrawToken, chainId: destinationChainId },
         { address: vaultAddress, chainId: chainId }
@@ -951,6 +980,7 @@ export function WidgetWithdraw({
       vaultAddress,
       chainId,
       stakingAddress,
+      isCrossChain,
       refreshWalletBalances,
       refetchVaultUserData
     ]
@@ -1237,7 +1267,7 @@ export function WidgetWithdraw({
         step={currentStep}
         isLastStep={isLastStep}
         autoContinueToNextStep
-        autoContinueStepLabels={['Approve', 'Sign Permit', 'Unstake']}
+        autoContinueStepIds={['approve', 'permit', 'unstake']}
         onStepSuccess={handleTransactionStepSuccess}
         onBeforeSuccess={handleWithdrawTransactionSuccess}
         onAllComplete={handleWithdrawSuccess}

@@ -3,7 +3,7 @@ import { useDirectWithdraw } from '@yearn/vault-widget/internal/hooks/actions/us
 import { useEnsoWithdraw } from '@yearn/vault-widget/internal/hooks/actions/useEnsoWithdraw'
 import { useYBoldZapperWithdraw } from '@yearn/vault-widget/internal/hooks/actions/useYBoldZapperWithdraw'
 import { useYvUsdLockedZapWithdraw } from '@yearn/vault-widget/internal/hooks/actions/useYvUsdLockedZapWithdraw'
-import type { EnsoRoutingStrategy } from '@yearn/vault-widget/internal/hooks/solvers/useSolverEnso'
+import type { EnsoQuotePurpose, EnsoRoutingStrategy } from '@yearn/vault-widget/internal/hooks/solvers/useSolverEnso'
 import { toAddress } from '@yearn/vault-widget/internal/utils'
 import { toBasisPoints } from '@yearn/vault-widget/internal/utils/slippage'
 import { YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@yearn/vault-widget/internal/utils/yvUsd'
@@ -42,6 +42,7 @@ interface UseWithdrawFlowProps {
   pricePerShare: bigint
   // Settings
   slippage: number
+  ensoQuotePurpose: EnsoQuotePurpose
   ensoEnabled: boolean
   withdrawalSource: WithdrawalSource
   isUnstake: boolean
@@ -81,6 +82,7 @@ export function useWithdrawFlow({
   outputDecimals,
   pricePerShare,
   slippage,
+  ensoQuotePurpose,
   ensoEnabled,
   withdrawalSource,
   isUnstake,
@@ -175,7 +177,6 @@ export function useWithdrawFlow({
     vaultAddress: sourceToken,
     withdrawToken,
     amount: requiredShares,
-    currentAmount,
     account,
     receiver: account,
     chainId,
@@ -183,6 +184,7 @@ export function useWithdrawFlow({
     decimalsOut: outputDecimals,
     enabled: ensoFlowEnabled,
     slippage: toBasisPoints(slippage),
+    quotePurpose: ensoQuotePurpose,
     routingStrategy: ensoRoutingStrategy
   })
 

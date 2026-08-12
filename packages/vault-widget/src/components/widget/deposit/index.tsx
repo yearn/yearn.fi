@@ -20,9 +20,15 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { formatUnits, isAddressEqual } from 'viem'
 import { SettingsPanel } from '../SettingsPanel'
 import { PriceImpactWarning } from '../shared/PriceImpactWarning'
+import { getProtectedEnsoQuoteError } from '../shared/protectedEnsoQuoteError'
+import { isProtectedEnsoTransactionStepEnabled } from '../shared/protectedEnsoTransaction'
 import { TokenSelectorOverlay } from '../shared/TokenSelectorOverlay'
 import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
-import { useProtectedEnsoQuoteState } from '../shared/useProtectedEnsoQuoteState'
+import {
+  getProtectedEnsoQuoteCandidate,
+  type ProtectedEnsoQuoteRequest,
+  useProtectedEnsoQuoteState
+} from '../shared/useProtectedEnsoQuoteState'
 import { useResetEnsoSelection } from '../shared/useResetEnsoSelection'
 import { useWidgetContext } from '../shared/useWidgetContext'
 import { formatWidgetAllowance, formatWidgetValue } from '../shared/valueDisplay'
@@ -304,7 +310,14 @@ export function WidgetDeposit({
   const depositInput = useDebouncedInput(inputToken?.decimals ?? 18)
   const [depositAmount, , setDepositInput] = depositInput
   const shouldCollapseDetails = Boolean(collapseDetails && !hideDetails && !hideActionButton)
-  const [ensoQuoteSlippage, setEnsoQuoteSlippage] = useState(0)
+  const [ensoQuoteRequest, setEnsoQuoteRequest] = useState<ProtectedEnsoQuoteRequest>({
+    purpose: 'calibration',
+    slippagePercentage: 0
+  })
+  const ensoQuoteSlippage = ensoQuoteRequest.slippagePercentage
+  const requestExecutionQuote = useCallback((slippagePercentage: number) => {
+    setEnsoQuoteRequest({ purpose: 'execution', slippagePercentage })
+  }, [])
 
   useEffect(() => {
     onAmountChange?.(depositAmount.formValue)
@@ -369,6 +382,7 @@ export function WidgetDeposit({
     inputDecimals: inputToken?.decimals ?? 18,
     vaultDecimals: vault?.decimals ?? 18,
     slippage: ensoQuoteSlippage,
+    ensoQuotePurpose: ensoQuoteRequest.purpose,
     ensoEnabled,
     ensoRoutingStrategy: isWalletSafe ? 'router' : undefined,
     routeRefreshKey: approvalRouteRefreshKey,
@@ -393,7 +407,8 @@ export function WidgetDeposit({
     expectedShareAmount: isEnsoRoute ? activeFlow.periphery.minExpectedOut : activeFlow.periphery.expectedOut,
     routeType,
     routerAddress: activeFlow.periphery.routerAddress,
-    isCrossChain
+    isCrossChain,
+    bridgeProtocol: activeFlow.periphery.bridgeProtocol
   })
 
   const depositError = useDepositError({
@@ -483,7 +498,7 @@ export function WidgetDeposit({
   )
 
   useEffect(() => {
-    setEnsoQuoteSlippage(0)
+    setEnsoQuoteRequest({ purpose: 'calibration', slippagePercentage: 0 })
   }, [ensoSlippageCalibrationKey])
 
   useEffect(() => {
@@ -544,9 +559,10 @@ export function WidgetDeposit({
   const protectedEnsoQuote = useProtectedEnsoQuoteState({
     stateKey: ensoSlippageCalibrationKey,
     isEnsoRoute,
+    isCrossChain,
     amount: depositAmount.debouncedBn,
-    requestedSlippage: ensoQuoteSlippage,
-    setRequestedSlippage: setEnsoQuoteSlippage,
+    quoteRequest: ensoQuoteRequest,
+    requestExecutionQuote,
     isLoadingQuote,
     userTolerancePercentage: zapSlippage,
     localPriceImpactPercentage: depositValueInfo.priceImpactPercentage,
@@ -555,7 +571,11 @@ export function WidgetDeposit({
     ensoPriceImpact: activeFlow.periphery.priceImpact,
     expectedOut: activeFlow.periphery.expectedOut,
     minExpectedOut: activeFlow.periphery.minExpectedOut,
-    tx: activeFlow.periphery.tx,
+    quote: getProtectedEnsoQuoteCandidate({
+      isEnsoRoute,
+      purpose: ensoQuoteRequest.purpose,
+      tx: activeFlow.periphery.tx
+    }),
     display: depositQuoteDisplay
   })
   const {
@@ -567,6 +587,7 @@ export function WidgetDeposit({
     isPreparing: isPreparingEnsoQuote,
     isDisplayLoading: isDisplayLoadingEnsoQuote,
     isWaitingForProtectedQuote: isWaitingForProtectedEnsoQuote,
+    canExecute: canExecuteProtectedEnsoQuote,
     executableTx: executableEnsoTx
   } = protectedEnsoQuote
 
@@ -603,7 +624,7 @@ export function WidgetDeposit({
       destinationTokenSymbol: assetToken?.symbol
     }
 
-    if (ensoQuoteSlippage === 0) {
+    if (ensoQuoteRequest.purpose === 'calibration') {
       const bootstrapLogKey = [
         ensoSlippageCalibrationKey,
         activeFlow.periphery.expectedOut.toString(),
@@ -647,6 +668,7 @@ export function WidgetDeposit({
     depositValueInfo.worstCasePriceImpactPercentage,
     desiredEnsoQuoteSlippage,
     ensoPriceImpactPercentage,
+    ensoQuoteRequest.purpose,
     ensoQuoteSlippage,
     ensoSlippageCalibrationKey,
     estimatedPriceImpactPercentage,
@@ -661,11 +683,13 @@ export function WidgetDeposit({
     zapSlippage
   ])
 
-  const unpricedEnsoDepositError =
-    protectedEnsoQuote.hasUnpricedQuoteError && !depositAmount.isDebouncing
-      ? 'Unable to estimate zap price impact for the selected token. Use the base asset flow or swap elsewhere.'
-      : null
-  const effectiveDepositError = depositError || unpricedEnsoDepositError
+  const protectedEnsoDepositError = getProtectedEnsoQuoteError({
+    blockedReason: protectedEnsoQuote.blockedReason,
+    hasUnpricedQuoteError: protectedEnsoQuote.hasUnpricedQuoteError,
+    isDebouncing: depositAmount.isDebouncing,
+    flow: 'deposit'
+  })
+  const effectiveDepositError = depositError || protectedEnsoDepositError
 
   const {
     spenderAddress: approvalSpenderAddress,
@@ -753,6 +777,7 @@ export function WidgetDeposit({
 
     if (safeDepositBatch) {
       return {
+        id: 'deposit-batch',
         prepare: activeFlow.actions.prepareApprove,
         batch: safeDepositBatch,
         label: `Approve & ${actionLabel}`,
@@ -773,6 +798,7 @@ export function WidgetDeposit({
 
     if (effectiveNeedsApproval) {
       return {
+        id: 'approve',
         prepare: activeFlow.actions.prepareApprove,
         label: 'Approve',
         confirmMessage: `Approving ${formattedDepositAmount} ${inputToken?.symbol || ''}`,
@@ -786,12 +812,16 @@ export function WidgetDeposit({
 
     if (isCrossChain) {
       return {
+        id: 'deposit',
         prepare: activeFlow.actions.prepareDeposit,
         label: actionLabel,
         confirmMessage: `${progressLabel} ${formattedDepositAmount} ${inputToken?.symbol || ''}`,
         successTitle: 'Transaction Submitted',
         successMessage: `Your cross-chain ${actionLabel.toLowerCase()} has been submitted.\nIt may take a few minutes to complete on the destination chain.`,
-        isEnabled: !isWaitingForProtectedEnsoQuote && activeFlow.periphery.prepareDepositEnabled,
+        isEnabled: isProtectedEnsoTransactionStepEnabled({
+          canExecute: canExecuteProtectedEnsoQuote,
+          prepareEnabled: activeFlow.periphery.prepareDepositEnabled
+        }),
         completesFlow: true,
         showConfetti: true,
         notification: depositNotificationParams
@@ -799,12 +829,16 @@ export function WidgetDeposit({
     }
 
     return {
+      id: 'deposit',
       prepare: activeFlow.actions.prepareDeposit,
       label: actionLabel,
       confirmMessage: `${progressLabel} ${formattedDepositAmount} ${inputToken?.symbol || ''}`,
       successTitle: `${actionLabel} successful!`,
       successMessage: `You have ${pastTenseLabel} ${formattedDepositAmount} ${inputToken?.symbol || ''} into ${vaultSymbol}.`,
-      isEnabled: !isWaitingForProtectedEnsoQuote && activeFlow.periphery.prepareDepositEnabled,
+      isEnabled: isProtectedEnsoTransactionStepEnabled({
+        canExecute: canExecuteProtectedEnsoQuote,
+        prepareEnabled: activeFlow.periphery.prepareDepositEnabled
+      }),
       completesFlow: true,
       showConfetti: true,
       notification: depositNotificationParams
@@ -823,7 +857,8 @@ export function WidgetDeposit({
     approveNotificationParams,
     depositNotificationParams,
     isCrossChain,
-    isWaitingForProtectedEnsoQuote
+    isWaitingForProtectedEnsoQuote,
+    canExecuteProtectedEnsoQuote
   ])
 
   const eligibleTransactionPlan = useMemo(
@@ -903,9 +938,9 @@ export function WidgetDeposit({
   // Called by TransactionOverlay after the final tx confirms on-chain, while the
   // overlay is in "refreshing" state. We await the wallet balance refetch so the
   // success screen appears only once balances are fresh. Not called for cross-chain
-  // deposits (those refresh in handleDepositSuccess after bridge completes).
+  // deposits (the host bridge tracker refreshes those on delivery).
   const handleDepositTransactionSuccess = useCallback(
-    async (_label: string) => {
+    async (_stepId: string) => {
       if (isCrossChain) return
       await Promise.all([Promise.resolve(refetchVaultUserData()), refreshWalletBalances(depositRefreshTargets)])
     },
@@ -913,8 +948,8 @@ export function WidgetDeposit({
   )
 
   const handleDepositStepSuccess = useCallback(
-    (label: string) => {
-      if (label === 'Approve' || label === 'Sign Permit') {
+    (stepId: string) => {
+      if (stepId === 'approve' || stepId === 'permit') {
         setCompletedApprovalFlowKey(approvalFlowKey)
       }
     },
@@ -973,14 +1008,6 @@ export function WidgetDeposit({
       setSelectedToken(assetAddress)
       setSelectedChainId(undefined)
     }
-    // Cross-chain deposits: the transaction submits on source chain but funds
-    // don't arrive on destination until minutes later, so there is no on-chain
-    // receipt — onBeforeSuccess never fires for these. Refresh balances here
-    // instead so the sent tokens are reflected after the bridge completes.
-    if (isCrossChain) {
-      refreshWalletBalances(depositRefreshTargets)
-      refetchVaultUserData()
-    }
     onDepositSuccess?.()
   }, [
     depositAmount.bn,
@@ -996,11 +1023,7 @@ export function WidgetDeposit({
     forceStake,
     assetAddress,
     setDepositInput,
-    isCrossChain,
-    depositRefreshTargets,
-    refreshWalletBalances,
-    onDepositSuccess,
-    refetchVaultUserData
+    onDepositSuccess
   ])
 
   const handleTokenChange = useCallback(
@@ -1401,7 +1424,7 @@ export function WidgetDeposit({
         deferOnAllCompleteUntilClose={deferSuccessEffectsUntilClose}
         deferOnAllCompleteUntilConfettiEnd={deferSuccessEffectsUntilConfettiEnd}
         autoContinueToNextStep
-        autoContinueStepLabels={['Approve', 'Sign Permit']}
+        autoContinueStepIds={['approve', 'permit']}
         onStepSuccess={handleDepositStepSuccess}
         onBeforeSuccess={handleDepositTransactionSuccess}
         onAllComplete={handleDepositSuccess}

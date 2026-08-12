@@ -4,7 +4,7 @@ import { useDirectStake } from '@yearn/vault-widget/internal/hooks/actions/useDi
 import { useEnsoDeposit } from '@yearn/vault-widget/internal/hooks/actions/useEnsoDeposit'
 import { useYBoldZapperDeposit } from '@yearn/vault-widget/internal/hooks/actions/useYBoldZapperDeposit'
 import { useYvUsdLockedZapDeposit } from '@yearn/vault-widget/internal/hooks/actions/useYvUsdLockedZapDeposit'
-import type { EnsoRoutingStrategy } from '@yearn/vault-widget/internal/hooks/solvers/useSolverEnso'
+import type { EnsoQuotePurpose, EnsoRoutingStrategy } from '@yearn/vault-widget/internal/hooks/solvers/useSolverEnso'
 import { toAddress } from '@yearn/vault-widget/internal/utils'
 import { toBasisPoints } from '@yearn/vault-widget/internal/utils/slippage'
 import { YVUSD_LOCKED_ADDRESS } from '@yearn/vault-widget/internal/utils/yvUsd'
@@ -36,6 +36,7 @@ interface UseDepositFlowProps {
   vaultDecimals: number
   // Settings
   slippage: number
+  ensoQuotePurpose: EnsoQuotePurpose
   ensoEnabled: boolean
   ensoRoutingStrategy?: EnsoRoutingStrategy
   routeRefreshKey?: number
@@ -60,6 +61,7 @@ export interface DepositFlowResult {
       normalizedExpectedOut: bigint
       normalizedMinExpectedOut: bigint
       routeHasSwap?: boolean
+      bridgeProtocol?: 'stargate' | 'ccip' | 'relay'
       isLoadingRoute: boolean
       isLoadingExpectedOutNormalization: boolean
       isCrossChain: boolean
@@ -95,6 +97,7 @@ export const useDepositFlow = ({
   inputDecimals,
   vaultDecimals,
   slippage,
+  ensoQuotePurpose,
   ensoEnabled,
   ensoRoutingStrategy,
   routeRefreshKey,
@@ -163,13 +166,13 @@ export const useDepositFlow = ({
     vaultAddress: destinationToken,
     depositToken,
     amount,
-    currentAmount,
     account,
     chainId: sourceChainId,
     destinationChainId,
     decimalsOut: vaultDecimals,
     enabled: routeType === 'ENSO' && !!depositToken && amount > 0n && currentAmount > 0n,
     slippage: toBasisPoints(slippage),
+    quotePurpose: ensoQuotePurpose,
     routingStrategy: ensoRoutingStrategy,
     routeRefreshKey
   })

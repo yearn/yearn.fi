@@ -1,6 +1,8 @@
 import {
   calculateRemainingEnsoSlippagePercentage,
+  MIN_CROSS_CHAIN_ENSO_SLIPPAGE_BPS,
   optionalBasisPointsToPercentage,
+  toBasisPoints,
   ZAP_SLIPPAGE_HARD_CAP
 } from '@yearn/vault-widget/internal/utils/slippage'
 import type { TAddress } from '@yearn/vault-widget/types'
@@ -8,12 +10,32 @@ import { useEffect, useMemo, useRef } from 'react'
 import type { Hex } from 'viem'
 
 export type ProtectedEnsoRouteState = 'idle' | 'loading' | 'protecting' | 'ready' | 'blocked'
+export type ProtectedEnsoBlockedReason = 'cross-chain-minimum-slippage' | 'no-protected-tolerance' | 'price-impact'
 
 export type ProtectedEnsoTx = {
   to: TAddress
   data: Hex
   value: string
   from: TAddress
+}
+
+export type ProtectedEnsoQuoteRequest =
+  | { purpose: 'calibration'; slippagePercentage: 0 }
+  | { purpose: 'execution'; slippagePercentage: number }
+
+export type ProtectedEnsoQuoteCandidate =
+  | { purpose: 'calibration' }
+  | { purpose: 'execution'; tx: ProtectedEnsoTx }
+  | { purpose: 'unavailable' }
+
+export function getProtectedEnsoQuoteCandidate(params: {
+  isEnsoRoute: boolean
+  purpose: ProtectedEnsoQuoteRequest['purpose']
+  tx?: ProtectedEnsoTx
+}): ProtectedEnsoQuoteCandidate {
+  if (!params.isEnsoRoute) return { purpose: 'unavailable' }
+  if (params.purpose === 'calibration') return { purpose: 'calibration' }
+  return params.tx ? { purpose: 'execution', tx: params.tx } : { purpose: 'unavailable' }
 }
 
 export type ProtectedQuoteSnapshot<TDisplay> = {
@@ -27,9 +49,10 @@ export type ProtectedQuoteSnapshot<TDisplay> = {
 type UseProtectedEnsoQuoteStateParams<TDisplay> = {
   stateKey: string
   isEnsoRoute: boolean
+  isCrossChain: boolean
   amount: bigint
-  requestedSlippage: number
-  setRequestedSlippage: (value: number) => void
+  quoteRequest: ProtectedEnsoQuoteRequest
+  requestExecutionQuote: (slippagePercentage: number) => void
   isLoadingQuote: boolean
   userTolerancePercentage: number
   localPriceImpactPercentage: number
@@ -38,14 +61,15 @@ type UseProtectedEnsoQuoteStateParams<TDisplay> = {
   ensoPriceImpact?: number | null
   expectedOut: bigint
   minExpectedOut: bigint
-  tx?: ProtectedEnsoTx
+  quote: ProtectedEnsoQuoteCandidate
   display: TDisplay
 }
 
 export function resolveProtectedEnsoQuoteView<TDisplay>({
   isEnsoRoute,
+  isCrossChain,
   amount,
-  requestedSlippage,
+  quotePurpose,
   isLoadingQuote,
   hasCurrentQuote,
   currentSnapshot,
@@ -55,11 +79,12 @@ export function resolveProtectedEnsoQuoteView<TDisplay>({
   fallbackDisplay,
   fallbackEstimatedPriceImpactPercentage,
   fallbackWorstCaseRouteImpactPercentage,
-  tx
+  quote
 }: {
   isEnsoRoute: boolean
+  isCrossChain: boolean
   amount: bigint
-  requestedSlippage: number
+  quotePurpose: ProtectedEnsoQuoteRequest['purpose']
   isLoadingQuote: boolean
   hasCurrentQuote: boolean
   currentSnapshot: ProtectedQuoteSnapshot<TDisplay>
@@ -69,13 +94,20 @@ export function resolveProtectedEnsoQuoteView<TDisplay>({
   fallbackDisplay: TDisplay
   fallbackEstimatedPriceImpactPercentage: number
   fallbackWorstCaseRouteImpactPercentage: number
-  tx?: ProtectedEnsoTx
+  quote: ProtectedEnsoQuoteCandidate
 }) {
+  const isCalibrationQuote = isEnsoRoute && quotePurpose === 'calibration'
+  const hasCompletedCalibration = isCalibrationQuote && hasCurrentQuote && !isLoadingQuote
+  const hasNoProtectedTolerance = hasCompletedCalibration && desiredSlippage === 0
+  const hasInsufficientCrossChainTolerance =
+    isCrossChain && toBasisPoints(userTolerancePercentage) < MIN_CROSS_CHAIN_ENSO_SLIPPAGE_BPS
   const isWaitingForProtectedQuote =
     isEnsoRoute &&
     amount > 0n &&
-    ((requestedSlippage === 0 && hasCurrentQuote && desiredSlippage > 0) || (requestedSlippage > 0 && isLoadingQuote))
-  const canDisplayCurrentQuote = hasCurrentQuote && !isWaitingForProtectedQuote && !isLoadingQuote
+    ((quotePurpose === 'calibration' && hasCurrentQuote && desiredSlippage > 0) ||
+      (quotePurpose === 'execution' && isLoadingQuote))
+  const canDisplayCurrentQuote =
+    hasCurrentQuote && !isCalibrationQuote && !isWaitingForProtectedQuote && !isLoadingQuote
   const snapshot = canDisplayCurrentQuote ? currentSnapshot : cachedSnapshot
   const isPreparing = isLoadingQuote || isWaitingForProtectedQuote
   const isDisplayLoading = isEnsoRoute && amount > 0n && isPreparing
@@ -99,18 +131,31 @@ export function resolveProtectedEnsoQuoteView<TDisplay>({
   const routeState: ProtectedEnsoRouteState =
     !isEnsoRoute || amount === 0n
       ? 'idle'
-      : isWaitingForProtectedQuote
-        ? 'protecting'
-        : isDisplayLoading
-          ? 'loading'
-          : priceImpactInfo.isBlocking || priceImpactInfo.isAboveTolerance
-            ? 'blocked'
-            : hasCurrentQuote
-              ? 'ready'
-              : 'loading'
+      : hasNoProtectedTolerance
+        ? 'blocked'
+        : isWaitingForProtectedQuote
+          ? 'protecting'
+          : isDisplayLoading
+            ? 'loading'
+            : priceImpactInfo.isBlocking || priceImpactInfo.isAboveTolerance
+              ? 'blocked'
+              : hasCurrentQuote && (!isEnsoRoute || quote.purpose === 'execution')
+                ? 'ready'
+                : 'loading'
+
+  const blockedReason: ProtectedEnsoBlockedReason | undefined = hasNoProtectedTolerance
+    ? hasInsufficientCrossChainTolerance
+      ? 'cross-chain-minimum-slippage'
+      : 'no-protected-tolerance'
+    : priceImpactInfo.isBlocking || priceImpactInfo.isAboveTolerance
+      ? 'price-impact'
+      : undefined
+  const canExecute = !isEnsoRoute || routeState === 'ready'
 
   return {
     routeState,
+    blockedReason,
+    canExecute,
     display: snapshot?.display ?? fallbackDisplay,
     isPreparing,
     isDisplayLoading,
@@ -119,16 +164,17 @@ export function resolveProtectedEnsoQuoteView<TDisplay>({
     estimatedPriceImpactPercentage: displayedEstimatedPriceImpactPercentage,
     worstCaseRouteImpactPercentage: displayedWorstCaseRouteImpactPercentage,
     priceImpactInfo,
-    executableTx: isEnsoRoute && isPreparing ? undefined : tx
+    executableTx: canExecute && quote.purpose === 'execution' ? quote.tx : undefined
   }
 }
 
 export function useProtectedEnsoQuoteState<TDisplay>({
   stateKey,
   isEnsoRoute,
+  isCrossChain,
   amount,
-  requestedSlippage,
-  setRequestedSlippage,
+  quoteRequest,
+  requestExecutionQuote,
   isLoadingQuote,
   userTolerancePercentage,
   localPriceImpactPercentage,
@@ -137,7 +183,7 @@ export function useProtectedEnsoQuoteState<TDisplay>({
   ensoPriceImpact,
   expectedOut,
   minExpectedOut,
-  tx,
+  quote,
   display
 }: UseProtectedEnsoQuoteStateParams<TDisplay>) {
   const resetKey = isEnsoRoute && amount > 0n ? stateKey : 'inactive'
@@ -191,19 +237,28 @@ export function useProtectedEnsoQuoteState<TDisplay>({
   )
 
   useEffect(() => {
-    if (!isEnsoRoute || requestedSlippage !== 0 || amount === 0n || isLoadingQuote || !hasCurrentQuote) {
+    if (!isEnsoRoute || quoteRequest.purpose !== 'calibration' || amount === 0n || isLoadingQuote || !hasCurrentQuote) {
       return
     }
 
     if (desiredSlippage > 0) {
-      setRequestedSlippage(desiredSlippage)
+      requestExecutionQuote(desiredSlippage)
     }
-  }, [amount, desiredSlippage, hasCurrentQuote, isEnsoRoute, isLoadingQuote, requestedSlippage, setRequestedSlippage])
+  }, [
+    amount,
+    desiredSlippage,
+    hasCurrentQuote,
+    isEnsoRoute,
+    isLoadingQuote,
+    quoteRequest.purpose,
+    requestExecutionQuote
+  ])
 
   const view = resolveProtectedEnsoQuoteView({
     isEnsoRoute,
+    isCrossChain,
     amount,
-    requestedSlippage,
+    quotePurpose: quoteRequest.purpose,
     isLoadingQuote,
     hasCurrentQuote,
     currentSnapshot,
@@ -213,7 +268,7 @@ export function useProtectedEnsoQuoteState<TDisplay>({
     fallbackDisplay: display,
     fallbackEstimatedPriceImpactPercentage: estimatedPriceImpactPercentage,
     fallbackWorstCaseRouteImpactPercentage: worstCaseRouteImpactPercentage,
-    tx
+    quote
   })
 
   useEffect(() => {
