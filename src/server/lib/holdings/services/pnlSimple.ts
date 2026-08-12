@@ -39,7 +39,12 @@ import {
 import { mergeAddressScopedRawPnlEventsWithTransactionActivity } from './pnlEvents'
 import { lowerCaseAddress, toVaultKey, ZERO } from './pnlShared'
 import type { TRawPnlEvent } from './pnlTypes'
-import { getSettledVersionedPpsContext, getVaultIdentifiers } from './settledHoldingsContext'
+import {
+  getSettledAddressScopedContext,
+  getSettledVersionedPpsContext,
+  getVaultIdentifiers,
+  selectVersionedEvents
+} from './settledHoldingsContext'
 import { getStakingVaultAddress } from './staking'
 
 type TProtocolReturnIssue = 'missing_metadata' | 'missing_pps' | 'missing_receipt_price' | 'unmatched_exit'
@@ -571,14 +576,15 @@ function countFetchedReceiptPricePoints(priceData: Map<string, Map<number, numbe
 }
 
 async function fetchReceiptPrices(
-  requests: TSimpleReceiptPriceRequest[]
+  requests: TSimpleReceiptPriceRequest[],
+  fetchPrices: typeof fetchHistoricalPricesForTokenTimestamps = fetchHistoricalPricesForTokenTimestamps
 ): Promise<TProtocolReturnPriceFetchResult<Map<string, Map<number, number>>>> {
   if (requests.length === 0) {
     return { priceData: new Map(), failedBatches: 0 }
   }
 
   try {
-    const priceData = await fetchHistoricalPricesForTokenTimestamps(requests, { resolution: 'utc_day' })
+    const priceData = await fetchPrices(requests, { resolution: 'utc_day' })
     const reportedFailedBatches = getHistoricalPriceFetchFailedBatches(priceData)
     return {
       priceData,
@@ -597,17 +603,17 @@ async function fetchReceiptPrices(
 }
 
 async function fetchEthReceiptPrices(
-  timestamps: number[]
+  timestamps: number[],
+  fetchPrices: typeof fetchHistoricalPricesForTokenTimestamps = fetchHistoricalPricesForTokenTimestamps
 ): Promise<TProtocolReturnPriceFetchResult<Map<number, number>>> {
   if (timestamps.length === 0) {
     return { priceData: new Map(), failedBatches: 0 }
   }
 
   try {
-    const priceData = await fetchHistoricalPricesForTokenTimestamps(
-      [{ chainId: 1, address: ETHEREUM_WETH_ADDRESS, timestamps }],
-      { resolution: 'utc_day' }
-    )
+    const priceData = await fetchPrices([{ chainId: 1, address: ETHEREUM_WETH_ADDRESS, timestamps }], {
+      resolution: 'utc_day'
+    })
     const ethPriceData = priceData.get(ETHEREUM_WETH_PRICE_KEY) ?? new Map()
     return {
       priceData: ethPriceData,
@@ -2451,27 +2457,35 @@ async function calculateHoldingsProtocolReturnHistory(
 
   const requestedVaults = normalizeProtocolReturnVaultFilters(requestedVaultFilters, legacyVaultChainId)
   const singleRequestedVault = requestedVaults?.length === 1 ? requestedVaults[0] : undefined
-  const settledContext = await getSettledVersionedPpsContext({
+  const baseContext = await (options.settledContext ??
+    getSettledAddressScopedContext({
+      userAddress,
+      fetchType,
+      paginationMode,
+      eventSource: options.eventSource
+    }))
+  const selection = selectVersionedEvents(baseContext, version, singleRequestedVault)
+  const ppsContextPromise = getSettledVersionedPpsContext({
     userAddress,
     version,
     fetchType,
     paginationMode,
     requestedVault: singleRequestedVault,
     vaultIdentifiers: requestedVaults,
-    eventSource: options.eventSource
+    context: baseContext,
+    eventSource: options.eventSource,
+    valuationLoader: options.valuationLoader,
+    valuationConsumer: 'protocol-return'
   })
-  const selectedEvents = filterEventsByRequestedVaults(settledContext.selectedEvents, requestedVaults)
-  reportHoldingsProgress(
-    30,
-    'Loaded wallet events and vault share prices',
-    `${settledContext.selectedEvents.length} events`
-  )
+  void ppsContextPromise.catch(() => undefined)
+  const selectedEvents = filterEventsByRequestedVaults(selection.events, requestedVaults)
+  reportHoldingsProgress(30, 'Loaded wallet events and vault share prices', `${selection.events.length} events`)
   const rawEvents =
     eventEnrichment === 'transaction'
       ? await enrichSimpleHistoryRawEvents({
           events: selectedEvents,
           version,
-          maxTimestamp: options.eventSource?.eventUpperTimestamp ?? settledContext.maxTimestamp
+          maxTimestamp: options.eventSource?.eventUpperTimestamp ?? baseContext.maxTimestamp
         })
       : selectedEvents
   if (eventEnrichment === 'address-only') {
@@ -2485,9 +2499,10 @@ async function calculateHoldingsProtocolReturnHistory(
     getVaultIdentifiers(effectiveEvents),
     requestedVaults
   )
-  const vaultMetadata = settledContext.vaultMetadata
+  const vaultMetadata = baseContext.vaultMetadata
 
   if (effectiveEvents.length === 0 || filteredVaultIdentifiers.length === 0) {
+    await ppsContextPromise
     reportHoldingsProgress(94, 'No historical protocol return events found', null)
     return {
       response: {
@@ -2521,9 +2536,9 @@ async function calculateHoldingsProtocolReturnHistory(
   const timestamps = getProtocolReturnTimestamps(
     effectiveEvents,
     timeframe,
-    options.eventSource ? settledContext.latestSettledDayTimestamp : undefined
+    options.eventSource ? baseContext.latestSettledDayTimestamp : undefined
   )
-  const latestTimestamp = timestamps[timestamps.length - 1] ?? settledContext.maxTimestamp
+  const latestTimestamp = timestamps[timestamps.length - 1] ?? baseContext.maxTimestamp
   const baseReceiptPriceRequests = buildReceiptPriceRequests({
     events: effectiveEvents,
     metadata: vaultMetadata,
@@ -2544,9 +2559,17 @@ async function calculateHoldingsProtocolReturnHistory(
     'Prepared historical price requests',
     `${receiptPriceRequests.length} receipt price series, ${ethReceiptPriceTimestamps.length} ETH price points, ${ppsIdentifiers.length} PPS series`
   )
-  const [receiptPriceResult, ethPriceResult] = await Promise.all([
-    fetchReceiptPrices(receiptPriceRequests),
-    fetchEthReceiptPrices(ethReceiptPriceTimestamps)
+  const fetchPrices: typeof fetchHistoricalPricesForTokenTimestamps = options.valuationLoader
+    ? (requests, priceOptions) =>
+        options.valuationLoader!.fetchHistoricalPrices(requests, {
+          ...priceOptions,
+          consumer: 'protocol-return'
+        })
+    : fetchHistoricalPricesForTokenTimestamps
+  const [settledContext, receiptPriceResult, ethPriceResult] = await Promise.all([
+    ppsContextPromise,
+    fetchReceiptPrices(receiptPriceRequests, fetchPrices),
+    fetchEthReceiptPrices(ethReceiptPriceTimestamps, fetchPrices)
   ])
   const fetchedPriceData = receiptPriceResult.priceData
   const ethPriceData = ethPriceResult.priceData

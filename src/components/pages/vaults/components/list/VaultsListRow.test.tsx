@@ -197,6 +197,29 @@ describe('VaultsListRow', () => {
     expect(html).not.toContain('Growth 0.00')
   })
 
+  it('renders the compact growth loader while the portfolio calculation is pending', () => {
+    mockUseWeb3.mockReturnValue({ address: '0x1111111111111111111111111111111111111111' })
+    const vault = {
+      version: '3.0.0',
+      chainID: 1,
+      address: '0x0000000000000000000000000000000000000001',
+      name: 'Test Vault',
+      token: {
+        address: '0x0000000000000000000000000000000000000002',
+        symbol: 'USDC',
+        decimals: 6
+      },
+      tvl: { tvl: 1234, totalAssets: 1234567 },
+      info: { riskLevel: 3 }
+    } as unknown as TKongVaultInput
+
+    const html = renderRowHtml(vault, { portfolioGrowth: null, isPortfolioGrowthLoading: true })
+
+    expect(html).toContain('aria-label="Growth loading"')
+    expect(html).toContain('animate-spin')
+    expect(html).not.toContain('aria-label="Growth unavailable"')
+  })
+
   it('keeps a complete zero-growth result distinct from unavailable growth', () => {
     mockUseWeb3.mockReturnValue({ address: '0x1111111111111111111111111111111111111111' })
     const vault = {

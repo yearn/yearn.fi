@@ -1,4 +1,7 @@
-import { resolvePortfolioHistoryCoordinatorState } from '@pages/portfolio/hooks/usePortfolioHistoryCoordinator'
+import {
+  resolvePortfolioHistoryCoordinatorState,
+  shouldLoadPortfolioPositionsHistory
+} from '@pages/portfolio/hooks/usePortfolioHistoryCoordinator'
 import { describe, expect, it } from 'vitest'
 
 describe('resolvePortfolioHistoryCoordinatorState', () => {
@@ -50,5 +53,16 @@ describe('resolvePortfolioHistoryCoordinatorState', () => {
         ledgerHasError: false
       })
     ).toEqual({ shouldUseLegacy: false, isLedgerPending: false })
+  })
+})
+
+describe('shouldLoadPortfolioPositionsHistory', () => {
+  it('starts ledger history as soon as a connected wallet opens the positions tab', () => {
+    expect(shouldLoadPortfolioPositionsHistory({ activeTab: 'positions', isWalletConnected: true })).toBe(true)
+  })
+
+  it('does not load positions history for disconnected wallets or background tabs', () => {
+    expect(shouldLoadPortfolioPositionsHistory({ activeTab: 'positions', isWalletConnected: false })).toBe(false)
+    expect(shouldLoadPortfolioPositionsHistory({ activeTab: 'activity', isWalletConnected: true })).toBe(false)
   })
 })

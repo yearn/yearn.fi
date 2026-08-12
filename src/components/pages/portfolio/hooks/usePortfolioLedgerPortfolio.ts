@@ -191,13 +191,18 @@ export function transformPortfolioLedgerPortfolioResponse(args: {
   liveSnapshot: TPortfolioLiveBalanceSnapshot | null
 }): {
   balanceData: TPortfolioHistoryChartData | null
+  balanceIsComplete: boolean
   protocolReturnData: TPortfolioProtocolReturnHistoryChartData | null
   protocolReturnSummary: TPortfolioProtocolReturnHistorySummary | null
   protocolReturnFamilySeries: TPortfolioProtocolReturnHistoryFamilySeries
 } {
   const balanceData = args.rawData?.balance.dataPoints
     ? upsertLivePortfolioBalancePoint({
-        data: args.rawData.balance.dataPoints.map((point) => ({ date: point.date, value: point.value })),
+        data: args.rawData.balance.dataPoints.map((point) => ({
+          date: point.date,
+          value: point.value,
+          isComplete: point.isComplete
+        })),
         denomination: args.denomination,
         liveSnapshot: args.liveSnapshot
       })
@@ -215,6 +220,7 @@ export function transformPortfolioLedgerPortfolioResponse(args: {
 
   return {
     balanceData,
+    balanceIsComplete: args.rawData?.balance.isComplete ?? true,
     protocolReturnData,
     protocolReturnSummary: args.rawData?.protocolReturn.summary ?? null,
     protocolReturnFamilySeries: args.rawData?.protocolReturn.familySeries ?? []
@@ -282,10 +288,11 @@ export function usePortfolioLedgerPortfolio(
     isFetching,
     error: requestError
   })
-  const { balanceData, protocolReturnData, protocolReturnSummary, protocolReturnFamilySeries } = useMemo(
-    () => transformPortfolioLedgerPortfolioResponse({ rawData: response, denomination, liveSnapshot }),
-    [denomination, liveSnapshot, response]
-  )
+  const { balanceData, balanceIsComplete, protocolReturnData, protocolReturnSummary, protocolReturnFamilySeries } =
+    useMemo(
+      () => transformPortfolioLedgerPortfolioResponse({ rawData: response, denomination, liveSnapshot }),
+      [denomination, liveSnapshot, response]
+    )
   const growthData = response?.growth ?? null
   const growthVaults = useMemo(() => growthData?.vaults ?? [], [growthData?.vaults])
   const growthVaultsByKey = useMemo(() => mapPortfolioLedgerGrowthVaults(growthVaults), [growthVaults])
@@ -326,6 +333,7 @@ export function usePortfolioLedgerPortfolio(
       data: balanceData,
       denomination: response?.balance.denomination ?? denomination,
       timeframe: response?.balance.timeframe ?? timeframe,
+      isComplete: balanceIsComplete,
       isLoading: queryState.isLoading,
       progress: null,
       error: balanceError,

@@ -89,6 +89,7 @@ export interface TEnvioLedgerChainWindow {
   readonly chainId: number
   readonly lowerBlock: number
   readonly upperBlock: number
+  readonly vaultAddresses?: readonly string[]
 }
 
 export type TEnvioLedgerLowerBlocks = Readonly<Partial<Record<number, number>>>
@@ -423,11 +424,19 @@ const ENVIO_LEDGER_STREAM_SPECS: readonly TEnvioLedgerStreamSpec<TLedgerStream>[
   TRANSFERS_OUT_SPEC
 ]
 
-function createAliasedFirstPageField<TStream extends TLedgerStream>(spec: TEnvioLedgerStreamSpec<TStream>): string {
+function createVaultFilter(vaultScoped: boolean): string {
+  return vaultScoped ? 'vaultAddress: { _in: $vaultAddresses }' : ''
+}
+
+function createAliasedFirstPageField<TStream extends TLedgerStream>(
+  spec: TEnvioLedgerStreamSpec<TStream>,
+  vaultScoped = false
+): string {
   return `
     ${spec.stream}: ${spec.entity}(
       where: {
         ${spec.addressField}: { _eq: $address }
+        ${createVaultFilter(vaultScoped)}
         chainId: { _eq: $chainId }
         blockNumber: { _gte: $lowerBlock, _lte: $upperBlock }
       }
@@ -467,7 +476,20 @@ const ENVIO_LEDGER_BATCHED_FIRST_PAGES_QUERY = `
     $upperBlock: Int!
     $limit: Int!
   ) {
-    ${ENVIO_LEDGER_STREAM_SPECS.map(createAliasedFirstPageField).join('\n')}
+    ${ENVIO_LEDGER_STREAM_SPECS.map((spec) => createAliasedFirstPageField(spec)).join('\n')}
+  }
+`
+
+const ENVIO_LEDGER_VAULT_BATCHED_FIRST_PAGES_QUERY = `
+  query LedgerVaultBatchedFirstPages(
+    $address: String!
+    $vaultAddresses: [String!]!
+    $chainId: Int!
+    $lowerBlock: Int!
+    $upperBlock: Int!
+    $limit: Int!
+  ) {
+    ${ENVIO_LEDGER_STREAM_SPECS.map((spec) => createAliasedFirstPageField(spec, true)).join('\n')}
   }
 `
 
@@ -482,10 +504,14 @@ const ENVIO_LEDGER_FACETED_PRESENCE_QUERY = `
   }
 `
 
-function createFirstPageQuery<TStream extends TLedgerStream>(spec: TEnvioLedgerStreamSpec<TStream>): string {
+function createFirstPageQuery<TStream extends TLedgerStream>(
+  spec: TEnvioLedgerStreamSpec<TStream>,
+  vaultScoped = false
+): string {
   return `
     query ${spec.operationName}FirstPage(
       $${spec.addressField}: String!
+      ${vaultScoped ? '$vaultAddresses: [String!]!' : ''}
       $chainId: Int!
       $lowerBlock: Int!
       $upperBlock: Int!
@@ -494,6 +520,7 @@ function createFirstPageQuery<TStream extends TLedgerStream>(spec: TEnvioLedgerS
       ${spec.entity}(
         where: {
           ${spec.addressField}: { _eq: $${spec.addressField} }
+          ${createVaultFilter(vaultScoped)}
           chainId: { _eq: $chainId }
           blockNumber: { _gte: $lowerBlock, _lte: $upperBlock }
         }
@@ -511,10 +538,14 @@ function createFirstPageQuery<TStream extends TLedgerStream>(spec: TEnvioLedgerS
   `
 }
 
-function createNextPageQuery<TStream extends TLedgerStream>(spec: TEnvioLedgerStreamSpec<TStream>): string {
+function createNextPageQuery<TStream extends TLedgerStream>(
+  spec: TEnvioLedgerStreamSpec<TStream>,
+  vaultScoped = false
+): string {
   return `
     query ${spec.operationName}NextPage(
       $${spec.addressField}: String!
+      ${vaultScoped ? '$vaultAddresses: [String!]!' : ''}
       $chainId: Int!
       $lowerBlock: Int!
       $upperBlock: Int!
@@ -527,6 +558,7 @@ function createNextPageQuery<TStream extends TLedgerStream>(spec: TEnvioLedgerSt
       ${spec.entity}(
         where: {
           ${spec.addressField}: { _eq: $${spec.addressField} }
+          ${createVaultFilter(vaultScoped)}
           chainId: { _eq: $chainId }
           blockNumber: { _gte: $lowerBlock, _lte: $upperBlock }
           _or: [
@@ -755,7 +787,18 @@ function validateWindows(windows: readonly TEnvioLedgerChainWindow[]): readonly 
   if (!valid || new Set(chainIds).size !== chainIds.length) {
     throw new Error('Envio ledger source block window is invalid')
   }
-  return [...windows].sort((left, right) => left.chainId - right.chainId)
+  return windows
+    .map((window) => {
+      if (window.vaultAddresses === undefined) {
+        return window
+      }
+      if (window.vaultAddresses.length === 0) {
+        throw new Error('Envio ledger source vault scope is invalid')
+      }
+      const vaultAddresses = Array.from(new Set(window.vaultAddresses.map((address) => getAddress(address)))).toSorted()
+      return { ...window, vaultAddresses }
+    })
+    .toSorted((left, right) => left.chainId - right.chainId)
 }
 
 function normalizeAddress(address: string): string {
@@ -798,6 +841,12 @@ function validatePage<TStream extends TLedgerStream>(
     const eventAddress = Reflect.get(event, spec.addressField)
     return typeof eventAddress === 'string' && eventAddress.toLowerCase() === address.toLowerCase()
   })
+  const allowedVaults = window.vaultAddresses
+    ? new Set(window.vaultAddresses.map((vaultAddress) => vaultAddress.toLowerCase()))
+    : null
+  const rowsMatchVaultScope = events.every(
+    (event) => allowedVaults === null || allowedVaults.has(event.vaultAddress.toLowerCase())
+  )
   const cursors = events.map(getCursor)
   const priorCursors = [previousCursor, ...cursors.slice(0, -1)]
   const strictlyIncreasing = cursors.every((cursor, index) => {
@@ -805,7 +854,7 @@ function validatePage<TStream extends TLedgerStream>(
     return prior === null || prior === undefined || compareCursors(prior, cursor) < 0
   })
 
-  if (!rowsMatchWindow || !rowsMatchAddress || !strictlyIncreasing) {
+  if (!rowsMatchWindow || !rowsMatchAddress || !rowsMatchVaultScope || !strictlyIncreasing) {
     throw new Error('Envio ledger source page did not advance')
   }
   return events
@@ -837,9 +886,12 @@ async function fetchStreamPages<TStream extends TLedgerStream>(
     if (state.pages >= ENVIO_LEDGER_MAX_PAGES_PER_STREAM_CHAIN) {
       throw new Error('Envio ledger source page limit exceeded')
     }
-    const query = state.cursor === null ? createFirstPageQuery(spec) : createNextPageQuery(spec)
+    const vaultScoped = window.vaultAddresses !== undefined
+    const query =
+      state.cursor === null ? createFirstPageQuery(spec, vaultScoped) : createNextPageQuery(spec, vaultScoped)
     const variables: Record<string, unknown> = {
       [spec.addressField]: address,
+      ...(window.vaultAddresses ? { vaultAddresses: window.vaultAddresses } : {}),
       chainId: window.chainId,
       lowerBlock: window.lowerBlock,
       upperBlock: window.upperBlock,
@@ -948,6 +1000,7 @@ function getBatchedVariables(
 ): Readonly<Record<string, unknown>> {
   return {
     address,
+    ...(window.vaultAddresses ? { vaultAddresses: window.vaultAddresses } : {}),
     chainId: window.chainId,
     lowerBlock: window.lowerBlock,
     upperBlock: window.upperBlock,
@@ -973,7 +1026,7 @@ async function fetchBatchedChain(
   onPage?: () => Promise<void>
 ): Promise<TEnvioLedgerBatchedChainResult> {
   const data = await executeEnvioQuery(
-    ENVIO_LEDGER_BATCHED_FIRST_PAGES_QUERY,
+    window.vaultAddresses ? ENVIO_LEDGER_VAULT_BATCHED_FIRST_PAGES_QUERY : ENVIO_LEDGER_BATCHED_FIRST_PAGES_QUERY,
     getBatchedVariables(address, window, true)
   )
   const firstPages = Object.fromEntries(
@@ -1244,4 +1297,18 @@ export async function fetchEnvioLedgerSource({
     windows,
     ...result
   }
+}
+
+export async function fetchEnvioLedgerVaultStreams(args: {
+  readonly address: string
+  readonly windows: readonly TEnvioLedgerChainWindow[]
+  readonly onPage?: () => Promise<void>
+}): Promise<TEnvioLedgerStreamsResult> {
+  if (args.windows.length === 0 || args.windows.some((window) => !window.vaultAddresses?.length)) {
+    throw new Error('Envio ledger vault source requires a vault scope for every chain window')
+  }
+  return fetchEnvioLedgerStreams(args.address, args.windows, {
+    strategy: 'warm-batched',
+    onPage: args.onPage
+  })
 }

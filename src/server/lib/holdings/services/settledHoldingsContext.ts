@@ -19,6 +19,7 @@ import {
 import { buildAddressScopedRawPnlEvents } from './pnlEvents'
 import { lowerCaseAddress, toVaultKey } from './pnlShared'
 import type { TRawPnlEvent } from './pnlTypes'
+import type { THoldingsValuationConsumer, THoldingsValuationLoader } from './valuationLoader'
 import { fetchMultipleVaultsMetadata, getVaultMetadataFetchFailedVaults } from './vaults'
 
 type TVaultIdentifier = {
@@ -71,6 +72,8 @@ function getContextKey(args: {
   paginationMode: HoldingsEventPaginationMode
   requestedVault?: TRequestedVault
   vaultIdentifiers?: TVaultIdentifier[]
+  valuationLoader?: THoldingsValuationLoader
+  valuationConsumer?: THoldingsValuationConsumer
 }): string {
   const normalizedVaultScope = args.vaultIdentifiers?.length
     ? args.vaultIdentifiers
@@ -87,6 +90,8 @@ function getContextKey(args: {
     args.version ?? 'all',
     args.fetchType,
     args.paginationMode,
+    args.valuationLoader?.key ?? 'direct',
+    args.valuationConsumer ?? 'balance',
     normalizedVaultScope
   ].join(':')
 }
@@ -257,6 +262,8 @@ export async function getSettledVersionedPpsContext(args: {
   vaultIdentifiers?: TVaultIdentifier[]
   context?: TSettledAddressScopedContext
   eventSource?: THoldingsEventSource
+  valuationLoader?: THoldingsValuationLoader
+  valuationConsumer?: THoldingsValuationConsumer
 }): Promise<TSettledVersionedPpsContext> {
   const eventSourceKey = args.context?.eventSourceKey ?? getHoldingsEventSourceKey(args.eventSource)
   const key = getContextKey({
@@ -266,7 +273,9 @@ export async function getSettledVersionedPpsContext(args: {
     fetchType: args.fetchType,
     paginationMode: args.paginationMode,
     requestedVault: args.requestedVault,
-    vaultIdentifiers: args.vaultIdentifiers
+    vaultIdentifiers: args.vaultIdentifiers,
+    valuationLoader: args.valuationLoader,
+    valuationConsumer: args.valuationConsumer
   })
   const existing = inFlightSettledVersionedPpsContexts.get(key)
 
@@ -291,7 +300,12 @@ export async function getSettledVersionedPpsContext(args: {
       ...selectedVaultIdentifiers,
       ...getNestedVaultPpsIdentifiersFromPriceRequests(basePriceRequests, context.vaultMetadata)
     ])
-    const ppsData = ppsIdentifiers.length > 0 ? await fetchMultipleVaultsPPS(ppsIdentifiers) : new Map()
+    const ppsData =
+      ppsIdentifiers.length > 0
+        ? args.valuationLoader
+          ? await args.valuationLoader.fetchVaultPps(ppsIdentifiers, { consumer: args.valuationConsumer })
+          : await fetchMultipleVaultsPPS(ppsIdentifiers)
+        : new Map()
 
     return {
       ...context,

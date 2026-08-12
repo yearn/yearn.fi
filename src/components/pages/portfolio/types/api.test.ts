@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 import {
   portfolioActivityFacetsResponseSchema,
   portfolioActivityResponseSchema,
+  portfolioHistorySimpleResponseSchema,
   portfolioLedgerGrowthResponseSchema,
   portfolioLedgerHistoryResponseSchema,
   portfolioLedgerSnapshotResponseSchema
@@ -175,7 +176,8 @@ describe('portfolio ledger schemas', () => {
         address: '0x2222222222222222222222222222222222222222',
         denomination: 'usd',
         timeframe: '1y',
-        dataPoints: [{ date: '2026-08-07', value: 125 }]
+        isComplete: false,
+        dataPoints: [{ date: '2026-08-07', value: 125, isComplete: false }]
       },
       protocolReturn: {
         address: '0x2222222222222222222222222222222222222222',
@@ -204,7 +206,21 @@ describe('portfolio ledger schemas', () => {
     })
 
     expect(parsed.balance.dataPoints).toHaveLength(1)
+    expect(parsed.balance.isComplete).toBe(false)
+    expect(parsed.balance.dataPoints[0]?.isComplete).toBe(false)
     expect(parsed.protocolReturn.dataPoints).toHaveLength(1)
+  })
+
+  it('defaults legacy balance completeness to true when the fields are absent', () => {
+    const parsed = portfolioHistorySimpleResponseSchema.parse({
+      address: '0x2222222222222222222222222222222222222222',
+      denomination: 'usd',
+      timeframe: '1y',
+      dataPoints: [{ date: '2026-08-07', value: 125 }]
+    })
+
+    expect(parsed.isComplete).toBe(true)
+    expect(parsed.dataPoints[0]?.isComplete).toBe(true)
   })
 
   it('accepts fast underlying growth rows', () => {

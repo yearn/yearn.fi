@@ -4,9 +4,10 @@ import type { TWalletLedgerReadResult } from '@/server/lib/holdings/services/led
 import { executeHoldingsLedgerRedisOperation } from '@/server/lib/holdings/storage/ledgerRedis'
 
 const SHA256_PATTERN = /^[a-f0-9]{64}$/
+const UTC_DATE_PATTERN = /^\d{4}-\d{2}-\d{2}$/
 const KEY_NAMESPACE_PATTERN = /^[A-Za-z0-9_-]{1,64}$/
 const LOCK_TOKEN_PATTERN = /^[A-Za-z0-9_-]{1,192}$/
-const WALLET_LEDGER_KEY_PREFIX = 'holdings:wallet-ledger:v1'
+const WALLET_LEDGER_KEY_PREFIX = 'holdings:wallet-ledger:v3'
 
 const RENEW_WALLET_LEDGER_LOCK_SCRIPT = `#!lua flags=allow-key-locking
 -- holdings-wallet-ledger-lock-renew-v1
@@ -25,9 +26,19 @@ return redis.call('DEL', KEYS[1])
 `
 
 const COMMIT_WALLET_LEDGER_SCRIPT = `#!lua flags=allow-key-locking
--- holdings-wallet-ledger-commit-v1
+-- holdings-wallet-ledger-commit-v3
 if redis.call('GET', KEYS[1]) ~= ARGV[1] then
   return 0
+end
+for keyIndex = 3, #KEYS do
+  local keyTypeReply = redis.call('TYPE', KEYS[keyIndex])
+  local keyType = keyTypeReply
+  if type(keyTypeReply) == 'table' then
+    keyType = keyTypeReply['ok']
+  end
+  if keyType ~= 'none' and keyType ~= 'hash' then
+    redis.call('DEL', KEYS[keyIndex])
+  end
 end
 local ttl = tonumber(ARGV[3])
 if ttl ~= nil and ttl > 0 then
@@ -35,17 +46,60 @@ if ttl ~= nil and ttl > 0 then
 else
   redis.call('SET', KEYS[2], ARGV[2])
 end
+for keyIndex = 3, #KEYS do
+  local argumentIndex = 4 + ((keyIndex - 3) * 5)
+  local previousMeta = ARGV[argumentIndex]
+  local currentMeta = ARGV[argumentIndex + 1]
+  local dirtyFromDate = ARGV[argumentIndex + 2]
+  local reset = ARGV[argumentIndex + 3]
+  local cacheTtl = ARGV[argumentIndex + 4]
+  local existingMeta = redis.call('HGET', KEYS[keyIndex], '__meta')
+  if existingMeta ~= false then
+    if existingMeta == currentMeta then
+      redis.call('EXPIRE', KEYS[keyIndex], cacheTtl)
+    elseif reset == '1' then
+      redis.call('DEL', KEYS[keyIndex])
+      redis.call('HSET', KEYS[keyIndex], '__meta', currentMeta)
+      redis.call('EXPIRE', KEYS[keyIndex], cacheTtl)
+    else
+      if previousMeta == '' or existingMeta ~= previousMeta then
+        redis.call('DEL', KEYS[keyIndex])
+      elseif dirtyFromDate ~= '' then
+        local fields = redis.call('HKEYS', KEYS[keyIndex])
+        for _, field in ipairs(fields) do
+          if string.match(field, '^%d%d%d%d%-%d%d%-%d%d$') and field >= dirtyFromDate then
+            redis.call('HDEL', KEYS[keyIndex], field)
+          end
+        end
+      end
+      redis.call('HSET', KEYS[keyIndex], '__meta', currentMeta)
+      redis.call('EXPIRE', KEYS[keyIndex], cacheTtl)
+    end
+  end
+end
 return 1
 `
 
 export interface TWalletLedgerRedis {
   get<TData>(key: string): Promise<TData | null>
+  llen(key: string): Promise<number>
+  lrange<TData>(key: string, start: number, end: number): Promise<TData[]>
+  rpush<TData>(key: string, ...elements: TData[]): Promise<number>
   set<TData>(key: string, value: TData, options?: SetCommandOptions): Promise<'OK' | TData | null>
   eval<TArgs extends unknown[], TData = unknown>(script: string, keys: string[], args: TArgs): Promise<TData>
 }
 
 export interface TWalletLedgerLock {
   readonly token: string
+}
+
+export interface TWalletLedgerCacheCommitTransition {
+  readonly key: string
+  readonly previousMeta: string | null
+  readonly currentMeta: string
+  readonly dirtyFromDate: string | null
+  readonly reset: boolean
+  readonly ttlSeconds: number
 }
 
 export type TAcquireWalletLedgerLockResult =
@@ -193,18 +247,47 @@ export async function commitStoredWalletLedger(args: {
   readonly lock: TWalletLedgerLock
   readonly value: string
   readonly ttlMs?: number
+  readonly cacheTransitions?: readonly TWalletLedgerCacheCommitTransition[]
 }): Promise<TWalletLedgerLockOperationResult> {
   assertLockToken(args.lock.token)
   if (args.ttlMs !== undefined) {
     assertPositiveSafeInteger(args.ttlMs, 'Wallet ledger value TTL')
   }
   decodeWalletLedgerValue(args.value, args.walletHash)
+  const cacheTransitions = args.cacheTransitions ?? []
+  cacheTransitions.forEach((transition) => {
+    if (!transition.key.startsWith(`${getWalletLedgerKey(args.walletHash)}:`)) {
+      throw new Error('Wallet ledger cache transition key is outside the wallet hash slot')
+    }
+    if (transition.currentMeta.length === 0) {
+      throw new Error('Wallet ledger cache transition metadata must not be empty')
+    }
+    if (transition.dirtyFromDate !== null && !UTC_DATE_PATTERN.test(transition.dirtyFromDate)) {
+      throw new Error('Wallet ledger cache transition dirty date is invalid')
+    }
+    assertPositiveSafeInteger(transition.ttlSeconds, 'Wallet ledger cache transition TTL')
+  })
   const committed = parseScriptBoolean(
     await executeHoldingsLedgerRedisOperation('commit', () =>
       args.redis.eval<string[], unknown>(
         COMMIT_WALLET_LEDGER_SCRIPT,
-        [getWalletLedgerLockKey(args.walletHash), getWalletLedgerKey(args.walletHash)],
-        [args.lock.token, args.value, String(args.ttlMs ?? 0)]
+        [
+          getWalletLedgerLockKey(args.walletHash),
+          getWalletLedgerKey(args.walletHash),
+          ...cacheTransitions.map(({ key }) => key)
+        ],
+        [
+          args.lock.token,
+          args.value,
+          String(args.ttlMs ?? 0),
+          ...cacheTransitions.flatMap((transition) => [
+            transition.previousMeta ?? '',
+            transition.currentMeta,
+            transition.dirtyFromDate ?? '',
+            transition.reset ? '1' : '0',
+            String(transition.ttlSeconds)
+          ])
+        ]
       )
     ),
     'Wallet ledger commit'

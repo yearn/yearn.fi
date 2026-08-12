@@ -70,8 +70,8 @@ export type THistoricalPriceRequest = {
 
 type TPriceTimestampMatch = { price: number; timestamp: number } | null
 type TPriceTimestampMatcher = (priceMap: Map<number, number>, targetTimestamp: number) => TPriceTimestampMatch
-type THistoricalPriceFetchResolution = 'strict' | 'utc_day'
-type THistoricalPriceFetchOptions = {
+export type THistoricalPriceFetchResolution = 'strict' | 'utc_day'
+export type THistoricalPriceFetchOptions = {
   resolution?: THistoricalPriceFetchResolution
 }
 const HISTORICAL_PRICE_FETCH_FAILED_BATCHES = Symbol('historicalPriceFetchFailedBatches')
@@ -233,6 +233,20 @@ function countPricePoints(priceData: Map<string, Map<number, number>>): number {
 
 export function getHistoricalPriceFetchFailedBatches(priceData: Map<string, Map<number, number>>): number {
   return (priceData as THistoricalPriceResult)[HISTORICAL_PRICE_FETCH_FAILED_BATCHES] ?? 0
+}
+
+export function setHistoricalPriceFetchFailedBatches(
+  priceData: Map<string, Map<number, number>>,
+  failedBatches: number
+): void {
+  if (!Number.isSafeInteger(failedBatches) || failedBatches < 0) {
+    throw new Error('Historical price failed batch count is invalid')
+  }
+  Object.defineProperty(priceData, HISTORICAL_PRICE_FETCH_FAILED_BATCHES, {
+    value: failedBatches,
+    configurable: true,
+    enumerable: false
+  })
 }
 
 function mergeFetchedPriceMaps(priceMaps: Array<Map<string, Map<number, number>>>): Map<string, Map<number, number>> {
@@ -978,10 +992,7 @@ export async function fetchHistoricalPricesForTokenTimestamps(
   }
 
   if (fetchStats.failedBatches > 0) {
-    Object.defineProperty(result, HISTORICAL_PRICE_FETCH_FAILED_BATCHES, {
-      value: fetchStats.failedBatches,
-      enumerable: false
-    })
+    setHistoricalPriceFetchFailedBatches(result, fetchStats.failedBatches)
   }
 
   debugLog('prices', 'completed historical price fetch', {

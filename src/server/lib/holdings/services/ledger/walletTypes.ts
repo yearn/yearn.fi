@@ -5,7 +5,7 @@ import type {
   TLedgerSyncReasonCode
 } from '@/server/lib/holdings/services/ledger/types'
 
-export const WALLET_LEDGER_SCHEMA_VERSION = 1 as const
+export const WALLET_LEDGER_SCHEMA_VERSION = 3 as const
 export const WALLET_LEDGER_CODEC = 'brotli-q4-base64' as const
 export const WALLET_LEDGER_FRESHNESS_MS = 5 * 60 * 1000
 export const WALLET_LEDGER_EMPTY_TTL_MS = 24 * 60 * 60 * 1000
@@ -21,20 +21,23 @@ export interface TWalletLedgerCoverageV1 {
   readonly completeThroughBlock: number
 }
 
-export interface TWalletLedgerPayloadV1 {
+export interface TWalletLedgerPayloadV3 {
   readonly schemaVersion: typeof WALLET_LEDGER_SCHEMA_VERSION
   readonly calculationVersion: string
   readonly walletHash: string
   readonly sourceFingerprint: string
   readonly sourceGeneration: number
+  readonly appliedInvalidationSequence: number
   readonly coverage: readonly TWalletLedgerCoverageV1[]
   readonly streams: TLedgerSixStreams
   readonly createdAtMs: number
   readonly updatedAtMs: number
+  readonly reconciledAtMs: number
 }
 
-export interface TWalletLedgerState extends TWalletLedgerPayloadV1 {
+export interface TWalletLedgerState extends TWalletLedgerPayloadV3 {
   readonly revision: string
+  readonly eventRevision: string
   readonly encodedBytes: number
   readonly decodedBytes: number
 }
@@ -44,7 +47,7 @@ export type TWalletLedgerReadResult =
   | { readonly status: 'corrupt' }
   | { readonly status: 'ready'; readonly ledger: TWalletLedgerState }
 
-export type TWalletLedgerSyncType = 'fresh' | 'bootstrap' | 'warm' | 'forced-reset' | 'source-reset'
+export type TWalletLedgerSyncType = 'fresh' | 'bootstrap' | 'warm' | 'reconcile' | 'forced-reset' | 'source-reset'
 export type TWalletLedgerSyncOutcome = 'fresh' | 'unchanged' | 'updated'
 
 export interface TWalletLedgerEventStats {
@@ -83,6 +86,11 @@ export interface TWalletLedgerCompletedSyncResult {
     >
   >
   readonly envio: TWalletLedgerEnvioStats
+  readonly transition: {
+    readonly previousEventRevision: string | null
+    readonly previousAppliedInvalidationSequence: number | null
+    readonly dirtyFromTimestamp: number | null
+  }
   readonly durationMs: number
 }
 

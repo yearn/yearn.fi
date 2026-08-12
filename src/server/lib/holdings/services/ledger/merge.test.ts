@@ -99,6 +99,21 @@ describe('mergeLedgerStreams', () => {
     expect(result.stats.transfersOut.added).toBe(1)
   })
 
+  it('replaces only invalidated vault events inside a vault-scoped authoritative window', () => {
+    const target = deposit('target', 20)
+    const otherVault = { ...deposit('other-vault', 20), vaultAddress: OTHER_ADDRESS }
+    const scopedWindows = windows(10, 100).map((window) => ({ ...window, vaultAddresses: [ADDRESS] }))
+    const result = mergeLedgerStreams({
+      cached: emptyStreams({ v3Deposits: [target, otherVault] }),
+      fetched: emptyStreams(),
+      windows: scopedWindows
+    })
+
+    expect(result.streams.v3Deposits).toEqual([otherVault])
+    expect(result.stats.v3Deposits).toMatchObject({ deleted: 1, total: 1 })
+    expect(result.earliestChangedTimestamp).toBe(target.blockTimestamp)
+  })
+
   it('rejects partial windows, out-of-window rows, and conflicting identities', () => {
     const partialWindows = windows(0, 100).filter((window) => window.stream !== 'v3Deposits')
     expect(() =>

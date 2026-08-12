@@ -2,6 +2,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { THoldingsEventSource } from '@/server/lib/holdings/services/eventSource'
 import type { TResolvedLedgerHistoricalPps } from '@/server/lib/holdings/services/ledger/pps'
 import { getLedgerProtocolReturnRows } from '@/server/lib/holdings/services/ledger/rows'
+import { buildAddressScopedRawPnlEvents } from '@/server/lib/holdings/services/pnlEvents'
 import type { UserEvents, VaultMetadata } from '@/server/lib/holdings/types'
 
 const ADDRESS = '0x1111111111111111111111111111111111111111'
@@ -233,5 +234,99 @@ describe('fast ledger growth row orchestration', () => {
       deposits: 0,
       transfersIn: 1
     })
+  })
+
+  it('labels request-scoped PPS work as growth', async () => {
+    const eventSource = createEventSource(
+      createEmptyEvents({
+        transfersIn: [
+          {
+            id: 'transfer-in-growth',
+            vaultAddress: VAULT,
+            chainId: 1,
+            blockNumber: 20_000_002,
+            blockTimestamp: EVENT_TIMESTAMP,
+            logIndex: 4,
+            transactionHash: `0x${'c'.repeat(64)}`,
+            transactionFrom: COUNTERPARTY,
+            sender: COUNTERPARTY,
+            receiver: ADDRESS,
+            value: SHARES
+          }
+        ]
+      })
+    )
+    const fetchVaultPps = vi
+      .fn()
+      .mockResolvedValue(new Map([[`1:${VAULT.toLowerCase()}`, new Map([[EVENT_TIMESTAMP, 1]])]]))
+
+    await getLedgerProtocolReturnRows({
+      address: ADDRESS,
+      version: 'all',
+      eventSource,
+      options: {
+        fetchMetadata: vi.fn().mockResolvedValue(metadata),
+        resolveNestedMetadata: vi.fn().mockImplementation(async (value: Map<string, VaultMetadata>) => value),
+        valuationLoader: {
+          key: 'growth-loader',
+          fetchVaultPps,
+          fetchHistoricalPrices: vi.fn()
+        }
+      }
+    })
+
+    expect(fetchVaultPps).toHaveBeenCalledWith([{ chainId: 1, vaultAddress: VAULT.toLowerCase() }], {
+      consumer: 'growth'
+    })
+  })
+
+  it('reuses a request-scoped settled context without loading events or metadata again', async () => {
+    const events = createEmptyEvents({
+      deposits: [
+        {
+          id: 'prepared-deposit',
+          vaultAddress: VAULT,
+          chainId: 1,
+          blockNumber: 20_000_003,
+          blockTimestamp: EVENT_TIMESTAMP,
+          logIndex: 1,
+          transactionHash: `0x${'d'.repeat(64)}`,
+          transactionFrom: ADDRESS,
+          owner: ADDRESS,
+          sender: ADDRESS,
+          assets: SHARES,
+          shares: SHARES
+        }
+      ]
+    })
+    const eventSource = createEventSource(events)
+    const { dependencies, options } = createOptions(
+      vi.fn().mockResolvedValue({ values: [], fetched: 0, missing: 0 } satisfies TResolvedLedgerHistoricalPps)
+    )
+    const settledContext = Promise.resolve({
+      address: ADDRESS.toLowerCase(),
+      eventSourceKey: eventSource.key,
+      latestSettledDayTimestamp: eventSource.latestSettledDayTimestamp,
+      maxTimestamp: eventSource.eventUpperTimestamp,
+      events,
+      timeline: [],
+      hasActivity: true,
+      rawEvents: buildAddressScopedRawPnlEvents(events),
+      rawVaultIdentifiers: [{ chainId: 1, vaultAddress: VAULT.toLowerCase() }],
+      vaultMetadata: metadata,
+      metadataFetchFailedVaults: 0
+    })
+
+    const response = await getLedgerProtocolReturnRows({
+      address: ADDRESS,
+      version: 'all',
+      eventSource,
+      options: { ...options, settledContext }
+    })
+
+    expect(eventSource.load).not.toHaveBeenCalled()
+    expect(dependencies.fetchMetadata).not.toHaveBeenCalled()
+    expect(dependencies.resolveNestedMetadata).not.toHaveBeenCalled()
+    expect(response.summary.totalVaults).toBe(1)
   })
 })

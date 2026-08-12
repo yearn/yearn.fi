@@ -35,7 +35,8 @@ describe('combined ledger portfolio history route', () => {
     mocks.getHistoricalHoldingsChart.mockResolvedValue({
       address: ADDRESS.toLowerCase(),
       hasActivity: true,
-      dataPoints: [{ date: '2026-08-07', value: 42 }]
+      isComplete: false,
+      dataPoints: [{ date: '2026-08-07', value: 42, isComplete: false }]
     })
     mocks.getHoldingsProtocolReturnHistory.mockResolvedValue({
       address: ADDRESS.toLowerCase(),
@@ -87,7 +88,8 @@ describe('combined ledger portfolio history route', () => {
       balance: {
         denomination: 'eth',
         timeframe: 'all',
-        dataPoints: [{ date: '2026-08-07', value: 42 }]
+        isComplete: false,
+        dataPoints: [{ date: '2026-08-07', value: 42, isComplete: false }]
       },
       protocolReturn: {
         summary: { totalVaults: 1 }
@@ -99,6 +101,7 @@ describe('combined ledger portfolio history route', () => {
     mocks.getHistoricalHoldingsChart.mockResolvedValueOnce({
       address: ADDRESS.toLowerCase(),
       hasActivity: false,
+      isComplete: true,
       dataPoints: []
     })
     mocks.getHoldingsProtocolReturnHistory.mockResolvedValueOnce({

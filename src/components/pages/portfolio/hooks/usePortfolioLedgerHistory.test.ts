@@ -19,7 +19,8 @@ function createCombinedResponse(): TPortfolioLedgerHistoryResponse {
       address: ADDRESS,
       denomination: 'usd',
       timeframe: '1y',
-      dataPoints: [{ date: '2026-08-07', value: 100 }]
+      isComplete: false,
+      dataPoints: [{ date: '2026-08-07', value: 100, isComplete: false }]
     },
     protocolReturn: {
       address: ADDRESS,
@@ -84,9 +85,10 @@ describe('portfolio ledger history helpers', () => {
     })
 
     expect(result.balanceData).toEqual([
-      { date: '2026-08-07', value: 100 },
-      { date: '2026-08-08', value: 125, isLive: true }
+      { date: '2026-08-07', value: 100, isComplete: false },
+      { date: '2026-08-08', value: 125, isComplete: true, isLive: true }
     ])
+    expect(result.balanceIsComplete).toBe(false)
     expect(result.protocolReturnData?.[0]).toMatchObject({
       growthWeightUsd: 10,
       protocolReturnPct: 10

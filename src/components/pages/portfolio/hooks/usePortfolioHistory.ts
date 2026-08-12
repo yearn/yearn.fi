@@ -66,7 +66,8 @@ export function usePortfolioHistory(
 
     const historicalData = rawData.dataPoints.map((point) => ({
       date: point.date,
-      value: point.value
+      value: point.value,
+      isComplete: point.isComplete
     }))
     return upsertLivePortfolioBalancePoint({ data: historicalData, denomination, liveSnapshot })
   }, [denomination, liveSnapshot, rawData])
@@ -94,6 +95,7 @@ export function usePortfolioHistory(
     data,
     denomination,
     timeframe,
+    isComplete: rawData?.isComplete ?? true,
     isLoading: isLoadingState,
     progress,
     error: visibleError,

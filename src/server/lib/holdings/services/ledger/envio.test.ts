@@ -9,6 +9,7 @@ import {
   fetchEnvioLedgerMetadata,
   fetchEnvioLedgerSource,
   fetchEnvioLedgerStreams,
+  fetchEnvioLedgerVaultStreams,
   rereadEnvioLedgerMetadata,
   type TEnvioLedgerMetadata
 } from '@/server/lib/holdings/services/ledger/envio'
@@ -157,6 +158,43 @@ describe('Envio ledger source', () => {
     vi.restoreAllMocks()
     vi.unstubAllGlobals()
     vi.unstubAllEnvs()
+  })
+
+  it('fetches all six wallet streams for a targeted vault in one batched chain request', async () => {
+    const requests: TGraphqlRequestBody[] = []
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (_input: string | URL | Request, init?: RequestInit) => {
+        const body = parseRequestBody(init)
+        requests.push(body)
+        return createGraphqlResponse(createAliasedStreamData({ v3Deposits: [createV3Deposit('targeted-deposit')] }))
+      })
+    )
+
+    const result = await fetchEnvioLedgerVaultStreams({
+      address: USER,
+      windows: [
+        {
+          chainId: 1,
+          lowerBlock: 100,
+          upperBlock: 1_000,
+          vaultAddresses: [VAULT]
+        }
+      ]
+    })
+
+    expect(requests).toHaveLength(1)
+    expect(requests[0]?.query).toContain('query LedgerVaultBatchedFirstPages')
+    expect(requests[0]?.query.match(/vaultAddress: \{ _in: \$vaultAddresses \}/g)).toHaveLength(6)
+    expect(requests[0]?.variables).toMatchObject({
+      address: CHECKSUM_USER,
+      vaultAddresses: [getAddress(VAULT)],
+      chainId: 1,
+      lowerBlock: 100,
+      upperBlock: 1_000
+    })
+    expect(result.streams.v3Deposits.map(({ id }) => id)).toEqual(['targeted-deposit'])
+    expect(result.stats).toMatchObject({ totalRequests: 1, totalRows: 1, strategy: 'warm-batched' })
   })
 
   it('validates metadata, keeps only supported chains, and creates inclusive windows', async () => {

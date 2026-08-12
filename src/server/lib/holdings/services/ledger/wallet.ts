@@ -1,3 +1,4 @@
+export { getWalletLedgerEventRevision } from '@/server/lib/holdings/services/ledger/walletCodec'
 export {
   createWalletLedgerEventSource,
   filterWalletLedgerStreams,
@@ -12,6 +13,14 @@ export {
   type TWalletLedgerSyncArguments,
   withSynchronizedWalletLedger
 } from '@/server/lib/holdings/services/ledger/walletSync'
+export {
+  createWalletLedgerDailyUsdTotalsCache,
+  getWalletLedgerDailyUsdTotalsKey,
+  type TWalletLedgerDailyUsdCacheIdentity,
+  type TWalletLedgerDailyUsdCacheMetaIdentity,
+  type TWalletLedgerDailyUsdCacheTransition,
+  transitionWalletLedgerDailyUsdTotalsCache
+} from '@/server/lib/holdings/services/ledger/walletTotalsCache'
 export {
   type TWalletLedgerBusySyncResult,
   type TWalletLedgerCompletedSyncResult,

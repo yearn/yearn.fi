@@ -44,13 +44,18 @@ export function transformPortfolioLedgerHistoryResponse(args: {
   liveSnapshot: TPortfolioLiveBalanceSnapshot | null
 }): {
   balanceData: TPortfolioHistoryChartData | null
+  balanceIsComplete: boolean
   protocolReturnData: TPortfolioProtocolReturnHistoryChartData | null
   protocolReturnSummary: TPortfolioProtocolReturnHistorySummary | null
   protocolReturnFamilySeries: TPortfolioProtocolReturnHistoryFamilySeries
 } {
   const balanceData = args.rawData?.balance.dataPoints
     ? upsertLivePortfolioBalancePoint({
-        data: args.rawData.balance.dataPoints.map((point) => ({ date: point.date, value: point.value })),
+        data: args.rawData.balance.dataPoints.map((point) => ({
+          date: point.date,
+          value: point.value,
+          isComplete: point.isComplete
+        })),
         denomination: args.denomination,
         liveSnapshot: args.liveSnapshot
       })
@@ -68,6 +73,7 @@ export function transformPortfolioLedgerHistoryResponse(args: {
 
   return {
     balanceData,
+    balanceIsComplete: args.rawData?.balance.isComplete ?? true,
     protocolReturnData,
     protocolReturnSummary: args.rawData?.protocolReturn.summary ?? null,
     protocolReturnFamilySeries: args.rawData?.protocolReturn.familySeries ?? []
@@ -112,10 +118,11 @@ export function usePortfolioLedgerHistory(
     }
   })
 
-  const { balanceData, protocolReturnData, protocolReturnSummary, protocolReturnFamilySeries } = useMemo(
-    () => transformPortfolioLedgerHistoryResponse({ rawData, denomination, timeframe, liveSnapshot }),
-    [denomination, liveSnapshot, rawData, timeframe]
-  )
+  const { balanceData, balanceIsComplete, protocolReturnData, protocolReturnSummary, protocolReturnFamilySeries } =
+    useMemo(
+      () => transformPortfolioLedgerHistoryResponse({ rawData, denomination, timeframe, liveSnapshot }),
+      [denomination, liveSnapshot, rawData, timeframe]
+    )
 
   const hasResponse = Boolean(rawData)
   const isLoadingState = !hasResponse && (isLoading || isFetching)
@@ -156,6 +163,7 @@ export function usePortfolioLedgerHistory(
       data: balanceData,
       denomination: rawData?.balance.denomination ?? denomination,
       timeframe: rawData?.balance.timeframe ?? timeframe,
+      isComplete: balanceIsComplete,
       isLoading: isLoadingState,
       progress: null,
       error: balanceError,

@@ -19,6 +19,7 @@ function createLedger() {
     walletHash: hashLedgerWalletAddress(USER_ADDRESS),
     sourceFingerprint: 'a'.repeat(64),
     sourceGeneration: 2,
+    appliedInvalidationSequence: 0,
     coverage: [{ chainId: 1, startBlock: 1, endBlock: null, completeThroughBlock: 100 }],
     streams: {
       v3Deposits: [
@@ -58,7 +59,8 @@ function createLedger() {
       transfersOut: []
     },
     createdAtMs: 1_000,
-    updatedAtMs: 2_000
+    updatedAtMs: 2_000,
+    reconciledAtMs: 1_500
   }).ledger
 }
 
@@ -80,6 +82,7 @@ describe('wallet ledger event source', () => {
 
     expect(events.deposits.map(({ id }) => id)).toEqual(['early'])
     expect(source.key).toContain(ledger.revision)
+    expect(source.hasActivity).toBe(true)
   })
 
   it('rejects a different wallet and returns detached filtered records', async () => {

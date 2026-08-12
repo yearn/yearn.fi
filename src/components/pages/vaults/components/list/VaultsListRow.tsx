@@ -56,6 +56,7 @@ import { IconChevron } from '@shared/icons/IconChevron'
 import { IconEyeOff } from '@shared/icons/IconEyeOff'
 import { IconHandCoins } from '@shared/icons/IconHandCoins'
 import { IconInfinifiPoints } from '@shared/icons/IconInfinifiPoints'
+import { IconSpinner } from '@shared/icons/IconSpinner'
 import {
   cl,
   formatApyDisplay,
@@ -255,6 +256,7 @@ type TVaultsListRowProps = {
   expandedChartVariant?: 'default' | 'portfolio-user-tvl-overlay'
   yvUsdVaults?: TYvUsdListVaults
   yvUsdPositionApy?: TYvUsdPositionApyBreakdown
+  isPortfolioGrowthLoading?: boolean
   portfolioGrowth?: TVaultPortfolioGrowth | null
   clickEventName?: TPlausibleEventName
 }
@@ -293,6 +295,7 @@ function VaultsListRowPresentationComponent({
   expandedChartVariant = 'default',
   yvUsdVaults,
   yvUsdPositionApy,
+  isPortfolioGrowthLoading = false,
   portfolioGrowth,
   clickEventName = PLAUSIBLE_EVENTS.VAULT_CLICK_LIST_ROW,
   hasWalletAddress = false,
@@ -868,6 +871,7 @@ function VaultsListRowPresentationComponent({
                   <span className={'text-text-primary/60'}>{'Growth:'}</span>
                   <VaultPortfolioGrowthValue
                     growth={portfolioGrowth}
+                    isLoading={isPortfolioGrowthLoading}
                     layout={'mobile'}
                     onInteractiveHoverChange={handleInteractiveHoverChange}
                   />
@@ -1005,6 +1009,7 @@ function VaultsListRowPresentationComponent({
               <div className={'flex w-full min-w-0 justify-end overflow-hidden text-right'}>
                 <VaultPortfolioGrowthValue
                   growth={portfolioGrowth}
+                  isLoading={isPortfolioGrowthLoading}
                   layout={'desktop'}
                   onInteractiveHoverChange={handleInteractiveHoverChange}
                 />
@@ -1108,13 +1113,27 @@ function PortfolioGrowthTooltipContent({ growth }: { growth: TVaultPortfolioGrow
 
 function VaultPortfolioGrowthValue({
   growth,
+  isLoading,
   layout,
   onInteractiveHoverChange
 }: {
   growth: TVaultPortfolioGrowth | null
+  isLoading: boolean
   layout: 'desktop' | 'mobile'
   onInteractiveHoverChange: (isHovering: boolean) => void
 }): ReactElement {
+  if (isLoading) {
+    return (
+      <span
+        className={cl('inline-flex items-center justify-end', layout === 'desktop' ? 'w-full' : undefined)}
+        role={'status'}
+        aria-label={'Growth loading'}
+      >
+        <IconSpinner className={'size-4 text-text-secondary'} />
+      </span>
+    )
+  }
+
   const amount = growth ? formatSignedPortfolioGrowthAmount(growth) : null
   if (!growth || amount === null) {
     return (

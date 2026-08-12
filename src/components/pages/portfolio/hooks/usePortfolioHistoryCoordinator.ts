@@ -8,6 +8,13 @@ import type {
 } from '@pages/portfolio/types/api'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 
+export function shouldLoadPortfolioPositionsHistory(args: {
+  activeTab: 'positions' | 'activity' | 'claim-rewards'
+  isWalletConnected: boolean
+}): boolean {
+  return args.activeTab === 'positions' && args.isWalletConnected
+}
+
 export function resolvePortfolioHistoryCoordinatorState(args: {
   canLoad: boolean
   ledgerHasResponse: boolean

@@ -2,7 +2,8 @@ import { z } from 'zod'
 
 const portfolioHistorySimpleDataPointSchema = z.object({
   date: z.string(),
-  value: z.number()
+  value: z.number(),
+  isComplete: z.boolean().optional().default(true)
 })
 
 const portfolioProtocolReturnHistoryDataPointSchema = z.object({
@@ -98,6 +99,7 @@ export const portfolioHistorySimpleResponseSchema = z.object({
   address: z.string(),
   denomination: z.enum(['usd', 'eth']).optional().default('usd'),
   timeframe: z.enum(['1y', 'all']).optional().default('1y'),
+  isComplete: z.boolean().optional().default(true),
   dataPoints: z.array(portfolioHistorySimpleDataPointSchema)
 })
 
@@ -151,6 +153,8 @@ export const portfolioLedgerGrowthResponseSchema = z.object({
 export const portfolioLedgerPortfolioResponseSchema = portfolioLedgerHistoryResponseSchema.extend({
   ledger: z.object({
     revision: z.string(),
+    eventRevision: z.string(),
+    appliedInvalidationSequence: z.number().int().nonnegative(),
     freshness: z.enum(['cached', 'refreshed', 'stale']),
     syncedAtMs: z.number().int().nonnegative(),
     eventUpperTimestamp: z.number().int().nonnegative(),
@@ -277,6 +281,7 @@ export type TPortfolioHistoryTimeframe = z.infer<typeof portfolioHistorySimpleRe
 export type TPortfolioHistoryChartData = Array<{
   date: string
   value: number
+  isComplete?: boolean
   isLive?: boolean
 }>
 export type TPortfolioLiveBalanceSnapshot = {

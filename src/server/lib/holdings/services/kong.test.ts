@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { fetchMultipleVaultsPPS, getPPS, getPpsFetchFailedVaults } from './kong'
+import {
+  fetchMultipleVaultsPPS,
+  getPPS,
+  getPpsFetchFailedVaultKeys,
+  getPpsFetchFailedVaults
+} from '@/server/lib/holdings/services/kong'
 
 function createResponse(points: Array<{ time: number; value: string }>): Response {
   return new Response(JSON.stringify(points.map((point) => ({ ...point, component: 'pps' }))), {
@@ -125,5 +130,6 @@ describe('fetchMultipleVaultsPPS', () => {
 
     expect(timelines.get('1:0xabc')).toEqual(new Map())
     expect(getPpsFetchFailedVaults(timelines)).toBe(1)
+    expect(getPpsFetchFailedVaultKeys(timelines)).toEqual(['1:0xabc'])
   })
 })

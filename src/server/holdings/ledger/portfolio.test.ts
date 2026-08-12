@@ -2,6 +2,17 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const ADDRESS = '0x1111111111111111111111111111111111111111'
 const UPDATED_AT_MS = Date.UTC(2026, 7, 8, 12)
+const WALLET_HASH = 'a'.repeat(64)
+const SOURCE_FINGERPRINT = 'b'.repeat(64)
+const LEDGER_REVISION = 'c'.repeat(64)
+const EVENT_REVISION = 'd'.repeat(64)
+const TOTALS_CACHE = { read: vi.fn(), write: vi.fn() }
+const VALUATION_LOADER = {
+  key: 'valuation-loader',
+  fetchVaultPps: vi.fn(),
+  fetchHistoricalPrices: vi.fn()
+}
+const SETTLED_CONTEXT = Promise.resolve({ key: 'settled-context' })
 const EVENT_SOURCE = {
   key: 'wallet-ledger-source',
   latestSettledDayTimestamp: Date.UTC(2026, 7, 7) / 1000,
@@ -10,11 +21,12 @@ const EVENT_SOURCE = {
 }
 
 const LEDGER = {
-  schemaVersion: 1,
+  schemaVersion: 3,
   calculationVersion: 'calculation-v1',
-  walletHash: 'wallet-hash',
-  sourceFingerprint: 'source-fingerprint',
+  walletHash: WALLET_HASH,
+  sourceFingerprint: SOURCE_FINGERPRINT,
   sourceGeneration: 1,
+  appliedInvalidationSequence: 2,
   coverage: [
     { chainId: 1, startBlock: 100, endBlock: null, completeThroughBlock: 1_000 },
     { chainId: 10, startBlock: 200, endBlock: null, completeThroughBlock: 2_000 }
@@ -29,18 +41,29 @@ const LEDGER = {
   },
   createdAtMs: UPDATED_AT_MS - 1_000,
   updatedAtMs: UPDATED_AT_MS,
-  revision: 'ledger-revision',
+  reconciledAtMs: UPDATED_AT_MS - 1_000,
+  revision: LEDGER_REVISION,
+  eventRevision: EVENT_REVISION,
   encodedBytes: 100,
   decodedBytes: 200
 }
 
+const SYNC_TRANSITION = {
+  previousEventRevision: EVENT_REVISION,
+  previousAppliedInvalidationSequence: 2,
+  dirtyFromTimestamp: null
+}
+
 const mocks = vi.hoisted(() => ({
+  createWalletLedgerDailyUsdTotalsCache: vi.fn(),
   createWalletLedgerEventSource: vi.fn(),
+  createHoldingsValuationLoader: vi.fn(),
   getLedgerAdminAccessError: vi.fn(),
   getLedgerReadinessError: vi.fn(),
   getHistoricalHoldingsChart: vi.fn(),
   getHoldingsProtocolReturnHistory: vi.fn(),
   getLedgerProtocolReturnRows: vi.fn(),
+  getSettledAddressScopedContext: vi.fn(),
   isWalletLedgerCompatible: vi.fn(),
   readWalletLedger: vi.fn(),
   synchronizeWalletLedger: vi.fn()
@@ -61,7 +84,16 @@ vi.mock('@/server/lib/holdings/services/ledger/rows', () => ({
   getLedgerProtocolReturnRows: mocks.getLedgerProtocolReturnRows
 }))
 
+vi.mock('@/server/lib/holdings/services/valuationLoader', () => ({
+  createHoldingsValuationLoader: mocks.createHoldingsValuationLoader
+}))
+
+vi.mock('@/server/lib/holdings/services/settledHoldingsContext', () => ({
+  getSettledAddressScopedContext: mocks.getSettledAddressScopedContext
+}))
+
 vi.mock('@/server/lib/holdings/services/ledger/wallet', () => ({
+  createWalletLedgerDailyUsdTotalsCache: mocks.createWalletLedgerDailyUsdTotalsCache,
   createWalletLedgerEventSource: mocks.createWalletLedgerEventSource,
   isWalletLedgerCompatible: mocks.isWalletLedgerCompatible,
   readWalletLedger: mocks.readWalletLedger,
@@ -74,11 +106,12 @@ function createRequest(query = ''): Request {
   return new Request(`https://yearn.fi/api/holdings/ledger/portfolio?address=${ADDRESS}${query}`)
 }
 
-function createBalance(hasActivity = true) {
+function createBalance(hasActivity = true, isComplete = true) {
   return {
     address: ADDRESS.toLowerCase(),
     hasActivity,
-    dataPoints: hasActivity ? [{ date: '2026-08-07', value: 42 }] : []
+    isComplete,
+    dataPoints: hasActivity ? [{ date: '2026-08-07', value: 42, isComplete }] : []
   }
 }
 
@@ -110,9 +143,18 @@ describe('wallet ledger portfolio route', () => {
     mocks.getLedgerAdminAccessError.mockReturnValue(null)
     mocks.getLedgerReadinessError.mockReturnValue(null)
     mocks.isWalletLedgerCompatible.mockReturnValue(true)
-    mocks.synchronizeWalletLedger.mockResolvedValue({ status: 'ready', outcome: 'updated', ledger: LEDGER })
+    mocks.synchronizeWalletLedger.mockResolvedValue({
+      status: 'ready',
+      outcome: 'updated',
+      syncType: 'warm',
+      ledger: LEDGER,
+      transition: SYNC_TRANSITION
+    })
     mocks.readWalletLedger.mockResolvedValue({ status: 'missing' })
     mocks.createWalletLedgerEventSource.mockReturnValue(EVENT_SOURCE)
+    mocks.createWalletLedgerDailyUsdTotalsCache.mockReturnValue(TOTALS_CACHE)
+    mocks.createHoldingsValuationLoader.mockReturnValue(VALUATION_LOADER)
+    mocks.getSettledAddressScopedContext.mockReturnValue(SETTLED_CONTEXT)
     mocks.getHistoricalHoldingsChart.mockResolvedValue(createBalance())
     mocks.getHoldingsProtocolReturnHistory.mockResolvedValue(createProtocolReturn())
     mocks.getLedgerProtocolReturnRows.mockResolvedValue(createGrowth())
@@ -137,6 +179,12 @@ describe('wallet ledger portfolio route', () => {
       eventUpperTimestamp: UPDATED_AT_MS / 1000,
       latestSettledDayTimestamp: Date.UTC(2026, 7, 7) / 1000
     })
+    expect(mocks.getSettledAddressScopedContext).toHaveBeenCalledWith({
+      userAddress: ADDRESS,
+      fetchType: 'seq',
+      paginationMode: 'paged',
+      eventSource: EVENT_SOURCE
+    })
     expect(mocks.getHistoricalHoldingsChart).toHaveBeenCalledWith(
       ADDRESS,
       'v3',
@@ -145,7 +193,12 @@ describe('wallet ledger portfolio route', () => {
       'eth',
       'all',
       undefined,
-      expect.objectContaining({ eventSource: EVENT_SOURCE, cacheMode: 'bypass' })
+      expect.objectContaining({
+        eventSource: EVENT_SOURCE,
+        totalsCache: TOTALS_CACHE,
+        valuationLoader: VALUATION_LOADER,
+        settledContext: SETTLED_CONTEXT
+      })
     )
     expect(mocks.getHoldingsProtocolReturnHistory).toHaveBeenCalledWith(
       ADDRESS,
@@ -158,13 +211,16 @@ describe('wallet ledger portfolio route', () => {
       expect.objectContaining({
         eventSource: EVENT_SOURCE,
         cacheMode: 'bypass',
+        valuationLoader: VALUATION_LOADER,
+        settledContext: SETTLED_CONTEXT,
         protocolReturnEventEnrichment: 'address-only'
       })
     )
     expect(mocks.getLedgerProtocolReturnRows).toHaveBeenCalledWith({
       address: ADDRESS,
       version: 'v3',
-      eventSource: EVENT_SOURCE
+      eventSource: EVENT_SOURCE,
+      options: { valuationLoader: VALUATION_LOADER, settledContext: SETTLED_CONTEXT }
     })
     await expect(response.json()).resolves.toMatchObject({
       address: ADDRESS.toLowerCase(),
@@ -172,7 +228,9 @@ describe('wallet ledger portfolio route', () => {
       denomination: 'eth',
       timeframe: 'all',
       ledger: {
-        revision: 'ledger-revision',
+        revision: LEDGER_REVISION,
+        eventRevision: EVENT_REVISION,
+        appliedInvalidationSequence: 2,
         freshness: 'refreshed',
         syncedAtMs: UPDATED_AT_MS,
         eventUpperTimestamp: UPDATED_AT_MS / 1000,
@@ -183,10 +241,39 @@ describe('wallet ledger portfolio route', () => {
           { chainId: 10, progressBlock: 2_000 }
         ]
       },
-      balance: { dataPoints: [{ date: '2026-08-07', value: 42 }] },
+      balance: {
+        isComplete: true,
+        dataPoints: [{ date: '2026-08-07', value: 42, isComplete: true }]
+      },
       protocolReturn: { summary: { totalVaults: 1 } },
       growth: { summary: { totalVaults: 1 } }
     })
+  })
+
+  it('preserves provisional balance completeness in the combined response', async () => {
+    mocks.getHistoricalHoldingsChart.mockResolvedValueOnce(createBalance(true, false))
+
+    const response = await GET(createRequest())
+
+    await expect(response.json()).resolves.toMatchObject({
+      balance: {
+        isComplete: false,
+        dataPoints: [{ date: '2026-08-07', value: 42, isComplete: false }]
+      }
+    })
+  })
+
+  it('uses the combined portfolio route identifier in debug logs', async () => {
+    const consoleLog = vi.spyOn(console, 'log').mockImplementation(() => undefined)
+
+    try {
+      const response = await GET(createRequest('&debug=1'))
+
+      expect(response.status).toBe(200)
+      expect(consoleLog).toHaveBeenCalledWith(expect.stringContaining('[HoldingsDebug][ledger-portfolio-'))
+    } finally {
+      consoleLog.mockRestore()
+    }
   })
 
   it('reads the cached wallet value without synchronizing when refresh is disabled', async () => {
@@ -211,7 +298,13 @@ describe('wallet ledger portfolio route', () => {
   })
 
   it('reports a recently synchronized wallet value as cached when no source check was needed', async () => {
-    mocks.synchronizeWalletLedger.mockResolvedValueOnce({ status: 'ready', outcome: 'fresh', ledger: LEDGER })
+    mocks.synchronizeWalletLedger.mockResolvedValueOnce({
+      status: 'ready',
+      outcome: 'fresh',
+      syncType: 'fresh',
+      ledger: LEDGER,
+      transition: SYNC_TRANSITION
+    })
 
     const response = await GET(createRequest())
 

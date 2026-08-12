@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { decodeWalletLedgerValue, encodeWalletLedgerPayload } from '@/server/lib/holdings/services/ledger/walletCodec'
 import {
-  type TWalletLedgerPayloadV1,
+  type TWalletLedgerPayloadV3,
   WALLET_LEDGER_SCHEMA_VERSION
 } from '@/server/lib/holdings/services/ledger/walletTypes'
 
@@ -11,13 +11,14 @@ const USER_ADDRESS = '0x1111111111111111111111111111111111111111'
 const VAULT_ADDRESS = '0x2222222222222222222222222222222222222222'
 const TRANSACTION_HASH = `0x${'c'.repeat(64)}`
 
-function createPayload(overrides: Partial<TWalletLedgerPayloadV1> = {}): TWalletLedgerPayloadV1 {
+function createPayload(overrides: Partial<TWalletLedgerPayloadV3> = {}): TWalletLedgerPayloadV3 {
   return {
     schemaVersion: WALLET_LEDGER_SCHEMA_VERSION,
     calculationVersion: 'wallet-ledger-test-v1',
     walletHash: WALLET_HASH,
     sourceFingerprint: SOURCE_FINGERPRINT,
     sourceGeneration: 1,
+    appliedInvalidationSequence: 0,
     coverage: [{ chainId: 1, startBlock: 1, endBlock: null, completeThroughBlock: 100 }],
     streams: {
       v3Deposits: [
@@ -44,6 +45,7 @@ function createPayload(overrides: Partial<TWalletLedgerPayloadV1> = {}): TWallet
     },
     createdAtMs: 1_000,
     updatedAtMs: 2_000,
+    reconciledAtMs: 1_500,
     ...overrides
   }
 }
@@ -109,5 +111,10 @@ describe('one-value wallet ledger codec', () => {
         ]
       })
     ).toThrow(/unique chains/i)
+  })
+
+  it('requires the last reconciliation timestamp to stay inside the ledger lifetime', () => {
+    expect(() => encodeWalletLedgerPayload(createPayload({ reconciledAtMs: 999 }))).toThrow(/timestamps/i)
+    expect(() => encodeWalletLedgerPayload(createPayload({ reconciledAtMs: 2_001 }))).toThrow(/timestamps/i)
   })
 })

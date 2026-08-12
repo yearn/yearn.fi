@@ -20,6 +20,7 @@ export interface HoldingsConfig {
   readonly ledgerOverlapBlocks: number
   readonly ledgerReconcileIntervalMs: number
   readonly ledgerSourceRevision: string
+  readonly ledgerValuationRevision: string
 }
 
 const HISTORY_START_TIMESTAMP = 1_704_067_200 // 2024-01-01T00:00:00Z
@@ -27,8 +28,8 @@ const YEARN_PRICES_BASE_URL = 'https://prices.yearn.dev'
 const DEFAULT_LEDGER_OVERLAP_BLOCKS = 50_000
 const DEFAULT_LEDGER_RECONCILE_INTERVAL_SECONDS = 7 * 24 * 60 * 60
 const DEFAULT_LEDGER_CHAIN_IDS = SUPPORTED_CHAINS.map(({ id }) => id).toSorted((left, right) => left - right)
-const DEFAULT_LEDGER_SOURCE_REVISION = 'default'
-const LEDGER_SOURCE_REVISION_PATTERN = /^[A-Za-z0-9._-]{1,96}$/
+const DEFAULT_LEDGER_OPERATOR_REVISION = 'default'
+const LEDGER_OPERATOR_REVISION_PATTERN = /^[A-Za-z0-9._-]{1,96}$/
 
 function parseBoundedPositiveInteger(value: string | undefined, fallback: number, maximum: number): number {
   const parsed = value && /^\d+$/.test(value.trim()) ? Number(value.trim()) : Number.NaN
@@ -40,9 +41,17 @@ export function parseHoldingsLedgerMode(value: string | undefined): HoldingsLedg
   return normalized === 'shadow' || normalized === 'read-write' ? normalized : 'off'
 }
 
-export function parseHoldingsLedgerSourceRevision(value: string | undefined): string {
+function parseHoldingsLedgerOperatorRevision(value: string | undefined): string {
   const normalized = value?.trim()
-  return normalized && LEDGER_SOURCE_REVISION_PATTERN.test(normalized) ? normalized : DEFAULT_LEDGER_SOURCE_REVISION
+  return normalized && LEDGER_OPERATOR_REVISION_PATTERN.test(normalized) ? normalized : DEFAULT_LEDGER_OPERATOR_REVISION
+}
+
+export function parseHoldingsLedgerSourceRevision(value: string | undefined): string {
+  return parseHoldingsLedgerOperatorRevision(value)
+}
+
+export function parseHoldingsLedgerValuationRevision(value: string | undefined): string {
+  return parseHoldingsLedgerOperatorRevision(value)
 }
 
 function parseHoldingsLedgerChainIds(value: string | undefined): readonly number[] {
@@ -108,6 +117,9 @@ export const holdingsConfig: HoldingsConfig = {
   },
   get ledgerSourceRevision() {
     return parseHoldingsLedgerSourceRevision(process.env.HOLDINGS_LEDGER_SOURCE_REVISION)
+  },
+  get ledgerValuationRevision() {
+    return parseHoldingsLedgerValuationRevision(process.env.HOLDINGS_LEDGER_VALUATION_REVISION)
   }
 }
 

@@ -27,6 +27,8 @@ function createCombinedResponse(): TPortfolioLedgerPortfolioResponse {
     timeframe: '1y',
     ledger: {
       revision: 'revision-1',
+      eventRevision: 'event-revision-1',
+      appliedInvalidationSequence: 2,
       freshness: 'refreshed',
       syncedAtMs: 1_786_147_200_000,
       eventUpperTimestamp: 1_786_147_200,
@@ -38,7 +40,8 @@ function createCombinedResponse(): TPortfolioLedgerPortfolioResponse {
       address: ADDRESS,
       denomination: 'usd',
       timeframe: '1y',
-      dataPoints: [{ date: '2026-08-07', value: 100 }]
+      isComplete: false,
+      dataPoints: [{ date: '2026-08-07', value: 100, isComplete: false }]
     },
     protocolReturn: {
       address: ADDRESS,
@@ -50,7 +53,7 @@ function createCombinedResponse(): TPortfolioLedgerPortfolioResponse {
         recommendedGrowthDisplay: 'usd',
         recommendedGrowthDisplayReason: 'stable_dominant',
         openBaselineCompositionUsd: { stable: 100, ethFamily: 0, other: 0 },
-        isComplete: true
+        isComplete: false
       },
       dataPoints: [
         {
@@ -176,9 +179,11 @@ describe('portfolio ledger combined query helpers', () => {
     })
 
     expect(result.balanceData).toEqual([
-      { date: '2026-08-07', value: 100 },
-      { date: '2026-08-08', value: 125, isLive: true }
+      { date: '2026-08-07', value: 100, isComplete: false },
+      { date: '2026-08-08', value: 125, isComplete: true, isLive: true }
     ])
+    expect(result.balanceIsComplete).toBe(false)
+    expect(result.protocolReturnSummary?.isComplete).toBe(false)
     expect(result.protocolReturnData?.[0]).toMatchObject({ growthWeightUsd: 10, protocolReturnPct: 10 })
   })
 

@@ -118,6 +118,27 @@ describe('holdings ledger admin access', () => {
     await expect(response?.json()).resolves.toEqual({ error: 'Ledger admin endpoint not configured' })
   })
 
+  it('keeps cross-site browser requests to loopback protected', async () => {
+    vi.stubEnv('NODE_ENV', 'development')
+    vi.stubEnv('ADMIN_SECRET', '')
+    const request = createRequest(undefined, 'http://localhost:3000')
+    request.headers.set('origin', 'https://malicious.example')
+
+    const response = getLedgerAdminAccessError(request)
+
+    expect(response?.status).toBe(503)
+    await expect(response?.json()).resolves.toEqual({ error: 'Ledger admin endpoint not configured' })
+  })
+
+  it('allows same-loopback browser origins in development', () => {
+    vi.stubEnv('NODE_ENV', 'development')
+    vi.stubEnv('ADMIN_SECRET', '')
+    const request = createRequest(undefined, 'http://localhost:3000')
+    request.headers.set('origin', 'http://127.0.0.1:3000')
+
+    expect(getLedgerAdminAccessError(request)).toBeNull()
+  })
+
   it('keeps loopback requests protected outside development', async () => {
     vi.stubEnv('NODE_ENV', 'production')
     vi.stubEnv('ADMIN_SECRET', '')

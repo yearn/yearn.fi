@@ -9,7 +9,7 @@ import {
 import { LEDGER_STREAMS, type TLedgerSixStreams } from '@/server/lib/holdings/services/ledger/types'
 import {
   type TWalletLedgerCoverageV1,
-  type TWalletLedgerPayloadV1,
+  type TWalletLedgerPayloadV3,
   type TWalletLedgerState,
   WALLET_LEDGER_CODEC,
   WALLET_LEDGER_MAX_DECODED_BYTES,
@@ -25,10 +25,12 @@ const PAYLOAD_FIELDS = [
   'walletHash',
   'sourceFingerprint',
   'sourceGeneration',
+  'appliedInvalidationSequence',
   'coverage',
   'streams',
   'createdAtMs',
-  'updatedAtMs'
+  'updatedAtMs',
+  'reconciledAtMs'
 ] as const
 const COVERAGE_FIELDS = ['chainId', 'startBlock', 'endBlock', 'completeThroughBlock'] as const
 
@@ -137,7 +139,7 @@ function assertStreamsWithinCoverage(streams: TLedgerSixStreams, coverage: reado
   }
 }
 
-export function parseWalletLedgerPayload(value: unknown): TWalletLedgerPayloadV1 {
+export function parseWalletLedgerPayload(value: unknown): TWalletLedgerPayloadV3 {
   assertExactObjectKeys(value, PAYLOAD_FIELDS, 'Wallet ledger payload')
   if (value.schemaVersion !== WALLET_LEDGER_SCHEMA_VERSION) {
     throw new Error('Wallet ledger schema version is unsupported')
@@ -152,9 +154,15 @@ export function parseWalletLedgerPayload(value: unknown): TWalletLedgerPayloadV1
   assertSha256(value.walletHash, 'Wallet ledger wallet hash')
   assertSha256(value.sourceFingerprint, 'Wallet ledger source fingerprint')
   assertSafeInteger(value.sourceGeneration, 'Wallet ledger source generation', 1)
+  assertSafeInteger(value.appliedInvalidationSequence, 'Wallet ledger applied invalidation sequence')
   assertSafeInteger(value.createdAtMs, 'Wallet ledger creation timestamp')
   assertSafeInteger(value.updatedAtMs, 'Wallet ledger update timestamp')
-  if (value.updatedAtMs < value.createdAtMs) {
+  assertSafeInteger(value.reconciledAtMs, 'Wallet ledger reconciliation timestamp')
+  if (
+    value.updatedAtMs < value.createdAtMs ||
+    value.reconciledAtMs < value.createdAtMs ||
+    value.reconciledAtMs > value.updatedAtMs
+  ) {
     throw new Error('Wallet ledger timestamps are inconsistent')
   }
   const coverage = parseCoverage(value.coverage)
@@ -166,10 +174,12 @@ export function parseWalletLedgerPayload(value: unknown): TWalletLedgerPayloadV1
     walletHash: value.walletHash,
     sourceFingerprint: value.sourceFingerprint,
     sourceGeneration: value.sourceGeneration,
+    appliedInvalidationSequence: value.appliedInvalidationSequence,
     coverage,
     streams,
     createdAtMs: value.createdAtMs,
-    updatedAtMs: value.updatedAtMs
+    updatedAtMs: value.updatedAtMs,
+    reconciledAtMs: value.reconciledAtMs
   }
 }
 
@@ -203,7 +213,11 @@ function decodeBrotliJson(data: string): { readonly json: string; readonly decod
   return { json: decoded.toString('utf8'), decodedBytes: decoded.length }
 }
 
-export function encodeWalletLedgerPayload(payload: TWalletLedgerPayloadV1): TEncodedWalletLedger {
+export function getWalletLedgerEventRevision(streams: TLedgerSixStreams): string {
+  return getLedgerSha256(stringifyCanonicalLedgerValue(canonicalizeLedgerStreams(streams)))
+}
+
+export function encodeWalletLedgerPayload(payload: TWalletLedgerPayloadV3): TEncodedWalletLedger {
   const normalized = parseWalletLedgerPayload(payload)
   const json = stringifyCanonicalLedgerValue(normalized)
   const decoded = Buffer.from(json, 'utf8')
@@ -224,6 +238,7 @@ export function encodeWalletLedgerPayload(payload: TWalletLedgerPayloadV1): TEnc
     ledger: {
       ...normalized,
       revision,
+      eventRevision: getWalletLedgerEventRevision(normalized.streams),
       encodedBytes,
       decodedBytes: decoded.length
     }
@@ -257,6 +272,7 @@ export function decodeWalletLedgerValue(value: unknown, expectedWalletHash?: str
   return {
     ...payload,
     revision,
+    eventRevision: getWalletLedgerEventRevision(payload.streams),
     encodedBytes,
     decodedBytes: decoded.decodedBytes
   }

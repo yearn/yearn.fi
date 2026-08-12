@@ -12,8 +12,19 @@ export function isValidLedgerWalletAddress(address: string): boolean {
   return /^0x[a-fA-F0-9]{40}$/.test(address)
 }
 
-function isUnauthenticatedLocalDevelopmentRequest(request: Request): boolean {
-  return process.env.NODE_ENV === 'development' && LOOPBACK_HOSTNAMES.has(new URL(request.url).hostname.toLowerCase())
+export function isUnauthenticatedLocalDevelopmentRequest(request: Request): boolean {
+  if (process.env.NODE_ENV !== 'development' || !LOOPBACK_HOSTNAMES.has(new URL(request.url).hostname.toLowerCase())) {
+    return false
+  }
+  const origin = request.headers.get('origin')
+  if (!origin) {
+    return true
+  }
+  try {
+    return LOOPBACK_HOSTNAMES.has(new URL(origin).hostname.toLowerCase())
+  } catch {
+    return false
+  }
 }
 
 export function getLedgerReadinessError(options?: {

@@ -75,9 +75,11 @@ export async function GET(request: Request): Promise<Response> {
             address: balance.address,
             denomination,
             timeframe,
+            isComplete: balance.isComplete,
             dataPoints: balance.dataPoints.map((point) => ({
               date: point.date,
-              value: point.value
+              value: point.value,
+              isComplete: point.isComplete
             }))
           },
           protocolReturn

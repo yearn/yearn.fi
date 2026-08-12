@@ -2,7 +2,8 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 import {
   holdingsConfig,
   parseHoldingsLedgerMode,
-  parseHoldingsLedgerSourceRevision
+  parseHoldingsLedgerSourceRevision,
+  parseHoldingsLedgerValuationRevision
 } from '@/server/lib/holdings/config'
 
 describe('holdings ledger mode', () => {
@@ -65,5 +66,19 @@ describe('holdings ledger mode', () => {
 
     vi.stubEnv('HOLDINGS_LEDGER_SOURCE_REVISION', 'invalid/revision')
     expect(holdingsConfig.ledgerSourceRevision).toBe('default')
+  })
+
+  it('reads a bounded non-secret valuation revision with a stable default', () => {
+    expect(parseHoldingsLedgerValuationRevision(undefined)).toBe('default')
+    expect(parseHoldingsLedgerValuationRevision('  ')).toBe('default')
+    expect(parseHoldingsLedgerValuationRevision(' pps-fix_2026.08.12 ')).toBe('pps-fix_2026.08.12')
+    expect(parseHoldingsLedgerValuationRevision('price/correction')).toBe('default')
+    expect(parseHoldingsLedgerValuationRevision('x'.repeat(97))).toBe('default')
+
+    vi.stubEnv('HOLDINGS_LEDGER_VALUATION_REVISION', 'valuation-abc123')
+    expect(holdingsConfig.ledgerValuationRevision).toBe('valuation-abc123')
+
+    vi.stubEnv('HOLDINGS_LEDGER_VALUATION_REVISION', 'invalid/revision')
+    expect(holdingsConfig.ledgerValuationRevision).toBe('default')
   })
 })

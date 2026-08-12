@@ -13,8 +13,10 @@ import {
 } from '@/server/lib/holdings/services/pnlSimple'
 import {
   filterEventsByAuthoritativeVersion,
-  getVaultIdentifiers
+  getVaultIdentifiers,
+  type TSettledAddressScopedContext
 } from '@/server/lib/holdings/services/settledHoldingsContext'
+import type { THoldingsValuationLoader } from '@/server/lib/holdings/services/valuationLoader'
 import { fetchMultipleVaultsMetadata } from '@/server/lib/holdings/services/vaults'
 
 export type THoldingsLedgerGrowthResponse = {
@@ -40,6 +42,8 @@ type TGetLedgerProtocolReturnRowsOptions = {
   resolveNestedMetadata?: typeof resolveNestedVaultAssetMetadata
   resolveHistoricalPps?: typeof resolveLedgerHistoricalPps
   fetchPps?: typeof fetchMultipleVaultsPPS
+  valuationLoader?: THoldingsValuationLoader
+  settledContext?: Promise<TSettledAddressScopedContext>
 }
 
 function getVaultKey(chainId: number, vaultAddress: string): string {
@@ -106,19 +110,30 @@ export async function getLedgerProtocolReturnRows(args: {
   const getDurationMs = startHoldingsDebugTimer()
   const fetchMetadata = args.options?.fetchMetadata ?? fetchMultipleVaultsMetadata
   const resolveNestedMetadata = args.options?.resolveNestedMetadata ?? resolveNestedVaultAssetMetadata
-  const resolveHistoricalPps = args.options?.resolveHistoricalPps ?? resolveLedgerHistoricalPps
-  const fetchPps = args.options?.fetchPps ?? fetchMultipleVaultsPPS
-  const events = await args.eventSource.load({
-    userAddress: args.address,
-    version: 'all',
-    maxTimestamp: args.eventSource.eventUpperTimestamp,
-    fetchType: 'seq',
-    paginationMode: 'paged'
-  })
-  const rawEvents = buildAddressScopedRawPnlEvents(events)
+  const fetchPps: typeof fetchMultipleVaultsPPS =
+    args.options?.fetchPps ??
+    (args.options?.valuationLoader
+      ? (vaults) => args.options!.valuationLoader!.fetchVaultPps(vaults, { consumer: 'growth' })
+      : fetchMultipleVaultsPPS)
+  const resolveHistoricalPps =
+    args.options?.resolveHistoricalPps ??
+    ((requirements: Parameters<typeof resolveLedgerHistoricalPps>[0]) =>
+      resolveLedgerHistoricalPps(requirements, { fetchPps }))
+  const settledContext = args.options?.settledContext ? await args.options.settledContext : null
+  const events = settledContext
+    ? settledContext.events
+    : await args.eventSource.load({
+        userAddress: args.address,
+        version: 'all',
+        maxTimestamp: args.eventSource.eventUpperTimestamp,
+        fetchType: 'seq',
+        paginationMode: 'paged'
+      })
+  const rawEvents = settledContext?.rawEvents ?? buildAddressScopedRawPnlEvents(events)
   const rawVaults = getVaultIdentifiers(rawEvents)
-  const baseMetadata = rawVaults.length > 0 ? await fetchMetadata(rawVaults) : new Map()
-  const metadata = await resolveNestedMetadata(baseMetadata)
+  const metadata = settledContext
+    ? settledContext.vaultMetadata
+    : await resolveNestedMetadata(rawVaults.length > 0 ? await fetchMetadata(rawVaults) : new Map())
   const selectedEvents = filterEventsByAuthoritativeVersion(rawEvents, metadata, args.version)
   const selectedVaults = getVaultIdentifiers(selectedEvents)
   const requirements = getProtocolReturnHistoricalPpsRequirements(selectedEvents, args.address)

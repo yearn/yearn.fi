@@ -55,11 +55,15 @@ export function createWalletLedgerEventSource(args: TCreateWalletLedgerEventSour
     args.ledger.sourceGeneration,
     args.ledger.revision
   ])
+  const hasActivity = Object.values(args.ledger.streams).some((events) =>
+    events.some((event: TLedgerBaseSourceEvent) => event.blockTimestamp <= args.eventUpperTimestamp)
+  )
 
   return Object.freeze({
     key,
     latestSettledDayTimestamp: args.latestSettledDayTimestamp,
     eventUpperTimestamp: args.eventUpperTimestamp,
+    hasActivity,
     load: async (request: THoldingsEventSourceRequest) => {
       if (hashLedgerWalletAddress(request.userAddress) !== args.ledger.walletHash) {
         throw new Error('Wallet ledger does not match the requested wallet')

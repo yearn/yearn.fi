@@ -13,6 +13,7 @@ export interface HoldingsDebugContext {
     | 'ledger-history'
     | 'ledger-breakdown'
     | 'ledger-growth'
+    | 'ledger-portfolio'
     | 'ledger-portfolio-history'
     | 'ledger-protocol-return-history'
   address: string

@@ -12,6 +12,7 @@ export interface TLedgerAuthoritativeWindow {
   readonly chainId: number
   readonly lowerBlock: number
   readonly upperBlock: number
+  readonly vaultAddresses?: readonly string[]
 }
 
 export interface TLedgerStreamMergeStats {
@@ -45,6 +46,13 @@ function assertWindow(window: TLedgerAuthoritativeWindow): void {
   ) {
     throw new Error('Ledger authoritative window is invalid')
   }
+  if (
+    window.vaultAddresses !== undefined &&
+    (window.vaultAddresses.length === 0 ||
+      window.vaultAddresses.some((address) => !/^0x[a-fA-F0-9]{40}$/.test(address)))
+  ) {
+    throw new Error('Ledger authoritative window vault scope is invalid')
+  }
 }
 
 function getStreamWindows(
@@ -65,7 +73,13 @@ function getStreamWindows(
 
 function isInsideWindow(event: TLedgerSourceEvent, windowsByChain: Map<number, TLedgerAuthoritativeWindow>): boolean {
   const window = windowsByChain.get(event.chainId)
-  return Boolean(window && event.blockNumber >= window.lowerBlock && event.blockNumber <= window.upperBlock)
+  return Boolean(
+    window &&
+      event.blockNumber >= window.lowerBlock &&
+      event.blockNumber <= window.upperBlock &&
+      (window.vaultAddresses === undefined ||
+        window.vaultAddresses.some((address) => address.toLowerCase() === event.vaultAddress.toLowerCase()))
+  )
 }
 
 function indexEvents(events: readonly TLedgerSourceEvent[], label: string): Map<string, TLedgerSourceEvent> {

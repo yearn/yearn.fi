@@ -5,13 +5,36 @@ import { debugError, debugLog } from './debug'
 export type PPSTimeline = Map<number, number>
 
 const PPS_FETCH_FAILED_VAULTS = Symbol('ppsFetchFailedVaults')
+const PPS_FETCH_FAILED_VAULT_KEYS = Symbol('ppsFetchFailedVaultKeys')
 
 type TPpsFetchResult = Map<string, PPSTimeline> & {
   [PPS_FETCH_FAILED_VAULTS]?: number
+  [PPS_FETCH_FAILED_VAULT_KEYS]?: readonly string[]
 }
 
 export function getPpsFetchFailedVaults(ppsData: Map<string, PPSTimeline>): number {
   return (ppsData as TPpsFetchResult)[PPS_FETCH_FAILED_VAULTS] ?? 0
+}
+
+export function getPpsFetchFailedVaultKeys(ppsData: Map<string, PPSTimeline>): readonly string[] {
+  return (ppsData as TPpsFetchResult)[PPS_FETCH_FAILED_VAULT_KEYS] ?? []
+}
+
+export function setPpsFetchFailureMetadata(
+  ppsData: Map<string, PPSTimeline>,
+  failedVaultKeys: readonly string[]
+): void {
+  const normalizedKeys = Array.from(new Set(failedVaultKeys.map((key) => key.toLowerCase()))).toSorted()
+  Object.defineProperty(ppsData, PPS_FETCH_FAILED_VAULTS, {
+    value: normalizedKeys.length,
+    configurable: true,
+    enumerable: false
+  })
+  Object.defineProperty(ppsData, PPS_FETCH_FAILED_VAULT_KEYS, {
+    value: Object.freeze(normalizedKeys),
+    configurable: true,
+    enumerable: false
+  })
 }
 
 type TFetchLike = typeof fetch
@@ -224,10 +247,10 @@ export async function fetchMultipleVaultsPPS(
   results.forEach(({ key, timeline }) => {
     map.set(key, timeline)
   })
-  Object.defineProperty(map, PPS_FETCH_FAILED_VAULTS, {
-    value: results.filter((result) => result.failed).length,
-    enumerable: false
-  })
+  setPpsFetchFailureMetadata(
+    map,
+    results.filter((result) => result.failed).map((result) => result.key)
+  )
   debugLog('kong-pps', 'resolved PPS timelines', {
     resolved: map.size,
     emptyTimelines: Array.from(map.values()).filter((timeline) => timeline.size === 0).length

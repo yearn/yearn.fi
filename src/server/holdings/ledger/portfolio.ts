@@ -29,12 +29,16 @@ import {
 import { getLedgerProtocolReturnRows } from '@/server/lib/holdings/services/ledger/rows'
 import { LEDGER_STREAMS } from '@/server/lib/holdings/services/ledger/types'
 import {
+  createWalletLedgerDailyUsdTotalsCache,
   createWalletLedgerEventSource,
   isWalletLedgerCompatible,
   readWalletLedger,
   synchronizeWalletLedger,
+  type TWalletLedgerDailyUsdCacheIdentity,
   type TWalletLedgerState
 } from '@/server/lib/holdings/services/ledger/wallet'
+import { getSettledAddressScopedContext } from '@/server/lib/holdings/services/settledHoldingsContext'
+import { createHoldingsValuationLoader } from '@/server/lib/holdings/services/valuationLoader'
 
 const SECONDS_PER_DAY = 24 * 60 * 60
 const PORTFOLIO_HEADERS = {
@@ -199,6 +203,21 @@ async function resolveWalletLedger(args: {
   }
 }
 
+function getDailyUsdCacheIdentity(
+  ledger: TWalletLedgerState,
+  version: VaultVersion
+): TWalletLedgerDailyUsdCacheIdentity {
+  return {
+    walletHash: ledger.walletHash,
+    version,
+    ledgerRevision: ledger.revision,
+    ledgerCalculationVersion: ledger.calculationVersion,
+    sourceGeneration: ledger.sourceGeneration,
+    eventRevision: ledger.eventRevision,
+    appliedInvalidationSequence: ledger.appliedInvalidationSequence
+  }
+}
+
 export function OPTIONS(): Response {
   return noContent(LEDGER_ADMIN_CORS_HEADERS)
 }
@@ -232,7 +251,7 @@ export async function GET(request: Request): Promise<Response> {
 
   const debugEnabled = isHoldingsDebugRequested(queryString(request, 'debug'))
   return withHoldingsDebugContext(
-    createHoldingsDebugContext('ledger-portfolio-history', addressValue, debugEnabled),
+    createHoldingsDebugContext('ledger-portfolio', addressValue, debugEnabled),
     async () => {
       const getDurationMs = startHoldingsDebugTimer()
       const version = parseVersion(queryString(request, 'version'))
@@ -258,7 +277,25 @@ export async function GET(request: Request): Promise<Response> {
           ledger: resolved.ledger,
           ...cutoffs
         })
-        const aggregationOptions = { eventSource, cacheMode: 'bypass' as const }
+        const valuationLoader = createHoldingsValuationLoader()
+        const settledContext = getSettledAddressScopedContext({
+          userAddress: addressValue,
+          fetchType: 'seq',
+          paginationMode: 'paged',
+          eventSource
+        })
+        const balanceOptions = {
+          eventSource,
+          totalsCache: createWalletLedgerDailyUsdTotalsCache(getDailyUsdCacheIdentity(resolved.ledger, version)),
+          valuationLoader,
+          settledContext
+        }
+        const uncachedLedgerOptions = {
+          eventSource,
+          valuationLoader,
+          settledContext,
+          cacheMode: 'bypass' as const
+        }
         const [balance, protocolReturn, growth] = await Promise.all([
           getHistoricalHoldingsChart(
             addressValue,
@@ -268,13 +305,18 @@ export async function GET(request: Request): Promise<Response> {
             denomination,
             timeframe,
             undefined,
-            aggregationOptions
+            balanceOptions
           ),
           getHoldingsProtocolReturnHistory(addressValue, version, 'seq', 'paged', timeframe, undefined, undefined, {
-            ...aggregationOptions,
+            ...uncachedLedgerOptions,
             protocolReturnEventEnrichment: 'address-only'
           }),
-          getLedgerProtocolReturnRows({ address: addressValue, version, eventSource })
+          getLedgerProtocolReturnRows({
+            address: addressValue,
+            version,
+            eventSource,
+            options: { valuationLoader, settledContext }
+          })
         ])
 
         if (!balance.hasActivity && protocolReturn.summary.totalVaults === 0 && growth.summary.totalVaults === 0) {
@@ -298,6 +340,8 @@ export async function GET(request: Request): Promise<Response> {
             timeframe,
             ledger: {
               revision: resolved.ledger.revision,
+              eventRevision: resolved.ledger.eventRevision,
+              appliedInvalidationSequence: resolved.ledger.appliedInvalidationSequence,
               freshness: resolved.freshness,
               syncedAtMs: resolved.ledger.updatedAtMs,
               eventUpperTimestamp: cutoffs.eventUpperTimestamp,
@@ -312,9 +356,11 @@ export async function GET(request: Request): Promise<Response> {
               address: balance.address,
               denomination,
               timeframe,
+              isComplete: balance.isComplete,
               dataPoints: balance.dataPoints.map((point) => ({
                 date: point.date,
-                value: point.value
+                value: point.value,
+                isComplete: point.isComplete
               }))
             },
             protocolReturn,

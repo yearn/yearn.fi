@@ -118,7 +118,10 @@ import {
   useLocalActivityReceiptStatuses
 } from './hooks/useLocalActivityReceiptStatuses'
 import { usePortfolioActivity } from './hooks/usePortfolioActivity'
-import { usePortfolioHistoryCoordinator } from './hooks/usePortfolioHistoryCoordinator'
+import {
+  shouldLoadPortfolioPositionsHistory,
+  usePortfolioHistoryCoordinator
+} from './hooks/usePortfolioHistoryCoordinator'
 import { comparePortfolioLedgerGrowthVaults, toPortfolioLedgerGrowthDisplay } from './hooks/usePortfolioLedgerGrowth'
 import type {
   TPortfolioActivityEntry,
@@ -169,6 +172,7 @@ type TPortfolioHoldingsProps = Pick<
   | 'vaultFlags'
 > & {
   growthVaultsByKey: ReadonlyMap<string, TPortfolioLedgerGrowthVault>
+  isGrowthLoading: boolean
 }
 
 type TPortfolioSuggestedProps = Pick<TPortfolioModel, 'hasHoldings' | 'isActive' | 'suggestedRows'>
@@ -2914,6 +2918,7 @@ function PortfolioHoldingsSection({
   hasHoldings,
   holdingsRows,
   isActive,
+  isGrowthLoading,
   isHoldingsLoading,
   openLoginModal,
   sortBy,
@@ -3032,6 +3037,7 @@ function PortfolioHoldingsSection({
                       currentVault={row.vault}
                       flags={vaultFlags[row.key]}
                       hrefOverride={row.hrefOverride}
+                      isPortfolioGrowthLoading={isGrowthLoading}
                       portfolioGrowth={toPortfolioLedgerGrowthDisplay(growthVaultsByKey.get(row.key))}
                       yvUsdPositionApy={row.yvUsdPositionApy}
                       showBoostDetails={false}
@@ -3230,7 +3236,10 @@ function PortfolioPage(): ReactElement {
     }
     return 'positions'
   }, [searchParams])
-  const shouldLoadPositionsHistory = activeTab === 'positions' && model.isActive && !model.isHoldingsLoading
+  const shouldLoadPositionsHistory = shouldLoadPortfolioPositionsHistory({
+    activeTab,
+    isWalletConnected: model.isActive
+  })
   const portfolioHistory = usePortfolioHistoryCoordinator(
     historyDenomination,
     historyFetchTimeframe,
@@ -3240,6 +3249,7 @@ function PortfolioPage(): ReactElement {
   const {
     data: historyData,
     denomination: resolvedHistoryDenomination,
+    isComplete: historyIsComplete,
     isLoading: historyLoading,
     progress: historyProgress,
     error: historyError,
@@ -3268,6 +3278,7 @@ function PortfolioPage(): ReactElement {
       protocolReturnSummary={protocolReturnHistorySummary}
       protocolReturnFamilySeries={protocolReturnHistoryFamilySeries}
       denomination={resolvedHistoryDenomination}
+      balanceIsComplete={historyIsComplete}
       timeframe={historyTimeframe}
       activeTab={historyChartTab}
       growthDisplayModeOverride={historyGrowthDisplayModeOverride}
@@ -3412,6 +3423,7 @@ function PortfolioPage(): ReactElement {
               hasHoldings={model.hasHoldings}
               holdingsRows={model.holdingsRows}
               isActive={model.isActive}
+              isGrowthLoading={portfolioHistory.growth.isLoading}
               isHoldingsLoading={model.isHoldingsLoading}
               openLoginModal={model.openLoginModal}
               sortBy={model.sortBy}

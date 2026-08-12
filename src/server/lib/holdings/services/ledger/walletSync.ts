@@ -1,10 +1,13 @@
 import { randomUUID } from 'node:crypto'
 import { holdingsConfig } from '@/server/lib/holdings/config'
 import { debugLog, startHoldingsDebugTimer } from '@/server/lib/holdings/services/debug'
+import { timestampToDateString } from '@/server/lib/holdings/services/holdings'
 import {
   fetchEnvioLedgerMetadata,
   fetchEnvioLedgerSource,
+  fetchEnvioLedgerVaultStreams,
   rereadEnvioLedgerMetadata,
+  type TEnvioLedgerChainWindow,
   type TEnvioLedgerFetchStats,
   type TEnvioLedgerMetadata
 } from '@/server/lib/holdings/services/ledger/envio'
@@ -12,11 +15,23 @@ import { hashLedgerWalletAddress } from '@/server/lib/holdings/services/ledger/k
 import {
   mergeLedgerStreams,
   type TLedgerAuthoritativeWindow,
+  type TLedgerMergeResult,
   type TLedgerStreamMergeStats
 } from '@/server/lib/holdings/services/ledger/merge'
 import { getLedgerSourceFingerprint, LEDGER_CALCULATION_VERSION } from '@/server/lib/holdings/services/ledger/state'
-import { LEDGER_STREAMS, type TLedgerSixStreams, type TLedgerStream } from '@/server/lib/holdings/services/ledger/types'
+import {
+  LEDGER_STREAMS,
+  type TLedgerSixStreams,
+  type TLedgerSourceEvent,
+  type TLedgerStream
+} from '@/server/lib/holdings/services/ledger/types'
 import { encodeWalletLedgerPayload } from '@/server/lib/holdings/services/ledger/walletCodec'
+import {
+  groupWalletLedgerInvalidationVaults,
+  readPendingWalletLedgerInvalidations,
+  readWalletLedgerInvalidationHead,
+  type TPendingWalletLedgerInvalidations
+} from '@/server/lib/holdings/services/ledger/walletInvalidation'
 import {
   acquireWalletLedgerLock,
   commitStoredWalletLedger,
@@ -26,6 +41,7 @@ import {
   type TWalletLedgerLock,
   type TWalletLedgerRedis
 } from '@/server/lib/holdings/services/ledger/walletStore'
+import { createWalletLedgerDailyUsdCacheCommitTransitions } from '@/server/lib/holdings/services/ledger/walletTotalsCache'
 import {
   type TWalletLedgerCompletedSyncResult,
   type TWalletLedgerCoverageV1,
@@ -42,6 +58,12 @@ import {
   WALLET_LEDGER_SCHEMA_VERSION,
   WalletLedgerError
 } from '@/server/lib/holdings/services/ledger/walletTypes'
+import {
+  getNestedVaultPpsIdentifiersFromPriceRequests,
+  resolveNestedVaultAssetMetadata
+} from '@/server/lib/holdings/services/nestedVaultPrices'
+import { toVaultKey } from '@/server/lib/holdings/services/pnlShared'
+import { fetchMultipleVaultsMetadata, getVaultMetadataFetchFailedVaults } from '@/server/lib/holdings/services/vaults'
 import {
   getHoldingsLedgerRedisClient,
   HoldingsLedgerRedisOperationError
@@ -125,12 +147,20 @@ export function isWalletLedgerCompatible(ledger: TWalletLedgerState): boolean {
   return ledger.calculationVersion === LEDGER_CALCULATION_VERSION && hasConfiguredChainScope(ledger)
 }
 
-function isFreshCompatibleLedger(ledger: TWalletLedgerState, nowMs: number, forceRebuild: boolean): boolean {
+function isFreshCompatibleLedger(
+  ledger: TWalletLedgerState,
+  nowMs: number,
+  forceRebuild: boolean,
+  invalidationHead: number
+): boolean {
   return (
     !forceRebuild &&
     isWalletLedgerCompatible(ledger) &&
+    ledger.appliedInvalidationSequence === invalidationHead &&
     nowMs >= ledger.updatedAtMs &&
-    nowMs - ledger.updatedAtMs < WALLET_LEDGER_FRESHNESS_MS
+    nowMs - ledger.updatedAtMs < WALLET_LEDGER_FRESHNESS_MS &&
+    nowMs >= ledger.reconciledAtMs &&
+    nowMs - ledger.reconciledAtMs < holdingsConfig.ledgerReconcileIntervalMs
   )
 }
 
@@ -177,6 +207,7 @@ function getSyncType(args: {
   readonly sourceFingerprint: string
   readonly metadata: readonly TEnvioLedgerMetadata[]
   readonly forceRebuild: boolean
+  readonly nowMs: number
 }): TWalletLedgerSyncType {
   if (!args.current) {
     return 'bootstrap'
@@ -189,6 +220,9 @@ function getSyncType(args: {
   }
   if (args.forceRebuild || args.current.calculationVersion !== LEDGER_CALCULATION_VERSION) {
     return 'forced-reset'
+  }
+  if (args.nowMs - args.current.reconciledAtMs >= holdingsConfig.ledgerReconcileIntervalMs) {
+    return 'reconcile'
   }
   return 'warm'
 }
@@ -222,6 +256,204 @@ function getAuthoritativeWindows(
   windows: readonly { readonly chainId: number; readonly lowerBlock: number; readonly upperBlock: number }[]
 ): TLedgerAuthoritativeWindow[] {
   return LEDGER_STREAMS.flatMap((stream) => windows.map((window) => ({ stream, ...window })))
+}
+
+function getInvalidationWindows(
+  invalidations: Extract<TPendingWalletLedgerInvalidations, { readonly status: 'ready' }>,
+  metadata: readonly TEnvioLedgerMetadata[]
+): readonly TEnvioLedgerChainWindow[] {
+  const metadataByChain = new Map(metadata.map((entry) => [entry.chainId, entry]))
+  return Array.from(groupWalletLedgerInvalidationVaults(invalidations.records).entries()).flatMap(
+    ([chainId, scope]) => {
+      const chain = metadataByChain.get(chainId)
+      if (!chain) {
+        return []
+      }
+      const lowerBlock = Math.max(chain.startBlock, scope.lowerBlock)
+      if (lowerBlock > chain.progressBlock) {
+        throw new WalletLedgerError('source_lagging', 503)
+      }
+      return [
+        {
+          chainId,
+          lowerBlock,
+          upperBlock: chain.progressBlock,
+          vaultAddresses: scope.vaultAddresses
+        }
+      ]
+    }
+  )
+}
+
+function getVaultAuthoritativeWindows(windows: readonly TEnvioLedgerChainWindow[]): TLedgerAuthoritativeWindow[] {
+  return LEDGER_STREAMS.flatMap((stream) =>
+    windows.map((window) => ({
+      stream,
+      chainId: window.chainId,
+      lowerBlock: window.lowerBlock,
+      upperBlock: window.upperBlock,
+      vaultAddresses: window.vaultAddresses
+    }))
+  )
+}
+
+function getScopedEarliestTimestamp(
+  streams: TLedgerSixStreams,
+  windows: readonly TEnvioLedgerChainWindow[]
+): number | null {
+  const windowsByChain = new Map(
+    windows.map((window) => [
+      window.chainId,
+      {
+        lowerBlock: window.lowerBlock,
+        upperBlock: window.upperBlock,
+        vaultAddresses: new Set(window.vaultAddresses?.map((address) => address.toLowerCase()) ?? [])
+      }
+    ])
+  )
+  return LEDGER_STREAMS.reduce<number | null>(
+    (earliestAcrossStreams, stream) =>
+      streams[stream].reduce<number | null>((earliest, event) => {
+        const window = windowsByChain.get(event.chainId)
+        const matches =
+          window !== undefined &&
+          event.blockNumber >= window.lowerBlock &&
+          event.blockNumber <= window.upperBlock &&
+          window.vaultAddresses.has(event.vaultAddress.toLowerCase())
+        if (!matches) {
+          return earliest
+        }
+        return earliest === null ? event.blockTimestamp : Math.min(earliest, event.blockTimestamp)
+      }, earliestAcrossStreams),
+    null
+  )
+}
+
+function minTimestamp(...timestamps: readonly (number | null)[]): number | null {
+  const values = timestamps.filter((timestamp): timestamp is number => timestamp !== null)
+  return values.length === 0 ? null : Math.min(...values)
+}
+
+function getLedgerVaultIdentifiers(
+  streams: TLedgerSixStreams
+): readonly { readonly chainId: number; readonly vaultAddress: string }[] {
+  return Array.from(
+    new Map(
+      LEDGER_STREAMS.flatMap((stream) => [...streams[stream]] as TLedgerSourceEvent[]).map((event) => [
+        toVaultKey(event.chainId, event.vaultAddress),
+        { chainId: event.chainId, vaultAddress: event.vaultAddress.toLowerCase() }
+      ])
+    ).values()
+  )
+}
+
+function getEarliestLedgerTimestamp(streams: TLedgerSixStreams, vaultKeys?: ReadonlySet<string>): number | null {
+  return LEDGER_STREAMS.reduce<number | null>(
+    (earliestAcrossStreams, stream) =>
+      streams[stream].reduce<number | null>((earliest, event) => {
+        if (vaultKeys && !vaultKeys.has(toVaultKey(event.chainId, event.vaultAddress))) {
+          return earliest
+        }
+        return earliest === null ? event.blockTimestamp : Math.min(earliest, event.blockTimestamp)
+      }, earliestAcrossStreams),
+    null
+  )
+}
+
+function getInvalidatedVaultKeys(
+  invalidations: Extract<TPendingWalletLedgerInvalidations, { readonly status: 'ready' }>
+): ReadonlySet<string> {
+  return new Set(
+    invalidations.records.flatMap(({ vaults }) => vaults.map((vault) => toVaultKey(vault.chainId, vault.address)))
+  )
+}
+
+async function getNestedDependencyDirtyTimestamp(args: {
+  readonly streams: TLedgerSixStreams
+  readonly invalidations: Extract<TPendingWalletLedgerInvalidations, { readonly status: 'ready' }>
+  readonly heartbeat: () => Promise<void>
+}): Promise<{ readonly timestamp: number | null; readonly status: 'unaffected' | 'affected' | 'conservative' }> {
+  const directVaults = getLedgerVaultIdentifiers(args.streams)
+  if (args.invalidations.records.length === 0 || directVaults.length === 0) {
+    return { timestamp: null, status: 'unaffected' }
+  }
+
+  const earliestLedgerTimestamp = getEarliestLedgerTimestamp(args.streams)
+  try {
+    await args.heartbeat()
+    const baseMetadata = await fetchMultipleVaultsMetadata([...directVaults])
+    await args.heartbeat()
+    const resolvedMetadata = await resolveNestedVaultAssetMetadata(baseMetadata, 4, async (vaults) => {
+      await args.heartbeat()
+      const metadata = await fetchMultipleVaultsMetadata(vaults)
+      await args.heartbeat()
+      return metadata
+    })
+    const hasIncompleteMetadata =
+      getVaultMetadataFetchFailedVaults(resolvedMetadata) > 0 ||
+      directVaults.some((vault) => !resolvedMetadata.has(toVaultKey(vault.chainId, vault.vaultAddress)))
+    if (hasIncompleteMetadata) {
+      return { timestamp: earliestLedgerTimestamp, status: 'conservative' }
+    }
+
+    const invalidatedVaultKeys = getInvalidatedVaultKeys(args.invalidations)
+    const affectedParentKeys = new Set(
+      directVaults.flatMap((vault) => {
+        const parentKey = toVaultKey(vault.chainId, vault.vaultAddress)
+        const metadata = resolvedMetadata.get(parentKey)
+        if (!metadata) {
+          return []
+        }
+        const underlyingRequest = {
+          chainId: metadata.chainId,
+          address: metadata.token.address,
+          timestamps: []
+        }
+        const dependencyKeys = new Set([
+          toVaultKey(underlyingRequest.chainId, underlyingRequest.address),
+          ...getNestedVaultPpsIdentifiersFromPriceRequests([underlyingRequest], resolvedMetadata).map((dependency) =>
+            toVaultKey(dependency.chainId, dependency.vaultAddress)
+          )
+        ])
+        return Array.from(dependencyKeys).some((dependencyKey) => invalidatedVaultKeys.has(dependencyKey))
+          ? [parentKey]
+          : []
+      })
+    )
+    const timestamp = getEarliestLedgerTimestamp(args.streams, affectedParentKeys)
+    return { timestamp, status: timestamp === null ? 'unaffected' : 'affected' }
+  } catch {
+    return { timestamp: earliestLedgerTimestamp, status: 'conservative' }
+  }
+}
+
+function combineMerges(
+  cached: TLedgerSixStreams,
+  primary: TLedgerMergeResult,
+  repair: TLedgerMergeResult | null
+): {
+  readonly streams: TLedgerSixStreams
+  readonly stats: Readonly<Record<TLedgerStream, TLedgerStreamMergeStats>>
+} {
+  if (!repair) {
+    return { streams: primary.streams, stats: primary.stats }
+  }
+  return {
+    streams: repair.streams,
+    stats: Object.fromEntries(
+      LEDGER_STREAMS.map((stream) => [
+        stream,
+        {
+          cached: cached[stream].length,
+          fetched: primary.stats[stream].fetched + repair.stats[stream].fetched,
+          added: primary.stats[stream].added + repair.stats[stream].added,
+          replaced: primary.stats[stream].replaced + repair.stats[stream].replaced,
+          deleted: primary.stats[stream].deleted + repair.stats[stream].deleted,
+          total: repair.stats[stream].total
+        }
+      ])
+    ) as Record<TLedgerStream, TLedgerStreamMergeStats>
+  }
 }
 
 async function assertLockRenewed(
@@ -292,6 +524,11 @@ function createFreshSyncResult(ledger: TWalletLedgerState, startedAt: number): T
     events: sumEventStats(streams),
     streams,
     envio: { pages: 0, rows: 0, requests: 0, strategy: 'none' },
+    transition: {
+      previousEventRevision: ledger.eventRevision,
+      previousAppliedInvalidationSequence: ledger.appliedInvalidationSequence,
+      dirtyFromTimestamp: null
+    },
     durationMs: getDurationMs(startedAt)
   }
 }
@@ -302,7 +539,7 @@ function getSyncOutcome(args: {
   readonly coverage: readonly TWalletLedgerCoverageV1[]
   readonly streamsChanged: boolean
 }): 'unchanged' | 'updated' {
-  if (args.syncType !== 'warm' || !args.current || args.streamsChanged) {
+  if ((args.syncType !== 'warm' && args.syncType !== 'reconcile') || !args.current || args.streamsChanged) {
     return 'updated'
   }
   const coverageChanged = args.current.coverage.some(
@@ -325,7 +562,24 @@ async function performWalletLedgerSync(args: {
     throw new WalletLedgerError('decode_failed', 500)
   }
   const current = args.currentRead.status === 'ready' ? args.currentRead.ledger : null
-  if (current && isFreshCompatibleLedger(current, args.nowMs, args.forceRebuild)) {
+  const getInvalidationDurationMs = startHoldingsDebugTimer()
+  const invalidations = await readPendingWalletLedgerInvalidations({
+    redis: args.redis,
+    appliedSequence: current?.appliedInvalidationSequence ?? 0
+  })
+  debugLog('wallet-ledger-sync', 'read pending wallet ledger invalidations', {
+    durationMs: getInvalidationDurationMs(),
+    status: invalidations.status,
+    appliedSequence: current?.appliedInvalidationSequence ?? 0,
+    headSequence: invalidations.headSequence,
+    pending: invalidations.status === 'ready' ? invalidations.records.length : null
+  })
+  if (
+    current &&
+    invalidations.status === 'ready' &&
+    invalidations.records.length === 0 &&
+    isFreshCompatibleLedger(current, args.nowMs, args.forceRebuild, invalidations.headSequence)
+  ) {
     debugLog('wallet-ledger-sync', 'used fresh wallet ledger after lock acquisition', {
       records: getRecordCount(current.streams),
       encodedBytes: current.encodedBytes
@@ -349,7 +603,8 @@ async function performWalletLedgerSync(args: {
     current,
     sourceFingerprint,
     metadata,
-    forceRebuild: args.forceRebuild
+    forceRebuild: args.forceRebuild || invalidations.status === 'gap',
+    nowMs: args.nowMs
   })
   const lowerBlockByChain = getLowerBlocks({ metadata, current, syncType })
   const strategy = syncType === 'warm' ? 'warm-batched' : 'faceted-batched'
@@ -377,6 +632,29 @@ async function performWalletLedgerSync(args: {
     batchedRequests: fetched.stats.batchedRequests,
     continuationRequests: fetched.stats.continuationRequests
   })
+  const invalidationWindows = invalidations.status === 'ready' ? getInvalidationWindows(invalidations, metadata) : []
+  const targetedInvalidationWindows = syncType === 'warm' ? invalidationWindows : []
+  const getInvalidationSourceDurationMs = startHoldingsDebugTimer()
+  const invalidationFetched =
+    targetedInvalidationWindows.length > 0
+      ? await fetchEnvioLedgerVaultStreams({
+          address: args.address,
+          windows: targetedInvalidationWindows,
+          onPage: heartbeat
+        }).catch((error) => {
+          if (error instanceof WalletLedgerError) {
+            throw error
+          }
+          throw new WalletLedgerError('upstream_failed', 502)
+        })
+      : null
+  debugLog('wallet-ledger-sync', 'fetched targeted invalidated vault events', {
+    durationMs: getInvalidationSourceDurationMs(),
+    chains: targetedInvalidationWindows.length,
+    vaults: targetedInvalidationWindows.reduce((total, window) => total + (window.vaultAddresses?.length ?? 0), 0),
+    requests: invalidationFetched?.stats.totalRequests ?? 0,
+    rows: invalidationFetched?.stats.totalRows ?? 0
+  })
   const getRevalidationDurationMs = startHoldingsDebugTimer()
   await rereadEnvioLedgerMetadata(metadata).catch(() => {
     throw new WalletLedgerError('upstream_failed', 502)
@@ -387,11 +665,41 @@ async function performWalletLedgerSync(args: {
   })
 
   const getMergeDurationMs = startHoldingsDebugTimer()
-  const merge = mergeLedgerStreams({
-    cached: syncType === 'warm' && current ? current.streams : emptyLedgerStreams(),
+  const cachedStreams =
+    (syncType === 'warm' || syncType === 'reconcile') && current ? current.streams : emptyLedgerStreams()
+  const primaryMerge = mergeLedgerStreams({
+    cached: cachedStreams,
     fetched: fetched.streams,
     windows: getAuthoritativeWindows(fetched.windows)
   })
+  const invalidationDirtyFromTimestamp = minTimestamp(
+    getScopedEarliestTimestamp(primaryMerge.streams, invalidationWindows),
+    invalidationFetched ? getScopedEarliestTimestamp(invalidationFetched.streams, invalidationWindows) : null
+  )
+  const repairMerge = invalidationFetched
+    ? mergeLedgerStreams({
+        cached: primaryMerge.streams,
+        fetched: invalidationFetched.streams,
+        windows: getVaultAuthoritativeWindows(targetedInvalidationWindows)
+      })
+    : null
+  const merge = combineMerges(cachedStreams, primaryMerge, repairMerge)
+  const getDependencyInvalidationDurationMs = startHoldingsDebugTimer()
+  const nestedDependencyDirty =
+    (syncType === 'warm' || syncType === 'reconcile') && invalidations.status === 'ready'
+      ? await getNestedDependencyDirtyTimestamp({ streams: merge.streams, invalidations, heartbeat })
+      : { timestamp: null, status: 'unaffected' as const }
+  debugLog('wallet-ledger-sync', 'resolved nested vault invalidation dependencies', {
+    durationMs: getDependencyInvalidationDurationMs(),
+    status: nestedDependencyDirty.status,
+    dirtyFromTimestamp: nestedDependencyDirty.timestamp
+  })
+  const dirtyFromTimestamp = minTimestamp(
+    primaryMerge.earliestChangedTimestamp,
+    repairMerge?.earliestChangedTimestamp ?? null,
+    invalidationDirtyFromTimestamp,
+    nestedDependencyDirty.timestamp
+  )
   const streamsChanged = LEDGER_STREAMS.some((stream) => {
     const stats = merge.stats[stream]
     return stats.added > 0 || stats.replaced > 0 || stats.deleted > 0
@@ -406,7 +714,9 @@ async function performWalletLedgerSync(args: {
     totalEvents: LEDGER_STREAMS.reduce((total, stream) => total + merge.stats[stream].total, 0)
   })
   const coverage = getCoverage(metadata)
-  const sourceGeneration = current ? current.sourceGeneration + (syncType === 'source-reset' ? 1 : 0) : 1
+  const sourceGeneration = current
+    ? current.sourceGeneration + (syncType === 'source-reset' || syncType === 'forced-reset' ? 1 : 0)
+    : 1
   const getEncodeDurationMs = startHoldingsDebugTimer()
   const encoded = encodeWalletLedgerPayload({
     schemaVersion: WALLET_LEDGER_SCHEMA_VERSION,
@@ -414,10 +724,12 @@ async function performWalletLedgerSync(args: {
     walletHash: args.walletHash,
     sourceFingerprint,
     sourceGeneration,
+    appliedInvalidationSequence: invalidations.headSequence,
     coverage,
     streams: merge.streams,
     createdAtMs: current?.createdAtMs ?? args.nowMs,
-    updatedAtMs: args.nowMs
+    updatedAtMs: args.nowMs,
+    reconciledAtMs: syncType === 'warm' && current ? current.reconciledAtMs : args.nowMs
   })
   debugLog('wallet-ledger-sync', 'encoded complete wallet ledger value', {
     durationMs: getEncodeDurationMs(),
@@ -425,17 +737,29 @@ async function performWalletLedgerSync(args: {
     encodedBytes: encoded.ledger.encodedBytes,
     decodedBytes: encoded.ledger.decodedBytes
   })
+  const resetDailyUsdCaches = syncType === 'bootstrap' || syncType === 'forced-reset' || syncType === 'source-reset'
+  const dailyUsdCacheTransitions = createWalletLedgerDailyUsdCacheCommitTransitions({
+    previous: current,
+    current: encoded.ledger,
+    dirtyFromDate: dirtyFromTimestamp === null ? null : timestampToDateString(dirtyFromTimestamp),
+    reset: resetDailyUsdCaches
+  })
+  await assertLockRenewed(args.redis, args.walletHash, args.lock)
   const getCommitDurationMs = startHoldingsDebugTimer()
   const commit = await commitStoredWalletLedger({
     redis: args.redis,
     walletHash: args.walletHash,
     lock: args.lock,
     value: encoded.value,
+    cacheTransitions: dailyUsdCacheTransitions,
     ...(getRecordCount(encoded.ledger.streams) === 0 ? { ttlMs: WALLET_LEDGER_EMPTY_TTL_MS } : {})
   })
   debugLog('wallet-ledger-sync', 'committed complete wallet ledger value', {
     durationMs: getCommitDurationMs(),
-    status: commit.status
+    status: commit.status,
+    appliedInvalidationSequence: invalidations.headSequence,
+    dirtyFromTimestamp,
+    dailyUsdCaches: dailyUsdCacheTransitions.length
   })
   if (commit.status !== 'ok') {
     throw new WalletLedgerError('stale_lock', 409)
@@ -447,7 +771,17 @@ async function performWalletLedgerSync(args: {
     ledger: encoded.ledger,
     events: sumEventStats(merge.stats),
     streams: merge.stats,
-    envio: getEnvioStats(fetched.stats),
+    envio: {
+      ...getEnvioStats(fetched.stats),
+      pages: fetched.stats.totalPages + (invalidationFetched?.stats.totalPages ?? 0),
+      rows: fetched.stats.totalRows + (invalidationFetched?.stats.totalRows ?? 0),
+      requests: fetched.stats.totalRequests + (invalidationFetched?.stats.totalRequests ?? 0)
+    },
+    transition: {
+      previousEventRevision: current?.eventRevision ?? null,
+      previousAppliedInvalidationSequence: current?.appliedInvalidationSequence ?? null,
+      dirtyFromTimestamp
+    },
     durationMs: getDurationMs(args.startedAt)
   }
 }
@@ -491,7 +825,10 @@ async function runWithSynchronizedWalletLedger<TConsumed>(
   const walletHash = hashLedgerWalletAddress(args.address)
   const redis = getRedisClient()
   const getInitialReadDurationMs = startHoldingsDebugTimer()
-  const preliminary = await readStoredWalletLedger({ redis, walletHash }).catch((error) => {
+  const [preliminary, invalidationHead] = await Promise.all([
+    readStoredWalletLedger({ redis, walletHash }),
+    readWalletLedgerInvalidationHead({ redis })
+  ]).catch((error) => {
     const normalized = normalizeWalletLedgerError(error)
     debugLog('wallet-ledger-sync', 'wallet ledger initial read failed', {
       durationMs: getInitialReadDurationMs(),
@@ -505,7 +842,15 @@ async function runWithSynchronizedWalletLedger<TConsumed>(
     records: preliminary.status === 'ready' ? getRecordCount(preliminary.ledger.streams) : undefined,
     encodedBytes: preliminary.status === 'ready' ? preliminary.ledger.encodedBytes : undefined
   })
-  if (preliminary.status === 'ready' && isFreshCompatibleLedger(preliminary.ledger, nowMs, forceRebuild)) {
+  debugLog('wallet-ledger-sync', 'read wallet ledger invalidation head', {
+    durationMs: getInitialReadDurationMs(),
+    appliedSequence: preliminary.status === 'ready' ? preliminary.ledger.appliedInvalidationSequence : undefined,
+    headSequence: invalidationHead
+  })
+  if (
+    preliminary.status === 'ready' &&
+    isFreshCompatibleLedger(preliminary.ledger, nowMs, forceRebuild, invalidationHead)
+  ) {
     const sync = createFreshSyncResult(preliminary.ledger, startedAt)
     debugLog('wallet-ledger-sync', 'used five-minute wallet ledger freshness fast path', {
       records: sync.events.total,

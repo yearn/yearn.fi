@@ -439,13 +439,13 @@ Non-empty settled responses are cached in Redis for up to 24 hours and invalidat
 
 ### `POST /api/admin/invalidate-cache`
 
-Marks vaults as invalidated so affected user daily totals are lazily cleared and recomputed on the next cached history request. Requires `x-admin-secret: $ADMIN_SECRET` and DB caching.
+Marks vaults as invalidated so affected user daily totals are lazily cleared and recomputed on the next cached history request. It also appends a global wallet-ledger invalidation record, allowing an existing ledger to discover events for a vault that Envio indexed retroactively. `fromBlock` is optional and defaults to `0`; supplying the earliest backfilled block reduces the targeted query range. Publish the invalidation only after the Envio backfill is visible. Redis caching is required. `x-admin-secret: $ADMIN_SECRET` is required outside loopback development.
 
 ```bash
 curl -X POST \
   -H "content-type: application/json" \
   -H "x-admin-secret: $ADMIN_SECRET" \
-  -d '{"vaults":[{"address":"0x...","chainId":1}]}' \
+  -d '{"vaults":[{"address":"0x...","chainId":1,"fromBlock":12345678}]}' \
   "http://localhost:3000/api/admin/invalidate-cache"
 ```
 
@@ -455,6 +455,7 @@ Response:
 {
   "success": true,
   "invalidated": 1,
+  "ledgerInvalidationSequence": 42,
   "vaults": ["1:0x..."],
   "timestamp": "2026-05-07T00:00:00.000Z"
 }
@@ -579,6 +580,8 @@ Warm synchronization rewinds each chain by `HOLDINGS_LEDGER_OVERLAP_BLOCKS`; a c
 
 `HOLDINGS_LEDGER_SOURCE_REVISION` is a non-secret operator marker included in the hashed source fingerprint. Bump it after an in-place Envio redeploy, reindex, or repair whose URL and configured chain bounds did not change; the next sync will detect a new source generation and rebuild from the configured start blocks. It defaults to `default` and accepts 1–96 ASCII letters, digits, `.`, `_`, or `-`. Do not place credentials, source URLs, or other secrets in it.
 
+`HOLDINGS_LEDGER_VALUATION_REVISION` is a separate non-secret marker for derived USD totals. Bump it after a historical PPS, token-price, or vault-metadata correction should invalidate cached valuations without replaying wallet events. It has the same default and validation rules as the source revision. A mismatch is a cache miss, and the next successful calculation replaces the old totals under the new revision.
+
 ### Simplified Wallet Ledger (Active Portfolio Path)
 
 The portfolio client now uses one public, wallet-scoped request:
@@ -587,26 +590,30 @@ The portfolio client now uses one public, wallet-scoped request:
 GET /api/holdings/ledger/portfolio?address=0x...&version=all&denomination=usd&timeframe=1y
 ```
 
-The route refreshes or reads one wallet ledger, creates one in-memory event source, then calculates balance history, protocol-return history, and per-vault growth concurrently. Historical PPS needed for transfer valuation is fetched into request memory and never persisted. No snapshot ID is created or sent back to the client. Normal reads do not require an admin secret; `forceRebuild=1` remains admin-protected outside loopback development. Production reads require `HOLDINGS_LEDGER_MODE=read-write`, while local development can exercise the path in `shadow` mode. Responses are private and `no-store`.
+The route refreshes or reads one wallet ledger, creates one in-memory event source, and starts one request-scoped settled context for the wallet events, position timeline, and vault metadata. Balance history, protocol-return history, and per-vault growth then calculate concurrently from that same prepared context. A request-scoped valuation loader sits behind all three calculations: concurrent PPS requests for the same vault share one Kong timeline fetch, while token/day price requests are coalesced into growth, protocol-return, and balance priority lanes. Small promoted overlaps remain bounded range fillers in the balance provider request so Yearn Prices can keep using contiguous range queries; a larger overlap is split into contiguous runs and a sparse remainder rather than duplicating an unbounded historical range. Each calculation receives only its requested subset. Higher-priority work normally runs independently; once the bounded duplication budget is exhausted, overlapping points reuse existing provider work instead. A total historical-price provider failure evicts its request-local entries for retry. Balance propagation remains strict, while protocol return deliberately converts provider failures into an explicitly incomplete best-effort result; the portfolio chart labels incomplete balance or return data as estimated. Partial provider results retain failure metadata. The loader retains results only until the HTTP request completes and never persists PPS or token prices. No snapshot ID is created or sent back to the client. Normal reads do not require an admin secret; `forceRebuild=1` remains admin-protected outside loopback development. Production reads require `HOLDINGS_LEDGER_MODE=read-write`, while local development can exercise the path in `shadow` mode. Responses are private and `no-store`.
 
-Each wallet has one durable Redis value at `holdings:wallet-ledger:v1:{walletHash}`. An optional `HOLDINGS_LEDGER_KEY_NAMESPACE` appends `:namespace:<namespace>`. The only companion key is the temporary `:lock`, which expires automatically and is not ledger data. A non-empty durable value has no TTL; a zero-event negative-cache value expires after 24 hours so arbitrary empty-address lookups cannot consume permanent storage. The value contains one Brotli-compressed, checksummed payload with:
+Each wallet has one durable Redis value at `holdings:wallet-ledger:v3:{walletHash}`. An optional `HOLDINGS_LEDGER_KEY_NAMESPACE` appends `:namespace:<namespace>`. Its temporary `:lock` expires automatically. A non-empty durable value has no TTL; a zero-event negative-cache value expires after 24 hours so arbitrary empty-address lookups cannot consume permanent storage. The value contains one Brotli-compressed, checksummed payload with:
 
 - the calculation version and Envio source fingerprint;
+- the last global vault-invalidation sequence checked for this wallet;
 - per-chain `startBlock`, optional `endBlock`, and `completeThroughBlock` coverage;
 - the six canonical deposit, withdrawal, and directional transfer streams;
-- creation/update timestamps and source generation.
+- creation/update/last-full-reconciliation timestamps and source generation.
 
 `completeThroughBlock` is the important cursor. It records how far Envio was completely read on each chain even when the wallet had no event there. This prevents an inactive wallet from repeatedly scanning months with no events and distinguishes “no event occurred” from “this range has not been checked.”
 
 Refresh behavior is intentionally small:
 
-1. A value updated less than five minutes ago is returned without contacting Envio.
+1. Every refresh reads the small global invalidation-log head. A value updated less than five minutes ago is returned without contacting Envio only when its applied sequence matches that head.
 2. A cold wallet reads Envio metadata, runs presence facets, and downloads full event pages only for chains with matching events.
 3. A warm wallet starts each chain at `completeThroughBlock - HOLDINGS_LEDGER_OVERLAP_BLOCKS`, fetches the six first pages in batched chain requests, and replaces that overlap window authoritatively. This picks up new events plus recent corrections or deletions.
-4. Coverage advances to the metadata block used for that fetch, including for zero-event chains. The updated payload replaces the previous Redis value in one lock-checked atomic write.
-5. If another worker owns the lock, an existing value is served as `stale`; a cold wallet receives `202` with `Retry-After: 2`. Upstream or Redis failures never overwrite the previous good value.
+4. Pending invalidations are grouped by chain and fetched with one wallet-plus-vault batched GraphQL request per affected chain. The merge is authoritative only for those vaults, so unrelated vault rows in the same block range remain intact. Empty results still advance the wallet's applied sequence.
+5. Coverage advances to the metadata block used for that fetch, including for zero-event chains. The updated payload and applied sequence replace the previous Redis value in one lock-checked atomic write.
+6. If another worker owns the lock, an existing value is served as `stale`; a cold wallet receives `202` with `Retry-After: 2`. Upstream or Redis failures never overwrite the previous good value or advance its invalidation cursor.
 
-Corrections older than the configured overlap are intentionally outside the warm path. Bump `HOLDINGS_LEDGER_SOURCE_REVISION` or use the protected `forceRebuild=1` request when a full replay is required.
+When `HOLDINGS_LEDGER_RECONCILE_INTERVAL_SECONDS` expires, the next refresh performs a complete faceted read from each configured chain start instead of the overlap read. An unchanged reconciliation advances only `reconciledAtMs` and preserves cached USD rows; historical event additions, corrections, or deletions remove totals from the earliest changed UTC date onward.
+
+Corrections older than the configured overlap are intentionally outside the ordinary warm path. Publish `/api/admin/invalidate-cache` with the affected vault and earliest block for a targeted repair. Bump `HOLDINGS_LEDGER_SOURCE_REVISION` or use the protected `forceRebuild=1` request when the affected range is unknown and a full replay is required.
 
 The client caches each exact wallet/version/denomination/timeframe response for 25 minutes and refreshes stale data on focus. If the combined request has no usable response and fails terminally, the existing legacy balance and protocol-return requests remain the fallback. A cached combined response stays visible during a failed background refresh.
 
@@ -643,7 +650,9 @@ Append `debug=1` to any sync, snapshot, or derived ledger route to print request
 ### Cache Layers
 
 1. Upstash Redis:
-   - `holdings:wallet-ledger:v1:{addressHash}[:namespace:<namespace>]`: the active one-value wallet event ledger; its temporary synchronization lock uses the same key plus `:lock`.
+   - `holdings:wallet-ledger:v3:{addressHash}[:namespace:<namespace>]`: the active one-value wallet event ledger; its temporary synchronization lock uses the same key plus `:lock`.
+   - `holdings:wallet-ledger-invalidations:v1[:namespace:<namespace>]`: append-only newly indexed-vault/backfill records; the Redis list position is the global sequence.
+   - `holdings:wallet-ledger:v3:{addressHash}[:namespace:<namespace>]:daily-usd:v1:<version>`: ledger-fenced daily USD totals.
    - `holdings:totals:<addressHash>:<version>`: daily USD totals per hashed user address, vault version, and date. Hash fields are `YYYY-MM-DD`; values include `usdValue` and `updatedAt`.
    - `holdings:protocol-return-history:v3:<addressHash>:<version>:<timeframe>:<vaultScope>`: successful non-empty protocol-return history snapshots. The payload includes its settled date and relevant vault identifiers for invalidation checks.
    - `holdings:vault-invalidated:<chainId>:<vaultAddress>`: per-vault invalidation timestamps for lazy cache clearing.
@@ -669,7 +678,13 @@ Cache behavior:
 - Vault-filtered history skips aggregate daily total cache because the cache is user/version scoped, not vault-filter scoped.
 - Cache staleness is checked against `holdings:vault-invalidated:<chainId>:<vaultAddress>` only after the request has enough cached daily totals to potentially serve from cache.
 - If any relevant vault was invalidated after the oldest cached row was written, the user's cached totals for that version are cleared and recomputed.
-- Recalculated totals are not cached when any token price batch failed, because partial price data can undercount chart totals.
+- Every balance point exposes `isComplete`, and the response-level `isComplete` is true only when every requested date is complete. A date with a non-zero position but missing vault metadata, a valid positive PPS, or a valid positive token price is returned as a best-effort provisional point instead of failing the whole request. The legacy aggregate cache writes only complete dates, so unresolved legacy dates are retried on the next request.
+
+### Wallet-Ledger Daily USD Totals
+
+The active combined portfolio route keeps a separate daily-USD hash at `holdings:wallet-ledger:v3:{walletHash}[:namespace:<namespace>]:daily-usd:v1:<version>`. Vault versions (`all`, `v2`, and `v3`) use separate hashes, while `1y` and `all` share the same `YYYY-MM-DD` fields so an `all` request fetches PPS and prices only for dates that a prior `1y` request did not fill. Reads request `__meta` plus exactly the UTC date fields in the requested range instead of downloading the whole hash. The cache persists USD totals only; ETH history divides those USD points by historical ETH prices at request time.
+
+Each hash has exact metadata containing its cache schema/calculation versions, valuation revision, ledger source generation, the wallet's events-only revision, and the applied indexer-invalidation sequence. A metadata mismatch is a miss. Forced and source resets advance the durable source generation; bumping `HOLDINGS_LEDGER_VALUATION_REVISION` invalidates only these derived totals. Writes atomically verify that the durable wallet ledger still has the caller's full ledger revision, preventing an older overlapping calculation from replacing newer totals. When synchronization changes historical events, the ledger value and all existing `all`/`v2`/`v3` cache transitions commit in the same wallet-scoped Redis operation: dates before the earliest affected UTC date survive, while that date and its tail are removed. Resets or incompatible metadata discard the affected hash. Complete cache coverage returns before event loading, metadata, PPS, or token-price work begins. Completeness is evaluated per date from the non-zero positions on that date. The wallet cache stores both complete and provisional totals. A fresh provisional row (`isComplete: false`) may satisfy a request for up to one hour; at or after that boundary it is omitted from the read so only that date is recalculated. A later complete calculation overwrites it and follows the normal 30-day hash lifetime. Mixed complete and provisional ranges remain usable and expose their state through per-point and response-level `isComplete` fields.
 
 ### Protocol Return History Snapshots
 
@@ -694,6 +709,9 @@ No schema migration is required. Redis keys are created lazily:
 
 | Key | Type | TTL | Purpose |
 |-----|------|-----|---------|
+| `holdings:wallet-ledger:v3:{addressHash}[:namespace:<namespace>]` | Opaque string | None, or 24 hours when empty | Active wallet event ledger and applied invalidation cursor. |
+| `holdings:wallet-ledger-invalidations:v1[:namespace:<namespace>]` | List | None | Sequenced vault backfills checked lazily by active wallets. |
+| `holdings:wallet-ledger:v3:{addressHash}[:namespace:<namespace>]:daily-usd:v1:<version>` | Hash | 30 days from write | Revision-fenced ledger daily USD totals. |
 | `holdings:totals:<addressHash>:<version>` | Hash | 30 days from write | Daily holdings chart totals. |
 | `holdings:protocol-return-history:v3:<addressHash>:<version>:<timeframe>:<vaultScope>` | String JSON | 24 hours | Atomic protocol-return history response snapshot. |
 | `holdings:vault-invalidated:<chainId>:<vaultAddress>` | String timestamp | None | Lazy invalidation marker for totals cache. |

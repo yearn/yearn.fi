@@ -146,4 +146,76 @@ describe('settled holdings event sources', () => {
 
     expect(mocks.fetchPps).toHaveBeenCalledTimes(2)
   })
+
+  it('loads PPS through the request-scoped valuation loader when supplied', async () => {
+    const eventSource = createEventSource('ledger:shared-loader', EMPTY_EVENTS)
+    const { getSettledAddressScopedContext, getSettledVersionedPpsContext } = await import(
+      '@/server/lib/holdings/services/settledHoldingsContext'
+    )
+    const context = await getSettledAddressScopedContext({
+      userAddress: '0x1111111111111111111111111111111111111111',
+      fetchType: 'seq',
+      paginationMode: 'paged',
+      eventSource
+    })
+    const vaultIdentifiers = [{ chainId: 1, vaultAddress: '0x2222222222222222222222222222222222222222' }]
+    const fetchVaultPps = vi.fn().mockResolvedValue(new Map())
+
+    await getSettledVersionedPpsContext({
+      userAddress: '0x1111111111111111111111111111111111111111',
+      version: 'all',
+      fetchType: 'seq',
+      paginationMode: 'paged',
+      vaultIdentifiers,
+      context,
+      valuationLoader: {
+        key: 'request-loader',
+        fetchVaultPps,
+        fetchHistoricalPrices: vi.fn()
+      },
+      valuationConsumer: 'protocol-return'
+    })
+
+    expect(fetchVaultPps).toHaveBeenCalledWith(vaultIdentifiers, { consumer: 'protocol-return' })
+    expect(mocks.fetchPps).not.toHaveBeenCalled()
+  })
+
+  it('separates versioned PPS in-flight work by valuation consumer', async () => {
+    const eventSource = createEventSource('ledger:consumer-priority', EMPTY_EVENTS)
+    const { getSettledAddressScopedContext, getSettledVersionedPpsContext } = await import(
+      '@/server/lib/holdings/services/settledHoldingsContext'
+    )
+    const context = await getSettledAddressScopedContext({
+      userAddress: '0x1111111111111111111111111111111111111111',
+      fetchType: 'seq',
+      paginationMode: 'paged',
+      eventSource
+    })
+    const vaultIdentifiers = [{ chainId: 1, vaultAddress: '0x2222222222222222222222222222222222222222' }]
+    const fetchVaultPps = vi.fn().mockResolvedValue(new Map())
+    const valuationLoader = {
+      key: 'consumer-loader',
+      fetchVaultPps,
+      fetchHistoricalPrices: vi.fn()
+    }
+
+    await Promise.all(
+      (['balance', 'protocol-return'] as const).map((valuationConsumer) =>
+        getSettledVersionedPpsContext({
+          userAddress: '0x1111111111111111111111111111111111111111',
+          version: 'all',
+          fetchType: 'seq',
+          paginationMode: 'paged',
+          vaultIdentifiers,
+          context,
+          valuationLoader,
+          valuationConsumer
+        })
+      )
+    )
+
+    expect(fetchVaultPps).toHaveBeenCalledTimes(2)
+    expect(fetchVaultPps).toHaveBeenNthCalledWith(1, vaultIdentifiers, { consumer: 'balance' })
+    expect(fetchVaultPps).toHaveBeenNthCalledWith(2, vaultIdentifiers, { consumer: 'protocol-return' })
+  })
 })

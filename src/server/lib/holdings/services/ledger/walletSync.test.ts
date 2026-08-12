@@ -3,15 +3,21 @@ import { createHoldingsDebugContext, withHoldingsDebugContext } from '@/server/l
 import type { TEnvioLedgerFetchStrategy, TEnvioLedgerMetadata } from '@/server/lib/holdings/services/ledger/envio'
 import type { TLedgerSixStreams, TLedgerV3DepositSourceEvent } from '@/server/lib/holdings/services/ledger/types'
 import { decodeWalletLedgerValue } from '@/server/lib/holdings/services/ledger/walletCodec'
+import type { TWalletLedgerInvalidationRecord } from '@/server/lib/holdings/services/ledger/walletInvalidation'
 import { synchronizeWalletLedger, withSynchronizedWalletLedger } from '@/server/lib/holdings/services/ledger/walletSync'
 import {
   type TWalletLedgerState,
   WALLET_LEDGER_EMPTY_TTL_MS,
   WALLET_LEDGER_FRESHNESS_MS
 } from '@/server/lib/holdings/services/ledger/walletTypes'
+import type { VaultMetadata } from '@/server/lib/holdings/types'
 
 const USER_ADDRESS = '0x1111111111111111111111111111111111111111'
 const VAULT_ADDRESS = '0x2222222222222222222222222222222222222222'
+const INTERMEDIATE_VAULT_ADDRESS = '0x3333333333333333333333333333333333333333'
+const NESTED_VAULT_ADDRESS = '0x4444444444444444444444444444444444444444'
+const BASE_TOKEN_ADDRESS = '0x5555555555555555555555555555555555555555'
+const UNRELATED_VAULT_ADDRESS = '0x6666666666666666666666666666666666666666'
 const TRANSACTION_HASH = `0x${'a'.repeat(64)}`
 const STARTED_AT_MS = 2_000_000
 
@@ -22,6 +28,8 @@ const testState = vi.hoisted(() => ({
   fetchedStreams: null as TLedgerSixStreams | null,
   lowerBlockByChain: null as Readonly<Record<number, number>> | null,
   strategy: null as TEnvioLedgerFetchStrategy | null,
+  invalidationRecords: [] as TWalletLedgerInvalidationRecord[],
+  invalidationFetchedStreams: null as TLedgerSixStreams | null,
   commitStatus: 'ok' as 'ok' | 'lock_lost'
 }))
 
@@ -33,16 +41,24 @@ const mocks = vi.hoisted(() => ({
   commit: vi.fn(),
   fetchMetadata: vi.fn(),
   fetchSource: vi.fn(),
-  rereadMetadata: vi.fn()
+  fetchVaultSource: vi.fn(),
+  rereadMetadata: vi.fn(),
+  readInvalidationHead: vi.fn(),
+  readPendingInvalidations: vi.fn(),
+  fetchVaultMetadata: vi.fn()
 }))
 
-vi.mock('@/server/lib/holdings/services/ledger/walletStore', () => ({
-  acquireWalletLedgerLock: mocks.acquire,
-  renewWalletLedgerLock: mocks.renew,
-  releaseWalletLedgerLock: mocks.release,
-  readStoredWalletLedger: mocks.read,
-  commitStoredWalletLedger: mocks.commit
-}))
+vi.mock('@/server/lib/holdings/services/ledger/walletStore', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@/server/lib/holdings/services/ledger/walletStore')>()
+  return {
+    ...original,
+    acquireWalletLedgerLock: mocks.acquire,
+    renewWalletLedgerLock: mocks.renew,
+    releaseWalletLedgerLock: mocks.release,
+    readStoredWalletLedger: mocks.read,
+    commitStoredWalletLedger: mocks.commit
+  }
+})
 
 vi.mock('@/server/lib/holdings/services/ledger/envio', async (importOriginal) => {
   const original = await importOriginal<typeof import('@/server/lib/holdings/services/ledger/envio')>()
@@ -50,7 +66,25 @@ vi.mock('@/server/lib/holdings/services/ledger/envio', async (importOriginal) =>
     ...original,
     fetchEnvioLedgerMetadata: mocks.fetchMetadata,
     fetchEnvioLedgerSource: mocks.fetchSource,
+    fetchEnvioLedgerVaultStreams: mocks.fetchVaultSource,
     rereadEnvioLedgerMetadata: mocks.rereadMetadata
+  }
+})
+
+vi.mock('@/server/lib/holdings/services/ledger/walletInvalidation', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@/server/lib/holdings/services/ledger/walletInvalidation')>()
+  return {
+    ...original,
+    readWalletLedgerInvalidationHead: mocks.readInvalidationHead,
+    readPendingWalletLedgerInvalidations: mocks.readPendingInvalidations
+  }
+})
+
+vi.mock('@/server/lib/holdings/services/vaults', async (importOriginal) => {
+  const original = await importOriginal<typeof import('@/server/lib/holdings/services/vaults')>()
+  return {
+    ...original,
+    fetchMultipleVaultsMetadata: mocks.fetchVaultMetadata
   }
 })
 
@@ -102,6 +136,40 @@ function createStreams(deposits: readonly TLedgerV3DepositSourceEvent[] = []): T
     transfersIn: [],
     transfersOut: []
   }
+}
+
+function createInvalidationRecord(fromBlock = 1, address = VAULT_ADDRESS): TWalletLedgerInvalidationRecord {
+  return {
+    schemaVersion: 1,
+    createdAtMs: STARTED_AT_MS + 1,
+    vaults: [{ chainId: 1, address, fromBlock }]
+  }
+}
+
+function createVaultMetadata(address: string, tokenAddress: string): VaultMetadata {
+  return {
+    address,
+    chainId: 1,
+    version: 'v3',
+    isHidden: false,
+    category: 'volatile',
+    token: { address: tokenAddress, symbol: 'TEST', decimals: 18 },
+    decimals: 18
+  }
+}
+
+function createVaultMetadataResult(
+  vaults: Array<{ readonly chainId: number; readonly vaultAddress: string }>,
+  hierarchy: ReadonlyMap<string, VaultMetadata> = new Map([
+    [VAULT_ADDRESS, createVaultMetadata(VAULT_ADDRESS, BASE_TOKEN_ADDRESS)]
+  ])
+): Map<string, VaultMetadata> {
+  return new Map(
+    vaults.flatMap(({ chainId, vaultAddress }) => {
+      const metadata = hierarchy.get(vaultAddress.toLowerCase())
+      return metadata ? [[`${chainId}:${vaultAddress.toLowerCase()}`, metadata] as const] : []
+    })
+  )
 }
 
 function createStats(strategy: TEnvioLedgerFetchStrategy, rows: number) {
@@ -160,6 +228,22 @@ function installMocks(): void {
     }
   )
   mocks.rereadMetadata.mockImplementation(() => Promise.resolve(createMetadata(testState.rereadProgressBlock)))
+  mocks.readInvalidationHead.mockImplementation(() => Promise.resolve(testState.invalidationRecords.length))
+  mocks.readPendingInvalidations.mockImplementation(({ appliedSequence }: { readonly appliedSequence: number }) =>
+    Promise.resolve({
+      status: 'ready',
+      headSequence: testState.invalidationRecords.length,
+      records: testState.invalidationRecords.slice(appliedSequence)
+    })
+  )
+  mocks.fetchVaultSource.mockImplementation(() => {
+    const streams = testState.invalidationFetchedStreams ?? createStreams()
+    return Promise.resolve({ streams, stats: createStats('warm-batched', streams.v3Deposits.length) })
+  })
+  mocks.fetchVaultMetadata.mockImplementation(
+    (vaults: Array<{ readonly chainId: number; readonly vaultAddress: string }>) =>
+      Promise.resolve(createVaultMetadataResult(vaults))
+  )
   mocks.commit.mockImplementation(({ value }: { readonly value: string }) => {
     if (testState.commitStatus === 'ok') {
       testState.stored = decodeWalletLedgerValue(value)
@@ -181,6 +265,8 @@ describe('one-value wallet ledger synchronization', () => {
     testState.fetchedStreams = createStreams([createDeposit(100)])
     testState.lowerBlockByChain = null
     testState.strategy = null
+    testState.invalidationRecords = []
+    testState.invalidationFetchedStreams = null
     testState.commitStatus = 'ok'
     installMocks()
   })
@@ -198,6 +284,14 @@ describe('one-value wallet ledger synchronization', () => {
     expect(testState.stored?.coverage).toEqual([
       { chainId: 1, startBlock: 1, endBlock: null, completeThroughBlock: 1_000 }
     ])
+    expect(testState.stored?.reconciledAtMs).toBe(STARTED_AT_MS)
+    expect(mocks.commit).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        cacheTransitions: expect.arrayContaining([
+          expect.objectContaining({ reset: true, dirtyFromDate: '1970-01-01' })
+        ])
+      })
+    )
     mocks.fetchMetadata.mockClear()
     mocks.fetchSource.mockClear()
 
@@ -229,7 +323,87 @@ describe('one-value wallet ledger synchronization', () => {
     expect(testState.stored?.streams.v3Deposits.map(({ id }) => id)).toEqual(['deposit-100'])
     expect(testState.stored?.coverage[0]?.completeThroughBlock).toBe(1_100)
     expect(testState.stored?.coverage[0]?.completeThroughBlock).not.toBe(1_200)
+    expect(testState.stored?.reconciledAtMs).toBe(STARTED_AT_MS)
     expect(warm.status === 'ready' && warm.events.fetched).toBe(0)
+  })
+
+  it('runs a full faceted reconciliation when the durable reconciliation interval expires', async () => {
+    vi.stubEnv('HOLDINGS_LEDGER_RECONCILE_INTERVAL_SECONDS', '10')
+    await synchronizeWalletLedger({ address: USER_ADDRESS, nowMs: STARTED_AT_MS })
+    const previousEventRevision = testState.stored?.eventRevision
+    testState.fetchedStreams = createStreams([createDeposit(100)])
+    mocks.fetchMetadata.mockClear()
+    mocks.fetchSource.mockClear()
+
+    const reconciled = await synchronizeWalletLedger({ address: USER_ADDRESS, nowMs: STARTED_AT_MS + 10_000 })
+
+    expect(reconciled).toMatchObject({
+      status: 'ready',
+      outcome: 'unchanged',
+      syncType: 'reconcile',
+      ledger: {
+        eventRevision: previousEventRevision,
+        reconciledAtMs: STARTED_AT_MS + 10_000,
+        sourceGeneration: 1
+      },
+      transition: { dirtyFromTimestamp: null }
+    })
+    expect(testState.lowerBlockByChain).toEqual({ 1: 1 })
+    expect(testState.strategy).toBe('faceted-batched')
+    expect(mocks.fetchMetadata).toHaveBeenCalledTimes(1)
+    expect(mocks.fetchSource).toHaveBeenCalledTimes(1)
+    expect(mocks.commit).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        cacheTransitions: expect.arrayContaining([expect.objectContaining({ reset: false, dirtyFromDate: null })])
+      })
+    )
+  })
+
+  it('dirties historical totals from the earliest event changed by reconciliation', async () => {
+    vi.stubEnv('HOLDINGS_LEDGER_RECONCILE_INTERVAL_SECONDS', '10')
+    await synchronizeWalletLedger({ address: USER_ADDRESS, nowMs: STARTED_AT_MS })
+    const backfilled = createDeposit(50)
+    testState.fetchedStreams = createStreams([backfilled, createDeposit(100)])
+
+    const reconciled = await synchronizeWalletLedger({ address: USER_ADDRESS, nowMs: STARTED_AT_MS + 10_000 })
+
+    expect(reconciled).toMatchObject({
+      status: 'ready',
+      syncType: 'reconcile',
+      transition: { dirtyFromTimestamp: backfilled.blockTimestamp }
+    })
+    expect(mocks.commit).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        cacheTransitions: expect.arrayContaining([
+          expect.objectContaining({ reset: false, dirtyFromDate: '1970-01-01' })
+        ])
+      })
+    )
+  })
+
+  it('dirties a directly invalidated vault when its full reconciliation is otherwise unchanged', async () => {
+    vi.stubEnv('HOLDINGS_LEDGER_RECONCILE_INTERVAL_SECONDS', '10')
+    await synchronizeWalletLedger({ address: USER_ADDRESS, nowMs: STARTED_AT_MS })
+    testState.invalidationRecords = [createInvalidationRecord()]
+    testState.fetchedStreams = createStreams([createDeposit(100)])
+    mocks.fetchVaultSource.mockClear()
+
+    const reconciled = await synchronizeWalletLedger({ address: USER_ADDRESS, nowMs: STARTED_AT_MS + 10_000 })
+
+    expect(reconciled).toMatchObject({
+      status: 'ready',
+      syncType: 'reconcile',
+      ledger: { appliedInvalidationSequence: 1 },
+      transition: { previousAppliedInvalidationSequence: 0, dirtyFromTimestamp: 1_000 }
+    })
+    expect(mocks.fetchVaultSource).not.toHaveBeenCalled()
+    expect(mocks.commit).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        cacheTransitions: expect.arrayContaining([
+          expect.objectContaining({ reset: false, dirtyFromDate: '1970-01-01' })
+        ])
+      })
+    )
   })
 
   it('bounds the lifetime of a cold wallet value with no events', async () => {
@@ -256,6 +430,224 @@ describe('one-value wallet ledger synchronization', () => {
 
     expect(warm.status === 'ready' && warm.events.deleted).toBe(1)
     expect(testState.stored?.streams.v3Deposits).toEqual([])
+  })
+
+  it('bypasses the five-minute fast path and repairs a newly indexed vault event', async () => {
+    testState.fetchedStreams = createStreams()
+    await synchronizeWalletLedger({ address: USER_ADDRESS, nowMs: STARTED_AT_MS })
+    testState.invalidationRecords = [createInvalidationRecord()]
+    testState.invalidationFetchedStreams = createStreams([createDeposit(100)])
+    mocks.fetchMetadata.mockClear()
+    mocks.fetchVaultSource.mockClear()
+
+    const repaired = await synchronizeWalletLedger({ address: USER_ADDRESS, nowMs: STARTED_AT_MS + 1 })
+
+    expect(repaired).toMatchObject({
+      status: 'ready',
+      syncType: 'warm',
+      ledger: { appliedInvalidationSequence: 1 },
+      transition: { previousAppliedInvalidationSequence: 0, dirtyFromTimestamp: 1_000 }
+    })
+    expect(mocks.fetchMetadata).toHaveBeenCalledTimes(1)
+    expect(mocks.fetchVaultSource).toHaveBeenCalledWith(
+      expect.objectContaining({
+        address: USER_ADDRESS,
+        windows: [
+          expect.objectContaining({
+            chainId: 1,
+            lowerBlock: 1,
+            upperBlock: 1_000,
+            vaultAddresses: [VAULT_ADDRESS]
+          })
+        ]
+      })
+    )
+    expect(repaired.status === 'ready' && repaired.ledger.streams.v3Deposits).toEqual([createDeposit(100)])
+    expect(mocks.commit).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        cacheTransitions: expect.arrayContaining([
+          expect.objectContaining({ reset: false, dirtyFromDate: '1970-01-01' })
+        ])
+      })
+    )
+  })
+
+  it('advances the invalidation sequence after a targeted query finds no wallet event', async () => {
+    testState.fetchedStreams = createStreams()
+    await synchronizeWalletLedger({ address: USER_ADDRESS, nowMs: STARTED_AT_MS })
+    testState.invalidationRecords = [createInvalidationRecord()]
+    testState.invalidationFetchedStreams = createStreams()
+    mocks.fetchVaultSource.mockClear()
+
+    const checked = await synchronizeWalletLedger({ address: USER_ADDRESS, nowMs: STARTED_AT_MS + 1 })
+
+    expect(checked).toMatchObject({
+      status: 'ready',
+      ledger: { appliedInvalidationSequence: 1 },
+      transition: { previousAppliedInvalidationSequence: 0, dirtyFromTimestamp: null }
+    })
+    expect(mocks.fetchVaultSource).toHaveBeenCalledTimes(1)
+  })
+
+  it('dirties an outer vault when a nested vault dependency is invalidated', async () => {
+    const existing = createDeposit(100)
+    testState.fetchedStreams = createStreams([existing])
+    await synchronizeWalletLedger({ address: USER_ADDRESS, nowMs: STARTED_AT_MS })
+    const hierarchy = new Map([
+      [VAULT_ADDRESS, createVaultMetadata(VAULT_ADDRESS, INTERMEDIATE_VAULT_ADDRESS)],
+      [INTERMEDIATE_VAULT_ADDRESS, createVaultMetadata(INTERMEDIATE_VAULT_ADDRESS, NESTED_VAULT_ADDRESS)],
+      [NESTED_VAULT_ADDRESS, createVaultMetadata(NESTED_VAULT_ADDRESS, BASE_TOKEN_ADDRESS)]
+    ])
+    mocks.fetchVaultMetadata.mockImplementation(
+      (vaults: Array<{ readonly chainId: number; readonly vaultAddress: string }>) =>
+        Promise.resolve(createVaultMetadataResult(vaults, hierarchy))
+    )
+    testState.invalidationRecords = [createInvalidationRecord(1, NESTED_VAULT_ADDRESS)]
+    testState.fetchedStreams = createStreams()
+    testState.invalidationFetchedStreams = createStreams()
+
+    const checked = await synchronizeWalletLedger({ address: USER_ADDRESS, nowMs: STARTED_AT_MS + 1 })
+
+    expect(checked).toMatchObject({
+      status: 'ready',
+      ledger: { appliedInvalidationSequence: 1 },
+      transition: { dirtyFromTimestamp: existing.blockTimestamp }
+    })
+    expect(mocks.commit).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        cacheTransitions: expect.arrayContaining([
+          expect.objectContaining({ reset: false, dirtyFromDate: '1970-01-01' })
+        ])
+      })
+    )
+  })
+
+  it('preserves historical totals when an unrelated vault is invalidated', async () => {
+    const existing = createDeposit(100)
+    testState.fetchedStreams = createStreams([existing])
+    await synchronizeWalletLedger({ address: USER_ADDRESS, nowMs: STARTED_AT_MS })
+    const hierarchy = new Map([
+      [VAULT_ADDRESS, createVaultMetadata(VAULT_ADDRESS, INTERMEDIATE_VAULT_ADDRESS)],
+      [INTERMEDIATE_VAULT_ADDRESS, createVaultMetadata(INTERMEDIATE_VAULT_ADDRESS, NESTED_VAULT_ADDRESS)],
+      [NESTED_VAULT_ADDRESS, createVaultMetadata(NESTED_VAULT_ADDRESS, BASE_TOKEN_ADDRESS)]
+    ])
+    mocks.fetchVaultMetadata.mockImplementation(
+      (vaults: Array<{ readonly chainId: number; readonly vaultAddress: string }>) =>
+        Promise.resolve(createVaultMetadataResult(vaults, hierarchy))
+    )
+    testState.invalidationRecords = [createInvalidationRecord(1, UNRELATED_VAULT_ADDRESS)]
+    testState.fetchedStreams = createStreams()
+    testState.invalidationFetchedStreams = createStreams()
+
+    const checked = await synchronizeWalletLedger({ address: USER_ADDRESS, nowMs: STARTED_AT_MS + 1 })
+
+    expect(checked).toMatchObject({
+      status: 'ready',
+      ledger: { appliedInvalidationSequence: 1 },
+      transition: { dirtyFromTimestamp: null }
+    })
+    expect(mocks.commit).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        cacheTransitions: expect.arrayContaining([expect.objectContaining({ reset: false, dirtyFromDate: null })])
+      })
+    )
+  })
+
+  it('conservatively dirties the whole wallet history when dependency metadata fails', async () => {
+    const existing = createDeposit(100)
+    testState.fetchedStreams = createStreams([existing])
+    await synchronizeWalletLedger({ address: USER_ADDRESS, nowMs: STARTED_AT_MS })
+    mocks.fetchVaultMetadata.mockRejectedValue(new Error('metadata unavailable'))
+    testState.invalidationRecords = [createInvalidationRecord(1, UNRELATED_VAULT_ADDRESS)]
+    testState.fetchedStreams = createStreams()
+    testState.invalidationFetchedStreams = createStreams()
+
+    const checked = await synchronizeWalletLedger({ address: USER_ADDRESS, nowMs: STARTED_AT_MS + 1 })
+
+    expect(checked).toMatchObject({
+      status: 'ready',
+      ledger: { appliedInvalidationSequence: 1 },
+      transition: { dirtyFromTimestamp: existing.blockTimestamp }
+    })
+    expect(mocks.commit).toHaveBeenLastCalledWith(
+      expect.objectContaining({
+        cacheTransitions: expect.arrayContaining([
+          expect.objectContaining({ reset: false, dirtyFromDate: '1970-01-01' })
+        ])
+      })
+    )
+  })
+
+  it('dirties from a deleted historical event even when the targeted source returns no row', async () => {
+    testState.fetchedStreams = createStreams([createDeposit(100)])
+    await synchronizeWalletLedger({ address: USER_ADDRESS, nowMs: STARTED_AT_MS })
+    testState.invalidationRecords = [createInvalidationRecord()]
+    testState.fetchedStreams = createStreams()
+    testState.invalidationFetchedStreams = createStreams()
+
+    const repaired = await synchronizeWalletLedger({ address: USER_ADDRESS, nowMs: STARTED_AT_MS + 1 })
+
+    expect(repaired).toMatchObject({
+      status: 'ready',
+      events: { deleted: 1 },
+      transition: { dirtyFromTimestamp: 1_000 }
+    })
+    expect(repaired.status === 'ready' && repaired.ledger.streams.v3Deposits).toEqual([])
+  })
+
+  it('dirties an invalidated vault from its earliest matching event when event bytes are unchanged', async () => {
+    const existing = createDeposit(100)
+    testState.fetchedStreams = createStreams([existing])
+    await synchronizeWalletLedger({ address: USER_ADDRESS, nowMs: STARTED_AT_MS })
+    const previousEventRevision = testState.stored?.eventRevision
+    testState.invalidationRecords = [createInvalidationRecord()]
+    testState.fetchedStreams = createStreams()
+    testState.invalidationFetchedStreams = createStreams([existing])
+
+    const checked = await synchronizeWalletLedger({ address: USER_ADDRESS, nowMs: STARTED_AT_MS + 1 })
+
+    expect(checked).toMatchObject({
+      status: 'ready',
+      ledger: { eventRevision: previousEventRevision },
+      transition: { previousEventRevision, dirtyFromTimestamp: existing.blockTimestamp }
+    })
+  })
+
+  it('falls back to a full rebuild when the invalidation log no longer covers the wallet cursor', async () => {
+    testState.fetchedStreams = createStreams()
+    await synchronizeWalletLedger({ address: USER_ADDRESS, nowMs: STARTED_AT_MS })
+    testState.stored = testState.stored ? { ...testState.stored, appliedInvalidationSequence: 1 } : null
+    mocks.readInvalidationHead.mockResolvedValue(0)
+    mocks.readPendingInvalidations.mockResolvedValueOnce({ status: 'gap', headSequence: 0 })
+
+    const rebuilt = await synchronizeWalletLedger({ address: USER_ADDRESS, nowMs: STARTED_AT_MS + 1 })
+
+    expect(rebuilt).toMatchObject({
+      status: 'ready',
+      syncType: 'forced-reset',
+      ledger: { appliedInvalidationSequence: 0, sourceGeneration: 2 }
+    })
+    expect(testState.lowerBlockByChain).toEqual({ 1: 1 })
+    expect(testState.strategy).toBe('faceted-batched')
+    expect(mocks.fetchVaultSource).not.toHaveBeenCalled()
+  })
+
+  it('advances the durable source generation for an explicit forced rebuild', async () => {
+    testState.fetchedStreams = createStreams([createDeposit(100)])
+    await synchronizeWalletLedger({ address: USER_ADDRESS, nowMs: STARTED_AT_MS })
+
+    const rebuilt = await synchronizeWalletLedger({
+      address: USER_ADDRESS,
+      forceRebuild: true,
+      nowMs: STARTED_AT_MS + 1
+    })
+
+    expect(rebuilt).toMatchObject({
+      status: 'ready',
+      syncType: 'forced-reset',
+      ledger: { sourceGeneration: 2 }
+    })
+    expect(testState.lowerBlockByChain).toEqual({ 1: 1 })
   })
 
   it('keeps the previous value when the upstream fetch fails', async () => {
@@ -289,6 +681,18 @@ describe('one-value wallet ledger synchronization', () => {
       })
     ).rejects.toMatchObject({ reasonCode: 'stale_lock', statusCode: 409 })
     expect(testState.stored).toBe(previous)
+  })
+
+  it('renews lock ownership immediately before the final commit', async () => {
+    mocks.renew.mockResolvedValueOnce({ status: 'lock_lost' })
+
+    await expect(synchronizeWalletLedger({ address: USER_ADDRESS, nowMs: STARTED_AT_MS })).rejects.toMatchObject({
+      reasonCode: 'stale_lock',
+      statusCode: 409
+    })
+    expect(mocks.renew).toHaveBeenCalledTimes(1)
+    expect(mocks.commit).not.toHaveBeenCalled()
+    expect(testState.stored).toBeNull()
   })
 
   it('keeps the previous value when Redis rejects the final write', async () => {
