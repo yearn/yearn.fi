@@ -69,6 +69,13 @@ export type VaultWidgetNotificationInput = {
 
 export type VaultWidgetNotificationStatus = 'error' | 'pending' | 'submitted' | 'success'
 
+export type VaultWidgetSubmittedNotificationInput = VaultWidgetNotificationInput & {
+  awaitingExecution?: boolean
+  ownerAddress: Address
+  status: Extract<VaultWidgetNotificationStatus, 'pending' | 'submitted'>
+  txHash: Hash
+}
+
 export type VaultWidgetNotificationUpdate = {
   awaitingExecution?: boolean
   id: VaultWidgetNotificationId
@@ -82,9 +89,14 @@ export type VaultWidgetTrackedNotification = {
   id: VaultWidgetNotificationId
   status: VaultWidgetNotificationStatus
   awaitingExecution?: boolean
+  bridgeProtocol?: VaultWidgetBridgeProtocol
+  bridgeRequestId?: Hash
   bridgeStatus?: VaultWidgetBridgeStatus
   bridgeTrackingState?: VaultWidgetBridgeTrackingState
   bridgeError?: string
+  sourceChainId?: number
+  sourceTxHash?: Hash
+  destinationChainId?: number
   destinationTxHash?: Hash
 }
 
@@ -136,6 +148,9 @@ export type VaultWidgetChainsRuntime = {
 
 export type VaultWidgetNotificationsRuntime = {
   create: (notification: VaultWidgetNotificationInput) => Promise<VaultWidgetNotificationId | undefined>
+  createSubmitted: (
+    notification: VaultWidgetSubmittedNotificationInput
+  ) => Promise<VaultWidgetNotificationId | undefined>
   update: (notification: VaultWidgetNotificationUpdate) => Promise<void>
   get: (id: VaultWidgetNotificationId | undefined) => VaultWidgetTrackedNotification | undefined
 }
@@ -241,6 +256,7 @@ export const DEFAULT_VAULT_WIDGET_RUNTIME: VaultWidgetRuntime = Object.freeze({
   }),
   notifications: Object.freeze({
     create: createNoopNotification,
+    createSubmitted: createNoopNotification,
     update: noopAsync,
     get: getNoNotification
   }),
@@ -337,6 +353,8 @@ export function createVaultWidgetRuntime(overrides: VaultWidgetRuntimeOverrides 
     },
     notifications: {
       create: overrides.notifications?.create ?? DEFAULT_VAULT_WIDGET_RUNTIME.notifications.create,
+      createSubmitted:
+        overrides.notifications?.createSubmitted ?? DEFAULT_VAULT_WIDGET_RUNTIME.notifications.createSubmitted,
       update: overrides.notifications?.update ?? DEFAULT_VAULT_WIDGET_RUNTIME.notifications.update,
       get: overrides.notifications?.get ?? DEFAULT_VAULT_WIDGET_RUNTIME.notifications.get
     },

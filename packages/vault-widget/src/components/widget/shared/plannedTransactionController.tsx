@@ -55,7 +55,7 @@ export type TExecutePlannedStyledWidgetTransactionParams = {
   adapter: VaultWidgetExecutionAdapter
   notification?: VaultWidgetNotificationInput
   notificationExecutionChainId?: number
-  notifications: Pick<VaultWidgetNotificationsRuntime, 'create' | 'update'>
+  notifications: Pick<VaultWidgetNotificationsRuntime, 'createSubmitted' | 'update'>
   onNotificationError?: (error: unknown) => void
   onState?: (state: TPlannedTransactionControllerState) => void
   onTransactionConfirmed?: () => void
@@ -172,15 +172,17 @@ export async function executePlannedStyledWidgetTransaction({
     if (!notification || notificationQueue.id) return
 
     notificationQueue.id = notifications
-      .create({
+      .createSubmitted({
         ...notification,
-        executionChainId: notificationExecutionChainId ?? notification.executionChainId
+        executionChainId: notificationExecutionChainId ?? notification.executionChainId,
+        ownerAddress: account,
+        status: 'pending',
+        txHash: hash
       })
       .catch((error: unknown) => {
         onNotificationError(error)
         return undefined
       })
-    appendNotificationUpdate({ status: 'pending', txHash: hash })
   }
 
   const handleExecutionState = (state: VaultWidgetPlanExecutionState): void => {

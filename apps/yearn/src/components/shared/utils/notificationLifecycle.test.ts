@@ -17,7 +17,7 @@ const notification: TNotification = {
 describe('notification lifecycle presentation', () => {
   it('shows source confirmation without claiming delivery', () => {
     expect(getNotificationLifecyclePresentation(notification)).toMatchObject({
-      label: 'Source confirmed',
+      label: 'Source transaction complete',
       styleStatus: 'submitted',
       transactionChainId: 1
     })
@@ -33,7 +33,7 @@ describe('notification lifecycle presentation', () => {
         destinationTxHash
       })
     ).toMatchObject({
-      label: 'Delivered',
+      label: 'Bridge complete',
       transactionHash: destinationTxHash,
       transactionChainId: 8453
     })

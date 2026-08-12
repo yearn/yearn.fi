@@ -7,6 +7,7 @@ export type TEnsoBridgeStatus = (typeof ENSO_BRIDGE_STATUSES)[number]
 
 export type TEnsoBridgeStatusResponse = {
   status: TEnsoBridgeStatus
+  bridgeRequestId?: Hash
   sourceChainId?: number
   sourceTxHash?: Hash
   destinationChainId?: number

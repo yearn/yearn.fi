@@ -19,8 +19,8 @@ export function getNotificationLifecyclePresentation(notification: TNotification
   }
   if (notification.status === 'success' && notification.bridgeStatus === 'delivered') {
     return {
-      label: 'Delivered',
-      detail: 'Confirmed on the destination chain.',
+      label: 'Bridge complete',
+      detail: 'Assets arrived on the destination chain.',
       styleStatus: 'success',
       transactionHash: notification.destinationTxHash ?? notification.txHash,
       transactionChainId: notification.toChainId ?? notification.chainId
@@ -61,8 +61,8 @@ export function getNotificationLifecyclePresentation(notification: TNotification
   }
   if (notification.bridgeStatus === 'pending') {
     return {
-      label: 'Source confirmed',
-      detail: 'Waiting for the bridge to pick up the transfer.',
+      label: 'Source transaction complete',
+      detail: 'Bridging to the destination chain.',
       styleStatus: 'submitted',
       ...sourceTransaction
     }

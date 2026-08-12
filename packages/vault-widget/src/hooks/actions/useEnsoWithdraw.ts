@@ -1,9 +1,10 @@
 import type { UseWidgetWithdrawFlowReturn } from '@yearn/vault-widget/types'
-import { useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import type { Address } from 'viem'
 import type { EnsoQuotePurpose, EnsoRoutingStrategy } from '../solvers/useSolverEnso'
 import { useSolverEnso } from '../solvers/useSolverEnso'
 import { useEnsoOrder } from '../useEnsoOrder'
+import { refreshEnsoReadiness } from './ensoReadiness'
 
 interface UseEnsoWithdrawParams {
   vaultAddress: Address
@@ -67,9 +68,12 @@ export function useEnsoWithdraw(params: UseEnsoWithdrawParams): UseWidgetWithdra
 
   // Prepare Enso order for withdrawal
   const canWithdraw = ensoFlow.periphery.route && params.amount > 0n && isAllowanceSufficient
+  const refreshReadiness = useCallback(async () => {
+    await refreshEnsoReadiness(ensoFlow.periphery.refetchAllowance, ensoFlow.methods.getRoute)
+  }, [ensoFlow.methods.getRoute, ensoFlow.periphery.refetchAllowance])
   const { prepareEnsoOrder } = useEnsoOrder({
     getEnsoTransaction: ensoFlow.methods.getEnsoTransaction,
-    refreshEnsoTransaction: ensoFlow.methods.getRoute,
+    refreshEnsoTransaction: refreshReadiness,
     routeError: ensoFlow.periphery.error?.message,
     isPreparingRoute: ensoFlow.periphery.isLoadingRoute,
     enabled: canWithdraw,

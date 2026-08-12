@@ -41,6 +41,7 @@ import { ApprovalOverlay } from './ApprovalOverlay'
 import { ApprovalResetWarning } from './ApprovalResetWarning'
 import { shouldBlockDepositApprovalForAllowanceReset } from './approvalReset'
 import { getDepositApprovalSpender } from './approvalSpender'
+import { handleDepositStepSuccess } from './depositStepSuccess'
 import { DepositDetails } from './DepositDetails'
 import { getStructurallyExcludedDepositTokenAddresses } from './tokenSelectorFiltering'
 import type { DepositRouteType } from './types'
@@ -947,16 +948,18 @@ export function WidgetDeposit({
     [isCrossChain, depositRefreshTargets, refreshWalletBalances, refetchVaultUserData]
   )
 
-  const handleDepositStepSuccess = useCallback(
-    (stepId: string) => {
-      if (stepId === 'approve' || stepId === 'permit') {
-        setCompletedApprovalFlowKey(approvalFlowKey)
-      }
-    },
-    [approvalFlowKey]
-  )
-
   const refetchActiveAllowance = activeFlow.periphery.refetchAllowance
+  const handleTransactionStepSuccess = useCallback(
+    (stepId: string) =>
+      handleDepositStepSuccess({
+        stepId,
+        approvalFlowKey,
+        requiredAllowance: depositAmount.debouncedBn,
+        refetchAllowance: refetchActiveAllowance,
+        completeApprovalFlow: setCompletedApprovalFlowKey
+      }),
+    [approvalFlowKey, depositAmount.debouncedBn, refetchActiveAllowance]
+  )
   const handleApprovalOverlayDone = useCallback(async () => {
     try {
       await refetchActiveAllowance?.()
@@ -1425,7 +1428,7 @@ export function WidgetDeposit({
         deferOnAllCompleteUntilConfettiEnd={deferSuccessEffectsUntilConfettiEnd}
         autoContinueToNextStep
         autoContinueStepIds={['approve', 'permit']}
-        onStepSuccess={handleDepositStepSuccess}
+        onStepSuccess={handleTransactionStepSuccess}
         onBeforeSuccess={handleDepositTransactionSuccess}
         onAllComplete={handleDepositSuccess}
       />

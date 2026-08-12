@@ -335,6 +335,13 @@ export type TCreateNotificationParams = {
   bridgeProtocol?: 'stargate' | 'ccip' | 'relay'
 }
 
+export type TCreateSubmittedNotificationParams = TCreateNotificationParams & {
+  awaitingExecution?: boolean
+  ownerAddress: TAddress
+  status: Extract<TNotificationStatus, 'pending' | 'submitted'>
+  txHash: Hash
+}
+
 export type TUpdateNotificationParams = {
   id: number
   txHash?: Hash

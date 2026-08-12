@@ -1,9 +1,72 @@
 import { describe, expect, it } from 'vitest'
 import {
+  getBridgeTrackerLink,
+  getSubmittedTransactionCopy,
   resolveCompletionDeferral,
   shouldAutoContinuePermitSuccess,
   shouldRunDeferredCompletion
 } from './transactionOverlay.helpers'
+
+describe('getBridgeTrackerLink', () => {
+  it('links Relay routes by their persisted request ID', () => {
+    expect(
+      getBridgeTrackerLink({
+        bridgeProtocol: 'relay',
+        bridgeRequestId: '0xrequest',
+        sourceTxHash: '0xsource'
+      })
+    ).toEqual({
+      label: 'Track bridge on Relay',
+      url: 'https://relay.link/transaction/0xrequest'
+    })
+  })
+
+  it('links Stargate routes by source transaction hash', () => {
+    expect(getBridgeTrackerLink({ bridgeProtocol: 'stargate', sourceTxHash: '0xsource' })).toEqual({
+      label: 'Track bridge on LayerZero',
+      url: 'https://layerzeroscan.com/tx/0xsource'
+    })
+  })
+
+  it('does not invent a transaction-specific CCIP link without a message ID', () => {
+    expect(getBridgeTrackerLink({ bridgeProtocol: 'ccip', sourceTxHash: '0xsource' })).toBeUndefined()
+  })
+})
+
+describe('getSubmittedTransactionCopy', () => {
+  const bridge = {
+    isCrossChain: true,
+    isBridgeTrackingActive: false,
+    isBridgeTrackingUnavailable: false,
+    sourceChainName: 'Katana',
+    destinationChainName: 'Base',
+    bridgeAction: 'deposit'
+  }
+
+  it('does not claim bridging started before source confirmation is persisted', () => {
+    expect(getSubmittedTransactionCopy(bridge)).toEqual({
+      title: 'Transaction submitted',
+      detail: 'Waiting for the source transaction to be confirmed.'
+    })
+  })
+
+  it('shows actionable fallback copy without bridge progress when persistence fails', () => {
+    expect(
+      getSubmittedTransactionCopy({
+        ...bridge,
+        isBridgeTrackingUnavailable: true,
+        bridgeTrackingError: 'Check the source transaction.'
+      })
+    ).toEqual({ title: 'Tracking unavailable', detail: 'Check the source transaction.' })
+  })
+
+  it('shows bridge progress only after durable tracking becomes active', () => {
+    expect(getSubmittedTransactionCopy({ ...bridge, isBridgeTrackingActive: true })).toEqual({
+      title: 'Transaction complete on Katana',
+      detail: 'Bridging to Base…'
+    })
+  })
+})
 
 describe('shouldAutoContinuePermitSuccess', () => {
   it('continues permit steps once the next step is ready', () => {

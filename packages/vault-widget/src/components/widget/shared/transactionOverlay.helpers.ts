@@ -70,6 +70,73 @@ export function getPendingTransactionTitle(params: {
   return `${pendingFunctionName} transaction pending`
 }
 
+export function getSubmittedTransactionCopy(params: {
+  isCrossChain: boolean
+  isBridgeTrackingActive: boolean
+  isBridgeTrackingUnavailable: boolean
+  bridgeStatus?: 'pending' | 'inflight' | 'delivered' | 'failed' | 'unknown'
+  bridgeTrackingError?: string
+  sourceChainName: string
+  destinationChainName: string
+  bridgeAction: string
+}): { title: string; detail: string } {
+  if (!params.isCrossChain) {
+    return {
+      title: 'Transaction submitted',
+      detail: `Your transaction has been submitted to your Safe.
+Execution may happen separately after the required confirmations are collected.`
+    }
+  }
+
+  if (params.isBridgeTrackingUnavailable) {
+    return {
+      title: 'Tracking unavailable',
+      detail: params.bridgeTrackingError || 'Check the source transaction for bridge progress.'
+    }
+  }
+
+  if (!params.isBridgeTrackingActive) {
+    return {
+      title: 'Transaction submitted',
+      detail: 'Waiting for the source transaction to be confirmed.'
+    }
+  }
+
+  if (params.bridgeStatus === 'inflight') {
+    return {
+      title: `Bridging to ${params.destinationChainName}`,
+      detail: `Waiting for the ${params.bridgeAction} to complete on ${params.destinationChainName}.`
+    }
+  }
+
+  return {
+    title: `Transaction complete on ${params.sourceChainName}`,
+    detail: `Bridging to ${params.destinationChainName}…`
+  }
+}
+
+export function getBridgeTrackerLink(params: {
+  bridgeProtocol?: 'stargate' | 'ccip' | 'relay'
+  bridgeRequestId?: string
+  sourceTxHash?: string
+}): { label: string; url: string } | undefined {
+  if (params.bridgeProtocol === 'relay' && params.bridgeRequestId) {
+    return {
+      label: 'Track bridge on Relay',
+      url: `https://relay.link/transaction/${params.bridgeRequestId}`
+    }
+  }
+
+  if (params.bridgeProtocol === 'stargate' && params.sourceTxHash) {
+    return {
+      label: 'Track bridge on LayerZero',
+      url: `https://layerzeroscan.com/tx/${params.sourceTxHash}`
+    }
+  }
+
+  return undefined
+}
+
 export function resolveOverlayConnectedChainId(params: {
   accountChainId: number | undefined
   currentChainId: number

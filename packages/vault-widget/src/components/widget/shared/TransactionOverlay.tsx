@@ -31,16 +31,18 @@ import {
   useSendCalls,
   useSignTypedData,
   useSwitchChain,
-  useWaitForTransactionReceipt,
   useWriteContract
 } from 'wagmi'
+import { getConfirmedTransactionReceipt } from './submittedTransactionReceipt'
 import { AnimatedCheckmark, ErrorIcon, Spinner } from './TransactionStateIndicators'
 import {
   AUTO_CONTINUE_SUCCESS_DELAY_MS,
   type CompletionDeferral,
   getAutoContinueConfirmDelayMs,
+  getBridgeTrackerLink,
   getInitialOverlayState,
   getPendingTransactionTitle,
+  getSubmittedTransactionCopy,
   hasExecutableWalletConnector,
   isConfirmedSafeTransactionFailure,
   type OverlayState,
@@ -184,6 +186,10 @@ function isCrossChainNotification(notification?: VaultWidgetNotificationInput): 
   return notification?.type === 'crosschain zap' || notification?.type === 'crosschain withdraw zap'
 }
 
+const BRIDGE_TRACKING_UNAVAILABLE_MESSAGE =
+  'Automatic bridge tracking could not be started. Check the source transaction for progress.'
+type LocalBridgeTrackingState = { status: 'idle' | 'active' } | { status: 'unavailable'; message: string }
+
 function isUserRejectionError(error: any): boolean {
   return (
     error?.message?.toLowerCase().includes('rejected') ||
@@ -206,7 +212,7 @@ type TransactionOverlayProps = {
   onAllComplete?: () => void
   deferOnAllCompleteUntilClose?: boolean
   deferOnAllCompleteUntilConfettiEnd?: boolean
-  onStepSuccess?: (stepId: string) => void
+  onStepSuccess?: (stepId: string) => void | Promise<void>
   /**
    * Called after the final transaction is confirmed, before the success screen
    * is shown. The overlay stays in a "refreshing" state while this resolves.
@@ -253,6 +259,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     connectedExecutionChainId
   const { switchChainAsync } = useSwitchChain()
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>()
+  const [submittedExecutionChainId, setSubmittedExecutionChainId] = useState<number | undefined>()
   const { address: account, chain, connector, status: accountStatus } = useAccount()
   const isWalletSafe = runtime.safe.isSafe
   const isWalletConnectionReady =
@@ -271,12 +278,23 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   })
 
   // Notification system integration
-  const { create: createNotification, update: updateNotification } = runtime.notifications
+  const { createSubmitted: createSubmittedNotification, update: updateNotification } = runtime.notifications
   const [notificationId, setNotificationId] = useState<VaultWidgetNotificationId | undefined>()
+  const notificationIdRef = useRef<VaultWidgetNotificationId | undefined>(undefined)
   const trackedNotification = runtime.notifications.get(notificationId)
+  const [localBridgeTracking, setLocalBridgeTracking] = useState<LocalBridgeTrackingState>({ status: 'idle' })
 
-  // Fast chains like BASE need extra confirmations
-  const confirmations = currentChainId === 8453 ? 2 : 1
+  const setActiveNotificationId = useCallback((id: VaultWidgetNotificationId | undefined) => {
+    notificationIdRef.current = id
+    setNotificationId(id)
+  }, [])
+
+  const submittedCanonicalChainId = resolveCanonicalChainId(
+    runtime.chains.resolveCanonicalChainId,
+    submittedExecutionChainId
+  )
+  // Fast chains like Base need extra confirmations.
+  const confirmations = submittedCanonicalChainId === 8453 ? 2 : 1
 
   // Track the step that was just executed (for showing success messages)
   const executedStepRef = useRef<TransactionStep | null>(null)
@@ -287,11 +305,6 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     getTransactionPreparationChainId(executedStepRef.current?.prepare) ??
     undefined
   const canonicalExplorerChainId = resolveCanonicalChainId(runtime.chains.resolveCanonicalChainId, explorerChainId)
-  const executionExplorerChainId = resolveExecutionChainId(
-    runtime.chains.resolveCanonicalChainId,
-    runtime.chains.resolveExecutionChainId,
-    explorerChainId
-  )
   const safeTransactionDetails = useQuery({
     queryKey: ['vault-widget', 'safe-transaction-details', txHash],
     enabled:
@@ -322,14 +335,23 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     safeExecutionTxHash: safeTransactionDetails.data?.executionTxHash,
     callsReceiptTxHash: safeCallsStatus.data?.receipts?.[0]?.transactionHash
   })
-  const receipt = useWaitForTransactionReceipt({
-    hash: executionTrackingHash,
-    chainId: executionExplorerChainId as any,
-    confirmations
+  const receipt = useQuery({
+    queryKey: ['vault-widget', 'submitted-transaction-receipt', submittedExecutionChainId, executionTrackingHash],
+    enabled: Boolean(executionTrackingHash && submittedExecutionChainId),
+    queryFn: async () => {
+      if (!executionTrackingHash || !submittedExecutionChainId) return null
+      const client = getPublicClient(wagmiConfig, { chainId: submittedExecutionChainId as any })
+      if (!client) throw new Error(`No receipt client available for chain ${submittedExecutionChainId}`)
+      return await getConfirmedTransactionReceipt(client, executionTrackingHash, confirmations)
+    },
+    refetchInterval: (query) => (query.state.data ? false : 1_000),
+    retry: false
   })
   const receiptOutcome = resolveTransactionReceiptOutcome({
     isSuccess: receipt.isSuccess,
-    isError: receipt.isError,
+    // A failed lookup is an RPC/tracking error, not proof that the transaction reverted.
+    // Keep polling until the submitted chain returns a receipt with a terminal status.
+    isError: false,
     status: receipt.data?.status
   })
   const blockExplorer = runtime.chains.getChain(canonicalExplorerChainId ?? currentChainId)?.blockExplorerUrl
@@ -369,9 +391,11 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   const pendingCompletionRef = useRef<CompletionDeferral>('none')
   const handledConfettiRequestRef = useRef(0)
   const handledSuccessReceiptRef = useRef<`0x${string}` | null>(null)
+  const processingSuccessReceiptRef = useRef<`0x${string}` | null>(null)
   const [isAutoContinuing, setIsAutoContinuing] = useState(false)
   const [confettiRequestNonce, setConfettiRequestNonce] = useState(0)
   const [isWaitingForNextStep, setIsWaitingForNextStep] = useState(false)
+  const [failedStepSuccessId, setFailedStepSuccessId] = useState<string | null>(null)
 
   useEffect(() => {
     writeContractResetRef.current = writeContract.reset
@@ -412,6 +436,26 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   const requestConfetti = useCallback(() => {
     setConfettiRequestNonce((nonce) => nonce + 1)
   }, [])
+
+  const reportStepSuccess = useCallback(
+    async (stepId: string): Promise<boolean> => {
+      try {
+        await onStepSuccess?.(stepId)
+        setFailedStepSuccessId(null)
+        return true
+      } catch (error) {
+        console.error('[TransactionOverlay] Failed to prepare the next transaction step', {
+          step: stepId,
+          error: (error as Error)?.message || error
+        })
+        setFailedStepSuccessId(stepId)
+        setOverlayState('error')
+        setErrorMessage((error as Error)?.message || 'Transaction confirmed, but the next step could not be prepared.')
+        return false
+      }
+    },
+    [onStepSuccess]
+  )
 
   useEffect(() => {
     if (
@@ -491,16 +535,22 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     hasReportedStepSuccessRef.current = false
     hasAdvancedFromStepRef.current = null
     setCompletedStepSnapshot(null)
+    setFailedStepSuccessId(null)
+    setLocalBridgeTracking({ status: 'idle' })
   }, [])
 
-  const resetTxState = useCallback((clearNotification = false) => {
-    writeContractResetRef.current()
-    sendCallsResetRef.current()
-    setTxHash(undefined)
-    if (clearNotification) {
-      setNotificationId(undefined)
-    }
-  }, [])
+  const resetTxState = useCallback(
+    (clearNotification = false) => {
+      writeContractResetRef.current()
+      sendCallsResetRef.current()
+      setTxHash(undefined)
+      setSubmittedExecutionChainId(undefined)
+      if (clearNotification) {
+        setActiveNotificationId(undefined)
+      }
+    },
+    [setActiveNotificationId]
+  )
 
   // Reset state when overlay closes
   useEffect(() => {
@@ -521,17 +571,20 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       wasLastStepRef.current = false
       executedStepBlockRef.current = undefined
       handledSuccessReceiptRef.current = null
+      processingSuccessReceiptRef.current = null
       pendingCompletionRef.current = 'none'
       autoContinueNonceRef.current += 1
       setIsAutoContinuing(false)
       setIsWaitingForNextStep(false)
+      setFailedStepSuccessId(null)
+      setLocalBridgeTracking({ status: 'idle' })
       handledConfettiRequestRef.current = 0
       setConfettiRequestNonce(0)
     }
   }, [isOpen, resetTxState, runAllCompleteIfPending])
 
-  // Create notification with txHash (called after signing succeeds)
-  const handleCreateNotification = useCallback(
+  // Persist the submitted hash before receipt polling can observe it.
+  const handleCreateSubmittedNotification = useCallback(
     async (
       txHash: `0x${string}`,
       notification?: VaultWidgetNotificationInput,
@@ -541,45 +594,80 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       if (!notification || !account) return undefined
 
       try {
-        const id = await createNotification({
+        const id = await createSubmittedNotification({
           ...notification,
-          executionChainId: executionChainId ?? notification.executionChainId
+          executionChainId: executionChainId ?? notification.executionChainId,
+          ownerAddress: account,
+          status,
+          txHash
         })
         if (id === undefined) return undefined
-        setNotificationId(id)
-        await updateNotification({ id, txHash, status })
+        setActiveNotificationId(id)
         return id
       } catch (error) {
         console.error('Failed to create notification:', error)
         return undefined
       }
     },
-    [account, createNotification, updateNotification]
+    [account, createSubmittedNotification, setActiveNotificationId]
   )
 
   // Update notification with new status/receipt
-  const handleUpdateNotification = useCallback(
-    async (params: {
-      status?: 'pending' | 'submitted' | 'success' | 'error'
-      receipt?: TransactionReceipt
-      awaitingExecution?: boolean
-      bridgeStatus?: 'pending' | 'inflight' | 'delivered' | 'failed' | 'unknown'
-    }) => {
-      if (notificationId === undefined) return
+  const updateNotificationById = useCallback(
+    async (
+      activeNotificationId: VaultWidgetNotificationId | undefined,
+      params: {
+        status?: 'pending' | 'submitted' | 'success' | 'error'
+        receipt?: TransactionReceipt
+        awaitingExecution?: boolean
+        bridgeStatus?: 'pending' | 'inflight' | 'delivered' | 'failed' | 'unknown'
+      }
+    ): Promise<boolean> => {
+      if (activeNotificationId === undefined) return false
 
       try {
         await updateNotification({
-          id: notificationId,
+          id: activeNotificationId,
           status: params.status,
           receipt: params.receipt,
           awaitingExecution: params.awaitingExecution,
           bridgeStatus: params.bridgeStatus
         })
+        return true
       } catch (error) {
         console.error('Failed to update notification:', error)
+        return false
       }
     },
-    [notificationId, updateNotification]
+    [updateNotification]
+  )
+
+  const beginSubmittedTransaction = useCallback(
+    async (hash: `0x${string}`, currentStep: TransactionStep, executionChainId: number | undefined): Promise<void> => {
+      const submittedNotificationId = await handleCreateSubmittedNotification(
+        hash,
+        currentStep.notification,
+        executionChainId
+      )
+      if (isCrossChainNotification(currentStep.notification)) {
+        if (!currentStep.notification?.bridgeProtocol) {
+          setLocalBridgeTracking({
+            status: 'unavailable',
+            message:
+              'Automatic bridge tracking is unavailable for this route. Check the source transaction for progress.'
+          })
+        } else if (submittedNotificationId === undefined) {
+          setLocalBridgeTracking({ status: 'unavailable', message: BRIDGE_TRACKING_UNAVAILABLE_MESSAGE })
+        }
+      }
+
+      // Receipt polling starts only after the notification write has either
+      // committed or failed explicitly, so a fast receipt cannot outrun its ID.
+      setSubmittedExecutionChainId(executionChainId)
+      setTxHash(hash)
+      setOverlayState('pending')
+    },
+    [handleCreateSubmittedNotification]
   )
 
   const executePlannedStep = useCallback(async () => {
@@ -602,7 +690,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       notification: step.notification,
       notificationExecutionChainId,
       notifications: {
-        create: createNotification,
+        createSubmitted: createSubmittedNotification,
         update: updateNotification
       },
       onNotificationError: (error) => console.error('Failed to update transaction notification:', error),
@@ -624,7 +712,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       onTransactionConfirmed: () => {
         if (hasReportedStepSuccessRef.current || !step.id) return
         hasReportedStepSuccessRef.current = true
-        onStepSuccess?.(step.id)
+        void reportStepSuccess(step.id)
       },
       plan,
       refresh: async () => {
@@ -657,12 +745,12 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     if (step.showConfetti) requestConfetti()
   }, [
     account,
-    createNotification,
+    createSubmittedNotification,
     finalizeSuccessState,
     isLastStep,
     onBeforeSuccess,
     onClose,
-    onStepSuccess,
+    reportStepSuccess,
     plan,
     requestConfetti,
     runtime.chains,
@@ -700,7 +788,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
         const completedAllSteps = currentStep.completesFlow ?? isLastStep
         if (!hasReportedStepSuccessRef.current && currentStep.id) {
           hasReportedStepSuccessRef.current = true
-          onStepSuccess?.(currentStep.id)
+          if (!(await reportStepSuccess(currentStep.id))) return
         }
         finalizeSuccessState(completedAllSteps, currentStep)
 
@@ -721,7 +809,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       finalizeSuccessState,
       isLastStep,
       onClose,
-      onStepSuccess,
+      reportStepSuccess,
       requestConfetti,
       setStepExecutionContext,
       signTypedDataAsync
@@ -783,9 +871,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
             calls: currentStep.batch.calls
           })
           const hash = result.id as `0x${string}`
-          setTxHash(hash)
-          setOverlayState('pending')
-          await handleCreateNotification(hash, currentStep.notification, executionTxChainId)
+          await beginSubmittedTransaction(hash, currentStep, executionTxChainId)
         } catch (error: any) {
           if (isUserRejectionError(error)) {
             onClose()
@@ -846,9 +932,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       try {
         if (rawPreparation) {
           const hash = await rawPreparation.execute()
-          setTxHash(hash)
-          setOverlayState('pending')
-          await handleCreateNotification(hash, currentStep.notification, executionTxChainId)
+          await beginSubmittedTransaction(hash, currentStep, executionTxChainId)
           return
         }
 
@@ -877,9 +961,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
           ...gasOverrides,
           connector
         })
-        setTxHash(hash)
-        setOverlayState('pending')
-        await handleCreateNotification(hash, currentStep.notification, executionTxChainId)
+        await beginSubmittedTransaction(hash, currentStep, executionTxChainId)
       } catch (error: any) {
         if (isUserRejectionError(error)) {
           onClose()
@@ -893,7 +975,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     [
       connectedChainId,
       runtime.chains,
-      handleCreateNotification,
+      beginSubmittedTransaction,
       account,
       isLastStep,
       isWalletSafe,
@@ -1017,22 +1099,54 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     executedStepAutoContinues,
     currentStepLabel: step?.label
   })
-  const isTrackingBridge = isCrossChainNotification(successStep?.notification)
-  const submittedTitle = isTrackingBridge
-    ? trackedNotification?.bridgeStatus === 'inflight'
-      ? 'Bridging'
-      : trackedNotification?.bridgeTrackingState === 'unavailable'
-        ? 'Tracking unavailable'
-        : 'Source confirmed'
-    : 'Transaction submitted'
-  const submittedDetail = isTrackingBridge
-    ? trackedNotification?.bridgeTrackingState === 'unavailable'
-      ? trackedNotification.bridgeError || 'Check the source transaction for bridge progress.'
-      : trackedNotification?.bridgeStatus === 'inflight'
-        ? 'Waiting for confirmation on the destination chain.'
-        : 'Waiting for the bridge to pick up the transfer.'
-    : `Your transaction has been submitted to your Safe.
-Execution may happen separately after the required confirmations are collected.`
+  const isCrossChainStep = isCrossChainNotification(successStep?.notification)
+  const hasRecoveredBridgeTracking = Boolean(
+    trackedNotification?.bridgeStatus && trackedNotification.bridgeTrackingState === 'active'
+  )
+  const localBridgeTrackingFailure =
+    !hasRecoveredBridgeTracking && localBridgeTracking.status === 'unavailable'
+      ? localBridgeTracking.message
+      : undefined
+  const bridgeTrackingUnavailable = Boolean(
+    !hasRecoveredBridgeTracking &&
+      (localBridgeTrackingFailure || trackedNotification?.bridgeTrackingState === 'unavailable')
+  )
+  const isTrackingBridge =
+    isCrossChainStep &&
+    !bridgeTrackingUnavailable &&
+    (localBridgeTracking.status === 'active' || hasRecoveredBridgeTracking)
+  const sourceChain = runtime.chains.getChain(successStep?.notification?.fromChainId ?? 0)
+  const destinationChain = runtime.chains.getChain(successStep?.notification?.toChainId ?? 0)
+  const sourceChainName = sourceChain?.name ?? 'the source network'
+  const destinationChainName = destinationChain?.name ?? 'the destination network'
+  const bridgeAction = successStep?.notification?.type.includes('withdraw') ? 'withdrawal' : 'deposit'
+  const isBridgeDelivered =
+    trackedNotification?.status === 'success' && trackedNotification.bridgeStatus === 'delivered'
+  const destinationExplorerTxUrl =
+    trackedNotification?.destinationTxHash && destinationChain?.blockExplorerUrl
+      ? `${destinationChain.blockExplorerUrl}/tx/${trackedNotification.destinationTxHash}`
+      : ''
+  const bridgeTrackerLink = isTrackingBridge
+    ? getBridgeTrackerLink({
+        bridgeProtocol: trackedNotification?.bridgeProtocol,
+        bridgeRequestId: trackedNotification?.bridgeRequestId,
+        sourceTxHash: trackedNotification?.sourceTxHash
+      })
+    : undefined
+  const { title: submittedTitle, detail: submittedDetail } = getSubmittedTransactionCopy({
+    isCrossChain: isCrossChainStep,
+    isBridgeTrackingActive: isTrackingBridge,
+    isBridgeTrackingUnavailable: bridgeTrackingUnavailable,
+    bridgeStatus: trackedNotification?.bridgeStatus,
+    bridgeTrackingError: localBridgeTrackingFailure || trackedNotification?.bridgeError,
+    sourceChainName,
+    destinationChainName,
+    bridgeAction
+  })
+  const successTitle = isBridgeDelivered ? `Bridge and ${bridgeAction} complete` : successStep?.successTitle
+  const successMessage = isBridgeDelivered
+    ? `Your ${successStep?.notification?.toSymbol ?? 'assets'} arrived on ${destinationChainName}.`
+    : successStep?.successMessage
 
   const handleNextStep = useCallback(() => {
     if (isAutoContinuing) return
@@ -1045,6 +1159,13 @@ Execution may happen separately after the required confirmations are collected.`
   }, [isAutoContinuing, isTerminalSuccess, onClose, advanceToNextStep])
 
   const handleRetry = useCallback(() => {
+    if (failedStepSuccessId) {
+      setOverlayState('pending')
+      setErrorMessage('')
+      void reportStepSuccess(failedStepSuccessId)
+      return
+    }
+
     resetTxState()
     if (plan) {
       hasStartedRef.current = true
@@ -1052,7 +1173,7 @@ Execution may happen separately after the required confirmations are collected.`
       return
     }
     executeStep()
-  }, [executePlannedStep, plan, resetTxState, executeStep])
+  }, [executePlannedStep, failedStepSuccessId, plan, reportStepSuccess, resetTxState, executeStep])
 
   const handleClose = useCallback(() => {
     onClose()
@@ -1105,7 +1226,7 @@ Execution may happen separately after the required confirmations are collected.`
 
     if (nextOverlayState === 'submitted') {
       setOverlayState('submitted')
-      void handleUpdateNotification({ status: 'submitted', awaitingExecution: true })
+      void updateNotificationById(notificationIdRef.current, { status: 'submitted', awaitingExecution: true })
       return
     }
 
@@ -1123,8 +1244,8 @@ Execution may happen separately after the required confirmations are collected.`
           : 'Transaction failed. Please try again.'
       )
       resetTxState()
-      void handleUpdateNotification({ status: 'error' })
-      setNotificationId(undefined)
+      void updateNotificationById(notificationIdRef.current, { status: 'error' })
+      setActiveNotificationId(undefined)
     }
   }, [
     overlayState,
@@ -1134,8 +1255,9 @@ Execution may happen separately after the required confirmations are collected.`
     safeTransactionDetails.data?.safeTxHash,
     safeTransactionDetails.data?.status,
     safeCallsStatus.data?.status,
-    handleUpdateNotification,
-    resetTxState
+    updateNotificationById,
+    resetTxState,
+    setActiveNotificationId
   ])
 
   // Handle transaction success
@@ -1143,13 +1265,17 @@ Execution may happen separately after the required confirmations are collected.`
     // For multi-step flows, wait until next step is ready before showing success
     // Check that step has changed (different label) and is ready
     const receiptHash = receipt.data?.transactionHash
-    const isUnhandledReceipt = Boolean(receiptHash && handledSuccessReceiptRef.current !== receiptHash)
+    const isUnhandledReceipt = Boolean(
+      receiptHash &&
+        handledSuccessReceiptRef.current !== receiptHash &&
+        processingSuccessReceiptRef.current !== receiptHash
+    )
 
     if (receiptOutcome === 'success' && receiptHash && (overlayState === 'pending' || overlayState === 'submitted')) {
       executedStepBlockRef.current = receipt.data?.blockNumber
       if (!hasReportedStepSuccessRef.current && executedStepId) {
         hasReportedStepSuccessRef.current = true
-        onStepSuccess?.(executedStepId)
+        void reportStepSuccess(executedStepId)
       }
     }
 
@@ -1162,7 +1288,7 @@ Execution may happen separately after the required confirmations are collected.`
       (overlayState === 'pending' || overlayState === 'submitted') &&
       canShowSuccess
     ) {
-      handledSuccessReceiptRef.current = receiptHash
+      processingSuccessReceiptRef.current = receiptHash
 
       if (
         shouldAutoContinueFromSuccessState({
@@ -1173,20 +1299,27 @@ Execution may happen separately after the required confirmations are collected.`
         executedStepId
       ) {
         if (hasAdvancedFromStepRef.current === executedStepId) {
+          processingSuccessReceiptRef.current = null
           return
         }
         if (hasAutoContinuedFromStepRef.current === executedStepId) {
+          processingSuccessReceiptRef.current = null
           return
         }
 
-        handleUpdateNotification({ receipt: receipt.data, status: 'success' })
-        setNotificationId(undefined)
+        const persistAndAdvance = async () => {
+          await updateNotificationById(notificationIdRef.current, {
+            receipt: receipt.data ?? undefined,
+            status: 'success'
+          })
+          setActiveNotificationId(undefined)
+          handledSuccessReceiptRef.current = receiptHash
+          processingSuccessReceiptRef.current = null
 
-        hasAutoContinuedFromStepRef.current = executedStepId
-        const nonceAtSchedule = autoContinueNonceRef.current
-        setIsAutoContinuing(true)
-        finalizeSuccessState(false, executedStepRef.current)
-        const advance = async () => {
+          hasAutoContinuedFromStepRef.current = executedStepId
+          const nonceAtSchedule = autoContinueNonceRef.current
+          setIsAutoContinuing(true)
+          finalizeSuccessState(false, executedStepRef.current)
           await new Promise((resolve) => {
             window.setTimeout(resolve, AUTO_CONTINUE_SUCCESS_DELAY_MS)
           })
@@ -1212,53 +1345,67 @@ Execution may happen separately after the required confirmations are collected.`
           }
           advanceToNextStep()
         }
-        void advance()
+        void persistAndAdvance()
         return
       }
 
       const completedAllSteps = executedStepRef.current?.completesFlow ?? wasLastStepRef.current
       const capturedStep = executedStepRef.current
-      const capturedReceipt = receipt.data
+      const capturedReceipt = receipt.data ?? undefined
       const isCrossChain = isCrossChainNotification(capturedStep?.notification)
       autoContinueNonceRef.current += 1
       setIsAutoContinuing(false)
       setIsWaitingForNextStep(false)
 
       if (isCrossChain) {
-        handledSuccessReceiptRef.current = receiptHash
-        setOverlayState('submitted')
-        void handleUpdateNotification({ receipt: capturedReceipt, status: 'submitted', bridgeStatus: 'pending' })
+        void (async () => {
+          const didPersistSourceConfirmation = await updateNotificationById(notificationIdRef.current, {
+            receipt: capturedReceipt,
+            status: 'submitted',
+            bridgeStatus: 'pending'
+          })
+          if (didPersistSourceConfirmation && capturedStep?.notification?.bridgeProtocol) {
+            setLocalBridgeTracking({ status: 'active' })
+          } else if (!didPersistSourceConfirmation) {
+            setLocalBridgeTracking({ status: 'unavailable', message: BRIDGE_TRACKING_UNAVAILABLE_MESSAGE })
+          }
+          handledSuccessReceiptRef.current = receiptHash
+          processingSuccessReceiptRef.current = null
+          setOverlayState('submitted')
+        })()
         return
       }
 
       resetTxState()
-      handleUpdateNotification({ receipt: capturedReceipt, status: 'success' })
-      setNotificationId(undefined)
+      void (async () => {
+        await updateNotificationById(notificationIdRef.current, { receipt: capturedReceipt, status: 'success' })
+        setActiveNotificationId(undefined)
+        handledSuccessReceiptRef.current = receiptHash
+        processingSuccessReceiptRef.current = null
 
-      if (completedAllSteps && onBeforeSuccess) {
-        setOverlayState('refreshing')
-        void (async () => {
+        if (completedAllSteps && onBeforeSuccess) {
+          setOverlayState('refreshing')
           await onBeforeSuccess(capturedStep?.id ?? '')
           await new Promise((resolve) => setTimeout(resolve, 500))
           finalizeSuccessState(completedAllSteps, capturedStep)
           if (capturedStep?.showConfetti) {
             requestConfetti()
           }
-        })()
-      } else {
-        finalizeSuccessState(completedAllSteps, capturedStep)
-        if (capturedStep?.showConfetti) {
-          requestConfetti()
+        } else {
+          finalizeSuccessState(completedAllSteps, capturedStep)
+          if (capturedStep?.showConfetti) {
+            requestConfetti()
+          }
         }
-      }
+      })()
     }
   }, [
     receiptOutcome,
     receipt.data?.transactionHash,
     overlayState,
     requestConfetti,
-    handleUpdateNotification,
-    onStepSuccess,
+    updateNotificationById,
+    reportStepSuccess,
     onBeforeSuccess,
     isStepReady,
     step?.id,
@@ -1270,7 +1417,8 @@ Execution may happen separately after the required confirmations are collected.`
     advanceToNextStep,
     finalizeSuccessState,
     isWalletSafe,
-    waitForAutoContinueBlock
+    waitForAutoContinueBlock,
+    setActiveNotificationId
   ])
 
   // Bridge settlement is host-owned and arrives asynchronously through the notification runtime.
@@ -1280,8 +1428,8 @@ Execution may happen separately after the required confirmations are collected.`
 
     setOverlayState('error')
     setErrorMessage(trackedNotification.bridgeError || 'The cross-chain transaction failed.')
-    setNotificationId(undefined)
-  }, [overlayState, trackedNotification])
+    setActiveNotificationId(undefined)
+  }, [overlayState, setActiveNotificationId, trackedNotification])
 
   // Delivery can complete after navigation or a reload, so derive terminal UI from persisted host state.
   useEffect(() => {
@@ -1290,7 +1438,6 @@ Execution may happen separately after the required confirmations are collected.`
 
     const completedStep = executedStepRef.current
     const completedAllSteps = completedStep?.completesFlow ?? wasLastStepRef.current
-    setNotificationId(undefined)
     finalizeSuccessState(completedAllSteps, completedStep)
     if (completedStep?.showConfetti) requestConfetti()
   }, [finalizeSuccessState, overlayState, requestConfetti, trackedNotification])
@@ -1333,10 +1480,10 @@ Execution may happen separately after the required confirmations are collected.`
       resetTxState()
 
       // Update notification to error
-      handleUpdateNotification({ status: 'error' })
-      setNotificationId(undefined)
+      void updateNotificationById(notificationIdRef.current, { status: 'error' })
+      setActiveNotificationId(undefined)
     }
-  }, [receiptOutcome, overlayState, handleUpdateNotification, resetTxState])
+  }, [receiptOutcome, overlayState, resetTxState, setActiveNotificationId, updateNotificationById])
 
   // When step 1 succeeds in a multi-step flow, the next step simulation may need a refetch
   // to pick up post-transaction state (e.g. unstake -> withdraw).
@@ -1372,6 +1519,14 @@ Execution may happen separately after the required confirmations are collected.`
     plan ? plannedFailureKind : 'pre-submission',
     errorMessage
   )
+  const displayedErrorPresentation = failedStepSuccessId
+    ? {
+        title: 'Next step unavailable',
+        message: errorMessage,
+        actionLabel: 'Retry next step',
+        canRetry: true
+      }
+    : transactionErrorPresentation
 
   if (!isOpen) {
     return null
@@ -1472,9 +1627,19 @@ Execution may happen separately after the required confirmations are collected.`
           {/* Submitted State */}
           {overlayState === 'submitted' && (
             <>
-              <Spinner />
+              {bridgeTrackingUnavailable ? <AnimatedCheckmark isVisible /> : <Spinner />}
               <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">{submittedTitle}</h3>
               <p className="text-sm text-text-secondary whitespace-pre-line">{submittedDetail}</p>
+              {bridgeTrackerLink ? (
+                <a
+                  href={bridgeTrackerLink.url}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mt-3 text-sm font-semibold text-text-primary underline"
+                >
+                  {bridgeTrackerLink.label}
+                </a>
+              ) : null}
               {explorerTxUrl ? (
                 <a
                   href={explorerTxUrl}
@@ -1482,7 +1647,7 @@ Execution may happen separately after the required confirmations are collected.`
                   rel="noopener noreferrer"
                   className="mt-3 text-sm font-semibold text-text-primary underline"
                 >
-                  View on block explorer
+                  View source transaction
                 </a>
               ) : null}
             </>
@@ -1495,8 +1660,18 @@ Execution may happen separately after the required confirmations are collected.`
                 <span id={confettiId} className="absolute top-1/2 left-1/2" />
                 <AnimatedCheckmark isVisible />
               </div>
-              <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">{successStep?.successTitle}</h3>
-              <p className="text-sm text-text-secondary whitespace-pre-line mb-6">{successStep?.successMessage}</p>
+              <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">{successTitle}</h3>
+              <p className="text-sm text-text-secondary whitespace-pre-line mb-6">{successMessage}</p>
+              {isBridgeDelivered && destinationExplorerTxUrl ? (
+                <a
+                  href={destinationExplorerTxUrl}
+                  target="_blank"
+                  rel="noopener noreferrer"
+                  className="mb-6 text-sm font-semibold text-text-primary underline"
+                >
+                  View destination transaction
+                </a>
+              ) : null}
               <Button
                 onClick={handleNextStep}
                 variant={isSuccessButtonBusy ? 'busy' : 'filled'}
@@ -1514,11 +1689,9 @@ Execution may happen separately after the required confirmations are collected.`
           {overlayState === 'error' && (
             <>
               <ErrorIcon />
-              <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">
-                {transactionErrorPresentation.title}
-              </h3>
+              <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">{displayedErrorPresentation.title}</h3>
               <p className={cl('text-sm text-text-secondary', explorerTxUrl ? 'mb-3' : 'mb-6')}>
-                {transactionErrorPresentation.message}
+                {displayedErrorPresentation.message}
               </p>
               {explorerTxUrl ? (
                 <a
@@ -1531,12 +1704,12 @@ Execution may happen separately after the required confirmations are collected.`
                 </a>
               ) : null}
               <Button
-                onClick={transactionErrorPresentation.canRetry ? handleRetry : handleClose}
+                onClick={displayedErrorPresentation.canRetry ? handleRetry : handleClose}
                 variant="filled"
                 className="w-full max-w-xs"
                 classNameOverride="yearn--button--nextgen w-full"
               >
-                {transactionErrorPresentation.actionLabel}
+                {displayedErrorPresentation.actionLabel}
               </Button>
             </>
           )}

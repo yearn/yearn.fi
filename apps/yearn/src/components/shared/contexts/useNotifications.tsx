@@ -3,6 +3,7 @@ import type { TNotification, TNotificationStatus, TNotificationsContext } from '
 import type React from 'react'
 import { createContext, startTransition, useCallback, useContext, useMemo, useState } from 'react'
 import { useIndexedDBStore } from 'use-indexeddb'
+import { applyNotificationUpdate } from './notificationTransitions'
 import {
   appendCachedNotification,
   filterNotificationsForAddress,
@@ -80,7 +81,7 @@ export const WithNotifications = ({ children }: { children: React.ReactElement }
         const notification = await getByID(id)
 
         if (notification) {
-          const updatedNotification = { ...notification, ...entry }
+          const updatedNotification = applyNotificationUpdate(notification, entry)
           await update(updatedNotification)
           startTransition(() => {
             setCachedEntries((currentEntries) =>
@@ -88,13 +89,15 @@ export const WithNotifications = ({ children }: { children: React.ReactElement }
                 ? mergeCachedNotificationEntry(currentEntries, id, updatedNotification)
                 : currentEntries.filter((currentEntry) => currentEntry.id !== id)
             )
-            setNotificationStatus(entry?.status || null)
+            setNotificationStatus(entry.status ? updatedNotification.status : null)
           })
         } else {
-          console.warn(`Notification with id ${id} not found`)
+          throw new Error(`Notification with id ${id} not found`)
         }
       } catch (error) {
         console.error('Failed to update notification:', error)
+        setError('Failed to update notification')
+        throw error
       }
     },
     [address, getByID, update]
@@ -113,8 +116,8 @@ export const WithNotifications = ({ children }: { children: React.ReactElement }
         return id
       } catch (error) {
         console.error('Failed to add notification:', error)
-
-        return -1
+        setError('Failed to add notification')
+        throw error
       }
     },
     [add, address]

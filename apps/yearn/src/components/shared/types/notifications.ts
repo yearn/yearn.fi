@@ -47,6 +47,7 @@ export type TNotification = {
   blockNumber?: bigint
   awaitingExecution?: boolean
   bridgeProtocol?: TEnsoBridgeProtocol
+  bridgeRequestId?: Hash
   bridgeStatus?: TEnsoBridgeStatus
   bridgeTrackingState?: TBridgeTrackingState
   destinationTxHash?: Hash
@@ -80,6 +81,13 @@ export type TCreateNotificationParams = {
   bridgeProtocol?: TEnsoBridgeProtocol
 }
 
+export type TCreateSubmittedNotificationParams = TCreateNotificationParams & {
+  awaitingExecution?: boolean
+  ownerAddress: TAddress
+  status: Extract<TNotificationStatus, 'pending' | 'submitted'>
+  txHash: Hash
+}
+
 export type TUpdateNotificationParams = {
   id: number
   txHash?: Hash
@@ -91,5 +99,6 @@ export type TUpdateNotificationParams = {
 
 export type TNotificationsActionsContext = {
   createNotification: (params: TCreateNotificationParams) => Promise<number>
+  createSubmittedNotification: (params: TCreateSubmittedNotificationParams) => Promise<number>
   updateNotification: (params: TUpdateNotificationParams) => Promise<void>
 }

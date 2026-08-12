@@ -34,6 +34,7 @@ import {
   type VaultWidgetRuntimeOverrides,
   VaultWidgetRuntimeProvider,
   type VaultWidgetSafeTransactionDetails,
+  type VaultWidgetSubmittedNotificationInput,
   type VaultWidgetToken,
   type VaultWidgetTokenReference,
   type VaultWidgetWalletRuntime
@@ -165,7 +166,7 @@ export function YearnVaultWidgetRuntimeProvider({ children }: { children: ReactN
   const wagmiConfig = useConfig()
   const trackEvent = usePlausible()
   const { isEnsoFailed } = useEnsoStatus()
-  const { createNotification, updateNotification } = useNotificationsActions()
+  const { createNotification, createSubmittedNotification, updateNotification } = useNotificationsActions()
   const { cachedEntries } = useNotifications()
   const { onRefresh } = useWalletActions()
   const { hasCompletedBalanceLoad, isLoading: isWalletLoading } = useWalletStatus()
@@ -280,6 +281,31 @@ export function YearnVaultWidgetRuntimeProvider({ children }: { children: ReactN
     [createNotification]
   )
 
+  const createSubmittedRuntimeNotification = useCallback(
+    async (notification: VaultWidgetSubmittedNotificationInput) => {
+      const notificationId = await createSubmittedNotification({
+        amount: notification.amount,
+        awaitingExecution: notification.awaitingExecution,
+        executionChainId: notification.executionChainId,
+        fromAddress: notification.fromAddress,
+        fromChainId: notification.fromChainId,
+        fromSymbol: notification.fromSymbol,
+        ownerAddress: notification.ownerAddress,
+        toAddress: notification.toAddress,
+        toAmount: notification.toAmount,
+        toChainId: notification.toChainId,
+        toSymbol: notification.toSymbol,
+        type: notification.type as TNotificationType,
+        bridgeProtocol: notification.bridgeProtocol,
+        status: notification.status,
+        txHash: notification.txHash
+      })
+
+      return notificationId >= 0 ? notificationId : undefined
+    },
+    [createSubmittedNotification]
+  )
+
   const updateRuntimeNotification = useCallback(
     async (notification: VaultWidgetNotificationUpdate) => {
       if (typeof notification.id !== 'number') {
@@ -307,9 +333,14 @@ export function YearnVaultWidgetRuntimeProvider({ children }: { children: ReactN
         id: notification.id,
         status: notification.status,
         awaitingExecution: notification.awaitingExecution,
+        bridgeProtocol: notification.bridgeProtocol,
+        bridgeRequestId: notification.bridgeRequestId,
         bridgeStatus: notification.bridgeStatus,
         bridgeTrackingState: notification.bridgeTrackingState,
         bridgeError: notification.bridgeError,
+        sourceChainId: notification.chainId,
+        sourceTxHash: notification.txHash,
+        destinationChainId: notification.toChainId,
         destinationTxHash: notification.destinationTxHash
       }
     },
@@ -350,6 +381,7 @@ export function YearnVaultWidgetRuntimeProvider({ children }: { children: ReactN
       execution,
       notifications: {
         create: createRuntimeNotification,
+        createSubmitted: createSubmittedRuntimeNotification,
         update: updateRuntimeNotification,
         get: getRuntimeNotification
       },
@@ -388,6 +420,7 @@ export function YearnVaultWidgetRuntimeProvider({ children }: { children: ReactN
       address,
       connectedExecutionChainId,
       createRuntimeNotification,
+      createSubmittedRuntimeNotification,
       enableCatalog,
       execution,
       getChain,
