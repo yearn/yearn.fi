@@ -32,6 +32,7 @@ const SAFE_ERROR_CLASSES = new Set([
 
 const holdingsLedgerRedisState = {
   client: null as Redis | null,
+  timedClients: new Map<number, Redis>(),
   disabled: false
 }
 
@@ -83,6 +84,7 @@ export function handleHoldingsLedgerRedisError(operation: THoldingsLedgerRedisOp
   if (shouldDisableRedis(error)) {
     holdingsLedgerRedisState.disabled = true
     holdingsLedgerRedisState.client = null
+    holdingsLedgerRedisState.timedClients.clear()
   }
 
   console.error(`[Holdings Ledger Redis] ${operation} failed`, {
@@ -145,4 +147,51 @@ export function getHoldingsLedgerRedisClient(): Redis | null {
   }
 
   return holdingsLedgerRedisState.client
+}
+
+export function getHoldingsLedgerRedisClientWithTimeout(requestTimeoutMs: number): Redis | null {
+  if (!Number.isSafeInteger(requestTimeoutMs) || requestTimeoutMs <= 0) {
+    throw new Error('Holdings ledger Redis request timeout must be a positive integer')
+  }
+  if (holdingsConfig.ledgerMode === 'off' || holdingsLedgerRedisState.disabled) {
+    return null
+  }
+
+  const config = getRedisConfig()
+  if (!config) {
+    return null
+  }
+
+  const existing = holdingsLedgerRedisState.timedClients.get(requestTimeoutMs)
+  if (existing) {
+    const currentSyncToken = holdingsLedgerRedisState.client?.readYourWritesSyncToken
+    if (currentSyncToken) {
+      existing.readYourWritesSyncToken = currentSyncToken
+    }
+    return existing
+  }
+
+  const client = new Redis({
+    ...config,
+    automaticDeserialization: false,
+    readYourWrites: true,
+    retry: false,
+    // Upstash calls the signal factory for every request, so a retry receives a fresh timeout.
+    signal: () => AbortSignal.timeout(requestTimeoutMs)
+  })
+  const currentSyncToken = holdingsLedgerRedisState.client?.readYourWritesSyncToken
+  if (currentSyncToken) {
+    client.readYourWritesSyncToken = currentSyncToken
+  }
+  holdingsLedgerRedisState.timedClients.set(requestTimeoutMs, client)
+  return client
+}
+
+export function adoptHoldingsLedgerRedisReadYourWritesSyncToken(
+  sourceClient: Pick<Redis, 'readYourWritesSyncToken'>
+): void {
+  const syncToken = sourceClient.readYourWritesSyncToken
+  if (syncToken && holdingsLedgerRedisState.client) {
+    holdingsLedgerRedisState.client.readYourWritesSyncToken = syncToken
+  }
 }

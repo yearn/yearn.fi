@@ -129,17 +129,88 @@ describe('pnl simple protocol return', () => {
         })
       ],
       metadata,
-      userAddress: USER,
-      currentTimestamp: 172800
+      userAddress: USER
     })
 
     expect(requests).toEqual([
       {
         chainId: 1,
         address: ASSET,
-        timestamps: [0, 86400]
+        timestamps: [0]
       }
     ])
+  })
+
+  it('does not carry a previous UTC-day price into a missing receipt day', () => {
+    const dayOneStart = 86_400
+    const dayTwoStart = 2 * 86_400
+    const receiptTimestamp = dayTwoStart + 100
+    const currentTimestamp = dayTwoStart + 200
+    const vault = materializeVault({
+      events: [
+        baseEvent({
+          kind: 'deposit',
+          id: 'missing-receipt-day',
+          blockTimestamp: receiptTimestamp,
+          shares: 100n * ONE,
+          assets: 100n * ONE,
+          owner: USER,
+          sender: USER
+        })
+      ],
+      ppsData: new Map([
+        [
+          VAULT_KEY,
+          new Map([
+            [receiptTimestamp, 1],
+            [currentTimestamp, 1.1]
+          ])
+        ]
+      ]),
+      priceData: new Map([[ASSET_PRICE_KEY, new Map([[dayOneStart, 2]])]]),
+      currentTimestamp
+    })
+
+    expect(vault.status).toBe('missing_receipt_price')
+    expect(vault.issues).toContain('missing_receipt_price')
+    expect(vault.baselineWeightUsd).toBe(0)
+  })
+
+  it('does not carry a previous UTC-day ETH price into a missing receipt day', () => {
+    const dayOneStart = 86_400
+    const dayTwoStart = 2 * 86_400
+    const receiptTimestamp = dayTwoStart + 100
+    const currentTimestamp = dayTwoStart + 200
+    const history = buildProtocolReturnHistorySeries({
+      events: [
+        baseEvent({
+          kind: 'deposit',
+          id: 'missing-receipt-eth-day',
+          blockTimestamp: receiptTimestamp,
+          shares: 100n * ONE,
+          assets: 100n * ONE,
+          owner: USER,
+          sender: USER
+        })
+      ],
+      userAddress: USER,
+      metadata,
+      ppsData: new Map([
+        [
+          VAULT_KEY,
+          new Map([
+            [receiptTimestamp, 1],
+            [currentTimestamp, 1.1]
+          ])
+        ]
+      ]),
+      priceData: new Map([[ASSET_PRICE_KEY, new Map([[dayTwoStart, 1]])]]),
+      ethPriceData: new Map([[dayOneStart, 2]]),
+      timestamps: [receiptTimestamp, currentTimestamp]
+    })
+
+    expect(history.at(-1)?.growthWeightUsd).toBeCloseTo(10)
+    expect(history.at(-1)?.growthWeightEth).toBeNull()
   })
 
   it('measures open deposit growth using receipt-time price as weight', () => {

@@ -1,4 +1,9 @@
 import type { THoldingsAggregationOptions } from '@/server/lib/holdings/services/eventSource'
+import {
+  createKongAssetPricePrefetcher,
+  fetchMissingHistoricalAssetPricesFromKong,
+  type TKongHeldAssetPriceRequirement
+} from '@/server/lib/holdings/services/kongAssetPrices'
 import { holdingsConfig } from '../config'
 import type { VaultMetadata } from '../types'
 import type { CachedTotal } from './cache'
@@ -9,7 +14,8 @@ import {
   fetchHistoricalPricesForTokenTimestamps,
   getChainPrefix,
   getHistoricalPriceFetchFailedBatches,
-  getPriceAtTimestamp
+  getPriceAtTimestamp,
+  type THistoricalPriceRequest
 } from './defillama'
 import {
   fetchUserEvents,
@@ -19,10 +25,12 @@ import {
 } from './graphql'
 import {
   buildPositionTimeline,
+  buildPositionTimelineIndex,
   generateDailyTimestamps,
   generateDailyTimestampsFromRange,
-  getShareBalanceAtTimestamp,
+  getIndexedShareBalanceAtTimestamp,
   getUniqueVaults,
+  type TPositionTimelineIndex,
   timestampToDateString,
   toSettledDayTimestamp
 } from './holdings'
@@ -139,6 +147,131 @@ function filterVaultsByRequestedVault<TVault extends { chainId: number; vaultAdd
     requestedVaults.map((vault) => toVaultKey(vault.chainId, vault.vaultAddress.toLowerCase()))
   )
   return vaults.filter((vault) => requestedVaultKeys.has(toVaultKey(vault.chainId, vault.vaultAddress)))
+}
+
+function getMissingKongAssetPriceRequirements(args: {
+  readonly vaults: readonly { readonly chainId: number; readonly vaultAddress: string }[]
+  readonly vaultMetadata: ReadonlyMap<string, VaultMetadata>
+  readonly positionTimelineIndex: TPositionTimelineIndex
+  readonly ppsData: ReadonlyMap<string, Map<number, number>>
+  readonly priceData: ReadonlyMap<string, Map<number, number>>
+  readonly timestamps: readonly number[]
+}): TKongHeldAssetPriceRequirement[] {
+  return args.vaults.flatMap((vault) => {
+    const vaultKey = toVaultKey(vault.chainId, vault.vaultAddress)
+    const metadata = args.vaultMetadata.get(vaultKey)
+    const ppsMap = args.ppsData.get(vaultKey)
+    if (!metadata || !ppsMap) {
+      return []
+    }
+    const priceKey = `${getChainPrefix(vault.chainId)}:${metadata.token.address.toLowerCase()}`
+    const priceMap = args.priceData.get(priceKey)
+    const timestamps = args.timestamps.filter((timestamp) => {
+      if (
+        getIndexedShareBalanceAtTimestamp(args.positionTimelineIndex, vault.vaultAddress, vault.chainId, timestamp) ===
+        BigInt(0)
+      ) {
+        return false
+      }
+      const pps = getPPS(ppsMap, timestamp)
+      if (pps === null || !Number.isFinite(pps) || pps <= 0) {
+        return false
+      }
+      const price = priceMap?.get(timestamp) ?? 0
+      return !Number.isFinite(price) || price <= 0
+    })
+    return timestamps.length > 0
+      ? [
+          {
+            chainId: vault.chainId,
+            vaultAddress: vault.vaultAddress,
+            assetAddress: metadata.token.address,
+            timestamps
+          }
+        ]
+      : []
+  })
+}
+
+function getPotentialKongAssetPriceRequirements(args: {
+  readonly vaults: readonly { readonly chainId: number; readonly vaultAddress: string }[]
+  readonly vaultMetadata: ReadonlyMap<string, VaultMetadata>
+  readonly positionTimelineIndex: TPositionTimelineIndex
+  readonly timestamps: readonly number[]
+}): TKongHeldAssetPriceRequirement[] {
+  return args.vaults.flatMap((vault) => {
+    const metadata = args.vaultMetadata.get(toVaultKey(vault.chainId, vault.vaultAddress))
+    if (!metadata) {
+      return []
+    }
+    const timestamps = args.timestamps.filter(
+      (timestamp) =>
+        getIndexedShareBalanceAtTimestamp(args.positionTimelineIndex, vault.vaultAddress, vault.chainId, timestamp) !==
+        BigInt(0)
+    )
+    return timestamps.length > 0
+      ? [
+          {
+            chainId: vault.chainId,
+            vaultAddress: vault.vaultAddress,
+            assetAddress: metadata.token.address,
+            timestamps
+          }
+        ]
+      : []
+  })
+}
+
+function buildHeldAssetPriceRequests(args: {
+  readonly vaults: readonly { readonly chainId: number; readonly vaultAddress: string }[]
+  readonly vaultMetadata: ReadonlyMap<string, VaultMetadata>
+  readonly positionTimelineIndex: TPositionTimelineIndex
+  readonly timestamps: readonly number[]
+}): THistoricalPriceRequest[] {
+  const requests = args.vaults.reduce<Map<string, { chainId: number; address: string; timestamps: Set<number> }>>(
+    (requestsByAsset, vault) => {
+      const metadata = args.vaultMetadata.get(toVaultKey(vault.chainId, vault.vaultAddress))
+      if (!metadata) {
+        return requestsByAsset
+      }
+
+      const heldTimestamps = args.timestamps.filter(
+        (timestamp) =>
+          getIndexedShareBalanceAtTimestamp(
+            args.positionTimelineIndex,
+            vault.vaultAddress,
+            vault.chainId,
+            timestamp
+          ) !== BigInt(0)
+      )
+      if (heldTimestamps.length === 0) {
+        return requestsByAsset
+      }
+
+      const tokenKey = `${metadata.chainId}:${metadata.token.address.toLowerCase()}`
+      const existing = requestsByAsset.get(tokenKey)
+      if (existing) {
+        heldTimestamps.forEach((timestamp) => {
+          existing.timestamps.add(timestamp)
+        })
+        return requestsByAsset
+      }
+
+      requestsByAsset.set(tokenKey, {
+        chainId: metadata.chainId,
+        address: metadata.token.address,
+        timestamps: new Set(heldTimestamps)
+      })
+      return requestsByAsset
+    },
+    new Map()
+  )
+
+  return Array.from(requests.values()).map((request) => ({
+    chainId: request.chainId,
+    address: request.address,
+    timestamps: Array.from(request.timestamps).sort((left, right) => left - right)
+  }))
 }
 
 function buildEmptyBreakdownResponse(
@@ -289,6 +422,7 @@ export async function getHistoricalHoldings(
   reportHoldingsProgress(28, 'Checked cached historical totals', `${initialCachedTotals.length} cached days`)
 
   const timeline = baseContext.timeline
+  const positionTimelineIndex = buildPositionTimelineIndex(timeline)
   const hasActivity = baseContext.hasActivity
   debugLog('history', 'built position timeline', {
     fetchType,
@@ -419,8 +553,8 @@ export async function getHistoricalHoldings(
         (timestamp) =>
           unidentifiedVersionVaults.filter(
             (vault) =>
-              getShareBalanceAtTimestamp(
-                timeline,
+              getIndexedShareBalanceAtTimestamp(
+                positionTimelineIndex,
                 vault.vaultAddress,
                 vault.chainId,
                 toSettledDayTimestamp(timestamp)
@@ -478,32 +612,23 @@ export async function getHistoricalHoldings(
         valuationLoader: options.valuationLoader,
         valuationConsumer: 'balance'
       })
-      const underlyingTokens = Array.from(
-        vaults
-          .reduce<Map<string, { chainId: number; address: string }>>((tokens, vault) => {
-            const metadata = vaultMetadata.get(toVaultKey(vault.chainId, vault.vaultAddress))
-
-            if (!metadata) {
-              return tokens
-            }
-
-            const tokenKey = `${metadata.chainId}:${metadata.token.address.toLowerCase()}`
-            if (!tokens.has(tokenKey)) {
-              tokens.set(tokenKey, {
-                chainId: metadata.chainId,
-                address: metadata.token.address
-              })
-            }
-
-            return tokens
-          }, new Map())
-          .values()
-      )
       const valuationTimestamps = missingTimestamps.map((timestamp) => toSettledDayTimestamp(timestamp))
-      const basePriceRequests = underlyingTokens.map((token) => ({
-        ...token,
+      const kongAssetPricePrefetcher = options.valuationLoader
+        ? createKongAssetPricePrefetcher({
+            potentialRequirements: getPotentialKongAssetPriceRequirements({
+              vaults,
+              vaultMetadata,
+              positionTimelineIndex,
+              timestamps: valuationTimestamps
+            })
+          })
+        : null
+      const basePriceRequests = buildHeldAssetPriceRequests({
+        vaults,
+        vaultMetadata,
+        positionTimelineIndex,
         timestamps: valuationTimestamps
-      }))
+      })
       const priceRequests = expandNestedVaultAssetPriceRequests(basePriceRequests, vaultMetadata)
       const ppsIdentifiers = mergeVaultIdentifiers([
         ...vaults,
@@ -514,7 +639,14 @@ export async function getHistoricalHoldings(
         options.valuationLoader
           ? options.valuationLoader.fetchHistoricalPrices(priceRequests, {
               resolution: 'utc_day',
-              consumer: 'balance'
+              consumer: 'balance',
+              ...(kongAssetPricePrefetcher
+                ? {
+                    onMissingHistoricalPrice: (request) => {
+                      kongAssetPricePrefetcher.prefetch([{ chainId: request.chainId, assetAddress: request.address }])
+                    }
+                  }
+                : {})
             })
           : fetchHistoricalPricesForTokenTimestamps(priceRequests, { resolution: 'utc_day' })
       ])
@@ -522,12 +654,23 @@ export async function getHistoricalHoldings(
       valuationHealth.failedPriceBatches = getHistoricalPriceFetchFailedBatches(fetchedPriceData)
       reportHoldingsProgress(62, 'Loaded vault share price history', `${vaults.length} vaults`)
       reportHoldingsProgress(76, 'Fetched historical token prices', `${priceRequests.length} price series`)
-      const priceData = deriveNestedVaultAssetPriceData({
+      const derivedPriceData = deriveNestedVaultAssetPriceData({
         priceData: fetchedPriceData,
         priceRequests,
         vaultMetadata,
         ppsData: ppsContext.ppsData
       })
+      const kongPriceRequirements = getMissingKongAssetPriceRequirements({
+        vaults,
+        vaultMetadata,
+        positionTimelineIndex,
+        ppsData: ppsContext.ppsData,
+        priceData: derivedPriceData,
+        timestamps: valuationTimestamps
+      })
+      const kongAssetPriceData = kongAssetPricePrefetcher
+        ? await kongAssetPricePrefetcher.resolve(kongPriceRequirements)
+        : await fetchMissingHistoricalAssetPricesFromKong({ requirements: kongPriceRequirements })
       debugLog('history', 'resolved metadata and PPS for history', {
         version,
         fetchType,
@@ -542,7 +685,8 @@ export async function getHistoricalHoldings(
         fetchType,
         paginationMode,
         tokens: priceRequests.length,
-        priceKeys: priceData.size,
+        priceKeys: derivedPriceData.size,
+        kongDailyAveragePriceKeys: kongAssetPriceData.size,
         missingTimestamps: missingTimestamps.length,
         failedPriceBatches: valuationHealth.failedPriceBatches,
         failedPpsVaults: valuationHealth.failedPpsVaults,
@@ -553,12 +697,22 @@ export async function getHistoricalHoldings(
         const valuationTimestamp = toSettledDayTimestamp(timestamp)
         const unidentifiedPositions = unidentifiedVersionVaults.filter(
           (vault) =>
-            getShareBalanceAtTimestamp(timeline, vault.vaultAddress, vault.chainId, valuationTimestamp) !== BigInt(0)
+            getIndexedShareBalanceAtTimestamp(
+              positionTimelineIndex,
+              vault.vaultAddress,
+              vault.chainId,
+              valuationTimestamp
+            ) !== BigInt(0)
         ).length
         const dayValuation = vaults.reduce(
           (result, vault) => {
             const vaultKey = toVaultKey(vault.chainId, vault.vaultAddress)
-            const shares = getShareBalanceAtTimestamp(timeline, vault.vaultAddress, vault.chainId, valuationTimestamp)
+            const shares = getIndexedShareBalanceAtTimestamp(
+              positionTimelineIndex,
+              vault.vaultAddress,
+              vault.chainId,
+              valuationTimestamp
+            )
 
             if (shares === BigInt(0)) {
               return result
@@ -582,8 +736,10 @@ export async function getHistoricalHoldings(
             }
 
             const priceKey = `${getChainPrefix(vault.chainId)}:${metadata.token.address.toLowerCase()}`
-            const tokenPriceMap = priceData.get(priceKey)
-            const tokenPrice = tokenPriceMap ? getPriceAtTimestamp(tokenPriceMap, valuationTimestamp) : 0
+            const tokenPriceMap = derivedPriceData.get(priceKey)
+            const primaryTokenPrice = tokenPriceMap?.get(valuationTimestamp) ?? 0
+            const kongDailyAveragePrice = kongAssetPriceData.get(priceKey)?.get(valuationTimestamp) ?? 0
+            const tokenPrice = primaryTokenPrice > 0 ? primaryTokenPrice : kongDailyAveragePrice
             if (!Number.isFinite(tokenPrice) || tokenPrice <= 0) {
               return {
                 usdValue: result.usdValue,
@@ -623,29 +779,61 @@ export async function getHistoricalHoldings(
     const completeTotals = newTotals.filter((total) => total.isComplete)
     const totalsToWrite = suppliedTotalsCache ? newTotals : completeTotals
     if (shouldWriteCache && totalsToWrite.length > 0) {
-      const savedTotals = suppliedTotalsCache
-        ? await suppliedTotalsCache.write(totalsToWrite)
-        : await saveCachedTotals(
-            userAddress,
-            cacheVersion,
-            totalsToWrite.map(({ date, usdValue }) => ({ date, usdValue }))
+      const writeTotalsPromise = Promise.resolve(
+        suppliedTotalsCache
+          ? suppliedTotalsCache.write(totalsToWrite)
+          : saveCachedTotals(
+              userAddress,
+              cacheVersion,
+              totalsToWrite.map(({ date, usdValue }) => ({ date, usdValue }))
+            )
+      )
+      const writeMode = { value: 'awaited' as 'awaited' | 'scheduled' }
+      const scheduleTotalsCacheWrite = suppliedTotalsCache ? options.scheduleTotalsCacheWrite : undefined
+      const logWriteResult = (savedTotals: boolean): boolean => {
+        debugLog(
+          'history',
+          savedTotals ? 'saved recalculated totals to cache' : 'did not save recalculated totals to cache',
+          {
+            version,
+            fetchType,
+            paginationMode,
+            newTotals: totalsToWrite.length,
+            provisionalTotals: newTotals.filter((total) => !total.isComplete).length,
+            writeMode: writeMode.value
+          }
+        )
+        return savedTotals
+      }
+      const trackedWriteTotalsPromise = writeTotalsPromise.then(logWriteResult)
+      if (scheduleTotalsCacheWrite) {
+        try {
+          scheduleTotalsCacheWrite(trackedWriteTotalsPromise)
+          writeMode.value = 'scheduled'
+          debugLog('history', 'queued recalculated totals cache write', {
+            version,
+            fetchType,
+            paginationMode,
+            newTotals: totalsToWrite.length,
+            provisionalTotals: newTotals.filter((total) => !total.isComplete).length
+          })
+          reportHoldingsProgress(92, 'Queued historical chart cache save', `${totalsToWrite.length} daily totals`)
+        } catch {
+          const savedTotals = await trackedWriteTotalsPromise
+          reportHoldingsProgress(
+            92,
+            savedTotals ? 'Saved historical chart cache' : 'Skipped historical chart cache save',
+            `${totalsToWrite.length} daily totals`
           )
-      debugLog(
-        'history',
-        savedTotals ? 'saved recalculated totals to cache' : 'did not save recalculated totals to cache',
-        {
-          version,
-          fetchType,
-          paginationMode,
-          newTotals: totalsToWrite.length,
-          provisionalTotals: newTotals.filter((total) => !total.isComplete).length
         }
-      )
-      reportHoldingsProgress(
-        92,
-        savedTotals ? 'Saved historical chart cache' : 'Skipped historical chart cache save',
-        `${totalsToWrite.length} daily totals`
-      )
+      } else {
+        const savedTotals = await trackedWriteTotalsPromise
+        reportHoldingsProgress(
+          92,
+          savedTotals ? 'Saved historical chart cache' : 'Skipped historical chart cache save',
+          `${totalsToWrite.length} daily totals`
+        )
+      }
     } else if (shouldWriteCache && newTotals.length > 0) {
       debugLog('history', 'skipped historical totals cache save because every date was incomplete', {
         version,
@@ -749,7 +937,7 @@ export async function getHistoricalHoldingsChart(
   const ethPrices = ethPriceMap.get(`${getChainPrefix(1)}:${ETHEREUM_WETH_ADDRESS.toLowerCase()}`)
 
   const dataPoints = holdings.dataPoints.map((point) => {
-    const ethPriceUsd = ethPrices ? getPriceAtTimestamp(ethPrices, point.timestamp) : 0
+    const ethPriceUsd = ethPrices?.get(point.timestamp) ?? 0
     const hasEthPrice = Number.isFinite(ethPriceUsd) && ethPriceUsd > 0
     return {
       date: point.date,
@@ -806,6 +994,7 @@ export async function getHoldingsBreakdown(
       })
     : await fetchUserEvents(userAddress, 'all', maxTimestamp, fetchType, paginationMode)
   const timeline = buildPositionTimeline(events.deposits, events.withdrawals, events.transfersIn, events.transfersOut)
+  const positionTimelineIndex = buildPositionTimelineIndex(timeline)
   debugLog('breakdown', 'built position timeline for breakdown', {
     version,
     fetchType,
@@ -858,7 +1047,12 @@ export async function getHoldingsBreakdown(
   >((active, vault) => {
     const metadata = vaultMetadata.get(toVaultKey(vault.chainId, vault.vaultAddress))
     const decimals = metadata?.decimals ?? 18
-    const shares = getShareBalanceAtTimestamp(timeline, vault.vaultAddress, vault.chainId, breakdownTimestamp)
+    const shares = getIndexedShareBalanceAtTimestamp(
+      positionTimelineIndex,
+      vault.vaultAddress,
+      vault.chainId,
+      breakdownTimestamp
+    )
 
     if (shares <= BigInt(0)) {
       return active
@@ -906,11 +1100,22 @@ export async function getHoldingsBreakdown(
       ? fetchHistoricalPricesForTokenTimestamps(priceRequests, { resolution: 'utc_day' })
       : Promise.resolve(new Map())
   ])
-  const priceData = deriveNestedVaultAssetPriceData({
+  const derivedPriceData = deriveNestedVaultAssetPriceData({
     priceData: fetchedPriceData,
     priceRequests,
     vaultMetadata,
     ppsData
+  })
+  const kongPriceRequirements = getMissingKongAssetPriceRequirements({
+    vaults: activeVaults,
+    vaultMetadata,
+    positionTimelineIndex,
+    ppsData,
+    priceData: derivedPriceData,
+    timestamps: [breakdownPriceTimestamp]
+  })
+  const kongAssetPriceData = await fetchMissingHistoricalAssetPricesFromKong({
+    requirements: kongPriceRequirements
   })
   debugLog('breakdown', 'resolved metadata, PPS, and prices for breakdown', {
     version,
@@ -920,7 +1125,8 @@ export async function getHoldingsBreakdown(
     metadataResolved: vaultMetadata.size,
     ppsResolved: ppsData.size,
     tokens: priceRequests.length,
-    priceKeys: priceData.size,
+    priceKeys: derivedPriceData.size,
+    kongDailyAveragePriceKeys: kongAssetPriceData.size,
     timestamp: breakdownTimestamp,
     priceTimestamp: breakdownPriceTimestamp,
     activeVaults: activeVaults.length
@@ -939,8 +1145,10 @@ export async function getHoldingsBreakdown(
 
     if (metadata) {
       const priceKey = `${getChainPrefix(metadata.chainId)}:${metadata.token.address.toLowerCase()}`
-      const tokenPriceMap = priceData.get(priceKey)
-      tokenPrice = tokenPriceMap ? getPriceAtTimestamp(tokenPriceMap, breakdownPriceTimestamp) : 0
+      const tokenPriceMap = derivedPriceData.get(priceKey)
+      const primaryTokenPrice = tokenPriceMap ? getPriceAtTimestamp(tokenPriceMap, breakdownPriceTimestamp) : 0
+      const kongDailyAveragePrice = kongAssetPriceData.get(priceKey)?.get(breakdownPriceTimestamp) ?? 0
+      tokenPrice = primaryTokenPrice > 0 ? primaryTokenPrice : kongDailyAveragePrice
       usdValue = pps ? vault.sharesFormatted * pps * tokenPrice : 0
     }
 

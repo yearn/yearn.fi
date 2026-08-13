@@ -32,8 +32,9 @@ const DEFAULT_MAX_RETRIES = 2
 const DEFAULT_RETRY_DELAY_MS = 200
 const DEFAULT_MAX_REQUEST_URL_LENGTH = 3_500
 const DEFAULT_YEARN_PRICES_MAX_REQUEST_URL_LENGTH = 8_000
-const DEFAULT_YEARN_PRICES_BATCH_TIMESTAMP_SIZE = 45
-const DEFAULT_YEARN_PRICES_BATCH_MAX_PRICE_POINTS = 150
+export const MAX_HISTORICAL_PRICE_POINT_TIMESTAMPS_PER_TOKEN = 45
+const YEARN_PRICES_BATCH_MAX_TIMESTAMPS_PER_TOKEN = 90
+const DEFAULT_YEARN_PRICES_BATCH_MAX_PRICE_POINTS = 450
 const YEARN_PRICES_MAX_RANGE_DAYS = 366
 const YEARN_PRICES_RANGE_WINDOW_DAYS = 183
 const MAX_REQUESTED_PRICE_DISTANCE_SECONDS = 60 * 60
@@ -185,6 +186,10 @@ function getHistoricalPriceProviderConfig(): THistoricalPriceProviderConfig {
   return { provider: 'defillama', label: 'DefiLlama' }
 }
 
+export function supportsHistoricalPriceRangeRequests(): boolean {
+  return getHistoricalPriceProviderConfig().provider === 'yearn-prices'
+}
+
 function wait(delayMs: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, delayMs))
 }
@@ -225,6 +230,35 @@ function chunkItems<T>(items: T[], chunkSize: number): T[][] {
   return Array.from({ length: Math.ceil(items.length / chunkSize) }, (_value, index) =>
     items.slice(index * chunkSize, index * chunkSize + chunkSize)
   )
+}
+
+async function runWithContinuousConcurrency<T>(
+  items: readonly T[],
+  concurrency: number,
+  runItem: (item: T, index: number) => Promise<void>
+): Promise<number> {
+  const cursor = { nextIndex: 0 }
+  const activity = { active: 0, peak: 0 }
+  const runWorker = async (): Promise<void> => {
+    const index = cursor.nextIndex
+    cursor.nextIndex += 1
+    if (index >= items.length) {
+      return
+    }
+
+    activity.active += 1
+    activity.peak = Math.max(activity.peak, activity.active)
+    try {
+      await runItem(items[index]!, index)
+    } finally {
+      activity.active -= 1
+    }
+    return runWorker()
+  }
+  const workerCount = Math.min(items.length, Math.max(1, concurrency))
+
+  await Promise.all(Array.from({ length: workerCount }, () => runWorker()))
+  return activity.peak
 }
 
 function countPricePoints(priceData: Map<string, Map<number, number>>): number {
@@ -371,15 +405,7 @@ function getPriceAtTimestampWithinTolerance(
     return { price: priceMap.get(targetTimestamp)!, timestamp: targetTimestamp }
   }
 
-  const closestPriorTimestamp = Array.from(priceMap.keys())
-    .sort((left, right) => left - right)
-    .reduce<number | null>((bestTimestamp, timestamp) => {
-      if (timestamp > targetTimestamp) {
-        return bestTimestamp
-      }
-
-      return timestamp
-    }, null)
+  const closestPriorTimestamp = findClosestPriorTimestamp(getSortedPriceTimestamps(priceMap), targetTimestamp)
 
   if (
     closestPriorTimestamp === null ||
@@ -399,39 +425,16 @@ function getPriceAtTimestampWithinDayWindow(
     return { price: priceMap.get(targetTimestamp)!, timestamp: targetTimestamp }
   }
 
-  const bestMatch = Array.from(priceMap.keys()).reduce<{
-    timestamp: number | null
-    distance: number
-  }>(
-    (best, timestamp) => {
-      const distance = Math.abs(timestamp - targetTimestamp)
+  const timestamps = getSortedPriceTimestamps(priceMap)
+  const priorTimestamp = findClosestPriorTimestamp(timestamps, targetTimestamp)
+  const nextTimestamp = findClosestNextTimestamp(timestamps, targetTimestamp)
+  const priorDistance = priorTimestamp === null ? Infinity : targetTimestamp - priorTimestamp
+  const nextDistance = nextTimestamp === null ? Infinity : nextTimestamp - targetTimestamp
+  const bestTimestamp = priorDistance <= nextDistance ? priorTimestamp : nextTimestamp
 
-      if (distance > MAX_DAILY_PRICE_DISTANCE_SECONDS) {
-        return best
-      }
-
-      if (
-        best.timestamp === null ||
-        distance < best.distance ||
-        (distance === best.distance && timestamp < targetTimestamp && (best.timestamp ?? Infinity) >= targetTimestamp)
-      ) {
-        return {
-          timestamp,
-          distance
-        }
-      }
-
-      return best
-    },
-    {
-      timestamp: null,
-      distance: Infinity
-    }
-  )
-
-  return bestMatch.timestamp === null
+  return bestTimestamp === null || Math.min(priorDistance, nextDistance) > MAX_DAILY_PRICE_DISTANCE_SECONDS
     ? null
-    : { price: priceMap.get(bestMatch.timestamp)!, timestamp: bestMatch.timestamp }
+    : { price: priceMap.get(bestTimestamp)!, timestamp: bestTimestamp }
 }
 
 function getRequestedPriceMatcher(resolution: THistoricalPriceFetchResolution): TPriceTimestampMatcher {
@@ -649,9 +652,9 @@ function getDefiLlamaFetchTuning(providerConfig: THistoricalPriceProviderConfig)
       timeoutMs: DEFAULT_YEARN_PRICES_TIMEOUT_MS,
       maxRetries: DEFAULT_MAX_RETRIES,
       retryDelayMs: DEFAULT_RETRY_DELAY_MS,
-      timestampBatchSize: DEFAULT_YEARN_PRICES_BATCH_TIMESTAMP_SIZE,
+      timestampBatchSize: YEARN_PRICES_BATCH_MAX_TIMESTAMPS_PER_TOKEN,
       maxTokensPerBatch: 50,
-      maxTimestampsPerTokenPerBatch: DEFAULT_YEARN_PRICES_BATCH_TIMESTAMP_SIZE,
+      maxTimestampsPerTokenPerBatch: YEARN_PRICES_BATCH_MAX_TIMESTAMPS_PER_TOKEN,
       maxPricePointsPerBatch: DEFAULT_YEARN_PRICES_BATCH_MAX_PRICE_POINTS,
       maxRequestUrlLength: DEFAULT_YEARN_PRICES_MAX_REQUEST_URL_LENGTH,
       parallelRequests: 4,
@@ -893,6 +896,7 @@ export async function fetchHistoricalPricesForTokenTimestamps(
   }
 
   const fetchStats = { successfulBatches: 0, failedBatches: 0 }
+  const fetchConcurrencyStats = { peak: 0 }
   const fetchPriceGroup = async (coinsToFetch: TCoinRequest[]): Promise<void> => {
     const rangeTimestampGroups =
       tuning.provider === 'yearn-prices' ? getYearnPricesSharedRangeTimestampGroups(coinsToFetch) : null
@@ -916,7 +920,8 @@ export async function fetchHistoricalPricesForTokenTimestamps(
             }))
           )
     const batches = buildRequestBatches(tokenRequests, effectiveTuning)
-    const batchGroups = chunkItems(batches, effectiveTuning.parallelRequests)
+    const batchGroups = Math.ceil(batches.length / effectiveTuning.parallelRequests)
+    const workerCount = Math.min(batches.length, effectiveTuning.parallelRequests)
     const allRequestedTimestamps = [...new Set(coinsToFetch.flatMap((coin) => coin.timestamps))].sort((a, b) => a - b)
     const groupPricePoints = countRequestedPricePoints(coinsToFetch)
 
@@ -927,7 +932,9 @@ export async function fetchHistoricalPricesForTokenTimestamps(
       pricePointCount: groupPricePoints,
       tokenRequests: tokenRequests.length,
       batches: batches.length,
-      batchGroups: batchGroups.length,
+      batchGroups,
+      scheduler: 'continuous-worker-pool',
+      workers: workerCount,
       maxTokensPerBatch: effectiveTuning.maxTokensPerBatch,
       maxPricePointsPerBatch: effectiveTuning.maxPricePointsPerBatch,
       maxTimestampsPerTokenPerBatch: effectiveTuning.maxTimestampsPerTokenPerBatch,
@@ -937,25 +944,26 @@ export async function fetchHistoricalPricesForTokenTimestamps(
       rangeWindows: rangeTimestampGroups?.length ?? null
     })
 
-    await batchGroups.reduce<Promise<void>>(async (previousGroupPromise, batchGroup, groupIndex) => {
-      await previousGroupPromise
-
-      const batchResults = await Promise.allSettled(
-        batchGroup.map((batch) => fetchBatch(batch.coinBatch, effectiveTuning))
-      )
-
-      batchResults.forEach((batchResult, batchIndex) => {
-        const batch = batchGroup[batchIndex]
+    const peakConcurrency = await runWithContinuousConcurrency(
+      batches,
+      effectiveTuning.parallelRequests,
+      async (batch) => {
+        const batchResult = await fetchBatch(batch.coinBatch, effectiveTuning).then(
+          (value) => ({ status: 'fulfilled' as const, value }),
+          (reason: unknown) => ({ status: 'rejected' as const, reason })
+        )
 
         if (batchResult.status === 'rejected') {
           fetchStats.failedBatches += 1
-          const batchTimestamps = [...new Set(batch.coinBatch.flatMap((coin) => coin.timestamps))].sort((a, b) => a - b)
+          const batchTimestamps = [...new Set(batch.coinBatch.flatMap((coin) => coin.timestamps))].sort(
+            (left, right) => left - right
+          )
           const batchPricePoints = batch.coinBatch.reduce((total, coin) => total + coin.timestamps.length, 0)
           console.error(
             `[${providerConfig.label}] Failed to fetch prices for ${batch.coinBatch.length} tokens and ${batchPricePoints} token-timestamp pairs:`,
             batchResult.reason
           )
-          debugError('prices', 'price batch group member failed', batchResult.reason, {
+          debugError('prices', 'price batch worker failed', batchResult.reason, {
             provider: providerConfig.provider,
             tokenCount: batch.coinBatch.length,
             timestampCount: batchTimestamps.length,
@@ -963,26 +971,29 @@ export async function fetchHistoricalPricesForTokenTimestamps(
             firstTimestamp: batchTimestamps[0] ?? null,
             lastTimestamp: batchTimestamps.length > 0 ? batchTimestamps[batchTimestamps.length - 1] : null
           })
-          return
+        } else {
+          fetchStats.successfulBatches += 1
+          const materializedPrices = materializeRequestedPrices(
+            batch.coinBatch,
+            batchResult.value,
+            matchPriceAtTimestamp
+          )
+          materializedPrices.forEach(({ tokenKey, timestamp, price }) => {
+            if (!result.has(tokenKey)) {
+              result.set(tokenKey, new Map())
+            }
+
+            const existingMap = result.get(tokenKey)!
+            existingMap.set(timestamp, price)
+          })
         }
 
-        fetchStats.successfulBatches += 1
-
-        const materializedPrices = materializeRequestedPrices(batch.coinBatch, batchResult.value, matchPriceAtTimestamp)
-        materializedPrices.forEach(({ tokenKey, timestamp, price }) => {
-          if (!result.has(tokenKey)) {
-            result.set(tokenKey, new Map())
-          }
-
-          const existingMap = result.get(tokenKey)!
-          existingMap.set(timestamp, price)
-        })
-      })
-
-      if (groupIndex < batchGroups.length - 1 && effectiveTuning.interGroupDelayMs > 0) {
-        await wait(effectiveTuning.interGroupDelayMs)
+        if (effectiveTuning.interGroupDelayMs > 0) {
+          await wait(effectiveTuning.interGroupDelayMs)
+        }
       }
-    }, Promise.resolve())
+    )
+    fetchConcurrencyStats.peak = Math.max(fetchConcurrencyStats.peak, peakConcurrency)
   }
 
   await fetchPriceGroup(coins)
@@ -1000,6 +1011,7 @@ export async function fetchHistoricalPricesForTokenTimestamps(
     successfulBatches: fetchStats.successfulBatches,
     failedBatches: fetchStats.failedBatches,
     totalPricePoints: countPricePoints(result),
+    peakConcurrentBatches: fetchConcurrencyStats.peak,
     resolution
   })
 
@@ -1018,24 +1030,80 @@ export async function fetchHistoricalPrices(
   )
 }
 
+interface TSortedPriceTimestampIndex {
+  readonly size: number
+  readonly timestamps: readonly number[]
+}
+
+const sortedPriceTimestampIndexes = new WeakMap<Map<number, number>, TSortedPriceTimestampIndex>()
+
+function getSortedPriceTimestamps(priceMap: Map<number, number>): readonly number[] {
+  const cached = sortedPriceTimestampIndexes.get(priceMap)
+  if (cached?.size === priceMap.size) {
+    return cached.timestamps
+  }
+
+  const timestamps = Array.from(priceMap.keys()).sort((left, right) => left - right)
+  sortedPriceTimestampIndexes.set(priceMap, { size: priceMap.size, timestamps })
+  return timestamps
+}
+
+function findClosestPriorTimestamp(
+  timestamps: readonly number[],
+  targetTimestamp: number,
+  lowerIndex = 0,
+  upperIndex = timestamps.length - 1,
+  closestPriorTimestamp: number | null = null
+): number | null {
+  if (lowerIndex > upperIndex) {
+    return closestPriorTimestamp
+  }
+
+  const middleIndex = Math.floor((lowerIndex + upperIndex) / 2)
+  const timestamp = timestamps[middleIndex]
+  if (timestamp === undefined) {
+    return closestPriorTimestamp
+  }
+  if (timestamp > targetTimestamp) {
+    return findClosestPriorTimestamp(timestamps, targetTimestamp, lowerIndex, middleIndex - 1, closestPriorTimestamp)
+  }
+  return findClosestPriorTimestamp(timestamps, targetTimestamp, middleIndex + 1, upperIndex, timestamp)
+}
+
+function findClosestNextTimestamp(
+  timestamps: readonly number[],
+  targetTimestamp: number,
+  lowerIndex = 0,
+  upperIndex = timestamps.length - 1,
+  closestNextTimestamp: number | null = null
+): number | null {
+  if (lowerIndex > upperIndex) {
+    return closestNextTimestamp
+  }
+
+  const middleIndex = Math.floor((lowerIndex + upperIndex) / 2)
+  const timestamp = timestamps[middleIndex]
+  if (timestamp === undefined) {
+    return closestNextTimestamp
+  }
+  if (timestamp < targetTimestamp) {
+    return findClosestNextTimestamp(timestamps, targetTimestamp, middleIndex + 1, upperIndex, closestNextTimestamp)
+  }
+  return findClosestNextTimestamp(timestamps, targetTimestamp, lowerIndex, middleIndex - 1, timestamp)
+}
+
 export function getPriceAtTimestamp(priceMap: Map<number, number>, targetTimestamp: number): number {
   if (priceMap.has(targetTimestamp)) {
     return priceMap.get(targetTimestamp)!
   }
 
-  const timestamps = Array.from(priceMap.keys()).sort((a, b) => a - b)
+  const timestamps = getSortedPriceTimestamps(priceMap)
 
   if (timestamps.length === 0) {
     return 0
   }
 
-  let closestPriorTimestamp: number | null = null
-  for (const timestamp of timestamps) {
-    if (timestamp > targetTimestamp) {
-      break
-    }
-    closestPriorTimestamp = timestamp
-  }
+  const closestPriorTimestamp = findClosestPriorTimestamp(timestamps, targetTimestamp)
 
   return closestPriorTimestamp !== null ? priceMap.get(closestPriorTimestamp) || 0 : 0
 }

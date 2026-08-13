@@ -4,6 +4,8 @@ const redisConfigs: Array<Record<string, unknown>> = []
 
 vi.mock('@upstash/redis', () => {
   class Redis {
+    readYourWritesSyncToken = ''
+
     constructor(config: Record<string, unknown>) {
       redisConfigs.push(config)
     }
@@ -68,6 +70,69 @@ describe('holdings ledger Redis adapter', () => {
         retry: false
       }
     ])
+  })
+
+  it('creates a bounded client whose requests each receive a fresh timeout signal', async () => {
+    vi.stubEnv('HOLDINGS_LEDGER_MODE', 'shadow')
+    vi.stubEnv('UPSTASH_REDIS_REST_URL_PORTFOLIO', 'https://redis.example')
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN_PORTFOLIO', 'test-token')
+
+    const { getHoldingsLedgerRedisClientWithTimeout } = await import('@/server/lib/holdings/storage/ledgerRedis')
+
+    const firstClient = getHoldingsLedgerRedisClientWithTimeout(2_000)
+    const secondClient = getHoldingsLedgerRedisClientWithTimeout(2_000)
+    expect(firstClient).not.toBeNull()
+    expect(secondClient).toBe(firstClient)
+    expect(redisConfigs).toHaveLength(1)
+    const signalFactory = redisConfigs[0]?.signal as (() => AbortSignal) | undefined
+    const firstSignal = signalFactory?.()
+    const secondSignal = signalFactory?.()
+
+    expect(redisConfigs[0]).toMatchObject({
+      automaticDeserialization: false,
+      readYourWrites: true,
+      retry: false
+    })
+    expect(firstSignal).toBeInstanceOf(AbortSignal)
+    expect(secondSignal).toBeInstanceOf(AbortSignal)
+    expect(firstSignal).not.toBe(secondSignal)
+    expect(firstSignal?.aborted).toBe(false)
+    expect(secondSignal?.aborted).toBe(false)
+  })
+
+  it('rejects invalid bounded-client timeouts before creating a client', async () => {
+    vi.stubEnv('HOLDINGS_LEDGER_MODE', 'shadow')
+    vi.stubEnv('UPSTASH_REDIS_REST_URL_PORTFOLIO', 'https://redis.example')
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN_PORTFOLIO', 'test-token')
+
+    const { getHoldingsLedgerRedisClientWithTimeout } = await import('@/server/lib/holdings/storage/ledgerRedis')
+
+    expect(() => getHoldingsLedgerRedisClientWithTimeout(0)).toThrow(
+      'Holdings ledger Redis request timeout must be a positive integer'
+    )
+    expect(redisConfigs).toEqual([])
+  })
+
+  it('adopts a successful bounded write token on the shared read client', async () => {
+    vi.stubEnv('HOLDINGS_LEDGER_MODE', 'shadow')
+    vi.stubEnv('UPSTASH_REDIS_REST_URL_PORTFOLIO', 'https://redis.example')
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN_PORTFOLIO', 'test-token')
+
+    const {
+      adoptHoldingsLedgerRedisReadYourWritesSyncToken,
+      getHoldingsLedgerRedisClient,
+      getHoldingsLedgerRedisClientWithTimeout
+    } = await import('@/server/lib/holdings/storage/ledgerRedis')
+    const sharedClient = getHoldingsLedgerRedisClient()
+    const boundedClient = getHoldingsLedgerRedisClientWithTimeout(3_000)
+    if (!sharedClient || !boundedClient) {
+      throw new Error('Expected Redis clients')
+    }
+    boundedClient.readYourWritesSyncToken = 'bounded-write-token'
+
+    adoptHoldingsLedgerRedisReadYourWritesSyncToken(boundedClient)
+
+    expect(sharedClient.readYourWritesSyncToken).toBe('bounded-write-token')
   })
 
   it('fingerprints the non-secret ledger runtime scope', async () => {

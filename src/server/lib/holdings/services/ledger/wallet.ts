@@ -7,14 +7,17 @@ export {
 export {
   getWalletLedgerRecordCount,
   isWalletLedgerCompatible,
+  readVerifiedWalletLedgerHeaderForAddress,
   readWalletLedger,
   synchronizeWalletLedger,
   type TSynchronizedWalletLedgerContext,
   type TWalletLedgerSyncArguments,
+  type TWalletLedgerVaultIdentifier,
   withSynchronizedWalletLedger
 } from '@/server/lib/holdings/services/ledger/walletSync'
 export {
   createWalletLedgerDailyUsdTotalsCache,
+  getWalletLedgerDailyUsdDateRange,
   getWalletLedgerDailyUsdTotalsKey,
   type TWalletLedgerDailyUsdCacheIdentity,
   type TWalletLedgerDailyUsdCacheMetaIdentity,
@@ -23,6 +26,7 @@ export {
 } from '@/server/lib/holdings/services/ledger/walletTotalsCache'
 export {
   type TWalletLedgerBusySyncResult,
+  type TWalletLedgerCheckedMarkerV2,
   type TWalletLedgerCompletedSyncResult,
   type TWalletLedgerCoverageV1,
   type TWalletLedgerReadResult,

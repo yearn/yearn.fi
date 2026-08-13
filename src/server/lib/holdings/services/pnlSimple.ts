@@ -14,7 +14,6 @@ import {
   fetchHistoricalPricesForTokenTimestamps,
   getChainPrefix,
   getHistoricalPriceFetchFailedBatches,
-  getPriceAtTimestamp,
   type THistoricalPriceRequest
 } from './defillama'
 import {
@@ -518,11 +517,12 @@ function tokenPriceMapKey(metadata: VaultMetadata): string {
   return `${getChainPrefix(metadata.chainId)}:${metadata.token.address.toLowerCase()}`
 }
 
-function getReceiptPriceBucketTimestamps(timestamp: number, currentTimestamp: number): number[] {
-  const dayStart = Math.floor(timestamp / RECEIPT_PRICE_BUCKET_SECONDS) * RECEIPT_PRICE_BUCKET_SECONDS
-  const nextDayStart = dayStart + RECEIPT_PRICE_BUCKET_SECONDS
+function getReceiptPriceBucketTimestamp(timestamp: number): number {
+  return Math.floor(timestamp / RECEIPT_PRICE_BUCKET_SECONDS) * RECEIPT_PRICE_BUCKET_SECONDS
+}
 
-  return [dayStart, ...(nextDayStart <= currentTimestamp ? [nextDayStart] : [])]
+function getReceiptDayPrice(priceData: Map<number, number>, timestamp: number): number {
+  return priceData.get(getReceiptPriceBucketTimestamp(timestamp)) ?? priceData.get(timestamp) ?? 0
 }
 
 function isReceiptEvent(event: TRawPnlEvent, userAddress: string): boolean {
@@ -533,11 +533,10 @@ export function buildReceiptPriceRequests(args: {
   events: TRawPnlEvent[]
   metadata: Map<string, VaultMetadata>
   userAddress: string
-  currentTimestamp: number
 }): TSimpleReceiptPriceRequest[] {
   const userAddress = lowerCaseAddress(args.userAddress)
   return Array.from(
-    args.events
+    buildProcessableProtocolReturnEvents(args.events, userAddress)
       .filter((event) => isReceiptEvent(event, userAddress))
       .reduce<Map<string, { chainId: number; address: string; timestamps: Set<number> }>>((requests, event) => {
         const metadata = args.metadata.get(toVaultKey(event.chainId, event.familyVaultAddress))
@@ -553,9 +552,7 @@ export function buildReceiptPriceRequests(args: {
           timestamps: new Set<number>()
         }
 
-        getReceiptPriceBucketTimestamps(event.blockTimestamp, args.currentTimestamp).forEach((timestamp) => {
-          request.timestamps.add(timestamp)
-        })
+        request.timestamps.add(getReceiptPriceBucketTimestamp(event.blockTimestamp))
         requests.set(tokenKey, request)
         return requests
       }, new Map())
@@ -637,7 +634,7 @@ function getReceiptPriceUsd(
   }
 
   const priceMap = priceData.get(tokenPriceMapKey(metadata))
-  return priceMap ? getPriceAtTimestamp(priceMap, timestamp) : 0
+  return priceMap ? getReceiptDayPrice(priceMap, timestamp) : 0
 }
 
 function getReceiptPriceEth(ethPriceData: Map<number, number>, receiptPriceUsd: number, timestamp: number): number {
@@ -645,7 +642,7 @@ function getReceiptPriceEth(ethPriceData: Map<number, number>, receiptPriceUsd: 
     return 0
   }
 
-  const ethPriceUsd = getPriceAtTimestamp(ethPriceData, timestamp)
+  const ethPriceUsd = getReceiptDayPrice(ethPriceData, timestamp)
   return ethPriceUsd > 0 ? receiptPriceUsd / ethPriceUsd : 0
 }
 
@@ -2542,8 +2539,7 @@ async function calculateHoldingsProtocolReturnHistory(
   const baseReceiptPriceRequests = buildReceiptPriceRequests({
     events: effectiveEvents,
     metadata: vaultMetadata,
-    userAddress,
-    currentTimestamp: latestTimestamp
+    userAddress
   })
   const receiptPriceRequests = expandNestedVaultAssetPriceRequests(baseReceiptPriceRequests, vaultMetadata)
   const ethReceiptPriceTimestamps = Array.from(

@@ -1,4 +1,5 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { createDeferred } from '@/server/lib/holdings/test-utils/deferred'
 
 const ADDRESS = '0x1111111111111111111111111111111111111111'
 const UPDATED_AT_MS = Date.UTC(2026, 7, 8, 12)
@@ -7,6 +8,17 @@ const SOURCE_FINGERPRINT = 'b'.repeat(64)
 const LEDGER_REVISION = 'c'.repeat(64)
 const EVENT_REVISION = 'd'.repeat(64)
 const TOTALS_CACHE = { read: vi.fn(), write: vi.fn() }
+const DERIVED_CACHE_IDENTITY = {
+  walletHash: WALLET_HASH,
+  ledgerRevision: LEDGER_REVISION,
+  eventRevision: EVENT_REVISION,
+  sourceGeneration: 1,
+  appliedInvalidationSequence: 2,
+  ledgerCalculationVersion: 'calculation-v1',
+  latestSettledDayTimestamp: Date.UTC(2026, 7, 7) / 1000,
+  version: 'all',
+  timeframe: '1y'
+}
 const VALUATION_LOADER = {
   key: 'valuation-loader',
   fetchVaultPps: vi.fn(),
@@ -57,6 +69,7 @@ const SYNC_TRANSITION = {
 const mocks = vi.hoisted(() => ({
   createWalletLedgerDailyUsdTotalsCache: vi.fn(),
   createWalletLedgerEventSource: vi.fn(),
+  getWalletLedgerDailyUsdDateRange: vi.fn(),
   createHoldingsValuationLoader: vi.fn(),
   getLedgerAdminAccessError: vi.fn(),
   getLedgerReadinessError: vi.fn(),
@@ -64,10 +77,20 @@ const mocks = vi.hoisted(() => ({
   getHoldingsProtocolReturnHistory: vi.fn(),
   getLedgerProtocolReturnRows: vi.fn(),
   getSettledAddressScopedContext: vi.fn(),
+  getRedis: vi.fn(),
+  after: vi.fn(),
+  enqueueWalletLedgerDerivedPortfolioCacheWrite: vi.fn(),
+  readInvalidationHead: vi.fn(),
+  readVerifiedWalletLedgerHeaderForAddress: vi.fn(),
   isWalletLedgerCompatible: vi.fn(),
+  readWalletLedgerDerivedPortfolioCache: vi.fn(),
   readWalletLedger: vi.fn(),
-  synchronizeWalletLedger: vi.fn()
+  synchronizeWalletLedger: vi.fn(),
+  prefetchGlobalVaultMetadata: vi.fn(),
+  resetGlobalVaultMetadataCacheForBenchmark: vi.fn()
 }))
+
+vi.mock('next/server', () => ({ after: mocks.after }))
 
 vi.mock('@/server/holdings/ledger/access', () => ({
   getLedgerAdminAccessError: mocks.getLedgerAdminAccessError,
@@ -75,7 +98,8 @@ vi.mock('@/server/holdings/ledger/access', () => ({
   isValidLedgerWalletAddress: (address: string) => /^0x[a-fA-F0-9]{40}$/.test(address)
 }))
 
-vi.mock('@/server/lib/holdings', () => ({
+vi.mock('@/server/lib/holdings', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/server/lib/holdings')>()),
   getHistoricalHoldingsChart: mocks.getHistoricalHoldingsChart,
   getHoldingsProtocolReturnHistory: mocks.getHoldingsProtocolReturnHistory
 }))
@@ -88,16 +112,37 @@ vi.mock('@/server/lib/holdings/services/valuationLoader', () => ({
   createHoldingsValuationLoader: mocks.createHoldingsValuationLoader
 }))
 
+vi.mock('@/server/lib/holdings/services/vaults', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/server/lib/holdings/services/vaults')>()),
+  prefetchGlobalVaultMetadata: mocks.prefetchGlobalVaultMetadata,
+  resetGlobalVaultMetadataCacheForBenchmark: mocks.resetGlobalVaultMetadataCacheForBenchmark
+}))
+
 vi.mock('@/server/lib/holdings/services/settledHoldingsContext', () => ({
   getSettledAddressScopedContext: mocks.getSettledAddressScopedContext
+}))
+
+vi.mock('@/server/lib/holdings/services/ledger/walletDerivedCache', () => ({
+  enqueueWalletLedgerDerivedPortfolioCacheWrite: mocks.enqueueWalletLedgerDerivedPortfolioCacheWrite,
+  readWalletLedgerDerivedPortfolioCache: mocks.readWalletLedgerDerivedPortfolioCache
 }))
 
 vi.mock('@/server/lib/holdings/services/ledger/wallet', () => ({
   createWalletLedgerDailyUsdTotalsCache: mocks.createWalletLedgerDailyUsdTotalsCache,
   createWalletLedgerEventSource: mocks.createWalletLedgerEventSource,
+  getWalletLedgerDailyUsdDateRange: mocks.getWalletLedgerDailyUsdDateRange,
   isWalletLedgerCompatible: mocks.isWalletLedgerCompatible,
   readWalletLedger: mocks.readWalletLedger,
+  readVerifiedWalletLedgerHeaderForAddress: mocks.readVerifiedWalletLedgerHeaderForAddress,
   synchronizeWalletLedger: mocks.synchronizeWalletLedger
+}))
+
+vi.mock('@/server/lib/holdings/services/ledger/walletInvalidation', () => ({
+  readWalletLedgerInvalidationHead: mocks.readInvalidationHead
+}))
+
+vi.mock('@/server/lib/holdings/storage/ledgerRedis', () => ({
+  getHoldingsLedgerRedisClient: mocks.getRedis
 }))
 
 import { GET, OPTIONS } from '@/server/holdings/ledger/portfolio'
@@ -148,16 +193,40 @@ describe('wallet ledger portfolio route', () => {
       outcome: 'updated',
       syncType: 'warm',
       ledger: LEDGER,
+      effectiveCoverage: LEDGER.coverage,
+      coveredAtMs: UPDATED_AT_MS,
       transition: SYNC_TRANSITION
     })
     mocks.readWalletLedger.mockResolvedValue({ status: 'missing' })
+    mocks.readVerifiedWalletLedgerHeaderForAddress.mockResolvedValue({ status: 'missing' })
+    mocks.getRedis.mockReturnValue({ marker: 'redis' })
+    mocks.readInvalidationHead.mockResolvedValue(2)
     mocks.createWalletLedgerEventSource.mockReturnValue(EVENT_SOURCE)
     mocks.createWalletLedgerDailyUsdTotalsCache.mockReturnValue(TOTALS_CACHE)
+    mocks.getWalletLedgerDailyUsdDateRange.mockReturnValue({
+      startDate: '2026-08-07',
+      endDate: '2026-08-07',
+      dates: ['2026-08-07']
+    })
+    TOTALS_CACHE.read.mockResolvedValue({ totals: [], oldestUpdatedAt: null })
+    TOTALS_CACHE.write.mockResolvedValue(true)
     mocks.createHoldingsValuationLoader.mockReturnValue(VALUATION_LOADER)
+    mocks.prefetchGlobalVaultMetadata.mockResolvedValue(undefined)
+    mocks.resetGlobalVaultMetadataCacheForBenchmark.mockResolvedValue(undefined)
     mocks.getSettledAddressScopedContext.mockReturnValue(SETTLED_CONTEXT)
+    mocks.readWalletLedgerDerivedPortfolioCache.mockResolvedValue({ status: 'miss' })
+    mocks.enqueueWalletLedgerDerivedPortfolioCacheWrite.mockReturnValue({
+      status: 'queued',
+      persistence: Promise.resolve('saved')
+    })
     mocks.getHistoricalHoldingsChart.mockResolvedValue(createBalance())
     mocks.getHoldingsProtocolReturnHistory.mockResolvedValue(createProtocolReturn())
     mocks.getLedgerProtocolReturnRows.mockResolvedValue(createGrowth())
+  })
+
+  afterEach(() => {
+    vi.useRealTimers()
+    vi.unstubAllEnvs()
   })
 
   it('allows the protected rebuild header in CORS preflight', () => {
@@ -173,7 +242,16 @@ describe('wallet ledger portfolio route', () => {
     expect(response.status).toBe(200)
     expect(response.headers.get('Cache-Control')).toBe('private, no-store, max-age=0, must-revalidate')
     expect(mocks.getLedgerAdminAccessError).not.toHaveBeenCalled()
-    expect(mocks.synchronizeWalletLedger).toHaveBeenCalledWith({ address: ADDRESS, forceRebuild: false })
+    expect(mocks.prefetchGlobalVaultMetadata).toHaveBeenCalledTimes(1)
+    expect(mocks.prefetchGlobalVaultMetadata.mock.invocationCallOrder[0]).toBeLessThan(
+      mocks.synchronizeWalletLedger.mock.invocationCallOrder[0] ?? Number.POSITIVE_INFINITY
+    )
+    expect(mocks.synchronizeWalletLedger).toHaveBeenCalledWith({
+      address: ADDRESS,
+      forceRebuild: false,
+      prefetchVaultMetadata: true,
+      onVaultsDiscovered: expect.any(Function)
+    })
     expect(mocks.createWalletLedgerEventSource).toHaveBeenCalledWith({
       ledger: LEDGER,
       eventUpperTimestamp: UPDATED_AT_MS / 1000,
@@ -184,6 +262,11 @@ describe('wallet ledger portfolio route', () => {
       fetchType: 'seq',
       paginationMode: 'paged',
       eventSource: EVENT_SOURCE
+    })
+    expect(mocks.readWalletLedgerDerivedPortfolioCache).toHaveBeenCalledWith({
+      ...DERIVED_CACHE_IDENTITY,
+      version: 'v3',
+      timeframe: 'all'
     })
     expect(mocks.getHistoricalHoldingsChart).toHaveBeenCalledWith(
       ADDRESS,
@@ -196,8 +279,7 @@ describe('wallet ledger portfolio route', () => {
       expect.objectContaining({
         eventSource: EVENT_SOURCE,
         totalsCache: TOTALS_CACHE,
-        valuationLoader: VALUATION_LOADER,
-        settledContext: SETTLED_CONTEXT
+        valuationLoader: VALUATION_LOADER
       })
     )
     expect(mocks.getHoldingsProtocolReturnHistory).toHaveBeenCalledWith(
@@ -222,6 +304,10 @@ describe('wallet ledger portfolio route', () => {
       eventSource: EVENT_SOURCE,
       options: { valuationLoader: VALUATION_LOADER, settledContext: SETTLED_CONTEXT }
     })
+    expect(mocks.enqueueWalletLedgerDerivedPortfolioCacheWrite).toHaveBeenCalledWith(
+      { ...DERIVED_CACHE_IDENTITY, version: 'v3', timeframe: 'all' },
+      { protocolReturn: createProtocolReturn(), growth: createGrowth() }
+    )
     await expect(response.json()).resolves.toMatchObject({
       address: ADDRESS.toLowerCase(),
       version: 'v3',
@@ -250,6 +336,149 @@ describe('wallet ledger portfolio route', () => {
     })
   })
 
+  it('returns without waiting for derived Redis persistence and extends it with after', async () => {
+    const persistence = createDeferred<'saved'>()
+    mocks.enqueueWalletLedgerDerivedPortfolioCacheWrite.mockReturnValueOnce({
+      status: 'queued',
+      persistence: persistence.promise
+    })
+
+    const response = await GET(createRequest())
+
+    expect(response.status).toBe(200)
+    expect(mocks.after).toHaveBeenCalledTimes(1)
+    const afterTask = mocks.after.mock.calls[0]?.[0] as (() => Promise<'saved'>) | undefined
+    expect(afterTask?.()).toBe(persistence.promise)
+
+    persistence.resolve('saved')
+    await persistence.promise
+  })
+
+  it('returns without waiting for daily USD persistence and extends it with after', async () => {
+    const persistence = createDeferred<boolean>()
+    mocks.enqueueWalletLedgerDerivedPortfolioCacheWrite.mockReturnValueOnce({
+      status: 'memory-only',
+      persistence: null
+    })
+    mocks.getHistoricalHoldingsChart.mockImplementationOnce((...args: unknown[]) => {
+      const options = args[7] as { readonly scheduleTotalsCacheWrite?: (write: Promise<boolean>) => void } | undefined
+      options?.scheduleTotalsCacheWrite?.(persistence.promise)
+      return Promise.resolve(createBalance())
+    })
+
+    const response = await GET(createRequest())
+
+    expect(response.status).toBe(200)
+    expect(mocks.after).toHaveBeenCalledTimes(1)
+    const afterTask = mocks.after.mock.calls[0]?.[0] as (() => Promise<boolean>) | undefined
+    expect(afterTask?.()).toBe(persistence.promise)
+
+    persistence.resolve(true)
+    await persistence.promise
+  })
+
+  it('skips projection cache reads after a cold bootstrap while preserving daily USD writes', async () => {
+    mocks.synchronizeWalletLedger.mockResolvedValueOnce({
+      status: 'ready',
+      outcome: 'updated',
+      syncType: 'bootstrap',
+      ledger: LEDGER,
+      effectiveCoverage: LEDGER.coverage,
+      coveredAtMs: UPDATED_AT_MS,
+      transition: {
+        previousEventRevision: null,
+        previousAppliedInvalidationSequence: null,
+        dirtyFromTimestamp: null
+      }
+    })
+
+    const response = await GET(createRequest())
+
+    expect(response.status).toBe(200)
+    expect(mocks.readWalletLedgerDerivedPortfolioCache).not.toHaveBeenCalled()
+    const balanceOptions = mocks.getHistoricalHoldingsChart.mock.calls[0]?.[7] as
+      | {
+          readonly totalsCache?: {
+            readonly read: (startDate: string, endDate: string) => Promise<unknown>
+            readonly write: typeof TOTALS_CACHE.write
+          }
+        }
+      | undefined
+    expect(balanceOptions?.totalsCache).not.toBe(TOTALS_CACHE)
+    await expect(balanceOptions?.totalsCache?.read('2026-08-07', '2026-08-07')).resolves.toEqual({
+      totals: [],
+      oldestUpdatedAt: null
+    })
+    expect(TOTALS_CACHE.read).not.toHaveBeenCalled()
+    expect(balanceOptions?.totalsCache?.write).toBe(TOTALS_CACHE.write)
+  })
+
+  it('preserves daily USD reads but skips an impossible derived hit after wallet events change', async () => {
+    mocks.synchronizeWalletLedger.mockResolvedValueOnce({
+      status: 'ready',
+      outcome: 'updated',
+      syncType: 'warm',
+      ledger: LEDGER,
+      effectiveCoverage: LEDGER.coverage,
+      coveredAtMs: UPDATED_AT_MS,
+      transition: {
+        previousEventRevision: 'e'.repeat(64),
+        previousAppliedInvalidationSequence: 2,
+        dirtyFromTimestamp: UPDATED_AT_MS / 1000
+      }
+    })
+
+    const response = await GET(createRequest())
+
+    expect(response.status).toBe(200)
+    expect(mocks.readWalletLedgerDerivedPortfolioCache).not.toHaveBeenCalled()
+    expect(mocks.getHistoricalHoldingsChart).toHaveBeenCalledWith(
+      ADDRESS,
+      'all',
+      'seq',
+      'paged',
+      'usd',
+      '1y',
+      undefined,
+      expect.objectContaining({ totalsCache: TOTALS_CACHE })
+    )
+  })
+
+  it('starts request-scoped PPS loading during synchronization without awaiting the prefetch', async () => {
+    const ppsResult = createDeferred<Map<string, never>>()
+    VALUATION_LOADER.fetchVaultPps.mockReturnValueOnce(ppsResult.promise)
+    mocks.synchronizeWalletLedger.mockImplementationOnce(
+      async ({ onVaultsDiscovered }: { readonly onVaultsDiscovered?: (vaults: readonly unknown[]) => void }) => {
+        onVaultsDiscovered?.([{ chainId: 1, vaultAddress: '0x2222222222222222222222222222222222222222' }])
+        return {
+          status: 'ready',
+          outcome: 'updated',
+          syncType: 'warm',
+          ledger: LEDGER,
+          effectiveCoverage: LEDGER.coverage,
+          coveredAtMs: UPDATED_AT_MS,
+          transition: SYNC_TRANSITION
+        }
+      }
+    )
+
+    try {
+      const response = await GET(createRequest())
+
+      expect(response.status).toBe(200)
+      expect(mocks.createHoldingsValuationLoader.mock.invocationCallOrder[0]).toBeLessThan(
+        mocks.synchronizeWalletLedger.mock.invocationCallOrder[0] ?? Number.POSITIVE_INFINITY
+      )
+      expect(VALUATION_LOADER.fetchVaultPps).toHaveBeenCalledWith(
+        [{ chainId: 1, vaultAddress: '0x2222222222222222222222222222222222222222' }],
+        { consumer: 'balance' }
+      )
+    } finally {
+      ppsResult.resolve(new Map())
+      await ppsResult.promise
+    }
+  })
+
   it('preserves provisional balance completeness in the combined response', async () => {
     mocks.getHistoricalHoldingsChart.mockResolvedValueOnce(createBalance(true, false))
 
@@ -261,6 +490,148 @@ describe('wallet ledger portfolio route', () => {
         dataPoints: [{ date: '2026-08-07', value: 42, isComplete: false }]
       }
     })
+  })
+
+  it('serves cached protocol return and growth without starting their valuation work', async () => {
+    mocks.readWalletLedgerDerivedPortfolioCache.mockResolvedValueOnce({
+      status: 'hit',
+      value: { protocolReturn: createProtocolReturn(2), growth: createGrowth(2) }
+    })
+
+    const response = await GET(createRequest())
+
+    expect(response.status).toBe(200)
+    expect(mocks.getHoldingsProtocolReturnHistory).not.toHaveBeenCalled()
+    expect(mocks.getLedgerProtocolReturnRows).not.toHaveBeenCalled()
+    expect(mocks.getSettledAddressScopedContext).not.toHaveBeenCalled()
+    expect(mocks.enqueueWalletLedgerDerivedPortfolioCacheWrite).not.toHaveBeenCalled()
+    await expect(response.json()).resolves.toMatchObject({
+      protocolReturn: { summary: { totalVaults: 2 } },
+      growth: { summary: { totalVaults: 2 } }
+    })
+  })
+
+  it('serves a fresh fully cached USD response without downloading or decoding wallet events', async () => {
+    vi.stubEnv('HOLDINGS_LEDGER_CHAIN_IDS', '1,10,137,250,8453,42161,747474')
+    vi.useFakeTimers()
+    vi.setSystemTime(UPDATED_AT_MS + 60_000)
+    mocks.readVerifiedWalletLedgerHeaderForAddress.mockResolvedValueOnce({
+      status: 'ready',
+      header: {
+        schemaVersion: 2,
+        revision: LEDGER_REVISION,
+        eventRevision: EVENT_REVISION,
+        calculationVersion: 'canonical-envio-ledger-v3',
+        sourceGeneration: 1,
+        appliedInvalidationSequence: 2,
+        updatedAtMs: UPDATED_AT_MS,
+        coveredAtMs: UPDATED_AT_MS,
+        eventCount: 2,
+        hasActivity: true,
+        encodedBytes: 1_000,
+        decodedBytes: 2_000,
+        checkedAtMs: UPDATED_AT_MS,
+        reconciledAtMs: UPDATED_AT_MS,
+        coverage: [
+          { chainId: 1, startBlock: 100, endBlock: null, completeThroughBlock: 1_000 },
+          { chainId: 10, startBlock: 200, endBlock: null, completeThroughBlock: 2_000 },
+          { chainId: 137, startBlock: 300, endBlock: null, completeThroughBlock: 3_000 },
+          { chainId: 250, startBlock: 400, endBlock: null, completeThroughBlock: 4_000 },
+          { chainId: 8453, startBlock: 500, endBlock: null, completeThroughBlock: 5_000 },
+          { chainId: 42161, startBlock: 600, endBlock: null, completeThroughBlock: 6_000 },
+          { chainId: 747474, startBlock: 700, endBlock: null, completeThroughBlock: 7_000 }
+        ]
+      }
+    })
+    TOTALS_CACHE.read.mockResolvedValueOnce({
+      totals: [{ date: '2026-08-07', usdValue: 42 }],
+      oldestUpdatedAt: new Date(UPDATED_AT_MS)
+    })
+    mocks.readWalletLedgerDerivedPortfolioCache.mockResolvedValueOnce({
+      status: 'hit',
+      value: { protocolReturn: createProtocolReturn(2), growth: createGrowth(2) }
+    })
+
+    const response = await GET(createRequest())
+
+    expect(response.status).toBe(200)
+    expect(mocks.synchronizeWalletLedger).not.toHaveBeenCalled()
+    expect(mocks.prefetchGlobalVaultMetadata).not.toHaveBeenCalled()
+    expect(mocks.readWalletLedger).not.toHaveBeenCalled()
+    expect(mocks.createWalletLedgerEventSource).not.toHaveBeenCalled()
+    expect(mocks.getHistoricalHoldingsChart).not.toHaveBeenCalled()
+    await expect(response.json()).resolves.toMatchObject({
+      ledger: { revision: LEDGER_REVISION, freshness: 'cached', eventCount: 2 },
+      balance: { isComplete: true, dataPoints: [{ date: '2026-08-07', value: 42, isComplete: true }] },
+      protocolReturn: { summary: { totalVaults: 2 } },
+      growth: { summary: { totalVaults: 2 } }
+    })
+  })
+
+  it('resets process metadata before a benchmark cold request and confirms it in a response header', async () => {
+    vi.stubEnv('HOLDINGS_LEDGER_KEY_NAMESPACE', 'benchmark_portfolio_test')
+
+    const response = await GET(createRequest('&benchmarkResetMetadataCache=1'))
+
+    expect(response.status).toBe(200)
+    expect(response.headers.get('x-holdings-benchmark-metadata-cache-reset')).toBe('1')
+    expect(mocks.resetGlobalVaultMetadataCacheForBenchmark).toHaveBeenCalledTimes(1)
+    expect(mocks.resetGlobalVaultMetadataCacheForBenchmark.mock.invocationCallOrder[0]).toBeLessThan(
+      mocks.synchronizeWalletLedger.mock.invocationCallOrder[0] ?? Number.POSITIVE_INFINITY
+    )
+  })
+
+  it('rejects process metadata reset outside an isolated benchmark namespace', async () => {
+    const response = await GET(createRequest('&benchmarkResetMetadataCache=1'))
+
+    expect(response.status).toBe(403)
+    expect(mocks.resetGlobalVaultMetadataCacheForBenchmark).not.toHaveBeenCalled()
+    expect(mocks.synchronizeWalletLedger).not.toHaveBeenCalled()
+  })
+
+  it('falls back to the full ledger path when either cache is incomplete', async () => {
+    vi.stubEnv('HOLDINGS_LEDGER_CHAIN_IDS', '1,10,137,250,8453,42161,747474')
+    vi.useFakeTimers()
+    vi.setSystemTime(UPDATED_AT_MS + 60_000)
+    mocks.readVerifiedWalletLedgerHeaderForAddress.mockResolvedValueOnce({
+      status: 'ready',
+      header: {
+        schemaVersion: 2,
+        revision: LEDGER_REVISION,
+        eventRevision: EVENT_REVISION,
+        calculationVersion: 'canonical-envio-ledger-v3',
+        sourceGeneration: 1,
+        appliedInvalidationSequence: 2,
+        updatedAtMs: UPDATED_AT_MS,
+        coveredAtMs: UPDATED_AT_MS,
+        eventCount: 2,
+        hasActivity: true,
+        encodedBytes: 1_000,
+        decodedBytes: 2_000,
+        checkedAtMs: UPDATED_AT_MS,
+        reconciledAtMs: UPDATED_AT_MS,
+        coverage: [
+          { chainId: 1, startBlock: 100, endBlock: null, completeThroughBlock: 1_000 },
+          { chainId: 10, startBlock: 200, endBlock: null, completeThroughBlock: 2_000 },
+          { chainId: 137, startBlock: 300, endBlock: null, completeThroughBlock: 3_000 },
+          { chainId: 250, startBlock: 400, endBlock: null, completeThroughBlock: 4_000 },
+          { chainId: 8453, startBlock: 500, endBlock: null, completeThroughBlock: 5_000 },
+          { chainId: 42161, startBlock: 600, endBlock: null, completeThroughBlock: 6_000 },
+          { chainId: 747474, startBlock: 700, endBlock: null, completeThroughBlock: 7_000 }
+        ]
+      }
+    })
+    TOTALS_CACHE.read.mockResolvedValueOnce({ totals: [], oldestUpdatedAt: null })
+    mocks.readWalletLedgerDerivedPortfolioCache.mockResolvedValueOnce({
+      status: 'hit',
+      value: { protocolReturn: createProtocolReturn(2), growth: createGrowth(2) }
+    })
+
+    const response = await GET(createRequest())
+
+    expect(response.status).toBe(200)
+    expect(mocks.synchronizeWalletLedger).toHaveBeenCalledTimes(1)
+    expect(mocks.getHistoricalHoldingsChart).toHaveBeenCalledTimes(1)
   })
 
   it('uses the combined portfolio route identifier in debug logs', async () => {
@@ -283,6 +654,7 @@ describe('wallet ledger portfolio route', () => {
 
     expect(response.status).toBe(200)
     expect(mocks.synchronizeWalletLedger).not.toHaveBeenCalled()
+    expect(mocks.prefetchGlobalVaultMetadata).not.toHaveBeenCalled()
     expect(mocks.readWalletLedger).toHaveBeenCalledWith({ address: ADDRESS })
     await expect(response.json()).resolves.toMatchObject({ ledger: { freshness: 'cached' } })
   })
@@ -303,6 +675,8 @@ describe('wallet ledger portfolio route', () => {
       outcome: 'fresh',
       syncType: 'fresh',
       ledger: LEDGER,
+      effectiveCoverage: LEDGER.coverage,
+      coveredAtMs: UPDATED_AT_MS,
       transition: SYNC_TRANSITION
     })
 
@@ -317,7 +691,14 @@ describe('wallet ledger portfolio route', () => {
 
     expect(response.status).toBe(200)
     expect(mocks.getLedgerAdminAccessError).toHaveBeenCalledWith(expect.any(Request), { requiresEnvio: true })
-    expect(mocks.synchronizeWalletLedger).toHaveBeenCalledWith({ address: ADDRESS, forceRebuild: true })
+    expect(mocks.synchronizeWalletLedger).toHaveBeenCalledWith({
+      address: ADDRESS,
+      forceRebuild: true,
+      prefetchVaultMetadata: true,
+      onVaultsDiscovered: expect.any(Function)
+    })
+    expect(mocks.readWalletLedgerDerivedPortfolioCache).not.toHaveBeenCalled()
+    expect(mocks.enqueueWalletLedgerDerivedPortfolioCacheWrite).toHaveBeenCalled()
   })
 
   it('keeps forced rebuilds behind ledger admin access', async () => {

@@ -74,7 +74,7 @@ function assertSha256(value: unknown, label: string): asserts value is string {
   }
 }
 
-function parseCoverage(value: unknown): TWalletLedgerCoverageV1[] {
+export function parseWalletLedgerCoverage(value: unknown): TWalletLedgerCoverageV1[] {
   if (!Array.isArray(value) || value.length === 0) {
     throw new Error('Wallet ledger coverage must contain at least one chain')
   }
@@ -165,7 +165,7 @@ export function parseWalletLedgerPayload(value: unknown): TWalletLedgerPayloadV3
   ) {
     throw new Error('Wallet ledger timestamps are inconsistent')
   }
-  const coverage = parseCoverage(value.coverage)
+  const coverage = parseWalletLedgerCoverage(value.coverage)
   const streams = normalizeStreams(value.streams)
   assertStreamsWithinCoverage(streams, coverage)
   return {

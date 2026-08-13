@@ -42,6 +42,7 @@ export interface TLedgerMetric {
   envioPages?: number
   envioRows?: number
   envioRequestCount?: number
+  envioPresenceChainProbeCount?: number
   envioPresenceRequestCount?: number
   envioBatchedRequestCount?: number
   envioContinuationRequestCount?: number
@@ -112,6 +113,7 @@ export function reportLedgerMetric(metric: TLedgerMetric, logger: TLedgerMetricL
       envioPages: metric.envioPages,
       envioRows: metric.envioRows,
       envioRequestCount: metric.envioRequestCount,
+      envioPresenceChainProbeCount: metric.envioPresenceChainProbeCount,
       envioPresenceRequestCount: metric.envioPresenceRequestCount,
       envioBatchedRequestCount: metric.envioBatchedRequestCount,
       envioContinuationRequestCount: metric.envioContinuationRequestCount,

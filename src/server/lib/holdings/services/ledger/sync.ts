@@ -615,7 +615,7 @@ async function performLedgerSync(args: {
     walletHash: args.walletHash,
     lock: args.lock
   })
-  const fetchStrategy: TEnvioLedgerFetchStrategy = syncType === 'warm' ? 'warm-batched' : 'faceted-batched'
+  const fetchStrategy: TEnvioLedgerFetchStrategy = syncType === 'warm' ? 'warm-batched' : 'cold-batched'
   const getSourceFetchDurationMs = startHoldingsDebugTimer()
   const fetched = await fetchEnvioLedgerSource({
     address: args.address,
@@ -632,9 +632,13 @@ async function performLedgerSync(args: {
     rows: fetched.stats.totalRows,
     chains: fetched.stats.chainCount,
     requests: fetched.stats.totalRequests,
+    presenceChainProbes: fetched.stats.validationQueries,
+    presenceHttpRequests: fetched.stats.presenceRequests,
     presenceRequests: fetched.stats.presenceRequests,
     batchedRequests: fetched.stats.batchedRequests,
     continuationRequests: fetched.stats.continuationRequests,
+    blockPartitionCount: fetched.stats.blockPartitionCount ?? 0,
+    blockPartitionRequests: fetched.stats.blockPartitionRequests ?? 0,
     validationQueries: fetched.stats.validationQueries
   })
   const getMetadataRevalidationDurationMs = startHoldingsDebugTimer()
@@ -698,6 +702,7 @@ async function performLedgerSync(args: {
       envioPages: fetched.stats.totalPages,
       envioRows: fetched.stats.totalRows,
       envioRequestCount: fetched.stats.totalRequests,
+      envioPresenceChainProbeCount: fetched.stats.validationQueries,
       envioPresenceRequestCount: fetched.stats.presenceRequests,
       envioBatchedRequestCount: fetched.stats.batchedRequests,
       envioContinuationRequestCount: fetched.stats.continuationRequests
@@ -777,6 +782,7 @@ async function performLedgerSync(args: {
       envioPages: fetched.stats.totalPages,
       envioRows: fetched.stats.totalRows,
       envioRequestCount: fetched.stats.totalRequests,
+      envioPresenceChainProbeCount: fetched.stats.validationQueries,
       envioPresenceRequestCount: fetched.stats.presenceRequests,
       envioBatchedRequestCount: fetched.stats.batchedRequests,
       envioContinuationRequestCount: fetched.stats.continuationRequests,
@@ -911,6 +917,7 @@ async function performLedgerSync(args: {
     envioPages: fetched.stats.totalPages,
     envioRows: fetched.stats.totalRows,
     envioRequestCount: fetched.stats.totalRequests,
+    envioPresenceChainProbeCount: fetched.stats.validationQueries,
     envioPresenceRequestCount: fetched.stats.presenceRequests,
     envioBatchedRequestCount: fetched.stats.batchedRequests,
     envioContinuationRequestCount: fetched.stats.continuationRequests,

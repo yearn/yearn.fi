@@ -18,13 +18,18 @@ import { SUPPORTED_CHAINS } from '@/server/lib/holdings/types'
 
 export const ENVIO_LEDGER_PAGE_SIZE = 1_000
 export const ENVIO_LEDGER_MAX_PAGES_PER_STREAM_CHAIN = 1_000
+export const ENVIO_LEDGER_COLD_TRANSFER_PARTITION_COUNT = 16
 export const ENVIO_LEDGER_MAX_FETCHED_ROWS = 250_000
 export const ENVIO_LEDGER_MAX_FETCHED_DECODED_BYTES = 2 * LEDGER_MAX_ACTIVE_REVISION_DECODED_BYTES
 export const ENVIO_LEDGER_MAX_RESPONSE_BYTES = 8 * 1024 * 1024
 
 const ENVIO_LEDGER_REQUEST_TIMEOUT_MS = 30_000
+// Hasura plans every aliased chain window independently. Live benchmarks showed
+// that one 36-alias request was roughly 2x slower than six concurrent six-alias
+// requests, so keep the per-chain probes parallel instead of packing them.
+const ENVIO_LEDGER_MAX_PRESENCE_WINDOWS_PER_REQUEST = 1
 
-export type TEnvioLedgerFetchStrategy = 'sequential' | 'warm-batched' | 'faceted-batched'
+export type TEnvioLedgerFetchStrategy = 'sequential' | 'warm-batched' | 'cold-batched' | 'faceted-batched'
 
 const ENVIO_META_QUERY = `
   query LedgerIndexerMeta {
@@ -104,12 +109,16 @@ export interface TEnvioLedgerFetchStats {
   readonly totalPages: number
   readonly totalRows: number
   readonly chainCount: number
+  /** Logical chain windows checked for activity. */
   readonly validationQueries: number
   readonly strategy: TEnvioLedgerFetchStrategy
   readonly totalRequests: number
+  /** Physical GraphQL HTTP requests used for the logical presence checks. */
   readonly presenceRequests: number
   readonly batchedRequests: number
   readonly continuationRequests: number
+  readonly blockPartitionCount?: number
+  readonly blockPartitionRequests?: number
 }
 
 export interface TEnvioLedgerStreamsResult {
@@ -144,6 +153,10 @@ interface TEnvioLedgerFetchBudget {
   decodedBytes: number
   readonly maximumRows: number
   readonly maximumDecodedBytes: number
+}
+
+interface TEnvioLedgerPageBudget {
+  pages: number
 }
 
 function isRecord(value: unknown): value is TEnvioJsonRecord {
@@ -188,6 +201,16 @@ function consumeFetchBudget(
   }
   budget.rows = rows
   budget.decodedBytes = decodedBytes
+}
+
+function reservePageBudget(pageBudget: TEnvioLedgerPageBudget | undefined): void {
+  if (!pageBudget) {
+    return
+  }
+  if (pageBudget.pages >= ENVIO_LEDGER_MAX_PAGES_PER_STREAM_CHAIN) {
+    throw new Error('Envio ledger source page limit exceeded')
+  }
+  pageBudget.pages += 1
 }
 
 function readRequiredString(record: TEnvioJsonRecord, field: string): string {
@@ -453,13 +476,18 @@ function createAliasedFirstPageField<TStream extends TLedgerStream>(
   `
 }
 
-function createAliasedPresenceField<TStream extends TLedgerStream>(spec: TEnvioLedgerStreamSpec<TStream>): string {
+function createAliasedPresenceField<TStream extends TLedgerStream>(
+  spec: TEnvioLedgerStreamSpec<TStream>,
+  windowIndex: number,
+  vaultScoped: boolean
+): string {
   return `
-    ${spec.stream}: ${spec.entity}(
+    window${windowIndex}_${spec.stream}: ${spec.entity}(
       where: {
         ${spec.addressField}: { _eq: $address }
-        chainId: { _eq: $chainId }
-        blockNumber: { _gte: $lowerBlock, _lte: $upperBlock }
+        ${vaultScoped ? `vaultAddress: { _in: $vaultAddresses${windowIndex} }` : ''}
+        chainId: { _eq: $chainId${windowIndex} }
+        blockNumber: { _gte: $lowerBlock${windowIndex}, _lte: $upperBlock${windowIndex} }
       }
       limit: 1
     ) {
@@ -493,16 +521,29 @@ const ENVIO_LEDGER_VAULT_BATCHED_FIRST_PAGES_QUERY = `
   }
 `
 
-const ENVIO_LEDGER_FACETED_PRESENCE_QUERY = `
-  query LedgerFacetedPresence(
-    $address: String!
-    $chainId: Int!
-    $lowerBlock: Int!
-    $upperBlock: Int!
-  ) {
-    ${ENVIO_LEDGER_STREAM_SPECS.map(createAliasedPresenceField).join('\n')}
-  }
-`
+function createFacetedPresenceQuery(windows: readonly TEnvioLedgerChainWindow[]): string {
+  return `
+    query LedgerFacetedPresenceBatch(
+      $address: String!
+      ${windows
+        .map(
+          (window, index) => `
+            $chainId${index}: Int!
+            $lowerBlock${index}: Int!
+            $upperBlock${index}: Int!
+            ${window.vaultAddresses ? `$vaultAddresses${index}: [String!]!` : ''}
+          `
+        )
+        .join('\n')}
+    ) {
+      ${windows
+        .flatMap((window, index) =>
+          ENVIO_LEDGER_STREAM_SPECS.map((spec) => createAliasedPresenceField(spec, index, !!window.vaultAddresses))
+        )
+        .join('\n')}
+    }
+  `
+}
 
 function createFirstPageQuery<TStream extends TLedgerStream>(
   spec: TEnvioLedgerStreamSpec<TStream>,
@@ -866,7 +907,8 @@ async function fetchStreamPages<TStream extends TLedgerStream>(
   window: TEnvioLedgerChainWindow,
   budget: TEnvioLedgerFetchBudget,
   onPage?: () => Promise<void>,
-  initialPage?: readonly TEnvioLedgerEventByStream[TStream][]
+  initialPage?: readonly TEnvioLedgerEventByStream[TStream][],
+  pageBudget?: TEnvioLedgerPageBudget
 ): Promise<{
   readonly events: readonly TEnvioLedgerEventByStream[TStream][]
   readonly pages: number
@@ -886,6 +928,7 @@ async function fetchStreamPages<TStream extends TLedgerStream>(
     if (state.pages >= ENVIO_LEDGER_MAX_PAGES_PER_STREAM_CHAIN) {
       throw new Error('Envio ledger source page limit exceeded')
     }
+    reservePageBudget(pageBudget)
     const vaultScoped = window.vaultAddresses !== undefined
     const query =
       state.cursor === null ? createFirstPageQuery(spec, vaultScoped) : createNextPageQuery(spec, vaultScoped)
@@ -930,6 +973,118 @@ async function fetchStreamPages<TStream extends TLedgerStream>(
     : fetchNextPage()
 }
 
+interface TEnvioLedgerTransferPartition {
+  readonly window: TEnvioLedgerChainWindow
+  readonly initialPage?: readonly TLedgerTransferSourceEvent[]
+}
+
+function hasNonDecreasingBlockNumbers(events: readonly TLedgerTransferSourceEvent[]): boolean {
+  return events.every((event, index) => index === 0 || Number(events[index - 1]?.blockNumber) <= event.blockNumber)
+}
+
+// Cold transfer history is block-partitioned only after the first globally ordered page.
+// The first partition includes that page's final block so events sharing its timestamp or
+// block remain under the existing strict keyset cursor; every later block belongs to one
+// and only one suffix partition.
+function createEvenBlockWindows(args: {
+  readonly window: TEnvioLedgerChainWindow
+  readonly lowerBlock: number
+  readonly partitionCount: number
+}): readonly TEnvioLedgerChainWindow[] {
+  const blockCount = args.window.upperBlock - args.lowerBlock + 1
+  const partitionCount = Math.min(args.partitionCount, blockCount)
+  return Array.from({ length: partitionCount }, (_, index) => ({
+    ...args.window,
+    lowerBlock: args.lowerBlock + Math.floor((blockCount * index) / partitionCount),
+    upperBlock: args.lowerBlock + Math.floor((blockCount * (index + 1)) / partitionCount) - 1
+  }))
+}
+
+function createColdTransferPartitions(
+  window: TEnvioLedgerChainWindow,
+  initialPage: readonly TLedgerTransferSourceEvent[]
+): readonly TEnvioLedgerTransferPartition[] {
+  const cursorEvent = initialPage.at(-1)
+  if (
+    window.vaultAddresses !== undefined ||
+    initialPage.length !== ENVIO_LEDGER_PAGE_SIZE ||
+    !cursorEvent ||
+    cursorEvent.blockNumber >= window.upperBlock ||
+    !hasNonDecreasingBlockNumbers(initialPage)
+  ) {
+    return []
+  }
+  const prefix: TEnvioLedgerTransferPartition = {
+    window: { ...window, upperBlock: cursorEvent.blockNumber },
+    initialPage
+  }
+  const suffixWindows = createEvenBlockWindows({
+    window,
+    lowerBlock: cursorEvent.blockNumber + 1,
+    partitionCount: ENVIO_LEDGER_COLD_TRANSFER_PARTITION_COUNT - 1
+  })
+  return [prefix, ...suffixWindows.map((partitionWindow) => ({ window: partitionWindow }))]
+}
+
+function validatePartitionedTransfers(
+  events: readonly TLedgerTransferSourceEvent[]
+): readonly TLedgerTransferSourceEvent[] {
+  const sorted = events.toSorted(compareLedgerOrder)
+  const identities = new Set(sorted.map(({ chainId, id }) => stringifyCanonicalLedgerValue([chainId, id])))
+  const cursors = sorted.map(getCursor)
+  const strictlyIncreasing = cursors.every(
+    (cursor, index) => index === 0 || compareCursors(cursors[index - 1] as TEnvioLedgerCursor, cursor) < 0
+  )
+  if (identities.size !== sorted.length || !strictlyIncreasing) {
+    throw new Error('Envio ledger source partitioned pages are inconsistent')
+  }
+  return sorted
+}
+
+async function fetchColdPartitionedTransfers(args: {
+  readonly address: string
+  readonly window: TEnvioLedgerChainWindow
+  readonly budget: TEnvioLedgerFetchBudget
+  readonly onPage?: () => Promise<void>
+  readonly initialPage: readonly TLedgerTransferSourceEvent[]
+}): Promise<{
+  readonly events: readonly TLedgerTransferSourceEvent[]
+  readonly pages: number
+  readonly continuationRequests: number
+  readonly blockPartitionCount: number
+  readonly blockPartitionRequests: number
+} | null> {
+  const partitions = createColdTransferPartitions(args.window, args.initialPage)
+  if (partitions.length < 2) {
+    return null
+  }
+  const pageBudget: TEnvioLedgerPageBudget = { pages: 1 }
+  const results = await settleConcurrent(
+    partitions.map((partition) =>
+      fetchStreamPages(
+        TRANSFERS_IN_SPEC,
+        args.address,
+        partition.window,
+        args.budget,
+        args.onPage,
+        partition.initialPage,
+        pageBudget
+      )
+    )
+  )
+  const blockPartitionRequests = results.reduce(
+    (total, result, index) => total + result.pages - (partitions[index]?.initialPage ? 1 : 0),
+    0
+  )
+  return {
+    events: validatePartitionedTransfers(results.flatMap(({ events }) => events)),
+    pages: results.reduce((total, { pages }) => total + pages, 0),
+    continuationRequests: blockPartitionRequests,
+    blockPartitionCount: partitions.length,
+    blockPartitionRequests
+  }
+}
+
 async function fetchStream<TStream extends TLedgerStream>(
   spec: TEnvioLedgerStreamSpec<TStream>,
   address: string,
@@ -969,6 +1124,8 @@ interface TEnvioLedgerBatchedChainResult {
   readonly streams: TLedgerSixStreams
   readonly byStream: Readonly<Record<TLedgerStream, TEnvioLedgerStreamStats>>
   readonly continuationRequests: number
+  readonly blockPartitionCount: number
+  readonly blockPartitionRequests: number
 }
 
 async function settleConcurrent<T>(requests: readonly Promise<T>[]): Promise<T[]> {
@@ -1008,22 +1165,67 @@ function getBatchedVariables(
   }
 }
 
-async function fetchChainPresence(
+function getPresenceAlias(windowIndex: number, stream: TLedgerStream): string {
+  return `window${windowIndex}_${stream}`
+}
+
+function getPresenceVariables(
   address: string,
-  window: TEnvioLedgerChainWindow,
+  windows: readonly TEnvioLedgerChainWindow[]
+): Readonly<Record<string, unknown>> {
+  return Object.fromEntries([
+    ['address', address],
+    ...windows.flatMap((window, index) => [
+      [`chainId${index}`, window.chainId],
+      [`lowerBlock${index}`, window.lowerBlock],
+      [`upperBlock${index}`, window.upperBlock],
+      ...(window.vaultAddresses ? [[`vaultAddresses${index}`, window.vaultAddresses]] : [])
+    ])
+  ])
+}
+
+async function fetchPresenceBatch(
+  address: string,
+  windows: readonly TEnvioLedgerChainWindow[],
   onPage?: () => Promise<void>
-): Promise<boolean> {
-  const data = await executeEnvioQuery(ENVIO_LEDGER_FACETED_PRESENCE_QUERY, getBatchedVariables(address, window, false))
-  const hasPresence = ENVIO_LEDGER_STREAM_SPECS.map((spec) => validatePresencePage(data[spec.stream])).some(Boolean)
+): Promise<readonly { readonly window: TEnvioLedgerChainWindow; readonly hasPresence: boolean }[]> {
+  const data = await executeEnvioQuery(createFacetedPresenceQuery(windows), getPresenceVariables(address, windows))
+  const presence = windows.map((window, windowIndex) => ({
+    window,
+    hasPresence: ENVIO_LEDGER_STREAM_SPECS.map((spec) =>
+      validatePresencePage(data[getPresenceAlias(windowIndex, spec.stream)])
+    ).some(Boolean)
+  }))
   await onPage?.()
-  return hasPresence
+  return presence
+}
+
+async function fetchFacetedPresence(
+  address: string,
+  windows: readonly TEnvioLedgerChainWindow[],
+  onPage?: () => Promise<void>
+): Promise<{
+  readonly windows: readonly { readonly window: TEnvioLedgerChainWindow; readonly hasPresence: boolean }[]
+  readonly requests: number
+}> {
+  const batches = Array.from(
+    { length: Math.ceil(windows.length / ENVIO_LEDGER_MAX_PRESENCE_WINDOWS_PER_REQUEST) },
+    (_, index) =>
+      windows.slice(
+        index * ENVIO_LEDGER_MAX_PRESENCE_WINDOWS_PER_REQUEST,
+        (index + 1) * ENVIO_LEDGER_MAX_PRESENCE_WINDOWS_PER_REQUEST
+      )
+  )
+  const results = await settleConcurrent(batches.map((batch) => fetchPresenceBatch(address, batch, onPage)))
+  return { windows: results.flat(), requests: batches.length }
 }
 
 async function fetchBatchedChain(
   address: string,
   window: TEnvioLedgerChainWindow,
   budget: TEnvioLedgerFetchBudget,
-  onPage?: () => Promise<void>
+  onPage?: () => Promise<void>,
+  enableColdTransferPartitioning = false
 ): Promise<TEnvioLedgerBatchedChainResult> {
   const data = await executeEnvioQuery(
     window.vaultAddresses ? ENVIO_LEDGER_VAULT_BATCHED_FIRST_PAGES_QUERY : ENVIO_LEDGER_BATCHED_FIRST_PAGES_QUERY,
@@ -1038,31 +1240,30 @@ async function fetchBatchedChain(
   ) as unknown as TLedgerSixStreams
   await onPage?.()
 
-  const continued = await ENVIO_LEDGER_STREAM_SPECS.reduce<
-    Promise<
-      Array<
-        readonly [
-          TLedgerStream,
-          {
-            readonly events: readonly TEnvioLedgerEventByStream[TLedgerStream][]
-            readonly pages: number
-            readonly continuationRequests: number
-          }
-        ]
-      >
-    >
-  >(async (pendingResults, spec) => {
-    const resolvedResults = await pendingResults
-    const result = await fetchStreamPages(
-      spec,
-      address,
-      window,
-      budget,
-      onPage,
-      firstPages[spec.stream] as readonly TEnvioLedgerEventByStream[TLedgerStream][]
-    )
-    return [...resolvedResults, [spec.stream, result] as const]
-  }, Promise.resolve([]))
+  const continued = await settleConcurrent(
+    ENVIO_LEDGER_STREAM_SPECS.map(async (spec) => {
+      const initialPage = firstPages[spec.stream] as readonly TEnvioLedgerEventByStream[TLedgerStream][]
+      const partitioned =
+        enableColdTransferPartitioning && spec.stream === 'transfersIn'
+          ? await fetchColdPartitionedTransfers({
+              address,
+              window,
+              budget,
+              onPage,
+              initialPage: initialPage as readonly TLedgerTransferSourceEvent[]
+            })
+          : null
+      const result = partitioned ?? (await fetchStreamPages(spec, address, window, budget, onPage, initialPage))
+      return [
+        spec.stream,
+        {
+          ...result,
+          blockPartitionCount: partitioned?.blockPartitionCount ?? 0,
+          blockPartitionRequests: partitioned?.blockPartitionRequests ?? 0
+        }
+      ] as const
+    })
+  )
   const streams = Object.fromEntries(
     continued.map(([stream, result]) => [stream, result.events])
   ) as unknown as TLedgerSixStreams
@@ -1079,7 +1280,9 @@ async function fetchBatchedChain(
   return {
     streams,
     byStream,
-    continuationRequests: continued.reduce((total, [, result]) => total + result.continuationRequests, 0)
+    continuationRequests: continued.reduce((total, [, result]) => total + result.continuationRequests, 0),
+    blockPartitionCount: continued.reduce((total, [, result]) => total + result.blockPartitionCount, 0),
+    blockPartitionRequests: continued.reduce((total, [, result]) => total + result.blockPartitionRequests, 0)
   }
 }
 
@@ -1087,6 +1290,8 @@ function combineBatchedChainResults(results: readonly TEnvioLedgerBatchedChainRe
   readonly streams: TLedgerSixStreams
   readonly byStream: Readonly<Record<TLedgerStream, TEnvioLedgerStreamStats>>
   readonly continuationRequests: number
+  readonly blockPartitionCount: number
+  readonly blockPartitionRequests: number
 } {
   return {
     streams: Object.fromEntries(
@@ -1104,7 +1309,9 @@ function combineBatchedChainResults(results: readonly TEnvioLedgerBatchedChainRe
         }
       ])
     ) as Record<TLedgerStream, TEnvioLedgerStreamStats>,
-    continuationRequests: results.reduce((total, result) => total + result.continuationRequests, 0)
+    continuationRequests: results.reduce((total, result) => total + result.continuationRequests, 0),
+    blockPartitionCount: results.reduce((total, result) => total + result.blockPartitionCount, 0),
+    blockPartitionRequests: results.reduce((total, result) => total + result.blockPartitionRequests, 0)
   }
 }
 
@@ -1120,28 +1327,33 @@ async function fetchBatchedStreams(args: {
   readonly presenceRequests: number
   readonly batchedRequests: number
   readonly continuationRequests: number
+  readonly blockPartitionCount: number
+  readonly blockPartitionRequests: number
 }> {
+  const presence =
+    args.strategy === 'faceted-batched'
+      ? await fetchFacetedPresence(args.address, args.windows, args.onPage)
+      : { windows: [], requests: 0 }
   const activeWindows =
     args.strategy === 'faceted-batched'
-      ? (
-          await settleConcurrent(
-            args.windows.map(async (window) => ({
-              window,
-              hasPresence: await fetchChainPresence(args.address, window, args.onPage)
-            }))
-          )
-        )
-          .filter(({ hasPresence }) => hasPresence)
-          .map(({ window }) => window)
+      ? presence.windows.filter(({ hasPresence }) => hasPresence).map(({ window }) => window)
       : args.windows
   const results = await settleConcurrent(
-    activeWindows.map((window) => fetchBatchedChain(args.address, window, args.budget, args.onPage))
+    activeWindows.map((window) =>
+      fetchBatchedChain(
+        args.address,
+        window,
+        args.budget,
+        args.onPage,
+        args.strategy === 'faceted-batched' || args.strategy === 'cold-batched'
+      )
+    )
   )
   const combined = combineBatchedChainResults(results)
 
   return {
     ...combined,
-    presenceRequests: args.strategy === 'faceted-batched' ? args.windows.length : 0,
+    presenceRequests: presence.requests,
     batchedRequests: activeWindows.length
   }
 }
@@ -1205,12 +1417,18 @@ export async function fetchEnvioLedgerStreams(
         totalPages,
         totalRows,
         chainCount: validatedWindows.length,
-        validationQueries: batched.presenceRequests,
+        validationQueries: strategy === 'faceted-batched' ? validatedWindows.length : 0,
         strategy,
         totalRequests: batched.presenceRequests + batched.batchedRequests + batched.continuationRequests,
         presenceRequests: batched.presenceRequests,
         batchedRequests: batched.batchedRequests,
-        continuationRequests: batched.continuationRequests
+        continuationRequests: batched.continuationRequests,
+        ...(batched.blockPartitionCount > 0
+          ? {
+              blockPartitionCount: batched.blockPartitionCount,
+              blockPartitionRequests: batched.blockPartitionRequests
+            }
+          : {})
       }
     }
   }

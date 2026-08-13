@@ -13,9 +13,46 @@ function createResponse(points: Array<{ time: number; value: string }>): Respons
   })
 }
 
+function createDeferredResponse(): Readonly<{
+  promise: Promise<Response>
+  resolve: (response: Response) => void
+}> {
+  const controls = { resolve: (_response: Response) => undefined }
+  const promise = new Promise<Response>((resolve) => {
+    controls.resolve = resolve
+  })
+  return { promise, resolve: controls.resolve }
+}
+
 describe('getPPS', () => {
   it('returns null for an empty timeline instead of defaulting to 1', () => {
     expect(getPPS(new Map(), 123)).toBeNull()
+  })
+
+  it('indexes an unsorted timeline once and resolves repeated lookups with floor semantics', () => {
+    const timeline = new Map([
+      [300, 1.3],
+      [100, 1.1],
+      [200, 1.2]
+    ])
+    const keysSpy = vi.spyOn(timeline, 'keys')
+
+    expect(getPPS(timeline, 50)).toBe(1.1)
+    expect(getPPS(timeline, 250)).toBe(1.2)
+    expect(getPPS(timeline, 275)).toBe(1.2)
+    expect(getPPS(timeline, 350)).toBe(1.3)
+    expect(keysSpy).toHaveBeenCalledTimes(1)
+  })
+
+  it('rebuilds its timestamp index when a timeline grows', () => {
+    const timeline = new Map([
+      [100, 1.1],
+      [300, 1.3]
+    ])
+
+    expect(getPPS(timeline, 250)).toBe(1.1)
+    timeline.set(200, 1.2)
+    expect(getPPS(timeline, 250)).toBe(1.2)
   })
 })
 
@@ -93,6 +130,34 @@ describe('fetchMultipleVaultsPPS', () => {
     )
 
     expect(activeRequests.max).toBe(2)
+  })
+
+  it('starts the next queued request when any worker becomes free', async () => {
+    const responses = Array.from({ length: 4 }, createDeferredResponse)
+    const fetchFn = vi.fn(
+      (_url: string | URL | Request) => responses[fetchFn.mock.calls.length - 1]!.promise
+    ) as unknown as typeof fetch
+    const request = fetchMultipleVaultsPPS(
+      [
+        { chainId: 1, vaultAddress: '0x1' },
+        { chainId: 1, vaultAddress: '0x2' },
+        { chainId: 1, vaultAddress: '0x3' },
+        { chainId: 1, vaultAddress: '0x4' }
+      ],
+      { fetchFn, concurrency: 2, maxRetries: 0 }
+    )
+
+    expect(fetchFn).toHaveBeenCalledTimes(2)
+    responses[1]!.resolve(createResponse([{ time: 100, value: '1.2' }]))
+    await vi.waitFor(() => expect(fetchFn).toHaveBeenCalledTimes(3))
+
+    responses[0]!.resolve(createResponse([{ time: 100, value: '1.1' }]))
+    responses[2]!.resolve(createResponse([{ time: 100, value: '1.3' }]))
+    await vi.waitFor(() => expect(fetchFn).toHaveBeenCalledTimes(4))
+    responses[3]!.resolve(createResponse([{ time: 100, value: '1.4' }]))
+
+    const timelines = await request
+    expect(Array.from(timelines.keys())).toEqual(['1:0x1', '1:0x2', '1:0x3', '1:0x4'])
   })
 
   it('reuses in-flight vault PPS fetches across concurrent callers', async () => {

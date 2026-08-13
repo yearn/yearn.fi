@@ -11,7 +11,9 @@ import {
   createWalletLedgerDailyUsdCacheCommitTransitions,
   createWalletLedgerDailyUsdTotalsCache,
   getWalletLedgerDailyUsdCacheIdentity,
+  getWalletLedgerDailyUsdDateRange,
   getWalletLedgerDailyUsdTotalsKey,
+  resetWalletLedgerDailyUsdTotalsCacheForTests,
   type TWalletLedgerDailyUsdCacheIdentity,
   transitionWalletLedgerDailyUsdTotalsCache
 } from '@/server/lib/holdings/services/ledger/walletTotalsCache'
@@ -20,6 +22,7 @@ import {
   WALLET_LEDGER_CODEC,
   WALLET_LEDGER_SCHEMA_VERSION
 } from '@/server/lib/holdings/services/ledger/walletTypes'
+import { createDeferred } from '@/server/lib/holdings/test-utils/deferred'
 
 const WALLET_HASH = 'a'.repeat(64)
 const PREVIOUS_LEDGER_REVISION = 'b'.repeat(64)
@@ -28,20 +31,28 @@ const PREVIOUS_EVENT_REVISION = 'd'.repeat(64)
 const CURRENT_EVENT_REVISION = 'e'.repeat(64)
 
 const mocks = vi.hoisted(() => ({
+  adoptSyncToken: vi.fn(),
+  getTimedRedis: vi.fn(),
   redis: null as FakeDailyUsdRedis | null
 }))
 
 vi.mock('@/server/lib/holdings/storage/ledgerRedis', () => ({
+  adoptHoldingsLedgerRedisReadYourWritesSyncToken: mocks.adoptSyncToken,
   executeHoldingsLedgerRedisOperation: async (_operation: string, action: () => Promise<unknown>) => action(),
-  getHoldingsLedgerRedisClient: () => mocks.redis
+  getHoldingsLedgerRedisClient: () => mocks.redis,
+  getHoldingsLedgerRedisClientWithTimeout: mocks.getTimedRedis
 }))
 
 class FakeDailyUsdRedis {
+  readonly readYourWritesSyncToken = 'daily-usd-sync-token'
   readonly values = new Map<string, string>()
   readonly hashes = new Map<string, Map<string, string>>()
   readonly ttlSeconds = new Map<string, number>()
   readonly hmgetCalls: { readonly key: string; readonly fields: readonly string[] }[] = []
+  dailyUsdWriteCalls = 0
   hmgetError: Error | null = null
+  dailyUsdWriteGate: Promise<void> | null = null
+  onDailyUsdWriteStarted: (() => void) | null = null
 
   hmget(key: string, ...fields: string[]): Promise<unknown> {
     this.hmgetCalls.push({ key, fields })
@@ -53,6 +64,12 @@ class FakeDailyUsdRedis {
   }
 
   eval<TArgs extends unknown[], TData = unknown>(script: string, keys: string[], args: TArgs): Promise<TData> {
+    if (script.includes('holdings-wallet-ledger-daily-usd-write-v2') && this.dailyUsdWriteGate) {
+      const gate = this.dailyUsdWriteGate
+      this.dailyUsdWriteGate = null
+      this.onDailyUsdWriteStarted?.()
+      return gate.then(() => this.eval<TArgs, TData>(script, keys, args))
+    }
     const walletKey = keys[0] ?? ''
     const totalsKey = keys[1] ?? ''
     const values = args.map(String)
@@ -61,12 +78,14 @@ class FakeDailyUsdRedis {
       if (!matchesLedger) {
         return 0
       }
-      if (script.includes('holdings-wallet-ledger-commit-v3')) {
-        keys.slice(2).forEach((cacheKey) => {
+      if (script.includes('holdings-wallet-ledger-commit-v5')) {
+        const cacheKeys = keys.slice(2, -1)
+        cacheKeys.forEach((cacheKey) => {
           this.values.delete(cacheKey)
         })
         this.values.set(keys[1] ?? '', values[1] ?? '')
-        keys.slice(2).forEach((cacheKey, index) => {
+        this.values.set(keys.at(-1) ?? '', values.at(-1) ?? '')
+        cacheKeys.forEach((cacheKey, index) => {
           const argumentIndex = 3 + index * 5
           const previousMeta = values[argumentIndex] ?? ''
           const currentMeta = values[argumentIndex + 1] ?? ''
@@ -93,6 +112,7 @@ class FakeDailyUsdRedis {
         return 1
       }
       if (script.includes('holdings-wallet-ledger-daily-usd-write-v2')) {
+        this.dailyUsdWriteCalls += 1
         this.values.delete(totalsKey)
         const expectedMeta = values[1] ?? ''
         const existing = this.hashes.get(totalsKey)
@@ -101,7 +121,12 @@ class FakeDailyUsdRedis {
           if (pendingField === null) {
             return value
           }
-          hash.set(pendingField, value)
+          const existingValue = hash.get(pendingField)
+          const existingComplete = existingValue?.includes('"isComplete":true') === true
+          const incomingComplete = value.includes('"isComplete":true')
+          if (!existingComplete || incomingComplete) {
+            hash.set(pendingField, value)
+          }
           return null
         }, null)
         this.hashes.set(totalsKey, hash)
@@ -212,13 +237,30 @@ function walletPayload(args: {
 
 describe('wallet ledger daily USD totals cache', () => {
   beforeEach(() => {
+    resetWalletLedgerDailyUsdTotalsCacheForTests()
+    vi.clearAllMocks()
     mocks.redis = new FakeDailyUsdRedis()
+    mocks.getTimedRedis.mockReturnValue(mocks.redis)
   })
 
   afterEach(() => {
+    vi.useRealTimers()
     delete process.env.HOLDINGS_LEDGER_KEY_NAMESPACE
     vi.unstubAllEnvs()
     vi.restoreAllMocks()
+  })
+
+  it('derives the exact one-year and all-history cache ranges used by holdings charts', () => {
+    const latestSettledDayTimestamp = Date.parse('2026-08-07T00:00:00.000Z') / 1000
+
+    const oneYear = getWalletLedgerDailyUsdDateRange({ latestSettledDayTimestamp, timeframe: '1y' })
+    const all = getWalletLedgerDailyUsdDateRange({ latestSettledDayTimestamp, timeframe: 'all' })
+
+    expect(oneYear).toMatchObject({ startDate: '2025-08-08', endDate: '2026-08-07' })
+    expect(oneYear.dates).toHaveLength(365)
+    expect(all).toMatchObject({ startDate: '2024-01-01', endDate: '2026-08-07' })
+    expect(all.dates.at(0)).toBe('2024-01-01')
+    expect(all.dates.at(-1)).toBe('2026-08-07')
   })
 
   it('keeps vault versions separate in the wallet hash slot and honors the ledger namespace', () => {
@@ -262,6 +304,95 @@ describe('wallet ledger daily USD totals cache', () => {
         fields: ['__meta', '2026-08-02', '2026-08-03']
       }
     ])
+    expect(mocks.getTimedRedis).toHaveBeenCalledWith(3_000)
+    expect(mocks.adoptSyncToken).toHaveBeenCalledWith(redis)
+  })
+
+  it('waits for the same in-flight write before reading an immediate hot request', async () => {
+    const redis = mocks.redis as FakeDailyUsdRedis
+    const writeGate = createDeferred<void>()
+    const writeStarted = createDeferred<void>()
+    storeWalletRevision(redis, PREVIOUS_LEDGER_REVISION)
+    redis.dailyUsdWriteGate = writeGate.promise
+    redis.onDailyUsdWriteStarted = writeStarted.resolve
+    const cache = createWalletLedgerDailyUsdTotalsCache(identity())
+
+    const write = cache.write([{ date: '2026-08-01', usdValue: 10 }])
+    await writeStarted.promise
+    const read = cache.read('2026-08-01', '2026-08-01')
+    await Promise.resolve()
+
+    expect(redis.hmgetCalls).toEqual([])
+    writeGate.resolve()
+    await expect(write).resolves.toBe(true)
+    await expect(read).resolves.toMatchObject({
+      totals: [{ date: '2026-08-01', usdValue: 10 }]
+    })
+    expect(redis.hmgetCalls).toHaveLength(1)
+  })
+
+  it('bypasses a stalled in-process write after a bounded wait', async () => {
+    vi.useFakeTimers()
+    const redis = mocks.redis as FakeDailyUsdRedis
+    const writeGate = createDeferred<void>()
+    const writeStarted = createDeferred<void>()
+    storeWalletRevision(redis, PREVIOUS_LEDGER_REVISION)
+    redis.dailyUsdWriteGate = writeGate.promise
+    redis.onDailyUsdWriteStarted = writeStarted.resolve
+    const cache = createWalletLedgerDailyUsdTotalsCache(identity())
+
+    const write = cache.write([{ date: '2026-08-01', usdValue: 10 }])
+    await writeStarted.promise
+    const read = cache.read('2026-08-01', '2026-08-01')
+    await vi.advanceTimersByTimeAsync(1_000)
+
+    await expect(read).resolves.toEqual({ totals: [], oldestUpdatedAt: null })
+    expect(redis.hmgetCalls).toHaveLength(1)
+
+    writeGate.resolve()
+    await expect(write).resolves.toBe(true)
+  })
+
+  it('coalesces a burst behind one write and keeps the complete candidate for each date', async () => {
+    const redis = mocks.redis as FakeDailyUsdRedis
+    const writeGate = createDeferred<void>()
+    const writeStarted = createDeferred<void>()
+    storeWalletRevision(redis, PREVIOUS_LEDGER_REVISION)
+    redis.dailyUsdWriteGate = writeGate.promise
+    redis.onDailyUsdWriteStarted = writeStarted.resolve
+    const cache = createWalletLedgerDailyUsdTotalsCache(identity())
+
+    const first = cache.write([{ date: '2026-08-01', usdValue: 1, isComplete: false }])
+    await writeStarted.promise
+    const burst = Array.from({ length: 50 }, (_, index) =>
+      cache.write([
+        {
+          date: '2026-08-01',
+          usdValue: index === 25 ? 999 : index + 2,
+          isComplete: index === 25
+        }
+      ])
+    )
+
+    writeGate.resolve()
+    await expect(Promise.all([first, ...burst])).resolves.toEqual(Array.from({ length: 51 }, () => true))
+    expect(redis.dailyUsdWriteCalls).toBe(2)
+    await expect(cache.read('2026-08-01', '2026-08-01')).resolves.toMatchObject({
+      totals: [{ date: '2026-08-01', usdValue: 999 }]
+    })
+  })
+
+  it('never downgrades a complete Redis date to a provisional result', async () => {
+    const redis = mocks.redis as FakeDailyUsdRedis
+    storeWalletRevision(redis, PREVIOUS_LEDGER_REVISION)
+    const cache = createWalletLedgerDailyUsdTotalsCache(identity())
+
+    await expect(cache.write([{ date: '2026-08-01', usdValue: 10 }])).resolves.toBe(true)
+    await expect(cache.write([{ date: '2026-08-01', usdValue: 20, isComplete: false }])).resolves.toBe(true)
+
+    await expect(cache.read('2026-08-01', '2026-08-01')).resolves.toMatchObject({
+      totals: [{ date: '2026-08-01', usdValue: 10 }]
+    })
   })
 
   it('enumerates only inclusive UTC dates across month boundaries', async () => {
@@ -699,6 +830,7 @@ describe('wallet ledger daily USD totals cache', () => {
     )
 
     const output = consoleLog.mock.calls.map(([message]) => String(message)).join('\n')
+    expect(output).toContain('queued daily USD totals cache write')
     expect(output).toContain('completed daily USD totals cache write')
     expect(output).toContain('completed daily USD totals cache read')
     expect(output).toContain('completed daily USD totals cache transition')

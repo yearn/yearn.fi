@@ -35,14 +35,20 @@ import {
 import {
   acquireWalletLedgerLock,
   commitStoredWalletLedger,
+  commitWalletLedgerCheckedMarker,
   readStoredWalletLedger,
+  readVerifiedWalletLedgerHeader,
+  readWalletLedgerCheckedMarker,
   releaseWalletLedgerLock,
   renewWalletLedgerLock,
   type TWalletLedgerLock,
-  type TWalletLedgerRedis
+  type TWalletLedgerRedis,
+  verifyWalletLedgerSnapshotUnderLock
 } from '@/server/lib/holdings/services/ledger/walletStore'
 import { createWalletLedgerDailyUsdCacheCommitTransitions } from '@/server/lib/holdings/services/ledger/walletTotalsCache'
 import {
+  type TWalletLedgerCheckedMarkerReadResult,
+  type TWalletLedgerCheckedMarkerV2,
   type TWalletLedgerCompletedSyncResult,
   type TWalletLedgerCoverageV1,
   type TWalletLedgerEventStats,
@@ -50,6 +56,7 @@ import {
   type TWalletLedgerState,
   type TWalletLedgerSyncResult,
   type TWalletLedgerSyncType,
+  type TWalletLedgerVerifiedHeaderReadResult,
   type TWithSynchronizedWalletLedgerResult,
   WALLET_LEDGER_EMPTY_TTL_MS,
   WALLET_LEDGER_FRESHNESS_MS,
@@ -73,6 +80,13 @@ export interface TWalletLedgerSyncArguments {
   readonly address: string
   readonly forceRebuild?: boolean
   readonly nowMs?: number
+  readonly prefetchVaultMetadata?: boolean
+  readonly onVaultsDiscovered?: (vaults: readonly TWalletLedgerVaultIdentifier[]) => void | Promise<void>
+}
+
+export interface TWalletLedgerVaultIdentifier {
+  readonly chainId: number
+  readonly vaultAddress: string
 }
 
 export interface TSynchronizedWalletLedgerContext {
@@ -149,19 +163,81 @@ export function isWalletLedgerCompatible(ledger: TWalletLedgerState): boolean {
 
 function isFreshCompatibleLedger(
   ledger: TWalletLedgerState,
+  markerRead: TWalletLedgerCheckedMarkerReadResult,
   nowMs: number,
   forceRebuild: boolean,
   invalidationHead: number
 ): boolean {
+  const marker = getMatchingCheckedMarker(ledger, markerRead, nowMs)
   return (
+    marker !== null &&
     !forceRebuild &&
     isWalletLedgerCompatible(ledger) &&
     ledger.appliedInvalidationSequence === invalidationHead &&
     nowMs >= ledger.updatedAtMs &&
-    nowMs - ledger.updatedAtMs < WALLET_LEDGER_FRESHNESS_MS &&
-    nowMs >= ledger.reconciledAtMs &&
-    nowMs - ledger.reconciledAtMs < holdingsConfig.ledgerReconcileIntervalMs
+    nowMs - marker.checkedAtMs < WALLET_LEDGER_FRESHNESS_MS &&
+    nowMs - marker.reconciledAtMs < holdingsConfig.ledgerReconcileIntervalMs
   )
+}
+
+function getMatchingCheckedMarker(
+  ledger: TWalletLedgerState,
+  markerRead: TWalletLedgerCheckedMarkerReadResult,
+  nowMs: number
+): TWalletLedgerCheckedMarkerV2 | null {
+  if (
+    markerRead.status !== 'ready' ||
+    markerRead.marker.revision !== ledger.revision ||
+    markerRead.marker.checkedAtMs > nowMs ||
+    markerRead.marker.reconciledAtMs > nowMs ||
+    !hasCompatibleCoverage(ledger.coverage, markerRead.marker.coverage)
+  ) {
+    return null
+  }
+  return markerRead.marker
+}
+
+function hasCompatibleCoverage(
+  stored: readonly TWalletLedgerCoverageV1[],
+  checked: readonly TWalletLedgerCoverageV1[]
+): boolean {
+  return (
+    stored.length === checked.length &&
+    stored.every((entry, index) => {
+      const candidate = checked[index]
+      return (
+        candidate !== undefined &&
+        entry.chainId === candidate.chainId &&
+        entry.startBlock === candidate.startBlock &&
+        entry.endBlock === candidate.endBlock &&
+        entry.completeThroughBlock <= candidate.completeThroughBlock
+      )
+    })
+  )
+}
+
+function getEffectiveCoverage(
+  ledger: TWalletLedgerState,
+  markerRead: TWalletLedgerCheckedMarkerReadResult,
+  nowMs: number
+): readonly TWalletLedgerCoverageV1[] {
+  return getMatchingCheckedMarker(ledger, markerRead, nowMs)?.coverage ?? ledger.coverage
+}
+
+function getEffectiveCoveredAtMs(
+  ledger: TWalletLedgerState,
+  markerRead: TWalletLedgerCheckedMarkerReadResult,
+  nowMs: number
+): number {
+  return getMatchingCheckedMarker(ledger, markerRead, nowMs)?.coveredAtMs ?? ledger.updatedAtMs
+}
+
+function getEffectiveReconciledAtMs(
+  ledger: TWalletLedgerState,
+  markerRead: TWalletLedgerCheckedMarkerReadResult,
+  nowMs: number
+): number {
+  return getMatchingCheckedMarker(ledger, markerRead, nowMs)?.reconciledAtMs ?? ledger.reconciledAtMs
 }
 
 function selectConfiguredMetadata(metadata: readonly TEnvioLedgerMetadata[]): readonly TEnvioLedgerMetadata[] {
@@ -208,6 +284,7 @@ function getSyncType(args: {
   readonly metadata: readonly TEnvioLedgerMetadata[]
   readonly forceRebuild: boolean
   readonly nowMs: number
+  readonly effectiveReconciledAtMs: number | null
 }): TWalletLedgerSyncType {
   if (!args.current) {
     return 'bootstrap'
@@ -221,7 +298,10 @@ function getSyncType(args: {
   if (args.forceRebuild || args.current.calculationVersion !== LEDGER_CALCULATION_VERSION) {
     return 'forced-reset'
   }
-  if (args.nowMs - args.current.reconciledAtMs >= holdingsConfig.ledgerReconcileIntervalMs) {
+  if (
+    args.effectiveReconciledAtMs !== null &&
+    args.nowMs - args.effectiveReconciledAtMs >= holdingsConfig.ledgerReconcileIntervalMs
+  ) {
     return 'reconcile'
   }
   return 'warm'
@@ -230,9 +310,10 @@ function getSyncType(args: {
 function getLowerBlocks(args: {
   readonly metadata: readonly TEnvioLedgerMetadata[]
   readonly current: TWalletLedgerState | null
+  readonly effectiveCoverage: readonly TWalletLedgerCoverageV1[]
   readonly syncType: TWalletLedgerSyncType
 }): Readonly<Record<number, number>> {
-  const currentByChain = new Map(args.current?.coverage.map((entry) => [entry.chainId, entry]) ?? [])
+  const currentByChain = new Map(args.effectiveCoverage.map((entry) => [entry.chainId, entry]))
   return Object.fromEntries(
     args.metadata.map((metadata) => {
       const previous = currentByChain.get(metadata.chainId)
@@ -334,9 +415,7 @@ function minTimestamp(...timestamps: readonly (number | null)[]): number | null 
   return values.length === 0 ? null : Math.min(...values)
 }
 
-function getLedgerVaultIdentifiers(
-  streams: TLedgerSixStreams
-): readonly { readonly chainId: number; readonly vaultAddress: string }[] {
+function getLedgerVaultIdentifiers(streams: TLedgerSixStreams): readonly TWalletLedgerVaultIdentifier[] {
   return Array.from(
     new Map(
       LEDGER_STREAMS.flatMap((stream) => [...streams[stream]] as TLedgerSourceEvent[]).map((event) => [
@@ -345,6 +424,61 @@ function getLedgerVaultIdentifiers(
       ])
     ).values()
   )
+}
+
+function notifyVaultsDiscovered(
+  streams: TLedgerSixStreams,
+  callback: TWalletLedgerSyncArguments['onVaultsDiscovered']
+): void {
+  if (!callback) {
+    return
+  }
+
+  const vaults = getLedgerVaultIdentifiers(streams)
+  if (vaults.length === 0) {
+    return
+  }
+
+  const logFailure = (error: unknown): void => {
+    debugLog('wallet-ledger-sync', 'wallet vault discovery callback failed without blocking synchronization', {
+      requested: vaults.length,
+      errorClass: error instanceof Error ? error.name : 'UnknownError'
+    })
+  }
+  try {
+    void Promise.resolve(callback(vaults)).catch(logFailure)
+  } catch (error) {
+    logFailure(error)
+  }
+}
+
+function startLedgerVaultMetadataPrefetch(streams: TLedgerSixStreams, enabled: boolean): void {
+  if (!enabled) {
+    return
+  }
+
+  const vaults = getLedgerVaultIdentifiers(streams)
+  if (vaults.length === 0) {
+    return
+  }
+
+  const getDurationMs = startHoldingsDebugTimer()
+  void fetchMultipleVaultsMetadata([...vaults])
+    .then((metadata) => {
+      debugLog('wallet-ledger-sync', 'prefetched wallet vault metadata during ledger persistence', {
+        durationMs: getDurationMs(),
+        requested: vaults.length,
+        resolved: metadata.size,
+        failed: getVaultMetadataFetchFailedVaults(metadata)
+      })
+    })
+    .catch((error) => {
+      debugLog('wallet-ledger-sync', 'wallet vault metadata prefetch failed without blocking synchronization', {
+        durationMs: getDurationMs(),
+        requested: vaults.length,
+        errorClass: error instanceof Error ? error.name : 'UnknownError'
+      })
+    })
 }
 
 function getEarliestLedgerTimestamp(streams: TLedgerSixStreams, vaultKeys?: ReadonlySet<string>): number | null {
@@ -501,6 +635,40 @@ function createLockHeartbeat(args: {
   }
 }
 
+type TEnvioSourceRevalidationResult =
+  | { readonly status: 'ready' }
+  | { readonly status: 'failed'; readonly error: unknown }
+
+function startEnvioSourceRevalidation(args: {
+  readonly metadata: readonly TEnvioLedgerMetadata[]
+  readonly redis: TWalletLedgerRedis
+  readonly walletHash: string
+  readonly lock: TWalletLedgerLock
+}): Promise<TEnvioSourceRevalidationResult> {
+  const getDurationMs = startHoldingsDebugTimer()
+  return Promise.all([
+    rereadEnvioLedgerMetadata(args.metadata).catch(() => {
+      throw new WalletLedgerError('upstream_failed', 502)
+    }),
+    assertLockRenewed(args.redis, args.walletHash, args.lock)
+  ]).then(
+    () => {
+      debugLog('wallet-ledger-sync', 'revalidated Envio metadata and lock ownership', {
+        durationMs: getDurationMs()
+      })
+      return { status: 'ready' as const }
+    },
+    (error: unknown) => ({ status: 'failed' as const, error })
+  )
+}
+
+async function awaitEnvioSourceRevalidation(revalidation: Promise<TEnvioSourceRevalidationResult>): Promise<void> {
+  const result = await revalidation
+  if (result.status === 'failed') {
+    throw result.error
+  }
+}
+
 function getEnvioStats(stats: TEnvioLedgerFetchStats) {
   return {
     pages: stats.totalPages,
@@ -514,13 +682,20 @@ function getDurationMs(startedAt: number): number {
   return Math.round((performance.now() - startedAt) * 100) / 100
 }
 
-function createFreshSyncResult(ledger: TWalletLedgerState, startedAt: number): TWalletLedgerCompletedSyncResult {
+function createFreshSyncResult(
+  ledger: TWalletLedgerState,
+  markerRead: TWalletLedgerCheckedMarkerReadResult,
+  nowMs: number,
+  startedAt: number
+): TWalletLedgerCompletedSyncResult {
   const streams = getFreshStreamStats(ledger.streams)
   return {
     status: 'ready',
     outcome: 'fresh',
     syncType: 'fresh',
     ledger,
+    effectiveCoverage: getEffectiveCoverage(ledger, markerRead, nowMs),
+    coveredAtMs: getEffectiveCoveredAtMs(ledger, markerRead, nowMs),
     events: sumEventStats(streams),
     streams,
     envio: { pages: 0, rows: 0, requests: 0, strategy: 'none' },
@@ -536,16 +711,16 @@ function createFreshSyncResult(ledger: TWalletLedgerState, startedAt: number): T
 function getSyncOutcome(args: {
   readonly syncType: TWalletLedgerSyncType
   readonly current: TWalletLedgerState | null
-  readonly coverage: readonly TWalletLedgerCoverageV1[]
   readonly streamsChanged: boolean
 }): 'unchanged' | 'updated' {
-  if ((args.syncType !== 'warm' && args.syncType !== 'reconcile') || !args.current || args.streamsChanged) {
-    return 'updated'
-  }
-  const coverageChanged = args.current.coverage.some(
-    (entry, index) => entry.completeThroughBlock !== args.coverage[index]?.completeThroughBlock
-  )
-  return coverageChanged ? 'updated' : 'unchanged'
+  return (args.syncType === 'warm' || args.syncType === 'reconcile') && args.current && !args.streamsChanged
+    ? 'unchanged'
+    : 'updated'
+}
+
+interface TPerformedWalletLedgerSync {
+  readonly sync: TWalletLedgerCompletedSyncResult
+  readonly lockReleasedAtomically: boolean
 }
 
 async function performWalletLedgerSync(args: {
@@ -556,8 +731,13 @@ async function performWalletLedgerSync(args: {
   readonly walletHash: string
   readonly lock: TWalletLedgerLock
   readonly currentRead: TWalletLedgerReadResult
+  readonly currentMarkerRead: TWalletLedgerCheckedMarkerReadResult
   readonly startedAt: number
-}): Promise<TWalletLedgerCompletedSyncResult> {
+  readonly getCompletionNowMs: () => number
+  readonly releaseLockOnCommit: boolean
+  readonly prefetchVaultMetadata: boolean
+  readonly onVaultsDiscovered: TWalletLedgerSyncArguments['onVaultsDiscovered']
+}): Promise<TPerformedWalletLedgerSync> {
   if (args.currentRead.status === 'corrupt' && !args.forceRebuild) {
     throw new WalletLedgerError('decode_failed', 500)
   }
@@ -578,13 +758,18 @@ async function performWalletLedgerSync(args: {
     current &&
     invalidations.status === 'ready' &&
     invalidations.records.length === 0 &&
-    isFreshCompatibleLedger(current, args.nowMs, args.forceRebuild, invalidations.headSequence)
+    isFreshCompatibleLedger(current, args.currentMarkerRead, args.nowMs, args.forceRebuild, invalidations.headSequence)
   ) {
+    startLedgerVaultMetadataPrefetch(current.streams, args.prefetchVaultMetadata)
+    notifyVaultsDiscovered(current.streams, args.onVaultsDiscovered)
     debugLog('wallet-ledger-sync', 'used fresh wallet ledger after lock acquisition', {
       records: getRecordCount(current.streams),
       encodedBytes: current.encodedBytes
     })
-    return createFreshSyncResult(current, args.startedAt)
+    return {
+      sync: createFreshSyncResult(current, args.currentMarkerRead, args.nowMs, args.startedAt),
+      lockReleasedAtomically: false
+    }
   }
 
   const getMetadataDurationMs = startHoldingsDebugTimer()
@@ -604,10 +789,12 @@ async function performWalletLedgerSync(args: {
     sourceFingerprint,
     metadata,
     forceRebuild: args.forceRebuild || invalidations.status === 'gap',
-    nowMs: args.nowMs
+    nowMs: args.nowMs,
+    effectiveReconciledAtMs: current ? getEffectiveReconciledAtMs(current, args.currentMarkerRead, args.nowMs) : null
   })
-  const lowerBlockByChain = getLowerBlocks({ metadata, current, syncType })
-  const strategy = syncType === 'warm' ? 'warm-batched' : 'faceted-batched'
+  const effectiveCoverage = current ? getEffectiveCoverage(current, args.currentMarkerRead, args.nowMs) : []
+  const lowerBlockByChain = getLowerBlocks({ metadata, current, effectiveCoverage, syncType })
+  const strategy = syncType === 'warm' ? 'warm-batched' : 'cold-batched'
   const heartbeat = createLockHeartbeat({ redis: args.redis, walletHash: args.walletHash, lock: args.lock })
   const getSourceDurationMs = startHoldingsDebugTimer()
   const fetched = await fetchEnvioLedgerSource({
@@ -628,9 +815,13 @@ async function performWalletLedgerSync(args: {
     pages: fetched.stats.totalPages,
     rows: fetched.stats.totalRows,
     requests: fetched.stats.totalRequests,
+    presenceChainProbes: fetched.stats.validationQueries,
+    presenceHttpRequests: fetched.stats.presenceRequests,
     presenceRequests: fetched.stats.presenceRequests,
     batchedRequests: fetched.stats.batchedRequests,
-    continuationRequests: fetched.stats.continuationRequests
+    continuationRequests: fetched.stats.continuationRequests,
+    blockPartitionCount: fetched.stats.blockPartitionCount ?? 0,
+    blockPartitionRequests: fetched.stats.blockPartitionRequests ?? 0
   })
   const invalidationWindows = invalidations.status === 'ready' ? getInvalidationWindows(invalidations, metadata) : []
   const targetedInvalidationWindows = syncType === 'warm' ? invalidationWindows : []
@@ -655,13 +846,11 @@ async function performWalletLedgerSync(args: {
     requests: invalidationFetched?.stats.totalRequests ?? 0,
     rows: invalidationFetched?.stats.totalRows ?? 0
   })
-  const getRevalidationDurationMs = startHoldingsDebugTimer()
-  await rereadEnvioLedgerMetadata(metadata).catch(() => {
-    throw new WalletLedgerError('upstream_failed', 502)
-  })
-  await assertLockRenewed(args.redis, args.walletHash, args.lock)
-  debugLog('wallet-ledger-sync', 'revalidated Envio metadata and lock ownership', {
-    durationMs: getRevalidationDurationMs()
+  const sourceRevalidation = startEnvioSourceRevalidation({
+    metadata,
+    redis: args.redis,
+    walletHash: args.walletHash,
+    lock: args.lock
   })
 
   const getMergeDurationMs = startHoldingsDebugTimer()
@@ -684,6 +873,8 @@ async function performWalletLedgerSync(args: {
       })
     : null
   const merge = combineMerges(cachedStreams, primaryMerge, repairMerge)
+  startLedgerVaultMetadataPrefetch(merge.streams, args.prefetchVaultMetadata)
+  notifyVaultsDiscovered(merge.streams, args.onVaultsDiscovered)
   const getDependencyInvalidationDurationMs = startHoldingsDebugTimer()
   const nestedDependencyDirty =
     (syncType === 'warm' || syncType === 'reconcile') && invalidations.status === 'ready'
@@ -717,6 +908,68 @@ async function performWalletLedgerSync(args: {
   const sourceGeneration = current
     ? current.sourceGeneration + (syncType === 'source-reset' || syncType === 'forced-reset' ? 1 : 0)
     : 1
+  const canCommitCheckedMarkerOnly =
+    syncType === 'warm' &&
+    current !== null &&
+    current.calculationVersion === LEDGER_CALCULATION_VERSION &&
+    current.sourceFingerprint === sourceFingerprint &&
+    current.sourceGeneration === sourceGeneration &&
+    current.appliedInvalidationSequence === invalidations.headSequence &&
+    invalidations.status === 'ready' &&
+    invalidations.records.length === 0 &&
+    !streamsChanged &&
+    dirtyFromTimestamp === null
+  if (canCommitCheckedMarkerOnly) {
+    await awaitEnvioSourceRevalidation(sourceRevalidation)
+    await assertLockRenewed(args.redis, args.walletHash, args.lock)
+    const getMarkerCommitDurationMs = startHoldingsDebugTimer()
+    const markerCommit = await commitWalletLedgerCheckedMarker({
+      redis: args.redis,
+      walletHash: args.walletHash,
+      lock: args.lock,
+      ledger: current,
+      checkedAtMs: args.getCompletionNowMs(),
+      effectiveReconciledAtMs: getEffectiveReconciledAtMs(current, args.currentMarkerRead, args.nowMs),
+      coveredAtMs: args.nowMs,
+      coverage,
+      releaseLockOnSuccess: args.releaseLockOnCommit
+    })
+    debugLog('wallet-ledger-sync', 'committed unchanged wallet ledger checked marker', {
+      durationMs: getMarkerCommitDurationMs(),
+      status: markerCommit.status,
+      lockRelease: args.releaseLockOnCommit && markerCommit.status === 'ok' ? 'atomic' : 'deferred',
+      records: getRecordCount(current.streams),
+      encodedBytesAvoided: current.encodedBytes
+    })
+    if (markerCommit.status !== 'ok') {
+      throw new WalletLedgerError('stale_lock', 409)
+    }
+    return {
+      sync: {
+        status: 'ready',
+        outcome: 'unchanged',
+        syncType,
+        ledger: current,
+        effectiveCoverage: coverage,
+        coveredAtMs: args.nowMs,
+        events: sumEventStats(merge.stats),
+        streams: merge.stats,
+        envio: {
+          ...getEnvioStats(fetched.stats),
+          pages: fetched.stats.totalPages + (invalidationFetched?.stats.totalPages ?? 0),
+          rows: fetched.stats.totalRows + (invalidationFetched?.stats.totalRows ?? 0),
+          requests: fetched.stats.totalRequests + (invalidationFetched?.stats.totalRequests ?? 0)
+        },
+        transition: {
+          previousEventRevision: current.eventRevision,
+          previousAppliedInvalidationSequence: current.appliedInvalidationSequence,
+          dirtyFromTimestamp: null
+        },
+        durationMs: getDurationMs(args.startedAt)
+      },
+      lockReleasedAtomically: args.releaseLockOnCommit
+    }
+  }
   const getEncodeDurationMs = startHoldingsDebugTimer()
   const encoded = encodeWalletLedgerPayload({
     schemaVersion: WALLET_LEDGER_SCHEMA_VERSION,
@@ -737,6 +990,7 @@ async function performWalletLedgerSync(args: {
     encodedBytes: encoded.ledger.encodedBytes,
     decodedBytes: encoded.ledger.decodedBytes
   })
+  await awaitEnvioSourceRevalidation(sourceRevalidation)
   const resetDailyUsdCaches = syncType === 'bootstrap' || syncType === 'forced-reset' || syncType === 'source-reset'
   const dailyUsdCacheTransitions = createWalletLedgerDailyUsdCacheCommitTransitions({
     previous: current,
@@ -746,17 +1000,25 @@ async function performWalletLedgerSync(args: {
   })
   await assertLockRenewed(args.redis, args.walletHash, args.lock)
   const getCommitDurationMs = startHoldingsDebugTimer()
+  const checkedAtMs = args.getCompletionNowMs()
   const commit = await commitStoredWalletLedger({
     redis: args.redis,
     walletHash: args.walletHash,
     lock: args.lock,
     value: encoded.value,
     cacheTransitions: dailyUsdCacheTransitions,
+    checkedAtMs,
+    effectiveReconciledAtMs:
+      syncType === 'warm' && current
+        ? getEffectiveReconciledAtMs(current, args.currentMarkerRead, args.nowMs)
+        : checkedAtMs,
+    releaseLockOnSuccess: args.releaseLockOnCommit,
     ...(getRecordCount(encoded.ledger.streams) === 0 ? { ttlMs: WALLET_LEDGER_EMPTY_TTL_MS } : {})
   })
   debugLog('wallet-ledger-sync', 'committed complete wallet ledger value', {
     durationMs: getCommitDurationMs(),
     status: commit.status,
+    lockRelease: args.releaseLockOnCommit && commit.status === 'ok' ? 'atomic' : 'deferred',
     appliedInvalidationSequence: invalidations.headSequence,
     dirtyFromTimestamp,
     dailyUsdCaches: dailyUsdCacheTransitions.length
@@ -765,24 +1027,29 @@ async function performWalletLedgerSync(args: {
     throw new WalletLedgerError('stale_lock', 409)
   }
   return {
-    status: 'ready',
-    outcome: getSyncOutcome({ syncType, current, coverage, streamsChanged }),
-    syncType,
-    ledger: encoded.ledger,
-    events: sumEventStats(merge.stats),
-    streams: merge.stats,
-    envio: {
-      ...getEnvioStats(fetched.stats),
-      pages: fetched.stats.totalPages + (invalidationFetched?.stats.totalPages ?? 0),
-      rows: fetched.stats.totalRows + (invalidationFetched?.stats.totalRows ?? 0),
-      requests: fetched.stats.totalRequests + (invalidationFetched?.stats.totalRequests ?? 0)
+    sync: {
+      status: 'ready',
+      outcome: getSyncOutcome({ syncType, current, streamsChanged }),
+      syncType,
+      ledger: encoded.ledger,
+      effectiveCoverage: encoded.ledger.coverage,
+      coveredAtMs: encoded.ledger.updatedAtMs,
+      events: sumEventStats(merge.stats),
+      streams: merge.stats,
+      envio: {
+        ...getEnvioStats(fetched.stats),
+        pages: fetched.stats.totalPages + (invalidationFetched?.stats.totalPages ?? 0),
+        rows: fetched.stats.totalRows + (invalidationFetched?.stats.totalRows ?? 0),
+        requests: fetched.stats.totalRequests + (invalidationFetched?.stats.totalRequests ?? 0)
+      },
+      transition: {
+        previousEventRevision: current?.eventRevision ?? null,
+        previousAppliedInvalidationSequence: current?.appliedInvalidationSequence ?? null,
+        dirtyFromTimestamp
+      },
+      durationMs: getDurationMs(args.startedAt)
     },
-    transition: {
-      previousEventRevision: current?.eventRevision ?? null,
-      previousAppliedInvalidationSequence: current?.appliedInvalidationSequence ?? null,
-      dirtyFromTimestamp
-    },
-    durationMs: getDurationMs(args.startedAt)
+    lockReleasedAtomically: args.releaseLockOnCommit
   }
 }
 
@@ -815,18 +1082,34 @@ export async function readWalletLedger(args: { readonly address: string }): Prom
   }
 }
 
+export async function readVerifiedWalletLedgerHeaderForAddress(args: {
+  readonly address: string
+}): Promise<TWalletLedgerVerifiedHeaderReadResult> {
+  try {
+    return await readVerifiedWalletLedgerHeader({
+      redis: getRedisClient(),
+      walletHash: hashLedgerWalletAddress(args.address)
+    })
+  } catch (error) {
+    throw normalizeWalletLedgerError(error)
+  }
+}
+
 async function runWithSynchronizedWalletLedger<TConsumed>(
   args: TWalletLedgerSyncArguments,
-  consume: (context: TSynchronizedWalletLedgerContext) => Promise<TConsumed>
+  consume: (context: TSynchronizedWalletLedgerContext) => Promise<TConsumed>,
+  releaseLockOnCommit: boolean
 ): Promise<TWithSynchronizedWalletLedgerResult<TConsumed>> {
   const startedAt = performance.now()
   const nowMs = getNowMs(args.nowMs)
+  const getCompletionNowMs = () => getNowMs(args.nowMs)
   const forceRebuild = args.forceRebuild ?? false
   const walletHash = hashLedgerWalletAddress(args.address)
   const redis = getRedisClient()
   const getInitialReadDurationMs = startHoldingsDebugTimer()
-  const [preliminary, invalidationHead] = await Promise.all([
+  const [preliminary, preliminaryMarker, invalidationHead] = await Promise.all([
     readStoredWalletLedger({ redis, walletHash }),
+    readWalletLedgerCheckedMarker({ redis, walletHash }),
     readWalletLedgerInvalidationHead({ redis })
   ]).catch((error) => {
     const normalized = normalizeWalletLedgerError(error)
@@ -847,11 +1130,25 @@ async function runWithSynchronizedWalletLedger<TConsumed>(
     appliedSequence: preliminary.status === 'ready' ? preliminary.ledger.appliedInvalidationSequence : undefined,
     headSequence: invalidationHead
   })
+  debugLog('wallet-ledger-sync', 'read wallet ledger checked marker', {
+    durationMs: getInitialReadDurationMs(),
+    status: preliminaryMarker.status,
+    usable:
+      preliminary.status === 'ready'
+        ? getMatchingCheckedMarker(preliminary.ledger, preliminaryMarker, nowMs) !== null
+        : false,
+    revisionMatches:
+      preliminary.status === 'ready' && preliminaryMarker.status === 'ready'
+        ? preliminaryMarker.marker.revision === preliminary.ledger.revision
+        : undefined
+  })
   if (
     preliminary.status === 'ready' &&
-    isFreshCompatibleLedger(preliminary.ledger, nowMs, forceRebuild, invalidationHead)
+    isFreshCompatibleLedger(preliminary.ledger, preliminaryMarker, nowMs, forceRebuild, invalidationHead)
   ) {
-    const sync = createFreshSyncResult(preliminary.ledger, startedAt)
+    startLedgerVaultMetadataPrefetch(preliminary.ledger.streams, args.prefetchVaultMetadata ?? false)
+    notifyVaultsDiscovered(preliminary.ledger.streams, args.onVaultsDiscovered)
+    const sync = createFreshSyncResult(preliminary.ledger, preliminaryMarker, nowMs, startedAt)
     debugLog('wallet-ledger-sync', 'used five-minute wallet ledger freshness fast path', {
       records: sync.events.total,
       encodedBytes: sync.ledger.encodedBytes
@@ -901,14 +1198,55 @@ async function runWithSynchronizedWalletLedger<TConsumed>(
     return { kind: 'busy', sync: { status: 'syncing', reasonCode: 'lock_busy' } }
   }
 
+  const atomicReleaseState = { completed: false }
   try {
-    const sync = await (async () => {
+    const performed = await (async () => {
       try {
         const getLockedReadDurationMs = startHoldingsDebugTimer()
-        const currentRead = await readStoredWalletLedger({ redis, walletHash })
-        debugLog('wallet-ledger-sync', 'reread wallet ledger while holding its lock', {
+        const lockedSnapshot = await (async (): Promise<{
+          readonly currentRead: TWalletLedgerReadResult
+          readonly currentMarkerRead: TWalletLedgerCheckedMarkerReadResult
+          readonly source: 'verified_preliminary' | 'reread'
+        }> => {
+          if (preliminary.status !== 'corrupt') {
+            const verification = await verifyWalletLedgerSnapshotUnderLock({
+              redis,
+              walletHash,
+              lock: acquired.lock,
+              expectedRevision: preliminary.status === 'ready' ? preliminary.ledger.revision : null,
+              expectedEncodedBytes: preliminary.status === 'ready' ? preliminary.ledger.encodedBytes : null
+            })
+            if (verification.status === 'lock_lost') {
+              throw new WalletLedgerError('stale_lock', 409)
+            }
+            if (verification.status === 'unchanged') {
+              return {
+                currentRead: preliminary,
+                currentMarkerRead: verification.marker,
+                source: 'verified_preliminary'
+              }
+            }
+          }
+          const [currentRead, currentMarkerRead] = await Promise.all([
+            readStoredWalletLedger({ redis, walletHash }),
+            readWalletLedgerCheckedMarker({ redis, walletHash })
+          ])
+          return { currentRead, currentMarkerRead, source: 'reread' }
+        })()
+        const { currentRead, currentMarkerRead } = lockedSnapshot
+        debugLog('wallet-ledger-sync', 'verified wallet ledger while holding its lock', {
           durationMs: getLockedReadDurationMs(),
-          status: currentRead.status
+          source: lockedSnapshot.source,
+          status: currentRead.status,
+          checkedMarkerStatus: currentMarkerRead.status,
+          checkedMarkerUsable:
+            currentRead.status === 'ready'
+              ? getMatchingCheckedMarker(currentRead.ledger, currentMarkerRead, nowMs) !== null
+              : false,
+          checkedMarkerRevisionMatches:
+            currentRead.status === 'ready' && currentMarkerRead.status === 'ready'
+              ? currentMarkerRead.marker.revision === currentRead.ledger.revision
+              : undefined
         })
         return await performWalletLedgerSync({
           address: args.address,
@@ -918,7 +1256,12 @@ async function runWithSynchronizedWalletLedger<TConsumed>(
           walletHash,
           lock: acquired.lock,
           currentRead,
-          startedAt
+          currentMarkerRead,
+          startedAt,
+          getCompletionNowMs,
+          releaseLockOnCommit,
+          prefetchVaultMetadata: args.prefetchVaultMetadata ?? false,
+          onVaultsDiscovered: args.onVaultsDiscovered
         })
       } catch (error) {
         const normalized = normalizeWalletLedgerError(error)
@@ -930,6 +1273,10 @@ async function runWithSynchronizedWalletLedger<TConsumed>(
         throw normalized
       }
     })()
+    if (performed.lockReleasedAtomically) {
+      atomicReleaseState.completed = true
+    }
+    const sync = performed.sync
     const consumed = await consume({ ledger: sync.ledger, sync })
     debugLog('wallet-ledger-sync', 'completed wallet ledger synchronization', {
       durationMs: sync.durationMs,
@@ -939,14 +1286,21 @@ async function runWithSynchronizedWalletLedger<TConsumed>(
     })
     return { kind: 'completed', sync, consumed }
   } finally {
-    const getReleaseDurationMs = startHoldingsDebugTimer()
-    const released = await releaseWalletLedgerLock({ redis, walletHash, lock: acquired.lock }).catch(() => ({
-      status: 'lock_lost' as const
-    }))
-    debugLog('wallet-ledger-sync', 'released wallet ledger lock', {
-      durationMs: getReleaseDurationMs(),
-      status: released.status
-    })
+    if (atomicReleaseState.completed) {
+      debugLog('wallet-ledger-sync', 'released wallet ledger lock', {
+        durationMs: 0,
+        status: 'released_atomically'
+      })
+    } else {
+      const getReleaseDurationMs = startHoldingsDebugTimer()
+      const released = await releaseWalletLedgerLock({ redis, walletHash, lock: acquired.lock }).catch(() => ({
+        status: 'lock_lost' as const
+      }))
+      debugLog('wallet-ledger-sync', 'released wallet ledger lock', {
+        durationMs: getReleaseDurationMs(),
+        status: released.status
+      })
+    }
   }
 }
 
@@ -954,11 +1308,11 @@ export function withSynchronizedWalletLedger<TConsumed>(
   args: TWalletLedgerSyncArguments,
   consume: (context: TSynchronizedWalletLedgerContext) => Promise<TConsumed>
 ): Promise<TWithSynchronizedWalletLedgerResult<TConsumed>> {
-  return runWithSynchronizedWalletLedger(args, consume)
+  return runWithSynchronizedWalletLedger(args, consume, false)
 }
 
 export async function synchronizeWalletLedger(args: TWalletLedgerSyncArguments): Promise<TWalletLedgerSyncResult> {
-  const result = await runWithSynchronizedWalletLedger(args, async () => undefined)
+  const result = await runWithSynchronizedWalletLedger(args, async () => undefined, true)
   return result.sync
 }
 

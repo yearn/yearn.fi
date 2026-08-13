@@ -228,7 +228,7 @@ describe('holdings ledger synchronization', () => {
     expect(cold.status).toBe('updated')
     expect(cold.status === 'updated' && cold.syncType).toBe('bootstrap')
     expect(testState.lastLowerBlockByChain).toEqual({ 1: 1 })
-    expect(testState.lastFetchStrategy).toBe('faceted-batched')
+    expect(testState.lastFetchStrategy).toBe('cold-batched')
     expect(mocks.commitRevision).toHaveBeenCalledTimes(1)
     const coldRevision = testState.currentRead as {
       readonly status: 'ready'
@@ -286,9 +286,9 @@ describe('holdings ledger synchronization', () => {
       expect(output).toContain('[ledger-sync] released wallet synchronization lock')
       expect(output).toContain('"pages":6')
       expect(output).toContain('"rows":1')
-      expect(output).toContain('"strategy":"faceted-batched"')
-      expect(output).toContain('"requests":2')
-      expect(output).toContain('"presenceRequests":1')
+      expect(output).toContain('"strategy":"cold-batched"')
+      expect(output).toContain('"requests":1')
+      expect(output).toContain('"presenceRequests":0')
       expect(output).not.toContain(USER_ADDRESS)
       expect(output).not.toContain(hashLedgerWalletAddress(USER_ADDRESS))
       expect(output).not.toContain(VAULT_ADDRESS)

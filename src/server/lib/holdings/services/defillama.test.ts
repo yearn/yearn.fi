@@ -6,7 +6,8 @@ import {
   getChainPrefix,
   getHistoricalPriceFetchFailedBatches,
   getPriceAtTimestamp,
-  parseDefiLlamaResponse
+  parseDefiLlamaResponse,
+  supportsHistoricalPriceRangeRequests
 } from './defillama'
 
 function createBatchResponse(response: DefiLlamaBatchResponse): Response {
@@ -16,6 +17,24 @@ function createBatchResponse(response: DefiLlamaBatchResponse): Response {
   })
 }
 
+type TDeferred<T> = Readonly<{
+  promise: Promise<T>
+  resolve: (value: T) => void
+}>
+
+function createDeferred<T>(): TDeferred<T> {
+  const controls: { resolve: (value: T) => void } = { resolve: () => undefined }
+  const promise = new Promise<T>((resolve) => {
+    controls.resolve = resolve
+  })
+
+  return { promise, resolve: (value) => controls.resolve(value) }
+}
+
+async function flushMicrotasks(): Promise<void> {
+  await new Promise<void>((resolve) => queueMicrotask(resolve))
+}
+
 afterEach(() => {
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
@@ -23,6 +42,16 @@ afterEach(() => {
 })
 
 describe('parseDefiLlamaResponse', () => {
+  it('reports range support only when yearn-prices is configured', () => {
+    vi.stubEnv('HOLDINGS_PRICE_PROVIDER', 'defillama')
+    expect(supportsHistoricalPriceRangeRequests()).toBe(false)
+
+    vi.stubEnv('HOLDINGS_PRICE_PROVIDER', 'yearn-prices')
+    vi.stubEnv('YEARN_PRICES_API_KEY', 'test-yearn-prices-key')
+
+    expect(supportsHistoricalPriceRangeRequests()).toBe(true)
+  })
+
   it('maps Katana chain IDs to the katana DefiLlama prefix', () => {
     expect(getChainPrefix(747474)).toBe('katana')
   })
@@ -244,7 +273,7 @@ describe('parseDefiLlamaResponse', () => {
     expect(prices.get(secondTokenKey)?.get(secondTimestamp)).toBe(2.002)
   })
 
-  it('keeps yearn-prices batchHistorical requests below the conservative pair cap', async () => {
+  it('packs yearn-prices batchHistorical requests up to the provider limits', async () => {
     vi.stubEnv('API_KEY_PORTFOLIO', 'portfolio-test-key')
 
     const tokens = Array.from({ length: 4 }, (_value, index) => ({
@@ -285,7 +314,7 @@ describe('parseDefiLlamaResponse', () => {
       }))
     )
 
-    expect(fetchStub.mock.calls.length).toBeGreaterThan(1)
+    expect(fetchStub).toHaveBeenCalledTimes(1)
     fetchStub.mock.calls.forEach(([requestInput]) => {
       const requestUrl = new URL(String(requestInput))
       const coinsParam = JSON.parse(decodeURIComponent(requestUrl.searchParams.get('coins') ?? 'null')) as Record<
@@ -297,11 +326,45 @@ describe('parseDefiLlamaResponse', () => {
       }, 0)
 
       expect(requestUrl.pathname).toBe('/api/prices/batchHistorical')
-      expect(pairCount).toBeLessThanOrEqual(150)
+      expect(pairCount).toBeLessThanOrEqual(450)
       Object.values(coinsParam).forEach((requestedTimestamps) => {
-        expect(requestedTimestamps.length).toBeLessThanOrEqual(45)
+        expect(requestedTimestamps.length).toBeLessThanOrEqual(90)
       })
     })
+    expect(prices.size).toBe(tokens.length)
+  })
+
+  it('keeps all four yearn-prices workers busy when an earlier batch is slower', async () => {
+    vi.stubEnv('API_KEY_PORTFOLIO', 'portfolio-test-key')
+
+    const tokens = Array.from({ length: 31 }, (_value, index) => ({
+      chainId: 1,
+      address: `0x${(index + 1).toString(16).padStart(40, '0')}`
+    }))
+    const timestamps = Array.from({ length: 90 }, (_value, index) => 1704153599 + index * 2 * 86_400)
+    const responses = Array.from({ length: 7 }, () => createDeferred<Response>())
+    const fetchCursor = { next: 0 }
+    const fetchStub = vi.fn(() => {
+      const response = responses[fetchCursor.next]!
+      fetchCursor.next += 1
+      return response.promise
+    })
+    vi.stubGlobal('fetch', fetchStub)
+
+    const pricesPromise = fetchHistoricalPricesForTokenTimestamps(tokens.map((token) => ({ ...token, timestamps })))
+    await flushMicrotasks()
+    await flushMicrotasks()
+
+    expect(fetchStub).toHaveBeenCalledTimes(4)
+    responses[0]!.resolve(createBatchResponse({ coins: {} }))
+    await vi.waitFor(() => expect(fetchStub).toHaveBeenCalledTimes(5))
+
+    responses.slice(1).forEach((response) => {
+      response.resolve(createBatchResponse({ coins: {} }))
+    })
+    const prices = await pricesPromise
+
+    expect(fetchStub).toHaveBeenCalledTimes(7)
     expect(prices.size).toBe(tokens.length)
   })
 

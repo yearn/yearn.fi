@@ -25,19 +25,6 @@ function priceMapKey(chainId: number, tokenAddress: string): string {
   return `${getChainPrefix(chainId)}:${tokenAddress.toLowerCase()}`
 }
 
-function getPriceAtTimestamp(priceMap: Map<number, number>, targetTimestamp: number): number {
-  if (priceMap.has(targetTimestamp)) {
-    return priceMap.get(targetTimestamp)!
-  }
-
-  const closestPriorTimestamp = Array.from(priceMap.keys())
-    .sort((left, right) => left - right)
-    .filter((timestamp) => timestamp <= targetTimestamp)
-    .pop()
-
-  return closestPriorTimestamp === undefined ? 0 : priceMap.get(closestPriorTimestamp) || 0
-}
-
 function priceRequestKey(chainId: number, tokenAddress: string): string {
   return `${chainId}:${tokenAddress.toLowerCase()}`
 }
@@ -235,7 +222,7 @@ function deriveNestedVaultAssetPriceDataOnce(args: {
       }
 
       const pricePerShare = getPPS(ppsMap, timestamp)
-      const underlyingTokenPrice = getPriceAtTimestamp(underlyingPriceMap, timestamp)
+      const underlyingTokenPrice = underlyingPriceMap.get(timestamp) ?? 0
       if (pricePerShare === null || pricePerShare <= 0 || underlyingTokenPrice <= 0) {
         return
       }

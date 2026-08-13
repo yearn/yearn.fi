@@ -102,6 +102,7 @@ const vaultListState: TVaultListState = {
   hasLoadedGlobalVaultList: false,
   loadPromise: null
 }
+const fallbackMetadataPromises = new Map<string, Promise<{ key: string; metadata: VaultMetadata } | null>>()
 
 type TVaultMetadataFetchResult = Map<string, VaultMetadata> & {
   [VAULT_METADATA_FETCH_FAILED_VAULTS]?: number
@@ -499,6 +500,25 @@ async function fetchFallbackMetadataForVault(
   return { key, metadata }
 }
 
+function fetchFallbackMetadataForVaultCoalesced(
+  chainId: number,
+  vaultAddress: string
+): Promise<{ key: string; metadata: VaultMetadata } | null> {
+  const key = `${chainId}:${vaultAddress.toLowerCase()}`
+  const existing = fallbackMetadataPromises.get(key)
+  if (existing) {
+    return existing
+  }
+
+  const promise = fetchFallbackMetadataForVault(chainId, vaultAddress).finally(() => {
+    if (fallbackMetadataPromises.get(key) === promise) {
+      fallbackMetadataPromises.delete(key)
+    }
+  })
+  fallbackMetadataPromises.set(key, promise)
+  return promise
+}
+
 async function fetchFallbackMetadata(
   vaults: Array<{ chainId: number; vaultAddress: string }>
 ): Promise<Map<string, VaultMetadata>> {
@@ -513,7 +533,7 @@ async function fetchFallbackMetadata(
     async (allResultsPromise, batch) => {
       const allResults = await allResultsPromise
       const batchResults = await Promise.allSettled(
-        batch.map(({ chainId, vaultAddress }) => fetchFallbackMetadataForVault(chainId, vaultAddress))
+        batch.map(({ chainId, vaultAddress }) => fetchFallbackMetadataForVaultCoalesced(chainId, vaultAddress))
       )
 
       const resolvedResults = batchResults.reduce<{
@@ -589,6 +609,27 @@ async function loadVaultList(): Promise<void> {
     })
 
   return vaultListState.loadPromise
+}
+
+export function prefetchGlobalVaultMetadata(): Promise<void> {
+  return loadVaultList()
+}
+
+/**
+ * Clears request-process vault metadata so an isolated local benchmark can measure the same
+ * metadata-cold stage for every wallet. The portfolio route guards this behind a benchmark
+ * Redis namespace; application code should not call it during normal requests.
+ */
+export async function resetGlobalVaultMetadataCacheForBenchmark(): Promise<void> {
+  await Promise.allSettled([
+    ...(vaultListState.loadPromise ? [vaultListState.loadPromise] : []),
+    ...fallbackMetadataPromises.values()
+  ])
+  vaultListState.vaultListCache = null
+  vaultListState.stakingToVaultMap = null
+  vaultListState.hasLoadedGlobalVaultList = false
+  vaultListState.loadPromise = null
+  fallbackMetadataPromises.clear()
 }
 
 export async function fetchVaultMetadata(chainId: number, vaultAddress: string): Promise<VaultMetadata | null> {

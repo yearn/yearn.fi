@@ -6,6 +6,7 @@ import type {
 } from '@/server/lib/holdings/services/ledger/types'
 
 export const WALLET_LEDGER_SCHEMA_VERSION = 3 as const
+export const WALLET_LEDGER_CHECKED_MARKER_SCHEMA_VERSION = 2 as const
 export const WALLET_LEDGER_CODEC = 'brotli-q4-base64' as const
 export const WALLET_LEDGER_FRESHNESS_MS = 5 * 60 * 1000
 export const WALLET_LEDGER_EMPTY_TTL_MS = 24 * 60 * 60 * 1000
@@ -42,6 +43,35 @@ export interface TWalletLedgerState extends TWalletLedgerPayloadV3 {
   readonly decodedBytes: number
 }
 
+export interface TWalletLedgerCheckedMarkerV2 {
+  readonly schemaVersion: typeof WALLET_LEDGER_CHECKED_MARKER_SCHEMA_VERSION
+  readonly revision: string
+  readonly eventRevision: string
+  readonly calculationVersion: string
+  readonly sourceGeneration: number
+  readonly appliedInvalidationSequence: number
+  readonly updatedAtMs: number
+  readonly coveredAtMs: number
+  readonly eventCount: number
+  readonly hasActivity: boolean
+  readonly encodedBytes: number
+  readonly decodedBytes: number
+  readonly checkedAtMs: number
+  readonly reconciledAtMs: number
+  readonly coverage: readonly TWalletLedgerCoverageV1[]
+}
+
+export type TWalletLedgerCheckedMarkerReadResult =
+  | { readonly status: 'missing' }
+  | { readonly status: 'corrupt' }
+  | { readonly status: 'ready'; readonly marker: TWalletLedgerCheckedMarkerV2 }
+
+export type TWalletLedgerVerifiedHeaderReadResult =
+  | { readonly status: 'missing' }
+  | { readonly status: 'corrupt' }
+  | { readonly status: 'ledger_changed' }
+  | { readonly status: 'ready'; readonly header: TWalletLedgerCheckedMarkerV2 }
+
 export type TWalletLedgerReadResult =
   | { readonly status: 'missing' }
   | { readonly status: 'corrupt' }
@@ -71,6 +101,8 @@ export interface TWalletLedgerCompletedSyncResult {
   readonly outcome: TWalletLedgerSyncOutcome
   readonly syncType: TWalletLedgerSyncType
   readonly ledger: TWalletLedgerState
+  readonly effectiveCoverage: readonly TWalletLedgerCoverageV1[]
+  readonly coveredAtMs: number
   readonly events: TWalletLedgerEventStats
   readonly streams: Readonly<
     Record<

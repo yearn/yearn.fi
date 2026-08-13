@@ -4,7 +4,9 @@ import {
   fetchHistoricalPricesForTokenTimestamps,
   getChainPrefix,
   getHistoricalPriceFetchFailedBatches,
+  MAX_HISTORICAL_PRICE_POINT_TIMESTAMPS_PER_TOKEN,
   setHistoricalPriceFetchFailedBatches,
+  supportsHistoricalPriceRangeRequests,
   type THistoricalPriceFetchOptions,
   type THistoricalPriceFetchResolution,
   type THistoricalPriceRequest
@@ -35,7 +37,11 @@ export type THoldingsValuationRequestOptions = Readonly<{
 
 export type THoldingsValuationPpsOptions = THoldingsValuationRequestOptions
 
-export type THoldingsHistoricalPriceLoadOptions = THistoricalPriceFetchOptions & THoldingsValuationRequestOptions
+export type THoldingsHistoricalPriceLoadOptions = THistoricalPriceFetchOptions &
+  THoldingsValuationRequestOptions &
+  Readonly<{
+    onMissingHistoricalPrice?: (request: THoldingsHistoricalPriceRequest) => void
+  }>
 
 export interface THoldingsValuationLoader {
   readonly key: string
@@ -73,11 +79,12 @@ type TPendingPpsEntry = {
 }
 
 type TValuationEntryPhase = 'pending' | 'in-flight' | 'settled'
+type TPpsEntryPhase = TValuationEntryPhase | 'queued'
 
 type TPpsEntryState = {
   readonly promise: Promise<TPpsEntry>
   consumer: THoldingsValuationConsumer
-  phase: TValuationEntryPhase
+  phase: TPpsEntryPhase
 }
 
 type TNormalizedHistoricalPriceRequest = Readonly<{
@@ -126,6 +133,12 @@ type TQueuedPriceDispatch = Readonly<{
   dispatch: () => Promise<void>
 }>
 
+type TQueuedPpsDispatch = {
+  consumer: THoldingsValuationConsumer
+  readonly sequence: number
+  readonly entries: TPendingPpsEntry[]
+}
+
 const PRICE_RESOLUTIONS = ['strict', 'utc_day'] as const satisfies readonly THistoricalPriceFetchResolution[]
 const VALUATION_CONSUMERS = [
   'growth',
@@ -139,7 +152,13 @@ const VALUATION_CONSUMER_PRIORITY: Readonly<Record<THoldingsValuationConsumer, n
 }
 const SECONDS_PER_DAY = 86_400
 const MAX_DUPLICATED_PRICE_POINTS_PER_LOADER = 256
-const MAX_CONCURRENT_PRICE_PROVIDER_BATCHES_PER_LOADER = 2
+const DEFAULT_PPS_PROVIDER_CONCURRENCY = 6
+const MAX_CONCURRENT_PPS_PROVIDER_BATCHES_PER_LOADER = 2
+const MAX_VAULTS_PER_PPS_PROVIDER_BATCH = 24
+const MAX_CONCURRENT_PRICE_PROVIDER_BATCHES_PER_LOADER = 3
+const MAX_BALANCE_RANGE_FILLER_RATIO = 0.15
+const MAX_BALANCE_RANGE_FILLER_POINTS = 10_000
+const MAX_BALANCE_RANGE_DAYS_PER_TOKEN = 366
 
 function createDeferred<T>(): TDeferred<T> {
   const controls: {
@@ -265,6 +284,12 @@ function groupPendingEntriesByConsumer<TEntry extends { readonly consumer: THold
   })).filter((group) => group.entries.length > 0)
 }
 
+function chunkEntries<TEntry>(entries: readonly TEntry[], chunkSize: number): TEntry[][] {
+  return Array.from({ length: Math.ceil(entries.length / chunkSize) }, (_value, index) =>
+    entries.slice(index * chunkSize, index * chunkSize + chunkSize)
+  )
+}
+
 function getPriceCacheKey(
   resolution: THistoricalPriceFetchResolution,
   tokenKey: string,
@@ -303,6 +328,31 @@ function areContiguousUtcDayEntries<TEntry extends Pick<TPriceProviderEntry, 'pr
 
 function arePriceEntriesContiguousByToken(entries: readonly TPriceProviderEntry[]): boolean {
   return Array.from(getPriceEntriesByToken(entries).values()).every(areContiguousUtcDayEntries)
+}
+
+function isBoundedBalanceRangeFillerPlan(
+  balanceEntries: readonly TPendingPriceEntry[],
+  rangeFillers: readonly TPriceProviderEntry[],
+  alreadyDuplicatedPricePoints: number,
+  supportsAdaptiveRangeFillers: boolean
+): boolean {
+  if (rangeFillers.length === 0) {
+    return false
+  }
+
+  const filledEntries = [...balanceEntries, ...rangeFillers]
+  const maximumAdaptiveFillers = Math.min(
+    MAX_BALANCE_RANGE_FILLER_POINTS,
+    supportsAdaptiveRangeFillers ? Math.floor(balanceEntries.length * MAX_BALANCE_RANGE_FILLER_RATIO) : 0
+  )
+  const maximumTotalDuplicatedPricePoints = Math.max(MAX_DUPLICATED_PRICE_POINTS_PER_LOADER, maximumAdaptiveFillers)
+  const withinDuplicationBudget =
+    alreadyDuplicatedPricePoints + rangeFillers.length <= maximumTotalDuplicatedPricePoints
+  const withinProviderRangeLimit = Array.from(getPriceEntriesByToken(filledEntries).values()).every(
+    (entries) => entries.length <= MAX_BALANCE_RANGE_DAYS_PER_TOKEN
+  )
+
+  return withinDuplicationBudget && withinProviderRangeLimit && arePriceEntriesContiguousByToken(filledEntries)
 }
 
 function getBalanceRangeFillerEntries(
@@ -363,12 +413,23 @@ function splitPriceEntriesForRangeEfficiency(entries: readonly TPendingPriceEntr
   const runsByToken = Array.from(getPriceEntriesByToken(entries).values()).map(getContiguousPriceRuns)
   const longRunsByToken = runsByToken.map((runs) => runs.filter((run) => run.length > 1))
   const maximumLongRuns = Math.max(0, ...longRunsByToken.map((runs) => runs.length))
-  const rangeBatches = Array.from({ length: maximumLongRuns }, (_value, index) =>
-    longRunsByToken.flatMap((runs) => runs[index] ?? [])
-  ).filter((batch) => batch.length > 0)
-  const sparseBatch = runsByToken.flatMap((runs) => runs.filter((run) => run.length === 1).flat())
+  const candidateRangeRunGroups = Array.from({ length: maximumLongRuns }, (_value, index) =>
+    longRunsByToken.flatMap((runs) => (runs[index] ? [runs[index]!] : []))
+  ).filter((runs) => runs.length > 0)
+  const rangeBatches = candidateRangeRunGroups
+    .map((runs) => runs.filter((run) => run.length > MAX_HISTORICAL_PRICE_POINT_TIMESTAMPS_PER_TOKEN).flat())
+    .filter((batch) => batch.length > 0)
+  const pointEfficientRangeEntries = candidateRangeRunGroups
+    .flatMap((runs) => runs.filter((run) => run.length <= MAX_HISTORICAL_PRICE_POINT_TIMESTAMPS_PER_TOKEN))
+    .flat()
+  const sparseBatch = [
+    ...runsByToken.flatMap((runs) => runs.filter((run) => run.length === 1).flat()),
+    ...pointEfficientRangeEntries
+  ]
 
-  return [...rangeBatches, ...(sparseBatch.length > 0 ? [sparseBatch] : [])]
+  return [...rangeBatches, ...(sparseBatch.length > 0 ? [sparseBatch] : [])].toSorted(
+    (left, right) => right.length - left.length
+  )
 }
 
 export function createHoldingsValuationLoader(): THoldingsValuationLoader {
@@ -377,9 +438,20 @@ export function createHoldingsValuationLoader(): THoldingsValuationLoader {
   const ppsEntryStates = new Map<string, TPpsEntryState>()
   const pendingPpsEntries = new Map<string, TPendingPpsEntry>()
   const ppsScheduleState = { scheduled: false }
+  const ppsDispatchQueue: TQueuedPpsDispatch[] = []
+  const queuedPpsDispatchByKey = new Map<string, TQueuedPpsDispatch>()
+  const ppsDispatchScheduleState = { scheduled: false }
+  const activePpsDispatches = { count: 0 }
+  const activePpsDispatchesByConsumer: Record<THoldingsValuationConsumer, number> = {
+    growth: 0,
+    'protocol-return': 0,
+    balance: 0
+  }
+  const ppsDispatchSequence = { next: 0 }
   const priceEntryPromises = new Map<string, Promise<TPriceEntry>>()
   const priceEntryStates = new Map<string, TPriceEntryState>()
   const priceDuplicationBudget = { remaining: MAX_DUPLICATED_PRICE_POINTS_PER_LOADER }
+  const priceDuplicationStats = { total: 0 }
   const pendingPriceEntries = {
     strict: new Map<string, TPendingPriceEntry>(),
     utc_day: new Map<string, TPendingPriceEntry>()
@@ -396,7 +468,79 @@ export function createHoldingsValuationLoader(): THoldingsValuationLoader {
   const priceDispatchScheduleState = { scheduled: false }
   const activePriceDispatches = { count: 0 }
   const activeBalancePriceDispatches = { count: 0 }
+  const hasDispatchedHigherPriorityPriceWork = { value: false }
   const priceDispatchSequence = { next: 0 }
+
+  const schedulePpsDispatchQueue = (): void => {
+    if (!ppsDispatchScheduleState.scheduled) {
+      ppsDispatchScheduleState.scheduled = true
+      queueMicrotask(drainPpsDispatchQueue)
+    }
+  }
+
+  const drainPpsDispatchQueue = (): void => {
+    ppsDispatchScheduleState.scheduled = false
+    const availableDispatches = Math.max(0, MAX_CONCURRENT_PPS_PROVIDER_BATCHES_PER_LOADER - activePpsDispatches.count)
+    if (availableDispatches === 0 || ppsDispatchQueue.length === 0) {
+      return
+    }
+
+    const sortedQueue = ppsDispatchQueue.toSorted(
+      (left, right) =>
+        VALUATION_CONSUMER_PRIORITY[right.consumer] - VALUATION_CONSUMER_PRIORITY[left.consumer] ||
+        left.sequence - right.sequence
+    )
+    const distinctConsumerDispatches = sortedQueue.reduce<TQueuedPpsDispatch[]>((selected, queuedDispatch) => {
+      if (
+        selected.length >= availableDispatches ||
+        activePpsDispatchesByConsumer[queuedDispatch.consumer] > 0 ||
+        selected.some(({ consumer }) => consumer === queuedDispatch.consumer)
+      ) {
+        return selected
+      }
+
+      selected.push(queuedDispatch)
+      return selected
+    }, [])
+    const distinctSequences = new Set(distinctConsumerDispatches.map(({ sequence }) => sequence))
+    const remainingCapacity = availableDispatches - distinctConsumerDispatches.length
+    const dispatches = [
+      ...distinctConsumerDispatches,
+      ...sortedQueue.filter(({ sequence }) => !distinctSequences.has(sequence)).slice(0, remainingCapacity)
+    ]
+    const selectedSequences = new Set(dispatches.map(({ sequence }) => sequence))
+    ppsDispatchQueue.splice(
+      0,
+      ppsDispatchQueue.length,
+      ...ppsDispatchQueue.filter(({ sequence }) => !selectedSequences.has(sequence))
+    )
+    activePpsDispatches.count += dispatches.length
+    dispatches.forEach((dispatch) => {
+      activePpsDispatchesByConsumer[dispatch.consumer] += 1
+      const releaseDispatch = (): void => {
+        activePpsDispatches.count -= 1
+        activePpsDispatchesByConsumer[dispatch.consumer] -= 1
+        schedulePpsDispatchQueue()
+      }
+      void dispatchPpsBatch(dispatch).then(releaseDispatch, releaseDispatch)
+    })
+  }
+
+  const enqueuePpsDispatch = (consumer: THoldingsValuationConsumer, entries: TPendingPpsEntry[]): void => {
+    const sequence = ppsDispatchSequence.next
+    ppsDispatchSequence.next += 1
+    const dispatch = { consumer, sequence, entries }
+    entries.forEach(({ request, deferred }) => {
+      queuedPpsDispatchByKey.set(request.key, dispatch)
+      const state = ppsEntryStates.get(request.key)
+      if (state?.promise === deferred.promise) {
+        state.phase = 'queued'
+        state.consumer = consumer
+      }
+    })
+    ppsDispatchQueue.push(dispatch)
+    schedulePpsDispatchQueue()
+  }
 
   const schedulePriceDispatchQueue = (): void => {
     if (!priceDispatchScheduleState.scheduled) {
@@ -426,9 +570,14 @@ export function createHoldingsValuationLoader(): THoldingsValuationLoader {
       }
 
       const selectedBalanceDispatches = selected.filter(({ consumer }) => consumer === 'balance').length
+      const hasDispatchedOrSelectedHigherPriorityWork =
+        hasDispatchedHigherPriorityPriceWork.value || selected.some(({ consumer }) => consumer !== 'balance')
+      const balanceDispatchLimit = hasDispatchedOrSelectedHigherPriorityWork
+        ? MAX_CONCURRENT_PRICE_PROVIDER_BATCHES_PER_LOADER
+        : 1
       if (
         queuedDispatch.consumer === 'balance' &&
-        activeBalancePriceDispatches.count + selectedBalanceDispatches >= 1
+        activeBalancePriceDispatches.count + selectedBalanceDispatches >= balanceDispatchLimit
       ) {
         return selected
       }
@@ -439,6 +588,9 @@ export function createHoldingsValuationLoader(): THoldingsValuationLoader {
     const selectedSequences = new Set(dispatches.map(({ sequence }) => sequence))
     const retainedDispatches = priceDispatchQueue.filter(({ sequence }) => !selectedSequences.has(sequence))
     priceDispatchQueue.splice(0, priceDispatchQueue.length, ...retainedDispatches)
+    if (dispatches.some(({ consumer }) => consumer !== 'balance')) {
+      hasDispatchedHigherPriorityPriceWork.value = true
+    }
     activePriceDispatches.count += dispatches.length
     activeBalancePriceDispatches.count += dispatches.filter(({ consumer }) => consumer === 'balance').length
     dispatches.forEach(({ consumer, dispatch }) => {
@@ -460,13 +612,14 @@ export function createHoldingsValuationLoader(): THoldingsValuationLoader {
     schedulePriceDispatchQueue()
   }
 
-  const dispatchPpsBatch = async (
-    consumer: THoldingsValuationConsumer,
-    batch: TPendingPpsEntry[],
-    lowerProviderConcurrency: boolean
-  ): Promise<void> => {
+  const dispatchPpsBatch = async (dispatch: TQueuedPpsDispatch): Promise<void> => {
+    const { consumer, entries: batch } = dispatch
+    const providerConcurrency = DEFAULT_PPS_PROVIDER_CONCURRENCY
     const getDurationMs = startHoldingsDebugTimer()
     batch.forEach(({ request, deferred }) => {
+      if (queuedPpsDispatchByKey.get(request.key) === dispatch) {
+        queuedPpsDispatchByKey.delete(request.key)
+      }
       const state = ppsEntryStates.get(request.key)
       if (state?.promise === deferred.promise) {
         state.phase = 'in-flight'
@@ -476,16 +629,18 @@ export function createHoldingsValuationLoader(): THoldingsValuationLoader {
     debugLog('valuation-loader', 'dispatching coalesced PPS batch', {
       loaderKey: key,
       consumer,
-      vaults: batch.length
+      vaults: batch.length,
+      providerConcurrency,
+      activeLoaderBatches: activePpsDispatches.count,
+      queuedLoaderBatches: ppsDispatchQueue.length,
+      maxConcurrentLoaderBatches: MAX_CONCURRENT_PPS_PROVIDER_BATCHES_PER_LOADER
     })
     try {
       const vaults = batch.map(({ request }) => ({
         chainId: request.chainId,
         vaultAddress: request.vaultAddress
       }))
-      const result = lowerProviderConcurrency
-        ? await fetchMultipleVaultsPPS(vaults, { concurrency: 1 })
-        : await fetchMultipleVaultsPPS(vaults)
+      const result = await fetchMultipleVaultsPPS(vaults, { concurrency: providerConcurrency })
       const failedVaultKeys = new Set(getPpsFetchFailedVaultKeys(result))
 
       batch.forEach(({ request, deferred }) => {
@@ -503,6 +658,8 @@ export function createHoldingsValuationLoader(): THoldingsValuationLoader {
         consumer,
         vaults: batch.length,
         failedVaults: failedVaultKeys.size,
+        activeLoaderBatches: activePpsDispatches.count,
+        queuedLoaderBatches: ppsDispatchQueue.length,
         durationMs: getDurationMs()
       })
     } catch (error) {
@@ -527,10 +684,11 @@ export function createHoldingsValuationLoader(): THoldingsValuationLoader {
     const batch = Array.from(pendingPpsEntries.values())
     pendingPpsEntries.clear()
     const consumerBatches = groupPendingEntriesByConsumer(batch)
-    const lowerProviderConcurrency = consumerBatches.length > 1
 
     consumerBatches.forEach(({ consumer, entries }) => {
-      void dispatchPpsBatch(consumer, entries, lowerProviderConcurrency)
+      chunkEntries(entries, MAX_VAULTS_PER_PPS_PROVIDER_BATCH).forEach((chunk) => {
+        enqueuePpsDispatch(consumer, chunk)
+      })
     })
   }
 
@@ -557,16 +715,29 @@ export function createHoldingsValuationLoader(): THoldingsValuationLoader {
         }
         return existing
       }
-      const state = ppsEntryStates.get(request.key)
-      if (state?.phase !== 'in-flight' || !isHigherPriorityConsumer(consumer, state.consumer)) {
+      const queuedDispatch = queuedPpsDispatchByKey.get(request.key)
+      if (queuedDispatch) {
+        const promotedConsumer = promoteConsumer(queuedDispatch.consumer, consumer)
+        if (promotedConsumer !== queuedDispatch.consumer) {
+          debugLog('valuation-loader', 'promoting queued PPS batch for a higher-priority consumer', {
+            loaderKey: key,
+            fromConsumer: queuedDispatch.consumer,
+            toConsumer: promotedConsumer,
+            vaults: queuedDispatch.entries.length
+          })
+          queuedDispatch.consumer = promotedConsumer
+          queuedDispatch.entries.forEach((entry) => {
+            entry.consumer = promoteConsumer(entry.consumer, promotedConsumer)
+            const state = ppsEntryStates.get(entry.request.key)
+            if (state?.promise === entry.deferred.promise) {
+              state.consumer = promotedConsumer
+            }
+          })
+          schedulePpsDispatchQueue()
+        }
         return existing
       }
-
-      debugLog('valuation-loader', 'forking in-flight PPS key for a higher-priority consumer', {
-        loaderKey: key,
-        fromConsumer: state.consumer,
-        toConsumer: consumer
-      })
+      return existing
     }
 
     const deferred = createDeferred<TPpsEntry>()
@@ -599,7 +770,10 @@ export function createHoldingsValuationLoader(): THoldingsValuationLoader {
       pricePoints: batch.length,
       providerPricePoints: providerBatch.length,
       duplicatedRangeFillers: rangeFillers.length,
-      tokens: new Set(providerBatch.map(({ request }) => request.tokenKey)).size
+      tokens: new Set(providerBatch.map(({ request }) => request.tokenKey)).size,
+      activeLoaderBatches: activePriceDispatches.count,
+      queuedLoaderBatches: priceDispatchQueue.length,
+      maxConcurrentLoaderBatches: MAX_CONCURRENT_PRICE_PROVIDER_BATCHES_PER_LOADER
     })
     try {
       const requests = Array.from(
@@ -659,6 +833,8 @@ export function createHoldingsValuationLoader(): THoldingsValuationLoader {
         duplicatedRangeFillers: rangeFillers.length,
         tokens: requests.length,
         failedBatches,
+        activeLoaderBatches: activePriceDispatches.count,
+        queuedLoaderBatches: priceDispatchQueue.length,
         durationMs: getDurationMs()
       })
     } catch (error) {
@@ -716,14 +892,17 @@ export function createHoldingsValuationLoader(): THoldingsValuationLoader {
             ...existingBalanceRangeFillers
           ])
         : []
-    const filledBalanceEntries = [...(balanceBatch?.entries ?? []), ...balanceRangeFillers]
     const useBoundedRangeFillers =
       balanceBatch !== undefined &&
-      balanceRangeFillers.length > 0 &&
-      balanceRangeFillers.length <= priceDuplicationBudget.remaining &&
-      arePriceEntriesContiguousByToken(filledBalanceEntries)
+      isBoundedBalanceRangeFillerPlan(
+        balanceBatch.entries,
+        balanceRangeFillers,
+        priceDuplicationStats.total,
+        supportsHistoricalPriceRangeRequests()
+      )
     if (useBoundedRangeFillers) {
-      priceDuplicationBudget.remaining -= balanceRangeFillers.length
+      priceDuplicationStats.total += balanceRangeFillers.length
+      priceDuplicationBudget.remaining = Math.max(0, priceDuplicationBudget.remaining - balanceRangeFillers.length)
     }
     const splitBalanceBatch =
       balanceBatch !== undefined &&
@@ -741,7 +920,16 @@ export function createHoldingsValuationLoader(): THoldingsValuationLoader {
         promotedOverlapPoints: balanceRangeFillers.length,
         duplicatedRangeFillers: useBoundedRangeFillers ? balanceRangeFillers.length : 0,
         remainingDuplicationBudget: priceDuplicationBudget.remaining,
+        duplicatedPricePointsTotal: priceDuplicationStats.total,
+        duplicatedRangeFillerRatio:
+          balanceBatch.entries.length > 0
+            ? Number((balanceRangeFillers.length / balanceBatch.entries.length).toFixed(4))
+            : 0,
         providerBatches: splitBalanceBatch?.length ?? 1,
+        providerBatchPricePoints: splitBalanceBatch?.map((providerBatch) => providerBatch.length) ?? [
+          balanceBatch.entries.length + (useBoundedRangeFillers ? balanceRangeFillers.length : 0)
+        ],
+        maximumPointEfficientRunPricePoints: MAX_HISTORICAL_PRICE_POINT_TIMESTAMPS_PER_TOKEN,
         strategy: useBoundedRangeFillers ? 'bounded-range-fillers' : 'split-contiguous-runs'
       })
     }
@@ -898,6 +1086,7 @@ export function createHoldingsValuationLoader(): THoldingsValuationLoader {
     const forkInFlightPromotions =
       inFlightPromotionKeys.length > 0 && inFlightPromotionKeys.length <= priceDuplicationBudget.remaining
     if (forkInFlightPromotions) {
+      priceDuplicationStats.total += inFlightPromotionKeys.length
       priceDuplicationBudget.remaining -= inFlightPromotionKeys.length
     }
     if (inFlightPromotionKeys.length > 0) {
@@ -907,15 +1096,32 @@ export function createHoldingsValuationLoader(): THoldingsValuationLoader {
         promotedPricePoints: inFlightPromotionKeys.length,
         duplicatedPricePoints: forkInFlightPromotions ? inFlightPromotionKeys.length : 0,
         remainingDuplicationBudget: priceDuplicationBudget.remaining,
+        duplicatedPricePointsTotal: priceDuplicationStats.total,
         strategy: forkInFlightPromotions ? 'bounded-independent-subset' : 'share-existing-provider-work'
       })
     }
     const entryPromises = normalizedRequests.flatMap((request) =>
-      request.timestamps.map(async (timestamp) => ({
-        request,
-        timestamp,
-        entry: await loadPriceEntry(resolution, request, timestamp, consumer, forkInFlightPromotions)
-      }))
+      request.timestamps.map(async (timestamp) => {
+        const entry = await loadPriceEntry(resolution, request, timestamp, consumer, forkInFlightPromotions)
+        if (entry.price === undefined && options?.onMissingHistoricalPrice) {
+          try {
+            options.onMissingHistoricalPrice({
+              chainId: request.chainId,
+              address: request.address,
+              timestamps: [timestamp]
+            })
+          } catch (error) {
+            debugError('valuation-loader', 'historical-price missing-value observer failed', error, {
+              loaderKey: key,
+              resolution,
+              consumer,
+              tokenKey: request.tokenKey,
+              timestamp
+            })
+          }
+        }
+        return { request, timestamp, entry }
+      })
     )
     const hasPendingBalanceEntries =
       consumer === 'balance' &&

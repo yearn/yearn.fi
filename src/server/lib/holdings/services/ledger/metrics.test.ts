@@ -13,7 +13,9 @@ describe('ledger metrics', () => {
         mode: 'shadow',
         walletHash,
         chunkCount: 4,
-        encodedBytes: 1024
+        encodedBytes: 1024,
+        envioPresenceChainProbeCount: 6,
+        envioPresenceRequestCount: 6
       },
       logger
     )
@@ -26,7 +28,9 @@ describe('ledger metrics', () => {
       mode: 'shadow',
       walletHash,
       chunkCount: 4,
-      encodedBytes: 1024
+      encodedBytes: 1024,
+      envioPresenceChainProbeCount: 6,
+      envioPresenceRequestCount: 6
     })
   })
 

@@ -46,6 +46,7 @@ export interface THoldingsAggregationOptions {
   readonly eventSource?: THoldingsEventSource
   readonly cacheMode?: THoldingsAggregationCacheMode
   readonly totalsCache?: THoldingsTotalsCache
+  readonly scheduleTotalsCacheWrite?: (persistence: Promise<boolean>) => void
   readonly valuationLoader?: THoldingsValuationLoader
   readonly settledContext?: Promise<TSettledAddressScopedContext>
   readonly protocolReturnEventEnrichment?: TProtocolReturnEventEnrichment
