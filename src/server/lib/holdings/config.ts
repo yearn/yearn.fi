@@ -27,7 +27,10 @@ const HISTORY_START_TIMESTAMP = 1_704_067_200 // 2024-01-01T00:00:00Z
 const YEARN_PRICES_BASE_URL = 'https://prices.yearn.dev'
 const DEFAULT_LEDGER_OVERLAP_BLOCKS = 50_000
 const DEFAULT_LEDGER_RECONCILE_INTERVAL_SECONDS = 7 * 24 * 60 * 60
-const DEFAULT_LEDGER_CHAIN_IDS = SUPPORTED_CHAINS.map(({ id }) => id).toSorted((left, right) => left - right)
+const UNSUPPORTED_LEDGER_CHAIN_ID = 250
+const DEFAULT_LEDGER_CHAIN_IDS = SUPPORTED_CHAINS.map(({ id }) => id)
+  .filter((chainId) => chainId !== UNSUPPORTED_LEDGER_CHAIN_ID)
+  .toSorted((left, right) => left - right)
 const DEFAULT_LEDGER_OPERATOR_REVISION = 'default'
 const LEDGER_OPERATOR_REVISION_PATTERN = /^[A-Za-z0-9._-]{1,96}$/
 

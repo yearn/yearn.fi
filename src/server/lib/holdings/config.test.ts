@@ -65,13 +65,13 @@ describe('holdings ledger mode', () => {
   })
 
   it('uses an explicit deterministic Envio chain contract for ledger coverage', () => {
-    expect(holdingsConfig.ledgerChainIds).toEqual([1, 10, 137, 250, 8453, 42_161, 747_474])
+    expect(holdingsConfig.ledgerChainIds).toEqual([1, 10, 137, 8453, 42_161, 747_474])
 
     vi.stubEnv('HOLDINGS_LEDGER_CHAIN_IDS', '42161,1,10')
     expect(holdingsConfig.ledgerChainIds).toEqual([1, 10, 42_161])
 
     vi.stubEnv('HOLDINGS_LEDGER_CHAIN_IDS', '1,invalid')
-    expect(holdingsConfig.ledgerChainIds).toEqual([1, 10, 137, 250, 8453, 42_161, 747_474])
+    expect(holdingsConfig.ledgerChainIds).toEqual([1, 10, 137, 8453, 42_161, 747_474])
   })
 
   it('reads a bounded non-secret source revision with a stable default', () => {

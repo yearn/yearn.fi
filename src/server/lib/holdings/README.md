@@ -485,7 +485,7 @@ Response:
 | `UPSTASH_REDIS_REST_TOKEN_PORTFOLIO` | No | `null` | Upstash Redis REST token for holdings storage |
 | `HOLDINGS_LEDGER_MODE` | No | `off` | Canonical event-ledger rollout mode: `off`, `shadow`, or `read-write` |
 | `HOLDINGS_LEDGER_KEY_NAMESPACE` | No | `''` | Optional isolated ledger Redis namespace; accepts 1-64 ASCII letters, digits, `_`, or `-` |
-| `HOLDINGS_LEDGER_CHAIN_IDS` | No | `1,10,137,250,8453,42161,747474` | Explicit Envio chain scope; changing it is a source-generation migration |
+| `HOLDINGS_LEDGER_CHAIN_IDS` | No | `1,10,137,8453,42161,747474` | Explicit Envio chain scope; changing it is a source-generation migration. Fantom (`250`) remains available when explicitly configured. |
 | `HOLDINGS_LEDGER_OVERLAP_BLOCKS` | No | `50000` | Inclusive per-chain rewind used by warm event synchronization |
 | `HOLDINGS_LEDGER_RECONCILE_INTERVAL_SECONDS` | No | `604800` | Seconds between full event-ledger reconciliations |
 | `RPC_URI_FOR_<id>` | No | `NEXT_PUBLIC_RPC_URI_FOR_<id>` | Optional server-only chain RPC URL for activity receipt and transaction enrichment |
