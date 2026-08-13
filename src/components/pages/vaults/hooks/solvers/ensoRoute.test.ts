@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { normalizeEnsoRouteResponse, routeHasSwapStep } from './ensoRoute'
 
 describe('normalizeEnsoRouteResponse', () => {
-  it('keeps valid Enso route payloads as routes', () => {
+  it('accepts routes without tx.operationType', () => {
     const routePayload = {
       tx: {
         to: '0x0000000000000000000000000000000000000001',
@@ -24,13 +24,13 @@ describe('normalizeEnsoRouteResponse', () => {
 
   it('accepts normal call routes with operationType 0', () => {
     const routePayload = {
-      operationType: 0 as const,
       tx: {
         to: '0x0000000000000000000000000000000000000001',
         data: '0x1234',
         value: '0',
         from: '0x0000000000000000000000000000000000000002',
-        chainId: 1
+        chainId: 1,
+        operationType: 0 as const
       },
       amountOut: '100',
       minAmountOut: '95',
@@ -41,16 +41,18 @@ describe('normalizeEnsoRouteResponse', () => {
     expect(normalizeEnsoRouteResponse(routePayload, 200)).toEqual({ route: routePayload })
   })
 
-  it.each([1, 2])('rejects unsupported operationType %i before exposing its transaction', (operationType) => {
+  it.each([
+    1, 2
+  ])('rejects unsupported numeric tx.operationType %i before exposing its transaction', (operationType) => {
     const normalized = normalizeEnsoRouteResponse(
       {
-        operationType,
         tx: {
           to: '0x00000000000000000000000000000000000000de',
           data: '0x1234',
           value: '0',
           from: '0x0000000000000000000000000000000000000002',
-          chainId: 1
+          chainId: 1,
+          operationType
         },
         amountOut: '100',
         minAmountOut: '95',
@@ -68,6 +70,37 @@ describe('normalizeEnsoRouteResponse', () => {
       }
     })
     expect(normalized.route).toBeUndefined()
+    expect(normalized.route?.tx).toBeUndefined()
+  })
+
+  it.each(['0', null])('rejects malformed tx.operationType %j before exposing its transaction', (operationType) => {
+    const normalized = normalizeEnsoRouteResponse(
+      {
+        tx: {
+          to: '0x00000000000000000000000000000000000000de',
+          data: '0x1234',
+          value: '0',
+          from: '0x0000000000000000000000000000000000000002',
+          chainId: 1,
+          operationType
+        },
+        amountOut: '100',
+        minAmountOut: '95',
+        gas: '123456',
+        route: []
+      },
+      200
+    )
+
+    expect(normalized).toEqual({
+      error: {
+        error: 'UnsupportedEnsoDelegateRoute',
+        message: 'Enso returned an unsupported wallet route. Please retry the quote.',
+        statusCode: 200
+      }
+    })
+    expect(normalized.route).toBeUndefined()
+    expect(normalized.route?.tx).toBeUndefined()
   })
 
   it('fills tx.chainId from the request context when Enso omits it in a 200 response', () => {
