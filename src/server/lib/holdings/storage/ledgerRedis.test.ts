@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const redisConfigs: Array<Record<string, unknown>> = []
 
@@ -15,6 +15,10 @@ vi.mock('@upstash/redis', () => {
 })
 
 describe('holdings ledger Redis adapter', () => {
+  beforeEach(() => {
+    vi.stubEnv('VERCEL_ENV', 'production')
+  })
+
   afterEach(() => {
     redisConfigs.length = 0
     vi.resetModules()

@@ -3,7 +3,8 @@ import {
   holdingsConfig,
   parseHoldingsLedgerMode,
   parseHoldingsLedgerSourceRevision,
-  parseHoldingsLedgerValuationRevision
+  parseHoldingsLedgerValuationRevision,
+  resolveHoldingsRedisCredentials
 } from '@/server/lib/holdings/config'
 
 describe('holdings ledger mode', () => {
@@ -27,6 +28,101 @@ describe('holdings ledger mode', () => {
 
     vi.stubEnv('HOLDINGS_LEDGER_MODE', 'read-write')
     expect(holdingsConfig.ledgerMode).toBe('read-write')
+  })
+
+  it('prefers the complete development Redis pair in local development', () => {
+    const credentials = resolveHoldingsRedisCredentials({
+      NODE_ENV: 'development',
+      UPSTASH_REDIS_REST_URL_PORTFOLIO_DEV: ' https://dev-redis.example ',
+      UPSTASH_REDIS_REST_TOKEN_PORTFOLIO_DEV: ' dev-token ',
+      UPSTASH_REDIS_REST_URL_PORTFOLIO: 'https://production-redis.example',
+      UPSTASH_REDIS_REST_TOKEN_PORTFOLIO: 'production-token'
+    })
+
+    expect(credentials).toEqual({ url: 'https://dev-redis.example', token: 'dev-token' })
+  })
+
+  it('uses development Redis credentials in a Vercel preview build', () => {
+    const credentials = resolveHoldingsRedisCredentials({
+      NODE_ENV: 'production',
+      VERCEL_ENV: 'preview',
+      UPSTASH_REDIS_REST_URL_PORTFOLIO_DEV: 'https://dev-redis.example',
+      UPSTASH_REDIS_REST_TOKEN_PORTFOLIO_DEV: 'dev-token',
+      UPSTASH_REDIS_REST_URL_PORTFOLIO: 'https://production-redis.example',
+      UPSTASH_REDIS_REST_TOKEN_PORTFOLIO: 'production-token'
+    })
+
+    expect(credentials).toEqual({ url: 'https://dev-redis.example', token: 'dev-token' })
+  })
+
+  it('uses only production Redis credentials in a production deployment', () => {
+    const credentials = resolveHoldingsRedisCredentials({
+      NODE_ENV: 'production',
+      VERCEL_ENV: 'production',
+      UPSTASH_REDIS_REST_URL_PORTFOLIO_DEV: 'https://dev-redis.example',
+      UPSTASH_REDIS_REST_TOKEN_PORTFOLIO_DEV: 'dev-token',
+      UPSTASH_REDIS_REST_URL_PORTFOLIO: 'https://production-redis.example',
+      UPSTASH_REDIS_REST_TOKEN_PORTFOLIO: 'production-token'
+    })
+
+    expect(credentials).toEqual({ url: 'https://production-redis.example', token: 'production-token' })
+  })
+
+  it('uses the development pair for a local production-mode server', () => {
+    const credentials = resolveHoldingsRedisCredentials({
+      NODE_ENV: 'production',
+      UPSTASH_REDIS_REST_URL_PORTFOLIO_DEV: 'https://dev-redis.example',
+      UPSTASH_REDIS_REST_TOKEN_PORTFOLIO_DEV: 'dev-token',
+      UPSTASH_REDIS_REST_URL_PORTFOLIO: 'https://production-redis.example',
+      UPSTASH_REDIS_REST_TOKEN_PORTFOLIO: 'production-token'
+    })
+
+    expect(credentials).toEqual({ url: 'https://dev-redis.example', token: 'dev-token' })
+  })
+
+  it('does not fall back to production Redis when the development pair is absent', () => {
+    const credentials = resolveHoldingsRedisCredentials({
+      NODE_ENV: 'development',
+      UPSTASH_REDIS_REST_URL_PORTFOLIO: 'https://production-redis.example',
+      UPSTASH_REDIS_REST_TOKEN_PORTFOLIO: 'production-token'
+    })
+
+    expect(credentials).toBeNull()
+  })
+
+  it('fails closed instead of mixing a partial development pair with production credentials', () => {
+    const credentials = resolveHoldingsRedisCredentials({
+      NODE_ENV: 'development',
+      UPSTASH_REDIS_REST_URL_PORTFOLIO_DEV: 'https://dev-redis.example',
+      UPSTASH_REDIS_REST_URL_PORTFOLIO: 'https://production-redis.example',
+      UPSTASH_REDIS_REST_TOKEN_PORTFOLIO: 'production-token'
+    })
+
+    expect(credentials).toBeNull()
+  })
+
+  it('fails closed when the production pair is partial even if DEV credentials exist', () => {
+    const credentials = resolveHoldingsRedisCredentials({
+      NODE_ENV: 'production',
+      VERCEL_ENV: 'production',
+      UPSTASH_REDIS_REST_URL_PORTFOLIO_DEV: 'https://dev-redis.example',
+      UPSTASH_REDIS_REST_TOKEN_PORTFOLIO_DEV: 'dev-token',
+      UPSTASH_REDIS_REST_URL_PORTFOLIO: 'https://production-redis.example'
+    })
+
+    expect(credentials).toBeNull()
+  })
+
+  it('fails closed for an unknown explicit Vercel environment', () => {
+    const credentials = resolveHoldingsRedisCredentials({
+      VERCEL_ENV: 'staging',
+      UPSTASH_REDIS_REST_URL_PORTFOLIO_DEV: 'https://dev-redis.example',
+      UPSTASH_REDIS_REST_TOKEN_PORTFOLIO_DEV: 'dev-token',
+      UPSTASH_REDIS_REST_URL_PORTFOLIO: 'https://production-redis.example',
+      UPSTASH_REDIS_REST_TOKEN_PORTFOLIO: 'production-token'
+    })
+
+    expect(credentials).toBeNull()
   })
 
   it('reads bounded incremental synchronization settings with safe defaults', () => {

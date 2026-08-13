@@ -54,7 +54,7 @@ export async function POST(request: Request): Promise<Response> {
   // Check Redis storage is enabled
   if (!isHoldingsStorageEnabled()) {
     return json(
-      { error: 'Caching not enabled (UPSTASH_REDIS_REST_URL_PORTFOLIO/TOKEN_PORTFOLIO not configured)' },
+      { error: 'Caching not enabled (complete portfolio Redis credentials are not configured)' },
       { status: 503, headers: ADMIN_POST_CORS_HEADERS }
     )
   }
@@ -77,7 +77,7 @@ export async function POST(request: Request): Promise<Response> {
     await ensureHoldingsStorageInitialized()
     if (!isHoldingsStorageEnabled()) {
       return json(
-        { error: 'Caching not enabled (UPSTASH_REDIS_REST_URL_PORTFOLIO/TOKEN_PORTFOLIO not configured)' },
+        { error: 'Caching not enabled (complete portfolio Redis credentials are not configured)' },
         { status: 503, headers: ADMIN_POST_CORS_HEADERS }
       )
     }
