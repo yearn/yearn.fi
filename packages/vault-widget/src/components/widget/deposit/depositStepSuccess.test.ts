@@ -3,10 +3,7 @@ import { handleDepositStepSuccess } from './depositStepSuccess'
 
 describe('handleDepositStepSuccess', () => {
   it('waits for sufficient source-chain allowance before completing approval', async () => {
-    const refetchAllowance = vi
-      .fn()
-      .mockResolvedValueOnce({ data: 0n })
-      .mockResolvedValueOnce({ data: 20n })
+    const refetchAllowance = vi.fn().mockResolvedValueOnce({ data: 0n }).mockResolvedValueOnce({ data: 20n })
     const completeApprovalFlow = vi.fn()
 
     await handleDepositStepSuccess({

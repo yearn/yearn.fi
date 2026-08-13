@@ -24,6 +24,14 @@ const notification = {
   type: 'deposit'
 }
 
+function createDeferred<T>(): { promise: Promise<T>; resolve: (value: T) => void } {
+  let resolve!: (value: T) => void
+  const promise = new Promise<T>((resolvePromise) => {
+    resolve = resolvePromise
+  })
+  return { promise, resolve }
+}
+
 const intent: VaultWidgetTransactionIntent = {
   id: 'deposit:direct:10',
   mode: 'deposit',
@@ -58,7 +66,7 @@ function createNotifications(): Pick<VaultWidgetNotificationsRuntime, 'createSub
 
 describe('executePlannedStyledWidgetTransaction', () => {
   it('does not let a fast receipt outrun durable notification creation', async () => {
-    const createGate = Promise.withResolvers<'notification-id'>()
+    const createGate = createDeferred<'notification-id'>()
     const notifications = {
       createSubmitted: vi.fn().mockReturnValue(createGate.promise),
       update: vi.fn().mockResolvedValue(undefined)

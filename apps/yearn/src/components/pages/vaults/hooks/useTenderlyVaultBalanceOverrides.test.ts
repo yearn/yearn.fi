@@ -50,6 +50,16 @@ const useWalletActionsMock = vi.mocked(useWalletActions)
 const fetchTokenBalancesMock = vi.mocked(fetchTokenBalances)
 type TFetchTokenBalancesResult = Awaited<ReturnType<typeof fetchTokenBalances>>
 
+function createDeferred<T>(): { promise: Promise<T>; resolve: (value: T) => void; reject: (reason?: unknown) => void } {
+  let resolve!: (value: T) => void
+  let reject!: (reason?: unknown) => void
+  const promise = new Promise<T>((resolvePromise, rejectPromise) => {
+    resolve = resolvePromise
+    reject = rejectPromise
+  })
+  return { promise, reject, resolve }
+}
+
 function tokenKeys(tokens: ReturnType<typeof getVaultTenderlyOverrideTokens>): string[] {
   return tokens.map((token) => `${token.chainID}:${token.address}`)
 }
@@ -296,8 +306,8 @@ describe('useTenderlyVaultBalanceOverrides', () => {
 
   it('ignores an older refresh that resolves after a newer state revision', async () => {
     const { setBalanceOverride } = setupWalletActionsMocks()
-    const firstRefresh = Promise.withResolvers<TFetchTokenBalancesResult>()
-    const secondRefresh = Promise.withResolvers<TFetchTokenBalancesResult>()
+    const firstRefresh = createDeferred<TFetchTokenBalancesResult>()
+    const secondRefresh = createDeferred<TFetchTokenBalancesResult>()
     const firstBalances = createTokenBalances(1n)
     const secondBalances = createTokenBalances(2n)
     const scopeId = getTenderlyVaultBalanceOverrideScopeId({
@@ -343,8 +353,8 @@ describe('useTenderlyVaultBalanceOverrides', () => {
 
   it('ignores an older refresh after remounting the same account and vault scope', async () => {
     const { clearBalanceOverride, setBalanceOverride } = setupWalletActionsMocks()
-    const firstMountRefresh = Promise.withResolvers<TFetchTokenBalancesResult>()
-    const secondMountRefresh = Promise.withResolvers<TFetchTokenBalancesResult>()
+    const firstMountRefresh = createDeferred<TFetchTokenBalancesResult>()
+    const secondMountRefresh = createDeferred<TFetchTokenBalancesResult>()
     const firstBalances = createTokenBalances(1n)
     const secondBalances = createTokenBalances(2n)
     const scopeId = getTenderlyVaultBalanceOverrideScopeId({
@@ -391,8 +401,8 @@ describe('useTenderlyVaultBalanceOverrides', () => {
 
   it('does not clear the active refresh key when an older lifecycle request rejects', async () => {
     setupWalletActionsMocks()
-    const firstMountRefresh = Promise.withResolvers<TFetchTokenBalancesResult>()
-    const secondMountRefresh = Promise.withResolvers<TFetchTokenBalancesResult>()
+    const firstMountRefresh = createDeferred<TFetchTokenBalancesResult>()
+    const secondMountRefresh = createDeferred<TFetchTokenBalancesResult>()
     const consoleError = vi.spyOn(console, 'error').mockImplementation(() => undefined)
     fetchTokenBalancesMock
       .mockImplementationOnce(async () => await firstMountRefresh.promise)
