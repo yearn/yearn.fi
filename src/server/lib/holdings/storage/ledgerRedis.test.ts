@@ -16,7 +16,8 @@ vi.mock('@upstash/redis', () => {
 
 describe('holdings ledger Redis adapter', () => {
   beforeEach(() => {
-    vi.stubEnv('VERCEL_ENV', 'production')
+    vi.stubEnv('UPSTASH_REDIS_REST_URL_PORTFOLIO_DEV', '')
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN_PORTFOLIO_DEV', '')
   })
 
   afterEach(() => {

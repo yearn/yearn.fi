@@ -23,11 +23,6 @@ export interface HoldingsConfig {
   readonly ledgerValuationRevision: string
 }
 
-export interface THoldingsRedisCredentials {
-  readonly url: string
-  readonly token: string
-}
-
 const HISTORY_START_TIMESTAMP = 1_704_067_200 // 2024-01-01T00:00:00Z
 const YEARN_PRICES_BASE_URL = 'https://prices.yearn.dev'
 const DEFAULT_LEDGER_OVERLAP_BLOCKS = 50_000
@@ -35,46 +30,6 @@ const DEFAULT_LEDGER_RECONCILE_INTERVAL_SECONDS = 7 * 24 * 60 * 60
 const DEFAULT_LEDGER_CHAIN_IDS = SUPPORTED_CHAINS.map(({ id }) => id).toSorted((left, right) => left - right)
 const DEFAULT_LEDGER_OPERATOR_REVISION = 'default'
 const LEDGER_OPERATOR_REVISION_PATTERN = /^[A-Za-z0-9._-]{1,96}$/
-
-function readEnvironmentValue(value: string | undefined): string | null {
-  return value?.trim() || null
-}
-
-function readRedisCredentials(url: string | undefined, token: string | undefined): THoldingsRedisCredentials | null {
-  const normalizedUrl = readEnvironmentValue(url)
-  const normalizedToken = readEnvironmentValue(token)
-  return normalizedUrl && normalizedToken ? { url: normalizedUrl, token: normalizedToken } : null
-}
-
-function getRedisCredentialScope(environment: NodeJS.ProcessEnv): 'development' | 'production' | null {
-  if (!environment.VERCEL_ENV) {
-    return 'development'
-  }
-  if (environment.VERCEL_ENV === 'preview' || environment.VERCEL_ENV === 'development') {
-    return 'development'
-  }
-  return environment.VERCEL_ENV === 'production' ? 'production' : null
-}
-
-export function resolveHoldingsRedisCredentials(
-  environment: NodeJS.ProcessEnv = process.env
-): THoldingsRedisCredentials | null {
-  const scope = getRedisCredentialScope(environment)
-  if (scope === 'development') {
-    return readRedisCredentials(
-      environment.UPSTASH_REDIS_REST_URL_PORTFOLIO_DEV,
-      environment.UPSTASH_REDIS_REST_TOKEN_PORTFOLIO_DEV
-    )
-  }
-  if (scope !== 'production') {
-    return null
-  }
-
-  return readRedisCredentials(
-    environment.UPSTASH_REDIS_REST_URL_PORTFOLIO,
-    environment.UPSTASH_REDIS_REST_TOKEN_PORTFOLIO
-  )
-}
 
 function parseBoundedPositiveInteger(value: string | undefined, fallback: number, maximum: number): number {
   const parsed = value && /^\d+$/.test(value.trim()) ? Number(value.trim()) : Number.NaN
@@ -117,10 +72,18 @@ export const holdingsConfig: HoldingsConfig = {
     return process.env.ENVIO_PASSWORD ?? ''
   },
   get redisUrl() {
-    return resolveHoldingsRedisCredentials()?.url ?? null
+    return (
+      process.env.UPSTASH_REDIS_REST_URL_PORTFOLIO_DEV?.trim() ||
+      process.env.UPSTASH_REDIS_REST_URL_PORTFOLIO?.trim() ||
+      null
+    )
   },
   get redisToken() {
-    return resolveHoldingsRedisCredentials()?.token ?? null
+    return (
+      process.env.UPSTASH_REDIS_REST_TOKEN_PORTFOLIO_DEV?.trim() ||
+      process.env.UPSTASH_REDIS_REST_TOKEN_PORTFOLIO?.trim() ||
+      null
+    )
   },
   kongBaseUrl: 'https://kong.yearn.fi',
   get yearnPricesBaseUrl() {
@@ -172,9 +135,7 @@ export function validateConfig(): void {
   if (!process.env.ENVIO_GRAPHQL_URL) {
     console.warn('[Holdings] ENVIO_GRAPHQL_URL not set, using default localhost:8080')
   }
-  if (!resolveHoldingsRedisCredentials()) {
-    console.warn(
-      '[Holdings] Complete portfolio Redis credentials are not configured for this environment, storage disabled'
-    )
+  if (!holdingsConfig.redisUrl || !holdingsConfig.redisToken) {
+    console.warn('[Holdings] Portfolio Redis URL / token not set, storage disabled')
   }
 }

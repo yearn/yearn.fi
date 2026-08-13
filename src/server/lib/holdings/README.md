@@ -481,8 +481,6 @@ Response:
 |----------|----------|---------|-------------|
 | `ENVIO_GRAPHQL_URL` | No | `http://localhost:8080/v1/graphql` | Envio indexer GraphQL endpoint |
 | `ENVIO_PASSWORD` | No | `''` | Envio Hasura admin secret; skipped when empty or `testing` |
-| `UPSTASH_REDIS_REST_URL_PORTFOLIO_DEV` | No | `null` | Development/Preview Upstash Redis REST URL; used only with the complete DEV pair |
-| `UPSTASH_REDIS_REST_TOKEN_PORTFOLIO_DEV` | No | `null` | Development/Preview Upstash Redis REST token; used only with the complete DEV pair |
 | `UPSTASH_REDIS_REST_URL_PORTFOLIO` | No | `null` | Upstash Redis REST URL for holdings cache, progress, and invalidations |
 | `UPSTASH_REDIS_REST_TOKEN_PORTFOLIO` | No | `null` | Upstash Redis REST token for holdings storage |
 | `HOLDINGS_LEDGER_MODE` | No | `off` | Canonical event-ledger rollout mode: `off`, `shadow`, or `read-write` |
@@ -525,7 +523,7 @@ If aggregates are unavailable, the code falls back to sequential pagination. For
 
 ## Caching
 
-Server-side cache is optional. Local development, local production-mode benchmarks, and Vercel Preview require the complete `UPSTASH_REDIS_REST_URL_PORTFOLIO_DEV` / `UPSTASH_REDIS_REST_TOKEN_PORTFOLIO_DEV` pair. Vercel Production ignores the DEV pair and requires the complete production-named pair. Missing or partial credentials disable storage instead of falling back across environments or mixing credentials. Without a usable pair, the APIs still work but recompute history and refetch prices/PPS on each request.
+Server-side cache is optional. When `UPSTASH_REDIS_REST_URL_PORTFOLIO` or `UPSTASH_REDIS_REST_TOKEN_PORTFOLIO` is absent, the APIs still work but recompute history and refetch prices/PPS on each request.
 
 ### Canonical Ledger (Phases 1–3)
 

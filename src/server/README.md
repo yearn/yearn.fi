@@ -128,8 +128,6 @@ Required env for a configured chain:
 | `API_KEY_PORTFOLIO` | holdings | Fallback bearer token for yearn-prices |
 | `DEFILLAMA_API_KEY` | holdings | Enables DefiLlama Pro |
 | `ADMIN_SECRET` | holdings admin | Required for cache invalidation and non-loopback or non-development `/api/holdings/ledger/*` requests |
-| `UPSTASH_REDIS_REST_URL_PORTFOLIO_DEV` | holdings | Development/Preview Upstash Redis REST URL; must be configured with its DEV token |
-| `UPSTASH_REDIS_REST_TOKEN_PORTFOLIO_DEV` | holdings | Development/Preview Upstash Redis REST token; must be configured with its DEV URL |
 | `UPSTASH_REDIS_REST_URL_PORTFOLIO` | holdings | Upstash Redis REST URL for holdings cache/progress |
 | `UPSTASH_REDIS_REST_TOKEN_PORTFOLIO` | holdings | Upstash Redis REST token for holdings storage |
 | `HOLDINGS_LEDGER_MODE` | holdings | Canonical event-ledger mode: `off`, `shadow`, or `read-write` |
