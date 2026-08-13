@@ -1,7 +1,8 @@
 import type { UseWidgetDepositFlowReturn } from '@yearn/vault-widget/types'
 import { useCallback, useMemo } from 'react'
 import type { Address } from 'viem'
-import type { EnsoQuotePurpose, EnsoRoutingStrategy } from '../solvers/useSolverEnso'
+import { VAULT_ENSO_ROUTING_STRATEGY } from '../solvers/ensoRouteRequest'
+import type { EnsoQuotePurpose } from '../solvers/useSolverEnso'
 import { useSolverEnso } from '../solvers/useSolverEnso'
 import { useEnsoOrder } from '../useEnsoOrder'
 import { refreshEnsoReadiness } from './ensoReadiness'
@@ -17,7 +18,6 @@ interface UseEnsoDepositParams {
   enabled: boolean
   slippage?: number
   quotePurpose?: EnsoQuotePurpose
-  routingStrategy?: EnsoRoutingStrategy
   routeRefreshKey?: number
 }
 
@@ -31,7 +31,7 @@ export function useEnsoDeposit(params: UseEnsoDepositParams): UseWidgetDepositFl
         params.vaultAddress,
         params.account ?? 'no-account',
         params.slippage ?? 'default',
-        params.routingStrategy ?? 'default-strategy',
+        VAULT_ENSO_ROUTING_STRATEGY,
         params.routeRefreshKey ?? 0
       ].join(':'),
     [
@@ -41,7 +41,6 @@ export function useEnsoDeposit(params: UseEnsoDepositParams): UseWidgetDepositFl
       params.vaultAddress,
       params.account,
       params.slippage,
-      params.routingStrategy,
       params.routeRefreshKey
     ]
   )
@@ -58,7 +57,7 @@ export function useEnsoDeposit(params: UseEnsoDepositParams): UseWidgetDepositFl
     decimalsOut: params.decimalsOut,
     slippage: params.slippage,
     quotePurpose: params.quotePurpose,
-    routingStrategy: params.routingStrategy,
+    routingStrategy: VAULT_ENSO_ROUTING_STRATEGY,
     requestKey: routeQueryKey,
     enabled: params.enabled
   })

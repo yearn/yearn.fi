@@ -388,8 +388,7 @@ export function WidgetWithdraw({
     withdrawalSource,
     isUnstake,
     isDebouncing: disableFlow ? false : withdrawAmount.isDebouncing,
-    useErc4626: usesErc4626,
-    ensoRoutingStrategy: isWalletSafe ? 'router' : undefined
+    useErc4626: usesErc4626
   })
   const effectiveDirectWithdrawPrepare = blockDirectWithdrawStep
     ? undefined

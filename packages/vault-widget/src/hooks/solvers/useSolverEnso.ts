@@ -23,9 +23,11 @@ import {
   normalizeEnsoRouteResponse,
   routeHasSwapStep
 } from './ensoRoute'
+import { buildEnsoRouteRequestParams, type EnsoRoutingStrategy } from './ensoRouteRequest'
 
 const ENSO_ROUTE_PROXY = '/api/enso/route'
-export type EnsoRoutingStrategy = 'router' | 'delegate' | 'router-legacy' | 'delegate-legacy' | 'ensowallet'
+
+export type { EnsoRoutingStrategy } from './ensoRouteRequest'
 export type EnsoQuotePurpose = 'calibration' | 'execution'
 
 export function getEffectiveEnsoRequestSlippage(requestedSlippage: number, isCrossChain: boolean): number {
@@ -141,16 +143,16 @@ export const useSolverEnso = ({
     staleTime: 0,
     queryFn: async ({ signal }) => {
       if (!fromAddress) return undefined
-      const params = new URLSearchParams({
+      const params = buildEnsoRouteRequestParams({
         fromAddress,
-        chainId: chainId.toString(),
+        chainId,
         tokenIn,
         tokenOut,
-        amountIn: amountIn.toString(),
-        slippage: effectiveSlippage.toString(),
-        ...(routingStrategy && { routingStrategy }),
-        ...(isCrossChain && { destinationChainId: destinationChainId!.toString() }),
-        ...(receiver && { receiver })
+        amountIn,
+        slippage: effectiveSlippage,
+        routingStrategy,
+        destinationChainId,
+        receiver
       })
       const response = await fetch(`${routeEndpoint}?${params}`, { signal })
       const data = await response.json()

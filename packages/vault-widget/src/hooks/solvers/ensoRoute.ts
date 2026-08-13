@@ -14,6 +14,7 @@ export interface EnsoRouteResponse {
     value: string
     from: Address
     chainId: number
+    operationType?: 0 | 1
   }
   amountOut: string
   minAmountOut: string
@@ -40,8 +41,9 @@ type EnsoRouteErrorPayload = {
 
 type EnsoRouteCandidate = Omit<EnsoRouteResponse, 'tx' | 'priceImpact'> & {
   priceImpact?: unknown
-  tx: Omit<EnsoRouteResponse['tx'], 'chainId'> & {
+  tx: Omit<EnsoRouteResponse['tx'], 'chainId' | 'operationType'> & {
     chainId?: number
+    operationType?: unknown
   }
 }
 
@@ -113,6 +115,19 @@ export function normalizeEnsoRouteResponse(
     const resolvedChainId = typeof data.tx.chainId === 'number' ? data.tx.chainId : fallbackChainId
     const priceImpact = normalizeEnsoPriceImpact(data.priceImpact)
     const { priceImpact: _rawPriceImpact, tx, ...routeData } = data
+    const { operationType, ...transaction } = tx
+
+    if (operationType !== undefined && operationType !== 0) {
+      return {
+        error: buildEnsoError(
+          {
+            error: 'UnsupportedEnsoDelegateRoute',
+            message: 'Enso returned an unsupported wallet route. Please retry the quote.'
+          },
+          statusCode
+        )
+      }
+    }
 
     if (typeof resolvedChainId !== 'number') {
       return { error: buildEnsoError({ message: 'Enso route payload missing tx.chainId' }, statusCode) }
@@ -123,7 +138,8 @@ export function normalizeEnsoRouteResponse(
         ...routeData,
         ...(priceImpact !== undefined ? { priceImpact } : {}),
         tx: {
-          ...tx,
+          ...transaction,
+          ...(operationType === 0 ? { operationType: 0 as const } : {}),
           chainId: resolvedChainId
         }
       }

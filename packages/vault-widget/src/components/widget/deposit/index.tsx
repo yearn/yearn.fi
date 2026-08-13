@@ -385,7 +385,6 @@ export function WidgetDeposit({
     slippage: ensoQuoteSlippage,
     ensoQuotePurpose: ensoQuoteRequest.purpose,
     ensoEnabled,
-    ensoRoutingStrategy: isWalletSafe ? 'router' : undefined,
     routeRefreshKey: approvalRouteRefreshKey,
     stakingSource
   })
