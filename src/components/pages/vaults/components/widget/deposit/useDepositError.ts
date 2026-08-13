@@ -1,3 +1,4 @@
+import { UNSUPPORTED_ENSO_DELEGATE_ROUTE_MESSAGE } from '@pages/vaults/hooks/solvers/ensoRoute'
 import { UNKNOWN_ENSO_APPROVAL_ROUTER_MESSAGE } from '@pages/vaults/utils/ensoRouters'
 import { useMemo } from 'react'
 import type { Address } from 'viem'
@@ -54,6 +55,10 @@ export const useDepositError = ({
     if (routeType === 'ENSO' && flowError && !isLoadingRoute && debouncedAmount > 0n && !isDebouncing) {
       if (flowError === UNKNOWN_ENSO_APPROVAL_ROUTER_MESSAGE) {
         return UNKNOWN_ENSO_APPROVAL_ROUTER_MESSAGE
+      }
+
+      if (flowError === UNSUPPORTED_ENSO_DELEGATE_ROUTE_MESSAGE) {
+        return UNSUPPORTED_ENSO_DELEGATE_ROUTE_MESSAGE
       }
 
       return 'Unable to find route'

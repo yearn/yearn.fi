@@ -12,9 +12,9 @@ import {
 } from '../../utils/ensoRouters'
 import { useTokenAllowance } from '../useTokenAllowance'
 import { type EnsoError, type EnsoRouteResponse, normalizeEnsoRouteResponse, routeHasSwapStep } from './ensoRoute'
+import { buildEnsoRouteRequestParams, type EnsoRoutingStrategy } from './ensoRouteRequest'
 
 const ENSO_ROUTE_PROXY = '/api/enso/route'
-export type EnsoRoutingStrategy = 'router' | 'delegate' | 'router-legacy' | 'delegate-legacy' | 'ensowallet'
 
 interface UseSolverEnsoProps {
   tokenIn: Address
@@ -134,16 +134,16 @@ export const useSolverEnso = ({
 
     setIsLoadingRoute(true)
     try {
-      const params = new URLSearchParams({
+      const params = buildEnsoRouteRequestParams({
         fromAddress,
-        chainId: chainId.toString(),
+        chainId,
         tokenIn,
         tokenOut,
-        amountIn: amountIn.toString(),
-        slippage: normalizedSlippage.toString(),
-        ...(routingStrategy && { routingStrategy }),
-        ...(isCrossChain && { destinationChainId: destinationChainId!.toString() }),
-        ...(receiver && { receiver })
+        amountIn,
+        slippage: normalizedSlippage,
+        routingStrategy,
+        destinationChainId,
+        receiver
       })
 
       const response = await fetch(`${ENSO_ROUTE_PROXY}?${params}`, { signal: abortController.signal })

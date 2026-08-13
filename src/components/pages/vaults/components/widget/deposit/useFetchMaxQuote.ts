@@ -1,5 +1,6 @@
 import { getRedeemPreviewCall } from '@pages/vaults/hooks/actions/stakingAdapter'
 import { type EnsoRouteResponse, normalizeEnsoRouteResponse } from '@pages/vaults/hooks/solvers/ensoRoute'
+import { buildEnsoRouteRequestParams, VAULT_ENSO_ROUTING_STRATEGY } from '@pages/vaults/hooks/solvers/ensoRouteRequest'
 import { calculateRemainingEnsoSlippagePercentage, clampZapSlippage, toBasisPoints } from '@shared/utils/slippage'
 import { useCallback, useState } from 'react'
 import { type Address, formatUnits, isAddressEqual } from 'viem'
@@ -57,6 +58,36 @@ interface FetchMaxQuoteResult {
   isFetching: boolean
 }
 
+export function buildMaxQuoteRequestParams({
+  account,
+  balance,
+  depositToken,
+  destinationToken,
+  sourceChainId,
+  destinationChainId,
+  routeSlippage
+}: {
+  account: Address
+  balance: bigint
+  depositToken: Address
+  destinationToken: Address
+  sourceChainId: number
+  destinationChainId: number
+  routeSlippage: number
+}): URLSearchParams {
+  return buildEnsoRouteRequestParams({
+    fromAddress: account,
+    chainId: sourceChainId,
+    tokenIn: depositToken,
+    tokenOut: destinationToken,
+    amountIn: balance,
+    slippage: toBasisPoints(routeSlippage),
+    routingStrategy: VAULT_ENSO_ROUTING_STRATEGY,
+    destinationChainId,
+    receiver: account
+  })
+}
+
 export const useFetchMaxQuote = ({
   isNativeToken,
   account,
@@ -83,15 +114,14 @@ export const useFetchMaxQuote = ({
   const fetchRoute = useCallback(
     async (routeSlippage: number): Promise<EnsoRouteResponse | undefined> => {
       const isCrossChain = sourceChainId !== chainId
-      const params = new URLSearchParams({
-        fromAddress: account!,
-        chainId: sourceChainId.toString(),
-        tokenIn: depositToken,
-        tokenOut: destinationToken,
-        amountIn: balance!.toString(),
-        slippage: toBasisPoints(routeSlippage).toString(),
-        ...(isCrossChain && { destinationChainId: chainId.toString() }),
-        receiver: account!
+      const params = buildMaxQuoteRequestParams({
+        account: account!,
+        balance: balance!,
+        depositToken,
+        destinationToken,
+        sourceChainId,
+        destinationChainId: chainId,
+        routeSlippage
       })
 
       const response = await fetch(`${ENSO_ROUTE_PROXY}?${params}`)

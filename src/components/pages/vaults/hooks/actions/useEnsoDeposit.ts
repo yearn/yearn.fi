@@ -1,7 +1,7 @@
 import type { UseWidgetDepositFlowReturn } from '@pages/vaults/types'
 import { useEffect, useMemo } from 'react'
 import type { Address } from 'viem'
-import type { EnsoRoutingStrategy } from '../solvers/useSolverEnso'
+import { VAULT_ENSO_ROUTING_STRATEGY } from '../solvers/ensoRouteRequest'
 import { useSolverEnso } from '../solvers/useSolverEnso'
 import { useEnsoOrder } from '../useEnsoOrder'
 
@@ -16,7 +16,6 @@ interface UseEnsoDepositParams {
   decimalsOut: number
   enabled: boolean
   slippage?: number
-  routingStrategy?: EnsoRoutingStrategy
   routeRefreshKey?: number
 }
 
@@ -30,7 +29,7 @@ export function useEnsoDeposit(params: UseEnsoDepositParams): UseWidgetDepositFl
         params.vaultAddress,
         params.account ?? 'no-account',
         params.slippage ?? 'default',
-        params.routingStrategy ?? 'default-strategy',
+        VAULT_ENSO_ROUTING_STRATEGY,
         params.routeRefreshKey ?? 0
       ].join(':'),
     [
@@ -40,7 +39,6 @@ export function useEnsoDeposit(params: UseEnsoDepositParams): UseWidgetDepositFl
       params.vaultAddress,
       params.account,
       params.slippage,
-      params.routingStrategy,
       params.routeRefreshKey
     ]
   )
@@ -56,7 +54,7 @@ export function useEnsoDeposit(params: UseEnsoDepositParams): UseWidgetDepositFl
     receiver: params.account,
     decimalsOut: params.decimalsOut,
     slippage: params.slippage,
-    routingStrategy: params.routingStrategy,
+    routingStrategy: VAULT_ENSO_ROUTING_STRATEGY,
     requestKey: routeQueryKey,
     enabled: params.enabled
   })

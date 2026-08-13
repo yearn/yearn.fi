@@ -4,7 +4,6 @@ import { useDirectStake } from '@pages/vaults/hooks/actions/useDirectStake'
 import { useEnsoDeposit } from '@pages/vaults/hooks/actions/useEnsoDeposit'
 import { useYBoldZapperDeposit } from '@pages/vaults/hooks/actions/useYBoldZapperDeposit'
 import { useYvUsdLockedZapDeposit } from '@pages/vaults/hooks/actions/useYvUsdLockedZapDeposit'
-import type { EnsoRoutingStrategy } from '@pages/vaults/hooks/solvers/useSolverEnso'
 import { YVUSD_LOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import { toAddress } from '@shared/utils'
 import { toBasisPoints } from '@shared/utils/slippage'
@@ -36,7 +35,6 @@ interface UseDepositFlowProps {
   vaultDecimals: number
   // Settings
   slippage: number
-  ensoRoutingStrategy?: EnsoRoutingStrategy
   routeRefreshKey?: number
   stakingSource?: string
 }
@@ -94,7 +92,6 @@ export const useDepositFlow = ({
   inputDecimals,
   vaultDecimals,
   slippage,
-  ensoRoutingStrategy,
   routeRefreshKey,
   stakingSource
 }: UseDepositFlowProps): DepositFlowResult => {
@@ -168,7 +165,6 @@ export const useDepositFlow = ({
     decimalsOut: vaultDecimals,
     enabled: routeType === 'ENSO' && !!depositToken && amount > 0n && currentAmount > 0n,
     slippage: toBasisPoints(slippage),
-    routingStrategy: ensoRoutingStrategy,
     routeRefreshKey
   })
 

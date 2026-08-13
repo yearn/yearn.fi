@@ -8,6 +8,7 @@ export interface EnsoError {
 }
 
 export interface EnsoRouteResponse {
+  operationType?: 0 | 1
   tx: {
     to: Address
     data: Hex
@@ -36,12 +37,16 @@ type EnsoRouteErrorPayload = {
   statusCode?: number
 }
 
-type EnsoRouteCandidate = Omit<EnsoRouteResponse, 'tx' | 'priceImpact'> & {
+type EnsoRouteCandidate = Omit<EnsoRouteResponse, 'operationType' | 'tx' | 'priceImpact'> & {
+  operationType?: unknown
   priceImpact?: unknown
   tx: Omit<EnsoRouteResponse['tx'], 'chainId'> & {
     chainId?: number
   }
 }
+
+export const UNSUPPORTED_ENSO_DELEGATE_ROUTE_MESSAGE =
+  'Enso returned an unsupported wallet route. Please retry the quote.'
 
 function isEnsoRouteCandidate(data: unknown): data is EnsoRouteCandidate {
   if (!data || typeof data !== 'object') {
@@ -108,9 +113,19 @@ export function normalizeEnsoRouteResponse(
   route?: EnsoRouteResponse
 } {
   if (isEnsoRouteCandidate(data)) {
+    if (data.operationType !== undefined && data.operationType !== 0) {
+      return {
+        error: {
+          error: 'UnsupportedEnsoDelegateRoute',
+          message: UNSUPPORTED_ENSO_DELEGATE_ROUTE_MESSAGE,
+          statusCode
+        }
+      }
+    }
+
     const resolvedChainId = typeof data.tx.chainId === 'number' ? data.tx.chainId : fallbackChainId
     const priceImpact = normalizeEnsoPriceImpact(data.priceImpact)
-    const { priceImpact: _rawPriceImpact, tx, ...routeData } = data
+    const { operationType, priceImpact: _rawPriceImpact, tx, ...routeData } = data
 
     if (typeof resolvedChainId !== 'number') {
       return { error: buildEnsoError({ message: 'Enso route payload missing tx.chainId' }, statusCode) }
@@ -119,6 +134,7 @@ export function normalizeEnsoRouteResponse(
     return {
       route: {
         ...routeData,
+        ...(operationType === 0 ? { operationType } : {}),
         ...(priceImpact !== undefined ? { priceImpact } : {}),
         tx: {
           ...tx,

@@ -3,7 +3,6 @@ import { useDirectWithdraw } from '@pages/vaults/hooks/actions/useDirectWithdraw
 import { useEnsoWithdraw } from '@pages/vaults/hooks/actions/useEnsoWithdraw'
 import { useYBoldZapperWithdraw } from '@pages/vaults/hooks/actions/useYBoldZapperWithdraw'
 import { useYvUsdLockedZapWithdraw } from '@pages/vaults/hooks/actions/useYvUsdLockedZapWithdraw'
-import type { EnsoRoutingStrategy } from '@pages/vaults/hooks/solvers/useSolverEnso'
 import type { UseWidgetWithdrawFlowReturn } from '@pages/vaults/types'
 import { YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import { toAddress } from '@shared/utils'
@@ -46,7 +45,6 @@ interface UseWithdrawFlowProps {
   isUnstake: boolean
   isDebouncing: boolean
   useErc4626: boolean
-  ensoRoutingStrategy?: EnsoRoutingStrategy
 }
 
 export interface WithdrawFlowResult {
@@ -83,8 +81,7 @@ export function useWithdrawFlow({
   withdrawalSource,
   isUnstake,
   isDebouncing,
-  useErc4626,
-  ensoRoutingStrategy
+  useErc4626
 }: UseWithdrawFlowProps): WithdrawFlowResult {
   const routeType = useWithdrawRoute({
     vaultAddress,
@@ -179,8 +176,7 @@ export function useWithdrawFlow({
     destinationChainId,
     decimalsOut: outputDecimals,
     enabled: ensoEnabled,
-    slippage: toBasisPoints(slippage),
-    routingStrategy: ensoRoutingStrategy
+    slippage: toBasisPoints(slippage)
   })
 
   const activeFlow = useMemo((): UseWidgetWithdrawFlowReturn => {

@@ -22,6 +22,54 @@ describe('normalizeEnsoRouteResponse', () => {
     })
   })
 
+  it('accepts normal call routes with operationType 0', () => {
+    const routePayload = {
+      operationType: 0 as const,
+      tx: {
+        to: '0x0000000000000000000000000000000000000001',
+        data: '0x1234',
+        value: '0',
+        from: '0x0000000000000000000000000000000000000002',
+        chainId: 1
+      },
+      amountOut: '100',
+      minAmountOut: '95',
+      gas: '123456',
+      route: []
+    }
+
+    expect(normalizeEnsoRouteResponse(routePayload, 200)).toEqual({ route: routePayload })
+  })
+
+  it.each([1, 2])('rejects unsupported operationType %i before exposing its transaction', (operationType) => {
+    const normalized = normalizeEnsoRouteResponse(
+      {
+        operationType,
+        tx: {
+          to: '0x00000000000000000000000000000000000000de',
+          data: '0x1234',
+          value: '0',
+          from: '0x0000000000000000000000000000000000000002',
+          chainId: 1
+        },
+        amountOut: '100',
+        minAmountOut: '95',
+        gas: '123456',
+        route: []
+      },
+      200
+    )
+
+    expect(normalized).toEqual({
+      error: {
+        error: 'UnsupportedEnsoDelegateRoute',
+        message: 'Enso returned an unsupported wallet route. Please retry the quote.',
+        statusCode: 200
+      }
+    })
+    expect(normalized.route).toBeUndefined()
+  })
+
   it('fills tx.chainId from the request context when Enso omits it in a 200 response', () => {
     expect(
       normalizeEnsoRouteResponse(

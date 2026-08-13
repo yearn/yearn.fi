@@ -367,7 +367,6 @@ export function WidgetDeposit({
     inputDecimals: inputToken?.decimals ?? 18,
     vaultDecimals: vault?.decimals ?? 18,
     slippage: ensoQuoteSlippage,
-    ensoRoutingStrategy: isWalletSafe ? 'router' : undefined,
     routeRefreshKey: approvalRouteRefreshKey,
     stakingSource
   })

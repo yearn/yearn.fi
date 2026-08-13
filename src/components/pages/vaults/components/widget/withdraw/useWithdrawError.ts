@@ -1,3 +1,4 @@
+import { UNSUPPORTED_ENSO_DELEGATE_ROUTE_MESSAGE } from '@pages/vaults/hooks/solvers/ensoRoute'
 import { useMemo } from 'react'
 import type { Address } from 'viem'
 import type { WithdrawalSource, WithdrawRouteType } from './types'
@@ -49,6 +50,10 @@ export const useWithdrawError = ({
     // Route-dependent validation - wait for debounce and route fetch
     if (routeType === 'ENSO') {
       if (flowError && !isLoadingRoute && debouncedAmount > 0n && !isDebouncing) {
+        if (flowError === UNSUPPORTED_ENSO_DELEGATE_ROUTE_MESSAGE) {
+          return UNSUPPORTED_ENSO_DELEGATE_ROUTE_MESSAGE
+        }
+
         return 'Unable to find route'
       }
     }
