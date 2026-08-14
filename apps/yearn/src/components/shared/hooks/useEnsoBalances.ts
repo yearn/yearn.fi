@@ -2,7 +2,6 @@ import { useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
 import type { TAddress } from '../types/address'
 import type { TChainTokens, TNDict } from '../types/mixed'
-import { SUPPORTED_NETWORKS } from '../utils/constants'
 import { toNormalizedBN } from '../utils/format'
 import { toAddress } from '../utils/tools.address'
 import { isZeroAddress } from '../utils/tools.is'
@@ -25,10 +24,7 @@ type TEnsoBalanceResponse = {
 /*******************************************************************************
  ** Enso API configuration - uses server proxy to handle auth
  ******************************************************************************/
-export const ENSO_UNSUPPORTED_NETWORKS = [250] // Fantom not supported by Enso
-export const ENSO_SUPPORTED_CHAINS = SUPPORTED_NETWORKS.map((n) => n.id).filter(
-  (id) => !ENSO_UNSUPPORTED_NETWORKS.includes(id)
-)
+export const ENSO_UNSUPPORTED_NETWORKS = [250]
 
 /*******************************************************************************
  ** Fetch balances from Enso API for a given address
@@ -170,30 +166,4 @@ export function useEnsoBalances(
     chainSuccessStatus,
     chainErrorStatus
   }
-}
-
-/*******************************************************************************
- ** Standalone fetch function for use outside of React components
- ******************************************************************************/
-export async function getEnsoBalances(address: TAddress): Promise<TChainTokens> {
-  const balances = await fetchEnsoBalances(address)
-  return transformEnsoResponse(balances)
-}
-
-/*******************************************************************************
- ** Merge Enso balances with existing balances
- ** Enso data takes precedence for tokens it has data for
- ******************************************************************************/
-export function mergeBalances(existing: TChainTokens, ensoBalances: TChainTokens): TChainTokens {
-  const result: TChainTokens = { ...existing }
-
-  for (const [chainIdStr, tokens] of Object.entries(ensoBalances)) {
-    const chainId = Number(chainIdStr)
-    if (!result[chainId]) {
-      result[chainId] = {}
-    }
-    result[chainId] = { ...result[chainId], ...tokens }
-  }
-
-  return result
 }

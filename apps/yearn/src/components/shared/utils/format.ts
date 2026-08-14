@@ -1,6 +1,5 @@
 import { formatUnits, parseUnits as vParseUnits } from 'viem'
 import type { TNormalizedBN, TNumberish } from '../types/mixed'
-import { MAX_UINT_256 } from './constants'
 import { isZero } from './tools.is'
 
 /***************************************************************************
@@ -103,40 +102,8 @@ export const toBigInt = (amount?: TNumberish): bigint => {
   return BigInt(integerPart)
 }
 
-export function toBigNumberAsAmount(bnAmount = 0n, decimals = 18, decimalsToDisplay = 2, symbol = ''): string {
-  let locale = 'en-US'
-  if (typeof navigator !== 'undefined') {
-    locale = navigator.language || 'fr-FR'
-  }
-  const locales = []
-  locales.push('en-US')
-  locales.push(locale)
-
-  let symbolWithPrefix = symbol
-  if (symbol.length > 0 && symbol !== '%') {
-    symbolWithPrefix = ` ${symbol}`
-  }
-
-  if (bnAmount === 0n) {
-    return `0${symbolWithPrefix}`
-  }
-  if (bnAmount === MAX_UINT_256) {
-    return `∞${symbolWithPrefix}`
-  }
-
-  const formatedAmount = formatUnits(bnAmount, decimals)
-  return `${new Intl.NumberFormat([locale, 'en-US'], {
-    minimumFractionDigits: 0,
-    maximumFractionDigits: decimalsToDisplay
-  }).format(Number(formatedAmount))}${symbolWithPrefix}`
-}
-
 export const toNormalizedValue = (v: bigint, d?: number): number => {
   return Number(formatUnits(v, d ?? 18))
-}
-
-export const toNormalizedAmount = (v: bigint, d?: number): string => {
-  return formatAmount(toNormalizedValue(v, d ?? 18), 6, 6)
 }
 
 export function toNormalizedBN(value: TNumberish, decimals: number): TNormalizedBN {
@@ -148,10 +115,6 @@ export function toNormalizedBN(value: TNumberish, decimals: number): TNormalized
   }
 }
 export const zeroNormalizedBN: TNormalizedBN = toNormalizedBN(0, 18)
-
-export function fromNormalized(value: number | string, decimals = 18): bigint {
-  return vParseUnits(eToNumber(String(value)), decimals)
-}
 
 export function parseUnits(value: TNumberish, decimals = 18): bigint {
   const valueAsNumber = Number(value)
@@ -442,70 +405,6 @@ export function formatAmount(
   return formattedAmount
 }
 
-export function parseAmount(stringNumber: string, providedLocales?: string[]): number {
-  let locale = 'en-US'
-  if (typeof navigator !== 'undefined') {
-    locale = navigator.language || 'fr-FR'
-  }
-  const locales = []
-  if (providedLocales) {
-    locales.push(...providedLocales)
-  }
-  locales.push('en-US')
-  locales.push(locale)
-
-  const thousandSeparator = Intl.NumberFormat(locales)
-    .format(11111)
-    .replace(/\p{Number}/gu, '')
-  const decimalSeparator = Intl.NumberFormat(locales)
-    .format(1.1)
-    .replace(/\p{Number}/gu, '')
-
-  return parseFloat(
-    stringNumber
-      .replace(new RegExp('\\' + thousandSeparator, 'g'), '')
-      .replace(new RegExp('\\' + decimalSeparator), '.')
-  )
-}
-
-export function formatCurrency(amount: number, decimals = 2): string {
-  let locale = 'fr-FR'
-  if (typeof navigator !== 'undefined') {
-    locale = navigator.language || 'fr-FR'
-  }
-  return new Intl.NumberFormat([locale, 'en-US'], {
-    style: 'currency',
-    currency: 'USD',
-    currencyDisplay: 'symbol',
-    minimumFractionDigits: 0,
-    maximumFractionDigits: decimals
-  }).format(amount)
-}
-
-export function formatWithUnit(
-  amount: number,
-  minimumFractionDigits = 2,
-  maximumFractionDigits = 2,
-  options?: {
-    locales?: string[]
-  }
-): string {
-  let locale = 'fr-FR'
-  if (typeof navigator !== 'undefined') {
-    locale = navigator.language || 'fr-FR'
-  }
-  if (maximumFractionDigits < minimumFractionDigits) {
-    maximumFractionDigits = minimumFractionDigits
-  }
-  return new Intl.NumberFormat(options?.locales || [locale, 'en-US'], {
-    minimumFractionDigits,
-    maximumFractionDigits,
-    notation: 'compact',
-    compactDisplay: 'short',
-    unitDisplay: 'short'
-  }).format(amount)
-}
-
 export function formatUSD(n: number, min = 2, max = 2): string {
   return `$${formatAmount(n || 0, min, max)}`
 }
@@ -538,16 +437,6 @@ export function formatPercent(n: number, min?: number, max?: number, upperLimit 
   return hasFixedPrecisionOverride
     ? `${formatAmount(safeN, resolvedMin, resolvedMax)}%`
     : `${formatToSignificantDigits(safeN)}%`
-}
-
-export function formatAllocationPercent(value: number, options?: { locales?: string[] }): string {
-  const safeValue = Number.isFinite(value) ? value : 0
-  const fractionDigits = resolveSignificantFractionDigits(safeValue)
-  const formatter = new Intl.NumberFormat(resolveLocales(options), {
-    minimumFractionDigits: fractionDigits,
-    maximumFractionDigits: fractionDigits
-  })
-  return `${formatter.format(safeValue)}%`
 }
 
 function resolveLocales(options?: { locales?: string[] }): string[] {

@@ -1,6 +1,6 @@
 import { useMountEffect } from '@react-hookz/web'
 import type React from 'react'
-import { createContext, useContext } from 'react'
+import { createContext } from 'react'
 import setupIndexedDB from 'use-indexeddb'
 
 import type { IndexedDBConfig } from 'use-indexeddb/dist/interfaces'
@@ -39,12 +39,4 @@ export const IndexedDB = ({ children }: { children: React.ReactElement }): React
   })
 
   return <IndexDBContext.Provider value={yearnIDBConfig}>{children}</IndexDBContext.Provider>
-}
-
-export const useIndexDB = (): IndexedDBConfig => {
-  const ctx = useContext(IndexDBContext)
-  if (!ctx) {
-    throw new Error('IndexDBContext not found')
-  }
-  return ctx
 }

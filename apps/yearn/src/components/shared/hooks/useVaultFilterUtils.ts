@@ -3,13 +3,10 @@ import {
   getVaultAPR,
   getVaultChainID,
   getVaultDecimals,
-  getVaultName,
   getVaultStaking,
-  getVaultSymbol,
   getVaultToken,
   getVaultTVL,
   getVaultVersion,
-  type TKongVault,
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
 import { getNativeTokenWrapperContract } from '@pages/vaults/utils/nativeTokens'
@@ -248,20 +245,6 @@ export function getVaultKey(vault: TVaultLike): string {
   return `${getVaultChainID(vault)}_${toAddress(getVaultAddress(vault))}`
 }
 
-export function matchesSearch(vault: TVaultLike, search: string): boolean {
-  const token = getVaultToken(vault)
-  const searchableText = `${getVaultName(vault)} ${getVaultSymbol(vault)} ${token.name} ${token.symbol} ${getVaultAddress(vault)} ${token.address}`
-
-  try {
-    const escapedSearch = search.replace(/[.*+?^${}()|[\]\\]/g, '\\$&')
-    const searchRegex = new RegExp(escapedSearch, 'i')
-    return searchRegex.test(searchableText)
-  } catch {
-    const lowercaseSearch = search.toLowerCase()
-    return searchableText.toLowerCase().includes(lowercaseSearch)
-  }
-}
-
 export function matchesSelectedChains(chainID: number, chains: number[] | null | undefined): boolean {
   return !chains?.length || chains.includes(chainID)
 }
@@ -269,16 +252,4 @@ export function matchesSelectedChains(chainID: number, chains: number[] | null |
 export function isV3Vault(vault: TVaultLike, isAllocatorOverride: boolean): boolean {
   const version = getVaultVersion(vault)
   return version.startsWith('3') || version.startsWith('~3') || isAllocatorOverride
-}
-
-export function extractHoldingsVaults(vaultMap: Map<string, TVaultWithMetadata>): TKongVault[] {
-  return Array.from(vaultMap.values())
-    .filter(({ hasHoldings }) => hasHoldings)
-    .map(({ vault }) => vault as TKongVault)
-}
-
-export function extractAvailableVaults(vaultMap: Map<string, TVaultWithMetadata>): TKongVault[] {
-  return Array.from(vaultMap.values())
-    .filter(({ hasAvailableBalance }) => hasAvailableBalance)
-    .map(({ vault }) => vault as TKongVault)
 }

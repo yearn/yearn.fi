@@ -1,9 +1,8 @@
-import type { Chain, PublicClient } from 'viem'
-import { createPublicClient, defineChain, http } from 'viem'
+import type { Chain } from 'viem'
+import { defineChain } from 'viem'
 import * as wagmiChains from 'viem/chains'
 import { katana } from '@/config/chainDefinitions'
 import {
-  resolveExecutionChainId,
   resolveTenderlyExplorerUriForExecutionChainId,
   resolveTenderlyRpcUriForExecutionChainId,
   supportedChainLookup
@@ -11,7 +10,6 @@ import {
 import { env } from '@/env'
 import type { TAddress } from '../../types/address'
 import type { TDict, TNDict } from '../../types/mixed'
-import { retrieveConfig } from './config'
 import { localhost } from './networks'
 
 export type TChainContract = {
@@ -221,41 +219,4 @@ export function getNetwork(chainID: number): TExtendedChain {
     } as TExtendedChain
   }
   return indexedWagmiChains[chainID]
-}
-
-export function getClient(chainID: number): PublicClient {
-  const executionChainId = resolveExecutionChainId(chainID)
-  if (executionChainId === undefined || !indexedWagmiChains[executionChainId]) {
-    throw new Error(`Chain ${chainID} is not supported`)
-  }
-  const chainConfig =
-    indexedWagmiChains[executionChainId] || retrieveConfig().chains.find((chain) => chain.id === executionChainId)
-
-  const newRPC = getRpcUriFor(executionChainId)
-  const oldRPC = env.NEXT_PUBLIC_JSON_RPC_URI?.[executionChainId] || env.NEXT_PUBLIC_JSON_RPC_URL?.[executionChainId]
-
-  const url =
-    newRPC ||
-    oldRPC ||
-    chainConfig?.rpcUrls.default.http[0] ||
-    chainConfig?.rpcUrls.alchemy.http[0] ||
-    chainConfig?.rpcUrls.infura.http[0] ||
-    indexedWagmiChains[executionChainId]?.rpcUrls?.public?.http?.[0] ||
-    ''
-
-  try {
-    new URL(url)
-    const urlAsNodeURL = new URL(url)
-    if (urlAsNodeURL.username && urlAsNodeURL.password) {
-      const headers = { Authorization: `Basic ${btoa(urlAsNodeURL.username + ':' + urlAsNodeURL.password)}` }
-      const cleanUrl = urlAsNodeURL.href.replace(`${urlAsNodeURL.username}:${urlAsNodeURL.password}@`, '')
-      return createPublicClient({
-        chain: indexedWagmiChains[executionChainId],
-        transport: http(cleanUrl, { fetchOptions: { headers } })
-      })
-    }
-    return createPublicClient({ chain: indexedWagmiChains[executionChainId], transport: http(url) })
-  } catch {
-    throw new Error(`We couldn't get a valid RPC URL for chain ${chainID}`)
-  }
 }

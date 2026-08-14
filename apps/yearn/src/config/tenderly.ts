@@ -304,10 +304,6 @@ export function persistTenderlyModeEnabled(value: boolean): void {
   }
 }
 
-export function getTenderlyBackedCanonicalChainIds(): readonly TCanonicalChainId[] {
-  return tenderlyRuntime.configuredCanonicalChainIds
-}
-
 export function resolveConnectedTenderlyExecutionChainForRuntime(
   runtime: TTenderlyRuntime,
   chainId: number | undefined
@@ -339,10 +335,6 @@ export function resolveConnectedTenderlyExecutionChain(
   chainId: number | undefined
 ): { canonicalChainId: TCanonicalChainId; executionChainId: number; canonicalChainName: string } | undefined {
   return resolveConnectedTenderlyExecutionChainForRuntime(tenderlyRuntime, chainId)
-}
-
-export function isCanonicalChainEnabled(chainId: number): chainId is TCanonicalChainId {
-  return supportedCanonicalChains.some((chain) => chain.id === chainId)
 }
 
 export function getCanonicalChain(chainId: number): Chain | undefined {

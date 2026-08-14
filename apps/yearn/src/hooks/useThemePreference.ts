@@ -86,14 +86,3 @@ export function setThemePreference(preference: ThemePreference): void {
   applyThemeAttribute(preference)
   window.dispatchEvent(new Event(THEME_CHANGE_EVENT))
 }
-
-export function toggleThemePreference(): void {
-  if (typeof window === 'undefined') {
-    return
-  }
-  const current = readThemePreference()
-  const order: ThemePreference[] = ['light', 'soft-dark', 'blue-dark', 'midnight']
-  const currentIndex = order.indexOf(current)
-  const next = order[(currentIndex + 1) % order.length] ?? 'light'
-  setThemePreference(next)
-}
