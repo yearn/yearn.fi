@@ -60,33 +60,32 @@ describe('useSolverEnso request slippage', () => {
     { label: 'cross-chain calibration', destinationChainId: 8453, requestedSlippage: 0, expectedSlippage: '1' },
     { label: 'same-chain calibration', destinationChainId: 1, requestedSlippage: 0, expectedSlippage: '0' },
     { label: 'protected cross-chain quote', destinationChainId: 8453, requestedSlippage: 37, expectedSlippage: '37' }
-  ])('sends $expectedSlippage bps for a $label', async ({
-    destinationChainId,
-    requestedSlippage,
-    expectedSlippage
-  }) => {
-    const { result } = renderHook(
-      () =>
-        useSolverEnso({
-          tokenIn: TOKEN_IN,
-          tokenOut: TOKEN_OUT,
-          amountIn: 1n,
-          fromAddress: ACCOUNT,
-          chainId: 1,
-          destinationChainId,
-          slippage: requestedSlippage,
-          quotePurpose: requestedSlippage === 0 ? 'calibration' : 'execution'
-        }),
-      { wrapper: createQueryWrapper() }
-    )
+  ])(
+    'sends $expectedSlippage bps for a $label',
+    async ({ destinationChainId, requestedSlippage, expectedSlippage }) => {
+      const { result } = renderHook(
+        () =>
+          useSolverEnso({
+            tokenIn: TOKEN_IN,
+            tokenOut: TOKEN_OUT,
+            amountIn: 1n,
+            fromAddress: ACCOUNT,
+            chainId: 1,
+            destinationChainId,
+            slippage: requestedSlippage,
+            quotePurpose: requestedSlippage === 0 ? 'calibration' : 'execution'
+          }),
+        { wrapper: createQueryWrapper() }
+      )
 
-    await act(async () => {
-      await result.current.methods.getRoute()
-    })
+      await act(async () => {
+        await result.current.methods.getRoute()
+      })
 
-    const requestUrl = new URL(String(fetchMock.mock.calls[0]?.[0]), 'http://localhost')
-    expect(requestUrl.searchParams.get('slippage')).toBe(expectedSlippage)
-  })
+      const requestUrl = new URL(String(fetchMock.mock.calls[0]?.[0]), 'http://localhost')
+      expect(requestUrl.searchParams.get('slippage')).toBe(expectedSlippage)
+    }
+  )
 
   it('keeps calibration and execution quotes separate at the same effective slippage', async () => {
     const { rerender } = renderHook(
