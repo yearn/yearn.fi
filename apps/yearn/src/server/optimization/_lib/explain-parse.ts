@@ -8,14 +8,6 @@ export interface ExplainMetadata {
   changesFiltered: number | null
 }
 
-export interface ExplainNoChangeStrategy {
-  name: string
-  currentRatio: number
-  targetRatio: number
-  currentApr: number | null
-  targetApr: number | null
-}
-
 const EXPLAIN_VAULT_LINE_PATTERN = /^(.+)\s+\((\d+):\s*(0x[a-fA-F0-9]{40})\)/
 const EXPLAIN_TVL_LINE_PATTERN = /^TVL:\s*(.+)$/im
 const EXPLAIN_TVL_VALUE_PATTERN = /^\s*(\$)?\s*([\d,]+(?:\.\d+)?)\s*([A-Za-z][A-Za-z0-9._-]*)?\s*$/
