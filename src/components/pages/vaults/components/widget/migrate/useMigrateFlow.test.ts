@@ -66,29 +66,27 @@ describe('getMigrateArgs', () => {
       expectedSelector: toFunctionSelector('migrateFromV2(address,address,uint256,uint256)'),
       rejectedSelector: toFunctionSelector('migrateFromV2(address,address,uint256)')
     }
-  ] as const)('encodes $functionName with the 4-input overload', ({
-    config,
-    functionName,
-    expectedSelector,
-    rejectedSelector
-  }) => {
-    expect(getMigrateArgs(config, FROM_VAULT, TO_VAULT, SHARE_BALANCE, RECIPIENT)).toEqual([
-      FROM_VAULT,
-      TO_VAULT,
-      SHARE_BALANCE,
-      0n
-    ])
+  ] as const)(
+    'encodes $functionName with the 4-input overload',
+    ({ config, functionName, expectedSelector, rejectedSelector }) => {
+      expect(getMigrateArgs(config, FROM_VAULT, TO_VAULT, SHARE_BALANCE, RECIPIENT)).toEqual([
+        FROM_VAULT,
+        TO_VAULT,
+        SHARE_BALANCE,
+        0n
+      ])
 
-    const data = encodeFunctionData({
-      abi: ERC_4626_ROUTER_ABI,
-      functionName,
-      args: getErc4626RouterMigrateArgs(FROM_VAULT, TO_VAULT, SHARE_BALANCE)
-    })
-    const selector = data.slice(0, 10)
+      const data = encodeFunctionData({
+        abi: ERC_4626_ROUTER_ABI,
+        functionName,
+        args: getErc4626RouterMigrateArgs(FROM_VAULT, TO_VAULT, SHARE_BALANCE)
+      })
+      const selector = data.slice(0, 10)
 
-    expect(selector).toBe(expectedSelector)
-    expect(selector).not.toBe(rejectedSelector)
-  })
+      expect(selector).toBe(expectedSelector)
+      expect(selector).not.toBe(rejectedSelector)
+    }
+  )
 
   it('encodes the Yearn veCRV zapper with amount, minOut, and recipient', () => {
     expect(getMigrateArgs(YEARN_VE_CRV_ZAP_CONFIG, FROM_VAULT, TO_VAULT, SHARE_BALANCE, RECIPIENT)).toEqual([

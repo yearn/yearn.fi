@@ -25,8 +25,7 @@ export type TPublicIconAsset = {
 export type TUsageMap = Record<string, string[]>
 
 export const BROKEN_ASSET_NOTES: Record<string, string> = {
-  'public/yearn-logo.svg': 'Broken: file is empty.',
-  'public/v3Mark.svg': 'Broken: SVG contains JSX syntax.'
+  'public/yearn-logo.svg': 'Broken: file is empty.'
 }
 
 export const ICON_OVERRIDES: Record<string, { note: string; props?: Partial<TIconProps>; forceFill?: boolean }> = {
@@ -107,11 +106,6 @@ export const PUBLIC_ICON_ASSETS: TPublicIconAsset[] = [
     name: 'v3.png',
     path: 'public/v3.png',
     src: '/v3.png'
-  },
-  {
-    name: 'v3Mark.svg',
-    path: 'public/v3Mark.svg',
-    src: '/v3Mark.svg'
   },
   {
     name: 'yearn-logo-text.svg',

@@ -176,15 +176,15 @@ describe('yBOLD estimated APY override', () => {
       }
     }) as TKongVault
 
-  it.each([
-    YBOLD_VAULT_ADDRESS,
-    YBOLD_STAKING_ADDRESS
-  ])('uses 7 day historical net APY as the estimated APY for %s', (address) => {
-    const vault = createYBoldVault(address)
+  it.each([YBOLD_VAULT_ADDRESS, YBOLD_STAKING_ADDRESS])(
+    'uses 7 day historical net APY as the estimated APY for %s',
+    (address) => {
+      const vault = createYBoldVault(address)
 
-    expect(getVaultForwardAPY(vault)).toBe(0.0725)
-    expect(calculateVaultEstimatedAPY(vault)).toBe(0.0725)
-  })
+      expect(getVaultForwardAPY(vault)).toBe(0.0725)
+      expect(calculateVaultEstimatedAPY(vault)).toBe(0.0725)
+    }
+  )
 
   it('keeps the forward APY for other vaults', () => {
     expect(getVaultForwardAPY(BASE_VAULT)).toBe(0.068)
