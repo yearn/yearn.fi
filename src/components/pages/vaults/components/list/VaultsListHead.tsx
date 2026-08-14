@@ -35,6 +35,8 @@ export type TListHead = {
   activeToggleValues?: Iterable<string>
   wrapperClassName?: string
   containerClassName?: string
+  leftColumnClassName?: string
+  rightColumnClassName?: string
 }
 
 function isToggleItem(item: TListHeadItem): item is TToggleListHeadItem {
@@ -72,11 +74,13 @@ export function VaultsListHead({
   onToggle,
   activeToggleValues,
   wrapperClassName,
-  containerClassName
+  containerClassName,
+  leftColumnClassName,
+  rightColumnClassName
 }: TListHead): ReactElement {
   const activeToggles = useMemo(() => new Set(activeToggleValues || []), [activeToggleValues])
-  const leftColumnSpan = 'col-span-12'
-  const rightColumnSpan = 'col-span-12'
+  const leftColumnSpan = leftColumnClassName ?? 'col-span-12'
+  const rightColumnSpan = rightColumnClassName ?? 'col-span-12'
   const rightGridColumns = 'md:grid-cols-12'
 
   const renderChevron = useCallback(

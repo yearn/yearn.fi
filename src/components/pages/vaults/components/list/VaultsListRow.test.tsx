@@ -1,3 +1,8 @@
+import {
+  formatSignedPortfolioGrowthPercent,
+  formatSignedPortfolioGrowthUsd,
+  VaultsListRow
+} from '@pages/vaults/components/list/VaultsListRow'
 import type { TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { getVaultFeeStructureKey } from '@pages/vaults/utils/vaultFees'
 import { YVBTC_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvBtc'
@@ -6,8 +11,6 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import type { ComponentProps } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-
-import { VaultsListRow } from './VaultsListRow'
 
 const { mockRouterPush, mockUseMediaQuery, mockUseYvUsdVaults, mockUseVaultSnapshot, mockVaultForwardAPY } = vi.hoisted(
   () => ({
@@ -109,6 +112,19 @@ describe('VaultsListRow', () => {
     mockUseVaultSnapshot.mockReturnValue({ data: undefined })
     mockVaultForwardAPY.mockClear()
     mockVaultForwardAPY.mockImplementation(() => <div>{'APY'}</div>)
+  })
+
+  it('formats growth as signed compact USD with three significant digits', () => {
+    expect(formatSignedPortfolioGrowthUsd(1476)).toBe('+$1.48K')
+    expect(formatSignedPortfolioGrowthUsd(-1_234_567)).toBe('−$1.23M')
+    expect(formatSignedPortfolioGrowthUsd(0)).toBe('$0')
+    expect(formatSignedPortfolioGrowthUsd(Number.NaN)).toBeNull()
+  })
+
+  it('formats growth percentages with explicit signs', () => {
+    expect(formatSignedPortfolioGrowthPercent(12.345)).toBe('+12.35%')
+    expect(formatSignedPortfolioGrowthPercent(-4.5)).toBe('−4.50%')
+    expect(formatSignedPortfolioGrowthPercent(null)).toBeNull()
   })
 
   it('renders the desktop TVL tooltip trigger for standard vault rows', () => {

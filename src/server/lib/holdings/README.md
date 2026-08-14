@@ -480,6 +480,8 @@ Response:
 |----------|----------|---------|-------------|
 | `ENVIO_GRAPHQL_URL` | No | `http://localhost:8080/v1/graphql` | Envio indexer GraphQL endpoint |
 | `ENVIO_PASSWORD` | No | `''` | Envio Hasura admin secret; skipped when empty or `testing` |
+| `UPSTASH_REDIS_REST_URL_PORTFOLIO_DEV` | No | Portfolio URL fallback | Preferred development Upstash Redis REST URL for holdings storage |
+| `UPSTASH_REDIS_REST_TOKEN_PORTFOLIO_DEV` | No | Portfolio token fallback | Preferred development Upstash Redis REST token for holdings storage |
 | `UPSTASH_REDIS_REST_URL_PORTFOLIO` | No | `null` | Upstash Redis REST URL for holdings cache, progress, and invalidations |
 | `UPSTASH_REDIS_REST_TOKEN_PORTFOLIO` | No | `null` | Upstash Redis REST token for holdings storage |
 | `RPC_URI_FOR_<id>` | No | `NEXT_PUBLIC_RPC_URI_FOR_<id>` | Optional server-only chain RPC URL for activity receipt and transaction enrichment |
@@ -517,12 +519,13 @@ If aggregates are unavailable, the code falls back to sequential pagination. For
 
 ## Caching
 
-Server-side cache is optional. When `UPSTASH_REDIS_REST_URL_PORTFOLIO` or `UPSTASH_REDIS_REST_TOKEN_PORTFOLIO` is absent, the APIs still work but recompute history and refetch prices/PPS on each request.
+Server-side cache is optional. Development credentials (`*_PORTFOLIO_DEV`) take precedence over the standard portfolio credentials. When neither pair is available, the APIs still work but recompute history and refetch events, prices, and PPS on each request.
 
 ### Cache Layers
 
 1. Upstash Redis:
-   - `holdings:totals:<addressHash>:<version>`: daily USD totals per hashed user address, vault version, and date. Hash fields are `YYYY-MM-DD`; values include `usdValue` and `updatedAt`.
+   - `holdings:wallet-events:v1:<addressHash>:<maxTimestamp>`: one Brotli-compressed normalized event set per wallet and event cutoff, overwritten with a five-minute TTL.
+   - `holdings:totals:v2:<addressHash>:<version>`: daily USD totals per hashed user address, vault version, and date. Hash fields are `YYYY-MM-DD`; values include `usdValue` and `updatedAt`.
    - `holdings:protocol-return-history:v3:<addressHash>:<version>:<timeframe>:<vaultScope>`: successful non-empty protocol-return history snapshots. The payload includes its settled date and relevant vault identifiers for invalidation checks.
    - `holdings:vault-invalidated:<chainId>:<vaultAddress>`: per-vault invalidation timestamps for lazy cache clearing.
    - `holdings:progress:<progressId>`: authoritative short-lived progress records keyed by caller-supplied progress ID for long history requests across Vercel function instances.
@@ -540,7 +543,7 @@ The history cache stores aggregate daily totals, not per-vault breakdown rows. C
 
 Cache behavior:
 
-- Unfiltered history can read/write `holdings:totals:<addressHash>:<version>`.
+- Unfiltered history can read/write `holdings:totals:v2:<addressHash>:<version>`.
 - Vault-filtered history skips aggregate daily total cache because the cache is user/version scoped, not vault-filter scoped.
 - Cache staleness is checked against `holdings:vault-invalidated:<chainId>:<vaultAddress>` only after the request has enough cached daily totals to potentially serve from cache.
 - If any relevant vault was invalidated after the oldest cached row was written, the user's cached totals for that version are cleared and recomputed.
@@ -569,7 +572,7 @@ No schema migration is required. Redis keys are created lazily:
 
 | Key | Type | TTL | Purpose |
 |-----|------|-----|---------|
-| `holdings:totals:<addressHash>:<version>` | Hash | 30 days from write | Daily holdings chart totals. |
+| `holdings:totals:v2:<addressHash>:<version>` | Hash | 30 days from write | Daily holdings chart totals. |
 | `holdings:protocol-return-history:v3:<addressHash>:<version>:<timeframe>:<vaultScope>` | String JSON | 24 hours | Atomic protocol-return history response snapshot. |
 | `holdings:vault-invalidated:<chainId>:<vaultAddress>` | String timestamp | None | Lazy invalidation marker for totals cache. |
 | `holdings:progress:<progressId>` | String JSON record | 10 minutes | Progress polling state for long requests. |

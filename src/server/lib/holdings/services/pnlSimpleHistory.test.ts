@@ -137,6 +137,19 @@ const settledContext = {
   ppsData: new Map([[VAULT_KEY, new Map([[HISTORY_START_TIMESTAMP + 1, 1]])]])
 }
 
+function emptyGrowthResponse(generatedAt: string) {
+  return {
+    generatedAt,
+    summary: {
+      totalVaults: 0,
+      completeVaults: 0,
+      partialVaults: 0,
+      isComplete: true
+    },
+    vaults: []
+  }
+}
+
 describe('getHoldingsProtocolReturnHistory', () => {
   beforeEach(() => {
     vi.resetModules()
@@ -178,6 +191,7 @@ describe('getHoldingsProtocolReturnHistory', () => {
       HISTORY_START_TIMESTAMP + 1,
       HISTORY_START_TIMESTAMP + 86_401
     ])
+    expect(response).not.toHaveProperty('growth')
     expect(saveCachedProtocolReturnHistoryMock).toHaveBeenCalledWith(
       {
         userAddress: USER,
@@ -187,9 +201,42 @@ describe('getHoldingsProtocolReturnHistory', () => {
       },
       'date-201',
       [{ address: VAULT, chainId: 1 }],
-      response,
+      expect.objectContaining({ protocolReturn: response }),
       expect.any(Number)
     )
+  })
+
+  it('derives portfolio growth from the final protocol-return vaults', async () => {
+    const { getHoldingsProtocolReturnPortfolio } = await import('./pnlSimple')
+
+    const response = await getHoldingsProtocolReturnPortfolio(USER, 'all', 'seq', 'paged', '1y')
+
+    expect(response.growth.generatedAt).toBe(response.protocolReturn.generatedAt)
+    expect(response.growth.summary).toEqual({
+      totalVaults: 1,
+      completeVaults: 1,
+      partialVaults: 0,
+      isComplete: true
+    })
+    expect(response.growth.vaults).toEqual([
+      {
+        chainId: 1,
+        vaultAddress: VAULT,
+        status: 'ok',
+        issues: [],
+        baselineUsd: 100,
+        baselineExposureUsdYears: expect.any(Number),
+        growthUsd: 0,
+        growthPct: 0,
+        annualizedProtocolReturnPct: null,
+        metadata: {
+          symbol: 'TST',
+          decimals: 18,
+          assetDecimals: 18,
+          tokenAddress: ASSET
+        }
+      }
+    ])
   })
 
   it('serves the settled protocol return history snapshot before loading wallet events', async () => {
@@ -210,7 +257,10 @@ describe('getHoldingsProtocolReturnHistory', () => {
       dataPoints: [],
       familySeries: []
     }
-    getCachedProtocolReturnHistoryMock.mockResolvedValue(cachedResponse)
+    getCachedProtocolReturnHistoryMock.mockResolvedValue({
+      protocolReturn: cachedResponse,
+      growth: emptyGrowthResponse(cachedResponse.generatedAt)
+    })
 
     const { getHoldingsProtocolReturnHistory } = await import('./pnlSimple')
     const response = await getHoldingsProtocolReturnHistory(USER, 'all', 'parallel', 'paged', '1y')
@@ -232,7 +282,7 @@ describe('getHoldingsProtocolReturnHistory', () => {
       expect.any(Object),
       'date-201',
       [{ address: VAULT, chainId: 1 }],
-      response,
+      expect.objectContaining({ protocolReturn: response }),
       expect.any(Number)
     )
   })
@@ -291,7 +341,7 @@ describe('getHoldingsProtocolReturnHistory', () => {
         { address: VAULT, chainId: 1 },
         { address: NESTED_VAULT, chainId: 1 }
       ],
-      response,
+      expect.objectContaining({ protocolReturn: response }),
       expect.any(Number)
     )
   })
@@ -314,8 +364,12 @@ describe('getHoldingsProtocolReturnHistory', () => {
       dataPoints: [],
       familySeries: []
     }
-    const cacheLookup: { resolve?: (value: typeof cachedResponse | null) => void } = {}
-    const cacheLookupPromise = new Promise<typeof cachedResponse | null>((resolve) => {
+    const cachedPortfolioResponse = {
+      protocolReturn: cachedResponse,
+      growth: emptyGrowthResponse(cachedResponse.generatedAt)
+    }
+    const cacheLookup: { resolve?: (value: typeof cachedPortfolioResponse | null) => void } = {}
+    const cacheLookupPromise = new Promise<typeof cachedPortfolioResponse | null>((resolve) => {
       cacheLookup.resolve = resolve
     })
     getCachedProtocolReturnHistoryMock.mockReturnValue(cacheLookupPromise)
@@ -325,7 +379,7 @@ describe('getHoldingsProtocolReturnHistory', () => {
     const secondRequest = getHoldingsProtocolReturnHistory(USER, 'all', 'parallel', 'paged', '1y')
 
     expect(getCachedProtocolReturnHistoryMock).toHaveBeenCalledTimes(1)
-    cacheLookup.resolve?.(cachedResponse)
+    cacheLookup.resolve?.(cachedPortfolioResponse)
     await expect(Promise.all([firstRequest, secondRequest])).resolves.toEqual([cachedResponse, cachedResponse])
     expect(getSettledVersionedPpsContextMock).not.toHaveBeenCalled()
   })

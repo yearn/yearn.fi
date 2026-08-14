@@ -34,7 +34,11 @@ import {
   resolveNestedVaultAssetMetadata
 } from './nestedVaultPrices'
 import { toVaultKey } from './pnlShared'
-import { getSettledAddressScopedContext, getSettledVersionedPpsContext } from './settledHoldingsContext'
+import {
+  getSettledAddressScopedContext,
+  getSettledVersionedPpsContext,
+  type TSettledAddressScopedContext
+} from './settledHoldingsContext'
 import { fetchMultipleVaultsMetadata } from './vaults'
 
 export interface HoldingsHistoryResponse {
@@ -172,14 +176,16 @@ export async function getHistoricalHoldings(
   fetchType: HoldingsEventFetchType = 'seq',
   paginationMode: HoldingsEventPaginationMode = 'paged',
   timeframe: HoldingsHistoryTimeframe = '1y',
-  requestedVaults?: HoldingsVaultFilter[]
+  requestedVaults?: HoldingsVaultFilter[],
+  settledContext?: Promise<TSettledAddressScopedContext>
 ): Promise<HoldingsHistoryResponse> {
   const defaultDays = holdingsConfig.historyDays
-  const baseContext = await getSettledAddressScopedContext({
-    userAddress,
-    fetchType,
-    paginationMode
-  })
+  const baseContext = await (settledContext ??
+    getSettledAddressScopedContext({
+      userAddress,
+      fetchType,
+      paginationMode
+    }))
   reportHoldingsProgress(18, 'Loaded wallet events', null)
   const dayTimestamps = generateDailyTimestamps(defaultDays, 1)
   const latestSettledDayTimestamp = baseContext.latestSettledDayTimestamp
@@ -518,7 +524,8 @@ export async function getHistoricalHoldingsChart(
   paginationMode: HoldingsEventPaginationMode = 'paged',
   denomination: HoldingsHistoryDenomination = 'usd',
   timeframe: HoldingsHistoryTimeframe = '1y',
-  requestedVaults?: HoldingsVaultFilter[]
+  requestedVaults?: HoldingsVaultFilter[],
+  settledContext?: Promise<TSettledAddressScopedContext>
 ): Promise<HoldingsHistoryChartResponse> {
   const holdings = await getHistoricalHoldings(
     userAddress,
@@ -526,7 +533,8 @@ export async function getHistoricalHoldingsChart(
     fetchType,
     paginationMode,
     timeframe,
-    requestedVaults
+    requestedVaults,
+    settledContext
   )
 
   if (denomination === 'usd') {

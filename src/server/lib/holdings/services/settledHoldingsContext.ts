@@ -1,3 +1,4 @@
+import { getCachedWalletEvents, saveCachedWalletEvents } from '@/server/lib/holdings/services/walletEventCache'
 import { holdingsConfig } from '../config'
 import type { UserEvents, VaultMetadata } from '../types'
 import { debugLog } from './debug'
@@ -199,13 +200,19 @@ export async function getSettledAddressScopedContext(args: {
     const latestSettledDayTimestamp = settledTimestamps[settledTimestamps.length - 1] ?? 0
     const maxTimestamp = toSettledDayTimestamp(latestSettledDayTimestamp)
     const activityMaxTimestamp = maxTimestamp + CURRENT_DAY_LOOKAHEAD_SECONDS
-    const events = await fetchUserEvents(
-      args.userAddress,
-      'all',
-      activityMaxTimestamp,
-      args.fetchType,
-      args.paginationMode
-    )
+    const eventCacheIdentity = {
+      userAddress: args.userAddress,
+      maxTimestamp: activityMaxTimestamp
+    }
+    const cachedEvents = await getCachedWalletEvents(eventCacheIdentity)
+    const events =
+      cachedEvents ??
+      (await fetchUserEvents(args.userAddress, 'all', activityMaxTimestamp, args.fetchType, args.paginationMode))
+
+    if (!cachedEvents) {
+      await saveCachedWalletEvents(eventCacheIdentity, events)
+    }
+
     const timeline = buildPositionTimeline(events.deposits, events.withdrawals, events.transfersIn, events.transfersOut)
     const rawEvents = buildAddressScopedRawPnlEvents(events)
     const rawVaultIdentifiers = timeline.length > 0 ? getUniqueVaults(timeline) : getVaultIdentifiers(rawEvents)

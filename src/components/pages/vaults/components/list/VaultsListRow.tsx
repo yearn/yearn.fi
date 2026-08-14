@@ -56,7 +56,8 @@ import { IconChevron } from '@shared/icons/IconChevron'
 import { IconEyeOff } from '@shared/icons/IconEyeOff'
 import { IconHandCoins } from '@shared/icons/IconHandCoins'
 import { IconInfinifiPoints } from '@shared/icons/IconInfinifiPoints'
-import { cl, formatApyDisplay, formatTvlDisplay, getVaultName, toAddress } from '@shared/utils'
+import { IconSpinner } from '@shared/icons/IconSpinner'
+import { cl, formatApyDisplay, formatPercent, formatTvlDisplay, getVaultName, toAddress } from '@shared/utils'
 import { PLAUSIBLE_EVENTS, type TPlausibleEventName } from '@shared/utils/plausible'
 import { kongVaultSnapshotSchema } from '@shared/utils/schemas/kongVaultSnapshotSchema'
 import { getNetwork } from '@shared/utils/wagmi'
@@ -108,6 +109,34 @@ type TYvUsdListMetrics = {
   lockedTvl: number
   combinedTvl: number
   hasInfinifiPointsNote: boolean
+}
+
+export type TVaultPortfolioGrowth = {
+  usd: number
+  percent: number | null
+  annualizedPercent: number | null
+}
+
+export function formatSignedPortfolioGrowthUsd(value: number): string | null {
+  if (!Number.isFinite(value)) {
+    return null
+  }
+
+  const sign = value > 0 ? '+' : value < 0 ? '−' : ''
+  const amount = new Intl.NumberFormat('en-US', {
+    notation: 'compact',
+    maximumSignificantDigits: 3
+  }).format(Math.abs(value))
+  return `${sign}$${amount}`
+}
+
+export function formatSignedPortfolioGrowthPercent(value: number | null): string | null {
+  if (value === null || !Number.isFinite(value)) {
+    return null
+  }
+
+  const sign = value > 0 ? '+' : value < 0 ? '−' : ''
+  return `${sign}${formatPercent(Math.abs(value), 2, 2, 10_000)}`
 }
 
 const YVUSD_HOLDINGS_FORMAT_OPTIONS = {
@@ -239,6 +268,8 @@ type TVaultsListRowProps = {
   expandedChartVariant?: 'default' | 'portfolio-user-tvl-overlay'
   yvUsdVaults?: TYvUsdListVaults
   yvUsdPositionApy?: TYvUsdPositionApyBreakdown
+  isPortfolioGrowthLoading?: boolean
+  portfolioGrowth?: TVaultPortfolioGrowth | null
   clickEventName?: TPlausibleEventName
 }
 
@@ -276,6 +307,8 @@ function VaultsListRowPresentationComponent({
   expandedChartVariant = 'default',
   yvUsdVaults,
   yvUsdPositionApy,
+  isPortfolioGrowthLoading,
+  portfolioGrowth,
   clickEventName = PLAUSIBLE_EVENTS.VAULT_CLICK_LIST_ROW,
   hasWalletAddress = false,
   isWalletLoading = false,
@@ -318,13 +351,14 @@ function VaultsListRowPresentationComponent({
   const isChipsCompressed = Boolean(shouldCollapseChips) || isMobile
   const shouldCollapseProductType = isChipsCompressed || shouldCollapseProductTypeChip
   const showCollapsedTooltip = isChipsCompressed
-  const leftColumnSpan = 'col-span-12'
-  const rightColumnSpan = 'col-span-12'
+  const showGrowthColumn = hasWalletAddress && (isPortfolioGrowthLoading !== undefined || portfolioGrowth !== undefined)
+  const leftColumnSpan = showGrowthColumn ? 'col-span-9' : 'col-span-12'
+  const rightColumnSpan = showGrowthColumn ? 'col-span-15' : 'col-span-12'
   const rightGridColumns = 'md:grid-cols-12'
   const showHoldingsColumn = hasWalletAddress
-  const apyColumnSpan = showHoldingsColumn ? 'col-span-4' : 'col-span-6'
-  const tvlColumnSpan = showHoldingsColumn ? 'col-span-4' : 'col-span-5'
-  const holdingsColumnSpan = 'col-span-4'
+  const apyColumnSpan = showGrowthColumn ? 'col-span-3' : showHoldingsColumn ? 'col-span-4' : 'col-span-6'
+  const tvlColumnSpan = showGrowthColumn ? 'col-span-3' : showHoldingsColumn ? 'col-span-4' : 'col-span-5'
+  const holdingsColumnSpan = showGrowthColumn ? 'col-span-3' : 'col-span-4'
   const showCompareToggle = Boolean(onToggleCompare)
   const vaultKey = `${chainID}_${toAddress(vaultAddress)}`
   const isCompareSelected = compareVaultKeys?.includes(vaultKey) ?? false
@@ -439,6 +473,76 @@ function VaultsListRowPresentationComponent({
     }
     return resolvedHoldingsValue
   }, [showHoldingsChip, mobileSecondaryMetric, isWalletLoading, resolvedHoldingsValue])
+
+  const renderPortfolioGrowth = (): ReactElement => {
+    if (isPortfolioGrowthLoading) {
+      return (
+        <span className={'inline-flex items-center justify-end'} role={'status'} aria-label={'Growth loading'}>
+          <IconSpinner className={'size-4 animate-spin text-text-secondary'} />
+        </span>
+      )
+    }
+    if (!portfolioGrowth) {
+      return (
+        <span className={'font-semibold text-text-secondary max-md:text-lg'} aria-label={'Growth unavailable'}>
+          {'—'}
+        </span>
+      )
+    }
+
+    const value = formatSignedPortfolioGrowthUsd(portfolioGrowth.usd)
+    if (value === null) {
+      return (
+        <span className={'font-semibold text-text-secondary max-md:text-lg'} aria-label={'Growth unavailable'}>
+          {'—'}
+        </span>
+      )
+    }
+    const totalPercent = formatSignedPortfolioGrowthPercent(portfolioGrowth.percent)
+    const annualizedPercent = formatSignedPortfolioGrowthPercent(portfolioGrowth.annualizedPercent)
+
+    return (
+      <Tooltip
+        className={'growth-subline-tooltip h-auto min-w-0 max-w-full gap-0 md:justify-end'}
+        openDelayMs={150}
+        toggleOnClick
+        tooltip={
+          <div
+            className={'min-w-56 rounded-xl border border-border bg-surface-secondary p-3 text-xs text-text-primary'}
+          >
+            <p className={'mb-2 font-semibold'}>{'Your vault growth'}</p>
+            <div className={'flex flex-col gap-2'}>
+              <div className={'flex items-center justify-between gap-6'}>
+                <span className={'text-text-secondary'}>{'Real APY'}</span>
+                <strong className={'font-semibold'}>{annualizedPercent ?? '—'}</strong>
+              </div>
+              <div className={'flex items-center justify-between gap-6'}>
+                <span className={'text-text-secondary'}>{'Total protocol return'}</span>
+                <strong className={'font-semibold'}>{totalPercent ?? '—'}</strong>
+              </div>
+              <p className={'border-t border-border pt-2 text-text-secondary'}>
+                {'Simple annualized return based on your actual USD growth and time-weighted capital.'}
+              </p>
+            </div>
+          </div>
+        }
+      >
+        <button
+          type={'button'}
+          className={cl(
+            'font-number font-semibold underline decoration-neutral-600/30 decoration-dotted underline-offset-4 max-md:text-lg',
+            portfolioGrowth.usd > 0 ? 'text-success' : portfolioGrowth.usd < 0 ? 'text-error' : 'text-text-primary'
+          )}
+          aria-label={`Growth ${value}; total protocol return ${totalPercent ?? 'unavailable'}; Real APY ${annualizedPercent ?? 'unavailable'}`}
+          onClick={(event): void => event.preventDefault()}
+          onMouseEnter={() => handleInteractiveHoverChange(true)}
+          onMouseLeave={() => handleInteractiveHoverChange(false)}
+        >
+          {value}
+        </button>
+      </Tooltip>
+    )
+  }
 
   useEffect(() => {
     if (isExpanded) {
@@ -843,6 +947,12 @@ function VaultsListRowPresentationComponent({
                   <VaultTVL currentVault={currentVault} valueClassName={'text-lg font-semibold text-text-primary'} />
                 )}
               </div>
+              {showGrowthColumn ? (
+                <div className={'col-span-2 flex items-center justify-center gap-2 whitespace-nowrap'}>
+                  <span className={'text-text-primary/60'}>{'Growth:'}</span>
+                  {renderPortfolioGrowth()}
+                </div>
+              ) : null}
             </div>
           </div>
         </div>
@@ -970,6 +1080,11 @@ function VaultsListRowPresentationComponent({
               </div>
             )}
           </div>
+          {showGrowthColumn ? (
+            <div className={'yearn--table-data-section-item col-span-3'} datatype={'number'}>
+              {renderPortfolioGrowth()}
+            </div>
+          ) : null}
           {!showHoldingsColumn ? <div className={'col-span-1'} /> : null}
           {showHoldingsColumn ? (
             <div className={cl('yearn--table-data-section-item', holdingsColumnSpan)} datatype={'number'}>

@@ -16,6 +16,20 @@ export interface HoldingsConfig {
 const HISTORY_START_TIMESTAMP = 1_704_067_200 // 2024-01-01T00:00:00Z
 const YEARN_PRICES_BASE_URL = 'https://prices.yearn.dev'
 
+function getRedisCredentials(): { url: string | null; token: string | null } {
+  const developmentUrl = process.env.UPSTASH_REDIS_REST_URL_PORTFOLIO_DEV?.trim()
+  const developmentToken = process.env.UPSTASH_REDIS_REST_TOKEN_PORTFOLIO_DEV?.trim()
+
+  if (developmentUrl && developmentToken) {
+    return { url: developmentUrl, token: developmentToken }
+  }
+
+  return {
+    url: process.env.UPSTASH_REDIS_REST_URL_PORTFOLIO?.trim() || null,
+    token: process.env.UPSTASH_REDIS_REST_TOKEN_PORTFOLIO?.trim() || null
+  }
+}
+
 export const holdingsConfig: HoldingsConfig = {
   get envioGraphqlUrl() {
     return process.env.ENVIO_GRAPHQL_URL ?? 'http://localhost:8080/v1/graphql'
@@ -24,10 +38,10 @@ export const holdingsConfig: HoldingsConfig = {
     return process.env.ENVIO_PASSWORD ?? ''
   },
   get redisUrl() {
-    return process.env.UPSTASH_REDIS_REST_URL_PORTFOLIO?.trim() || null
+    return getRedisCredentials().url
   },
   get redisToken() {
-    return process.env.UPSTASH_REDIS_REST_TOKEN_PORTFOLIO?.trim() || null
+    return getRedisCredentials().token
   },
   kongBaseUrl: 'https://kong.yearn.fi',
   get yearnPricesBaseUrl() {
@@ -51,9 +65,7 @@ export function validateConfig(): void {
   if (!process.env.ENVIO_GRAPHQL_URL) {
     console.warn('[Holdings] ENVIO_GRAPHQL_URL not set, using default localhost:8080')
   }
-  if (!process.env.UPSTASH_REDIS_REST_URL_PORTFOLIO || !process.env.UPSTASH_REDIS_REST_TOKEN_PORTFOLIO) {
-    console.warn(
-      '[Holdings] UPSTASH_REDIS_REST_URL_PORTFOLIO / UPSTASH_REDIS_REST_TOKEN_PORTFOLIO not set, storage disabled'
-    )
+  if (!holdingsConfig.redisUrl || !holdingsConfig.redisToken) {
+    console.warn('[Holdings] Portfolio Upstash Redis URL / token not set, storage disabled')
   }
 }

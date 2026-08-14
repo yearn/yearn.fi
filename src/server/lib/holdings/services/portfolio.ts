@@ -1,0 +1,78 @@
+import type { HoldingsHistoryDenomination, HoldingsHistoryTimeframe } from './aggregator'
+import { getHistoricalHoldingsChart } from './aggregator'
+import type { HoldingsEventFetchType, HoldingsEventPaginationMode, VaultVersion } from './graphql'
+import type { HoldingsPnLSimpleHistoryResponse, HoldingsPortfolioGrowthResponse } from './pnlSimple'
+import { getHoldingsProtocolReturnPortfolio } from './pnlSimple'
+import { getSettledAddressScopedContext } from './settledHoldingsContext'
+
+export interface HoldingsPortfolioBalanceResponse {
+  address: string
+  denomination: HoldingsHistoryDenomination
+  timeframe: HoldingsHistoryTimeframe
+  dataPoints: Array<{ date: string; value: number }>
+}
+
+export interface HoldingsPortfolioResponse {
+  address: string
+  version: VaultVersion
+  denomination: HoldingsHistoryDenomination
+  timeframe: HoldingsHistoryTimeframe
+  balance: HoldingsPortfolioBalanceResponse
+  protocolReturn: HoldingsPnLSimpleHistoryResponse
+  growth: HoldingsPortfolioGrowthResponse
+}
+
+export async function getHoldingsPortfolio(
+  userAddress: string,
+  version: VaultVersion = 'all',
+  fetchType: HoldingsEventFetchType = 'seq',
+  paginationMode: HoldingsEventPaginationMode = 'paged',
+  denomination: HoldingsHistoryDenomination = 'usd',
+  timeframe: HoldingsHistoryTimeframe = '1y'
+): Promise<HoldingsPortfolioResponse> {
+  const settledContext = getSettledAddressScopedContext({
+    userAddress,
+    fetchType,
+    paginationMode
+  })
+  const [balance, protocolReturnPortfolio] = await Promise.all([
+    getHistoricalHoldingsChart(
+      userAddress,
+      version,
+      fetchType,
+      paginationMode,
+      denomination,
+      timeframe,
+      undefined,
+      settledContext
+    ),
+    getHoldingsProtocolReturnPortfolio(
+      userAddress,
+      version,
+      fetchType,
+      paginationMode,
+      timeframe,
+      undefined,
+      undefined,
+      settledContext
+    )
+  ])
+
+  return {
+    address: balance.address,
+    version,
+    denomination,
+    timeframe,
+    balance: {
+      address: balance.address,
+      denomination: balance.denomination,
+      timeframe: balance.timeframe,
+      dataPoints: balance.dataPoints.map((point) => ({
+        date: point.date,
+        value: point.value
+      }))
+    },
+    protocolReturn: protocolReturnPortfolio.protocolReturn,
+    growth: protocolReturnPortfolio.growth
+  }
+}

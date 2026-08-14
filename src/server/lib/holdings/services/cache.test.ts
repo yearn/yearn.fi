@@ -33,7 +33,7 @@ describe('Redis cache writes', () => {
 
     expect(saved).toBe(true)
     expect(hsetMock).toHaveBeenCalledTimes(1)
-    expect(hsetMock.mock.calls[0]?.[0]).toMatch(/^holdings:totals:[a-f0-9]{64}:all$/)
+    expect(hsetMock.mock.calls[0]?.[0]).toMatch(/^holdings:totals:v2:[a-f0-9]{64}:all$/)
     expect(Object.keys(hsetMock.mock.calls[0]?.[1] ?? {})).toEqual(['2025-01-01', '2025-01-02'])
     expect(expireMock).toHaveBeenCalledWith(hsetMock.mock.calls[0]?.[0], 30 * 24 * 60 * 60)
   })
@@ -93,7 +93,7 @@ describe('protocol return history snapshot cache', () => {
     const key = getProtocolReturnHistoryCacheKey(identity)
 
     expect(saved).toBe(true)
-    expect(key).toMatch(/^holdings:protocol-return-history:v3:[a-f0-9]{64}:all:1y:all$/)
+    expect(key).toMatch(/^holdings:protocol-return-history:v4:[a-f0-9]{64}:all:1y:all$/)
     expect(key).not.toContain(identity.userAddress)
     expect(setMock).toHaveBeenCalledWith(
       key,
@@ -122,7 +122,7 @@ describe('protocol return history snapshot cache', () => {
     const key = getProtocolReturnHistoryCacheKey(identity)
 
     expect(key).toBe(getProtocolReturnHistoryCacheKey(reversedIdentity))
-    expect(key).toMatch(/^holdings:protocol-return-history:v3:[a-f0-9]{64}:all:1y:[a-f0-9]{64}$/)
+    expect(key).toMatch(/^holdings:protocol-return-history:v4:[a-f0-9]{64}:all:1y:[a-f0-9]{64}$/)
     expect(key).not.toContain(identity.vaultScope[0].address)
   })
 

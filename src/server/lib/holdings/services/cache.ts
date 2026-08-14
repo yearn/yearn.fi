@@ -29,10 +29,12 @@ export interface VaultIdentifier {
 }
 
 const HOLDINGS_TOTALS_TTL_SECONDS = 30 * 24 * 60 * 60
-const HOLDINGS_TOTALS_KEY_PREFIX = 'holdings:totals'
+// v2 starts from fresh daily totals after introducing the shared wallet-event source.
+// Old hashes expire naturally and cannot reintroduce previously cached incomplete days.
+const HOLDINGS_TOTALS_KEY_PREFIX = 'holdings:totals:v2'
 // Settled snapshots remain valid through the day; the settled-date guard rolls them over on the next day.
 const PROTOCOL_RETURN_HISTORY_TTL_SECONDS = 24 * 60 * 60
-const PROTOCOL_RETURN_HISTORY_KEY_PREFIX = 'holdings:protocol-return-history:v3'
+const PROTOCOL_RETURN_HISTORY_KEY_PREFIX = 'holdings:protocol-return-history:v4'
 const VAULT_INVALIDATION_KEY_PREFIX = 'holdings:vault-invalidated'
 const REDIS_SCAN_COUNT = 500
 
