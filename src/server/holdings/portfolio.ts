@@ -6,13 +6,18 @@ import type {
   VaultVersion
 } from '../lib/holdings'
 import { ensureHoldingsStorageInitialized } from '../lib/holdings'
+import {
+  createHoldingsDebugContext,
+  isHoldingsDebugRequested,
+  withHoldingsDebugContext
+} from '../lib/holdings/services/debug'
 
 function isValidAddress(address: string): boolean {
   return /^0x[a-fA-F0-9]{40}$/.test(address)
 }
 
 function parseHoldingsEventFetchType(value: string | string[] | undefined): HoldingsEventFetchType {
-  return value === 'parallel' ? 'parallel' : 'seq'
+  return value === 'seq' ? 'seq' : 'parallel'
 }
 
 function parseHoldingsHistoryDenomination(value: string | string[] | undefined): HoldingsHistoryDenomination {
@@ -50,6 +55,7 @@ export async function GET(request: Request): Promise<Response> {
   const denominationParam = queryValue(request, 'denomination')
   const timeframeParam = queryValue(request, 'timeframe')
   const fetchTypeParam = queryValue(request, 'fetchType')
+  const debugParam = queryValue(request, 'debug')
 
   if (!address || typeof address !== 'string') {
     return json({ error: 'Missing required parameter: address' }, { status: 400, headers: GET_CORS_HEADERS })
@@ -63,10 +69,14 @@ export async function GET(request: Request): Promise<Response> {
   const denomination = parseHoldingsHistoryDenomination(denominationParam)
   const timeframe = parseHoldingsHistoryTimeframe(timeframeParam)
   const fetchType = parseHoldingsEventFetchType(fetchTypeParam)
+  const debugEnabled = isHoldingsDebugRequested(typeof debugParam === 'string' ? debugParam : null)
 
   try {
     const { getHoldingsPortfolio } = await import('../lib/holdings')
-    const portfolio = await getHoldingsPortfolio(address, version, fetchType, 'paged', denomination, timeframe)
+    const portfolio = await withHoldingsDebugContext(
+      createHoldingsDebugContext('portfolio', address, debugEnabled),
+      () => getHoldingsPortfolio(address, version, fetchType, 'paged', denomination, timeframe)
+    )
 
     return json(portfolio, {
       headers: {

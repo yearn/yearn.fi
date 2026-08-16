@@ -3,7 +3,7 @@ import { getHistoricalHoldingsChart } from './aggregator'
 import type { HoldingsEventFetchType, HoldingsEventPaginationMode, VaultVersion } from './graphql'
 import type { HoldingsPnLSimpleHistoryResponse, HoldingsPortfolioGrowthResponse } from './pnlSimple'
 import { getHoldingsProtocolReturnPortfolio } from './pnlSimple'
-import { getSettledAddressScopedContext } from './settledHoldingsContext'
+import { getSettledAddressScopedContext, type TSettledAddressScopedContext } from './settledHoldingsContext'
 
 export interface HoldingsPortfolioBalanceResponse {
   address: string
@@ -30,33 +30,49 @@ export async function getHoldingsPortfolio(
   denomination: HoldingsHistoryDenomination = 'usd',
   timeframe: HoldingsHistoryTimeframe = '1y'
 ): Promise<HoldingsPortfolioResponse> {
-  const settledContext = getSettledAddressScopedContext({
+  const settledContextState: { request?: Promise<TSettledAddressScopedContext> } = {}
+  const getSettledContext = (): Promise<TSettledAddressScopedContext> => {
+    if (settledContextState.request) {
+      return settledContextState.request
+    }
+
+    const request = getSettledAddressScopedContext({
+      userAddress,
+      fetchType,
+      paginationMode
+    })
+    settledContextState.request = request
+    return request
+  }
+  const protocolReturnPortfolioPromise = getHoldingsProtocolReturnPortfolio(
     userAddress,
+    version,
     fetchType,
-    paginationMode
-  })
-  const [balance, protocolReturnPortfolio] = await Promise.all([
-    getHistoricalHoldingsChart(
-      userAddress,
-      version,
-      fetchType,
-      paginationMode,
-      denomination,
-      timeframe,
-      undefined,
-      settledContext
-    ),
-    getHoldingsProtocolReturnPortfolio(
-      userAddress,
-      version,
-      fetchType,
-      paginationMode,
-      timeframe,
-      undefined,
-      undefined,
-      settledContext
+    paginationMode,
+    timeframe,
+    undefined,
+    undefined,
+    getSettledContext
+  )
+  const loadCacheValidationVaults = (): Promise<Array<{ chainId: number; vaultAddress: string }>> =>
+    protocolReturnPortfolioPromise.then((portfolio) =>
+      portfolio.growth.vaults.map((vault) => ({
+        chainId: vault.chainId,
+        vaultAddress: vault.vaultAddress
+      }))
     )
-  ])
+  const balancePromise = getHistoricalHoldingsChart(
+    userAddress,
+    version,
+    fetchType,
+    paginationMode,
+    denomination,
+    timeframe,
+    undefined,
+    getSettledContext,
+    loadCacheValidationVaults
+  )
+  const [balance, protocolReturnPortfolio] = await Promise.all([balancePromise, protocolReturnPortfolioPromise])
 
   return {
     address: balance.address,

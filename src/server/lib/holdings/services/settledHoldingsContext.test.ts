@@ -5,6 +5,7 @@ const serviceMocks = vi.hoisted(() => ({
   fetchUserEvents: vi.fn(),
   getCachedWalletEvents: vi.fn(),
   saveCachedWalletEvents: vi.fn(),
+  prefetchGlobalVaultMetadata: vi.fn(),
   fetchMultipleVaultsMetadata: vi.fn(),
   getVaultMetadataFetchFailedVaults: vi.fn(),
   resolveNestedVaultAssetMetadata: vi.fn()
@@ -20,6 +21,7 @@ vi.mock('@/server/lib/holdings/services/walletEventCache', () => ({
 }))
 
 vi.mock('@/server/lib/holdings/services/vaults', () => ({
+  prefetchGlobalVaultMetadata: serviceMocks.prefetchGlobalVaultMetadata,
   fetchMultipleVaultsMetadata: serviceMocks.fetchMultipleVaultsMetadata,
   getVaultMetadataFetchFailedVaults: serviceMocks.getVaultMetadataFetchFailedVaults
 }))
@@ -82,6 +84,7 @@ describe('getSettledAddressScopedContext wallet event cache', () => {
     serviceMocks.fetchUserEvents.mockResolvedValue(EVENTS)
     serviceMocks.getCachedWalletEvents.mockResolvedValueOnce(EVENTS).mockResolvedValueOnce(null)
     serviceMocks.saveCachedWalletEvents.mockResolvedValue(true)
+    serviceMocks.prefetchGlobalVaultMetadata.mockResolvedValue(undefined)
     serviceMocks.fetchMultipleVaultsMetadata.mockResolvedValue(
       new Map([[`1:${VAULT_ADDRESS.toLowerCase()}`, VAULT_METADATA]])
     )

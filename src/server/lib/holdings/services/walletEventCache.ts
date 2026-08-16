@@ -4,7 +4,8 @@ import { z } from 'zod'
 import { getHoldingsRedisClient, handleHoldingsRedisError } from '@/server/lib/holdings/storage/redis'
 import type { UserEvents } from '@/server/lib/holdings/types'
 
-const WALLET_EVENT_CACHE_KEY_PREFIX = 'holdings:wallet-events:v1'
+// v2 cannot reuse event sets produced by the old count-free 50k query, which Envio could silently cap at 1k rows.
+const WALLET_EVENT_CACHE_KEY_PREFIX = 'holdings:wallet-events:v2'
 const WALLET_EVENT_CACHE_VALUE_PREFIX = 'br1:'
 const WALLET_EVENT_CACHE_TTL_SECONDS = 5 * 60
 const WALLET_EVENT_CACHE_MAX_AGE_MS = WALLET_EVENT_CACHE_TTL_SECONDS * 1000

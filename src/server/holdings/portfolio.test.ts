@@ -72,4 +72,22 @@ describe('holdings portfolio route', () => {
     await expect(response.json()).resolves.toEqual(portfolio)
     expect(getHoldingsPortfolioMock).toHaveBeenCalledWith(USER, 'v3', 'parallel', 'paged', 'eth', 'all')
   })
+
+  it('uses bounded parallel event pagination by default', async () => {
+    getHoldingsPortfolioMock.mockResolvedValue({
+      address: USER,
+      version: 'all',
+      denomination: 'usd',
+      timeframe: '1y',
+      balance: { address: USER, denomination: 'usd', timeframe: '1y', dataPoints: [] },
+      protocolReturn: { dataPoints: [] },
+      growth: { vaults: [] }
+    })
+
+    const { default: handler } = await import('./portfolio')
+    const response = await handler(new Request(`https://yearn.fi/api/holdings/portfolio?address=${USER}`))
+
+    expect(response.status).toBe(200)
+    expect(getHoldingsPortfolioMock).toHaveBeenCalledWith(USER, 'all', 'parallel', 'paged', 'usd', '1y')
+  })
 })

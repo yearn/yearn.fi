@@ -203,6 +203,41 @@ describe('nested vault asset prices', () => {
     expect(derivedInnerPrices?.get(200)).toBeCloseTo(1.02102)
   })
 
+  it('uses the latest prior underlying token price by default', () => {
+    const priceData = deriveNestedVaultAssetPriceData({
+      priceData: new Map([[`ethereum:${UNDERLYING}`, new Map([[100, 0.99]])]]),
+      priceRequests: [
+        {
+          chainId: 1,
+          address: INNER_VAULT,
+          timestamps: [200]
+        }
+      ],
+      vaultMetadata: metadata,
+      ppsData: new Map([[toVaultKey(1, INNER_VAULT), new Map([[200, 1.02]])]])
+    })
+
+    expect(priceData.get(`ethereum:${INNER_VAULT}`)?.get(200)).toBeCloseTo(1.0098)
+  })
+
+  it('does not derive a daily nested vault price without an exact underlying timestamp', () => {
+    const priceData = deriveNestedVaultAssetPriceData({
+      priceData: new Map([[`ethereum:${UNDERLYING}`, new Map([[100, 0.99]])]]),
+      priceRequests: [
+        {
+          chainId: 1,
+          address: INNER_VAULT,
+          timestamps: [200]
+        }
+      ],
+      vaultMetadata: metadata,
+      ppsData: new Map([[toVaultKey(1, INNER_VAULT), new Map([[200, 1.02]])]]),
+      underlyingPriceLookup: 'exact'
+    })
+
+    expect(priceData.get(`ethereum:${INNER_VAULT}`)?.has(200)).toBe(false)
+  })
+
   it('recursively derives multi-level vault-share token prices', () => {
     const priceData = deriveNestedVaultAssetPriceData({
       priceData: new Map([

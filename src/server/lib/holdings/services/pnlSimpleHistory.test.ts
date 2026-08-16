@@ -6,8 +6,10 @@ import type { TRawPnlEvent } from './pnlTypes'
 const fetchHistoricalPricesForTokenTimestampsMock = vi.fn()
 const getHistoricalPriceFetchFailedBatchesMock = vi.fn()
 const getPriceAtTimestampMock = vi.fn()
+const getSettledAddressScopedContextMock = vi.fn()
 const getSettledVersionedPpsContextMock = vi.fn()
 const getVaultIdentifiersMock = vi.fn()
+const selectVersionedEventsMock = vi.fn()
 const fetchActivityEventsByTransactionHashesMock = vi.fn()
 const generateDailyTimestampsMock = vi.fn()
 const generateDailyTimestampsFromRangeMock = vi.fn()
@@ -34,8 +36,10 @@ vi.mock('./defillama', () => ({
 }))
 
 vi.mock('./settledHoldingsContext', () => ({
+  getSettledAddressScopedContext: getSettledAddressScopedContextMock,
   getSettledVersionedPpsContext: getSettledVersionedPpsContextMock,
-  getVaultIdentifiers: getVaultIdentifiersMock
+  getVaultIdentifiers: getVaultIdentifiersMock,
+  selectVersionedEvents: selectVersionedEventsMock
 }))
 
 vi.mock('./graphql', () => ({
@@ -178,7 +182,12 @@ describe('getHoldingsProtocolReturnHistory', () => {
       transfers: []
     })
     getVaultIdentifiersMock.mockReturnValue([{ chainId: 1, vaultAddress: VAULT }])
+    getSettledAddressScopedContextMock.mockResolvedValue(settledContext)
     getSettledVersionedPpsContextMock.mockResolvedValue(settledContext)
+    selectVersionedEventsMock.mockReturnValue({
+      events: settledContext.selectedEvents,
+      vaultIdentifiers: settledContext.selectedVaultIdentifiers
+    })
   })
 
   it('starts all timeframe at the supported history floor', async () => {
@@ -240,6 +249,7 @@ describe('getHoldingsProtocolReturnHistory', () => {
   })
 
   it('serves the settled protocol return history snapshot before loading wallet events', async () => {
+    const loadSettledContext = vi.fn(async () => settledContext)
     const cachedResponse = {
       address: USER,
       version: 'all' as const,
@@ -263,9 +273,19 @@ describe('getHoldingsProtocolReturnHistory', () => {
     })
 
     const { getHoldingsProtocolReturnHistory } = await import('./pnlSimple')
-    const response = await getHoldingsProtocolReturnHistory(USER, 'all', 'parallel', 'paged', '1y')
+    const response = await getHoldingsProtocolReturnHistory(
+      USER,
+      'all',
+      'parallel',
+      'paged',
+      '1y',
+      undefined,
+      undefined,
+      loadSettledContext
+    )
 
     expect(response).toBe(cachedResponse)
+    expect(loadSettledContext).not.toHaveBeenCalled()
     expect(getSettledVersionedPpsContextMock).not.toHaveBeenCalled()
     expect(saveCachedProtocolReturnHistoryMock).not.toHaveBeenCalled()
   })

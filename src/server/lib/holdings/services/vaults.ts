@@ -543,6 +543,10 @@ async function loadVaultList(): Promise<void> {
   return vaultListState.loadPromise
 }
 
+export function prefetchGlobalVaultMetadata(): Promise<void> {
+  return loadVaultList()
+}
+
 export async function fetchVaultMetadata(chainId: number, vaultAddress: string): Promise<VaultMetadata | null> {
   const metadata = await fetchMultipleVaultsMetadata([{ chainId, vaultAddress }])
   return metadata.get(`${chainId}:${vaultAddress.toLowerCase()}`) ?? null

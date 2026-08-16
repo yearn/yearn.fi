@@ -1,5 +1,5 @@
 import type { VaultMetadata } from '../types'
-import { getChainPrefix, type THistoricalPriceRequest } from './defillama'
+import { getChainPrefix, getPriceAtTimestamp, type THistoricalPriceRequest } from './defillama'
 import { getPPS, type PPSTimeline } from './kong'
 import { toVaultKey } from './pnlShared'
 
@@ -23,19 +23,6 @@ const DEFAULT_MAX_NESTED_VAULT_DEPTH = 4
 
 function priceMapKey(chainId: number, tokenAddress: string): string {
   return `${getChainPrefix(chainId)}:${tokenAddress.toLowerCase()}`
-}
-
-function getPriceAtTimestamp(priceMap: Map<number, number>, targetTimestamp: number): number {
-  if (priceMap.has(targetTimestamp)) {
-    return priceMap.get(targetTimestamp)!
-  }
-
-  const closestPriorTimestamp = Array.from(priceMap.keys())
-    .sort((left, right) => left - right)
-    .filter((timestamp) => timestamp <= targetTimestamp)
-    .pop()
-
-  return closestPriorTimestamp === undefined ? 0 : priceMap.get(closestPriorTimestamp) || 0
 }
 
 function priceRequestKey(chainId: number, tokenAddress: string): string {
@@ -211,6 +198,7 @@ function deriveNestedVaultAssetPriceDataOnce(args: {
   priceRequests: THistoricalPriceRequest[]
   vaultMetadata: Map<string, VaultMetadata>
   ppsData: Map<string, PPSTimeline>
+  underlyingPriceLookup: 'prior' | 'exact'
 }): Map<string, Map<number, number>> {
   const result = new Map(Array.from(args.priceData.entries()).map(([key, priceMap]) => [key, new Map(priceMap)]))
 
@@ -235,7 +223,10 @@ function deriveNestedVaultAssetPriceDataOnce(args: {
       }
 
       const pricePerShare = getPPS(ppsMap, timestamp)
-      const underlyingTokenPrice = getPriceAtTimestamp(underlyingPriceMap, timestamp)
+      const underlyingTokenPrice =
+        args.underlyingPriceLookup === 'exact'
+          ? (underlyingPriceMap.get(timestamp) ?? 0)
+          : getPriceAtTimestamp(underlyingPriceMap, timestamp)
       if (pricePerShare === null || pricePerShare <= 0 || underlyingTokenPrice <= 0) {
         return
       }
@@ -255,6 +246,7 @@ export function deriveNestedVaultAssetPriceData(args: {
   vaultMetadata: Map<string, VaultMetadata>
   ppsData: Map<string, PPSTimeline>
   maxDepth?: number
+  underlyingPriceLookup?: 'prior' | 'exact'
 }): Map<string, Map<number, number>> {
   const maxDepth = args.maxDepth ?? DEFAULT_MAX_NESTED_VAULT_DEPTH
 
@@ -264,7 +256,8 @@ export function deriveNestedVaultAssetPriceData(args: {
         priceData,
         priceRequests: args.priceRequests,
         vaultMetadata: args.vaultMetadata,
-        ppsData: args.ppsData
+        ppsData: args.ppsData,
+        underlyingPriceLookup: args.underlyingPriceLookup ?? 'prior'
       }),
     args.priceData
   )

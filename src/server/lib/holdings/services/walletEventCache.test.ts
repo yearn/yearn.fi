@@ -138,7 +138,7 @@ describe('wallet event cache storage', () => {
     const key = getWalletEventCacheKey(IDENTITY)
 
     expect(saved).toBe(true)
-    expect(key).toMatch(/^holdings:wallet-events:v1:[a-f0-9]{64}:1800000000$/)
+    expect(key).toMatch(/^holdings:wallet-events:v2:[a-f0-9]{64}:1800000000$/)
     expect(key).not.toContain(USER_ADDRESS.toLowerCase())
     expect(setMock).toHaveBeenCalledWith(key, expect.stringMatching(/^br1:/), { ex: 5 * 60 })
   })

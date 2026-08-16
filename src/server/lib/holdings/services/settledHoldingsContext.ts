@@ -19,7 +19,7 @@ import {
 import { buildAddressScopedRawPnlEvents } from './pnlEvents'
 import { lowerCaseAddress, toVaultKey } from './pnlShared'
 import type { TRawPnlEvent } from './pnlTypes'
-import { fetchMultipleVaultsMetadata, getVaultMetadataFetchFailedVaults } from './vaults'
+import { fetchMultipleVaultsMetadata, getVaultMetadataFetchFailedVaults, prefetchGlobalVaultMetadata } from './vaults'
 
 type TVaultIdentifier = {
   chainId: number
@@ -44,6 +44,16 @@ export interface TSettledAddressScopedContext {
   rawVaultIdentifiers: TVaultIdentifier[]
   vaultMetadata: Map<string, VaultMetadata>
   metadataFetchFailedVaults: number
+}
+
+export type TSettledAddressScopedContextSource =
+  | Promise<TSettledAddressScopedContext>
+  | (() => Promise<TSettledAddressScopedContext>)
+
+export function resolveSettledAddressScopedContext(
+  source: TSettledAddressScopedContextSource
+): Promise<TSettledAddressScopedContext> {
+  return typeof source === 'function' ? source() : source
 }
 
 export interface TSettledVersionedSelection {
@@ -196,6 +206,7 @@ export async function getSettledAddressScopedContext(args: {
   }
 
   const request = (async () => {
+    const metadataPrefetch = prefetchGlobalVaultMetadata().catch(() => undefined)
     const settledTimestamps = generateDailyTimestamps(holdingsConfig.historyDays, 1)
     const latestSettledDayTimestamp = settledTimestamps[settledTimestamps.length - 1] ?? 0
     const maxTimestamp = toSettledDayTimestamp(latestSettledDayTimestamp)
@@ -208,18 +219,17 @@ export async function getSettledAddressScopedContext(args: {
     const events =
       cachedEvents ??
       (await fetchUserEvents(args.userAddress, 'all', activityMaxTimestamp, args.fetchType, args.paginationMode))
-
-    if (!cachedEvents) {
-      await saveCachedWalletEvents(eventCacheIdentity, events)
-    }
+    const eventCacheSave = cachedEvents ? Promise.resolve(false) : saveCachedWalletEvents(eventCacheIdentity, events)
 
     const timeline = buildPositionTimeline(events.deposits, events.withdrawals, events.transfersIn, events.transfersOut)
     const rawEvents = buildAddressScopedRawPnlEvents(events)
     const rawVaultIdentifiers = timeline.length > 0 ? getUniqueVaults(timeline) : getVaultIdentifiers(rawEvents)
+    await metadataPrefetch
     const baseVaultMetadata =
       rawVaultIdentifiers.length > 0 ? await fetchMultipleVaultsMetadata(rawVaultIdentifiers) : new Map()
     const vaultMetadata = await resolveNestedVaultAssetMetadata(baseVaultMetadata)
     const metadataFetchFailedVaults = getVaultMetadataFetchFailedVaults(vaultMetadata)
+    await eventCacheSave
 
     return {
       address: lowerCaseAddress(args.userAddress),

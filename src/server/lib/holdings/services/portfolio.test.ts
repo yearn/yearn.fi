@@ -25,8 +25,7 @@ describe('getHoldingsPortfolio', () => {
     vi.clearAllMocks()
   })
 
-  it('preserves the public balance and protocol-return responses while sharing settled context', async () => {
-    const settledContext = Promise.resolve({ address: USER })
+  it('preserves cached responses without constructing the deferred settled context', async () => {
     const protocolReturn = {
       address: USER,
       version: 'v3' as const,
@@ -77,7 +76,7 @@ describe('getHoldingsPortfolio', () => {
         }
       ]
     }
-    getSettledAddressScopedContextMock.mockReturnValue(settledContext)
+    getSettledAddressScopedContextMock.mockResolvedValue({ address: USER })
     getHistoricalHoldingsChartMock.mockResolvedValue({
       address: USER,
       periodDays: 2,
@@ -119,7 +118,8 @@ describe('getHoldingsPortfolio', () => {
       'eth',
       'all',
       undefined,
-      settledContext
+      expect.any(Function),
+      expect.any(Function)
     )
     expect(getHoldingsProtocolReturnPortfolioMock).toHaveBeenCalledWith(
       USER,
@@ -129,7 +129,70 @@ describe('getHoldingsPortfolio', () => {
       'all',
       undefined,
       undefined,
-      settledContext
+      expect.any(Function)
     )
+    expect(getSettledAddressScopedContextMock).not.toHaveBeenCalled()
+    expect(getHistoricalHoldingsChartMock.mock.calls[0]?.[7]).toBe(
+      getHoldingsProtocolReturnPortfolioMock.mock.calls[0]?.[7]
+    )
+    const loadCacheValidationVaults = getHistoricalHoldingsChartMock.mock.calls[0]?.[8] as () => Promise<unknown>
+    await expect(loadCacheValidationVaults()).resolves.toEqual([{ chainId: 1, vaultAddress: VAULT }])
+  })
+
+  it('constructs the shared settled context once when both cold paths request it', async () => {
+    const generatedAt = '2026-08-14T00:00:00.000Z'
+    const loadContextArgument = async (...args: unknown[]): Promise<void> => {
+      const loadContext = args[7] as () => Promise<unknown>
+      await loadContext()
+    }
+    getSettledAddressScopedContextMock.mockResolvedValue({ address: USER })
+    getHistoricalHoldingsChartMock.mockImplementation(async (...args: unknown[]) => {
+      await loadContextArgument(...args)
+      return {
+        address: USER,
+        periodDays: 1,
+        timeframe: '1y',
+        denomination: 'usd',
+        hasActivity: true,
+        dataPoints: [{ date: '2026-08-13', timestamp: 1_755_043_199, value: 100 }]
+      }
+    })
+    getHoldingsProtocolReturnPortfolioMock.mockImplementation(async (...args: unknown[]) => {
+      await loadContextArgument(...args)
+      return {
+        protocolReturn: {
+          address: USER,
+          version: 'all',
+          timeframe: '1y',
+          generatedAt,
+          summary: {
+            totalVaults: 0,
+            completeVaults: 0,
+            partialVaults: 0,
+            recommendedGrowthDisplay: 'index',
+            recommendedGrowthDisplayReason: 'mixed',
+            openBaselineCompositionUsd: { stable: 0, ethFamily: 0, other: 0 },
+            isComplete: true
+          },
+          dataPoints: [],
+          familySeries: []
+        },
+        growth: {
+          generatedAt,
+          summary: { totalVaults: 0, completeVaults: 0, partialVaults: 0, isComplete: true },
+          vaults: []
+        }
+      }
+    })
+
+    const { getHoldingsPortfolio } = await import('./portfolio')
+    await getHoldingsPortfolio(USER)
+
+    expect(getSettledAddressScopedContextMock).toHaveBeenCalledTimes(1)
+    expect(getSettledAddressScopedContextMock).toHaveBeenCalledWith({
+      userAddress: USER,
+      fetchType: 'seq',
+      paginationMode: 'paged'
+    })
   })
 })

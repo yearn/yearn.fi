@@ -39,9 +39,12 @@ import { mergeAddressScopedRawPnlEventsWithTransactionActivity } from './pnlEven
 import { lowerCaseAddress, toVaultKey, ZERO } from './pnlShared'
 import type { TRawPnlEvent } from './pnlTypes'
 import {
+  getSettledAddressScopedContext,
   getSettledVersionedPpsContext,
   getVaultIdentifiers,
-  type TSettledAddressScopedContext
+  resolveSettledAddressScopedContext,
+  selectVersionedEvents,
+  type TSettledAddressScopedContextSource
 } from './settledHoldingsContext'
 import { getStakingVaultAddress } from './staking'
 
@@ -2248,7 +2251,7 @@ async function calculateHoldingsProtocolReturnHistory(
   timeframe: '1y' | 'all' = '1y',
   requestedVaultFilters?: Array<{ chainId: number; vaultAddress: string }> | string,
   legacyVaultChainId?: number,
-  settledAddressContext?: Promise<TSettledAddressScopedContext>
+  settledAddressContext?: TSettledAddressScopedContextSource
 ): Promise<TProtocolReturnHistoryCalculation> {
   debugLog('protocol-return-history', 'starting holdings protocol return history calculation', {
     version,
@@ -2260,25 +2263,30 @@ async function calculateHoldingsProtocolReturnHistory(
 
   const requestedVaults = normalizeProtocolReturnVaultFilters(requestedVaultFilters, legacyVaultChainId)
   const singleRequestedVault = requestedVaults?.length === 1 ? requestedVaults[0] : undefined
-  const settledContext = await getSettledVersionedPpsContext({
+  const baseContext = await (settledAddressContext
+    ? resolveSettledAddressScopedContext(settledAddressContext)
+    : getSettledAddressScopedContext({
+        userAddress,
+        fetchType,
+        paginationMode
+      }))
+  const selection = selectVersionedEvents(baseContext, version, singleRequestedVault)
+  const ppsContextPromise = getSettledVersionedPpsContext({
     userAddress,
     version,
     fetchType,
     paginationMode,
     requestedVault: singleRequestedVault,
     vaultIdentifiers: requestedVaults,
-    context: settledAddressContext ? await settledAddressContext : undefined
+    context: baseContext
   })
-  const selectedEvents = filterEventsByRequestedVaults(settledContext.selectedEvents, requestedVaults)
-  reportHoldingsProgress(
-    30,
-    'Loaded wallet events and vault share prices',
-    `${settledContext.selectedEvents.length} events`
-  )
+  void ppsContextPromise.catch(() => undefined)
+  const selectedEvents = filterEventsByRequestedVaults(selection.events, requestedVaults)
+  reportHoldingsProgress(30, 'Loaded wallet events and started vault share prices', `${selection.events.length} events`)
   const rawEvents = await enrichSimpleHistoryRawEvents({
     events: selectedEvents,
     version,
-    maxTimestamp: settledContext.maxTimestamp
+    maxTimestamp: baseContext.maxTimestamp
   })
   reportHoldingsProgress(40, 'Enriched historical wallet events', `${rawEvents.length} events`)
   const effectiveEvents = rawEvents
@@ -2286,9 +2294,10 @@ async function calculateHoldingsProtocolReturnHistory(
     getVaultIdentifiers(effectiveEvents),
     requestedVaults
   )
-  const vaultMetadata = settledContext.vaultMetadata
+  const vaultMetadata = baseContext.vaultMetadata
 
   if (effectiveEvents.length === 0 || filteredVaultIdentifiers.length === 0) {
+    await ppsContextPromise
     const generatedAt = new Date().toISOString()
     reportHoldingsProgress(94, 'No historical protocol return events found', null)
     return {
@@ -2322,7 +2331,7 @@ async function calculateHoldingsProtocolReturnHistory(
   }
 
   const timestamps = getProtocolReturnTimestamps(effectiveEvents, timeframe)
-  const latestTimestamp = timestamps[timestamps.length - 1] ?? settledContext.maxTimestamp
+  const latestTimestamp = timestamps[timestamps.length - 1] ?? baseContext.maxTimestamp
   const baseReceiptPriceRequests = buildReceiptPriceRequests({
     events: effectiveEvents,
     metadata: vaultMetadata,
@@ -2343,7 +2352,8 @@ async function calculateHoldingsProtocolReturnHistory(
     'Prepared historical price requests',
     `${receiptPriceRequests.length} receipt price series, ${ethReceiptPriceTimestamps.length} ETH price points, ${ppsIdentifiers.length} PPS series`
   )
-  const [receiptPriceResult, ethPriceResult] = await Promise.all([
+  const [settledContext, receiptPriceResult, ethPriceResult] = await Promise.all([
+    ppsContextPromise,
     fetchReceiptPrices(receiptPriceRequests),
     fetchEthReceiptPrices(ethReceiptPriceTimestamps)
   ])
@@ -2454,7 +2464,7 @@ export async function getHoldingsProtocolReturnPortfolio(
   timeframe: '1y' | 'all' = '1y',
   requestedVaultFilters?: Array<{ chainId: number; vaultAddress: string }> | string,
   legacyVaultChainId?: number,
-  settledAddressContext?: Promise<TSettledAddressScopedContext>
+  settledAddressContext?: TSettledAddressScopedContextSource
 ): Promise<HoldingsProtocolReturnPortfolioResponse> {
   const requestedVaults = normalizeProtocolReturnVaultFilters(requestedVaultFilters, legacyVaultChainId)
   const cacheIdentity = getProtocolReturnHistoryCacheIdentity({
@@ -2563,7 +2573,7 @@ export async function getHoldingsProtocolReturnHistory(
   timeframe: '1y' | 'all' = '1y',
   requestedVaultFilters?: Array<{ chainId: number; vaultAddress: string }> | string,
   legacyVaultChainId?: number,
-  settledAddressContext?: Promise<TSettledAddressScopedContext>
+  settledAddressContext?: TSettledAddressScopedContextSource
 ): Promise<HoldingsPnLSimpleHistoryResponse> {
   const portfolio = await getHoldingsProtocolReturnPortfolio(
     userAddress,

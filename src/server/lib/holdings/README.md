@@ -7,6 +7,7 @@ Calculates historical holdings value, per-vault breakdowns, recent activity, and
 ```
 Frontend hooks
   │
+  ├─ GET /api/holdings/portfolio
   ├─ GET /api/holdings/history
   ├─ GET /api/holdings/progress
   ├─ GET /api/holdings/breakdown
@@ -53,7 +54,7 @@ The API internally values each day at `23:59:59 UTC`.
 
 | Service | Source | Purpose |
 |---------|--------|---------|
-| `graphql.ts` | Envio indexer | Fetch V2/V3 deposits, withdrawals, and transfers with paged or experimental all-at-once modes |
+| `graphql.ts` | Envio indexer | Fetch V2/V3 deposits, withdrawals, and transfers with bounded count-free pages |
 | `settledHoldingsContext.ts` | Local orchestration | Build reusable settled event, timeline, metadata, raw PnL, and PPS contexts |
 | `vaults.ts` | Kong | Fetch global vault metadata, staking-to-family mappings, hidden flags, and snapshot fallback metadata |
 | `kong.ts` | Kong | Fetch historical PPS timelines with request dedupe and retries |
@@ -118,6 +119,16 @@ DefiLlama behavior:
 
 Public holdings data routes support CORS, `GET`, and `OPTIONS`. Request rate limiting is handled by Vercel Firewall project configuration before requests reach the Next.js route handlers.
 
+### `GET /api/holdings/portfolio`
+
+Combined balance, protocol-return, and per-vault growth response used by the portfolio page. It shares one deferred wallet context across cold calculations and can serve complete balance and protocol snapshots without loading wallet events. The route defaults to bounded parallel event fetching; legacy standalone routes keep their existing sequential default.
+
+```bash
+curl "http://localhost:3000/api/holdings/portfolio?address=0x...&denomination=usd&timeframe=1y"
+```
+
+Query params are `address`, `version`, `denomination`, `timeframe`, and `debug`. The response contains `balance`, `protocolReturn`, and `growth` sections.
+
 ### `GET /api/holdings/history`
 
 Daily holdings chart.
@@ -141,7 +152,7 @@ Query params:
 | `vault` + `chainId` | No | - | Single family vault filter |
 | `vaults` | No | - | Comma-separated multi-vault filter, e.g. `1:0xvault,8453:0xvault` |
 | `fetchType` | No | `seq` | `seq` or `parallel` |
-| `paginationMode` | No | `paged` | `paged` or `all` |
+| `paginationMode` | No | `paged` | Compatibility selector; both `paged` and `all` use bounded 1,000-row pages |
 | `progressId` | No | - | Stable progress ID clients can poll through `/api/holdings/progress` |
 | `debug` | No | - | Enables the route debug context |
 
@@ -216,7 +227,7 @@ Query params:
 | `date` | No | latest settled UTC day | UTC date in `YYYY-MM-DD` format |
 | `version` | No | `all` | `v2`, `v3`, or `all` |
 | `fetchType` | No | `seq` | `seq` or `parallel` |
-| `paginationMode` | No | `paged` | `paged` or `all` |
+| `paginationMode` | No | `paged` | Compatibility selector; both `paged` and `all` use bounded 1,000-row pages |
 | `debug` | No | - | Enables the route debug context |
 
 Response is intentionally verbose because it is used to explain the latest chart point:
@@ -381,7 +392,7 @@ Query params:
 | `vault` + `chainId` | No | - | Single family vault filter |
 | `vaults` | No | - | Comma-separated multi-vault filter |
 | `fetchType` | No | `seq` | `seq` or `parallel` |
-| `paginationMode` | No | `paged` | `paged` or `all` |
+| `paginationMode` | No | `paged` | Compatibility selector; both `paged` and `all` use bounded 1,000-row pages |
 | `progressId` | No | - | Stable progress ID clients can poll through `/api/holdings/progress` |
 | `debug` | No | - | Enables the route debug context |
 
@@ -502,20 +513,13 @@ Hardcoded service bases:
 
 ## Event Fetching
 
-Envio hosted GraphQL has a practical `1000`-row page limit. Holdings routes expose controls for fetching address-scoped event families:
+Envio hosted GraphQL has a practical `1000`-row page limit. Every address-scoped event path is therefore count-free and caps each `limit/offset` query at `1000` rows:
 
-- `fetchType=seq`: fetch each event family through sequential `limit/offset` pages.
-- `fetchType=parallel`: use aggregate counts when available, then fetch pages for event families concurrently.
-- `paginationMode=paged`: use normal page-by-page fetching.
-- `paginationMode=all`: issue one large query per event family. This is primarily for benchmarking and experiments.
+- `fetchType=seq`: continue each event family one bounded page at a time.
+- `fetchType=parallel`: fetch the first bounded page, then continue full event families in bounded parallel waves.
+- `paginationMode=paged` and `paginationMode=all`: retained for API compatibility and use the same safe bounded paginator. `all` no longer requests a 50,000-row page.
 
-`parallel` depends on aggregate roots being available:
-
-- `Deposit_aggregate`, `Withdraw_aggregate`
-- `V2Deposit_aggregate`, `V2Withdraw_aggregate`
-- `Transfer_aggregate`
-
-If aggregates are unavailable, the code falls back to sequential pagination. For most production traffic, `fetchType=parallel&paginationMode=paged` is the preferred fast path.
+No aggregate GraphQL roots are required. A full page always triggers another bounded page, so an Envio response cap cannot silently truncate the cached wallet event set.
 
 ## Caching
 
@@ -524,14 +528,14 @@ Server-side cache is optional. Development credentials (`*_PORTFOLIO_DEV`) take 
 ### Cache Layers
 
 1. Upstash Redis:
-   - `holdings:wallet-events:v1:<addressHash>:<maxTimestamp>`: one Brotli-compressed normalized event set per wallet and event cutoff, overwritten with a five-minute TTL.
+   - `holdings:wallet-events:v2:<addressHash>:<maxTimestamp>`: one Brotli-compressed normalized event set per wallet and event cutoff, overwritten with a five-minute TTL. The version prevents reuse of event sets created by the former 50,000-row query that Envio could silently truncate.
    - `holdings:totals:v2:<addressHash>:<version>`: daily USD totals per hashed user address, vault version, and date. Hash fields are `YYYY-MM-DD`; values include `usdValue` and `updatedAt`.
-   - `holdings:protocol-return-history:v3:<addressHash>:<version>:<timeframe>:<vaultScope>`: successful non-empty protocol-return history snapshots. The payload includes its settled date and relevant vault identifiers for invalidation checks.
+   - `holdings:protocol-return-history:v4:<addressHash>:<version>:<timeframe>:<vaultScope>`: successful non-empty protocol-return history and growth snapshots. The payload includes its settled date and relevant vault identifiers for invalidation checks.
    - `holdings:vault-invalidated:<chainId>:<vaultAddress>`: per-vault invalidation timestamps for lazy cache clearing.
    - `holdings:progress:<progressId>`: authoritative short-lived progress records keyed by caller-supplied progress ID for long history requests across Vercel function instances.
 2. HTTP cache:
    - Wallet-scoped holdings responses use `Cache-Control: private, no-store, max-age=0, must-revalidate`.
-   - This applies to history, breakdown, activity, activity facets, and protocol-return history.
+   - This applies to the combined portfolio route, history, breakdown, activity, activity facets, and protocol-return history.
    - Progress: `Cache-Control: no-store`.
 3. Client TanStack Query cache:
    - Portfolio history and protocol-return history hooks keep chart responses fresh for one hour.
@@ -546,8 +550,9 @@ Cache behavior:
 - Unfiltered history can read/write `holdings:totals:v2:<addressHash>:<version>`.
 - Vault-filtered history skips aggregate daily total cache because the cache is user/version scoped, not vault-filter scoped.
 - Cache staleness is checked against `holdings:vault-invalidated:<chainId>:<vaultAddress>` only after the request has enough cached daily totals to potentially serve from cache.
+- On the combined route, a complete totals hash is validated with the vault list stored in the protocol snapshot, so a true warm request does not need to load wallet events or metadata.
 - If any relevant vault was invalidated after the oldest cached row was written, the user's cached totals for that version are cleared and recomputed.
-- Recalculated totals are not cached when any token price batch failed, because partial price data can undercount chart totals.
+- Recalculated totals are not cached when any token price batch failed, because a temporary transport failure can undercount chart totals. Successfully returned provider data keeps the established partial-data behavior: unsupported vault/day prices contribute zero and the response can still be cached.
 
 ### Protocol Return History Snapshots
 
@@ -572,8 +577,9 @@ No schema migration is required. Redis keys are created lazily:
 
 | Key | Type | TTL | Purpose |
 |-----|------|-----|---------|
+| `holdings:wallet-events:v2:<addressHash>:<maxTimestamp>` | Brotli string | 5 minutes | Complete bounded-page wallet event snapshot for one settled cutoff. |
 | `holdings:totals:v2:<addressHash>:<version>` | Hash | 30 days from write | Daily holdings chart totals. |
-| `holdings:protocol-return-history:v3:<addressHash>:<version>:<timeframe>:<vaultScope>` | String JSON | 24 hours | Atomic protocol-return history response snapshot. |
+| `holdings:protocol-return-history:v4:<addressHash>:<version>:<timeframe>:<vaultScope>` | String JSON | 24 hours | Atomic protocol-return history and growth response snapshot. |
 | `holdings:vault-invalidated:<chainId>:<vaultAddress>` | String timestamp | None | Lazy invalidation marker for totals cache. |
 | `holdings:progress:<progressId>` | String JSON record | 10 minutes | Progress polling state for long requests. |
 
