@@ -4,8 +4,7 @@ export const KATANA_CHAIN_ID = 747474
  ** Vault addresses eligible for Spectra boost on Katana chain
  *************************************************************************************************/
 export const SPECTRA_MARKET_VAULT_ADDRESSES = [
-  '0x80c34BD3A3569E126e7055831036aa7b212cB159', //vbUSDC
-  '0x9A6bd7B6Fd5C4F87eb66356441502fc7dCdd185B' //vbUSDT
+  '0x80c34BD3A3569E126e7055831036aa7b212cB159' //vbUSDC
 ].map((addr) => addr.toLowerCase())
 
 export const VAULT_ADDRESSES = {
