@@ -1,4 +1,4 @@
-import type { Address, TransactionReceipt } from 'viem'
+import { type Address, type Hash, isHash, type TransactionReceipt } from 'viem'
 import type {
   VaultWidgetExecutionAdapter,
   VaultWidgetExecutionStep,
@@ -7,7 +7,8 @@ import type {
   VaultWidgetPlanSubmission,
   VaultWidgetRequestStep,
   VaultWidgetSafeProposalStep,
-  VaultWidgetTransactionPlan
+  VaultWidgetTransactionPlan,
+  VaultWidgetTransactionReceiptResult
 } from './types'
 
 export type ExecuteTransactionPlanParams = {
@@ -96,6 +97,63 @@ function requireSuccessfulReceipt(
   }
 }
 
+function isTransactionHash(value: unknown): value is Hash {
+  return typeof value === 'string' && isHash(value)
+}
+
+function resolveReceiptOutcome(
+  params: ExecuteTransactionPlanParams,
+  context: ExecutionFailureContext,
+  pendingOutcome: VaultWidgetPlanOutcome,
+  submissionIndex: number,
+  submittedHash: Hash,
+  result: VaultWidgetTransactionReceiptResult
+): VaultWidgetPlanOutcome {
+  const receiptHash = result.receipt.transactionHash
+  if (!isTransactionHash(receiptHash)) {
+    throw createExecutionError(params, new Error('Execution adapter returned an invalid transaction receipt'), context)
+  }
+
+  const replacement = result.replacement
+  if (!replacement) {
+    if (receiptHash.toLowerCase() !== submittedHash.toLowerCase()) {
+      throw createExecutionError(
+        params,
+        new Error('Execution adapter returned a receipt for an unexpected transaction'),
+        context
+      )
+    }
+  } else if (
+    !isTransactionHash(replacement.replacedHash) ||
+    replacement.replacedHash.toLowerCase() !== submittedHash.toLowerCase() ||
+    receiptHash.toLowerCase() === submittedHash.toLowerCase()
+  ) {
+    throw createExecutionError(params, new Error('Execution adapter returned invalid replacement details'), context)
+  }
+
+  const confirmedOutcome = updateSubmission(pendingOutcome, submissionIndex, {
+    hash: receiptHash,
+    receipt: result.receipt
+  })
+  const confirmedContext = { ...context, outcome: confirmedOutcome }
+  if (replacement?.reason === 'cancelled') {
+    throw createExecutionError(params, new Error('Transaction was cancelled in the wallet'), confirmedContext)
+  }
+  if (replacement?.reason === 'replaced') {
+    throw createExecutionError(
+      params,
+      new Error('Transaction was replaced by a different transaction'),
+      confirmedContext
+    )
+  }
+  if (replacement && replacement.reason !== 'repriced') {
+    throw createExecutionError(params, new Error('Execution adapter returned an invalid replacement reason'), context)
+  }
+
+  requireSuccessfulReceipt(params, confirmedContext, result.receipt)
+  return confirmedOutcome
+}
+
 async function executeRequestStep(
   params: ExecuteTransactionPlanParams,
   step: VaultWidgetRequestStep,
@@ -120,11 +178,17 @@ async function executeRequestStep(
     stepIndex,
     stepCount
   })
-  const receipt = await runOperation(params, { ...initialContext, outcome: pendingOutcome }, () =>
+  const receiptResult = await runOperation(params, { ...initialContext, outcome: pendingOutcome }, () =>
     params.adapter.waitForReceipt({ chainId: step.chainId, hash })
   )
-  const confirmedOutcome = updateSubmission(pendingOutcome, submissionIndex, { receipt })
-  requireSuccessfulReceipt(params, { ...initialContext, outcome: confirmedOutcome }, receipt)
+  const confirmedOutcome = resolveReceiptOutcome(
+    params,
+    { ...initialContext, outcome: pendingOutcome },
+    pendingOutcome,
+    submissionIndex,
+    hash,
+    receiptResult
+  )
   return executePlanStep(params, stepIndex + 1, confirmedOutcome)
 }
 
@@ -177,11 +241,17 @@ async function executeSafeProposalStep(
     stepIndex,
     stepCount
   })
-  const receipt = await runOperation(params, { ...initialContext, outcome: pendingOutcome }, () =>
+  const receiptResult = await runOperation(params, { ...initialContext, outcome: pendingOutcome }, () =>
     params.adapter.waitForReceipt({ chainId: step.chainId, hash })
   )
-  const confirmedOutcome = updateSubmission(pendingOutcome, submissionIndex, { receipt })
-  requireSuccessfulReceipt(params, { ...initialContext, outcome: confirmedOutcome }, receipt)
+  const confirmedOutcome = resolveReceiptOutcome(
+    params,
+    { ...initialContext, outcome: pendingOutcome },
+    pendingOutcome,
+    submissionIndex,
+    hash,
+    receiptResult
+  )
   return executePlanStep(params, stepIndex + 1, confirmedOutcome)
 }
 

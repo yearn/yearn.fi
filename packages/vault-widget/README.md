@@ -87,6 +87,12 @@ const outcome = await executeTransactionPlan({
 
 EOA requests are simulated before the wallet is invoked. Safe requests are simulated as an atomic ordered batch when the RPC supports `eth_simulateV1`, submitted with atomic execution required, and tracked with a bounded polling timeout. A Safe plan must target the chain on which that Safe is open because Safe connectors cannot switch chains programmatically.
 
+Custom execution adapters return receipt waits as `{ receipt, replacement? }`.
+When a wallet replaces a transaction, `replacement` must identify the original
+hash and whether it was repriced, cancelled, or replaced. The executor follows
+validated repriced transactions under their mined hash and rejects cancellations
+or unrelated same-nonce transactions.
+
 Run the import boundary guard from the repository root:
 
 ```bash
