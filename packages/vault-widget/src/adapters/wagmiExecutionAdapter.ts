@@ -133,7 +133,6 @@ export function createWagmiVaultWidgetExecutionAdapter(
         chainId: requireExecutionChainId(chainId),
         hash
       })
-      if (receipt.status !== 'success') throw new Error('Transaction reverted')
       if (!isTransactionHash(receipt.transactionHash)) {
         throw new Error('Wallet returned an invalid transaction receipt')
       }

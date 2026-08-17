@@ -160,11 +160,17 @@ describe('Wagmi EOA execution adapter', () => {
     })
   })
 
+  it('returns a matching reverted receipt for executor classification', async () => {
+    const revertedReceipt = { ...successfulReceipt, status: 'reverted' } as TransactionReceipt
+    wagmiActions.waitForTransactionReceipt.mockResolvedValue(revertedReceipt)
+    const adapter = createAdapter()
+
+    await expect(adapter.waitForReceipt({ chainId: canonicalChainId, hash: transactionHash })).resolves.toBe(
+      revertedReceipt
+    )
+  })
+
   it.each([
-    {
-      expectedError: 'Transaction reverted',
-      receipt: { ...successfulReceipt, status: 'reverted' }
-    },
     {
       expectedError: 'Wallet returned an invalid transaction receipt',
       receipt: { ...successfulReceipt, transactionHash: '0x1234' }

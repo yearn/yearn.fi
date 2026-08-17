@@ -147,6 +147,47 @@ describe('executePlannedStyledWidgetTransaction', () => {
     })
   })
 
+  it('marks a reverted receipt as failed and retriable without refreshing', async () => {
+    const revertedReceipt = { ...receipt, status: 'reverted' } as TransactionReceipt
+    const notifications = createNotifications()
+    const refresh = vi.fn().mockResolvedValue(undefined)
+    const states: TPlannedTransactionControllerState[] = []
+    const result = await executePlannedStyledWidgetTransaction({
+      account,
+      adapter: createAdapter({ waitForReceipt: vi.fn().mockResolvedValue(revertedReceipt) }),
+      notification,
+      notifications,
+      onState: (state) => states.push(state),
+      plan: buildTransactionPlan({ intent, connectedChainId: 1 }),
+      refresh
+    })
+
+    expect(result).toMatchObject({
+      failureKind: 'pre-submission',
+      hash,
+      outcome: { submissions: [{ hash, receipt: revertedReceipt }] },
+      status: 'error'
+    })
+    expect(states.map(({ status }) => status)).toEqual(['confirming', 'pending', 'error'])
+    expect(refresh).not.toHaveBeenCalled()
+    expect(notifications.update).toHaveBeenNthCalledWith(1, {
+      id: 'notification-id',
+      status: 'pending',
+      txHash: hash
+    })
+    expect(notifications.update).toHaveBeenNthCalledWith(2, {
+      id: 'notification-id',
+      status: 'error'
+    })
+    if (result.status !== 'error') throw new Error('Expected reverted transaction to fail')
+    expect(getPlannedTransactionErrorPresentation(result.failureKind, result.error.message)).toEqual({
+      actionLabel: 'Try Again',
+      canRetry: true,
+      message: 'Transaction reverted',
+      title: 'Transaction failed'
+    })
+  })
+
   it('keeps failures before submission retriable', async () => {
     const result = await executePlannedStyledWidgetTransaction({
       account,
