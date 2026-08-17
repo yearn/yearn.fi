@@ -1,21 +1,24 @@
+import { normalizeTokenDecimals } from '@/server/lib/holdings/services/pnlShared'
 import { holdingsConfig } from '../config'
 import type { VaultMetadata } from '../types'
 import { debugError, debugLog } from './debug'
 import { getUnderlyingVault, isStakingVault } from './staking'
+
+type TKongDecimals = number | string
 
 interface KongVault {
   address: string
   apiVersion?: string
   chainId: number
   symbol: string
-  decimals: number
+  decimals: TKongDecimals
   v3?: boolean
   category?: string | null
   isHidden?: boolean
   asset: {
     address: string
     symbol: string
-    decimals: number
+    decimals: TKongDecimals
   }
   staking?: {
     address: string | null
@@ -28,7 +31,7 @@ interface KongVaultSnapshot {
   apiVersion?: string
   chainId: number
   symbol?: string
-  decimals?: number
+  decimals?: TKongDecimals
   v3?: boolean
   meta?: {
     category?: string | null
@@ -37,7 +40,7 @@ interface KongVaultSnapshot {
   asset?: {
     address: string
     symbol: string
-    decimals: number
+    decimals: TKongDecimals
   }
   staking?: {
     address?: string | null
@@ -192,6 +195,7 @@ function buildMetadataMaps(vaults: KongVault[]): {
   }>(
     (maps, vault) => {
       const version = inferVaultVersion(vault)
+      const vaultDecimals = normalizeTokenDecimals(vault.decimals)
       const metadata: VaultMetadata = {
         address: vault.address.toLowerCase(),
         chainId: vault.chainId,
@@ -205,9 +209,9 @@ function buildMetadataMaps(vaults: KongVault[]): {
         token: {
           address: vault.asset.address.toLowerCase(),
           symbol: vault.asset.symbol,
-          decimals: vault.asset.decimals
+          decimals: normalizeTokenDecimals(vault.asset.decimals)
         },
-        decimals: vault.decimals
+        decimals: vaultDecimals
       }
 
       const key = `${vault.chainId}:${vault.address.toLowerCase()}`
@@ -224,9 +228,9 @@ function buildMetadataMaps(vaults: KongVault[]): {
           token: {
             address: vault.address.toLowerCase(),
             symbol: vault.symbol,
-            decimals: vault.decimals
+            decimals: vaultDecimals
           },
-          decimals: vault.decimals
+          decimals: vaultDecimals
         }
         maps.stakingToVaultMap.set(stakingKey, stakingMetadata)
       }
@@ -290,9 +294,9 @@ function buildMetadataFromSnapshot(snapshot: KongVaultSnapshot): VaultMetadata |
     token: {
       address: snapshot.asset.address.toLowerCase(),
       symbol: snapshot.asset.symbol,
-      decimals: snapshot.asset.decimals
+      decimals: normalizeTokenDecimals(snapshot.asset.decimals)
     },
-    decimals: snapshot.decimals ?? 18
+    decimals: normalizeTokenDecimals(snapshot.decimals)
   }
 }
 
@@ -300,6 +304,8 @@ function buildStakingMetadataFromSnapshot(stakingAddress: string, snapshot: Kong
   if (!snapshot.symbol || snapshot.decimals === undefined) {
     return null
   }
+
+  const vaultDecimals = normalizeTokenDecimals(snapshot.decimals)
 
   return {
     address: stakingAddress.toLowerCase(),
@@ -314,9 +320,9 @@ function buildStakingMetadataFromSnapshot(stakingAddress: string, snapshot: Kong
     token: {
       address: snapshot.address.toLowerCase(),
       symbol: snapshot.symbol,
-      decimals: snapshot.decimals
+      decimals: vaultDecimals
     },
-    decimals: snapshot.decimals
+    decimals: vaultDecimals
   }
 }
 

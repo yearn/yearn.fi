@@ -248,6 +248,65 @@ describe('getHoldingsProtocolReturnHistory', () => {
     ])
   })
 
+  it('normalizes string decimals in cached portfolio growth metadata', async () => {
+    const generatedAt = '2026-07-15T00:00:00.000Z'
+    getCachedProtocolReturnHistoryMock.mockResolvedValue({
+      protocolReturn: {
+        address: USER,
+        version: 'all',
+        timeframe: '1y',
+        generatedAt,
+        summary: {
+          totalVaults: 1,
+          completeVaults: 1,
+          partialVaults: 0,
+          recommendedGrowthDisplay: 'index',
+          recommendedGrowthDisplayReason: 'mixed',
+          openBaselineCompositionUsd: { stable: 1, ethFamily: 0, other: 0 },
+          isComplete: true
+        },
+        dataPoints: [],
+        familySeries: []
+      },
+      growth: {
+        generatedAt,
+        summary: {
+          totalVaults: 1,
+          completeVaults: 1,
+          partialVaults: 0,
+          isComplete: true
+        },
+        vaults: [
+          {
+            chainId: 1,
+            vaultAddress: VAULT,
+            status: 'ok',
+            issues: [],
+            baselineUsd: 100,
+            baselineExposureUsdYears: 1,
+            growthUsd: 1,
+            growthPct: 1,
+            annualizedProtocolReturnPct: 1,
+            metadata: {
+              symbol: 'TST',
+              decimals: '18',
+              assetDecimals: '6',
+              tokenAddress: ASSET
+            }
+          }
+        ]
+      }
+    })
+
+    const { getHoldingsProtocolReturnPortfolio } = await import('./pnlSimple')
+    const response = await getHoldingsProtocolReturnPortfolio(USER, 'all', 'seq', 'paged', '1y')
+
+    expect(response.growth.vaults[0]?.metadata).toMatchObject({
+      decimals: 18,
+      assetDecimals: 6
+    })
+  })
+
   it('serves the settled protocol return history snapshot before loading wallet events', async () => {
     const loadSettledContext = vi.fn(async () => settledContext)
     const cachedResponse = {

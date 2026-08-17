@@ -1,4 +1,5 @@
 import { formatUnits } from 'viem'
+import { normalizeTokenDecimals } from '@/server/lib/holdings/services/pnlShared'
 import { selectProtocolReturnFamilySeriesCandidates } from '@/server/lib/holdings/services/protocolReturnFamilySeries'
 import { holdingsConfig } from '../config'
 import type { VaultMetadata } from '../types'
@@ -1984,6 +1985,25 @@ function buildPortfolioGrowth(vaults: HoldingsPnLSimpleVault[], generatedAt: str
   }
 }
 
+function normalizeProtocolReturnPortfolioResponse(
+  response: HoldingsProtocolReturnPortfolioResponse
+): HoldingsProtocolReturnPortfolioResponse {
+  return {
+    ...response,
+    growth: {
+      ...response.growth,
+      vaults: response.growth.vaults.map((vault) => ({
+        ...vault,
+        metadata: {
+          ...vault.metadata,
+          decimals: normalizeTokenDecimals(vault.metadata.decimals),
+          assetDecimals: normalizeTokenDecimals(vault.metadata.assetDecimals)
+        }
+      }))
+    }
+  }
+}
+
 function buildSummary(vaults: HoldingsPnLSimpleVault[]): HoldingsPnLSimpleResponse['summary'] {
   const baselineWeightUsd = vaults.reduce((total, vault) => total + vault.baselineWeightUsd, 0)
   const growthWeightUsd = vaults.reduce((total, vault) => total + vault.growthWeightUsd, 0)
@@ -2491,22 +2511,23 @@ export async function getHoldingsProtocolReturnPortfolio(
     )
 
     if (cachedResponse) {
+      const normalizedCachedResponse = normalizeProtocolReturnPortfolioResponse(cachedResponse)
       reportHoldingsProgress(
         94,
         'Loaded cached protocol return history',
-        `${cachedResponse.protocolReturn.dataPoints.length} chart points`
+        `${normalizedCachedResponse.protocolReturn.dataPoints.length} chart points`
       )
-      if (cachedResponse.protocolReturn.familySeries.length === 0) {
-        return cachedResponse
+      if (normalizedCachedResponse.protocolReturn.familySeries.length === 0) {
+        return normalizedCachedResponse
       }
 
       return {
-        ...cachedResponse,
+        ...normalizedCachedResponse,
         protocolReturn: {
-          ...cachedResponse.protocolReturn,
+          ...normalizedCachedResponse.protocolReturn,
           familySeries: selectProtocolReturnFamilySeriesCandidates(
-            cachedResponse.protocolReturn.familySeries,
-            cachedResponse.protocolReturn.timeframe
+            normalizedCachedResponse.protocolReturn.familySeries,
+            normalizedCachedResponse.protocolReturn.timeframe
           )
         }
       }
@@ -2531,10 +2552,10 @@ export async function getHoldingsProtocolReturnPortfolio(
         calculation.response.timeframe
       )
     }
-    const compactResponse: HoldingsProtocolReturnPortfolioResponse = {
+    const compactResponse = normalizeProtocolReturnPortfolioResponse({
       protocolReturn: compactProtocolReturn,
       growth: calculation.growth
-    }
+    })
     const failedUpstreamFetches =
       calculation.failedPriceBatches + calculation.failedPpsVaults + calculation.failedMetadataVaults
 
