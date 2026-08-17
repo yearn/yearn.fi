@@ -822,8 +822,15 @@ export async function getHoldingsBreakdown(
     ...activeVaults,
     ...getNestedVaultPpsIdentifiersFromPriceRequests(basePriceRequests, vaultMetadata)
   ])
+  const breakdownPpsTimestamp = Math.floor(breakdownTimestamp / (24 * 60 * 60)) * 24 * 60 * 60
   const [ppsData, fetchedPriceData] = await Promise.all([
-    ppsIdentifiers.length > 0 ? fetchMultipleVaultsPPS(ppsIdentifiers) : Promise.resolve(new Map()),
+    ppsIdentifiers.length === 0
+      ? Promise.resolve(new Map())
+      : process.env.HOLDINGS_KONG_BATCH_PPS === 'true'
+        ? fetchMultipleVaultsPPS(ppsIdentifiers, {
+            range: { start: breakdownPpsTimestamp, finish: breakdownPpsTimestamp }
+          })
+        : fetchMultipleVaultsPPS(ppsIdentifiers),
     priceRequests.length > 0
       ? fetchHistoricalPricesForTokenTimestamps(priceRequests, { resolution: 'utc_day' })
       : Promise.resolve(new Map())

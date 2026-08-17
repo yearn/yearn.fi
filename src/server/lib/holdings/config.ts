@@ -43,7 +43,12 @@ export const holdingsConfig: HoldingsConfig = {
   get redisToken() {
     return getRedisCredentials().token
   },
-  kongBaseUrl: 'https://kong.yearn.fi',
+  get kongBaseUrl() {
+    return (process.env.KONG_REST_URL ?? process.env.NEXT_PUBLIC_KONG_REST_URL ?? 'https://kong.yearn.fi')
+      .trim()
+      .replace(/\/$/, '')
+      .replace(/\/api\/rest$/, '')
+  },
   get yearnPricesBaseUrl() {
     return (process.env.YEARN_PRICES_BASE_URL ?? process.env.YEARN_PRICES_API_URL ?? YEARN_PRICES_BASE_URL)
       .trim()

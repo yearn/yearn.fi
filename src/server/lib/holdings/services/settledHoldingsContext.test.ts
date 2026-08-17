@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { UserEvents, VaultMetadata } from '@/server/lib/holdings/types'
 
 const serviceMocks = vi.hoisted(() => ({
@@ -7,6 +7,7 @@ const serviceMocks = vi.hoisted(() => ({
   saveCachedWalletEvents: vi.fn(),
   prefetchGlobalVaultMetadata: vi.fn(),
   fetchMultipleVaultsMetadata: vi.fn(),
+  fetchMultipleVaultsPPS: vi.fn(),
   getVaultMetadataFetchFailedVaults: vi.fn(),
   resolveNestedVaultAssetMetadata: vi.fn()
 }))
@@ -33,10 +34,13 @@ vi.mock('@/server/lib/holdings/services/nestedVaultPrices', () => ({
 }))
 
 vi.mock('@/server/lib/holdings/services/kong', () => ({
-  fetchMultipleVaultsPPS: vi.fn()
+  fetchMultipleVaultsPPS: serviceMocks.fetchMultipleVaultsPPS
 }))
 
-import { getSettledAddressScopedContext } from '@/server/lib/holdings/services/settledHoldingsContext'
+import {
+  getSettledAddressScopedContext,
+  getSettledVersionedPpsContext
+} from '@/server/lib/holdings/services/settledHoldingsContext'
 
 const CACHED_USER = '0x00000000000000000000000000000000000000A1'
 const ENVIO_USER = '0x00000000000000000000000000000000000000A2'
@@ -79,6 +83,10 @@ const VAULT_METADATA: VaultMetadata = {
 }
 
 describe('getSettledAddressScopedContext wallet event cache', () => {
+  afterEach(() => {
+    delete process.env.HOLDINGS_KONG_BATCH_PPS
+  })
+
   beforeEach(() => {
     vi.clearAllMocks()
     serviceMocks.fetchUserEvents.mockResolvedValue(EVENTS)
@@ -90,6 +98,8 @@ describe('getSettledAddressScopedContext wallet event cache', () => {
     )
     serviceMocks.resolveNestedVaultAssetMetadata.mockImplementation(async (metadata) => metadata)
     serviceMocks.getVaultMetadataFetchFailedVaults.mockReturnValue(0)
+    serviceMocks.fetchMultipleVaultsPPS.mockResolvedValue(new Map())
+    delete process.env.HOLDINGS_KONG_BATCH_PPS
   })
 
   it('feeds cached and Envio events through the same calculators and saves only an Envio miss', async () => {
@@ -118,6 +128,34 @@ describe('getSettledAddressScopedContext wallet event cache', () => {
     expect(serviceMocks.saveCachedWalletEvents).toHaveBeenCalledWith(
       { userAddress: ENVIO_USER, maxTimestamp: activityMaxTimestamp },
       EVENTS
+    )
+  })
+
+  it('bounds batch PPS from the earliest selected event through the settled day', async () => {
+    process.env.HOLDINGS_KONG_BATCH_PPS = 'true'
+    const context = await getSettledAddressScopedContext({
+      userAddress: CACHED_USER,
+      fetchType: 'parallel',
+      paginationMode: 'paged'
+    })
+
+    await getSettledVersionedPpsContext({
+      userAddress: CACHED_USER,
+      version: 'all',
+      fetchType: 'parallel',
+      paginationMode: 'paged',
+      context
+    })
+
+    const utcDaySeconds = 24 * 60 * 60
+    expect(serviceMocks.fetchMultipleVaultsPPS).toHaveBeenCalledWith(
+      [{ chainId: 1, vaultAddress: VAULT_ADDRESS.toLowerCase() }],
+      {
+        range: {
+          start: Math.floor(EVENTS.deposits[0]!.blockTimestamp / utcDaySeconds) * utcDaySeconds,
+          finish: Math.floor(context.maxTimestamp / utcDaySeconds) * utcDaySeconds
+        }
+      }
     )
   })
 })

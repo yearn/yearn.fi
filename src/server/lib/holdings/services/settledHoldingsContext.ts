@@ -10,7 +10,7 @@ import {
   type VaultVersion
 } from './graphql'
 import { buildPositionTimeline, generateDailyTimestamps, getUniqueVaults, toSettledDayTimestamp } from './holdings'
-import { fetchMultipleVaultsPPS, type PPSTimeline } from './kong'
+import { fetchMultipleVaultsPPS, type PPSTimeline, type TPpsRange } from './kong'
 import {
   getNestedVaultPpsIdentifiersFromPriceRequests,
   mergeVaultIdentifiers,
@@ -71,6 +71,23 @@ export interface TSettledVersionedPpsContext extends TSettledAddressScopedContex
 const inFlightSettledAddressScopedContexts = new Map<string, Promise<TSettledAddressScopedContext>>()
 const inFlightSettledVersionedPpsContexts = new Map<string, Promise<TSettledVersionedPpsContext>>()
 const CURRENT_DAY_LOOKAHEAD_SECONDS = 24 * 60 * 60
+const UTC_DAY_SECONDS = 24 * 60 * 60
+
+function toUtcDayStart(timestamp: number): number {
+  return Math.floor(timestamp / UTC_DAY_SECONDS) * UTC_DAY_SECONDS
+}
+
+function getPpsRange(events: TRawPnlEvent[], finishTimestamp: number): TPpsRange {
+  const earliestEventTimestamp = events.reduce(
+    (earliest, event) => (Number.isFinite(event.blockTimestamp) ? Math.min(earliest, event.blockTimestamp) : earliest),
+    finishTimestamp
+  )
+
+  return {
+    start: toUtcDayStart(earliestEventTimestamp),
+    finish: toUtcDayStart(finishTimestamp)
+  }
+}
 
 function getContextKey(args: {
   userAddress: string
@@ -283,7 +300,14 @@ export async function getSettledVersionedPpsContext(args: {
       ...selectedVaultIdentifiers,
       ...getNestedVaultPpsIdentifiersFromPriceRequests(basePriceRequests, context.vaultMetadata)
     ])
-    const ppsData = ppsIdentifiers.length > 0 ? await fetchMultipleVaultsPPS(ppsIdentifiers) : new Map()
+    const ppsData =
+      ppsIdentifiers.length === 0
+        ? new Map()
+        : process.env.HOLDINGS_KONG_BATCH_PPS === 'true'
+          ? await fetchMultipleVaultsPPS(ppsIdentifiers, {
+              range: getPpsRange(selection.events, context.maxTimestamp)
+            })
+          : await fetchMultipleVaultsPPS(ppsIdentifiers)
 
     return {
       ...context,

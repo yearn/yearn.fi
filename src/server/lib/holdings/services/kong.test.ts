@@ -1,11 +1,18 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { fetchMultipleVaultsPPS, getPPS, getPpsFetchFailedVaults } from './kong'
+import { fetchMultipleVaultsPPS, getPPS, getPpsBatchFallbackVaults, getPpsFetchFailedVaults } from './kong'
 
 function createResponse(points: Array<{ time: number; value: string }>): Response {
   return new Response(JSON.stringify(points.map((point) => ({ ...point, component: 'pps' }))), {
     status: 200,
     headers: { 'content-type': 'application/json' }
   })
+}
+
+function createBatchResponse(addresses: string[]): Response {
+  return new Response(
+    JSON.stringify(Object.fromEntries(addresses.map((address) => [address, [{ time: 86_400, value: '1.25' }]]))),
+    { status: 200, headers: { 'content-type': 'application/json' } }
+  )
 }
 
 function createDeferredResponse(): Readonly<{
@@ -214,5 +221,104 @@ describe('fetchMultipleVaultsPPS', () => {
 
     expect(timelines.get('1:0xabc')).toEqual(new Map())
     expect(getPpsFetchFailedVaults(timelines)).toBe(1)
+  })
+
+  it('fetches bounded PPS timelines in one batch request', async () => {
+    const firstAddress = '0x0000000000000000000000000000000000000001'
+    const secondAddress = '0x0000000000000000000000000000000000000002'
+    const addresses = [`1:${firstAddress}`, `10:${secondAddress}`]
+    const fetchFn = vi.fn(async () => createBatchResponse(addresses)) as typeof fetch
+
+    const timelines = await fetchMultipleVaultsPPS(
+      [
+        { chainId: 1, vaultAddress: firstAddress },
+        { chainId: 10, vaultAddress: secondAddress }
+      ],
+      {
+        fetchFn,
+        batch: true,
+        range: { start: 0, finish: 86_400 },
+        maxRetries: 0
+      }
+    )
+
+    expect(fetchFn).toHaveBeenCalledTimes(1)
+    expect(fetchFn.mock.calls[0]?.[0]).toBe('https://kong.yearn.fi/api/rest/timeseries/pps/v2')
+    expect(fetchFn.mock.calls[0]?.[1]).toMatchObject({
+      method: 'POST',
+      body: JSON.stringify({ start: 0, finish: 86_400, addresses })
+    })
+    expect(timelines.get(addresses[0])?.get(86_400)).toBe(1.25)
+    expect(timelines.get(addresses[1])?.get(86_400)).toBe(1.25)
+    expect(getPpsBatchFallbackVaults(timelines)).toBe(0)
+    expect(getPpsFetchFailedVaults(timelines)).toBe(0)
+  })
+
+  it('splits a batch after a 413 response without falling back to legacy requests', async () => {
+    const vaults = [1, 2].map((suffix) => ({
+      chainId: 1,
+      vaultAddress: `0x${String(suffix).padStart(40, '0')}`
+    }))
+    const fetchFn = vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
+      if (fetchFn.mock.calls.length === 1) {
+        return new Response(JSON.stringify({ error: 'too large' }), { status: 413 })
+      }
+
+      const body = JSON.parse(String(init?.body)) as { addresses: string[] }
+      return createBatchResponse(body.addresses)
+    }) as typeof fetch
+
+    const timelines = await fetchMultipleVaultsPPS(vaults, {
+      fetchFn,
+      batch: true,
+      range: { start: 0, finish: 86_400 },
+      maxRetries: 0
+    })
+
+    expect(fetchFn).toHaveBeenCalledTimes(3)
+    expect(timelines.size).toBe(2)
+    expect(getPpsBatchFallbackVaults(timelines)).toBe(0)
+  })
+
+  it('chunks more than 50 vaults across bounded batch requests', async () => {
+    const vaults = Array.from({ length: 51 }, (_value, index) => ({
+      chainId: 1,
+      vaultAddress: `0x${String(index + 1).padStart(40, '0')}`
+    }))
+    const fetchFn = vi.fn(async (_url: string | URL | Request, init?: RequestInit) => {
+      const body = JSON.parse(String(init?.body)) as { addresses: string[] }
+      return createBatchResponse(body.addresses)
+    }) as typeof fetch
+
+    const timelines = await fetchMultipleVaultsPPS(vaults, {
+      fetchFn,
+      batch: true,
+      range: { start: 0, finish: 86_400 },
+      maxRetries: 0
+    })
+
+    expect(fetchFn).toHaveBeenCalledTimes(2)
+    expect(timelines.size).toBe(51)
+  })
+
+  it('falls back to legacy per-vault PPS after a batch failure', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    const vaultAddress = '0x0000000000000000000000000000000000000001'
+    const fetchFn = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(JSON.stringify({ error: 'failed' }), { status: 500 }))
+      .mockResolvedValueOnce(createResponse([{ time: 86_400, value: '1.5' }])) as typeof fetch
+
+    const timelines = await fetchMultipleVaultsPPS([{ chainId: 1, vaultAddress }], {
+      fetchFn,
+      batch: true,
+      range: { start: 0, finish: 86_400 },
+      maxRetries: 0
+    })
+
+    expect(fetchFn).toHaveBeenCalledTimes(2)
+    expect(timelines.get(`1:${vaultAddress}`)?.get(86_400)).toBe(1.5)
+    expect(getPpsBatchFallbackVaults(timelines)).toBe(1)
+    expect(getPpsFetchFailedVaults(timelines)).toBe(0)
   })
 })

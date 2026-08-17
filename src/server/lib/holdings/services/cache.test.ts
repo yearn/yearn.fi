@@ -93,7 +93,7 @@ describe('protocol return history snapshot cache', () => {
     const key = getProtocolReturnHistoryCacheKey(identity)
 
     expect(saved).toBe(true)
-    expect(key).toMatch(/^holdings:protocol-return-history:v4:[a-f0-9]{64}:all:1y:all$/)
+    expect(key).toMatch(/^holdings:protocol-return-history:v5:[a-f0-9]{64}:all:1y:all$/)
     expect(key).not.toContain(identity.userAddress)
     expect(setMock).toHaveBeenCalledWith(
       key,
@@ -103,7 +103,7 @@ describe('protocol return history snapshot cache', () => {
         vaults: [{ address: '0x00000000000000000000000000000000000000a1', chainId: 1 }],
         response
       }),
-      { ex: 24 * 60 * 60 }
+      { ex: 30 * 24 * 60 * 60 }
     )
   })
 
@@ -122,7 +122,7 @@ describe('protocol return history snapshot cache', () => {
     const key = getProtocolReturnHistoryCacheKey(identity)
 
     expect(key).toBe(getProtocolReturnHistoryCacheKey(reversedIdentity))
-    expect(key).toMatch(/^holdings:protocol-return-history:v4:[a-f0-9]{64}:all:1y:[a-f0-9]{64}$/)
+    expect(key).toMatch(/^holdings:protocol-return-history:v5:[a-f0-9]{64}:all:1y:[a-f0-9]{64}$/)
     expect(key).not.toContain(identity.vaultScope[0].address)
   })
 
@@ -151,9 +151,37 @@ describe('protocol return history snapshot cache', () => {
     expect(mgetMock).toHaveBeenCalledWith(['holdings:vault-invalidated:1:0x00000000000000000000000000000000000000a1'])
   })
 
-  it('misses snapshots from a different settled day before checking invalidations', async () => {
+  it('returns an older valid snapshot for tail filling after checking invalidations', async () => {
     const getMock = vi.fn().mockResolvedValue({
       settledDate: '2026-07-14',
+      updatedAt: 2000,
+      vaults: [{ address: '0x00000000000000000000000000000000000000a1', chainId: 1 }],
+      response: { dataPoints: [] }
+    })
+    const mgetMock = vi.fn().mockResolvedValue([null])
+    isHoldingsStorageEnabledMock.mockReturnValue(true)
+    getHoldingsRedisClientMock.mockReturnValue({ get: getMock, mget: mgetMock })
+
+    const { getCachedProtocolReturnHistorySnapshot } = await import('./cache')
+    const response = await getCachedProtocolReturnHistorySnapshot(
+      {
+        userAddress: '0x0000000000000000000000000000000000000001',
+        version: 'all',
+        timeframe: '1y'
+      },
+      '2026-07-15'
+    )
+
+    expect(response).toEqual({
+      settledDate: '2026-07-14',
+      response: { dataPoints: [] }
+    })
+    expect(mgetMock).toHaveBeenCalledTimes(1)
+  })
+
+  it('rejects snapshots from a future settled day before checking invalidations', async () => {
+    const getMock = vi.fn().mockResolvedValue({
+      settledDate: '2026-07-16',
       updatedAt: 2000,
       vaults: [{ address: '0x00000000000000000000000000000000000000a1', chainId: 1 }],
       response: { dataPoints: [] }
@@ -162,8 +190,8 @@ describe('protocol return history snapshot cache', () => {
     isHoldingsStorageEnabledMock.mockReturnValue(true)
     getHoldingsRedisClientMock.mockReturnValue({ get: getMock, mget: mgetMock })
 
-    const { getCachedProtocolReturnHistory } = await import('./cache')
-    const response = await getCachedProtocolReturnHistory(
+    const { getCachedProtocolReturnHistorySnapshot } = await import('./cache')
+    const response = await getCachedProtocolReturnHistorySnapshot(
       {
         userAddress: '0x0000000000000000000000000000000000000001',
         version: 'all',

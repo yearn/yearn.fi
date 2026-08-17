@@ -4,7 +4,8 @@ import { selectProtocolReturnFamilySeriesCandidates } from '@/server/lib/holding
 import { holdingsConfig } from '../config'
 import type { VaultMetadata } from '../types'
 import {
-  getCachedProtocolReturnHistory,
+  type CachedProtocolReturnHistory,
+  getCachedProtocolReturnHistorySnapshot,
   getProtocolReturnHistoryCacheKey,
   type ProtocolReturnHistoryCacheIdentity,
   saveCachedProtocolReturnHistory
@@ -1665,6 +1666,130 @@ function getLatestProtocolReturnSettledDate(): string {
   return timestampToDateString(toSettledDayTimestamp(latestTimestamp))
 }
 
+type TProtocolReturnHistoryTailPlan = {
+  cachedPoints: HoldingsPnLSimpleHistoryPoint[]
+  calculationTimestamps: number[]
+  growthIndexSeed: { timestamp: number; growthIndex: number | null }
+}
+
+function normalizeCachedGrowthIndexesForWindow(
+  points: HoldingsPnLSimpleHistoryPoint[],
+  timeframe: '1y' | 'all'
+): HoldingsPnLSimpleHistoryPoint[] | null {
+  if (timeframe === 'all') {
+    return points
+  }
+
+  const baseGrowthIndex = points.find((point) => point.growthIndex !== null)?.growthIndex ?? null
+  if (baseGrowthIndex === null) {
+    return points
+  }
+  if (baseGrowthIndex === 0 || !Number.isFinite(baseGrowthIndex)) {
+    return null
+  }
+
+  return points.map((point) => ({
+    ...point,
+    growthIndex: point.growthIndex === null ? null : (point.growthIndex / baseGrowthIndex) * 100
+  }))
+}
+
+function areHistoryPointNumbersEqual(left: number | null | undefined, right: number | null | undefined): boolean {
+  if (left === null || left === undefined || right === null || right === undefined) {
+    return left === right
+  }
+
+  return Math.abs(left - right) <= Math.max(1, Math.abs(left), Math.abs(right)) * 1e-10
+}
+
+function isProtocolReturnHistoryOverlapEqual(
+  cached: HoldingsPnLSimpleHistoryPoint,
+  current: HoldingsPnLSimpleHistoryPoint
+): boolean {
+  const numericFields = [
+    'growthWeightUsd',
+    'growthWeightEth',
+    'protocolReturnPct',
+    'annualizedProtocolReturnPct',
+    'growthIndex',
+    'currentUnderlying',
+    'growthUnderlying',
+    'sharesFormatted',
+    'pricePerShare'
+  ] as const
+
+  return (
+    cached.date === current.date &&
+    cached.timestamp === current.timestamp &&
+    numericFields.every((field) => areHistoryPointNumbersEqual(cached[field], current[field]))
+  )
+}
+
+function haveSameProtocolReturnVaults(
+  cached: HoldingsProtocolReturnPortfolioResponse,
+  current: HoldingsPnLSimpleVault[]
+): boolean {
+  const cachedKeys = cached.growth.vaults.map((vault) => toVaultKey(vault.chainId, vault.vaultAddress)).toSorted()
+  const currentKeys = current.map((vault) => toVaultKey(vault.chainId, vault.vaultAddress)).toSorted()
+  return cachedKeys.length === currentKeys.length && cachedKeys.every((key, index) => key === currentKeys[index])
+}
+
+function getProtocolReturnHistoryTailPlan(args: {
+  cached: CachedProtocolReturnHistory<HoldingsProtocolReturnPortfolioResponse> | null
+  userAddress: string
+  version: VaultVersion
+  timeframe: '1y' | 'all'
+  timestamps: number[]
+}): TProtocolReturnHistoryTailPlan | null {
+  const protocolReturn = args.cached?.response.protocolReturn
+
+  if (
+    !args.cached ||
+    !protocolReturn ||
+    protocolReturn.address !== lowerCaseAddress(args.userAddress) ||
+    protocolReturn.version !== args.version ||
+    protocolReturn.timeframe !== args.timeframe
+  ) {
+    return null
+  }
+
+  const allCachedTimestamps = protocolReturn.dataPoints.map((point) => point.timestamp)
+  const cachedPointByTimestamp = new Map(protocolReturn.dataPoints.map((point) => [point.timestamp, point]))
+  const latestCachedTimestamp = Math.max(...allCachedTimestamps)
+  const latestCachedPoint = cachedPointByTimestamp.get(latestCachedTimestamp)
+  const prefixTimestamps = args.timestamps.filter((timestamp) => timestamp <= latestCachedTimestamp)
+  const missingTimestamps = args.timestamps.filter((timestamp) => timestamp > latestCachedTimestamp)
+  const hasValidCoverage =
+    allCachedTimestamps.length > 0 &&
+    allCachedTimestamps.length === new Set(allCachedTimestamps).size &&
+    prefixTimestamps.every((timestamp) => cachedPointByTimestamp.has(timestamp)) &&
+    missingTimestamps.length > 0 &&
+    latestCachedPoint !== undefined &&
+    timestampToDateString(latestCachedTimestamp) === args.cached.settledDate
+
+  if (!hasValidCoverage) {
+    return null
+  }
+
+  const cachedPoints = normalizeCachedGrowthIndexesForWindow(
+    prefixTimestamps.map((timestamp) => cachedPointByTimestamp.get(timestamp)!),
+    args.timeframe
+  )
+  const latestNormalizedPoint = cachedPoints?.[cachedPoints.length - 1]
+  if (!cachedPoints || !latestNormalizedPoint) {
+    return null
+  }
+
+  return {
+    cachedPoints,
+    calculationTimestamps: [latestCachedTimestamp, ...missingTimestamps],
+    growthIndexSeed: {
+      timestamp: latestCachedTimestamp,
+      growthIndex: latestNormalizedPoint.growthIndex
+    }
+  }
+}
+
 function getProtocolReturnHistoryCacheIdentity(args: {
   userAddress: string
   version: VaultVersion
@@ -2047,6 +2172,7 @@ export function buildProtocolReturnHistorySeries(args: {
   timestamps: number[]
   selectedVaultKey?: string
   selectedVaultKeys?: string[]
+  growthIndexSeed?: { timestamp: number; growthIndex: number | null }
 }): HoldingsPnLSimpleHistoryPoint[] {
   const userAddress = lowerCaseAddress(args.userAddress)
   const effectiveEvents = buildEffectiveSimpleEvents(args.events, userAddress)
@@ -2107,6 +2233,9 @@ export function buildProtocolReturnHistorySeries(args: {
       deltaSeconds: previousTimestamp === null ? 0 : Math.max(0, timestamp - previousTimestamp),
       hasCapital: summary.baselineWeightUsd > 0 || summary.growthWeightUsd !== 0
     })
+    if (args.growthIndexSeed?.timestamp === timestamp) {
+      growthIndex = args.growthIndexSeed.growthIndex
+    }
     previousTimestamp = timestamp
     previousGrowthWeightUsd = summary.growthWeightUsd
     previousExposureWeightUsdYears = summary.baselineExposureWeightUsdYears
@@ -2271,7 +2400,8 @@ async function calculateHoldingsProtocolReturnHistory(
   timeframe: '1y' | 'all' = '1y',
   requestedVaultFilters?: Array<{ chainId: number; vaultAddress: string }> | string,
   legacyVaultChainId?: number,
-  settledAddressContext?: TSettledAddressScopedContextSource
+  settledAddressContext?: TSettledAddressScopedContextSource,
+  cached?: CachedProtocolReturnHistory<HoldingsProtocolReturnPortfolioResponse> | null
 ): Promise<TProtocolReturnHistoryCalculation> {
   debugLog('protocol-return-history', 'starting holdings protocol return history calculation', {
     version,
@@ -2404,18 +2534,56 @@ async function calculateHoldingsProtocolReturnHistory(
   })
   reportHoldingsProgress(82, 'Calculated protocol return ledgers', `${finalVaults.length} vaults`)
   const eligibleHistoryFamilies = selectEligibleHistoryFamilies(finalVaults)
-  const history = buildProtocolReturnHistorySeries({
-    events: effectiveEvents,
+  const tailPlan = getProtocolReturnHistoryTailPlan({
+    cached: cached ?? null,
     userAddress,
-    metadata: vaultMetadata,
-    ppsData: settledContext.ppsData,
-    priceData,
-    ethPriceData,
-    timestamps,
-    selectedVaultKeys: requestedVaults
-      ? filteredVaultIdentifiers.map((vault) => toVaultKey(vault.chainId, vault.vaultAddress))
-      : undefined
+    version,
+    timeframe,
+    timestamps
   })
+  const selectedVaultKeys = requestedVaults
+    ? filteredVaultIdentifiers.map((vault) => toVaultKey(vault.chainId, vault.vaultAddress))
+    : undefined
+  const buildHistory = (
+    historyTimestamps: number[],
+    growthIndexSeed?: { timestamp: number; growthIndex: number | null }
+  ) =>
+    buildProtocolReturnHistorySeries({
+      events: effectiveEvents,
+      userAddress,
+      metadata: vaultMetadata,
+      ppsData: settledContext.ppsData,
+      priceData,
+      ethPriceData,
+      timestamps: historyTimestamps,
+      selectedVaultKeys,
+      ...(growthIndexSeed ? { growthIndexSeed } : {})
+    })
+  const tailHistory = buildHistory(tailPlan?.calculationTimestamps ?? timestamps, tailPlan?.growthIndexSeed)
+  const canAppend = Boolean(
+    tailPlan &&
+      cached &&
+      tailHistory[0] &&
+      isProtocolReturnHistoryOverlapEqual(tailPlan.cachedPoints[tailPlan.cachedPoints.length - 1]!, tailHistory[0]) &&
+      haveSameProtocolReturnVaults(cached.response, finalVaults)
+  )
+  const history =
+    tailPlan && canAppend
+      ? [...tailPlan.cachedPoints, ...tailHistory.slice(1)]
+      : tailPlan
+        ? buildHistory(timestamps)
+        : tailHistory
+  debugLog(
+    'protocol-return-history',
+    tailPlan && canAppend ? 'appended missing protocol return dates' : 'rebuilt protocol return history',
+    {
+      cachedSettledDate: cached?.settledDate ?? null,
+      requestedSettledDate: timestampToDateString(latestTimestamp),
+      cachedPoints: tailPlan && canAppend ? tailPlan.cachedPoints.length : 0,
+      calculatedPoints: tailPlan && canAppend ? tailPlan.calculationTimestamps.length : timestamps.length,
+      overlapMatched: tailPlan ? canAppend : null
+    }
+  )
   const familySeries = buildProtocolReturnFamilyHistorySeries({
     events: effectiveEvents,
     userAddress,
@@ -2505,13 +2673,13 @@ export async function getHoldingsProtocolReturnPortfolio(
   }
 
   const request = (async () => {
-    const cachedResponse = await getCachedProtocolReturnHistory<HoldingsProtocolReturnPortfolioResponse>(
+    const cached = await getCachedProtocolReturnHistorySnapshot<HoldingsProtocolReturnPortfolioResponse>(
       cacheIdentity,
       settledDate
     )
 
-    if (cachedResponse) {
-      const normalizedCachedResponse = normalizeProtocolReturnPortfolioResponse(cachedResponse)
+    if (cached?.settledDate === settledDate) {
+      const normalizedCachedResponse = normalizeProtocolReturnPortfolioResponse(cached.response)
       reportHoldingsProgress(
         94,
         'Loaded cached protocol return history',
@@ -2542,7 +2710,8 @@ export async function getHoldingsProtocolReturnPortfolio(
       timeframe,
       requestedVaultFilters,
       legacyVaultChainId,
-      settledAddressContext
+      settledAddressContext,
+      cached
     )
 
     const compactProtocolReturn = {

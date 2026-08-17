@@ -7,8 +7,10 @@ const REDIS_ENV_NAMES = [
   'UPSTASH_REDIS_REST_URL_PORTFOLIO',
   'UPSTASH_REDIS_REST_TOKEN_PORTFOLIO'
 ] as const
+const KONG_ENV_NAMES = ['KONG_REST_URL', 'NEXT_PUBLIC_KONG_REST_URL'] as const
 
 const originalRedisEnv = Object.fromEntries(REDIS_ENV_NAMES.map((name) => [name, process.env[name]]))
+const originalKongEnv = Object.fromEntries(KONG_ENV_NAMES.map((name) => [name, process.env[name]]))
 
 afterEach(() => {
   REDIS_ENV_NAMES.forEach((name) => {
@@ -19,6 +21,23 @@ afterEach(() => {
     }
 
     process.env[name] = value
+  })
+  KONG_ENV_NAMES.forEach((name) => {
+    const value = originalKongEnv[name]
+    if (value === undefined) {
+      delete process.env[name]
+      return
+    }
+
+    process.env[name] = value
+  })
+})
+
+describe('holdings Kong configuration', () => {
+  it('uses the server override and normalizes its REST suffix', () => {
+    process.env.KONG_REST_URL = 'https://kong-preview.example/api/rest/'
+
+    expect(holdingsConfig.kongBaseUrl).toBe('https://kong-preview.example')
   })
 })
 

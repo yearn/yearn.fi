@@ -21,11 +21,21 @@ const getNestedVaultPpsIdentifiersFromPriceRequestsMock = vi.fn()
 const getCachedProtocolReturnHistoryMock = vi.fn()
 const getProtocolReturnHistoryCacheKeyMock = vi.fn()
 const saveCachedProtocolReturnHistoryMock = vi.fn()
+const debugLogMock = vi.fn()
 
 vi.mock('./cache', () => ({
-  getCachedProtocolReturnHistory: getCachedProtocolReturnHistoryMock,
+  getCachedProtocolReturnHistorySnapshot: async (...args: unknown[]) => {
+    const cached = await getCachedProtocolReturnHistoryMock(...args)
+    return cached ? ('settledDate' in cached ? cached : { settledDate: args[1], response: cached }) : null
+  },
   getProtocolReturnHistoryCacheKey: getProtocolReturnHistoryCacheKeyMock,
   saveCachedProtocolReturnHistory: saveCachedProtocolReturnHistoryMock
+}))
+
+vi.mock('./debug', () => ({
+  debugError: vi.fn(),
+  debugLog: debugLogMock,
+  reportHoldingsProgress: vi.fn()
 }))
 
 vi.mock('./defillama', () => ({
@@ -422,6 +432,92 @@ describe('getHoldingsProtocolReturnHistory', () => {
       ],
       expect.objectContaining({ protocolReturn: response }),
       expect.any(Number)
+    )
+  })
+
+  it('appends a missing settled date and matches a clean rebuild', async () => {
+    const firstDay = 1_800_000_000
+    const secondDay = firstDay + 86_400
+    const thirdDay = secondDay + 86_400
+    const fourthDay = thirdDay + 86_400
+    const fifthDay = fourthDay + 86_400
+    getPPSMock.mockImplementation(
+      (_timeline: Map<number, number>, timestamp: number) =>
+        1 + (Math.max(firstDay, timestamp) - firstDay) / 86_400 / 100
+    )
+    generateDailyTimestampsMock.mockReturnValue([firstDay, secondDay, thirdDay, fourthDay])
+
+    const { getHoldingsProtocolReturnHistory } = await import('./pnlSimple')
+    await getHoldingsProtocolReturnHistory(USER, 'all', 'parallel', 'paged', '1y')
+
+    const firstSavedResponse = saveCachedProtocolReturnHistoryMock.mock.calls[0]?.[3]
+    expect(firstSavedResponse).toBeDefined()
+
+    generateDailyTimestampsMock.mockReturnValue([secondDay, thirdDay, fourthDay, fifthDay])
+    getCachedProtocolReturnHistoryMock.mockResolvedValue({
+      settledDate: `date-${fourthDay + 1}`,
+      response: firstSavedResponse
+    })
+    saveCachedProtocolReturnHistoryMock.mockClear()
+
+    const appended = await getHoldingsProtocolReturnHistory(USER, 'all', 'parallel', 'paged', '1y')
+    expect(appended.dataPoints.map((point) => point.timestamp)).toEqual([
+      secondDay + 1,
+      thirdDay + 1,
+      fourthDay + 1,
+      fifthDay + 1
+    ])
+    expect(debugLogMock).toHaveBeenCalledWith(
+      'protocol-return-history',
+      'appended missing protocol return dates',
+      expect.objectContaining({ cachedPoints: 3, calculatedPoints: 2, overlapMatched: true })
+    )
+
+    getCachedProtocolReturnHistoryMock.mockResolvedValue(null)
+    const rebuilt = await getHoldingsProtocolReturnHistory(USER, 'all', 'parallel', 'paged', '1y')
+    const withoutGeneratedAtAndAggregateIndex = (response: typeof rebuilt) => ({
+      ...response,
+      generatedAt: '',
+      dataPoints: response.dataPoints.map((point) => ({ ...point, growthIndex: null }))
+    })
+
+    expect(withoutGeneratedAtAndAggregateIndex(appended)).toEqual(withoutGeneratedAtAndAggregateIndex(rebuilt))
+    appended.dataPoints.forEach((point, index) => {
+      const rebuiltGrowthIndex = rebuilt.dataPoints[index]?.growthIndex
+      if (point.growthIndex === null || rebuiltGrowthIndex === null || rebuiltGrowthIndex === undefined) {
+        expect(point.growthIndex).toBe(rebuiltGrowthIndex)
+        return
+      }
+      expect(point.growthIndex).toBeCloseTo(rebuiltGrowthIndex, 10)
+    })
+  })
+
+  it('rebuilds instead of appending when the replayed overlap day changed', async () => {
+    const firstDay = 1_800_000_000
+    const secondDay = firstDay + 86_400
+    const thirdDay = secondDay + 86_400
+    generateDailyTimestampsMock.mockReturnValue([firstDay, secondDay])
+
+    const { getHoldingsProtocolReturnHistory } = await import('./pnlSimple')
+    await getHoldingsProtocolReturnHistory(USER, 'all', 'parallel', 'paged', '1y')
+    const cachedResponse = saveCachedProtocolReturnHistoryMock.mock.calls[0]?.[3]
+
+    generateDailyTimestampsMock.mockReturnValue([secondDay, thirdDay])
+    getPPSMock.mockImplementation((_timeline: Map<number, number>, timestamp: number) =>
+      timestamp >= secondDay ? 2 : 1
+    )
+    getCachedProtocolReturnHistoryMock.mockResolvedValue({
+      settledDate: `date-${secondDay + 1}`,
+      response: cachedResponse
+    })
+    debugLogMock.mockClear()
+
+    await getHoldingsProtocolReturnHistory(USER, 'all', 'parallel', 'paged', '1y')
+
+    expect(debugLogMock).toHaveBeenCalledWith(
+      'protocol-return-history',
+      'rebuilt protocol return history',
+      expect.objectContaining({ cachedPoints: 0, calculatedPoints: 2, overlapMatched: false })
     )
   })
 

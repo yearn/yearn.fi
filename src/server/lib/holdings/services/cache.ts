@@ -32,9 +32,8 @@ const HOLDINGS_TOTALS_TTL_SECONDS = 30 * 24 * 60 * 60
 // v2 starts from fresh daily totals after introducing the shared wallet-event source.
 // Old hashes expire naturally and cannot reintroduce previously cached incomplete days.
 const HOLDINGS_TOTALS_KEY_PREFIX = 'holdings:totals:v2'
-// Settled snapshots remain valid through the day; the settled-date guard rolls them over on the next day.
-const PROTOCOL_RETURN_HISTORY_TTL_SECONDS = 24 * 60 * 60
-const PROTOCOL_RETURN_HISTORY_KEY_PREFIX = 'holdings:protocol-return-history:v4'
+const PROTOCOL_RETURN_HISTORY_TTL_SECONDS = 30 * 24 * 60 * 60
+const PROTOCOL_RETURN_HISTORY_KEY_PREFIX = 'holdings:protocol-return-history:v5'
 const VAULT_INVALIDATION_KEY_PREFIX = 'holdings:vault-invalidated'
 const REDIS_SCAN_COUNT = 500
 
@@ -43,6 +42,11 @@ export interface ProtocolReturnHistoryCacheIdentity {
   version: string
   timeframe: string
   vaultScope?: VaultIdentifier[]
+}
+
+export interface CachedProtocolReturnHistory<TResponse> {
+  settledDate: string
+  response: TResponse
 }
 
 interface CachedProtocolReturnHistoryPayload<TResponse> {
@@ -257,6 +261,19 @@ export async function getCachedProtocolReturnHistory<TResponse>(
   identity: ProtocolReturnHistoryCacheIdentity,
   settledDate: string
 ): Promise<TResponse | null> {
+  const cached = await getCachedProtocolReturnHistorySnapshot<TResponse>(identity, settledDate)
+
+  if (!cached || cached.settledDate !== settledDate) {
+    return null
+  }
+
+  return cached.response
+}
+
+export async function getCachedProtocolReturnHistorySnapshot<TResponse>(
+  identity: ProtocolReturnHistoryCacheIdentity,
+  maximumSettledDate: string
+): Promise<CachedProtocolReturnHistory<TResponse> | null> {
   if (!isHoldingsStorageEnabled()) {
     debugLog('cache', 'skipping protocol return history cache lookup because Redis storage is disabled')
     return null
@@ -277,11 +294,11 @@ export async function getCachedProtocolReturnHistory<TResponse>(
       return null
     }
 
-    if (payload.settledDate !== settledDate) {
-      debugLog('cache', 'protocol return history cache settled date mismatch', {
+    if (payload.settledDate > maximumSettledDate) {
+      debugLog('cache', 'protocol return history cache is from a future settled date', {
         key,
         cachedSettledDate: payload.settledDate,
-        requestedSettledDate: settledDate
+        requestedSettledDate: maximumSettledDate
       })
       return null
     }
@@ -292,8 +309,16 @@ export async function getCachedProtocolReturnHistory<TResponse>(
       return null
     }
 
-    debugLog('cache', 'protocol return history cache hit', { key, vaults: payload.vaults.length })
-    return payload.response
+    debugLog('cache', 'protocol return history cache hit', {
+      key,
+      vaults: payload.vaults.length,
+      cachedSettledDate: payload.settledDate,
+      requestedSettledDate: maximumSettledDate
+    })
+    return {
+      settledDate: payload.settledDate,
+      response: payload.response
+    }
   } catch (error) {
     handleHoldingsRedisError('protocol return history cache lookup failed', error)
     debugError('cache', 'protocol return history cache lookup failed', error, { key })
