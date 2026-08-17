@@ -133,7 +133,7 @@ describe('createVaultWidgetRuntime', () => {
     const parentExecute = vi.fn().mockResolvedValue(HASH)
     const childExecute = vi.fn().mockResolvedValue(HASH)
     const switchChain = vi.fn().mockResolvedValue(undefined)
-    const waitForReceipt = vi.fn().mockResolvedValue(createReceipt())
+    const waitForReceipt = vi.fn().mockResolvedValue({ receipt: createReceipt() })
     const parentExecution: VaultWidgetExecutionAdapter = {
       execute: parentExecute,
       switchChain,
@@ -159,9 +159,9 @@ describe('createVaultWidgetRuntime', () => {
 
     await expect(observed.current?.execution.execute({ account: ACCOUNT, request: REQUEST })).resolves.toBe(HASH)
     await expect(observed.current?.execution.switchChain({ chainId: 1 })).resolves.toBeUndefined()
-    await expect(observed.current?.execution.waitForReceipt({ chainId: 1, hash: HASH })).resolves.toEqual(
-      createReceipt()
-    )
+    await expect(observed.current?.execution.waitForReceipt({ chainId: 1, hash: HASH })).resolves.toEqual({
+      receipt: createReceipt()
+    })
     expect(observed.current?.execution.execute).toBe(childExecute)
     expect(observed.current?.execution.switchChain).toBe(switchChain)
     expect(observed.current?.execution.waitForReceipt).toBe(waitForReceipt)

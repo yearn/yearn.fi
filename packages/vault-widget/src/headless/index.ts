@@ -20,6 +20,8 @@ export type {
   VaultWidgetTransactionIntent,
   VaultWidgetTransactionMode,
   VaultWidgetTransactionPlan,
+  VaultWidgetTransactionReceiptResult,
+  VaultWidgetTransactionReplacement,
   VaultWidgetTransactionRequest,
   VaultWidgetWalletType
 } from './types'

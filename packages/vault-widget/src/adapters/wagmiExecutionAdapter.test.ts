@@ -3,7 +3,14 @@ import {
   createWagmiVaultWidgetExecutionAdapter,
   type TWagmiVaultWidgetExecutionAdapterOptions
 } from '@yearn/vault-widget/wagmi'
-import { BaseError, type Hash, MethodNotFoundRpcError, MethodNotSupportedRpcError, type TransactionReceipt } from 'viem'
+import {
+  BaseError,
+  type Hash,
+  MethodNotFoundRpcError,
+  MethodNotSupportedRpcError,
+  type ReplacementReturnType,
+  type TransactionReceipt
+} from 'viem'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const wagmiActions = vi.hoisted(() => ({
@@ -11,8 +18,7 @@ const wagmiActions = vi.hoisted(() => ({
   sendCalls: vi.fn(),
   sendTransaction: vi.fn(),
   switchChain: vi.fn(),
-  waitForCallsStatus: vi.fn(),
-  waitForTransactionReceipt: vi.fn()
+  waitForCallsStatus: vi.fn()
 }))
 
 vi.mock('@wagmi/core/actions', () => wagmiActions)
@@ -42,6 +48,29 @@ function createAdapter(overrides: TAdapterOverrides = {}) {
     resolveExecutionChainId: (chainId) => (chainId === canonicalChainId ? executionChainId : undefined),
     ...overrides
   })
+}
+
+function createReplacement(
+  reason: ReplacementReturnType['reason'],
+  replacementReceipt: TransactionReceipt
+): ReplacementReturnType {
+  return {
+    reason,
+    replacedTransaction: { hash: transactionHash } as ReplacementReturnType['replacedTransaction'],
+    transaction: { hash: replacementReceipt.transactionHash } as ReplacementReturnType['transaction'],
+    transactionReceipt: replacementReceipt
+  }
+}
+
+function mockReceiptWait(receipt: TransactionReceipt, replacement?: ReplacementReturnType) {
+  const waitForTransactionReceipt = vi.fn(
+    async ({ onReplaced }: { onReplaced?: (value: ReplacementReturnType) => void }) => {
+      if (replacement) onReplaced?.(replacement)
+      return receipt
+    }
+  )
+  wagmiActions.getPublicClient.mockReturnValue({ waitForTransactionReceipt })
+  return waitForTransactionReceipt
 }
 
 beforeEach(() => {
@@ -148,26 +177,39 @@ describe('Wagmi EOA execution adapter', () => {
   })
 
   it('maps receipt lookup to the execution chain and returns a matching successful receipt', async () => {
-    wagmiActions.waitForTransactionReceipt.mockResolvedValue(successfulReceipt)
+    const waitForTransactionReceipt = mockReceiptWait(successfulReceipt)
     const adapter = createAdapter()
 
-    await expect(adapter.waitForReceipt({ chainId: canonicalChainId, hash: transactionHash })).resolves.toBe(
-      successfulReceipt
-    )
-    expect(wagmiActions.waitForTransactionReceipt).toHaveBeenCalledWith(config, {
-      chainId: executionChainId,
-      hash: transactionHash
+    await expect(adapter.waitForReceipt({ chainId: canonicalChainId, hash: transactionHash })).resolves.toEqual({
+      receipt: successfulReceipt
+    })
+    expect(wagmiActions.getPublicClient).toHaveBeenCalledWith(config, { chainId: executionChainId })
+    expect(waitForTransactionReceipt).toHaveBeenCalledWith({
+      hash: transactionHash,
+      onReplaced: expect.any(Function),
+      timeout: 0
     })
   })
 
   it('returns a matching reverted receipt for executor classification', async () => {
     const revertedReceipt = { ...successfulReceipt, status: 'reverted' } as TransactionReceipt
-    wagmiActions.waitForTransactionReceipt.mockResolvedValue(revertedReceipt)
+    mockReceiptWait(revertedReceipt)
     const adapter = createAdapter()
 
-    await expect(adapter.waitForReceipt({ chainId: canonicalChainId, hash: transactionHash })).resolves.toBe(
-      revertedReceipt
-    )
+    await expect(adapter.waitForReceipt({ chainId: canonicalChainId, hash: transactionHash })).resolves.toEqual({
+      receipt: revertedReceipt
+    })
+  })
+
+  it('accepts a repriced replacement reported by viem', async () => {
+    const replacementReceipt = { ...successfulReceipt, transactionHash: otherTransactionHash } as TransactionReceipt
+    mockReceiptWait(replacementReceipt, createReplacement('repriced', replacementReceipt))
+    const adapter = createAdapter()
+
+    await expect(adapter.waitForReceipt({ chainId: canonicalChainId, hash: transactionHash })).resolves.toEqual({
+      receipt: replacementReceipt,
+      replacement: { reason: 'repriced', replacedHash: transactionHash }
+    })
   })
 
   it.each([
@@ -180,11 +222,25 @@ describe('Wagmi EOA execution adapter', () => {
       receipt: { ...successfulReceipt, transactionHash: otherTransactionHash }
     }
   ])('rejects an invalid receipt: $expectedError', async ({ expectedError, receipt }) => {
-    wagmiActions.waitForTransactionReceipt.mockResolvedValue(receipt)
+    mockReceiptWait(receipt as TransactionReceipt)
     const adapter = createAdapter()
 
     await expect(adapter.waitForReceipt({ chainId: canonicalChainId, hash: transactionHash })).rejects.toThrow(
       expectedError
+    )
+  })
+
+  it('rejects replacement information that does not match the mined receipt', async () => {
+    const replacementReceipt = { ...successfulReceipt, transactionHash: otherTransactionHash } as TransactionReceipt
+    const replacement = createReplacement('repriced', replacementReceipt)
+    mockReceiptWait(replacementReceipt, {
+      ...replacement,
+      transaction: { hash: transactionHash } as ReplacementReturnType['transaction']
+    })
+    const adapter = createAdapter()
+
+    await expect(adapter.waitForReceipt({ chainId: canonicalChainId, hash: transactionHash })).rejects.toThrow(
+      'Wallet returned a receipt for an unexpected transaction'
     )
   })
 })
