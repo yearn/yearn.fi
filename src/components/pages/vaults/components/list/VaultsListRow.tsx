@@ -123,6 +123,10 @@ export function formatSignedPortfolioGrowthUsd(value: number): string | null {
   }
 
   const sign = value > 0 ? '+' : value < 0 ? '−' : ''
+  if (value !== 0 && Math.abs(value) < 0.01) {
+    return `${sign}<$0.01`
+  }
+
   const amount = new Intl.NumberFormat('en-US', {
     notation: 'compact',
     maximumSignificantDigits: 3
@@ -544,6 +548,34 @@ function VaultsListRowPresentationComponent({
     )
   }
 
+  const renderMobileTvl = (): ReactElement => {
+    if (resolvedYvUsdMetrics) {
+      return (
+        <Tooltip
+          className={'tvl-subline-tooltip gap-0 h-auto md:justify-end'}
+          openDelayMs={150}
+          toggleOnClick={false}
+          tooltip={yvUsdTvlTooltip ?? ''}
+        >
+          <span className={'text-lg font-semibold text-text-primary font-number'}>
+            <RenderAmount
+              value={resolvedYvUsdMetrics.combinedTvl}
+              symbol={'USD'}
+              decimals={0}
+              options={{
+                shouldCompactValue: true,
+                maximumFractionDigits: 2,
+                minimumFractionDigits: 0
+              }}
+            />
+          </span>
+        </Tooltip>
+      )
+    }
+
+    return <VaultTVL currentVault={currentVault} valueClassName={'text-lg font-semibold text-text-primary'} />
+  }
+
   useEffect(() => {
     if (isExpanded) {
       setExpandedView(defaultExpandedView)
@@ -923,35 +955,28 @@ function VaultsListRowPresentationComponent({
                   <span className={'text-lg font-semibold text-text-primary'}>
                     {showHoldingsValue ? formatTvlDisplay(holdingsValue, holdingsFormatOptions) : '—'}
                   </span>
-                ) : resolvedYvUsdMetrics ? (
-                  <Tooltip
-                    className={'tvl-subline-tooltip gap-0 h-auto md:justify-end'}
-                    openDelayMs={150}
-                    toggleOnClick={false}
-                    tooltip={yvUsdTvlTooltip ?? ''}
-                  >
-                    <span className={'text-lg font-semibold text-text-primary font-number'}>
-                      <RenderAmount
-                        value={resolvedYvUsdMetrics.combinedTvl}
-                        symbol={'USD'}
-                        decimals={0}
-                        options={{
-                          shouldCompactValue: true,
-                          maximumFractionDigits: 2,
-                          minimumFractionDigits: 0
-                        }}
-                      />
-                    </span>
-                  </Tooltip>
                 ) : (
-                  <VaultTVL currentVault={currentVault} valueClassName={'text-lg font-semibold text-text-primary'} />
+                  renderMobileTvl()
                 )}
               </div>
               {showGrowthColumn ? (
-                <div className={'col-span-2 flex items-center justify-center gap-2 whitespace-nowrap'}>
-                  <span className={'text-text-primary/60'}>{'Growth:'}</span>
-                  {renderPortfolioGrowth()}
-                </div>
+                <>
+                  {mobileSecondaryMetric === 'holdings' ? (
+                    <div className={'flex items-center justify-center gap-2 whitespace-nowrap'}>
+                      <span className={'text-text-primary/60'}>{'TVL:'}</span>
+                      {renderMobileTvl()}
+                    </div>
+                  ) : null}
+                  <div
+                    className={cl(
+                      mobileSecondaryMetric === 'holdings' ? '' : 'col-span-2',
+                      'flex items-center justify-center gap-2 whitespace-nowrap'
+                    )}
+                  >
+                    <span className={'text-text-primary/60'}>{'Growth:'}</span>
+                    {renderPortfolioGrowth()}
+                  </div>
+                </>
               ) : null}
             </div>
           </div>

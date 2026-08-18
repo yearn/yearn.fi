@@ -211,14 +211,7 @@ export function VaultsListHead({
           containerClassName
         )}
       >
-        <div
-          className={cl(
-            leftColumnSpan,
-            'flex flex-row items-center justify-between',
-            'mb-2 py-4 md:mb-0 md:py-0',
-            token.className
-          )}
-        >
+        <div className={cl(leftColumnSpan, 'flex flex-row items-center justify-between', 'mb-2 py-4 md:mb-0 md:py-0')}>
           {renderItem(token, !isToggleItem(token) && sortBy === token.value, false)}
         </div>
 
