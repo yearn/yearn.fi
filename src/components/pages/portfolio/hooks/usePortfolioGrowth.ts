@@ -35,7 +35,7 @@ function combineYvUsdGrowth(vaultsByKey: Map<string, TPortfolioGrowthVault>): TP
   const baselineExposureUsdYears = sumGrowthField(variants, 'baselineExposureUsdYears')
   const growthUsd = sumGrowthField(variants, 'growthUsd')
   const issues = Array.from(new Set(variants.flatMap((vault) => vault.issues)))
-  const isComplete = variants.length === 2 && variants.every((vault) => vault.status === 'ok')
+  const isComplete = variants.every((vault) => vault.status === 'ok')
   const representative = vaultsByKey.get(unlockedKey) ?? variants[0]
 
   return {

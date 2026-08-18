@@ -84,14 +84,18 @@ describe('portfolio growth helpers', () => {
     expect(toPortfolioGrowthDisplay(combined)).toBeNull()
   })
 
-  it('does not mark yvUSD complete when only one variant was returned', () => {
-    const unlocked = makeGrowthVault(YVUSD_UNLOCKED_ADDRESS)
+  it('shows yvUSD growth when only one complete variant was returned', () => {
+    const unlocked = makeGrowthVault(YVUSD_UNLOCKED_ADDRESS, { baselineExposureUsdYears: 50 })
 
     const mapped = mapPortfolioGrowthVaults([unlocked])
     const combined = mapped.get(getPortfolioGrowthVaultKey(unlocked))
 
-    expect(combined?.status).toBe('partial')
-    expect(toPortfolioGrowthDisplay(combined)).toBeNull()
+    expect(combined?.status).toBe('ok')
+    expect(toPortfolioGrowthDisplay(combined)).toEqual({
+      usd: 10,
+      percent: 10,
+      annualizedPercent: 20
+    })
   })
 
   it('sorts complete USD growth values and leaves unavailable results last', () => {
