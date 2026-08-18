@@ -89,12 +89,12 @@ describe('buildEligibleStyledWidgetPlan', () => {
     ['disabled', { isEnabled: false }],
     ['Enso', { routeType: 'ENSO' }],
     ['direct unstake-withdraw', { mode: 'withdraw', routeType: 'DIRECT_UNSTAKE_WITHDRAW' }]
-  ] satisfies readonly [
-    string,
-    Partial<TBuildEligibleStyledWidgetPlanParams>
-  ][])('rejects %s flows', (_name, overrides) => {
-    expect(buildEligibleStyledWidgetPlan(createParams(overrides))).toBeUndefined()
-  })
+  ] satisfies readonly [string, Partial<TBuildEligibleStyledWidgetPlanParams>][])(
+    'rejects %s flows',
+    (_name, overrides) => {
+      expect(buildEligibleStyledWidgetPlan(createParams(overrides))).toBeUndefined()
+    }
+  )
 
   it('rejects a missing or different connected canonical chain', () => {
     expect(buildEligibleStyledWidgetPlan(createParams({ connectedCanonicalChainId: undefined }))).toBeUndefined()

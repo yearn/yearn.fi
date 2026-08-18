@@ -59,20 +59,17 @@ describe('createWagmiVaultWidgetExecutionAdapter', () => {
     expect(() => createAdapter({ safeTimeoutMs: 0 })).toThrow('safeTimeoutMs must be a positive integer')
   })
 
-  it.each([
-    undefined,
-    0,
-    -1,
-    1.5,
-    Number.NaN
-  ])('rejects invalid execution-chain resolver output %s before invoking Wagmi', async (resolvedChainId) => {
-    const adapter = createAdapter({ resolveExecutionChainId: () => resolvedChainId })
+  it.each([undefined, 0, -1, 1.5, Number.NaN])(
+    'rejects invalid execution-chain resolver output %s before invoking Wagmi',
+    async (resolvedChainId) => {
+      const adapter = createAdapter({ resolveExecutionChainId: () => resolvedChainId })
 
-    await expect(adapter.switchChain({ chainId: canonicalChainId })).rejects.toThrow(
-      `Chain ${canonicalChainId} is not enabled for execution`
-    )
-    expect(wagmiActions.switchChain).not.toHaveBeenCalled()
-  })
+      await expect(adapter.switchChain({ chainId: canonicalChainId })).rejects.toThrow(
+        `Chain ${canonicalChainId} is not enabled for execution`
+      )
+      expect(wagmiActions.switchChain).not.toHaveBeenCalled()
+    }
+  )
 
   it('uses identity chain mapping when no resolver is supplied', async () => {
     wagmiActions.switchChain.mockResolvedValue({ id: canonicalChainId })
