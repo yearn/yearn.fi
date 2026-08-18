@@ -1,3 +1,4 @@
+import type { THoldingsAggregationOptions } from '@/server/lib/holdings/services/eventSource'
 import { GET_CORS_HEADERS, json, noContent, queryValue, WALLET_SCOPED_CACHE_CONTROL } from '../http'
 import type { HoldingsEventFetchType, HoldingsEventPaginationMode, VaultVersion } from '../lib/holdings'
 import { ensureHoldingsStorageInitialized } from '../lib/holdings'
@@ -46,7 +47,10 @@ export function OPTIONS(): Response {
   return noContent(GET_CORS_HEADERS)
 }
 
-export async function GET(request: Request): Promise<Response> {
+export async function handleHoldingsBreakdownRequest(
+  request: Request,
+  options?: THoldingsAggregationOptions
+): Promise<Response> {
   try {
     await ensureHoldingsStorageInitialized()
   } catch (error) {
@@ -55,7 +59,7 @@ export async function GET(request: Request): Promise<Response> {
   }
 
   const envioUrl = process.env.ENVIO_GRAPHQL_URL
-  if (!envioUrl) {
+  if (!envioUrl && !options?.eventSource) {
     return json(
       {
         error: 'Holdings breakdown API not configured',
@@ -83,6 +87,16 @@ export async function GET(request: Request): Promise<Response> {
   if (dateParam && breakdownTimestamp === null) {
     return json({ error: 'Invalid date format, expected YYYY-MM-DD' }, { status: 400, headers: GET_CORS_HEADERS })
   }
+  if (
+    options?.eventSource &&
+    breakdownTimestamp !== null &&
+    breakdownTimestamp > options.eventSource.latestSettledDayTimestamp
+  ) {
+    return json(
+      { error: 'Requested date is after the ledger snapshot settled cutoff' },
+      { status: 400, headers: GET_CORS_HEADERS }
+    )
+  }
 
   const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
   const fetchType = parseHoldingsEventFetchType(fetchTypeParam)
@@ -90,13 +104,16 @@ export async function GET(request: Request): Promise<Response> {
 
   try {
     const { getHoldingsBreakdown } = await import('../lib/holdings')
-    const breakdown = await getHoldingsBreakdown(
-      address,
-      version,
-      fetchType,
-      paginationMode,
-      breakdownTimestamp ?? undefined
-    )
+    const breakdown = options
+      ? await getHoldingsBreakdown(
+          address,
+          version,
+          fetchType,
+          paginationMode,
+          breakdownTimestamp ?? undefined,
+          options
+        )
+      : await getHoldingsBreakdown(address, version, fetchType, paginationMode, breakdownTimestamp ?? undefined)
 
     return json(breakdown, {
       headers: {
@@ -122,6 +139,10 @@ export async function GET(request: Request): Promise<Response> {
 
     return json({ error: 'Failed to fetch holdings breakdown' }, { status: 502, headers: GET_CORS_HEADERS })
   }
+}
+
+export async function GET(request: Request): Promise<Response> {
+  return handleHoldingsBreakdownRequest(request)
 }
 
 export default GET

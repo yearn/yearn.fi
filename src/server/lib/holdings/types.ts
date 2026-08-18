@@ -91,6 +91,7 @@ export interface VaultMetadata {
   version: 'v2' | 'v3'
   category: 'stable' | 'volatile'
   isHidden?: boolean
+  currentPricePerShare?: number
   token: {
     address: string
     symbol: string

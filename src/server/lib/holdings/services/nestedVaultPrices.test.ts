@@ -203,6 +203,37 @@ describe('nested vault asset prices', () => {
     expect(derivedInnerPrices?.get(200)).toBeCloseTo(1.02102)
   })
 
+  it('does not carry a pre-exit underlying price across an unpriced re-entry gap', () => {
+    const priceData = deriveNestedVaultAssetPriceData({
+      priceData: new Map([[`ethereum:${UNDERLYING}`, new Map([[100, 1]])]]),
+      priceRequests: [
+        {
+          chainId: 1,
+          address: INNER_VAULT,
+          timestamps: [100, 1_000]
+        },
+        {
+          chainId: 1,
+          address: UNDERLYING,
+          timestamps: [100, 1_000]
+        }
+      ],
+      vaultMetadata: metadata,
+      ppsData: new Map([
+        [
+          toVaultKey(1, INNER_VAULT),
+          new Map([
+            [100, 1.01],
+            [1_000, 1.02]
+          ])
+        ]
+      ])
+    })
+
+    expect(priceData.get(`ethereum:${INNER_VAULT}`)?.get(100)).toBeCloseTo(1.01)
+    expect(priceData.get(`ethereum:${INNER_VAULT}`)?.get(1_000)).toBeUndefined()
+  })
+
   it('recursively derives multi-level vault-share token prices', () => {
     const priceData = deriveNestedVaultAssetPriceData({
       priceData: new Map([

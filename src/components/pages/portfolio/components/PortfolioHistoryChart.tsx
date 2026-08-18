@@ -55,6 +55,7 @@ type TPortfolioHistoryChartProps = {
   protocolReturnSummary: TPortfolioProtocolReturnHistorySummary | null
   protocolReturnFamilySeries: TPortfolioProtocolReturnHistoryFamilySeries
   denomination: TPortfolioHistoryDenomination
+  balanceIsComplete?: boolean
   timeframe: TPortfolioHistoryChartTimeframe
   activeTab: TPortfolioHistoryChartTab
   growthDisplayModeOverride: TGrowthDisplayMode | null
@@ -82,6 +83,7 @@ type TPortfolioHistoryChartProps = {
 type TChartPoint = {
   date: string
   value: number | null
+  isComplete?: boolean
   isLive?: boolean
 }
 
@@ -92,6 +94,7 @@ type TPortfolioHistoryTooltipProps = {
     payload?: {
       date?: string
       value?: unknown
+      isComplete?: boolean
       isLive?: boolean
       [key: string]: unknown
     }
@@ -554,6 +557,7 @@ function PortfolioHistoryTooltip({
   const point = payload[0]?.payload
   const date = point?.date
   const value = Number(payload[0]?.value ?? point?.value ?? 0)
+  const isEstimatedBalance = activeTab === 'balance' && point?.isComplete === false
 
   if (!date) {
     return null
@@ -582,10 +586,46 @@ function PortfolioHistoryTooltip({
       </div>
       {activeTab === 'balance' ? (
         <span className={'text-xs font-medium text-text-secondary'}>
-          {value > 0 && !point?.isLive ? 'Click to see breakdown' : 'No breakdown available for this point'}
+          {isEstimatedBalance
+            ? 'Estimated balance — historical vault pricing is incomplete'
+            : value > 0 && !point?.isLive
+              ? 'Click to see breakdown'
+              : 'No breakdown available for this point'}
         </span>
       ) : null}
     </div>
+  )
+}
+
+export function PortfolioHistoryCompletenessNotice({
+  activeTab,
+  balanceIsComplete,
+  protocolReturnIsComplete
+}: {
+  activeTab: TPortfolioHistoryChartTab
+  balanceIsComplete: boolean
+  protocolReturnIsComplete: boolean
+}): ReactElement | null {
+  const isEstimatedBalance = activeTab === 'balance' && !balanceIsComplete
+  const isEstimatedReturn = activeTab !== 'balance' && !protocolReturnIsComplete
+
+  if (!isEstimatedBalance && !isEstimatedReturn) {
+    return null
+  }
+
+  return (
+    <span
+      className={
+        'absolute right-2 top-2 z-10 rounded-full border border-border bg-surface/90 px-2 py-1 text-xs font-medium text-text-secondary shadow-sm backdrop-blur-sm'
+      }
+      title={
+        isEstimatedBalance
+          ? 'Some historical vault pricing is missing, so this balance may be incomplete.'
+          : 'Some historical return inputs are missing or unmatched, so this return may be incomplete.'
+      }
+    >
+      {isEstimatedBalance ? 'Estimated balance' : 'Estimated return'}
+    </span>
   )
 }
 
@@ -615,6 +655,7 @@ export function PortfolioHistoryChart({
   protocolReturnSummary,
   protocolReturnFamilySeries,
   denomination,
+  balanceIsComplete = true,
   timeframe,
   activeTab,
   growthDisplayModeOverride,
@@ -667,7 +708,12 @@ export function PortfolioHistoryChart({
 
     const limit = getTimeframeLimit(timeframe)
     const points = !Number.isFinite(limit) || limit >= balanceData.length ? balanceData : balanceData.slice(-limit)
-    return points.map((point) => ({ date: point.date, value: point.value, isLive: point.isLive }))
+    return points.map((point) => ({
+      date: point.date,
+      value: point.value,
+      isComplete: point.isComplete,
+      isLive: point.isLive
+    }))
   }, [balanceData, timeframe])
 
   const filteredGrowthUsdData = useMemo<TChartPoint[]>(() => {
@@ -770,6 +816,13 @@ export function PortfolioHistoryChart({
   const activeIsLoading = activeTab === 'balance' ? balanceIsLoading : protocolReturnIsLoading
   const activeIsEmpty = activeTab === 'balance' ? balanceIsEmpty : protocolReturnIsEmpty
   const activeError = activeTab === 'balance' ? balanceError : protocolReturnError
+  const completenessNotice = (
+    <PortfolioHistoryCompletenessNotice
+      activeTab={activeTab}
+      balanceIsComplete={balanceIsComplete}
+      protocolReturnIsComplete={protocolReturnSummary?.isComplete ?? true}
+    />
+  )
   const activeHasRenderableValue = activeData.some((point) => point.value !== null)
   const yAxisFloor = activeTab === 'growth' && resolvedGrowthDisplayMode === 'index' ? 100 : 0
   const yAxisTicks = useMemo(
@@ -1063,7 +1116,8 @@ export function PortfolioHistoryChart({
     const vaultGrowthSeries = buildPortfolioVaultGrowthSeries(visibleProtocolReturnFamilySeries, familyLabelByVaultKey)
 
     return (
-      <section className={cl(sectionClassName, className)}>
+      <section className={cl('relative', sectionClassName, className)}>
+        {completenessNotice}
         <PortfolioVaultGrowthChart
           series={vaultGrowthSeries}
           mode={vaultGrowthMode}
@@ -1091,7 +1145,8 @@ export function PortfolioHistoryChart({
 
   return (
     <section className={cl(sectionClassName, className)}>
-      <div className={'min-h-0 flex-1'}>
+      <div className={'relative min-h-0 flex-1'}>
+        {completenessNotice}
         <ChartContainer
           config={chartConfig}
           style={{ height: '100%', aspectRatio: 'unset' }}

@@ -22,7 +22,7 @@ export function upsertLivePortfolioBalancePoint({
     return data
   }
 
-  const livePoint = { date: liveSnapshot.date, value: liveValue, isLive: true }
+  const livePoint = { date: liveSnapshot.date, value: liveValue, isComplete: true, isLive: true }
   const existingIndex = data.findIndex((point) => point.date === liveSnapshot.date)
   if (existingIndex === -1) {
     return [...data, livePoint]

@@ -6,8 +6,10 @@ import type { TRawPnlEvent } from './pnlTypes'
 const fetchHistoricalPricesForTokenTimestampsMock = vi.fn()
 const getHistoricalPriceFetchFailedBatchesMock = vi.fn()
 const getPriceAtTimestampMock = vi.fn()
+const getSettledAddressScopedContextMock = vi.fn()
 const getSettledVersionedPpsContextMock = vi.fn()
 const getVaultIdentifiersMock = vi.fn()
+const selectVersionedEventsMock = vi.fn()
 const fetchActivityEventsByTransactionHashesMock = vi.fn()
 const generateDailyTimestampsMock = vi.fn()
 const generateDailyTimestampsFromRangeMock = vi.fn()
@@ -34,8 +36,10 @@ vi.mock('./defillama', () => ({
 }))
 
 vi.mock('./settledHoldingsContext', () => ({
+  getSettledAddressScopedContext: getSettledAddressScopedContextMock,
   getSettledVersionedPpsContext: getSettledVersionedPpsContextMock,
-  getVaultIdentifiers: getVaultIdentifiersMock
+  getVaultIdentifiers: getVaultIdentifiersMock,
+  selectVersionedEvents: selectVersionedEventsMock
 }))
 
 vi.mock('./graphql', () => ({
@@ -74,6 +78,22 @@ const HISTORY_START_TIMESTAMP = 1_704_067_200
 const VAULT_KEY = toVaultKey(1, VAULT)
 const ASSET_PRICE_KEY = `ethereum:${ASSET}`
 const WETH_PRICE_KEY = 'ethereum:0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
+const PINNED_LATEST_SETTLED_DAY_TIMESTAMP = 1_785_974_400
+const PINNED_EVENT_UPPER_TIMESTAMP = 1_786_147_199
+
+function createEventSource(key: string) {
+  return {
+    key,
+    latestSettledDayTimestamp: PINNED_LATEST_SETTLED_DAY_TIMESTAMP,
+    eventUpperTimestamp: PINNED_EVENT_UPPER_TIMESTAMP,
+    load: vi.fn().mockResolvedValue({
+      deposits: [],
+      withdrawals: [],
+      transfersIn: [],
+      transfersOut: []
+    })
+  }
+}
 
 const metadata = new Map<string, VaultMetadata>([
   [
@@ -165,11 +185,16 @@ describe('getHoldingsProtocolReturnHistory', () => {
       transfers: []
     })
     getVaultIdentifiersMock.mockReturnValue([{ chainId: 1, vaultAddress: VAULT }])
+    getSettledAddressScopedContextMock.mockResolvedValue(settledContext)
     getSettledVersionedPpsContextMock.mockResolvedValue(settledContext)
+    selectVersionedEventsMock.mockImplementation((context: typeof settledContext) => ({
+      events: context.rawEvents,
+      vaultIdentifiers: context.rawVaultIdentifiers
+    }))
   })
 
   it('starts all timeframe at the supported history floor', async () => {
-    const { getHoldingsProtocolReturnHistory } = await import('./pnlSimple')
+    const { getHoldingsProtocolReturnHistory } = await import('@/server/lib/holdings/services/pnlSimple')
 
     const response = await getHoldingsProtocolReturnHistory(USER, 'all', 'seq', 'paged', 'all')
 
@@ -212,7 +237,7 @@ describe('getHoldingsProtocolReturnHistory', () => {
     }
     getCachedProtocolReturnHistoryMock.mockResolvedValue(cachedResponse)
 
-    const { getHoldingsProtocolReturnHistory } = await import('./pnlSimple')
+    const { getHoldingsProtocolReturnHistory } = await import('@/server/lib/holdings/services/pnlSimple')
     const response = await getHoldingsProtocolReturnHistory(USER, 'all', 'parallel', 'paged', '1y')
 
     expect(response).toBe(cachedResponse)
@@ -223,7 +248,7 @@ describe('getHoldingsProtocolReturnHistory', () => {
   it('caches a successful partial protocol return history calculation', async () => {
     getPPSMock.mockReturnValue(null)
 
-    const { getHoldingsProtocolReturnHistory } = await import('./pnlSimple')
+    const { getHoldingsProtocolReturnHistory } = await import('@/server/lib/holdings/services/pnlSimple')
     const response = await getHoldingsProtocolReturnHistory(USER, 'all', 'parallel', 'paged', '1y')
 
     expect(response.summary.isComplete).toBe(false)
@@ -240,7 +265,7 @@ describe('getHoldingsProtocolReturnHistory', () => {
   it('does not cache protocol return history when a price request succeeds without prices', async () => {
     fetchHistoricalPricesForTokenTimestampsMock.mockResolvedValue(new Map())
 
-    const { getHoldingsProtocolReturnHistory } = await import('./pnlSimple')
+    const { getHoldingsProtocolReturnHistory } = await import('@/server/lib/holdings/services/pnlSimple')
     const response = await getHoldingsProtocolReturnHistory(USER, 'all', 'parallel', 'paged', '1y')
 
     expect(response.summary.totalVaults).toBe(1)
@@ -328,5 +353,186 @@ describe('getHoldingsProtocolReturnHistory', () => {
     cacheLookup.resolve?.(cachedResponse)
     await expect(Promise.all([firstRequest, secondRequest])).resolves.toEqual([cachedResponse, cachedResponse])
     expect(getSettledVersionedPpsContextMock).not.toHaveBeenCalled()
+  })
+
+  it('uses pinned ledger cutoffs and bypasses protocol history cache reads and writes', async () => {
+    const eventSource = createEventSource('ledger:revision-1')
+    getSettledAddressScopedContextMock.mockResolvedValue({
+      ...settledContext,
+      eventSourceKey: eventSource.key,
+      latestSettledDayTimestamp: eventSource.latestSettledDayTimestamp,
+      maxTimestamp: eventSource.latestSettledDayTimestamp + 86_399
+    })
+    getSettledVersionedPpsContextMock.mockResolvedValue({
+      ...settledContext,
+      eventSourceKey: eventSource.key,
+      latestSettledDayTimestamp: eventSource.latestSettledDayTimestamp,
+      maxTimestamp: eventSource.latestSettledDayTimestamp + 86_399
+    })
+
+    const { getHoldingsProtocolReturnHistory } = await import('@/server/lib/holdings/services/pnlSimple')
+    const response = await getHoldingsProtocolReturnHistory(
+      USER,
+      'all',
+      'parallel',
+      'paged',
+      '1y',
+      undefined,
+      undefined,
+      { eventSource, cacheMode: 'bypass' }
+    )
+
+    expect(response.summary.totalVaults).toBe(1)
+    expect(getCachedProtocolReturnHistoryMock).not.toHaveBeenCalled()
+    expect(saveCachedProtocolReturnHistoryMock).not.toHaveBeenCalled()
+    expect(getSettledVersionedPpsContextMock).toHaveBeenCalledWith(expect.objectContaining({ eventSource }))
+    expect(generateDailyTimestampsFromRangeMock).toHaveBeenCalledWith(
+      PINNED_LATEST_SETTLED_DAY_TIMESTAMP - 364 * 86_400,
+      PINNED_LATEST_SETTLED_DAY_TIMESTAMP
+    )
+    expect(timestampToDateStringMock).toHaveBeenCalledWith(PINNED_LATEST_SETTLED_DAY_TIMESTAMP + 1)
+    expect(fetchActivityEventsByTransactionHashesMock).toHaveBeenCalledWith(
+      expect.any(Map),
+      'all',
+      PINNED_EVENT_UPPER_TIMESTAMP
+    )
+  })
+
+  it('uses only address-scoped ledger events when transaction enrichment is disabled', async () => {
+    getPPSMock.mockReturnValue(1.1)
+    const eventSource = createEventSource('ledger:revision-address-only')
+    getSettledAddressScopedContextMock.mockResolvedValue({
+      ...settledContext,
+      eventSourceKey: eventSource.key,
+      latestSettledDayTimestamp: eventSource.latestSettledDayTimestamp,
+      maxTimestamp: eventSource.latestSettledDayTimestamp + 86_399
+    })
+    getSettledVersionedPpsContextMock.mockResolvedValue({
+      ...settledContext,
+      eventSourceKey: eventSource.key,
+      latestSettledDayTimestamp: eventSource.latestSettledDayTimestamp,
+      maxTimestamp: eventSource.latestSettledDayTimestamp + 86_399
+    })
+    fetchActivityEventsByTransactionHashesMock.mockRejectedValue(new Error('Envio is unavailable'))
+
+    const { getHoldingsProtocolReturnHistory } = await import('@/server/lib/holdings/services/pnlSimple')
+    const response = await getHoldingsProtocolReturnHistory(
+      USER,
+      'all',
+      'parallel',
+      'paged',
+      '1y',
+      undefined,
+      undefined,
+      {
+        eventSource,
+        cacheMode: 'bypass',
+        protocolReturnEventEnrichment: 'address-only'
+      }
+    )
+
+    expect(response.summary.totalVaults).toBe(1)
+    expect(response.dataPoints.at(-1)?.protocolReturnPct).toBeCloseTo(10)
+    expect(fetchActivityEventsByTransactionHashesMock).not.toHaveBeenCalled()
+  })
+
+  it('reuses a prepared settled context across the combined portfolio calculation', async () => {
+    const eventSource = createEventSource('ledger:prepared-context')
+    const preparedContext = {
+      ...settledContext,
+      eventSourceKey: eventSource.key,
+      latestSettledDayTimestamp: eventSource.latestSettledDayTimestamp,
+      maxTimestamp: eventSource.latestSettledDayTimestamp + 86_399
+    }
+
+    const { getHoldingsProtocolReturnHistory } = await import('@/server/lib/holdings/services/pnlSimple')
+    const response = await getHoldingsProtocolReturnHistory(
+      USER,
+      'all',
+      'parallel',
+      'paged',
+      '1y',
+      undefined,
+      undefined,
+      {
+        eventSource,
+        cacheMode: 'bypass',
+        settledContext: Promise.resolve(preparedContext),
+        protocolReturnEventEnrichment: 'address-only'
+      }
+    )
+
+    expect(getSettledAddressScopedContextMock).not.toHaveBeenCalled()
+    expect(getSettledVersionedPpsContextMock).toHaveBeenCalledWith(
+      expect.objectContaining({ context: preparedContext })
+    )
+    expect(response.summary.totalVaults).toBe(1)
+  })
+
+  it('labels request-scoped protocol-return PPS and price work', async () => {
+    const eventSource = createEventSource('ledger:protocol-return-priority')
+    const fetchVaultPps = vi.fn()
+    const fetchHistoricalPrices = vi.fn().mockResolvedValue(
+      new Map([
+        [ASSET_PRICE_KEY, new Map([[HISTORY_START_TIMESTAMP + 1, 1]])],
+        [WETH_PRICE_KEY, new Map([[HISTORY_START_TIMESTAMP + 1, 1]])]
+      ])
+    )
+    const valuationLoader = {
+      key: 'protocol-return-loader',
+      fetchVaultPps,
+      fetchHistoricalPrices
+    }
+
+    const { getHoldingsProtocolReturnHistory } = await import('@/server/lib/holdings/services/pnlSimple')
+    await getHoldingsProtocolReturnHistory(USER, 'all', 'parallel', 'paged', '1y', undefined, undefined, {
+      eventSource,
+      cacheMode: 'bypass',
+      valuationLoader
+    })
+
+    expect(getSettledVersionedPpsContextMock).toHaveBeenCalledWith(
+      expect.objectContaining({
+        valuationLoader,
+        valuationConsumer: 'protocol-return'
+      })
+    )
+    expect(fetchHistoricalPrices).toHaveBeenCalledTimes(2)
+    expect(fetchHistoricalPrices.mock.calls).toEqual([
+      [expect.any(Array), { resolution: 'utc_day', consumer: 'protocol-return' }],
+      [expect.any(Array), { resolution: 'utc_day', consumer: 'protocol-return' }]
+    ])
+  })
+
+  it('isolates in-flight protocol history calculations by event source identity', async () => {
+    const firstEventSource = createEventSource('ledger:revision-1')
+    const secondEventSource = createEventSource('ledger:revision-2')
+
+    const { getHoldingsProtocolReturnHistory } = await import('@/server/lib/holdings/services/pnlSimple')
+    const firstRequest = getHoldingsProtocolReturnHistory(
+      USER,
+      'all',
+      'parallel',
+      'paged',
+      '1y',
+      undefined,
+      undefined,
+      { eventSource: firstEventSource }
+    )
+    const secondRequest = getHoldingsProtocolReturnHistory(
+      USER,
+      'all',
+      'parallel',
+      'paged',
+      '1y',
+      undefined,
+      undefined,
+      { eventSource: secondEventSource }
+    )
+
+    await Promise.all([firstRequest, secondRequest])
+    expect(getSettledVersionedPpsContextMock).toHaveBeenCalledTimes(2)
+    expect(getCachedProtocolReturnHistoryMock).not.toHaveBeenCalled()
+    expect(saveCachedProtocolReturnHistoryMock).not.toHaveBeenCalled()
   })
 })

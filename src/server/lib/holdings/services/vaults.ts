@@ -8,14 +8,15 @@ interface KongVault {
   apiVersion?: string
   chainId: number
   symbol: string
-  decimals: number
+  decimals: number | string
+  pricePerShare?: string | number | null
   v3?: boolean
   category?: string | null
   isHidden?: boolean
   asset: {
     address: string
     symbol: string
-    decimals: number
+    decimals: number | string
   }
   staking?: {
     address: string | null
@@ -28,16 +29,19 @@ interface KongVaultSnapshot {
   apiVersion?: string
   chainId: number
   symbol?: string
-  decimals?: number
+  decimals?: number | string
   v3?: boolean
   meta?: {
     category?: string | null
     isHidden?: boolean
   } | null
+  apy?: {
+    pricePerShare?: string | number | null
+  } | null
   asset?: {
     address: string
     symbol: string
-    decimals: number
+    decimals: number | string
   }
   staking?: {
     address?: string | null
@@ -98,6 +102,7 @@ const vaultListState: TVaultListState = {
   hasLoadedGlobalVaultList: false,
   loadPromise: null
 }
+const fallbackMetadataPromises = new Map<string, Promise<{ key: string; metadata: VaultMetadata } | null>>()
 
 type TVaultMetadataFetchResult = Map<string, VaultMetadata> & {
   [VAULT_METADATA_FETCH_FAILED_VAULTS]?: number
@@ -162,6 +167,29 @@ function resolveVaultCategory(args: {
   return normalizeVaultCategory(args.category) ?? deriveVaultCategory([args.assetSymbol, args.vaultSymbol])
 }
 
+function normalizeCurrentPricePerShare(
+  value: string | number | null | undefined,
+  decimals: number
+): number | undefined {
+  if (value === null || value === undefined || !Number.isInteger(decimals) || decimals < 0) {
+    return undefined
+  }
+
+  const normalized = Number(value) / 10 ** decimals
+  return Number.isFinite(normalized) && normalized > 0 ? normalized : undefined
+}
+
+function normalizeDecimals(value: unknown): number | null {
+  const normalized =
+    typeof value === 'number'
+      ? value
+      : typeof value === 'string' && /^\d+$/.test(value.trim())
+        ? Number(value.trim())
+        : Number.NaN
+
+  return Number.isSafeInteger(normalized) && normalized >= 0 && normalized <= 255 ? normalized : null
+}
+
 function wait(delayMs: number): Promise<void> {
   return new Promise((resolve) => setTimeout(resolve, delayMs))
 }
@@ -191,7 +219,13 @@ function buildMetadataMaps(vaults: KongVault[]): {
     stakingToVaultMap: Map<string, VaultMetadata>
   }>(
     (maps, vault) => {
+      const shareDecimals = normalizeDecimals(vault.decimals)
+      const assetDecimals = normalizeDecimals(vault.asset.decimals)
+      if (shareDecimals === null || assetDecimals === null) {
+        return maps
+      }
       const version = inferVaultVersion(vault)
+      const currentPricePerShare = normalizeCurrentPricePerShare(vault.pricePerShare, assetDecimals)
       const metadata: VaultMetadata = {
         address: vault.address.toLowerCase(),
         chainId: vault.chainId,
@@ -202,12 +236,13 @@ function buildMetadataMaps(vaults: KongVault[]): {
           assetSymbol: vault.asset.symbol,
           vaultSymbol: vault.symbol
         }),
+        ...(currentPricePerShare === undefined ? {} : { currentPricePerShare }),
         token: {
           address: vault.asset.address.toLowerCase(),
           symbol: vault.asset.symbol,
-          decimals: vault.asset.decimals
+          decimals: assetDecimals
         },
-        decimals: vault.decimals
+        decimals: shareDecimals
       }
 
       const key = `${vault.chainId}:${vault.address.toLowerCase()}`
@@ -224,9 +259,9 @@ function buildMetadataMaps(vaults: KongVault[]): {
           token: {
             address: vault.address.toLowerCase(),
             symbol: vault.symbol,
-            decimals: vault.decimals
+            decimals: shareDecimals
           },
-          decimals: vault.decimals
+          decimals: shareDecimals
         }
         maps.stakingToVaultMap.set(stakingKey, stakingMetadata)
       }
@@ -277,6 +312,14 @@ function buildMetadataFromSnapshot(snapshot: KongVaultSnapshot): VaultMetadata |
     return null
   }
 
+  const assetDecimals = normalizeDecimals(snapshot.asset.decimals)
+  const shareDecimals = snapshot.decimals === undefined ? 18 : normalizeDecimals(snapshot.decimals)
+  if (assetDecimals === null || shareDecimals === null) {
+    return null
+  }
+
+  const currentPricePerShare = normalizeCurrentPricePerShare(snapshot.apy?.pricePerShare, assetDecimals)
+
   return {
     address: snapshot.address.toLowerCase(),
     chainId: snapshot.chainId,
@@ -287,17 +330,23 @@ function buildMetadataFromSnapshot(snapshot: KongVaultSnapshot): VaultMetadata |
       assetSymbol: snapshot.asset.symbol,
       vaultSymbol: snapshot.symbol
     }),
+    ...(currentPricePerShare === undefined ? {} : { currentPricePerShare }),
     token: {
       address: snapshot.asset.address.toLowerCase(),
       symbol: snapshot.asset.symbol,
-      decimals: snapshot.asset.decimals
+      decimals: assetDecimals
     },
-    decimals: snapshot.decimals ?? 18
+    decimals: shareDecimals
   }
 }
 
 function buildStakingMetadataFromSnapshot(stakingAddress: string, snapshot: KongVaultSnapshot): VaultMetadata | null {
   if (!snapshot.symbol || snapshot.decimals === undefined) {
+    return null
+  }
+
+  const shareDecimals = normalizeDecimals(snapshot.decimals)
+  if (shareDecimals === null) {
     return null
   }
 
@@ -314,9 +363,9 @@ function buildStakingMetadataFromSnapshot(stakingAddress: string, snapshot: Kong
     token: {
       address: snapshot.address.toLowerCase(),
       symbol: snapshot.symbol,
-      decimals: snapshot.decimals
+      decimals: shareDecimals
     },
-    decimals: snapshot.decimals
+    decimals: shareDecimals
   }
 }
 
@@ -451,6 +500,25 @@ async function fetchFallbackMetadataForVault(
   return { key, metadata }
 }
 
+function fetchFallbackMetadataForVaultCoalesced(
+  chainId: number,
+  vaultAddress: string
+): Promise<{ key: string; metadata: VaultMetadata } | null> {
+  const key = `${chainId}:${vaultAddress.toLowerCase()}`
+  const existing = fallbackMetadataPromises.get(key)
+  if (existing) {
+    return existing
+  }
+
+  const promise = fetchFallbackMetadataForVault(chainId, vaultAddress).finally(() => {
+    if (fallbackMetadataPromises.get(key) === promise) {
+      fallbackMetadataPromises.delete(key)
+    }
+  })
+  fallbackMetadataPromises.set(key, promise)
+  return promise
+}
+
 async function fetchFallbackMetadata(
   vaults: Array<{ chainId: number; vaultAddress: string }>
 ): Promise<Map<string, VaultMetadata>> {
@@ -465,7 +533,7 @@ async function fetchFallbackMetadata(
     async (allResultsPromise, batch) => {
       const allResults = await allResultsPromise
       const batchResults = await Promise.allSettled(
-        batch.map(({ chainId, vaultAddress }) => fetchFallbackMetadataForVault(chainId, vaultAddress))
+        batch.map(({ chainId, vaultAddress }) => fetchFallbackMetadataForVaultCoalesced(chainId, vaultAddress))
       )
 
       const resolvedResults = batchResults.reduce<{
@@ -541,6 +609,27 @@ async function loadVaultList(): Promise<void> {
     })
 
   return vaultListState.loadPromise
+}
+
+export function prefetchGlobalVaultMetadata(): Promise<void> {
+  return loadVaultList()
+}
+
+/**
+ * Clears request-process vault metadata so an isolated local benchmark can measure the same
+ * metadata-cold stage for every wallet. The portfolio route guards this behind a benchmark
+ * Redis namespace; application code should not call it during normal requests.
+ */
+export async function resetGlobalVaultMetadataCacheForBenchmark(): Promise<void> {
+  await Promise.allSettled([
+    ...(vaultListState.loadPromise ? [vaultListState.loadPromise] : []),
+    ...fallbackMetadataPromises.values()
+  ])
+  vaultListState.vaultListCache = null
+  vaultListState.stakingToVaultMap = null
+  vaultListState.hasLoadedGlobalVaultList = false
+  vaultListState.loadPromise = null
+  fallbackMetadataPromises.clear()
 }
 
 export async function fetchVaultMetadata(chainId: number, vaultAddress: string): Promise<VaultMetadata | null> {

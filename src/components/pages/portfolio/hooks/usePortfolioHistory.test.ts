@@ -22,7 +22,7 @@ describe('upsertLivePortfolioBalancePoint', () => {
 
     expect(upsertLivePortfolioBalancePoint({ data, denomination: 'usd', liveSnapshot })).toEqual([
       { date: '2026-05-13', value: 1000 },
-      { date: '2026-05-14', value: 1234, isLive: true }
+      { date: '2026-05-14', value: 1234, isComplete: true, isLive: true }
     ])
   })
 
@@ -34,7 +34,7 @@ describe('upsertLivePortfolioBalancePoint', () => {
 
     expect(upsertLivePortfolioBalancePoint({ data, denomination: 'usd', liveSnapshot })).toEqual([
       { date: '2026-05-13', value: 1000 },
-      { date: '2026-05-14', value: 1234, isLive: true }
+      { date: '2026-05-14', value: 1234, isComplete: true, isLive: true }
     ])
   })
 
@@ -43,7 +43,7 @@ describe('upsertLivePortfolioBalancePoint', () => {
 
     expect(upsertLivePortfolioBalancePoint({ data, denomination: 'eth', liveSnapshot })).toEqual([
       { date: '2026-05-13', value: 0.35 },
-      { date: '2026-05-14', value: 0.4, isLive: true }
+      { date: '2026-05-14', value: 0.4, isComplete: true, isLive: true }
     ])
   })
 

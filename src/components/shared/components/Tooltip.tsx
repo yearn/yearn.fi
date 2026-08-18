@@ -24,6 +24,7 @@ export const Tooltip: FC<{
   align?: 'center' | 'start' | 'left' | 'right'
   side?: 'top' | 'bottom' | 'left' | 'right'
   zIndex?: number
+  fullWidth?: boolean
 }> = ({
   children,
   tooltip,
@@ -32,7 +33,8 @@ export const Tooltip: FC<{
   toggleOnClick = false,
   align = 'center',
   side = 'top',
-  zIndex = 9999
+  zIndex = 9999,
+  fullWidth = false
 }) => {
   const [canHover, setCanHover] = useState<boolean>(() => getCanHover())
   const [isTooltipVisible, setIsTooltipVisible] = useState(false)
@@ -242,7 +244,11 @@ export const Tooltip: FC<{
       onMouseEnter={handleMouseEnter}
       onMouseLeave={handleMouseLeave}
       onClick={handleClick}
-      className={cl('flex w-fit items-center justify-end gap-4 md:justify-center relative', className)}
+      className={cl(
+        'flex items-center justify-end gap-4 md:justify-center relative',
+        fullWidth ? 'w-full' : 'w-fit',
+        className
+      )}
     >
       {children}
 

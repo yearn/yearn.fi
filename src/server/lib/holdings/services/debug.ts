@@ -4,7 +4,18 @@ import { appendHoldingsProgressLog, updateHoldingsProgress } from './progress'
 export interface HoldingsDebugContext {
   enabled: boolean
   requestId: string
-  route: 'history' | 'breakdown' | 'protocol-return-history'
+  route:
+    | 'history'
+    | 'breakdown'
+    | 'protocol-return-history'
+    | 'ledger-sync'
+    | 'ledger-snapshot'
+    | 'ledger-history'
+    | 'ledger-breakdown'
+    | 'ledger-growth'
+    | 'ledger-portfolio'
+    | 'ledger-portfolio-history'
+    | 'ledger-protocol-return-history'
   address: string
   startedAt: number
   lotsEnabled: boolean
@@ -34,7 +45,7 @@ export function isHoldingsDebugRequested(debugValue?: string | null): boolean {
 }
 
 export function createHoldingsDebugContext(
-  route: 'history' | 'breakdown' | 'protocol-return-history',
+  route: HoldingsDebugContext['route'],
   address: string,
   enabled: boolean,
   options?: {
@@ -58,7 +69,27 @@ export function createHoldingsDebugContext(
   }
 }
 
+export function startHoldingsDebugTimer(): () => number {
+  const startedAt = performance.now()
+  return () => Math.round((performance.now() - startedAt) * 100) / 100
+}
+
 export async function withHoldingsDebugContext<T>(context: HoldingsDebugContext, fn: () => Promise<T>): Promise<T> {
+  const activeContext = storage.getStore()
+  if (activeContext && activeContext.address === context.address) {
+    return storage.run(
+      {
+        ...activeContext,
+        enabled: activeContext.enabled || context.enabled,
+        lotsEnabled: activeContext.lotsEnabled || context.lotsEnabled,
+        vaultFilter: context.vaultFilter ?? activeContext.vaultFilter,
+        txFilter: context.txFilter ?? activeContext.txFilter,
+        progressId: context.progressId ?? activeContext.progressId
+      },
+      fn
+    )
+  }
+
   return storage.run(context, async () => {
     try {
       return await fn()
