@@ -1,3 +1,8 @@
+import {
+  ALLOCATION_COMPLETENESS_TOLERANCE_BPS,
+  type AllocationCoverage,
+  calculateAllocationCoverage
+} from './allocationCoverage'
 import { getChainLogoUrl, getTokenAddressForSymbol, getTokenLogoUrl, getVaultAssetToken } from './assetLogos'
 import { assignStrategyColors } from './colors'
 import { parseExplainMetadata, parseFilteredNoChangeStrategies } from './explain-parse'
@@ -6,7 +11,7 @@ import type { OptimizationSourceMeta } from './redis'
 import type { StrategyDebtRatio, VaultOptimization } from './schema'
 
 const TOTAL_BPS = 10000
-export const NORMALIZATION_TOLERANCE_BPS = 5
+export const NORMALIZATION_TOLERANCE_BPS = ALLOCATION_COMPLETENESS_TOLERANCE_BPS
 
 function buildSyntheticStrategyAddress(vaultAddress: string, strategyName: string, index: number, salt = 0): string {
   const seed = `${vaultAddress.toLowerCase()}|${strategyName.toLowerCase()}|${index}|${salt}`
@@ -64,7 +69,8 @@ export interface NormalizedChange {
   vaultAprDeltaPct: number
   vaultAprDeltaRelativePct: number | null
   hasUnallocated: boolean
-  unallocatedBps: number
+  unallocatedBps: number | null
+  allocationCoverage: AllocationCoverage
   tokenLogoUrl: string | null
   chainLogoUrl: string | null
   timestampUtc: string | null
@@ -165,32 +171,8 @@ export function normalizeChange(data: VaultOptimization, source?: OptimizationSo
   )
   const inputStrategies = normalizeStrategyNames(augmentedStrategies)
 
-  let strategies = inputStrategies
-  let hasUnallocated = false
-  let unallocatedBps = 0
-
-  const totalCurrentBps = strategies.reduce((sum, s) => sum + s.currentRatio, 0)
-  const totalTargetBps = strategies.reduce((sum, s) => sum + s.targetRatio, 0)
-
-  const unallocatedCurrentBps = Math.max(0, TOTAL_BPS - totalCurrentBps)
-  const unallocatedTargetBps = Math.max(0, TOTAL_BPS - totalTargetBps)
-
-  if (unallocatedCurrentBps > NORMALIZATION_TOLERANCE_BPS || unallocatedTargetBps > NORMALIZATION_TOLERANCE_BPS) {
-    hasUnallocated = unallocatedCurrentBps > NORMALIZATION_TOLERANCE_BPS
-    unallocatedBps = unallocatedCurrentBps
-
-    strategies = [
-      ...strategies,
-      {
-        strategy: 'unallocated',
-        name: 'Unallocated',
-        currentRatio: unallocatedCurrentBps,
-        targetRatio: unallocatedTargetBps,
-        currentApr: undefined,
-        targetApr: undefined
-      } as StrategyDebtRatio
-    ]
-  }
+  const strategies = inputStrategies
+  const allocationCoverage = calculateAllocationCoverage(data.strategyDebtRatios)
 
   const strategyKeys: string[] = []
   const usedKeys = new Set<string>()
@@ -281,8 +263,9 @@ export function normalizeChange(data: VaultOptimization, source?: OptimizationSo
     vaultAprProposedPct,
     vaultAprDeltaPct,
     vaultAprDeltaRelativePct,
-    hasUnallocated,
-    unallocatedBps,
+    hasUnallocated: allocationCoverage.unallocatedBps !== null,
+    unallocatedBps: allocationCoverage.unallocatedBps,
+    allocationCoverage,
     tokenLogoUrl,
     chainLogoUrl,
     timestampUtc,
