@@ -207,14 +207,7 @@ export async function executePlannedStyledWidgetTransaction({
         ? 'submitted-unconfirmed'
         : 'pre-submission'
 
-    if (failureKind === 'pre-submission') {
-      const receipt = getLatestReceipt(outcome)
-      appendNotificationUpdate({
-        status: 'error',
-        ...(hash ? { txHash: hash } : {}),
-        ...(receipt ? { receipt } : {})
-      })
-    }
+    if (failureKind === 'pre-submission') appendNotificationUpdate({ status: 'error' })
     if (transactionConfirmed && hash) {
       onState?.({ error, hash, status: 'confirmed-refresh-error' })
     } else if (submissionUnconfirmed && hash) {

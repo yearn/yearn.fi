@@ -4,7 +4,8 @@ import {
   sendCalls,
   sendTransaction,
   switchChain as wagmiSwitchChain,
-  waitForCallsStatus
+  waitForCallsStatus,
+  waitForTransactionReceipt
 } from '@wagmi/core/actions'
 import type { VaultWidgetExecutionAdapter, VaultWidgetTransactionRequest } from '@yearn/vault-widget/headless'
 import {
@@ -14,8 +15,7 @@ import {
   isHash,
   isHex,
   MethodNotFoundRpcError,
-  MethodNotSupportedRpcError,
-  type ReplacementReturnType
+  MethodNotSupportedRpcError
 } from 'viem'
 
 export type TWagmiVaultWidgetExecutionAdapterOptions = {
@@ -129,47 +129,17 @@ export function createWagmiVaultWidgetExecutionAdapter(
       return hash
     },
     async waitForReceipt({ chainId, hash }) {
-      const executionChainId = requireExecutionChainId(chainId)
-      const publicClient = getPublicClient(options.config, { chainId: executionChainId })
-      if (!publicClient) throw new Error(`No public client is configured for chain ${executionChainId}`)
-
-      const observedReplacement: { current?: ReplacementReturnType } = {}
-      const receipt = await publicClient.waitForTransactionReceipt({
-        hash,
-        onReplaced: (replacement) => {
-          observedReplacement.current = replacement
-        },
-        timeout: 0
+      const receipt = await waitForTransactionReceipt(options.config, {
+        chainId: requireExecutionChainId(chainId),
+        hash
       })
       if (!isTransactionHash(receipt.transactionHash)) {
         throw new Error('Wallet returned an invalid transaction receipt')
       }
-
-      const replacement = observedReplacement.current
-      if (receipt.transactionHash.toLowerCase() === hash.toLowerCase()) {
-        if (replacement) throw new Error('Wallet returned invalid transaction replacement details')
-        return { receipt }
-      }
-
-      if (
-        !replacement ||
-        !isTransactionHash(replacement.replacedTransaction.hash) ||
-        replacement.replacedTransaction.hash.toLowerCase() !== hash.toLowerCase() ||
-        !isTransactionHash(replacement.transaction.hash) ||
-        replacement.transaction.hash.toLowerCase() !== receipt.transactionHash.toLowerCase() ||
-        !isTransactionHash(replacement.transactionReceipt.transactionHash) ||
-        replacement.transactionReceipt.transactionHash.toLowerCase() !== receipt.transactionHash.toLowerCase()
-      ) {
+      if (receipt.transactionHash.toLowerCase() !== hash.toLowerCase()) {
         throw new Error('Wallet returned a receipt for an unexpected transaction')
       }
-
-      return {
-        receipt,
-        replacement: {
-          reason: replacement.reason,
-          replacedHash: hash
-        }
-      }
+      return receipt
     },
     async proposeSafeBatch({ account, chainId, requests }) {
       if (requests.length === 0) throw new Error('Safe batch cannot be empty')
