@@ -1,6 +1,7 @@
-import { describe, expect, it } from 'vitest'
+import { describe, expect, it, vi } from 'vitest'
 import {
   resolveCompletionDeferral,
+  runBeforeSuccessSafely,
   shouldAutoContinuePermitSuccess,
   shouldRunDeferredCompletion
 } from './transactionOverlay.helpers'
@@ -127,5 +128,31 @@ describe('shouldRunDeferredCompletion', () => {
         trigger: 'close'
       })
     ).toBe(true)
+  })
+})
+
+describe('runBeforeSuccessSafely', () => {
+  it('absorbs refresh failures so confirmed transactions can still finalize', async () => {
+    const error = new Error('RPC unavailable')
+    const onError = vi.fn()
+
+    await expect(
+      runBeforeSuccessSafely({
+        onBeforeSuccess: async () => await Promise.reject(error),
+        label: 'Swap',
+        onError
+      })
+    ).resolves.toBeUndefined()
+    expect(onError).toHaveBeenCalledWith(error)
+  })
+
+  it('awaits a successful refresh without reporting an error', async () => {
+    const onBeforeSuccess = vi.fn(async () => undefined)
+    const onError = vi.fn()
+
+    await runBeforeSuccessSafely({ onBeforeSuccess, label: 'Swap', onError })
+
+    expect(onBeforeSuccess).toHaveBeenCalledWith('Swap')
+    expect(onError).not.toHaveBeenCalled()
   })
 })

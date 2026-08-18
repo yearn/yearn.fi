@@ -21,3 +21,17 @@ export function requiresAllowanceResetBeforeApproval(tokenAddress?: Address): bo
 
   return TOKENS_REQUIRING_ALLOWANCE_RESET_BEFORE_APPROVAL.has(getAddress(tokenAddress))
 }
+
+export function requiresAllowanceResetForApproval({
+  tokenAddress,
+  currentAllowance,
+  requiredAmount
+}: {
+  tokenAddress?: Address
+  currentAllowance: bigint
+  requiredAmount: bigint
+}): boolean {
+  return (
+    requiresAllowanceResetBeforeApproval(tokenAddress) && currentAllowance > 0n && requiredAmount > currentAllowance
+  )
+}

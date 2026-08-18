@@ -61,6 +61,9 @@ export function getNotificationActivityAction(notification: TNotification): TPor
     case 'zap':
     case 'crosschain zap':
       return 'deposit'
+    case 'swap':
+    case 'crosschain swap':
+      return 'swap'
     case 'withdraw':
     case 'withdraw zap':
     case 'crosschain withdraw zap':
@@ -108,6 +111,8 @@ export function isZapNotification(notification: TNotification): boolean {
   return (
     notification.type === 'zap' ||
     notification.type === 'crosschain zap' ||
+    notification.type === 'swap' ||
+    notification.type === 'crosschain swap' ||
     notification.type === 'withdraw zap' ||
     notification.type === 'crosschain withdraw zap'
   )

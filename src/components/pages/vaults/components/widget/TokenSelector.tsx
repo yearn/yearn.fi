@@ -1,8 +1,11 @@
 import {
   getVaultAddress,
   getVaultChainID,
+  getVaultDecimals,
   getVaultInfo,
-  getVaultStakingAddress
+  getVaultName,
+  getVaultStakingAddress,
+  getVaultSymbol
 } from '@pages/vaults/domain/kongVaultSelectors'
 import { ImageWithFallback } from '@shared/components/ImageWithFallback'
 import { TokenLogoV2 } from '@shared/components/TokenLogoV2'
@@ -10,8 +13,8 @@ import { useWalletStatus, useWalletTokens } from '@shared/contexts/useWallet'
 import { useYearn } from '@shared/contexts/useYearn'
 import { useTokenList } from '@shared/contexts/WithTokenList'
 import type { TToken } from '@shared/types'
-import { cl, formatTAmount, toAddress } from '@shared/utils'
-import { type FC, useCallback, useMemo, useState } from 'react'
+import { cl, formatTAmount, toAddress, toNormalizedBN } from '@shared/utils'
+import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
 import { isAddress, zeroAddress } from 'viem'
 import { env } from '@/env'
 import { CloseIcon } from './shared/Icons'
@@ -55,7 +58,10 @@ interface TokenSelectorProps {
   vaultAddress?: `0x${string}`
   stakingAddress?: `0x${string}`
   allowHiddenVaultTokenSelection?: boolean
+  excludeRetiredVaults?: boolean
+  balanceOnly?: boolean
   mode?: TTokenSelectorMode
+  resolveCustomToken?: (address: `0x${string}`, chainId: number) => Promise<TToken | undefined>
 }
 
 const TokenTypeChip: FC<{ type: TTokenType }> = ({ type }) => {
@@ -101,6 +107,7 @@ const TokenItem: FC<{
           tokenName={token.name}
           width={24}
           height={24}
+          loading="lazy"
           className="rounded-full"
         />
         <div className="text-left">
@@ -137,18 +144,37 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
   vaultAddress,
   stakingAddress,
   allowHiddenVaultTokenSelection,
-  mode = 'default'
+  excludeRetiredVaults,
+  balanceOnly,
+  mode = 'default',
+  resolveCustomToken
 }) => {
   const [searchText, setSearchText] = useState('')
   const [selectedChainId, setSelectedChainId] = useState(chainId)
   const { getToken, balances } = useWalletTokens()
   const { isLoading } = useWalletStatus()
-  const { tokenLists } = useTokenList()
-  const { allVaults, getPrice } = useYearn()
+  const { addCustomToken, tokenLists } = useTokenList()
+  const { allVaults, getPrice, isLoadingVaultList } = useYearn()
   const customAddress = useMemo(
     () => (searchText && isAddress(searchText) ? (searchText as `0x${string}`) : undefined),
     [searchText]
   )
+  const [customAddressToken, setCustomAddressToken] = useState<TToken | undefined>()
+
+  useEffect(() => {
+    if (!customAddress || !resolveCustomToken) {
+      setCustomAddressToken(undefined)
+      return
+    }
+
+    let isCurrent = true
+    void resolveCustomToken(customAddress, selectedChainId).then((token) => {
+      if (isCurrent) setCustomAddressToken(token)
+    })
+    return () => {
+      isCurrent = false
+    }
+  }, [customAddress, resolveCustomToken, selectedChainId])
 
   const priorityTokenAddresses = useMemo(
     () => (priorityTokens?.[selectedChainId] || []).map((address) => toAddress(address) as `0x${string}`),
@@ -182,6 +208,25 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
 
     return [...hiddenAddresses]
   }, [allVaults, selectedChainId])
+  const retiredVaultTokenAddresses = useMemo(() => {
+    if (!excludeRetiredVaults) {
+      return []
+    }
+
+    return Object.values(allVaults).flatMap((vault) => {
+      const info = getVaultInfo(vault)
+      if (getVaultChainID(vault) !== selectedChainId || !info.isRetired) {
+        return []
+      }
+
+      const addresses = [toAddress(getVaultAddress(vault)) as `0x${string}`]
+      const retiredStakingAddress = getVaultStakingAddress(vault)
+      if (retiredStakingAddress !== zeroAddress) {
+        addresses.push(retiredStakingAddress as `0x${string}`)
+      }
+      return addresses
+    })
+  }, [allVaults, excludeRetiredVaults, selectedChainId])
   const hiddenVaultExemptAddresses = useMemo(
     () =>
       mode === 'withdraw' && allowHiddenVaultTokenSelection && selectedChainId === chainId && vaultAddress
@@ -197,11 +242,12 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
           ...hiddenVaultTokenAddresses.filter(
             (address) => !hiddenVaultExemptAddresses.includes(toAddress(address) as `0x${string}`)
           ),
+          ...retiredVaultTokenAddresses,
           ...(LEGACY_SELECTOR_TOKEN_ADDRESSES_BY_CHAIN[selectedChainId] || [])
         ].map((address) => toAddress(address))
       )
     ],
-    [excludeTokens, hiddenVaultExemptAddresses, hiddenVaultTokenAddresses, selectedChainId]
+    [excludeTokens, hiddenVaultExemptAddresses, hiddenVaultTokenAddresses, retiredVaultTokenAddresses, selectedChainId]
   )
   const assetLogoToken = useMemo<TTokenLogoSourceToken | undefined>(() => {
     if (selectedChainId !== assetChainId || !assetAddress) {
@@ -265,6 +311,27 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
       })
     }
 
+    if (mode === 'swap') {
+      Object.values(allVaults)
+        .filter((vault) => getVaultChainID(vault) === selectedChainId && !getVaultInfo(vault).isHidden)
+        .map((vault): TToken => {
+          const address = toAddress(getVaultAddress(vault))
+          const decimals = getVaultDecimals(vault)
+          const walletToken = chainBalances[address]
+
+          return {
+            address,
+            name: getVaultName(vault),
+            symbol: getVaultSymbol(vault) || 'Vault',
+            decimals,
+            chainID: selectedChainId,
+            value: walletToken?.value ?? 0,
+            balance: walletToken?.balance ?? toNormalizedBN(0n, decimals)
+          }
+        })
+        .forEach(setOverride)
+    }
+
     // Add all tokens from wallet balances
     Object.entries(chainBalances).forEach(([address, token]) => {
       if (token.chainID === 137 && toAddress(address) === '0x0000000000000000000000000000000000001010') {
@@ -299,6 +366,16 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
       const customToken = getToken({ address: toAddress(customAddress), chainID: selectedChainId })
       if (customToken.symbol) {
         setIfMissing(customToken)
+      } else if (customAddressToken?.address && customAddressToken.symbol && customAddressToken.symbol !== '???') {
+        setIfMissing({
+          address: toAddress(customAddressToken.address),
+          name: customAddressToken.name || customAddressToken.symbol,
+          symbol: customAddressToken.symbol,
+          decimals: customAddressToken.decimals ?? 18,
+          chainID: selectedChainId,
+          value: 0,
+          balance: customAddressToken.balance
+        })
       }
     }
 
@@ -308,8 +385,22 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
       setOverride(extraToken)
     }
 
-    return [...tokenMap.values()]
-  }, [balances, selectedChainId, value, customAddress, getToken, priorityTokenAddresses, chainExtraTokens])
+    const availableTokens = [...tokenMap.values()]
+    return balanceOnly ? availableTokens.filter((token) => token.balance.raw > 0n) : availableTokens
+  }, [
+    allVaults,
+    balanceOnly,
+    balances,
+    chainExtraTokens,
+    customAddress,
+    customAddressToken,
+    getToken,
+    mode,
+    priorityTokenAddresses,
+    selectedChainId,
+    tokenLists,
+    value
+  ])
 
   const yearnKnownTokenAddresses = useMemo(
     () =>
@@ -397,12 +488,18 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
 
   const handleSelect = useCallback(
     (address: `0x${string}`) => {
+      const selectedCustomToken = customAddressToken?.address
+        ? tokens.find((token) => toAddress(token.address) === toAddress(customAddressToken.address))
+        : undefined
+      if (selectedCustomToken && toAddress(address) === toAddress(selectedCustomToken.address)) {
+        addCustomToken(selectedCustomToken)
+      }
       onChange(address, selectedChainId)
       if (onClose) {
         onClose()
       }
     },
-    [onChange, onClose, selectedChainId]
+    [addCustomToken, customAddressToken?.address, onChange, onClose, selectedChainId, tokens]
   )
 
   const getTokenType = useCallback(
@@ -428,6 +525,8 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
             <button
               key={chain.id}
               onClick={() => setSelectedChainId(chain.id)}
+              aria-label={`Select ${chain.name}`}
+              title={chain.name}
               className={cl(
                 'size-9 flex items-center justify-center rounded-md',
                 selectedChainId === chain.id ? 'bg-surface shadow-sm' : 'bg-transparent hover:bg-surface/50'
@@ -462,7 +561,7 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
 
       {/* Token list */}
       <div className="flex-1 overflow-y-auto px-4 pb-4 overscroll-contain">
-        {isLoading ? (
+        {isLoading || (mode === 'swap' && isLoadingVaultList) ? (
           <div className="flex items-center justify-center py-8">
             <div className="w-5 h-5 border-2 border-border border-t-primary rounded-full animate-spin" />
           </div>

@@ -18,7 +18,10 @@ interface TokenSelectorOverlayProps {
   vaultAddress?: Address
   stakingAddress?: Address
   allowHiddenVaultTokenSelection?: boolean
+  excludeRetiredVaults?: boolean
+  balanceOnly?: boolean
   mode?: TTokenSelectorMode
+  resolveCustomToken?: (address: Address, chainId: number) => Promise<TToken | undefined>
 }
 
 export const TokenSelectorOverlay: FC<TokenSelectorOverlayProps> = ({
@@ -35,7 +38,10 @@ export const TokenSelectorOverlay: FC<TokenSelectorOverlayProps> = ({
   vaultAddress,
   stakingAddress,
   allowHiddenVaultTokenSelection,
-  mode
+  excludeRetiredVaults,
+  balanceOnly,
+  mode,
+  resolveCustomToken
 }) => {
   return (
     <div
@@ -65,7 +71,10 @@ export const TokenSelectorOverlay: FC<TokenSelectorOverlayProps> = ({
           vaultAddress={vaultAddress}
           stakingAddress={stakingAddress}
           allowHiddenVaultTokenSelection={allowHiddenVaultTokenSelection}
+          excludeRetiredVaults={excludeRetiredVaults}
+          balanceOnly={balanceOnly}
           mode={mode}
+          resolveCustomToken={resolveCustomToken}
         />
       </div>
     </div>

@@ -10,7 +10,7 @@ import type { TDict, TToken } from '@shared/types'
 import { toAddress } from '@shared/utils'
 import { type Address, zeroAddress } from 'viem'
 
-export type TTokenSelectorMode = 'default' | 'deposit' | 'withdraw'
+export type TTokenSelectorMode = 'default' | 'deposit' | 'withdraw' | 'swap'
 
 type TGetPrice = (props: { address: Address; chainID: number }) => { normalized: number }
 const MIN_SELECTOR_USD_VALUE = 0.01
@@ -190,6 +190,15 @@ export function filterAndSortTokenSelectorTokens({
       }
 
       if (mode === 'deposit' && usdValue <= 0 && !knownAddresses.has(address) && !explicitAddresses.has(address)) {
+        return false
+      }
+
+      if (
+        mode === 'swap' &&
+        token.balance.raw <= 0n &&
+        !knownAddresses.has(address) &&
+        !explicitAddresses.has(address)
+      ) {
         return false
       }
 
