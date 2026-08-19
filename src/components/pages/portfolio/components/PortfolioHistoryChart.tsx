@@ -36,6 +36,7 @@ import type {
   TPortfolioProtocolReturnHistoryFamilySeries,
   TPortfolioProtocolReturnHistorySummary
 } from '../types/api'
+import { PortfolioGrowthContributionsChart } from './PortfolioGrowthContributionsChart'
 import { PortfolioHistoryBreakdownModal } from './PortfolioHistoryBreakdownModal'
 import type {
   TPortfolioVaultGrowthChartMode,
@@ -461,6 +462,9 @@ export function PortfolioHistoryChartControls({
       })
     }
     onActiveTabChange(tab)
+    if (tab === 'growth') {
+      onGrowthDisplayModeOverrideChange('usd')
+    }
     if (tab === 'index') {
       onVaultGrowthModeChange('index')
     }
@@ -523,10 +527,7 @@ function buildPortfolioVaultGrowthSeries(
   return familySeries.map((series) => ({
     chainId: series.chainId,
     vaultAddress: series.vaultAddress,
-    vaultName:
-      labelByVaultKey[`${series.chainId}:${series.vaultAddress.toLowerCase()}`] ??
-      series.symbol ??
-      `${series.vaultAddress.slice(0, 6)}…${series.vaultAddress.slice(-4)}`,
+    vaultName: getPortfolioVaultSeriesLabel(series, labelByVaultKey),
     symbol: series.symbol,
     points: series.dataPoints.map((point) => ({
       timestamp: point.timestamp,
@@ -534,6 +535,17 @@ function buildPortfolioVaultGrowthSeries(
       indexValue: point.growthIndex
     }))
   }))
+}
+
+function getPortfolioVaultSeriesLabel(
+  series: TPortfolioProtocolReturnHistoryFamilySeries[number],
+  labelByVaultKey: Record<string, string>
+): string {
+  return (
+    labelByVaultKey[`${series.chainId}:${series.vaultAddress.toLowerCase()}`] ??
+    series.symbol ??
+    `${series.vaultAddress.slice(0, 6)}…${series.vaultAddress.slice(-4)}`
+  )
 }
 
 function PortfolioHistoryTooltip({
@@ -651,8 +663,8 @@ export function PortfolioHistoryChart({
   )
 
   useEffect(() => {
-    onGrowthDisplayModeOverrideChange(null)
-  }, [address, onGrowthDisplayModeOverrideChange])
+    onGrowthDisplayModeOverrideChange(activeTab === 'growth' ? 'usd' : null)
+  }, [activeTab, address, onGrowthDisplayModeOverrideChange])
 
   const sectionClassName = embedded
     ? reserveControlSpace
@@ -753,6 +765,19 @@ export function PortfolioHistoryChart({
   const visibleProtocolReturnFamilySeries = useMemo(
     () => filterVisiblePortfolioVaultSeries(protocolReturnFamilySeries, Object.values(allVaults)),
     [allVaults, protocolReturnFamilySeries]
+  )
+  const growthContributionFamilySeries = useMemo(
+    () =>
+      visibleProtocolReturnFamilySeries.map((series) => ({
+        chainId: series.chainId,
+        vaultAddress: series.vaultAddress,
+        label: getPortfolioVaultSeriesLabel(series, familyLabelByVaultKey),
+        dataPoints: series.dataPoints.map((point) => ({
+          timestamp: point.timestamp,
+          growthWeightUsd: point.growthWeightUsd
+        }))
+      })),
+    [familyLabelByVaultKey, visibleProtocolReturnFamilySeries]
   )
 
   const activeData =
@@ -1080,6 +1105,25 @@ export function PortfolioHistoryChart({
           className={'h-full min-h-0 pt-1'}
           emptyMessage={getEmptyMessage(activeTab, resolvedGrowthDisplayMode)}
         />
+        <PortfolioHistoryBreakdownModal
+          date={selectedBreakdownDate}
+          isOpen={isBreakdownModalOpen}
+          onClose={() => setIsBreakdownModalOpen(false)}
+        />
+      </section>
+    )
+  }
+
+  if (activeTab === 'growth' && resolvedGrowthDisplayMode === 'usd') {
+    return (
+      <section className={cl(sectionClassName, className)}>
+        <div className={'min-h-0 flex-1'}>
+          <PortfolioGrowthContributionsChart
+            totalPoints={filteredGrowthUsdData}
+            familySeries={growthContributionFamilySeries}
+            timeframe={timeframe}
+          />
+        </div>
         <PortfolioHistoryBreakdownModal
           date={selectedBreakdownDate}
           isOpen={isBreakdownModalOpen}
