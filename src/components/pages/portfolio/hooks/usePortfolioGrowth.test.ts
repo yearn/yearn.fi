@@ -5,6 +5,7 @@ import {
   toPortfolioGrowthDisplay
 } from '@pages/portfolio/hooks/usePortfolioGrowth'
 import type { TPortfolioGrowthVault } from '@pages/portfolio/types/api'
+import { YBOLD_STAKING_ADDRESS, YBOLD_VAULT_ADDRESS } from '@pages/vaults/domain/normalizeVault'
 import { YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import { describe, expect, it } from 'vitest'
 
@@ -95,6 +96,60 @@ describe('portfolio growth helpers', () => {
       usd: 10,
       percent: 10,
       annualizedPercent: 20
+    })
+  })
+
+  it('combines unstaked and staked yBOLD growth under the displayed vault', () => {
+    const unstaked = makeGrowthVault(YBOLD_VAULT_ADDRESS, {
+      baselineUsd: 100,
+      baselineExposureUsdYears: 50,
+      growthUsd: 0
+    })
+    const staked = makeGrowthVault(YBOLD_STAKING_ADDRESS, {
+      baselineUsd: 200,
+      baselineExposureUsdYears: 100,
+      growthUsd: 30,
+      metadata: {
+        symbol: 'ysyBOLD',
+        decimals: 18,
+        assetDecimals: 18,
+        tokenAddress: YBOLD_VAULT_ADDRESS
+      }
+    })
+
+    const mapped = mapPortfolioGrowthVaults([unstaked, staked])
+    const combined = mapped.get(getPortfolioGrowthVaultKey(unstaked))
+
+    expect(combined).toMatchObject({
+      vaultAddress: YBOLD_VAULT_ADDRESS,
+      status: 'ok',
+      baselineUsd: 300,
+      baselineExposureUsdYears: 150,
+      growthUsd: 30,
+      growthPct: 10,
+      annualizedProtocolReturnPct: 20
+    })
+    expect(combined?.metadata.symbol).toBe('yvTEST')
+  })
+
+  it('maps staking-only yBOLD growth to the displayed vault', () => {
+    const staked = makeGrowthVault(YBOLD_STAKING_ADDRESS, {
+      baselineUsd: 200,
+      baselineExposureUsdYears: 100,
+      growthUsd: 30
+    })
+
+    const mapped = mapPortfolioGrowthVaults([staked])
+    const combined = mapped.get(`1_${YBOLD_VAULT_ADDRESS}`)
+
+    expect(combined).toMatchObject({
+      vaultAddress: YBOLD_VAULT_ADDRESS,
+      status: 'ok',
+      baselineUsd: 200,
+      baselineExposureUsdYears: 100,
+      growthUsd: 30,
+      growthPct: 15,
+      annualizedProtocolReturnPct: 30
     })
   })
 

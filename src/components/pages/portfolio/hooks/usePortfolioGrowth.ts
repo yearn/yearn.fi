@@ -1,7 +1,10 @@
 import type { TPortfolioGrowthVault } from '@pages/portfolio/types/api'
+import { YBOLD_STAKING_ADDRESS, YBOLD_VAULT_ADDRESS } from '@pages/vaults/domain/normalizeVault'
 import { YVUSD_CHAIN_ID, YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import type { TSortDirection } from '@shared/types'
 import { toAddress } from '@shared/utils'
+
+const YBOLD_CHAIN_ID = 1
 
 export type TPortfolioGrowthDisplay = {
   usd: number
@@ -20,12 +23,16 @@ function sumGrowthField(
   return vaults.reduce((total, vault) => total + vault[field], 0)
 }
 
-function combineYvUsdGrowth(vaultsByKey: Map<string, TPortfolioGrowthVault>): TPortfolioGrowthVault | null {
-  const unlockedKey = `${YVUSD_CHAIN_ID}_${YVUSD_UNLOCKED_ADDRESS}`
-  const lockedKey = `${YVUSD_CHAIN_ID}_${YVUSD_LOCKED_ADDRESS}`
-  const variants = [vaultsByKey.get(unlockedKey), vaultsByKey.get(lockedKey)].filter(
-    (vault): vault is TPortfolioGrowthVault => Boolean(vault)
-  )
+function combineGrowthVariants(
+  vaultsByKey: Map<string, TPortfolioGrowthVault>,
+  chainId: number,
+  displayAddress: string,
+  variantAddresses: readonly string[]
+): TPortfolioGrowthVault | null {
+  const displayKey = getPortfolioGrowthVaultKey({ chainId, vaultAddress: displayAddress })
+  const variants = variantAddresses
+    .map((vaultAddress) => vaultsByKey.get(getPortfolioGrowthVaultKey({ chainId, vaultAddress })))
+    .filter((vault): vault is TPortfolioGrowthVault => Boolean(vault))
 
   if (variants.length === 0) {
     return null
@@ -36,11 +43,11 @@ function combineYvUsdGrowth(vaultsByKey: Map<string, TPortfolioGrowthVault>): TP
   const growthUsd = sumGrowthField(variants, 'growthUsd')
   const issues = Array.from(new Set(variants.flatMap((vault) => vault.issues)))
   const isComplete = variants.every((vault) => vault.status === 'ok')
-  const representative = vaultsByKey.get(unlockedKey) ?? variants[0]
+  const representative = vaultsByKey.get(displayKey) ?? variants[0]
 
   return {
     ...representative,
-    vaultAddress: YVUSD_UNLOCKED_ADDRESS,
+    vaultAddress: displayAddress,
     status: isComplete ? 'ok' : 'partial',
     issues,
     baselineUsd,
@@ -51,14 +58,29 @@ function combineYvUsdGrowth(vaultsByKey: Map<string, TPortfolioGrowthVault>): TP
   }
 }
 
+function combineYvUsdGrowth(vaultsByKey: Map<string, TPortfolioGrowthVault>): TPortfolioGrowthVault | null {
+  return combineGrowthVariants(vaultsByKey, YVUSD_CHAIN_ID, YVUSD_UNLOCKED_ADDRESS, [
+    YVUSD_UNLOCKED_ADDRESS,
+    YVUSD_LOCKED_ADDRESS
+  ])
+}
+
+function combineYBoldGrowth(vaultsByKey: Map<string, TPortfolioGrowthVault>): TPortfolioGrowthVault | null {
+  return combineGrowthVariants(vaultsByKey, YBOLD_CHAIN_ID, YBOLD_VAULT_ADDRESS, [
+    YBOLD_VAULT_ADDRESS,
+    YBOLD_STAKING_ADDRESS
+  ])
+}
+
 export function mapPortfolioGrowthVaults(
   vaults: readonly TPortfolioGrowthVault[]
 ): ReadonlyMap<string, TPortfolioGrowthVault> {
   const vaultsByKey = new Map(vaults.map((vault) => [getPortfolioGrowthVaultKey(vault), vault] as const))
-  const combinedYvUsdGrowth = combineYvUsdGrowth(vaultsByKey)
 
-  if (combinedYvUsdGrowth) {
-    vaultsByKey.set(getPortfolioGrowthVaultKey(combinedYvUsdGrowth), combinedYvUsdGrowth)
+  for (const combinedGrowth of [combineYvUsdGrowth(vaultsByKey), combineYBoldGrowth(vaultsByKey)]) {
+    if (combinedGrowth) {
+      vaultsByKey.set(getPortfolioGrowthVaultKey(combinedGrowth), combinedGrowth)
+    }
   }
 
   return vaultsByKey
