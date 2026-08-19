@@ -533,10 +533,9 @@ function VaultsListRowPresentationComponent({
       >
         <button
           type={'button'}
-          className={cl(
-            'font-number font-semibold underline decoration-neutral-600/30 decoration-dotted underline-offset-4 max-md:text-lg',
-            portfolioGrowth.usd > 0 ? 'text-success' : portfolioGrowth.usd < 0 ? 'text-error' : 'text-text-primary'
-          )}
+          className={
+            'font-number font-semibold text-text-primary underline decoration-neutral-600/30 decoration-dotted underline-offset-4 max-md:text-lg'
+          }
           aria-label={`Growth ${value}; total protocol return ${totalPercent ?? 'unavailable'}; Real APY ${annualizedPercent ?? 'unavailable'}`}
           onClick={(event): void => event.preventDefault()}
           onMouseEnter={() => handleInteractiveHoverChange(true)}
