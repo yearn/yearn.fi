@@ -149,10 +149,10 @@ function YvUsdVaultBalances({ account }: { account?: `0x${string}` }): ReactElem
   const unlockedDecimals = unlockedUserData.assetToken?.decimals ?? 6
   const lockedDecimals = lockedUserData.assetToken?.decimals ?? 18
   const unlockedAssetPrice =
-    unlockedUserData.assetToken?.address && unlockedUserData.assetToken?.chainID
+    unlockedUserData.assetToken?.address && unlockedUserData.assetToken?.chainId
       ? getPrice({
           address: toAddress(unlockedUserData.assetToken.address),
-          chainID: unlockedUserData.assetToken.chainID
+          chainID: unlockedUserData.assetToken.chainId
         }).normalized
       : unlockedVault?.tvl.price || 0
   const unlockedSharePrice = getYvUsdSharePrice(unlockedVault, unlockedAssetPrice)
@@ -251,7 +251,7 @@ export const WalletPanel: FC<WalletPanelProps> = ({
   const isYvUsd = isYvUsdVault(currentVault)
   const vaultDecimals = getVaultDecimals(currentVault)
   const vaultTVL = getVaultTVL(currentVault)
-  const { getPrice } = useYearnSpotPrices([{ address: assetToken?.address, chainID: assetToken?.chainID ?? chainId }])
+  const { getPrice } = useYearnSpotPrices([{ address: assetToken?.address, chainID: assetToken?.chainId ?? chainId }])
 
   const assetSymbol = assetToken?.symbol || getVaultSymbol(currentVault)
   const vaultSymbol = vaultToken?.symbol || getVaultSymbol(currentVault) || assetSymbol
@@ -265,7 +265,7 @@ export const WalletPanel: FC<WalletPanelProps> = ({
   const hasStakedShares = stakingBalance > 0n
   const showTotalShares = hasVaultShares && hasStakedShares
   const assetPrice = assetToken?.address
-    ? getPrice({ address: toAddress(assetToken.address), chainID: assetToken.chainID ?? chainId }).normalized ||
+    ? getPrice({ address: toAddress(assetToken.address), chainID: assetToken.chainId ?? chainId }).normalized ||
       vaultTVL.price ||
       0
     : 0

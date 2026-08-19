@@ -12,7 +12,7 @@ import {
   getVaultVersion,
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
-import type { VaultUserData as YearnVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
+import type { TToken } from '@shared/types'
 import { isZeroAddress, toAddress } from '@shared/utils'
 import type {
   Token as SharedWidgetToken,
@@ -67,10 +67,10 @@ export function normalizeVaultForWidget(vault: TKongVaultInput): VaultWidgetVaul
   }
 }
 
-type TYearnToken = NonNullable<YearnVaultUserData['assetToken']>
+type TNormalizableToken = SharedWidgetToken | TToken
 
 export const normalizeTokenForWidget = (
-  token: TYearnToken | undefined,
+  token: TNormalizableToken | undefined,
   fallbackChainId: number
 ): SharedWidgetToken | undefined => {
   if (!token?.address) {
@@ -79,16 +79,18 @@ export const normalizeTokenForWidget = (
 
   return {
     address: toAddress(token.address),
-    chainId: token.chainID ?? fallbackChainId,
-    decimals: token.decimals ?? token.balance.decimals,
-    symbol: token.symbol ?? '',
-    name: token.name ?? '',
-    balance: token.balance
+    chainId: 'chainId' in token ? token.chainId : (token.chainID ?? fallbackChainId),
+    decimals: token.decimals,
+    symbol: token.symbol,
+    name: token.name,
+    balance: token.balance,
+    logoURI: token.logoURI,
+    value: token.value
   }
 }
 
 export function normalizeVaultUserDataForWidget(
-  userData: YearnVaultUserData,
+  userData: SharedWidgetUserData,
   fallbackChainId: number
 ): SharedWidgetUserData {
   return {

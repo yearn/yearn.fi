@@ -1,9 +1,11 @@
 import {
+  normalizeTokenForWidget,
   normalizeVaultForWidget,
   normalizeVaultUserDataForWidget
 } from '@pages/vaults/components/widget/vaultWidgetAdapter'
 import type { TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import type { VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
+import type { TToken } from '@shared/types'
 import { describe, expect, it } from 'vitest'
 
 const VAULT_ADDRESS = '0x1111111111111111111111111111111111111111'
@@ -78,7 +80,7 @@ describe('normalizeVaultForWidget', () => {
 })
 
 describe('normalizeVaultUserDataForWidget', () => {
-  it('converts legacy Yearn token chain IDs and fills required metadata', () => {
+  it('preserves shared widget token metadata', () => {
     const balance = {
       raw: 1_000_000n,
       normalized: 1,
@@ -88,7 +90,10 @@ describe('normalizeVaultUserDataForWidget', () => {
     const userData = {
       assetToken: {
         address: ASSET_ADDRESS,
-        chainID: 10,
+        chainId: 10,
+        decimals: 6,
+        symbol: 'USDC',
+        name: 'USD Coin',
         balance
       },
       vaultToken: undefined,
@@ -109,11 +114,38 @@ describe('normalizeVaultUserDataForWidget', () => {
       address: ASSET_ADDRESS,
       chainId: 10,
       decimals: 6,
-      symbol: '',
-      name: '',
+      symbol: 'USDC',
+      name: 'USD Coin',
       balance
     })
     expect(normalized.vaultToken).toBeUndefined()
     expect(normalized.pricePerShare).toBe(1_000_000n)
+  })
+})
+
+describe('normalizeTokenForWidget', () => {
+  it('converts an app token chainID for the shared widget', () => {
+    const token = {
+      address: ASSET_ADDRESS,
+      chainID: 10,
+      decimals: 6,
+      symbol: 'USDC',
+      name: 'USD Coin',
+      value: 1,
+      balance: {
+        raw: 1_000_000n,
+        normalized: 1,
+        display: '1',
+        decimals: 6
+      }
+    } satisfies TToken
+
+    expect(normalizeTokenForWidget(token, 1)).toMatchObject({
+      address: ASSET_ADDRESS,
+      chainId: 10,
+      decimals: 6,
+      symbol: 'USDC',
+      name: 'USD Coin'
+    })
   })
 })
