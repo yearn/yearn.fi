@@ -19,6 +19,7 @@ import {
 
 export type TWagmiVaultWidgetExecutionAdapterOptions = {
   config: Config
+  resolveConfirmations?: (canonicalChainId: number) => number
   resolveExecutionChainId?: (canonicalChainId: number) => number | undefined
   safePollingIntervalMs?: number
   safeTimeoutMs?: number
@@ -64,6 +65,10 @@ export function createWagmiVaultWidgetExecutionAdapter(
       throw new Error(`Chain ${canonicalChainId} is not enabled for execution`)
     }
     return executionChainId as number
+  }
+
+  function requireConfirmations(canonicalChainId: number): number {
+    return requireDuration('confirmations', options.resolveConfirmations?.(canonicalChainId) ?? 1, false)
   }
 
   async function simulateSafeBatch({
@@ -132,7 +137,10 @@ export function createWagmiVaultWidgetExecutionAdapter(
       const publicClient = getPublicClient(options.config, { chainId: executionChainId })
       if (!publicClient) throw new Error(`No public client is configured for chain ${executionChainId}`)
 
-      const receipt = await publicClient.waitForTransactionReceipt({ hash })
+      const receipt = await publicClient.waitForTransactionReceipt({
+        confirmations: requireConfirmations(chainId),
+        hash
+      })
       if (!isTransactionHash(receipt.transactionHash)) {
         throw new Error('Wallet returned an invalid transaction receipt')
       }

@@ -155,6 +155,10 @@ function toPlausibleProperties(properties?: VaultWidgetAnalyticsProperties): Rec
   )
 }
 
+export function resolveVaultWidgetConfirmations(canonicalChainId: number): number {
+  return canonicalChainId === 8453 ? 2 : 1
+}
+
 export function YearnVaultWidgetRuntimeProvider({ children }: { children: ReactNode }): ReactElement {
   const { chainId: connectedExecutionChainId } = useAccount()
   const wagmiConfig = useConfig()
@@ -183,7 +187,12 @@ export function YearnVaultWidgetRuntimeProvider({ children }: { children: ReactN
   const knownVaults = useMemo(() => Object.values(allVaults).map(toVaultWidgetCatalogVault), [allVaults])
   const catalogAssetPrices = useMemo(() => getCatalogAssetPrices(allVaults), [allVaults])
   const execution = useMemo(
-    () => createWagmiVaultWidgetExecutionAdapter({ config: wagmiConfig, resolveExecutionChainId }),
+    () =>
+      createWagmiVaultWidgetExecutionAdapter({
+        config: wagmiConfig,
+        resolveConfirmations: resolveVaultWidgetConfirmations,
+        resolveExecutionChainId
+      }),
     [wagmiConfig]
   )
 
