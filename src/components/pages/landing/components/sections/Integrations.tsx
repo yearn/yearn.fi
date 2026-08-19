@@ -95,7 +95,7 @@ export const Integrations: FC = () => (
         <SectionHeader
           tagline={'Partners'}
           title={'Integrations'}
-          description={'Partners actively using Yearn vaults'}
+          description={'Partners actively using Yearn Vaults'}
         />
         <div className={'mt-6 grid overflow-hidden rounded-lg sm:mt-8'}>
           {integrations.map((integration, index) => (
