@@ -162,7 +162,7 @@ export function YvUsdDeposit({
         name: lockedUserData.assetToken?.name ?? unlockedUserData.vaultToken?.name ?? 'yvUSD',
         symbol: lockedUserData.assetToken?.symbol ?? unlockedUserData.vaultToken?.symbol ?? 'yvUSD',
         decimals: lockedUserData.assetToken?.decimals ?? unlockedUserData.vaultToken?.decimals ?? 18,
-        chainID: lockedUserData.assetToken?.chainID ?? chainId,
+        chainID: lockedUserData.assetToken?.chainId ?? chainId,
         logoURI: lockedDepositLogoURI,
         balance: lockedUserData.assetToken?.balance
       }
@@ -173,7 +173,7 @@ export function YvUsdDeposit({
         name: unlockedUserData.assetToken?.name ?? unlockedVault.token.name ?? 'USD Coin',
         symbol: unlockedUserData.assetToken?.symbol ?? unlockedVault.token.symbol ?? 'USDC',
         decimals: unlockedUserData.assetToken?.decimals ?? unlockedVault.token.decimals ?? 6,
-        chainID: unlockedUserData.assetToken?.chainID ?? chainId,
+        chainID: unlockedUserData.assetToken?.chainId ?? chainId,
         logoURI: lockedDepositLogoURI,
         balance: unlockedUserData.assetToken?.balance
       }
