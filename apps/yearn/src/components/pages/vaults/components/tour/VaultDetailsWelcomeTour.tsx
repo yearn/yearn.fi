@@ -177,7 +177,7 @@ export function VaultDetailsWelcomeTour({ onTourStateChange }: VaultDetailsWelco
   return (
     <>
       {!isDismissed && !isTourOpen ? (
-        <div className="fixed bottom-4 right-4 z-60 w-[calc(100%-2rem)] max-w-[360px]">
+        <div className="fixed bottom-4 right-4 z-60 w-[calc(100%-2rem)] max-w-[360px] min-[1700px]:bottom-24">
           <div className="rounded-2xl border border-border bg-surface p-4 shadow-xl">
             <div className="flex items-start gap-3">
               <div className="flex-1">
@@ -224,7 +224,7 @@ export function VaultDetailsWelcomeTour({ onTourStateChange }: VaultDetailsWelco
             role="dialog"
             aria-modal="true"
             className={cl(
-              'absolute bottom-4 right-4 w-[min(360px,calc(100%-2rem))] rounded-2xl border border-border bg-surface p-5 text-text-primary shadow-2xl'
+              'absolute bottom-4 right-4 w-[min(360px,calc(100%-2rem))] rounded-2xl border border-border bg-surface p-5 text-text-primary shadow-2xl min-[1700px]:bottom-24'
             )}
           >
             <div className="text-[11px] font-semibold uppercase tracking-[0.12em] text-text-secondary">
