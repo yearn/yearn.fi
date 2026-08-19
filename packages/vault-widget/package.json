@@ -41,22 +41,22 @@
   "peerDependencies": {
     "@tanstack/react-query": "5.101.4",
     "@wagmi/core": "2.22.1",
-    "react": "19.2.7",
-    "react-dom": "19.2.7",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
     "react-rewards": "2.1.0",
-    "viem": "2.55.8",
+    "viem": "2.55.11",
     "wagmi": "2.18.2"
   },
   "devDependencies": {
     "@tanstack/react-query": "5.101.4",
     "@wagmi/core": "2.22.1",
-    "@types/react": "19.2.17",
-    "@types/react-dom": "19.2.3",
-    "react": "19.2.7",
-    "react-dom": "19.2.7",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.4",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
     "react-rewards": "2.1.0",
     "typescript": "5.9.3",
-    "viem": "2.55.8",
+    "viem": "2.55.11",
     "vitest": "4.1.10",
     "wagmi": "2.18.2"
   }
