@@ -36,6 +36,7 @@ import {
   getInitialOverlayState,
   getPendingTransactionTitle,
   hasExecutableWalletConnector,
+  isConfirmedSafeTransactionFailure,
   type OverlayState,
   resolveCompletionDeferral,
   resolveExecutionTrackingHash,
@@ -1097,8 +1098,18 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     }
 
     if (nextOverlayState === 'error') {
+      const isConfirmedSafeFailure = isConfirmedSafeTransactionFailure({
+        isWalletSafe,
+        submittedTxHash: txHash,
+        safeTxHash: safeTransactionDetails.data?.safeTxHash,
+        safeTxStatus: safeTransactionDetails.data?.status
+      })
       setOverlayState('error')
-      setErrorMessage('Transaction failed in Safe. Please review your Safe queue and try again.')
+      setErrorMessage(
+        isConfirmedSafeFailure
+          ? 'Transaction failed in Safe. Please review your Safe queue and try again.'
+          : 'Transaction failed. Please try again.'
+      )
       resetTxState()
       void handleUpdateNotification({ status: 'error' })
       setNotificationId(undefined)
@@ -1106,7 +1117,9 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   }, [
     overlayState,
     isWalletSafe,
+    txHash,
     receipt.data?.transactionHash,
+    safeTransactionDetails.data?.safeTxHash,
     safeTransactionDetails.data?.status,
     safeCallsStatus.data?.status,
     handleUpdateNotification,

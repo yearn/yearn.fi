@@ -112,6 +112,19 @@ export function resolvePendingSafeOverlayState(params: {
   return overlayState
 }
 
+export function isConfirmedSafeTransactionFailure(params: {
+  isWalletSafe: boolean
+  submittedTxHash?: string
+  safeTxHash?: string
+  safeTxStatus?: SafeTransactionStatus
+}): boolean {
+  if (!params.isWalletSafe || !params.submittedTxHash || !params.safeTxHash) return false
+  if (params.submittedTxHash.toLowerCase() !== params.safeTxHash.toLowerCase()) return false
+
+  const normalizedSafeTxStatus = params.safeTxStatus?.replaceAll('-', '_').toUpperCase()
+  return normalizedSafeTxStatus === 'FAILED' || normalizedSafeTxStatus === 'CANCELLED'
+}
+
 export function resolveExecutionTrackingHash(params: {
   isWalletSafe: boolean
   submittedTxHash?: `0x${string}`
