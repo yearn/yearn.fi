@@ -963,7 +963,7 @@ export function WidgetWithdraw({
 
     trackEvent('withdraw', {
       props: {
-        chainId: String(chainId),
+        chainID: String(chainId),
         vaultAddress,
         vaultSymbol,
         sharesToWithdraw,
