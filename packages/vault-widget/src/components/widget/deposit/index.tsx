@@ -954,7 +954,7 @@ export function WidgetDeposit({
 
     trackEvent('deposit', {
       props: {
-        chainId: String(chainId),
+        chainID: String(chainId),
         vaultAddress,
         vaultSymbol,
         amountToDeposit,
