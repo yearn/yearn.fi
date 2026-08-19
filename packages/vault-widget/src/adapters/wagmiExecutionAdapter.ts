@@ -116,7 +116,7 @@ export function createWagmiVaultWidgetExecutionAdapter(
       const publicClient = getPublicClient(options.config, { chainId: executionChainId })
       if (!publicClient) throw new Error(`No public client is configured for chain ${executionChainId}`)
 
-      await publicClient.call({
+      const gasEstimate = await publicClient.estimateGas({
         account,
         data: request.data,
         to: request.to,
@@ -126,6 +126,7 @@ export function createWagmiVaultWidgetExecutionAdapter(
         account,
         chainId: executionChainId,
         data: request.data,
+        gas: (gasEstimate * 110n) / 100n,
         to: request.to,
         value: request.value ?? 0n
       })

@@ -129,16 +129,16 @@ describe('Wagmi EOA execution adapter', () => {
     expect(wagmiActions.switchChain).toHaveBeenCalledWith(config, { chainId: executionChainId })
   })
 
-  it('simulates on the execution chain before sending a transaction', async () => {
-    const call = vi.fn().mockResolvedValue({ data: '0x' })
-    wagmiActions.getPublicClient.mockReturnValue({ call })
+  it('estimates on the execution chain and sends a 10% gas buffer', async () => {
+    const estimateGas = vi.fn().mockResolvedValue(100_000n)
+    wagmiActions.getPublicClient.mockReturnValue({ estimateGas })
     wagmiActions.sendTransaction.mockResolvedValue(transactionHash)
     const adapter = createAdapter()
 
     await expect(adapter.execute({ account, request })).resolves.toBe(transactionHash)
 
     expect(wagmiActions.getPublicClient).toHaveBeenCalledWith(config, { chainId: executionChainId })
-    expect(call).toHaveBeenCalledWith({
+    expect(estimateGas).toHaveBeenCalledWith({
       account,
       data: request.data,
       to: request.to,
@@ -148,16 +148,19 @@ describe('Wagmi EOA execution adapter', () => {
       account,
       chainId: executionChainId,
       data: request.data,
+      gas: 110_000n,
       to: request.to,
       value: 0n
     })
-    expect(call.mock.invocationCallOrder[0]).toBeLessThan(wagmiActions.sendTransaction.mock.invocationCallOrder[0]!)
+    expect(estimateGas.mock.invocationCallOrder[0]).toBeLessThan(
+      wagmiActions.sendTransaction.mock.invocationCallOrder[0]!
+    )
     expect(request.chainId).toBe(canonicalChainId)
   })
 
   it('does not invoke the wallet when simulation fails', async () => {
     const simulationError = new Error('execution reverted')
-    wagmiActions.getPublicClient.mockReturnValue({ call: vi.fn().mockRejectedValue(simulationError) })
+    wagmiActions.getPublicClient.mockReturnValue({ estimateGas: vi.fn().mockRejectedValue(simulationError) })
     const adapter = createAdapter()
 
     await expect(adapter.execute({ account, request })).rejects.toBe(simulationError)
@@ -175,7 +178,7 @@ describe('Wagmi EOA execution adapter', () => {
   })
 
   it('rejects an invalid transaction hash returned by the wallet', async () => {
-    wagmiActions.getPublicClient.mockReturnValue({ call: vi.fn().mockResolvedValue({ data: '0x' }) })
+    wagmiActions.getPublicClient.mockReturnValue({ estimateGas: vi.fn().mockResolvedValue(100_000n) })
     wagmiActions.sendTransaction.mockResolvedValue('0x1234')
     const adapter = createAdapter()
 
