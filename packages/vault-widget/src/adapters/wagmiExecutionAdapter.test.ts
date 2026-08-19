@@ -191,7 +191,20 @@ describe('Wagmi EOA execution adapter', () => {
       successfulReceipt
     )
     expect(wagmiActions.getPublicClient).toHaveBeenCalledWith(config, { chainId: executionChainId })
-    expect(waitForTransactionReceipt).toHaveBeenCalledWith({ hash: transactionHash })
+    expect(waitForTransactionReceipt).toHaveBeenCalledWith({ confirmations: 1, hash: transactionHash })
+  })
+
+  it('applies confirmation policy using the canonical chain', async () => {
+    const waitForTransactionReceipt = vi.fn().mockResolvedValue(successfulReceipt)
+    const resolveConfirmations = vi.fn().mockReturnValue(2)
+    wagmiActions.getPublicClient.mockReturnValue({ waitForTransactionReceipt })
+    const adapter = createAdapter({ resolveConfirmations })
+
+    await expect(adapter.waitForReceipt({ chainId: canonicalChainId, hash: transactionHash })).resolves.toBe(
+      successfulReceipt
+    )
+    expect(resolveConfirmations).toHaveBeenCalledWith(canonicalChainId)
+    expect(waitForTransactionReceipt).toHaveBeenCalledWith({ confirmations: 2, hash: transactionHash })
   })
 
   it('returns a reverted receipt from the public client for executor classification', async () => {

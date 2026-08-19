@@ -1,4 +1,5 @@
 import {
+  resolveVaultWidgetConfirmations,
   resolveVaultWidgetUsdPrice,
   toVaultWidgetSafeTransactionDetails,
   toVaultWidgetToken,
@@ -31,6 +32,11 @@ function createToken(overrides: Partial<TToken> = {}): TToken {
 }
 
 describe('Yearn vault widget runtime adapter', () => {
+  it('waits for an extra confirmation on Base', () => {
+    expect(resolveVaultWidgetConfirmations(8453)).toBe(2)
+    expect(resolveVaultWidgetConfirmations(1)).toBe(1)
+  })
+
   it('normalizes Yearn wallet tokens into the package runtime shape', () => {
     expect(toVaultWidgetToken(createToken())).toEqual({
       address: TOKEN_ADDRESS,
