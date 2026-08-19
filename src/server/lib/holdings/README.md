@@ -446,6 +446,8 @@ Response:
 
 When a vault filter is present, each history point can also include `currentUnderlying`, `growthUnderlying`, `sharesFormatted`, and `pricePerShare`.
 
+The combined portfolio response values each vault row's asset-denominated growth with the latest positive asset price already returned by the receipt-price request. It does not make a separate spot-price request. Missing earlier receipt prices therefore do not block the row when a later fetched price is available; protocol-return history keeps its receipt-time weighting.
+
 Non-empty settled responses are cached in Redis for up to 24 hours and invalidated lazily when one of their vaults changes. Responses produced after a failed or empty historical-price request, failed Kong PPS request, or retryable metadata fallback failure are returned to the caller but are not cached, so a temporary upstream outage cannot preserve incomplete chart data for the rest of the day.
 
 ### `POST /api/admin/invalidate-cache`
@@ -530,7 +532,7 @@ Server-side cache is optional. Development credentials (`*_PORTFOLIO_DEV`) take 
 1. Upstash Redis:
    - `holdings:wallet-events:v2:<addressHash>:<maxTimestamp>`: one Brotli-compressed normalized event set per wallet and event cutoff, overwritten with a five-minute TTL. The version prevents reuse of event sets created by the former 50,000-row query that Envio could silently truncate.
    - `holdings:totals:v2:<addressHash>:<version>`: daily USD totals per hashed user address, vault version, and date. Hash fields are `YYYY-MM-DD`; values include `usdValue` and `updatedAt`.
-   - `holdings:protocol-return-history:v5:<addressHash>:<version>:<timeframe>:<vaultScope>`: successful non-empty protocol-return history and growth snapshots. The payload includes its settled date and relevant vault identifiers for invalidation checks.
+   - `holdings:protocol-return-history:v6:<addressHash>:<version>:<timeframe>:<vaultScope>`: successful non-empty protocol-return history and growth snapshots. The payload includes its settled date and relevant vault identifiers for invalidation checks.
    - `holdings:vault-invalidated:<chainId>:<vaultAddress>`: per-vault invalidation timestamps for lazy cache clearing.
    - `holdings:progress:<progressId>`: authoritative short-lived progress records keyed by caller-supplied progress ID for long history requests across Vercel function instances.
 2. HTTP cache:
@@ -580,7 +582,7 @@ No schema migration is required. Redis keys are created lazily:
 |-----|------|-----|---------|
 | `holdings:wallet-events:v2:<addressHash>:<maxTimestamp>` | Brotli string | 5 minutes | Complete bounded-page wallet event snapshot for one settled cutoff. |
 | `holdings:totals:v2:<addressHash>:<version>` | Hash | 30 days from write | Daily holdings chart totals. |
-| `holdings:protocol-return-history:v5:<addressHash>:<version>:<timeframe>:<vaultScope>` | String JSON | 30 days from write | Atomic protocol-return history and growth response snapshot. |
+| `holdings:protocol-return-history:v6:<addressHash>:<version>:<timeframe>:<vaultScope>` | String JSON | 30 days from write | Atomic protocol-return history and growth response snapshot. |
 | `holdings:vault-invalidated:<chainId>:<vaultAddress>` | String timestamp | None | Lazy invalidation marker for totals cache. |
 | `holdings:progress:<progressId>` | String JSON record | 10 minutes | Progress polling state for long requests. |
 

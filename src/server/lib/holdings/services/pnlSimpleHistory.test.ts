@@ -258,6 +258,38 @@ describe('getHoldingsProtocolReturnHistory', () => {
     ])
   })
 
+  it('values portfolio growth with the latest fetched asset price when a receipt price is missing', async () => {
+    getPriceAtTimestampMock.mockReturnValue(0)
+    getPPSMock.mockImplementation((_ppsMap: Map<number, number>, timestamp: number) => (timestamp === 201 ? 1.1 : 1))
+    fetchHistoricalPricesForTokenTimestampsMock.mockResolvedValue(
+      new Map([
+        [
+          ASSET_PRICE_KEY,
+          new Map([
+            [100, 2],
+            [200, 3]
+          ])
+        ],
+        [WETH_PRICE_KEY, new Map([[200, 1]])]
+      ])
+    )
+
+    const { getHoldingsProtocolReturnPortfolio } = await import('./pnlSimple')
+    const response = await getHoldingsProtocolReturnPortfolio(USER, 'all', 'seq', 'paged', '1y')
+    const growthVault = response.growth.vaults[0]
+
+    expect(response.protocolReturn.summary.isComplete).toBe(false)
+    expect(growthVault).toMatchObject({
+      status: 'ok',
+      issues: [],
+      baselineUsd: 300,
+      baselineExposureUsdYears: 0,
+      annualizedProtocolReturnPct: null
+    })
+    expect(growthVault?.growthUsd).toBeCloseTo(30)
+    expect(growthVault?.growthPct).toBeCloseTo(10)
+  })
+
   it('normalizes string decimals in cached portfolio growth metadata', async () => {
     const generatedAt = '2026-07-15T00:00:00.000Z'
     getCachedProtocolReturnHistoryMock.mockResolvedValue({
