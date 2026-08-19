@@ -6,6 +6,7 @@ import {
   getInitialOverlayState,
   getPendingTransactionTitle,
   hasExecutableWalletConnector,
+  isConfirmedSafeTransactionFailure,
   resolveCompletionDeferral,
   resolveExecutionTrackingHash,
   resolveOverlayConnectedChainId,
@@ -312,6 +313,56 @@ describe('resolvePendingSafeOverlayState', () => {
         callsStatus: 'failure'
       })
     ).toBe('error')
+  })
+})
+
+describe('isConfirmedSafeTransactionFailure', () => {
+  it('requires a matching failed or cancelled Safe transaction', () => {
+    expect(
+      isConfirmedSafeTransactionFailure({
+        isWalletSafe: true,
+        submittedTxHash: '0xsafe',
+        safeTxHash: '0xsafe',
+        safeTxStatus: 'failed'
+      })
+    ).toBe(true)
+    expect(
+      isConfirmedSafeTransactionFailure({
+        isWalletSafe: true,
+        submittedTxHash: '0xsafe',
+        safeTxHash: '0xsafe',
+        safeTxStatus: 'cancelled'
+      })
+    ).toBe(true)
+  })
+
+  it('does not use Safe-specific copy for a non-Safe wallet', () => {
+    expect(
+      isConfirmedSafeTransactionFailure({
+        isWalletSafe: false,
+        submittedTxHash: '0xtransaction',
+        safeTxHash: '0xtransaction',
+        safeTxStatus: 'failed'
+      })
+    ).toBe(false)
+  })
+
+  it('does not trust missing or mismatched Safe transaction details', () => {
+    expect(
+      isConfirmedSafeTransactionFailure({
+        isWalletSafe: true,
+        submittedTxHash: '0xtransaction',
+        safeTxStatus: 'failed'
+      })
+    ).toBe(false)
+    expect(
+      isConfirmedSafeTransactionFailure({
+        isWalletSafe: true,
+        submittedTxHash: '0xtransaction',
+        safeTxHash: '0xother',
+        safeTxStatus: 'failed'
+      })
+    ).toBe(false)
   })
 })
 

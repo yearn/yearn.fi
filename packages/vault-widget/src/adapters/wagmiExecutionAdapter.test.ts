@@ -3,7 +3,16 @@ import {
   createWagmiVaultWidgetExecutionAdapter,
   type TWagmiVaultWidgetExecutionAdapterOptions
 } from '@yearn/vault-widget/wagmi'
-import { BaseError, type Hash, MethodNotFoundRpcError, MethodNotSupportedRpcError, type TransactionReceipt } from 'viem'
+import {
+  BaseError,
+  createPublicClient,
+  custom,
+  defineChain,
+  type Hash,
+  MethodNotFoundRpcError,
+  MethodNotSupportedRpcError,
+  type TransactionReceipt
+} from 'viem'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const wagmiActions = vi.hoisted(() => ({
@@ -11,8 +20,7 @@ const wagmiActions = vi.hoisted(() => ({
   sendCalls: vi.fn(),
   sendTransaction: vi.fn(),
   switchChain: vi.fn(),
-  waitForCallsStatus: vi.fn(),
-  waitForTransactionReceipt: vi.fn()
+  waitForCallsStatus: vi.fn()
 }))
 
 vi.mock('@wagmi/core/actions', () => wagmiActions)
@@ -20,6 +28,12 @@ vi.mock('@wagmi/core/actions', () => wagmiActions)
 const account = '0x1111111111111111111111111111111111111111'
 const canonicalChainId = 1
 const executionChainId = 73_571
+const executionChain = defineChain({
+  id: executionChainId,
+  name: 'Execution test chain',
+  nativeCurrency: { decimals: 18, name: 'Ether', symbol: 'ETH' },
+  rpcUrls: { default: { http: ['http://execution.test'] } }
+})
 const transactionHash = `0x${'22'.repeat(32)}` as Hash
 const otherTransactionHash = `0x${'33'.repeat(32)}` as Hash
 const config = {} as Config
@@ -33,6 +47,30 @@ const successfulReceipt = {
   status: 'success',
   transactionHash
 } as TransactionReceipt
+
+function createReceiptPublicClient(status: '0x0' | '0x1', hash: Hash = transactionHash) {
+  const transportRequest = vi.fn().mockResolvedValue({
+    blockHash: `0x${'44'.repeat(32)}`,
+    blockNumber: '0x1',
+    contractAddress: null,
+    cumulativeGasUsed: '0x5208',
+    effectiveGasPrice: '0x1',
+    from: account,
+    gasUsed: '0x5208',
+    logs: [],
+    logsBloom: `0x${'00'.repeat(256)}`,
+    status,
+    to: request.to,
+    transactionHash: hash,
+    transactionIndex: '0x0',
+    type: '0x2'
+  })
+  const publicClient = createPublicClient({
+    chain: executionChain,
+    transport: custom({ request: transportRequest })
+  })
+  return { publicClient, transportRequest }
+}
 
 type TAdapterOverrides = Omit<Partial<TWagmiVaultWidgetExecutionAdapterOptions>, 'config'>
 
@@ -145,26 +183,30 @@ describe('Wagmi EOA execution adapter', () => {
   })
 
   it('maps receipt lookup to the execution chain and returns a matching successful receipt', async () => {
-    wagmiActions.waitForTransactionReceipt.mockResolvedValue(successfulReceipt)
+    const waitForTransactionReceipt = vi.fn().mockResolvedValue(successfulReceipt)
+    wagmiActions.getPublicClient.mockReturnValue({ waitForTransactionReceipt })
     const adapter = createAdapter()
 
     await expect(adapter.waitForReceipt({ chainId: canonicalChainId, hash: transactionHash })).resolves.toBe(
       successfulReceipt
     )
-    expect(wagmiActions.waitForTransactionReceipt).toHaveBeenCalledWith(config, {
-      chainId: executionChainId,
-      hash: transactionHash
-    })
+    expect(wagmiActions.getPublicClient).toHaveBeenCalledWith(config, { chainId: executionChainId })
+    expect(waitForTransactionReceipt).toHaveBeenCalledWith({ hash: transactionHash })
   })
 
-  it('returns a matching reverted receipt for executor classification', async () => {
-    const revertedReceipt = { ...successfulReceipt, status: 'reverted' } as TransactionReceipt
-    wagmiActions.waitForTransactionReceipt.mockResolvedValue(revertedReceipt)
+  it('returns a reverted receipt from the public client for executor classification', async () => {
+    const { publicClient, transportRequest } = createReceiptPublicClient('0x0')
+    wagmiActions.getPublicClient.mockReturnValue(publicClient)
     const adapter = createAdapter()
 
-    await expect(adapter.waitForReceipt({ chainId: canonicalChainId, hash: transactionHash })).resolves.toBe(
-      revertedReceipt
-    )
+    await expect(adapter.waitForReceipt({ chainId: canonicalChainId, hash: transactionHash })).resolves.toMatchObject({
+      status: 'reverted',
+      transactionHash
+    })
+    expect(transportRequest.mock.calls[0]?.[0]).toEqual({
+      method: 'eth_getTransactionReceipt',
+      params: [transactionHash]
+    })
   })
 
   it.each([
@@ -177,7 +219,7 @@ describe('Wagmi EOA execution adapter', () => {
       receipt: { ...successfulReceipt, transactionHash: otherTransactionHash }
     }
   ])('rejects an invalid receipt: $expectedError', async ({ expectedError, receipt }) => {
-    wagmiActions.waitForTransactionReceipt.mockResolvedValue(receipt)
+    wagmiActions.getPublicClient.mockReturnValue({ waitForTransactionReceipt: vi.fn().mockResolvedValue(receipt) })
     const adapter = createAdapter()
 
     await expect(adapter.waitForReceipt({ chainId: canonicalChainId, hash: transactionHash })).rejects.toThrow(

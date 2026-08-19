@@ -4,8 +4,7 @@ import {
   sendCalls,
   sendTransaction,
   switchChain as wagmiSwitchChain,
-  waitForCallsStatus,
-  waitForTransactionReceipt
+  waitForCallsStatus
 } from '@wagmi/core/actions'
 import type { VaultWidgetExecutionAdapter, VaultWidgetTransactionRequest } from '@yearn/vault-widget/headless'
 import {
@@ -129,10 +128,11 @@ export function createWagmiVaultWidgetExecutionAdapter(
       return hash
     },
     async waitForReceipt({ chainId, hash }) {
-      const receipt = await waitForTransactionReceipt(options.config, {
-        chainId: requireExecutionChainId(chainId),
-        hash
-      })
+      const executionChainId = requireExecutionChainId(chainId)
+      const publicClient = getPublicClient(options.config, { chainId: executionChainId })
+      if (!publicClient) throw new Error(`No public client is configured for chain ${executionChainId}`)
+
+      const receipt = await publicClient.waitForTransactionReceipt({ hash })
       if (!isTransactionHash(receipt.transactionHash)) {
         throw new Error('Wallet returned an invalid transaction receipt')
       }
