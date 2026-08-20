@@ -194,7 +194,11 @@ describe('Wagmi EOA execution adapter', () => {
       successfulReceipt
     )
     expect(wagmiActions.getPublicClient).toHaveBeenCalledWith(config, { chainId: executionChainId })
-    expect(waitForTransactionReceipt).toHaveBeenCalledWith({ confirmations: 1, hash: transactionHash })
+    expect(waitForTransactionReceipt).toHaveBeenCalledWith({
+      confirmations: 1,
+      hash: transactionHash,
+      timeout: 0
+    })
   })
 
   it('applies confirmation policy using the canonical chain', async () => {
@@ -207,7 +211,11 @@ describe('Wagmi EOA execution adapter', () => {
       successfulReceipt
     )
     expect(resolveConfirmations).toHaveBeenCalledWith(canonicalChainId)
-    expect(waitForTransactionReceipt).toHaveBeenCalledWith({ confirmations: 2, hash: transactionHash })
+    expect(waitForTransactionReceipt).toHaveBeenCalledWith({
+      confirmations: 2,
+      hash: transactionHash,
+      timeout: 0
+    })
   })
 
   it('returns a reverted receipt from the public client for executor classification', async () => {
