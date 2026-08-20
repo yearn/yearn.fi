@@ -6,6 +6,7 @@ import {
 
 type TProtocolReturnFamilyPoint = {
   timestamp: number
+  growthUsd: number | null
   growthWeightUsd: number | null
   growthIndex: number | null
 }
@@ -43,13 +44,13 @@ function isFiniteNumber(value: unknown): value is number {
 }
 
 function buildPositionRankPoints(points: TProtocolReturnFamilyPoint[]): Array<{ value: number | null }> {
-  const firstFiniteIndex = points.findIndex((point) => isFiniteNumber(point.growthWeightUsd))
+  const firstFiniteIndex = points.findIndex((point) => isFiniteNumber(point.growthUsd))
   if (firstFiniteIndex < 0 || points.length - firstFiniteIndex < 2) {
     return []
   }
 
-  const firstValue = points[firstFiniteIndex]?.growthWeightUsd
-  const lastValue = points.findLast((point) => isFiniteNumber(point.growthWeightUsd))?.growthWeightUsd
+  const firstValue = points[firstFiniteIndex]?.growthUsd
+  const lastValue = points.findLast((point) => isFiniteNumber(point.growthUsd))?.growthUsd
   if (!isFiniteNumber(firstValue) || !isFiniteNumber(lastValue)) {
     return []
   }
@@ -116,6 +117,7 @@ export function selectProtocolReturnFamilySeriesCandidates<TSeries extends TProt
         ...series,
         dataPoints: series.dataPoints.map((point) => ({
           timestamp: point.timestamp,
+          growthUsd: point.growthUsd,
           growthWeightUsd: point.growthWeightUsd,
           growthIndex: point.growthIndex
         }))

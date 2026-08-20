@@ -403,6 +403,7 @@ baselineUnderlying = shares received * PPS at receipt
 growthUnderlying = withdrawable underlying now-or-at-exit - baselineUnderlying
 baselineWeightUsd = baselineUnderlying * receiptTokenPriceUsd
 growthWeightUsd = growthUnderlying * receiptTokenPriceUsd
+growthUsd = growthUnderlying * latestFetchedTokenPriceUsd
 protocolReturnPct = growthWeightUsd / baselineWeightUsd * 100
 ```
 
@@ -434,6 +435,7 @@ Response:
       "date": "2026-05-06",
       "timestamp": 1778111999,
       "growthWeightUsd": 100,
+      "growthUsd": 105,
       "growthWeightEth": null,
       "protocolReturnPct": 10,
       "annualizedProtocolReturnPct": 12,
@@ -446,7 +448,7 @@ Response:
 
 When a vault filter is present, each history point can also include `currentUnderlying`, `growthUnderlying`, `sharesFormatted`, and `pricePerShare`.
 
-The combined portfolio response values each vault row's asset-denominated growth with the latest positive asset price already returned by the receipt-price request. It does not make a separate spot-price request. Missing earlier receipt prices therefore do not block the row when a later fetched price is available; protocol-return history keeps its receipt-time weighting.
+The combined portfolio response values each vault row's asset-denominated growth with the latest positive asset price already returned by the receipt-price request. It does not make a separate spot-price request. The history response exposes the same latest-price valuation as `growthUsd` for the aggregate and each family series, so the Growth chart matches its vault rows. Missing earlier receipt prices therefore do not block either display when a later fetched price is available. Receipt-weighted `growthWeightUsd` remains separate and continues to drive protocol-return percentages and indexes.
 
 Non-empty settled responses are cached in Redis for up to 24 hours and invalidated lazily when one of their vaults changes. Responses produced after a failed or empty historical-price request, failed Kong PPS request, or retryable metadata fallback failure are returned to the caller but are not cached, so a temporary upstream outage cannot preserve incomplete chart data for the rest of the day.
 

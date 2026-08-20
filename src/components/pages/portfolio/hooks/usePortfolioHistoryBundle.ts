@@ -76,6 +76,7 @@ export function usePortfolioHistoryBundle(
     return data.protocolReturn.dataPoints.map((point) => ({
       date: point.date,
       growthWeightUsd: point.growthWeightUsd,
+      growthUsd: point.growthUsd,
       growthWeightEth: point.growthWeightEth,
       protocolReturnPct: point.protocolReturnPct,
       annualizedProtocolReturnPct: point.annualizedProtocolReturnPct,

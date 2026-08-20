@@ -20,7 +20,7 @@ function makeFamily(args: {
     label: args.label,
     dataPoints: args.values.map((point) => ({
       timestamp: timestamp(point.date) * (point.milliseconds ? 1000 : 1),
-      growthWeightUsd: point.value
+      growthUsd: point.value
     }))
   }
 }

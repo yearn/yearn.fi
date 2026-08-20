@@ -8,6 +8,7 @@ const portfolioHistorySimpleDataPointSchema = z.object({
 const portfolioProtocolReturnHistoryDataPointSchema = z.object({
   date: z.string(),
   growthWeightUsd: z.number(),
+  growthUsd: z.number(),
   growthWeightEth: z.number().nullable(),
   protocolReturnPct: z.number().nullable(),
   annualizedProtocolReturnPct: z.number().nullable(),
@@ -31,6 +32,7 @@ const portfolioProtocolReturnHistorySummarySchema = z.object({
 const portfolioProtocolReturnHistoryFamilyPointSchema = z.object({
   timestamp: z.number(),
   growthWeightUsd: z.number().nullable(),
+  growthUsd: z.number().nullable(),
   growthIndex: z.number().nullable()
 })
 
@@ -236,6 +238,7 @@ export type TPortfolioLiveBalanceSnapshot = {
 export type TPortfolioProtocolReturnHistoryChartData = Array<{
   date: string
   growthWeightUsd: number
+  growthUsd: number
   growthWeightEth: number | null
   protocolReturnPct: number | null
   annualizedProtocolReturnPct: number | null
@@ -249,6 +252,7 @@ export type TPortfolioProtocolReturnHistoryFamilySeries = Array<{
   dataPoints: Array<{
     timestamp: number
     growthWeightUsd: number | null
+    growthUsd: number | null
     growthIndex: number | null
   }>
 }>

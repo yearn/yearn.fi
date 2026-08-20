@@ -449,7 +449,15 @@ describe('pnl simple protocol return', () => {
           ])
         ]
       ]),
-      priceData: new Map([[ASSET_PRICE_KEY, new Map([[0, 1]])]]),
+      priceData: new Map([
+        [
+          ASSET_PRICE_KEY,
+          new Map([
+            [0, 1],
+            [250, 3]
+          ])
+        ]
+      ]),
       ethPriceData: new Map([
         [0, 2],
         [100, 2],
@@ -464,6 +472,7 @@ describe('pnl simple protocol return', () => {
     expect(history[0]).toEqual({
       date: '1970-01-01',
       timestamp: 100,
+      growthUsd: 0,
       growthWeightUsd: 0,
       growthWeightEth: 0,
       protocolReturnPct: 0,
@@ -471,6 +480,7 @@ describe('pnl simple protocol return', () => {
       growthIndex: 100
     })
     expect(history[1]?.growthWeightUsd).toBeCloseTo(10)
+    expect(history[1]?.growthUsd).toBeCloseTo(30)
     expect(history[1]?.growthWeightEth).toBeCloseTo(5)
     expect(history[1]?.protocolReturnPct).toBeCloseTo(10)
     expect(history[1]?.annualizedProtocolReturnPct).not.toBeNull()
@@ -480,6 +490,7 @@ describe('pnl simple protocol return', () => {
     expect(history[2]?.protocolReturnPct).toBeCloseTo(6.6666666667)
     expect(history[2]?.growthIndex).toBeCloseTo(110)
     expect(history[3]?.growthWeightUsd).toBeCloseTo(24.5454545455)
+    expect(history[3]?.growthUsd).toBeCloseTo(73.6363636365)
     expect(history[3]?.growthWeightEth).toBeCloseTo(12.2727272727)
     expect(history[3]?.protocolReturnPct).toBeCloseTo(16.3636363636)
     expect(history[3]?.growthIndex).toBeCloseTo(120.6666666667)
@@ -1791,8 +1802,14 @@ describe('pnl simple protocol return', () => {
     expect(
       familyHistory.find((series) => series.vaultAddress === YVUSD_LOCKED)?.dataPoints[1]?.growthWeightUsd
     ).toBeCloseTo(5.05)
+    expect(familyHistory.find((series) => series.vaultAddress === YVUSD_LOCKED)?.dataPoints[1]?.growthUsd).toBeCloseTo(
+      5.1
+    )
     expect(
       familyHistory.find((series) => series.vaultAddress === YVUSD_UNLOCKED)?.dataPoints[1]?.growthWeightUsd
+    ).toBeCloseTo(2)
+    expect(
+      familyHistory.find((series) => series.vaultAddress === YVUSD_UNLOCKED)?.dataPoints[1]?.growthUsd
     ).toBeCloseTo(2)
   })
 

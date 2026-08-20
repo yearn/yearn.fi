@@ -93,7 +93,7 @@ describe('protocol return history snapshot cache', () => {
     const key = getProtocolReturnHistoryCacheKey(identity)
 
     expect(saved).toBe(true)
-    expect(key).toMatch(/^holdings:protocol-return-history:v6:[a-f0-9]{64}:all:1y:all$/)
+    expect(key).toMatch(/^holdings:protocol-return-history:v7:[a-f0-9]{64}:all:1y:all$/)
     expect(key).not.toContain(identity.userAddress)
     expect(setMock).toHaveBeenCalledWith(
       key,
@@ -122,7 +122,7 @@ describe('protocol return history snapshot cache', () => {
     const key = getProtocolReturnHistoryCacheKey(identity)
 
     expect(key).toBe(getProtocolReturnHistoryCacheKey(reversedIdentity))
-    expect(key).toMatch(/^holdings:protocol-return-history:v6:[a-f0-9]{64}:all:1y:[a-f0-9]{64}$/)
+    expect(key).toMatch(/^holdings:protocol-return-history:v7:[a-f0-9]{64}:all:1y:[a-f0-9]{64}$/)
     expect(key).not.toContain(identity.vaultScope[0].address)
   })
 

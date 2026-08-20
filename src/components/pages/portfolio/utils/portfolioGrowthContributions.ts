@@ -7,7 +7,7 @@ export type TPortfolioGrowthContributionFamily = {
   label: string
   dataPoints: Array<{
     timestamp: number
-    growthWeightUsd: number | null
+    growthUsd: number | null
   }>
 }
 
@@ -62,7 +62,7 @@ function buildRebasedFamilyValues(points: TPortfolioGrowthContributionFamily['da
   const sortedPoints = points
     .flatMap((point) => {
       const date = timestampToUtcDate(point.timestamp)
-      return date ? [{ date, value: point.growthWeightUsd }] : []
+      return date ? [{ date, value: point.growthUsd }] : []
     })
     .toSorted((left, right) => left.date.localeCompare(right.date))
 

@@ -258,9 +258,14 @@ describe('getHoldingsProtocolReturnHistory', () => {
     ])
   })
 
-  it('values portfolio growth with the latest fetched asset price when a receipt price is missing', async () => {
+  it('values growth history at the latest price and keeps recoverable missing-price families eligible', async () => {
+    const firstTimestamp = event.blockTimestamp + 1
+    const secondTimestamp = firstTimestamp + 100
+    generateDailyTimestampsMock.mockReturnValue([event.blockTimestamp, event.blockTimestamp + 100])
     getPriceAtTimestampMock.mockReturnValue(0)
-    getPPSMock.mockImplementation((_ppsMap: Map<number, number>, timestamp: number) => (timestamp === 201 ? 1.1 : 1))
+    getPPSMock.mockImplementation((_ppsMap: Map<number, number>, timestamp: number) =>
+      timestamp >= secondTimestamp ? 1.1 : 1
+    )
     fetchHistoricalPricesForTokenTimestampsMock.mockResolvedValue(
       new Map([
         [
@@ -283,11 +288,24 @@ describe('getHoldingsProtocolReturnHistory', () => {
       status: 'ok',
       issues: [],
       baselineUsd: 300,
-      baselineExposureUsdYears: 0,
-      annualizedProtocolReturnPct: null
+      baselineExposureUsdYears: expect.any(Number),
+      annualizedProtocolReturnPct: expect.any(Number)
     })
     expect(growthVault?.growthUsd).toBeCloseTo(30)
     expect(growthVault?.growthPct).toBeCloseTo(10)
+    expect(response.protocolReturn.dataPoints[0]?.growthUsd).toBe(0)
+    expect(response.protocolReturn.dataPoints[1]?.growthUsd).toBeCloseTo(30)
+    expect(response.protocolReturn.dataPoints.map((point) => point.growthWeightUsd)).toEqual([0, 0])
+    expect(response.protocolReturn.familySeries).toHaveLength(1)
+    expect(response.protocolReturn.familySeries[0]).toMatchObject({
+      chainId: 1,
+      vaultAddress: VAULT,
+      dataPoints: [
+        { timestamp: firstTimestamp, growthUsd: 0, growthWeightUsd: 0 },
+        { timestamp: secondTimestamp, growthWeightUsd: 0 }
+      ]
+    })
+    expect(response.protocolReturn.familySeries[0]?.dataPoints[1]?.growthUsd).toBeCloseTo(30)
   })
 
   it('normalizes string decimals in cached portfolio growth metadata', async () => {
@@ -537,6 +555,47 @@ describe('getHoldingsProtocolReturnHistory', () => {
     generateDailyTimestampsMock.mockReturnValue([secondDay, thirdDay])
     getPPSMock.mockImplementation((_timeline: Map<number, number>, timestamp: number) =>
       timestamp >= secondDay ? 2 : 1
+    )
+    getCachedProtocolReturnHistoryMock.mockResolvedValue({
+      settledDate: `date-${secondDay + 1}`,
+      response: cachedResponse
+    })
+    debugLogMock.mockClear()
+
+    await getHoldingsProtocolReturnHistory(USER, 'all', 'parallel', 'paged', '1y')
+
+    expect(debugLogMock).toHaveBeenCalledWith(
+      'protocol-return-history',
+      'rebuilt protocol return history',
+      expect.objectContaining({ cachedPoints: 0, calculatedPoints: 2, overlapMatched: false })
+    )
+  })
+
+  it('rebuilds cached history when its latest-price growth valuation changed', async () => {
+    const firstDay = 1_800_000_000
+    const secondDay = firstDay + 86_400
+    const thirdDay = secondDay + 86_400
+    generateDailyTimestampsMock.mockReturnValue([firstDay, secondDay])
+    getPPSMock.mockImplementation((_timeline: Map<number, number>, timestamp: number) =>
+      timestamp >= secondDay ? 1.1 : 1
+    )
+    fetchHistoricalPricesForTokenTimestampsMock.mockResolvedValue(
+      new Map([
+        [ASSET_PRICE_KEY, new Map([[firstDay, 1]])],
+        [WETH_PRICE_KEY, new Map([[firstDay, 1]])]
+      ])
+    )
+
+    const { getHoldingsProtocolReturnHistory } = await import('./pnlSimple')
+    await getHoldingsProtocolReturnHistory(USER, 'all', 'parallel', 'paged', '1y')
+    const cachedResponse = saveCachedProtocolReturnHistoryMock.mock.calls[0]?.[3]
+
+    generateDailyTimestampsMock.mockReturnValue([secondDay, thirdDay])
+    fetchHistoricalPricesForTokenTimestampsMock.mockResolvedValue(
+      new Map([
+        [ASSET_PRICE_KEY, new Map([[thirdDay, 2]])],
+        [WETH_PRICE_KEY, new Map([[thirdDay, 1]])]
+      ])
     )
     getCachedProtocolReturnHistoryMock.mockResolvedValue({
       settledDate: `date-${secondDay + 1}`,

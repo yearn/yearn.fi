@@ -33,7 +33,7 @@ const HOLDINGS_TOTALS_TTL_SECONDS = 30 * 24 * 60 * 60
 // Old hashes expire naturally and cannot reintroduce previously cached incomplete days.
 const HOLDINGS_TOTALS_KEY_PREFIX = 'holdings:totals:v2'
 const PROTOCOL_RETURN_HISTORY_TTL_SECONDS = 30 * 24 * 60 * 60
-const PROTOCOL_RETURN_HISTORY_KEY_PREFIX = 'holdings:protocol-return-history:v6'
+const PROTOCOL_RETURN_HISTORY_KEY_PREFIX = 'holdings:protocol-return-history:v7'
 const VAULT_INVALIDATION_KEY_PREFIX = 'holdings:vault-invalidated'
 const REDIS_SCAN_COUNT = 500
 

@@ -531,7 +531,7 @@ function buildPortfolioVaultGrowthSeries(
     symbol: series.symbol,
     points: series.dataPoints.map((point) => ({
       timestamp: point.timestamp,
-      positionValueUsd: point.growthWeightUsd,
+      positionValueUsd: point.growthUsd,
       indexValue: point.growthIndex
     }))
   }))
@@ -696,7 +696,7 @@ export function PortfolioHistoryChart({
     return rebaseDeltaPoints(
       points.map((point) => ({
         date: point.date,
-        value: point.growthWeightUsd
+        value: point.growthUsd
       }))
     )
   }, [protocolReturnData, timeframe])
@@ -774,7 +774,7 @@ export function PortfolioHistoryChart({
         label: getPortfolioVaultSeriesLabel(series, familyLabelByVaultKey),
         dataPoints: series.dataPoints.map((point) => ({
           timestamp: point.timestamp,
-          growthWeightUsd: point.growthWeightUsd
+          growthUsd: point.growthUsd
         }))
       })),
     [familyLabelByVaultKey, visibleProtocolReturnFamilySeries]

@@ -55,6 +55,7 @@ export function usePortfolioProtocolReturnHistory(timeframe: TPortfolioHistoryTi
     return data.dataPoints.map((point) => ({
       date: point.date,
       growthWeightUsd: point.growthWeightUsd,
+      growthUsd: point.growthUsd,
       growthWeightEth: point.growthWeightEth,
       protocolReturnPct: point.protocolReturnPct,
       annualizedProtocolReturnPct: point.annualizedProtocolReturnPct,
