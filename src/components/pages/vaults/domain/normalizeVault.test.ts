@@ -16,7 +16,7 @@ describe('yBOLD product helpers', () => {
     expect(isYBoldProductAddress('0x0000000000000000000000000000000000000001')).toBe(false)
   })
 
-  it('keeps the base Oracle while borrowing staked vault history', () => {
+  it('uses the staked net Oracle and historical performance', () => {
     const baseOracle = { apr: 0.0537, apy: 0.0551, netAPR: 0.0537, netAPY: 0.0551 }
     const stakedOracle = { apr: 0.0537, apy: 0.0551, netAPR: 0.0483, netAPY: 0.0495 }
     const stakedHistorical = { net: 0.0617, weeklyNet: 0.046, monthlyNet: 0.0617, inceptionNet: 0.0726 }
@@ -31,11 +31,11 @@ describe('yBOLD product helpers', () => {
       } as any
     )
 
-    expect(merged.performance?.oracle).toEqual(baseOracle)
+    expect(merged.performance?.oracle).toEqual(stakedOracle)
     expect(merged.performance?.historical).toEqual(stakedHistorical)
   })
 
-  it('keeps the base snapshot Oracle while borrowing staked snapshot APY history', () => {
+  it('uses the staked snapshot Oracle and APY history', () => {
     const baseOracle = { apr: 0.0537, apy: 0.0551, netAPR: 0.0537, netAPY: 0.0551 }
     const stakedOracle = { apr: 0.0537, apy: 0.0551, netAPR: 0.0483, netAPY: 0.0495 }
     const merged = mergeYBoldSnapshot(
@@ -49,7 +49,7 @@ describe('yBOLD product helpers', () => {
       } as any
     )
 
-    expect(merged.performance?.oracle).toEqual(baseOracle)
+    expect(merged.performance?.oracle).toEqual(stakedOracle)
     expect(merged.apy?.weeklyNet).toBe(0.046)
   })
 })

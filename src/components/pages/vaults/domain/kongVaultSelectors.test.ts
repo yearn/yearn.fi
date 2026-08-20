@@ -1,6 +1,7 @@
 import { calculateVaultEstimatedAPY } from '@shared/utils/vaultApy'
 import { describe, expect, it } from 'vitest'
-import { getVaultAPR, getVaultStaking, getVaultStrategies, getVaultTVL } from './kongVaultSelectors'
+import { getVaultAPR, getVaultStaking, getVaultStrategies, getVaultTVL, getVaultView } from './kongVaultSelectors'
+import { YBOLD_VAULT_ADDRESS } from './normalizeVault'
 
 const LIST_REWARD = {
   address: '0x3333333333333333333333333333333333333333',
@@ -183,6 +184,32 @@ describe('getVaultStaking', () => {
 })
 
 describe('getVaultAPR', () => {
+  it('uses staked yBOLD weeklyNet and oracle.netAPY even when estimated APY is present', () => {
+    const view = getVaultView(
+      {
+        ...BASE_LIST_VAULT,
+        chainId: 1,
+        address: YBOLD_VAULT_ADDRESS,
+        performance: {
+          oracle: { netAPY: 0.0551 },
+          historical: { weeklyNet: null }
+        }
+      } as any,
+      {
+        apy: { weeklyNet: 0.046 },
+        performance: {
+          estimated: { apy: 0.2 },
+          oracle: { netAPY: 0.0495 }
+        }
+      } as any
+    )
+
+    expect(view.apr.points.weekAgo).toBe(0.046)
+    expect(view.apr.forwardAPR.type).toBe('oracle')
+    expect(view.apr.forwardAPR.netAPR).toBe(0.0495)
+    expect(calculateVaultEstimatedAPY(view)).toBe(0.0495)
+  })
+
   it('uses list pricePerShare when snapshot pricePerShare is missing', () => {
     const apr = getVaultAPR({
       chainId: 1,
