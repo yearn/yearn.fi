@@ -1149,9 +1149,11 @@ export function VaultDetailsHeaderPresentation({
 
   return (
     <div
-      className={'grid w-full grid-cols-1 gap-y-0 gap-x-6 text-left md:auto-rows-min md:grid-cols-20 bg-app rounded-lg'}
+      className={
+        'grid w-full grid-cols-1 gap-x-6 gap-y-0 rounded-lg bg-app text-left md:auto-rows-min min-[1100px]:grid-cols-[minmax(0,1fr)_408px]'
+      }
     >
-      <div className={'hidden md:flex items-center gap-2 text-sm text-text-secondary md:col-span-20 px-1'}>
+      <div className={'hidden items-center gap-2 px-1 text-sm text-text-secondary md:flex min-[1100px]:col-span-2'}>
         <a href={'/'} className={'transition-colors hover:text-text-primary'}>
           {'Home'}
         </a>
@@ -1163,7 +1165,7 @@ export function VaultDetailsHeaderPresentation({
         <span className={'font-medium text-text-primary'}>{getVaultName(currentVault)}</span>
       </div>
       {isCompressed ? (
-        <div className={'md:col-span-13 md:row-start-2 pt-4'}>
+        <div className={'pt-4 md:row-start-2 min-[1100px]:col-start-1'}>
           <div
             className={cl(
               'rounded-lg border border-border bg-surface'
@@ -1206,7 +1208,7 @@ export function VaultDetailsHeaderPresentation({
       ) : (
         <>
           {isYvUsd ? (
-            <div className={'md:col-span-20 md:row-start-2 md:flex md:items-stretch md:gap-6'}>
+            <div className={'md:row-start-2 md:flex md:items-stretch md:gap-6 min-[1100px]:col-span-2'}>
               <VaultHeaderIdentity
                 currentVault={currentVault}
                 isCompressed={isCompressed}
@@ -1221,11 +1223,11 @@ export function VaultDetailsHeaderPresentation({
             <VaultHeaderIdentity
               currentVault={currentVault}
               isCompressed={isCompressed}
-              className={'md:col-span-20 md:row-start-2'}
+              className={'md:row-start-2 min-[1100px]:col-span-2'}
               includeTourAttributes={includeTourAttributes}
             />
           )}
-          <div className={cl('md:col-span-13 md:row-start-3')}>
+          <div className={'md:row-start-3 min-[1100px]:col-start-1'}>
             {' '}
             {/* step 2 should be here*/}
             <div className={'flex flex-col'}>
@@ -1255,8 +1257,8 @@ export function VaultDetailsHeaderPresentation({
 
       <div
         className={cl(
-          'flex flex-col pt-4',
-          isCompressed ? 'md:col-span-7 md:col-start-14 md:row-start-2' : 'md:col-span-7 md:col-start-14 md:row-start-3'
+          'hidden flex-col pt-4 min-[1100px]:col-start-2 min-[1100px]:flex',
+          isCompressed ? 'min-[1100px]:row-start-2' : 'min-[1100px]:row-start-3'
         )}
       >
         {' '}

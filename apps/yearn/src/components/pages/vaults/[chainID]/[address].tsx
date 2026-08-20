@@ -1971,13 +1971,16 @@ function Index(): ReactElement | null {
           </section>
         </div>
 
-        <section className={'grid grid-cols-1 gap-4 md:gap-6 md:grid-cols-20 md:items-start bg-app'}>
+        <section
+          className={
+            'grid grid-cols-1 gap-4 bg-app md:items-start md:gap-6 min-[1100px]:grid-cols-[minmax(0,1fr)_408px]'
+          }
+        >
           <div
             ref={widgetContainerRef}
             className={cl(
-              'hidden md:block',
-              'order-1 md:order-2',
-              'md:col-span-7 md:col-start-14 md:sticky pt-4',
+              'hidden min-[1100px]:block',
+              'min-[1100px]:col-start-2 min-[1100px]:row-start-1 min-[1100px]:sticky pt-4',
               'flex flex-col overflow-hidden',
               desktopWidgetHeightClassNames.container
             )}
@@ -2042,7 +2045,7 @@ function Index(): ReactElement | null {
             </div>
           </div>
 
-          <div className={'hidden md:block space-y-4 md:col-span-13 order-2 md:order-1 py-4'}>
+          <div className={'hidden space-y-4 py-4 md:block min-[1100px]:col-start-1 min-[1100px]:row-start-1'}>
             {isRetired && retiredVaultAlertMessage ? (
               <VaultWarningAlert message={retiredVaultAlertMessage} className="px-6 py-4" />
             ) : null}
@@ -2136,11 +2139,11 @@ function Index(): ReactElement | null {
         </section>
       </div>
 
-      {/* Mobile Floating Action Buttons - visible until desktop widget appears (md:), hidden when drawer is open */}
+      {/* Floating action buttons remain available until the fixed-width desktop widget appears. */}
       {!isMobileDrawerOpen && (
         <div
           className={cl(
-            'fixed bottom-0 left-0 right-0 z-50 px-4 pt-4 md:hidden',
+            'fixed bottom-0 left-0 right-0 z-50 px-4 pt-4 min-[1100px]:hidden',
             'backdrop-blur-md',
             'pb-[calc(1rem+env(safe-area-inset-bottom,0px))]'
           )}
