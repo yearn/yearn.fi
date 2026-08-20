@@ -412,6 +412,7 @@ function SectionSelectorBar({
   sectionSelectorRef,
   sectionTabs,
   isCompressed,
+  hasActionFooter = false,
   includeTourAttributes = true
 }: {
   activeSectionKey?: string
@@ -425,6 +426,7 @@ function SectionSelectorBar({
     notificationAriaLabel?: string
   }[]
   isCompressed: boolean
+  hasActionFooter?: boolean
   includeTourAttributes?: boolean
 }): ReactElement {
   return (
@@ -435,7 +437,8 @@ function SectionSelectorBar({
     >
       <div
         className={cl(
-          'flex w-full flex-wrap justify-between gap-2 rounded-b-lg border-border bg-surface-secondary p-1',
+          'flex w-full flex-wrap justify-between gap-2 border-border bg-surface-secondary p-1',
+          hasActionFooter ? 'rounded-none' : 'rounded-b-lg',
           isCompressed ? 'border-t' : 'border-x border-b'
         )}
       >
@@ -1111,6 +1114,7 @@ type TVaultDetailsHeaderBaseProps = {
   isWidgetWalletOpen?: boolean
   onWidgetCloseOverlays?: () => void
   hideBreadcrumbs?: boolean
+  hasActionFooter?: boolean
 }
 
 type TVaultDetailsHeaderPresentationProps = TVaultDetailsHeaderBaseProps & {
@@ -1134,6 +1138,7 @@ export function VaultDetailsHeaderPresentation({
   isWidgetWalletOpen,
   onWidgetCloseOverlays,
   hideBreadcrumbs = false,
+  hasActionFooter = false,
   isCompressed,
   includeTourAttributes = true
 }: TVaultDetailsHeaderPresentationProps): ReactElement {
@@ -1172,8 +1177,8 @@ export function VaultDetailsHeaderPresentation({
         <div className={cl('pt-4 min-[1100px]:col-start-1', hideBreadcrumbs ? 'md:row-start-1' : 'md:row-start-2')}>
           <div
             className={cl(
-              'rounded-lg border border-border bg-surface'
-              // 'border border-border',
+              'border border-border bg-surface',
+              hasActionFooter ? 'rounded-t-lg border-b-0' : 'rounded-lg'
             )}
           >
             <div className={'flex flex-col'}>
@@ -1202,6 +1207,7 @@ export function VaultDetailsHeaderPresentation({
                     sectionSelectorRef={sectionSelectorRef}
                     sectionTabs={sectionTabs}
                     isCompressed={isCompressed}
+                    hasActionFooter={hasActionFooter}
                     includeTourAttributes={includeTourAttributes}
                   />
                 </div>

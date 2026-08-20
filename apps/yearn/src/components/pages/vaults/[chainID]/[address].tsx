@@ -1798,7 +1798,9 @@ function Index(): ReactElement | null {
         <button
           type={'button'}
           onClick={() => handleFloatingButtonClick(widgetActions[1])}
-          className={'yearn--button flex-1 border-border! hover:border-border-hover!'}
+          className={
+            'yearn--button flex-1 border-border! bg-surface! hover:border-border-hover! hover:bg-surface-tertiary!'
+          }
           data-variant={'light'}
         >
           {'Withdraw'}
@@ -1885,17 +1887,24 @@ function Index(): ReactElement | null {
               onWidgetCloseOverlays={closeWidgetOverlays}
               forceCompressed={isBelowDesktopWidgetBreakpoint}
               hideBreadcrumbs={shouldRenderCompactHeaderBanner}
+              hasActionFooter={isBelowDesktopWidgetBreakpoint}
               onCompressionChange={setIsHeaderCompressed}
               onCompressionStateChange={({ isCompressed, isForceCompressed }): void => {
                 setIsHeaderCompressed(isCompressed)
                 setIsHeaderAutoCompressed(isForceCompressed)
               }}
             />
-          </header>
 
-          {isBelowDesktopWidgetBreakpoint ? (
-            <div className={'hidden pt-4 md:block'}>{renderDrawerActionButtons()}</div>
-          ) : null}
+            {isBelowDesktopWidgetBreakpoint ? (
+              <div
+                className={
+                  'hidden w-full rounded-b-lg border border-t-0 border-border bg-surface-secondary p-2 md:block'
+                }
+              >
+                {renderDrawerActionButtons()}
+              </div>
+            ) : null}
+          </header>
         </div>
 
         {shouldRenderCompactHeaderBanner ? <YvUsdHeaderBanner className={'mt-3 hidden min-h-26 md:flex'} /> : null}
