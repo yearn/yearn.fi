@@ -154,7 +154,7 @@ describe('vaultApy Katana calculations', () => {
 })
 
 describe('yBOLD estimated APY override', () => {
-  const createYBoldVault = (address: string): TKongVault =>
+  const createYBoldVault = (address: string, weeklyNet = 0.0725): TKongVault =>
     ({
       ...BASE_VAULT,
       chainId: 1,
@@ -169,7 +169,7 @@ describe('yBOLD estimated APY override', () => {
         },
         historical: {
           net: 0.08,
-          weeklyNet: 0.0725,
+          weeklyNet,
           monthlyNet: 0.081,
           inceptionNet: 0.09
         }
@@ -177,14 +177,21 @@ describe('yBOLD estimated APY override', () => {
     }) as TKongVault
 
   it.each([YBOLD_VAULT_ADDRESS, YBOLD_STAKING_ADDRESS])(
-    'uses 7 day historical net APY as the estimated APY for %s',
+    'uses the Oracle APY when it exceeds the 7 day historical net APY for %s',
     (address) => {
       const vault = createYBoldVault(address)
 
-      expect(getVaultForwardAPY(vault)).toBe(0.0725)
-      expect(calculateVaultEstimatedAPY(vault)).toBe(0.0725)
+      expect(getVaultForwardAPY(vault)).toBe(0.115)
+      expect(calculateVaultEstimatedAPY(vault)).toBe(0.115)
     }
   )
+
+  it('uses the 7 day historical net APY when it exceeds the Oracle APY', () => {
+    const vault = createYBoldVault(YBOLD_VAULT_ADDRESS, 0.125)
+
+    expect(getVaultForwardAPY(vault)).toBe(0.125)
+    expect(calculateVaultEstimatedAPY(vault)).toBe(0.125)
+  })
 
   it('keeps the forward APY for other vaults', () => {
     expect(getVaultForwardAPY(BASE_VAULT)).toBe(0.068)
