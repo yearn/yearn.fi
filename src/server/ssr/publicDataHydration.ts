@@ -1,5 +1,6 @@
 import { type DehydratedState, dehydrate, QueryClient } from '@tanstack/react-query'
 import * as z from 'zod'
+import { YBOLD_STAKING_ADDRESS, YBOLD_VAULT_ADDRESS } from '@/components/pages/vaults/domain/normalizeVault'
 import {
   buildVaultsInitialPayload,
   type TVaultsInitialPayload
@@ -110,6 +111,11 @@ async function prefetchRelatedVaultDetailSnapshots(
   chainId?: number | string,
   address?: string
 ): Promise<void> {
+  if (isMatchingSnapshotRoute(chainId, address, 1, YBOLD_VAULT_ADDRESS)) {
+    await prefetchVaultSnapshot(queryClient, 1, YBOLD_STAKING_ADDRESS)
+    return
+  }
+
   if (Number(chainId) !== YVUSD_CHAIN_ID || !isYvUsdAddress(address)) {
     return
   }
