@@ -1,3 +1,5 @@
+import { mergeYBoldSnapshot } from '@pages/vaults/domain/normalizeVault'
+import { isYBoldProductAddress, isYBoldVaultAddress, YBOLD_STAKING_ADDRESS } from '@pages/vaults/domain/yBoldProduct'
 import landingManifest from '@shared/data/landing-manifest.json'
 import { buildVaultSnapshotEndpoint } from '@shared/data/publicQueryEndpoints'
 import vaultsManifest from '@shared/data/vaults-manifest.json'
@@ -61,7 +63,7 @@ function isValidVaultMetadataParams(chainID: string, address: string): boolean {
 
 const VAULT_METADATA_TIMEOUT_MS = 7000
 
-export const fetchVaultMetadataSnapshot = cache(async function fetchVaultMetadataSnapshot(
+async function fetchVaultMetadataSnapshotForAddress(
   chainID: string,
   address: string
 ): Promise<TKongVaultSnapshot | null> {
@@ -76,6 +78,21 @@ export const fetchVaultMetadataSnapshot = cache(async function fetchVaultMetadat
     console.warn(`[Metadata] Failed to fetch vault snapshot ${chainID}/${address}`, error)
     return null
   }
+}
+
+export const fetchVaultMetadataSnapshot = cache(async function fetchVaultMetadataSnapshot(
+  chainID: string,
+  address: string
+): Promise<TKongVaultSnapshot | null> {
+  if (Number(chainID) !== 1 || !isYBoldVaultAddress(address)) {
+    return fetchVaultMetadataSnapshotForAddress(chainID, address)
+  }
+
+  const [snapshot, stakedSnapshot] = await Promise.all([
+    fetchVaultMetadataSnapshotForAddress(chainID, address),
+    fetchVaultMetadataSnapshotForAddress(chainID, YBOLD_STAKING_ADDRESS)
+  ])
+  return snapshot && stakedSnapshot ? mergeYBoldSnapshot(snapshot, stakedSnapshot) : null
 })
 
 function pickFirstText(...values: Array<string | null | undefined>): string {
@@ -84,6 +101,27 @@ function pickFirstText(...values: Array<string | null | undefined>): string {
 
 function pickFirstNumber(...values: Array<number | null | undefined>): number | null {
   return values.find((value) => typeof value === 'number' && Number.isFinite(value)) ?? null
+}
+
+function pickMaximumNumber(...values: Array<number | null | undefined>): number | null {
+  const finiteValues = values.filter((value): value is number => typeof value === 'number' && Number.isFinite(value))
+  return finiteValues.length > 0 ? Math.max(...finiteValues) : null
+}
+
+function resolveVaultMetadataApy(address: string, snapshot?: TKongVaultSnapshot | null): number | null {
+  if (isYBoldProductAddress(address)) {
+    return pickMaximumNumber(snapshot?.apy?.weeklyNet, snapshot?.performance?.oracle?.netAPY)
+  }
+
+  return pickFirstNumber(
+    snapshot?.apy?.net,
+    snapshot?.performance?.estimated?.apy,
+    snapshot?.performance?.estimated?.apr,
+    snapshot?.performance?.oracle?.netAPY,
+    snapshot?.performance?.oracle?.apy,
+    snapshot?.performance?.oracle?.netAPR,
+    snapshot?.performance?.oracle?.apr
+  )
 }
 
 function buildVaultDescription({
@@ -154,15 +192,7 @@ export function buildVaultMetadataFromInput({ chainID, address, snapshot }: TVau
   const symbol = pickFirstText(snapshot?.meta?.displaySymbol, snapshot?.symbol)
   const assetSymbol = pickFirstText(snapshot?.meta?.token?.symbol, snapshot?.asset?.symbol)
   const title = symbol ? `${name} (${symbol})` : name
-  const apy = pickFirstNumber(
-    snapshot?.apy?.net,
-    snapshot?.performance?.estimated?.apy,
-    snapshot?.performance?.estimated?.apr,
-    snapshot?.performance?.oracle?.netAPY,
-    snapshot?.performance?.oracle?.apy,
-    snapshot?.performance?.oracle?.netAPR,
-    snapshot?.performance?.oracle?.apr
-  )
+  const apy = resolveVaultMetadataApy(address, snapshot)
   const tvl = pickFirstNumber(snapshot?.tvl?.close)
   const description = snapshot
     ? buildVaultDescription({ assetSymbol, chainName, name, apy, tvl })
@@ -227,15 +257,7 @@ export function buildVaultStructuredDataFromInput({
   const name = pickFirstText(snapshot?.meta?.displayName, snapshot?.meta?.name, snapshot?.name, genericVaultTitle)
   const symbol = pickFirstText(snapshot?.meta?.displaySymbol, snapshot?.symbol)
   const assetSymbol = pickFirstText(snapshot?.meta?.token?.symbol, snapshot?.asset?.symbol)
-  const apy = pickFirstNumber(
-    snapshot?.apy?.net,
-    snapshot?.performance?.estimated?.apy,
-    snapshot?.performance?.estimated?.apr,
-    snapshot?.performance?.oracle?.netAPY,
-    snapshot?.performance?.oracle?.apy,
-    snapshot?.performance?.oracle?.netAPR,
-    snapshot?.performance?.oracle?.apr
-  )
+  const apy = resolveVaultMetadataApy(address, snapshot)
   const title = symbol ? `${name} (${symbol})` : name
   const description = snapshot
     ? buildVaultDescription({

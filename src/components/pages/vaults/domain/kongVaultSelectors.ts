@@ -1,4 +1,4 @@
-import { isYBoldProductAddress } from '@pages/vaults/domain/normalizeVault'
+import { isYBoldProductAddress } from '@pages/vaults/domain/yBoldProduct'
 import { normalizeVaultCategory } from '@pages/vaults/utils/normalizeVaultCategory'
 import { toAddress, toBigInt, toNormalizedBN } from '@shared/utils'
 import type { TKongVaultListItem, TKongVaultListItemStakingReward } from '@shared/utils/schemas/kongVaultListSchema'

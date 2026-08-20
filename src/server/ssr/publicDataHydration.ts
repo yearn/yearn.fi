@@ -1,6 +1,6 @@
 import { type DehydratedState, dehydrate, QueryClient } from '@tanstack/react-query'
 import * as z from 'zod'
-import { YBOLD_STAKING_ADDRESS, YBOLD_VAULT_ADDRESS } from '@/components/pages/vaults/domain/normalizeVault'
+import { YBOLD_STAKING_ADDRESS, YBOLD_VAULT_ADDRESS } from '@/components/pages/vaults/domain/yBoldProduct'
 import {
   buildVaultsInitialPayload,
   type TVaultsInitialPayload
