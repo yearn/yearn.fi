@@ -140,7 +140,8 @@ export function createWagmiVaultWidgetExecutionAdapter(
 
       const receipt = await publicClient.waitForTransactionReceipt({
         confirmations: requireConfirmations(chainId),
-        hash
+        hash,
+        timeout: 0
       })
       if (!isTransactionHash(receipt.transactionHash)) {
         throw new Error('Wallet returned an invalid transaction receipt')
