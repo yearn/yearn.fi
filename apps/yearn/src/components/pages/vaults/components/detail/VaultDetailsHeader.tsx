@@ -1110,6 +1110,7 @@ type TVaultDetailsHeaderBaseProps = {
   onWidgetWalletOpen?: () => void
   isWidgetWalletOpen?: boolean
   onWidgetCloseOverlays?: () => void
+  hideBreadcrumbs?: boolean
 }
 
 type TVaultDetailsHeaderPresentationProps = TVaultDetailsHeaderBaseProps & {
@@ -1132,6 +1133,7 @@ export function VaultDetailsHeaderPresentation({
   onWidgetWalletOpen,
   isWidgetWalletOpen,
   onWidgetCloseOverlays,
+  hideBreadcrumbs = false,
   isCompressed,
   includeTourAttributes = true
 }: TVaultDetailsHeaderPresentationProps): ReactElement {
@@ -1153,19 +1155,21 @@ export function VaultDetailsHeaderPresentation({
         'grid w-full grid-cols-1 gap-x-6 gap-y-0 rounded-lg bg-app text-left md:auto-rows-min min-[1100px]:grid-cols-[minmax(0,1fr)_408px]'
       }
     >
-      <div className={'hidden items-center gap-2 px-1 text-sm text-text-secondary md:flex min-[1100px]:col-span-2'}>
-        <a href={'/'} className={'transition-colors hover:text-text-primary'}>
-          {'Home'}
-        </a>
-        <span>{'>'}</span>
-        <Link href={'/v3'} className={'transition-colors hover:text-text-primary'}>
-          {'Vaults'}
-        </Link>
-        <span>{'>'}</span>
-        <span className={'font-medium text-text-primary'}>{getVaultName(currentVault)}</span>
-      </div>
+      {!hideBreadcrumbs ? (
+        <div className={'hidden items-center gap-2 px-1 text-sm text-text-secondary md:flex min-[1100px]:col-span-2'}>
+          <a href={'/'} className={'transition-colors hover:text-text-primary'}>
+            {'Home'}
+          </a>
+          <span>{'>'}</span>
+          <Link href={'/v3'} className={'transition-colors hover:text-text-primary'}>
+            {'Vaults'}
+          </Link>
+          <span>{'>'}</span>
+          <span className={'font-medium text-text-primary'}>{getVaultName(currentVault)}</span>
+        </div>
+      ) : null}
       {isCompressed ? (
-        <div className={'pt-4 md:row-start-2 min-[1100px]:col-start-1'}>
+        <div className={cl('pt-4 min-[1100px]:col-start-1', hideBreadcrumbs ? 'md:row-start-1' : 'md:row-start-2')}>
           <div
             className={cl(
               'rounded-lg border border-border bg-surface'
@@ -1290,21 +1294,27 @@ export function VaultDetailsHeaderPresentation({
 
 export function VaultDetailsHeader({
   isCollapsibleMode = true,
+  forceCompressed = false,
   onCompressionChange,
   onCompressionStateChange,
   ...presentationProps
 }: TVaultDetailsHeaderBaseProps & {
   isCollapsibleMode?: boolean
+  forceCompressed?: boolean
   onCompressionChange?: (isCompressed: boolean) => void
   onCompressionStateChange?: (state: { isCompressed: boolean; isForceCompressed: boolean }) => void
 }): ReactElement {
-  const [forceCompressed, setForceCompressed] = useState(false)
-  const { isCompressed } = useHeaderCompression({ enabled: isCollapsibleMode, forceCompressed })
+  const [forceCompressedByHeight, setForceCompressedByHeight] = useState(false)
+  const shouldForceCompressed = forceCompressed || forceCompressedByHeight
+  const { isCompressed } = useHeaderCompression({
+    enabled: isCollapsibleMode,
+    forceCompressed: shouldForceCompressed
+  })
 
   useEffect(() => {
     if (typeof window === 'undefined') return
     const updateViewport = (): void => {
-      setForceCompressed(window.innerHeight < 890)
+      setForceCompressedByHeight(window.innerHeight < 890)
     }
     updateViewport()
     window.addEventListener('resize', updateViewport)
@@ -1316,8 +1326,8 @@ export function VaultDetailsHeader({
   }, [isCompressed, onCompressionChange])
 
   useEffect(() => {
-    onCompressionStateChange?.({ isCompressed, isForceCompressed: forceCompressed })
-  }, [isCompressed, forceCompressed, onCompressionStateChange])
+    onCompressionStateChange?.({ isCompressed, isForceCompressed: shouldForceCompressed })
+  }, [isCompressed, onCompressionStateChange, shouldForceCompressed])
 
   return <VaultDetailsHeaderPresentation {...presentationProps} isCompressed={isCompressed} />
 }
