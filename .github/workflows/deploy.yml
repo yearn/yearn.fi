@@ -5,19 +5,25 @@ on:
   push:
     branches: [main]
 
-concurrency:
-  group: vercel-deploy-${{ github.ref }}
-  cancel-in-progress: true
-
-permissions:
-  contents: read
-  deployments: write
-  id-token: write
-  pull-requests: write
-
 jobs:
   deploy:
+    strategy:
+      fail-fast: false
+      matrix:
+        # Doppler project holding VERCEL_PROJECT_ID for each Vercel target.
+        #   yearn-fi         -> yearnfi          (prj_yBOrjfd9qZT0nAx6b7aO30VPUstN)
+        #   yearn-bold       -> yearn-bold       (prj_fmOJzToCRMkkElHLNltH5MORGT1r)
+        #   yearnfi-nextjs-2 -> yearnfi-nextjs-2 (prj_zKahGFECAkhRMwyk7UKB938wKTSZ)
+        project: [yearn-fi, yearn-bold, yearnfi-nextjs-2]
+    concurrency:
+      group: vercel-deploy-${{ matrix.project }}-${{ github.ref }}
+      cancel-in-progress: true
+    permissions:
+      contents: read
+      deployments: write
+      id-token: write
+      pull-requests: write
     uses: yearn/yearn-gha/.github/workflows/vercel-deploy.yml@9701cd661a98fda358bb7b273b2baab97f12dea2
     with:
-      project: yearn-fi
+      project: ${{ matrix.project }}
       identity-id: ${{ github.event_name == 'pull_request' && vars.DOPPLER_PREVIEW_IDENTITY_ID || vars.DOPPLER_PRODUCTION_IDENTITY_ID }}
