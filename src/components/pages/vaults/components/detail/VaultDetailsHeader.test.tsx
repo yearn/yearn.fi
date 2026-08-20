@@ -392,12 +392,12 @@ describe('VaultDetailsHeaderPresentation', () => {
     )
   })
 
-  it('describes the 7 day historical basis for the yBOLD estimated APY', () => {
+  it('describes the Oracle and 7 day inputs for the yBOLD estimated APY', () => {
     const html = renderToStaticMarkup(
       <VaultDetailsHeaderPresentation currentVault={YBOLD_VAULT as never} depositedValue={0n} isCompressed={false} />
     )
 
-    expect(html).toContain('Projected APY based on 7 day historical performance')
+    expect(html).toContain('Higher of the Oracle APY and 7 day historical performance')
     expect(html).not.toContain('Projected APY based on underlying markets')
   })
 

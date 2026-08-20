@@ -29,8 +29,8 @@ export function mergeYBoldVault(baseVault: TKongVaultListItem, stakedVault: TKon
     performance: {
       ...(baseVault.performance ?? {}),
       historical: stakedVault.performance?.historical ?? baseVault.performance?.historical,
-      estimated: stakedVault.performance?.estimated ?? baseVault.performance?.estimated,
-      oracle: stakedVault.performance?.oracle ?? baseVault.performance?.oracle
+      estimated: baseVault.performance?.estimated ?? stakedVault.performance?.estimated,
+      oracle: baseVault.performance?.oracle ?? stakedVault.performance?.oracle
     },
     fees: {
       managementFee: baseVault.fees?.managementFee ?? 0,
@@ -86,8 +86,8 @@ export function mergeYBoldSnapshot(
     performance: {
       ...(baseSnapshot.performance ?? {}),
       historical: stakedSnapshot.performance?.historical ?? baseSnapshot.performance?.historical,
-      oracle: stakedSnapshot.performance?.oracle ?? baseSnapshot.performance?.oracle,
-      estimated: stakedSnapshot.performance?.estimated ?? baseSnapshot.performance?.estimated
+      oracle: baseSnapshot.performance?.oracle ?? stakedSnapshot.performance?.oracle,
+      estimated: baseSnapshot.performance?.estimated ?? stakedSnapshot.performance?.estimated
     }
   }
 }
