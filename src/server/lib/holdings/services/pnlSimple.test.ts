@@ -535,7 +535,7 @@ describe('pnl simple protocol return', () => {
     expect(history[1]?.pricePerShare).toBeCloseTo(1.1)
   })
 
-  it('combines current underlying and growth fields for multi-vault history points', () => {
+  it('combines a locked yvUSD transfer-in with unlocked history in USDC-root units', () => {
     const combinedMetadata = new Map<string, VaultMetadata>([
       ...metadata,
       [
@@ -583,15 +583,14 @@ describe('pnl simple protocol return', () => {
           sender: USER
         }),
         baseEvent({
-          kind: 'deposit',
-          id: 'locked-deposit',
+          kind: 'transfer',
+          id: 'locked-transfer-in',
           vaultAddress: YVUSD_LOCKED,
           familyVaultAddress: YVUSD_LOCKED,
           blockTimestamp: 100,
           shares: 2n * ONE,
-          assets: 200n * YVUSD_ONE,
-          owner: USER,
-          sender: USER
+          sender: OTHER,
+          receiver: USER
         })
       ],
       userAddress: USER,
@@ -619,8 +618,8 @@ describe('pnl simple protocol return', () => {
 
     expect(history[0]?.currentUnderlying).toBeCloseTo(300)
     expect(history[0]?.growthUnderlying).toBeCloseTo(0)
-    expect(history[1]?.currentUnderlying).toBeCloseTo(330)
-    expect(history[1]?.growthUnderlying).toBeCloseTo(30)
+    expect(history[1]?.currentUnderlying).toBeCloseTo(352)
+    expect(history[1]?.growthUnderlying).toBeCloseTo(52)
   })
 
   it('keeps ETH growth history available when another vault is missing receipt prices', () => {
@@ -1678,7 +1677,7 @@ describe('pnl simple protocol return', () => {
     ])
   })
 
-  it('keeps locked and unlocked yvUSD as separate protocol-return families', () => {
+  it('accounts for open locked and unlocked yvUSD positions in USDC-root units', () => {
     const yvUsdMetadata = new Map<string, VaultMetadata>([
       [
         YVUSD_UNLOCKED_KEY,
@@ -1795,16 +1794,23 @@ describe('pnl simple protocol return', () => {
     })
 
     expect(selectedVaults).toHaveLength(2)
-    expect(lockedVault?.currentUnderlying).toBeCloseTo(105)
-    expect(lockedVault?.growthUnderlying).toBeCloseTo(5)
-    expect(lockedVault?.growthWeightUsd).toBeCloseTo(5.05)
+    expect(lockedVault?.baselineUnderlying).toBeCloseTo(100)
+    expect(lockedVault?.currentUnderlying).toBeCloseTo(107.1)
+    expect(lockedVault?.pricePerShare).toBeCloseTo(1.071)
+    expect(lockedVault?.growthUnderlying).toBeCloseTo(7.1)
+    expect(lockedVault?.baselineWeightUsd).toBeCloseTo(100)
+    expect(lockedVault?.growthWeightUsd).toBeCloseTo(7.1)
+    expect(lockedVault?.protocolReturnPct).toBeCloseTo(7.1)
     expect(familyHistory.map((series) => series.vaultAddress).sort()).toEqual([YVUSD_LOCKED, YVUSD_UNLOCKED].sort())
     expect(
       familyHistory.find((series) => series.vaultAddress === YVUSD_LOCKED)?.dataPoints[1]?.growthWeightUsd
-    ).toBeCloseTo(5.05)
+    ).toBeCloseTo(7.1)
     expect(familyHistory.find((series) => series.vaultAddress === YVUSD_LOCKED)?.dataPoints[1]?.growthUsd).toBeCloseTo(
-      5.1
+      7.1
     )
+    expect(
+      familyHistory.find((series) => series.vaultAddress === YVUSD_LOCKED)?.dataPoints[1]?.growthIndex
+    ).toBeCloseTo(107.1)
     expect(
       familyHistory.find((series) => series.vaultAddress === YVUSD_UNLOCKED)?.dataPoints[1]?.growthWeightUsd
     ).toBeCloseTo(2)
@@ -1813,8 +1819,75 @@ describe('pnl simple protocol return', () => {
     ).toBeCloseTo(2)
   })
 
-  it('values locked yvUSD withdrawals as normal nested-vault exits, not staking wrapper exits', () => {
+  it('does not mix direct yvUSD units into the locked root ledger when unlocked PPS is missing', () => {
     const yvUsdMetadata = new Map<string, VaultMetadata>([
+      [
+        YVUSD_LOCKED_KEY,
+        {
+          address: YVUSD_LOCKED,
+          chainId: 1,
+          version: 'v3',
+          category: 'stable',
+          token: {
+            address: YVUSD_UNLOCKED,
+            symbol: 'yvUSD',
+            decimals: 6
+          },
+          decimals: 6
+        }
+      ]
+    ])
+    const ppsData = new Map([[YVUSD_LOCKED_KEY, new Map([[100, 1.05]])]])
+    const ledgers = buildProtocolReturnLedgers({
+      events: [
+        baseEvent({
+          kind: 'deposit',
+          id: 'locked-deposit',
+          vaultAddress: YVUSD_LOCKED,
+          familyVaultAddress: YVUSD_LOCKED,
+          blockTimestamp: 100,
+          shares: 100n * YVUSD_ONE,
+          assets: 100n * YVUSD_ONE,
+          owner: USER,
+          sender: USER
+        })
+      ],
+      userAddress: USER,
+      metadata: yvUsdMetadata,
+      ppsData,
+      priceData: new Map([[`ethereum:${YVUSD_UNDERLYING}`, new Map([[100, 1]])]]),
+      currentTimestamp: 100
+    })
+    const vault = materializeProtocolReturnVaults({
+      ledgers,
+      metadata: yvUsdMetadata,
+      ppsData,
+      currentTimestamp: 100
+    })[0]!
+
+    expect(vault.status).toBe('missing_pps')
+    expect(vault.baselineUnderlying).toBe(0)
+    expect(vault.currentUnderlying).toBe(0)
+    expect(vault.growthUnderlying).toBe(0)
+  })
+
+  it('keeps locked yvUSD withdrawal growth in USDC-root units after a full exit', () => {
+    const yvUsdMetadata = new Map<string, VaultMetadata>([
+      [
+        YVUSD_UNLOCKED_KEY,
+        {
+          address: YVUSD_UNLOCKED,
+          chainId: 1,
+          version: 'v3',
+          category: 'stable',
+          token: {
+            address: YVUSD_UNDERLYING,
+            symbol: 'USDC',
+            decimals: 6
+          },
+          decimals: 6
+        }
+      ],
       [
         YVUSD_LOCKED_KEY,
         {
@@ -1833,6 +1906,14 @@ describe('pnl simple protocol return', () => {
     ])
     const ppsData = new Map([
       [
+        YVUSD_UNLOCKED_KEY,
+        new Map([
+          [100, 1],
+          [200, 1.02],
+          [300, 1.02]
+        ])
+      ],
+      [
         YVUSD_LOCKED_KEY,
         new Map([
           [100, 1],
@@ -1841,35 +1922,54 @@ describe('pnl simple protocol return', () => {
         ])
       ]
     ])
-    const ledgers = buildProtocolReturnLedgers({
-      events: [
-        baseEvent({
-          kind: 'deposit',
-          id: 'locked-deposit',
-          vaultAddress: YVUSD_LOCKED,
-          familyVaultAddress: YVUSD_LOCKED,
-          blockTimestamp: 100,
-          shares: 100n * YVUSD_ONE,
-          assets: 100n * YVUSD_ONE,
-          owner: USER,
-          sender: USER
-        }),
-        baseEvent({
-          kind: 'withdrawal',
-          id: 'locked-withdrawal',
-          vaultAddress: YVUSD_LOCKED,
-          familyVaultAddress: YVUSD_LOCKED,
-          blockTimestamp: 200,
-          blockNumber: 2,
-          shares: 100n * YVUSD_ONE,
-          assets: 105n * YVUSD_ONE,
-          owner: USER
-        })
+    const priceData = new Map([
+      [
+        `ethereum:${YVUSD_UNDERLYING}`,
+        new Map([
+          [100, 1],
+          [200, 1],
+          [300, 1]
+        ])
       ],
+      [
+        `ethereum:${YVUSD_UNLOCKED}`,
+        new Map([
+          [100, 1.01],
+          [200, 1.02],
+          [300, 1.02]
+        ])
+      ]
+    ])
+    const events = [
+      baseEvent({
+        kind: 'deposit',
+        id: 'locked-deposit',
+        vaultAddress: YVUSD_LOCKED,
+        familyVaultAddress: YVUSD_LOCKED,
+        blockTimestamp: 100,
+        shares: 100n * YVUSD_ONE,
+        assets: 100n * YVUSD_ONE,
+        owner: USER,
+        sender: USER
+      }),
+      baseEvent({
+        kind: 'withdrawal',
+        id: 'locked-withdrawal',
+        vaultAddress: YVUSD_LOCKED,
+        familyVaultAddress: YVUSD_LOCKED,
+        blockTimestamp: 200,
+        blockNumber: 2,
+        shares: 100n * YVUSD_ONE,
+        assets: 105n * YVUSD_ONE,
+        owner: USER
+      })
+    ]
+    const ledgers = buildProtocolReturnLedgers({
+      events,
       userAddress: USER,
       metadata: yvUsdMetadata,
       ppsData,
-      priceData: new Map([[`ethereum:${YVUSD_UNLOCKED}`, new Map([[100, 1.01]])]]),
+      priceData,
       currentTimestamp: 300
     })
     const vault = materializeProtocolReturnVaults({
@@ -1878,11 +1978,37 @@ describe('pnl simple protocol return', () => {
       ppsData,
       currentTimestamp: 300
     })[0]!
+    const history = buildProtocolReturnHistorySeries({
+      events,
+      userAddress: USER,
+      metadata: yvUsdMetadata,
+      ppsData,
+      priceData,
+      timestamps: [100, 200, 300],
+      selectedVaultKey: YVUSD_LOCKED_KEY
+    })
 
     expect(vault.status).toBe('ok')
-    expect(vault.realizedGrowthUnderlying).toBeCloseTo(5)
-    expect(vault.growthWeightUsd).toBeCloseTo(5.05)
-    expect(vault.protocolReturnPct).toBeCloseTo(5)
+    expect(vault.baselineUnderlying).toBeCloseTo(100)
+    expect(vault.realizedGrowthUnderlying).toBeCloseTo(7.1)
+    expect(vault.baselineWeightUsd).toBeCloseTo(100)
+    expect(vault.growthWeightUsd).toBeCloseTo(7.1)
+    expect(vault.protocolReturnPct).toBeCloseTo(7.1)
+    expect(history.map((point) => point.currentUnderlying)).toEqual([
+      expect.closeTo(100),
+      expect.closeTo(0),
+      expect.closeTo(0)
+    ])
+    expect(history.map((point) => point.growthUnderlying)).toEqual([
+      expect.closeTo(0),
+      expect.closeTo(7.1),
+      expect.closeTo(7.1)
+    ])
+    expect(history.map((point) => point.growthUsd)).toEqual([
+      expect.closeTo(0),
+      expect.closeTo(7.1),
+      expect.closeTo(7.1)
+    ])
   })
 
   it('stops emitting family growth index points after a vault is fully exited', () => {

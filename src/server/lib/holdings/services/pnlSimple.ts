@@ -59,6 +59,11 @@ const RECEIPT_PRICE_BUCKET_SECONDS = 24 * 60 * 60
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
 const ETHEREUM_WETH_ADDRESS = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
 const ETHEREUM_WETH_PRICE_KEY = `${getChainPrefix(1)}:${ETHEREUM_WETH_ADDRESS.toLowerCase()}`
+const YVUSD_CHAIN_ID = 1
+const YVUSD_UNLOCKED_ADDRESS = '0x696d02db93291651ed510704c9b286841d506987'
+const YVUSD_LOCKED_ADDRESS = '0xaaafea48472f77563961cdb53291dedfb46f9040'
+const YVUSD_ROOT_ASSET_ADDRESS = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
+const YVUSD_UNLOCKED_KEY = toVaultKey(YVUSD_CHAIN_ID, YVUSD_UNLOCKED_ADDRESS)
 const ETH_FAMILY_SYMBOLS = new Set([
   'ETH',
   'WETH',
@@ -499,6 +504,18 @@ function tokenPriceMapKey(metadata: VaultMetadata): string {
   return `${getChainPrefix(metadata.chainId)}:${metadata.token.address.toLowerCase()}`
 }
 
+function isLockedYvUsdVault(chainId: number, vaultAddress: string): boolean {
+  return chainId === YVUSD_CHAIN_ID && lowerCaseAddress(vaultAddress) === YVUSD_LOCKED_ADDRESS
+}
+
+function getProtocolReturnAssetAddress(
+  chainId: number,
+  vaultAddress: string,
+  metadata: VaultMetadata | undefined
+): string | null {
+  return isLockedYvUsdVault(chainId, vaultAddress) ? YVUSD_ROOT_ASSET_ADDRESS : (metadata?.token.address ?? null)
+}
+
 function getReceiptPriceBucketTimestamps(timestamp: number, currentTimestamp: number): number[] {
   const dayStart = Math.floor(timestamp / RECEIPT_PRICE_BUCKET_SECONDS) * RECEIPT_PRICE_BUCKET_SECONDS
   const nextDayStart = dayStart + RECEIPT_PRICE_BUCKET_SECONDS
@@ -608,15 +625,18 @@ async function fetchEthReceiptPrices(
 }
 
 function getReceiptPriceUsd(
+  chainId: number,
+  vaultAddress: string,
   metadata: VaultMetadata | undefined,
   priceData: Map<string, Map<number, number>>,
   timestamp: number
 ): number {
-  if (!metadata) {
+  const assetAddress = getProtocolReturnAssetAddress(chainId, vaultAddress, metadata)
+  if (!assetAddress) {
     return 0
   }
 
-  const priceMap = priceData.get(tokenPriceMapKey(metadata))
+  const priceMap = priceData.get(`${getChainPrefix(chainId)}:${assetAddress.toLowerCase()}`)
   return priceMap ? getPriceAtTimestamp(priceMap, timestamp) : 0
 }
 
@@ -631,6 +651,42 @@ function getReceiptPriceEth(ethPriceData: Map<number, number>, receiptPriceUsd: 
 
 function getEventPps(ppsMap: Map<number, number> | undefined, timestamp: number): number | null {
   return ppsMap ? getPPS(ppsMap, timestamp) : null
+}
+
+function getYvUsdUnlockedPps(ppsData: Map<string, Map<number, number>>, timestamp: number): number | null {
+  return getEventPps(ppsData.get(YVUSD_UNLOCKED_KEY), timestamp)
+}
+
+function getProtocolReturnPps(args: {
+  chainId: number
+  vaultAddress: string
+  directPps: number | null
+  ppsData: Map<string, Map<number, number>>
+  timestamp: number
+}): number | null {
+  if (args.directPps === null || !isLockedYvUsdVault(args.chainId, args.vaultAddress)) {
+    return args.directPps
+  }
+
+  const unlockedPps = getYvUsdUnlockedPps(args.ppsData, args.timestamp)
+  return unlockedPps === null ? null : args.directPps * unlockedPps
+}
+
+function convertYvUsdLockedUnderlyingToRoot(args: {
+  chainId: number
+  vaultAddress: string
+  directUnderlying: number
+  ppsData: Map<string, Map<number, number>>
+  timestamp: number
+}): { underlying: number; missingPps: boolean } {
+  if (!isLockedYvUsdVault(args.chainId, args.vaultAddress)) {
+    return { underlying: args.directUnderlying, missingPps: false }
+  }
+
+  const unlockedPps = getYvUsdUnlockedPps(args.ppsData, args.timestamp)
+  return unlockedPps === null
+    ? { underlying: 0, missingPps: true }
+    : { underlying: args.directUnderlying * unlockedPps, missingPps: false }
 }
 
 function isKnownStakingWrapperEvent(event: TRawPnlEvent): boolean {
@@ -909,16 +965,30 @@ function processEvent(
   )
 
   if (event.kind === 'deposit') {
-    const receiptPriceUsd = getReceiptPriceUsd(metadata, args.priceData, event.blockTimestamp)
+    const receiptPriceUsd = getReceiptPriceUsd(
+      event.chainId,
+      event.familyVaultAddress,
+      metadata,
+      args.priceData,
+      event.blockTimestamp
+    )
     const receiptPriceEth = getReceiptPriceEth(args.ethPriceData, receiptPriceUsd, event.blockTimestamp)
-    const valuation = valueDepositOrWithdrawalEvent(event, {
+    const directValuation = valueDepositOrWithdrawalEvent(event, {
       assetDecimals,
       shareDecimals,
       ppsMap
     })
+    const valuation = convertYvUsdLockedUnderlyingToRoot({
+      chainId: event.chainId,
+      vaultAddress: event.familyVaultAddress,
+      directUnderlying: directValuation.underlying,
+      ppsData: args.ppsData,
+      timestamp: event.blockTimestamp
+    })
+    const missingPps = directValuation.missingPps || valuation.missingPps
     ledgers.set(
       vaultKey,
-      addReceipt(valuation.missingPps ? { ...currentLedger, missingPps: true } : currentLedger, {
+      addReceipt(missingPps ? { ...currentLedger, missingPps: true } : currentLedger, {
         shares: event.shares,
         baselineUnderlying: valuation.underlying,
         receiptTimestamp: event.blockTimestamp,
@@ -932,14 +1002,22 @@ function processEvent(
   }
 
   if (event.kind === 'withdrawal') {
-    const valuation = valueDepositOrWithdrawalEvent(event, {
+    const directValuation = valueDepositOrWithdrawalEvent(event, {
       assetDecimals,
       shareDecimals,
       ppsMap
     })
+    const valuation = convertYvUsdLockedUnderlyingToRoot({
+      chainId: event.chainId,
+      vaultAddress: event.familyVaultAddress,
+      directUnderlying: directValuation.underlying,
+      ppsData: args.ppsData,
+      timestamp: event.blockTimestamp
+    })
+    const missingPps = directValuation.missingPps || valuation.missingPps
     ledgers.set(
       vaultKey,
-      addExit(valuation.missingPps ? { ...currentLedger, missingPps: true } : currentLedger, {
+      addExit(missingPps ? { ...currentLedger, missingPps: true } : currentLedger, {
         shares: event.shares,
         exitUnderlying: valuation.underlying,
         exitKind: 'withdrawal'
@@ -960,13 +1038,26 @@ function processEvent(
   }
 
   if (event.receiver === args.userAddress) {
-    const receiptPriceUsd = getReceiptPriceUsd(metadata, args.priceData, event.blockTimestamp)
+    const receiptPriceUsd = getReceiptPriceUsd(
+      event.chainId,
+      event.familyVaultAddress,
+      metadata,
+      args.priceData,
+      event.blockTimestamp
+    )
     const receiptPriceEth = getReceiptPriceEth(args.ethPriceData, receiptPriceUsd, event.blockTimestamp)
+    const valuation = convertYvUsdLockedUnderlyingToRoot({
+      chainId: event.chainId,
+      vaultAddress: event.familyVaultAddress,
+      directUnderlying: formatAmount(event.shares, shareDecimals) * pps,
+      ppsData: args.ppsData,
+      timestamp: event.blockTimestamp
+    })
     ledgers.set(
       vaultKey,
-      addReceipt(currentLedger, {
+      addReceipt(valuation.missingPps ? { ...currentLedger, missingPps: true } : currentLedger, {
         shares: event.shares,
-        baselineUnderlying: formatAmount(event.shares, shareDecimals) * pps,
+        baselineUnderlying: valuation.underlying,
         receiptTimestamp: event.blockTimestamp,
         receiptPriceUsd,
         receiptPriceEth,
@@ -978,11 +1069,18 @@ function processEvent(
   }
 
   if (event.sender === args.userAddress) {
+    const valuation = convertYvUsdLockedUnderlyingToRoot({
+      chainId: event.chainId,
+      vaultAddress: event.familyVaultAddress,
+      directUnderlying: formatAmount(event.shares, shareDecimals) * pps,
+      ppsData: args.ppsData,
+      timestamp: event.blockTimestamp
+    })
     ledgers.set(
       vaultKey,
-      addExit(currentLedger, {
+      addExit(valuation.missingPps ? { ...currentLedger, missingPps: true } : currentLedger, {
         shares: event.shares,
-        exitUnderlying: formatAmount(event.shares, shareDecimals) * pps,
+        exitUnderlying: valuation.underlying,
         exitKind: 'transfer_out'
       })
     )
@@ -1942,7 +2040,13 @@ function computeVaultGrowthWeightEth(args: {
 
   const vaultKey = toVaultKey(args.ledger.chainId, args.ledger.vaultAddress)
   const shareDecimals = args.metadata?.decimals ?? 18
-  const currentPps = getEventPps(args.ppsData.get(vaultKey), args.currentTimestamp)
+  const currentPps = getProtocolReturnPps({
+    chainId: args.ledger.chainId,
+    vaultAddress: args.ledger.vaultAddress,
+    directPps: getEventPps(args.ppsData.get(vaultKey), args.currentTimestamp),
+    ppsData: args.ppsData,
+    timestamp: args.currentTimestamp
+  })
   const currentShares = args.ledger.lots.reduce((total, lot) => total + lot.shares, ZERO)
   const sharesFormatted = formatAmount(currentShares, shareDecimals)
   const currentUnderlying = currentPps === null ? 0 : sharesFormatted * currentPps
@@ -2022,7 +2126,14 @@ export function materializeProtocolReturnVaults(args: {
     const metadata = args.metadata.get(vaultKey)
     const shareDecimals = metadata?.decimals ?? 18
     const ppsMap = args.ppsData.get(vaultKey)
-    const currentPps = ppsMap ? getPPS(ppsMap, args.currentTimestamp) : null
+    const directCurrentPps = ppsMap ? getPPS(ppsMap, args.currentTimestamp) : null
+    const currentPps = getProtocolReturnPps({
+      chainId: ledger.chainId,
+      vaultAddress: ledger.vaultAddress,
+      directPps: directCurrentPps,
+      ppsData: args.ppsData,
+      timestamp: args.currentTimestamp
+    })
     const currentShares = ledger.lots.reduce((total, lot) => total + lot.shares, ZERO)
     const sharesFormatted = formatAmount(currentShares, shareDecimals)
     const currentUnderlying = currentPps === null ? 0 : sharesFormatted * currentPps
@@ -2113,7 +2224,10 @@ function getLatestFetchedAssetPriceUsd(
   vault: HoldingsPnLSimpleVault,
   priceData: Map<string, Map<number, number>>
 ): number | null {
-  return getLatestFetchedTokenPriceUsd(vault.chainId, vault.metadata.tokenAddress, priceData)
+  const assetAddress = isLockedYvUsdVault(vault.chainId, vault.vaultAddress)
+    ? YVUSD_ROOT_ASSET_ADDRESS
+    : vault.metadata.tokenAddress
+  return getLatestFetchedTokenPriceUsd(vault.chainId, assetAddress, priceData)
 }
 
 function buildLatestAssetPriceUsdByVaultKey(
@@ -2123,7 +2237,11 @@ function buildLatestAssetPriceUsdByVaultKey(
   return new Map(
     Array.from(metadata.entries()).map(([vaultKey, vaultMetadata]) => [
       vaultKey,
-      getLatestFetchedTokenPriceUsd(vaultMetadata.chainId, vaultMetadata.token.address, priceData)
+      getLatestFetchedTokenPriceUsd(
+        vaultMetadata.chainId,
+        getProtocolReturnAssetAddress(vaultMetadata.chainId, vaultMetadata.address, vaultMetadata),
+        priceData
+      )
     ])
   )
 }
