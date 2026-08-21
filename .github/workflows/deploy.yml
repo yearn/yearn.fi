@@ -5,19 +5,34 @@ on:
   push:
     branches: [main]
 
-concurrency:
-  group: vercel-deploy-${{ github.ref }}
-  cancel-in-progress: true
-
-permissions:
-  contents: read
-  deployments: write
-  id-token: write
-  pull-requests: write
-
 jobs:
   deploy:
+    strategy:
+      fail-fast: false
+      matrix:
+        # One entry per Vercel project. Each carries its own Doppler project
+        # (holds VERCEL_PROJECT_ID in deploy-configs) and its own Doppler
+        # service account identities. Add a project by appending an entry
+        # and creating its DOPPLER_*_IDENTITY_ID_* repo variables.
+        include:
+          - project: yearn-fi
+            preview_identity: ${{ vars.DOPPLER_PREVIEW_IDENTITY_ID }}
+            production_identity: ${{ vars.DOPPLER_PRODUCTION_IDENTITY_ID }}
+          - project: yearn-bold
+            preview_identity: ${{ vars.DOPPLER_PREVIEW_IDENTITY_ID_YEARN_BOLD }}
+            production_identity: ${{ vars.DOPPLER_PRODUCTION_IDENTITY_ID_YEARN_BOLD }}
+          - project: yearnfi-nextjs-2
+            preview_identity: ${{ vars.DOPPLER_PREVIEW_IDENTITY_ID_YEARNFI_NEXTJS_2 }}
+            production_identity: ${{ vars.DOPPLER_PRODUCTION_IDENTITY_ID_YEARNFI_NEXTJS_2 }}
+    concurrency:
+      group: vercel-deploy-${{ matrix.project }}-${{ github.ref }}
+      cancel-in-progress: true
+    permissions:
+      contents: read
+      deployments: write
+      id-token: write
+      pull-requests: write
     uses: yearn/yearn-gha/.github/workflows/vercel-deploy.yml@9701cd661a98fda358bb7b273b2baab97f12dea2
     with:
-      project: yearn-fi
-      identity-id: ${{ github.event_name == 'pull_request' && vars.DOPPLER_PREVIEW_IDENTITY_ID || vars.DOPPLER_PRODUCTION_IDENTITY_ID }}
+      project: ${{ matrix.project }}
+      identity-id: ${{ github.event_name == 'pull_request' && matrix.preview_identity || matrix.production_identity }}
