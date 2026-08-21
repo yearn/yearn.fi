@@ -544,7 +544,7 @@ function Index(): ReactElement | null {
   })
   const isDualVariantVault = isYvUsd || isYvBtc
   const isDesktopViewport = useMediaQuery('(min-width: 768px)', { initializeWithValue: false })
-  const isBelowDesktopWidgetBreakpoint = useMediaQuery('(max-width: 1099px)', { initializeWithValue: false }) ?? false
+  const isBelowDesktopWidgetBreakpoint = useMediaQuery('(max-width: 1100px)', { initializeWithValue: false }) ?? false
   const shouldRenderCompactHeaderBanner = isYvUsd && isBelowDesktopWidgetBreakpoint
   const shouldRenderDesktopCharts = isDesktopViewport === true
   const shouldRenderMobileCharts = isDesktopViewport === false
@@ -1784,7 +1784,7 @@ function Index(): ReactElement | null {
     )
   }
 
-  function renderDrawerActionButtons(): ReactElement {
+  function renderDrawerActionButtons({ isCompactHeader }: { isCompactHeader: boolean }): ReactElement {
     return (
       <div className={'flex w-full gap-3'}>
         <button
@@ -1798,9 +1798,10 @@ function Index(): ReactElement | null {
         <button
           type={'button'}
           onClick={() => handleFloatingButtonClick(widgetActions[1])}
-          className={
-            'yearn--button flex-1 border-border! bg-surface! hover:border-border-hover! hover:bg-surface-tertiary!'
-          }
+          className={cl(
+            'yearn--button flex-1',
+            isCompactHeader ? 'border-border! bg-surface! hover:border-border-hover! hover:bg-surface-tertiary!' : ''
+          )}
           data-variant={'light'}
         >
           {'Withdraw'}
@@ -1901,7 +1902,7 @@ function Index(): ReactElement | null {
                   'hidden w-full rounded-b-lg border border-t-0 border-border bg-surface-secondary p-2 md:block'
                 }
               >
-                {renderDrawerActionButtons()}
+                {renderDrawerActionButtons({ isCompactHeader: true })}
               </div>
             ) : null}
           </header>
@@ -2032,14 +2033,14 @@ function Index(): ReactElement | null {
 
         <section
           className={
-            'grid grid-cols-1 gap-4 bg-app md:items-start md:gap-6 min-[1100px]:grid-cols-[minmax(0,1fr)_408px]'
+            'grid grid-cols-1 gap-4 bg-app md:items-start md:gap-6 min-[1101px]:grid-cols-[minmax(0,1fr)_408px]'
           }
         >
           <div
             ref={widgetContainerRef}
             className={cl(
-              'hidden min-[1100px]:block',
-              'min-[1100px]:col-start-2 min-[1100px]:row-start-1 min-[1100px]:sticky pt-4',
+              'hidden min-[1101px]:block',
+              'min-[1101px]:col-start-2 min-[1101px]:row-start-1 min-[1101px]:sticky pt-4',
               'flex flex-col overflow-hidden',
               desktopWidgetHeightClassNames.container
             )}
@@ -2104,7 +2105,7 @@ function Index(): ReactElement | null {
             </div>
           </div>
 
-          <div className={'hidden space-y-4 py-4 md:block min-[1100px]:col-start-1 min-[1100px]:row-start-1'}>
+          <div className={'hidden space-y-4 py-4 md:block min-[1101px]:col-start-1 min-[1101px]:row-start-1'}>
             {isRetired && retiredVaultAlertMessage ? (
               <VaultWarningAlert message={retiredVaultAlertMessage} className="px-6 py-4" />
             ) : null}
@@ -2208,7 +2209,7 @@ function Index(): ReactElement | null {
             'pb-[calc(1rem+env(safe-area-inset-bottom,0px))]'
           )}
         >
-          <div className={'mx-auto max-w-[1232px]'}>{renderDrawerActionButtons()}</div>
+          <div className={'mx-auto max-w-[1232px]'}>{renderDrawerActionButtons({ isCompactHeader: false })}</div>
         </div>
       )}
 
