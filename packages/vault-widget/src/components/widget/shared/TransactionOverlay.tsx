@@ -630,6 +630,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
         result.failureKind,
         getTransactionErrorMessage(result.error)
       )
+      if (result.hash) setPlannedTxHash(result.hash)
       setPlannedFailureKind(result.failureKind)
       setErrorMessage(presentation.message)
       setOverlayState('error')

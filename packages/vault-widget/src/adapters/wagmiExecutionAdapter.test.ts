@@ -5,17 +5,21 @@ import {
 } from '@yearn/vault-widget/wagmi'
 import {
   BaseError,
+  createClient,
   createPublicClient,
   custom,
   defineChain,
   type Hash,
   MethodNotFoundRpcError,
   MethodNotSupportedRpcError,
+  type ReplacementReturnType,
   type TransactionReceipt
 } from 'viem'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const wagmiActions = vi.hoisted(() => ({
+  getAccount: vi.fn(),
+  getConnectorClient: vi.fn(),
   getPublicClient: vi.fn(),
   sendCalls: vi.fn(),
   sendTransaction: vi.fn(),
@@ -37,6 +41,7 @@ const executionChain = defineChain({
 const transactionHash = `0x${'22'.repeat(32)}` as Hash
 const otherTransactionHash = `0x${'33'.repeat(32)}` as Hash
 const config = {} as Config
+const connector = { id: 'test-connector' }
 const request = {
   chainId: canonicalChainId,
   data: '0x1234',
@@ -47,6 +52,18 @@ const successfulReceipt = {
   status: 'success',
   transactionHash
 } as TransactionReceipt
+
+function createReplacement(
+  reason: ReplacementReturnType['reason'],
+  replacementReceipt: TransactionReceipt
+): ReplacementReturnType {
+  return {
+    reason,
+    replacedTransaction: { hash: transactionHash } as ReplacementReturnType['replacedTransaction'],
+    transaction: { hash: replacementReceipt.transactionHash } as ReplacementReturnType['transaction'],
+    transactionReceipt: replacementReceipt
+  }
+}
 
 function createReceiptPublicClient(status: '0x0' | '0x1', hash: Hash = transactionHash) {
   const transportRequest = vi.fn().mockResolvedValue({
@@ -84,6 +101,8 @@ function createAdapter(overrides: TAdapterOverrides = {}) {
 
 beforeEach(() => {
   vi.resetAllMocks()
+  wagmiActions.getAccount.mockReturnValue({ connector })
+  wagmiActions.getConnectorClient.mockResolvedValue({})
 })
 
 describe('createWagmiVaultWidgetExecutionAdapter', () => {
@@ -137,6 +156,13 @@ describe('Wagmi EOA execution adapter', () => {
 
     await expect(adapter.execute({ account, request })).resolves.toBe(transactionHash)
 
+    expect(wagmiActions.getAccount).toHaveBeenCalledWith(config)
+    expect(wagmiActions.getConnectorClient).toHaveBeenCalledWith(config, {
+      account,
+      assertChainId: false,
+      chainId: executionChainId,
+      connector
+    })
     expect(wagmiActions.getPublicClient).toHaveBeenCalledWith(config, { chainId: executionChainId })
     expect(estimateGas).toHaveBeenCalledWith({
       account,
@@ -149,6 +175,7 @@ describe('Wagmi EOA execution adapter', () => {
       chainId: executionChainId,
       data: request.data,
       gas: 110_000n,
+      connector,
       to: request.to,
       value: 0n
     })
@@ -165,6 +192,29 @@ describe('Wagmi EOA execution adapter', () => {
 
     await expect(adapter.execute({ account, request })).rejects.toBe(simulationError)
     expect(wagmiActions.sendTransaction).not.toHaveBeenCalled()
+  })
+
+  it('does not let optional nonce lookups delay wallet submission indefinitely', async () => {
+    vi.useFakeTimers()
+    try {
+      const estimateGas = vi.fn().mockResolvedValue(100_000n)
+      const requestPendingForever = vi.fn(() => new Promise(() => undefined))
+      wagmiActions.getPublicClient.mockReturnValue({ estimateGas, request: requestPendingForever })
+      wagmiActions.getConnectorClient.mockResolvedValue({ request: requestPendingForever })
+      wagmiActions.sendTransaction.mockResolvedValue(transactionHash)
+      const adapter = createAdapter()
+
+      const executePromise = adapter.execute({ account, request })
+      await vi.advanceTimersByTimeAsync(0)
+
+      expect(wagmiActions.sendTransaction).toHaveBeenCalledOnce()
+      await vi.advanceTimersByTimeAsync(3_000)
+
+      await expect(executePromise).resolves.toBe(transactionHash)
+      expect(requestPendingForever).toHaveBeenCalledTimes(2)
+    } finally {
+      vi.useRealTimers()
+    }
   })
 
   it('rejects execution when no public client is configured', async () => {
@@ -190,28 +240,36 @@ describe('Wagmi EOA execution adapter', () => {
     wagmiActions.getPublicClient.mockReturnValue({ waitForTransactionReceipt })
     const adapter = createAdapter()
 
-    await expect(adapter.waitForReceipt({ chainId: canonicalChainId, hash: transactionHash })).resolves.toBe(
-      successfulReceipt
-    )
+    await expect(adapter.waitForReceipt({ chainId: canonicalChainId, hash: transactionHash })).resolves.toEqual({
+      receipt: successfulReceipt
+    })
     expect(wagmiActions.getPublicClient).toHaveBeenCalledWith(config, { chainId: executionChainId })
     expect(waitForTransactionReceipt).toHaveBeenCalledWith({
       confirmations: 1,
       hash: transactionHash,
+      onReplaced: expect.any(Function),
       timeout: 0
     })
   })
 
-  it('applies confirmation policy using the canonical chain', async () => {
+  it('detects the transaction first and then applies the canonical-chain confirmation policy', async () => {
     const waitForTransactionReceipt = vi.fn().mockResolvedValue(successfulReceipt)
     const resolveConfirmations = vi.fn().mockReturnValue(2)
     wagmiActions.getPublicClient.mockReturnValue({ waitForTransactionReceipt })
     const adapter = createAdapter({ resolveConfirmations })
 
-    await expect(adapter.waitForReceipt({ chainId: canonicalChainId, hash: transactionHash })).resolves.toBe(
-      successfulReceipt
-    )
+    await expect(adapter.waitForReceipt({ chainId: canonicalChainId, hash: transactionHash })).resolves.toEqual({
+      receipt: successfulReceipt
+    })
     expect(resolveConfirmations).toHaveBeenCalledWith(canonicalChainId)
-    expect(waitForTransactionReceipt).toHaveBeenCalledWith({
+    expect(waitForTransactionReceipt).toHaveBeenNthCalledWith(1, {
+      confirmations: 1,
+      hash: transactionHash,
+      onReplaced: expect.any(Function),
+      timeout: 0
+    })
+    expect(waitForTransactionReceipt).toHaveBeenNthCalledWith(2, {
+      checkReplacement: false,
       confirmations: 2,
       hash: transactionHash,
       timeout: 0
@@ -224,13 +282,178 @@ describe('Wagmi EOA execution adapter', () => {
     const adapter = createAdapter()
 
     await expect(adapter.waitForReceipt({ chainId: canonicalChainId, hash: transactionHash })).resolves.toMatchObject({
-      status: 'reverted',
-      transactionHash
+      receipt: {
+        status: 'reverted',
+        transactionHash
+      }
     })
     expect(transportRequest.mock.calls[0]?.[0]).toEqual({
       method: 'eth_getTransactionReceipt',
       params: [transactionHash]
     })
+  })
+
+  it.each(['repriced', 'cancelled', 'replaced'] as const)(
+    'detects a real Viem %s replacement across connector and public identity sources',
+    async (expectedReason) => {
+      const isCancellation = expectedReason === 'cancelled'
+      const blockHash = `0x${'44'.repeat(32)}` as Hash
+      const blockNumberRequestCount = { current: 0 }
+      const replacementAccount = '0x96A489A533bA0913dD8E507e6D985a45BC783566'
+      const replacementTarget = '0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204'
+      const replacementRequest = { ...request, to: replacementTarget } as const
+      const replacementInput =
+        expectedReason === 'replaced' ? ('0xabcd' as const) : isCancellation ? ('0x' as const) : replacementRequest.data
+      const replacementTo = (
+        expectedReason === 'replaced'
+          ? '0x4444444444444444444444444444444444444444'
+          : isCancellation
+            ? replacementAccount
+            : replacementTarget
+      ).toLowerCase()
+      const blockReplacementFrom = isCancellation ? replacementAccount : replacementAccount.toLowerCase()
+      const blockReplacementTo = isCancellation ? replacementAccount : replacementTo
+      const connectorRpcRequest = vi.fn(async ({ method, params }: { method: string; params?: readonly unknown[] }) => {
+        if (method === 'eth_getTransactionCount') {
+          if (expectedReason === 'repriced') return '0x120'
+          throw new Error('Wallet nonce lookup unavailable')
+        }
+        if (method === 'eth_getTransactionByHash') {
+          if (expectedReason !== 'repriced' || params?.[0] !== transactionHash) return null
+          return {
+            blockHash: null,
+            blockNumber: null,
+            chainId: '0x1',
+            from: replacementAccount,
+            gas: '0x5208',
+            hash: transactionHash,
+            input: replacementRequest.data,
+            maxFeePerGas: '0x77359400',
+            maxPriorityFeePerGas: '0x77359400',
+            nonce: '0x120',
+            to: replacementTarget,
+            transactionIndex: null,
+            type: '0x2',
+            value: '0x0'
+          }
+        }
+        throw new Error(`Unexpected connector RPC method: ${method}`)
+      })
+      const publicRpcRequest = vi.fn(async ({ method, params }: { method: string; params?: readonly unknown[] }) => {
+        if (method === 'eth_estimateGas') return '0x186a0'
+        if (method === 'eth_getTransactionCount') return expectedReason === 'repriced' ? '0x121' : '0x120'
+        if (method === 'eth_blockNumber') {
+          blockNumberRequestCount.current += 1
+          return blockNumberRequestCount.current === 1 ? '0x10' : '0x11'
+        }
+        if (method === 'eth_getTransactionByHash') return null
+        if (method === 'eth_getTransactionReceipt') {
+          if (params?.[0] === transactionHash) return null
+          if (params?.[0] === otherTransactionHash) {
+            return {
+              blockHash,
+              blockNumber: '0x10',
+              contractAddress: null,
+              cumulativeGasUsed: '0x5208',
+              effectiveGasPrice: '0x3b9aca00',
+              from: replacementAccount.toLowerCase(),
+              gasUsed: '0x5208',
+              logs: [],
+              logsBloom: `0x${'00'.repeat(256)}`,
+              status: '0x1',
+              to: replacementTo,
+              transactionHash: otherTransactionHash,
+              transactionIndex: '0x0',
+              type: '0x2'
+            }
+          }
+        }
+        if (method === 'eth_getBlockByNumber') {
+          return {
+            hash: blockHash,
+            number: '0x10',
+            timestamp: '0x1',
+            transactions: [
+              {
+                blockHash,
+                blockNumber: '0x10',
+                chainId: '0x1',
+                from: blockReplacementFrom,
+                gas: '0x5208',
+                hash: otherTransactionHash,
+                input: replacementInput,
+                maxFeePerGas: '0x77359400',
+                maxPriorityFeePerGas: '0x77359400',
+                nonce: '0x120',
+                to: blockReplacementTo,
+                transactionIndex: '0x0',
+                type: '0x2',
+                value: '0x0'
+              }
+            ]
+          }
+        }
+        throw new Error(`Unexpected public RPC method: ${method}`)
+      })
+      const connectorClient = createClient({
+        chain: executionChain,
+        pollingInterval: 1,
+        transport: custom({ request: connectorRpcRequest })
+      })
+      const publicClient = createPublicClient({
+        chain: executionChain,
+        pollingInterval: 1,
+        transport: custom({ request: publicRpcRequest })
+      })
+      wagmiActions.getConnectorClient.mockResolvedValue(connectorClient)
+      wagmiActions.getPublicClient.mockReturnValue(publicClient)
+      wagmiActions.sendTransaction.mockResolvedValue(transactionHash)
+      const adapter = createAdapter({ resolveConfirmations: () => 2 })
+
+      await adapter.execute({ account: replacementAccount, request: replacementRequest })
+
+      const receiptPromise = adapter.waitForReceipt({ chainId: canonicalChainId, hash: transactionHash })
+      if (expectedReason === 'replaced') {
+        await expect(receiptPromise).rejects.toThrow('Wallet returned an unverifiable transaction replacement')
+      } else {
+        await expect(receiptPromise).resolves.toMatchObject({
+          receipt: { status: 'success', transactionHash: otherTransactionHash },
+          replacement: { reason: expectedReason, replacedHash: transactionHash }
+        })
+      }
+      expect(
+        connectorRpcRequest.mock.calls.some(
+          ([rpc]) => rpc.method === 'eth_getTransactionByHash' && rpc.params?.[0] === transactionHash
+        )
+      ).toBe(true)
+      expect(connectorRpcRequest.mock.calls.some(([rpc]) => rpc.method === 'eth_getTransactionCount')).toBe(true)
+      expect(publicRpcRequest.mock.calls.some(([rpc]) => rpc.method === 'eth_getTransactionCount')).toBe(true)
+      expect(
+        publicRpcRequest.mock.calls.some(
+          ([rpc]) => rpc.method === 'eth_getTransactionByHash' && rpc.params?.[0] === transactionHash
+        )
+      ).toBe(true)
+      expect(blockNumberRequestCount.current).toBeGreaterThanOrEqual(2)
+    }
+  )
+
+  it('rejects replacement information that does not match the mined receipt', async () => {
+    const replacementReceipt = { ...successfulReceipt, transactionHash: otherTransactionHash } as TransactionReceipt
+    const waitForTransactionReceipt = vi.fn(
+      async ({ onReplaced }: { onReplaced?: (replacement: ReplacementReturnType) => void }) => {
+        onReplaced?.({
+          ...createReplacement('repriced', replacementReceipt),
+          transaction: { hash: transactionHash } as ReplacementReturnType['transaction']
+        })
+        return replacementReceipt
+      }
+    )
+    wagmiActions.getPublicClient.mockReturnValue({ waitForTransactionReceipt })
+    const adapter = createAdapter()
+
+    await expect(adapter.waitForReceipt({ chainId: canonicalChainId, hash: transactionHash })).rejects.toThrow(
+      'Wallet returned a receipt for an unexpected transaction'
+    )
   })
 
   it.each([

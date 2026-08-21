@@ -5,11 +5,14 @@ import { fetchSafeTransactionDetails } from '@shared/hooks/useSafeTransactionDet
 import type { TNotification } from '@shared/types/notifications'
 import { getNetwork, retrieveConfig } from '@shared/utils/wagmi'
 import { useQueryClient } from '@tanstack/react-query'
-import { getConnectorClient } from '@wagmi/core'
+import { getConnectorClient, getPublicClient } from '@wagmi/core'
 import { useCallback, useEffect, useRef } from 'react'
+import { TransactionReceiptNotFoundError } from 'viem'
 import { getCallsStatus } from 'viem/actions'
 import { getBlock, waitForTransactionReceipt } from 'wagmi/actions'
 import {
+  resolvePolledTransactionStatus,
+  shouldApplyPolledTransactionSettlement,
   shouldPollNotificationStatus,
   shouldRefreshBeforeNotificationSettlement
 } from './transactionStatusPoller.helpers'
@@ -17,7 +20,7 @@ import {
 /************************************************************************************************
  * Custom hook to poll transaction status for pending notifications every minute.
  * This hook checks if a pending transaction has been completed and updates the notification
- * status accordingly using waitForTransactionReceipt from wagmi.
+ * status accordingly using receipt lookups and Safe transaction status APIs.
  *
  * @param notification - The notification to poll for status updates
  ************************************************************************************************/
@@ -27,6 +30,8 @@ export function useTransactionStatusPoller(notification: TNotification): void {
   const { address } = useWeb3()
   const queryClient = useQueryClient()
   const pollIntervalRef = useRef<NodeJS.Timeout | undefined>(undefined)
+  const latestNotificationRef = useRef(notification)
+  latestNotificationRef.current = notification
 
   const refreshBeforeSettlement = useCallback(async (): Promise<void> => {
     await queryClient.invalidateQueries()
@@ -39,8 +44,7 @@ export function useTransactionStatusPoller(notification: TNotification): void {
 
   /************************************************************************************************
    * Function to check the transaction status and update the notification accordingly.
-   * Uses waitForTransactionReceipt to get the transaction receipt and determine if the
-   * transaction was successful or failed.
+   * Looks up the transaction receipt and determines whether it succeeded or failed.
    ************************************************************************************************/
   const checkTransactionStatus = useCallback(async (): Promise<void> => {
     if (!shouldPollNotificationStatus(notification)) {
@@ -52,7 +56,6 @@ export function useTransactionStatusPoller(notification: TNotification): void {
     if (!notificationId || !txHash) {
       return
     }
-
     try {
       const config = retrieveConfig()
       const pollingChainId = notification.executionChainId ?? notification.chainId
@@ -198,23 +201,37 @@ export function useTransactionStatusPoller(notification: TNotification): void {
         return
       }
 
-      const receipt = await waitForTransactionReceipt(config, {
-        chainId: pollingChainId,
-        hash: txHash,
-        timeout: 5000
+      const publicClient = getPublicClient(config, { chainId: pollingChainId })
+      if (!publicClient) return
+      // The widget controller owns active replacement tracking. This poller only
+      // reconciles a persisted notification by its recorded transaction hash.
+      const receipt = await publicClient.getTransactionReceipt({ hash: txHash }).catch((error) => {
+        if (error instanceof TransactionReceiptNotFoundError) return undefined
+        throw error
       })
 
       if (receipt) {
-        const newStatus = receipt.status === 'success' ? 'success' : 'error'
+        const status = resolvePolledTransactionStatus({
+          receipt,
+          requestedHash: txHash
+        })
         const block = await getBlock(config, {
           chainId: pollingChainId,
           blockNumber: receipt.blockNumber
         })
         const timeFinished = Number(block.timestamp)
+        if (
+          !shouldApplyPolledTransactionSettlement(latestNotificationRef.current, {
+            id: notificationId,
+            txHash
+          })
+        ) {
+          return
+        }
 
         await updateEntry(
           {
-            status: newStatus,
+            status,
             timeFinished,
             blockNumber: receipt.blockNumber,
             awaitingExecution: false

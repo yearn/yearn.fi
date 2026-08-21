@@ -18,6 +18,10 @@ function createReceipt(hash: Hash, status: TransactionReceipt['status'] = 'succe
   return { status, transactionHash: hash } as TransactionReceipt
 }
 
+function createReceiptResult(hash: Hash, status: TransactionReceipt['status'] = 'success') {
+  return { receipt: createReceipt(hash, status) }
+}
+
 function createIntent(callCount = 1): VaultWidgetTransactionIntent {
   return {
     id: `deposit:test:${callCount}`,
@@ -53,7 +57,7 @@ function createAdapter(overrides: Partial<VaultWidgetExecutionAdapter> = {}): Va
   return {
     switchChain: vi.fn().mockResolvedValue(undefined),
     execute: vi.fn().mockResolvedValue(hashOne),
-    waitForReceipt: vi.fn().mockResolvedValue(createReceipt(hashOne)),
+    waitForReceipt: vi.fn().mockResolvedValue(createReceiptResult(hashOne)),
     ...overrides
   }
 }
@@ -92,11 +96,11 @@ describe('executeTransactionPlan', () => {
         .fn()
         .mockImplementationOnce(async () => {
           order.push('receipt-1')
-          return receiptOne
+          return { receipt: receiptOne }
         })
         .mockImplementationOnce(async () => {
           order.push('receipt-2')
-          return receiptTwo
+          return { receipt: receiptTwo }
         })
     })
     const plan = buildTransactionPlan({ intent: createIntent(2), connectedChainId: 10 })
@@ -154,7 +158,7 @@ describe('executeTransactionPlan', () => {
       }),
       waitForReceipt: vi.fn(async () => {
         order.push('receipt')
-        return receipt
+        return { receipt }
       })
     })
     const plan = buildTransactionPlan({ intent: createIntent(), walletType: 'safe' })
@@ -189,7 +193,7 @@ describe('executeTransactionPlan', () => {
     const plan = buildTransactionPlan({ intent: createIntent(), connectedChainId: 1 })
     const error = await captureExecutionError({
       account,
-      adapter: createAdapter({ waitForReceipt: vi.fn().mockResolvedValue(revertedReceipt) }),
+      adapter: createAdapter({ waitForReceipt: vi.fn().mockResolvedValue({ receipt: revertedReceipt }) }),
       plan,
       refresh,
       onState: (state) => states.push(state)
@@ -204,6 +208,110 @@ describe('executeTransactionPlan', () => {
     })
     expect(states.map(({ status }) => status)).toEqual(['confirming', 'pending', 'error'])
     expect(states.at(-1)).toMatchObject({ error, outcome: error.outcome })
+    expect(refresh).not.toHaveBeenCalled()
+  })
+
+  it('tracks a successful repriced transaction through refresh and success', async () => {
+    const replacementReceipt = createReceipt(hashTwo)
+    const refresh = vi.fn().mockResolvedValue(undefined)
+    const states: VaultWidgetPlanExecutionState[] = []
+    const plan = buildTransactionPlan({ intent: createIntent(), connectedChainId: 1 })
+
+    const outcome = await executeTransactionPlan({
+      account,
+      adapter: createAdapter({
+        waitForReceipt: vi.fn().mockResolvedValue({
+          receipt: replacementReceipt,
+          replacement: { reason: 'repriced', replacedHash: hashOne }
+        })
+      }),
+      plan,
+      refresh,
+      onState: (state) => states.push(state)
+    })
+
+    expect(outcome).toEqual({
+      submissions: [
+        {
+          stepId: 'deposit',
+          chainId: 1,
+          hash: hashTwo,
+          receipt: replacementReceipt,
+          replacement: { reason: 'repriced', replacedHash: hashOne }
+        }
+      ]
+    })
+    expect(states.map(({ status }) => status)).toEqual(['confirming', 'pending', 'refreshing', 'success'])
+    expect(refresh).toHaveBeenCalledOnce()
+  })
+
+  it('reports a mined cancellation as a failed plan and skips refresh', async () => {
+    const cancellationReceipt = createReceipt(hashTwo)
+    const refresh = vi.fn().mockResolvedValue(undefined)
+    const states: VaultWidgetPlanExecutionState[] = []
+    const plan = buildTransactionPlan({ intent: createIntent(), connectedChainId: 1 })
+    const error = await captureExecutionError({
+      account,
+      adapter: createAdapter({
+        waitForReceipt: vi.fn().mockResolvedValue({
+          receipt: cancellationReceipt,
+          replacement: { reason: 'cancelled', replacedHash: hashOne }
+        })
+      }),
+      plan,
+      refresh,
+      onState: (state) => states.push(state)
+    })
+
+    expect(error.message).toBe('Transaction was cancelled in the wallet')
+    expect(error.outcome).toEqual({
+      submissions: [
+        {
+          stepId: 'deposit',
+          chainId: 1,
+          hash: hashTwo,
+          receipt: cancellationReceipt,
+          replacement: { reason: 'cancelled', replacedHash: hashOne }
+        }
+      ]
+    })
+    expect(states.map(({ status }) => status)).toEqual(['confirming', 'pending', 'error'])
+    expect(refresh).not.toHaveBeenCalled()
+  })
+
+  it('rejects an unproven receipt hash mismatch before refresh', async () => {
+    const refresh = vi.fn().mockResolvedValue(undefined)
+    const plan = buildTransactionPlan({ intent: createIntent(), connectedChainId: 1 })
+    const error = await captureExecutionError({
+      account,
+      adapter: createAdapter({ waitForReceipt: vi.fn().mockResolvedValue(createReceiptResult(hashTwo)) }),
+      plan,
+      refresh
+    })
+
+    expect(error.message).toBe('Execution adapter returned a receipt for an unexpected transaction')
+    expect(error.outcome).toEqual({ submissions: [{ stepId: 'deposit', chainId: 1, hash: hashOne }] })
+    expect(refresh).not.toHaveBeenCalled()
+  })
+
+  it('does not allow replacement semantics for Safe execution receipts', async () => {
+    const refresh = vi.fn().mockResolvedValue(undefined)
+    const plan = buildTransactionPlan({ intent: createIntent(), walletType: 'safe', connectedChainId: 1 })
+    const error = await captureExecutionError({
+      account,
+      adapter: createAdapter({
+        proposeSafeBatch: vi.fn().mockResolvedValue(proposalId),
+        waitForSafeExecution: vi.fn().mockResolvedValue(safeHash),
+        waitForReceipt: vi.fn().mockResolvedValue({
+          receipt: createReceipt(hashTwo),
+          replacement: { reason: 'repriced', replacedHash: safeHash }
+        })
+      }),
+      plan,
+      refresh
+    })
+
+    expect(error.message).toBe('Execution adapter returned invalid replacement details')
     expect(refresh).not.toHaveBeenCalled()
   })
 
@@ -227,7 +335,7 @@ describe('executeTransactionPlan', () => {
     const refresh = vi.fn().mockResolvedValue(undefined)
     const adapter = createAdapter({
       execute: vi.fn().mockResolvedValueOnce(hashOne).mockResolvedValueOnce(hashTwo),
-      waitForReceipt: vi.fn().mockResolvedValueOnce(receiptOne).mockRejectedValueOnce(receiptFailure)
+      waitForReceipt: vi.fn().mockResolvedValueOnce({ receipt: receiptOne }).mockRejectedValueOnce(receiptFailure)
     })
     const plan = buildTransactionPlan({ intent: createIntent(2), connectedChainId: 1 })
     const error = await captureExecutionError({ account, adapter, plan, refresh })
@@ -259,7 +367,7 @@ describe('executeTransactionPlan', () => {
     const plan = buildTransactionPlan({ intent: createIntent(), connectedChainId: 1 })
     const error = await captureExecutionError({
       account,
-      adapter: createAdapter({ waitForReceipt: vi.fn().mockResolvedValue(receipt) }),
+      adapter: createAdapter({ waitForReceipt: vi.fn().mockResolvedValue({ receipt }) }),
       plan,
       refresh: vi.fn().mockRejectedValue(refreshFailure),
       onState: (state) => states.push(state)

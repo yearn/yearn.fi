@@ -85,16 +85,27 @@ export type VaultWidgetPlanSubmission = {
   proposalId?: Hex
   hash?: Hash
   receipt?: TransactionReceipt
+  replacement?: VaultWidgetTransactionReplacement
 }
 
 export type VaultWidgetPlanOutcome = {
   submissions: readonly VaultWidgetPlanSubmission[]
 }
 
+export type VaultWidgetTransactionReplacement = {
+  reason: 'cancelled' | 'replaced' | 'repriced'
+  replacedHash: Hash
+}
+
+export type VaultWidgetTransactionReceiptResult = {
+  receipt: TransactionReceipt
+  replacement?: VaultWidgetTransactionReplacement
+}
+
 export type VaultWidgetExecutionAdapter = {
   switchChain: (params: { chainId: number }) => Promise<void>
   execute: (params: { account: Address; request: VaultWidgetTransactionRequest }) => Promise<Hash>
-  waitForReceipt: (params: { chainId: number; hash: Hash }) => Promise<TransactionReceipt>
+  waitForReceipt: (params: { chainId: number; hash: Hash }) => Promise<VaultWidgetTransactionReceiptResult>
   proposeSafeBatch?: (params: {
     account: Address
     chainId: number

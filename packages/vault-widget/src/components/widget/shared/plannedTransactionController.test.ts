@@ -14,6 +14,7 @@ import { describe, expect, it, vi } from 'vitest'
 
 const account = '0x1111111111111111111111111111111111111111' as const
 const hash = `0x${'1'.repeat(64)}` as Hash
+const replacementHash = `0x${'2'.repeat(64)}` as Hash
 const receipt = { status: 'success', transactionHash: hash } as TransactionReceipt
 const notification = {
   amount: '10',
@@ -43,7 +44,7 @@ function createAdapter(overrides: Partial<VaultWidgetExecutionAdapter> = {}): Va
   return {
     execute: vi.fn().mockResolvedValue(hash),
     switchChain: vi.fn().mockResolvedValue(undefined),
-    waitForReceipt: vi.fn().mockResolvedValue(receipt),
+    waitForReceipt: vi.fn().mockResolvedValue({ receipt }),
     ...overrides
   }
 }
@@ -86,7 +87,8 @@ describe('executePlannedStyledWidgetTransaction', () => {
     expect(notifications.update).toHaveBeenNthCalledWith(2, {
       id: 'notification-id',
       receipt,
-      status: 'success'
+      status: 'success',
+      txHash: hash
     })
   })
 
@@ -115,7 +117,8 @@ describe('executePlannedStyledWidgetTransaction', () => {
     expect(notifications.update).toHaveBeenLastCalledWith({
       id: 'notification-id',
       receipt,
-      status: 'success'
+      status: 'success',
+      txHash: hash
     })
     expect(getPlannedTransactionErrorPresentation('confirmed-refresh')).toMatchObject({
       actionLabel: 'Close',
@@ -154,7 +157,7 @@ describe('executePlannedStyledWidgetTransaction', () => {
     const states: TPlannedTransactionControllerState[] = []
     const result = await executePlannedStyledWidgetTransaction({
       account,
-      adapter: createAdapter({ waitForReceipt: vi.fn().mockResolvedValue(revertedReceipt) }),
+      adapter: createAdapter({ waitForReceipt: vi.fn().mockResolvedValue({ receipt: revertedReceipt }) }),
       notification,
       notifications,
       onState: (state) => states.push(state),
@@ -177,7 +180,9 @@ describe('executePlannedStyledWidgetTransaction', () => {
     })
     expect(notifications.update).toHaveBeenNthCalledWith(2, {
       id: 'notification-id',
-      status: 'error'
+      receipt: revertedReceipt,
+      status: 'error',
+      txHash: hash
     })
     if (result.status !== 'error') throw new Error('Expected reverted transaction to fail')
     expect(getPlannedTransactionErrorPresentation(result.failureKind, result.error.message)).toEqual({
@@ -185,6 +190,84 @@ describe('executePlannedStyledWidgetTransaction', () => {
       canRetry: true,
       message: 'Transaction reverted',
       title: 'Transaction failed'
+    })
+  })
+
+  it('completes a speed-up under its mined replacement hash', async () => {
+    const replacementReceipt = { ...receipt, transactionHash: replacementHash } as TransactionReceipt
+    const notifications = createNotifications()
+    const refresh = vi.fn().mockResolvedValue(undefined)
+    const states: TPlannedTransactionControllerState[] = []
+    const result = await executePlannedStyledWidgetTransaction({
+      account,
+      adapter: createAdapter({
+        waitForReceipt: vi.fn().mockResolvedValue({
+          receipt: replacementReceipt,
+          replacement: { reason: 'repriced', replacedHash: hash }
+        })
+      }),
+      notification,
+      notifications,
+      onState: (state) => states.push(state),
+      plan: buildTransactionPlan({ intent, connectedChainId: 1 }),
+      refresh
+    })
+
+    expect(result).toMatchObject({
+      hash: replacementHash,
+      status: 'success'
+    })
+    expect(states).toMatchObject([
+      { status: 'confirming' },
+      { hash, status: 'pending' },
+      { hash: replacementHash, status: 'refreshing' },
+      { hash: replacementHash, status: 'success' }
+    ])
+    expect(refresh).toHaveBeenCalledOnce()
+    expect(notifications.update).toHaveBeenNthCalledWith(2, {
+      id: 'notification-id',
+      receipt: replacementReceipt,
+      status: 'success',
+      txHash: replacementHash
+    })
+  })
+
+  it('stops a mined wallet cancellation and exposes its replacement hash for retry', async () => {
+    const cancellationReceipt = { ...receipt, transactionHash: replacementHash } as TransactionReceipt
+    const notifications = createNotifications()
+    const refresh = vi.fn().mockResolvedValue(undefined)
+    const result = await executePlannedStyledWidgetTransaction({
+      account,
+      adapter: createAdapter({
+        waitForReceipt: vi.fn().mockResolvedValue({
+          receipt: cancellationReceipt,
+          replacement: { reason: 'cancelled', replacedHash: hash }
+        })
+      }),
+      notification,
+      notifications,
+      plan: buildTransactionPlan({ intent, connectedChainId: 1 }),
+      refresh
+    })
+
+    expect(result).toMatchObject({
+      error: { message: 'Transaction was cancelled in the wallet' },
+      failureKind: 'cancelled',
+      hash: replacementHash,
+      status: 'error'
+    })
+    expect(refresh).not.toHaveBeenCalled()
+    expect(notifications.update).toHaveBeenNthCalledWith(2, {
+      id: 'notification-id',
+      receipt: cancellationReceipt,
+      status: 'error',
+      txHash: replacementHash
+    })
+    expect(getPlannedTransactionErrorPresentation('cancelled')).toEqual({
+      actionLabel: 'Try Again',
+      canRetry: true,
+      message: 'The transaction was cancelled in your wallet. You can try again.',
+      title: 'Transaction cancelled'
     })
   })
 

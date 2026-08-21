@@ -22,7 +22,12 @@ export type TPlannedTransactionControllerState =
   | { error: Error; hash: Hash; status: 'submitted-unknown-error' }
   | { error: Error; hash: Hash; status: 'confirmed-refresh-error' }
 
-export type TPlannedTransactionFailureKind = 'confirmed-refresh' | 'pre-submission' | 'submitted-unconfirmed'
+export type TPlannedTransactionFailureKind =
+  | 'cancelled'
+  | 'confirmed-refresh'
+  | 'pre-submission'
+  | 'replaced'
+  | 'submitted-unconfirmed'
 
 export type TPlannedTransactionExecutionResult =
   | {
@@ -106,6 +111,24 @@ export function getPlannedTransactionErrorPresentation(
     }
   }
 
+  if (failureKind === 'cancelled') {
+    return {
+      actionLabel: 'Try Again',
+      canRetry: true,
+      message: 'The transaction was cancelled in your wallet. You can try again.',
+      title: 'Transaction cancelled'
+    }
+  }
+
+  if (failureKind === 'replaced') {
+    return {
+      actionLabel: 'Close',
+      canRetry: false,
+      message: 'This transaction was replaced by a different wallet transaction. Close this window and try again.',
+      title: 'Transaction replaced'
+    }
+  }
+
   return {
     actionLabel: 'Try Again',
     canRetry: true,
@@ -181,7 +204,7 @@ export async function executePlannedStyledWidgetTransaction({
         confirmationState.reported = true
         onTransactionConfirmed?.()
       }
-      appendNotificationUpdate({ receipt: getLatestReceipt(state.outcome), status: 'success' })
+      appendNotificationUpdate({ receipt: getLatestReceipt(state.outcome), status: 'success', txHash: hash })
       onState?.({ hash, status: 'refreshing' })
       return
     }
@@ -199,15 +222,27 @@ export async function executePlannedStyledWidgetTransaction({
     const error = normalizeError(cause)
     const outcome = error instanceof VaultWidgetPlanExecutionError ? error.outcome : { submissions: [] }
     const hash = getLatestHash(outcome)
+    const replacementReason = outcome.submissions.at(-1)?.replacement?.reason
     const transactionConfirmed = isConfirmedRefreshFailure(error)
     const submissionUnconfirmed = Boolean(hash && !getLatestReceipt(outcome))
     const failureKind: TPlannedTransactionFailureKind = transactionConfirmed
       ? 'confirmed-refresh'
-      : submissionUnconfirmed
-        ? 'submitted-unconfirmed'
-        : 'pre-submission'
+      : replacementReason === 'cancelled'
+        ? 'cancelled'
+        : replacementReason === 'replaced'
+          ? 'replaced'
+          : submissionUnconfirmed
+            ? 'submitted-unconfirmed'
+            : 'pre-submission'
 
-    if (failureKind === 'pre-submission') appendNotificationUpdate({ status: 'error' })
+    if (failureKind === 'pre-submission' || failureKind === 'cancelled' || failureKind === 'replaced') {
+      const receipt = getLatestReceipt(outcome)
+      appendNotificationUpdate({
+        status: 'error',
+        ...(hash ? { txHash: hash } : {}),
+        ...(receipt ? { receipt } : {})
+      })
+    }
     if (transactionConfirmed && hash) {
       onState?.({ error, hash, status: 'confirmed-refresh-error' })
     } else if (submissionUnconfirmed && hash) {
