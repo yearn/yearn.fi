@@ -17,7 +17,7 @@ permissions:
 
 jobs:
   yearn:
-    uses: yearn/yearn-gha/.github/workflows/vercel-deploy.yml@9701cd661a98fda358bb7b273b2baab97f12dea2
+    uses: yearn/yearn-gha/.github/workflows/vercel-deploy.yml@4491a119aee0a0458eb6d946921f7c0271d58f17
     with:
       project: yearnfi-nextjs-2
       identity-id: ${{ github.event_name == 'pull_request' && vars.DOPPLER_PREVIEW_IDENTITY_ID || vars.DOPPLER_PRODUCTION_IDENTITY_ID }}
