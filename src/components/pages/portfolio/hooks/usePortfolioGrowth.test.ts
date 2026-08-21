@@ -103,12 +103,16 @@ describe('portfolio growth helpers', () => {
     const unstaked = makeGrowthVault(YBOLD_VAULT_ADDRESS, {
       baselineUsd: 100,
       baselineExposureUsdYears: 50,
-      growthUsd: 0
+      growthUsd: 0,
+      growthPct: 5,
+      annualizedProtocolReturnPct: 8
     })
     const staked = makeGrowthVault(YBOLD_STAKING_ADDRESS, {
       baselineUsd: 200,
       baselineExposureUsdYears: 100,
       growthUsd: 30,
+      growthPct: 20,
+      annualizedProtocolReturnPct: 26,
       metadata: {
         symbol: 'ysyBOLD',
         decimals: 18,
@@ -126,10 +130,55 @@ describe('portfolio growth helpers', () => {
       baselineUsd: 300,
       baselineExposureUsdYears: 150,
       growthUsd: 30,
-      growthPct: 10,
+      growthPct: 15,
       annualizedProtocolReturnPct: 20
     })
     expect(combined?.metadata.symbol).toBe('yvTEST')
+  })
+
+  it('does not derive combined protocol returns from hybrid USD growth', () => {
+    const unlocked = makeGrowthVault(YVUSD_UNLOCKED_ADDRESS, {
+      baselineUsd: 100,
+      baselineExposureUsdYears: 50,
+      growthUsd: 80,
+      growthPct: 10,
+      annualizedProtocolReturnPct: 20
+    })
+    const locked = makeGrowthVault(YVUSD_LOCKED_ADDRESS, {
+      baselineUsd: 300,
+      baselineExposureUsdYears: 150,
+      growthUsd: -20,
+      growthPct: 30,
+      annualizedProtocolReturnPct: 40
+    })
+
+    const combined = mapPortfolioGrowthVaults([unlocked, locked]).get(getPortfolioGrowthVaultKey(unlocked))
+
+    expect(combined).toMatchObject({
+      growthUsd: 60,
+      growthPct: 25,
+      annualizedProtocolReturnPct: 35
+    })
+  })
+
+  it('requires finite component returns only for variants with positive weights', () => {
+    const unstaked = makeGrowthVault(YBOLD_VAULT_ADDRESS, {
+      baselineUsd: 100,
+      baselineExposureUsdYears: 50,
+      growthPct: 10,
+      annualizedProtocolReturnPct: null
+    })
+    const staked = makeGrowthVault(YBOLD_STAKING_ADDRESS, {
+      baselineUsd: 0,
+      baselineExposureUsdYears: 0,
+      growthPct: null,
+      annualizedProtocolReturnPct: null
+    })
+
+    const combined = mapPortfolioGrowthVaults([unstaked, staked]).get(getPortfolioGrowthVaultKey(unstaked))
+
+    expect(combined?.growthPct).toBe(10)
+    expect(combined?.annualizedProtocolReturnPct).toBeNull()
   })
 
   it('maps staking-only yBOLD growth to the displayed vault', () => {
@@ -148,8 +197,8 @@ describe('portfolio growth helpers', () => {
       baselineUsd: 200,
       baselineExposureUsdYears: 100,
       growthUsd: 30,
-      growthPct: 15,
-      annualizedProtocolReturnPct: 30
+      growthPct: 10,
+      annualizedProtocolReturnPct: 20
     })
   })
 

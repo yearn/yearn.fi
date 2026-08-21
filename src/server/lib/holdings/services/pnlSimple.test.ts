@@ -4,6 +4,7 @@ import type { TransactionActivityEvents } from './graphql'
 import { mergeAddressScopedRawPnlEventsWithTransactionActivity } from './pnlEvents'
 import { toVaultKey } from './pnlShared'
 import {
+  buildExitPriceRequests,
   buildProtocolReturnFamilyHistorySeries,
   buildProtocolReturnHistorySeries,
   buildProtocolReturnLedgers,
@@ -134,6 +135,61 @@ describe('pnl simple protocol return', () => {
         chainId: 1,
         address: ASSET,
         timestamps: [0, 86400]
+      }
+    ])
+  })
+
+  it('requests only UTC day-start prices for withdrawals and outward transfers', () => {
+    const requests = buildExitPriceRequests({
+      events: [
+        baseEvent({
+          kind: 'withdrawal',
+          id: 'withdrawal',
+          blockTimestamp: 86399,
+          shares: 25n * ONE,
+          assets: 25n * ONE,
+          owner: USER
+        }),
+        baseEvent({
+          kind: 'deposit',
+          id: 'deposit',
+          blockTimestamp: 86450,
+          shares: 25n * ONE,
+          assets: 25n * ONE,
+          owner: USER,
+          sender: USER
+        }),
+        baseEvent({
+          kind: 'transfer',
+          id: 'transfer-out',
+          blockTimestamp: 172850,
+          sender: USER,
+          receiver: OTHER
+        }),
+        baseEvent({
+          kind: 'transfer',
+          id: 'transfer-in',
+          blockTimestamp: 259250,
+          sender: OTHER,
+          receiver: USER
+        }),
+        baseEvent({
+          kind: 'transfer',
+          id: 'self-transfer',
+          blockTimestamp: 345650,
+          sender: USER,
+          receiver: USER
+        })
+      ],
+      metadata,
+      userAddress: USER
+    })
+
+    expect(requests).toEqual([
+      {
+        chainId: 1,
+        address: ASSET,
+        timestamps: [0, 172800]
       }
     ])
   })
@@ -271,6 +327,246 @@ describe('pnl simple protocol return', () => {
     expect(vault.baselineWeightUsd).toBe(300)
     expect(vault.growthWeightUsd).toBeCloseTo(60)
     expect(vault.protocolReturnPct).toBeCloseTo(20)
+  })
+
+  it('freezes withdrawn growth at the exit price while valuing open growth at the latest price', () => {
+    const history = buildProtocolReturnHistorySeries({
+      events: [
+        baseEvent({
+          kind: 'deposit',
+          id: 'deposit',
+          blockTimestamp: 100,
+          shares: 100n * ONE,
+          assets: 100n * ONE,
+          owner: USER,
+          sender: USER
+        }),
+        baseEvent({
+          kind: 'withdrawal',
+          id: 'partial-withdrawal',
+          blockTimestamp: 200,
+          blockNumber: 2,
+          shares: 40n * ONE,
+          assets: 44n * ONE,
+          owner: USER
+        })
+      ],
+      userAddress: USER,
+      metadata,
+      ppsData: new Map([
+        [
+          VAULT_KEY,
+          new Map([
+            [100, 1],
+            [200, 1.1],
+            [300, 1.2]
+          ])
+        ]
+      ]),
+      priceData: new Map([
+        [
+          ASSET_PRICE_KEY,
+          new Map([
+            [100, 1],
+            [200, 2],
+            [300, 5]
+          ])
+        ]
+      ]),
+      timestamps: [100, 200, 300],
+      selectedVaultKey: VAULT_KEY
+    })
+
+    expect(history.map((point) => point.growthUnderlying)).toEqual([
+      expect.closeTo(0),
+      expect.closeTo(10),
+      expect.closeTo(16)
+    ])
+    expect(history.map((point) => point.growthUsd)).toEqual([expect.closeTo(0), expect.closeTo(38), expect.closeTo(68)])
+  })
+
+  it('accumulates multiple partial exits at each exit price', () => {
+    const history = buildProtocolReturnHistorySeries({
+      events: [
+        baseEvent({
+          kind: 'deposit',
+          id: 'deposit',
+          blockTimestamp: 100,
+          shares: 100n * ONE,
+          assets: 100n * ONE,
+          owner: USER,
+          sender: USER
+        }),
+        baseEvent({
+          kind: 'withdrawal',
+          id: 'first-partial-withdrawal',
+          blockTimestamp: 200,
+          blockNumber: 2,
+          shares: 25n * ONE,
+          assets: (275n * ONE) / 10n,
+          owner: USER
+        }),
+        baseEvent({
+          kind: 'withdrawal',
+          id: 'second-partial-withdrawal',
+          blockTimestamp: 300,
+          blockNumber: 3,
+          shares: 25n * ONE,
+          assets: 30n * ONE,
+          owner: USER
+        })
+      ],
+      userAddress: USER,
+      metadata,
+      ppsData: new Map([
+        [
+          VAULT_KEY,
+          new Map([
+            [100, 1],
+            [200, 1.1],
+            [300, 1.2],
+            [400, 1.3]
+          ])
+        ]
+      ]),
+      priceData: new Map([
+        [
+          ASSET_PRICE_KEY,
+          new Map([
+            [100, 1],
+            [200, 2],
+            [300, 4],
+            [400, 10]
+          ])
+        ]
+      ]),
+      timestamps: [100, 200, 300, 400],
+      selectedVaultKey: VAULT_KEY
+    })
+
+    expect(history.map((point) => point.growthUsd)).toEqual([
+      expect.closeTo(0),
+      expect.closeTo(80),
+      expect.closeTo(125),
+      expect.closeTo(175)
+    ])
+  })
+
+  it('freezes transfer-out growth at the transfer price', () => {
+    const history = buildProtocolReturnHistorySeries({
+      events: [
+        baseEvent({
+          kind: 'transfer',
+          id: 'transfer-in',
+          blockTimestamp: 100,
+          shares: 100n * ONE,
+          sender: OTHER,
+          receiver: USER
+        }),
+        baseEvent({
+          kind: 'transfer',
+          id: 'transfer-out',
+          blockTimestamp: 200,
+          blockNumber: 2,
+          shares: 100n * ONE,
+          sender: USER,
+          receiver: OTHER
+        })
+      ],
+      userAddress: USER,
+      metadata,
+      ppsData: new Map([
+        [
+          VAULT_KEY,
+          new Map([
+            [100, 1],
+            [200, 1.2],
+            [300, 1.2]
+          ])
+        ]
+      ]),
+      priceData: new Map([
+        [
+          ASSET_PRICE_KEY,
+          new Map([
+            [100, 1],
+            [200, 3],
+            [300, 8]
+          ])
+        ]
+      ]),
+      timestamps: [100, 200, 300],
+      selectedVaultKey: VAULT_KEY
+    })
+
+    expect(history.map((point) => point.growthUnderlying)).toEqual([
+      expect.closeTo(0),
+      expect.closeTo(20),
+      expect.closeTo(20)
+    ])
+    expect(history.map((point) => point.growthUsd)).toEqual([expect.closeTo(0), expect.closeTo(60), expect.closeTo(60)])
+  })
+
+  it('falls back only the missing-price exit chunk to the latest price', () => {
+    const history = buildProtocolReturnHistorySeries({
+      events: [
+        baseEvent({
+          kind: 'deposit',
+          id: 'deposit',
+          blockTimestamp: 100,
+          shares: 100n * ONE,
+          assets: 100n * ONE,
+          owner: USER,
+          sender: USER
+        }),
+        baseEvent({
+          kind: 'withdrawal',
+          id: 'priced-withdrawal',
+          blockTimestamp: 200,
+          blockNumber: 2,
+          shares: 25n * ONE,
+          assets: (275n * ONE) / 10n,
+          owner: USER
+        }),
+        baseEvent({
+          kind: 'withdrawal',
+          id: 'unpriced-withdrawal',
+          blockTimestamp: 300,
+          blockNumber: 3,
+          shares: 25n * ONE,
+          assets: 30n * ONE,
+          owner: USER
+        })
+      ],
+      userAddress: USER,
+      metadata,
+      ppsData: new Map([
+        [
+          VAULT_KEY,
+          new Map([
+            [100, 1],
+            [200, 1.1],
+            [300, 1.2],
+            [400, 1.3]
+          ])
+        ]
+      ]),
+      priceData: new Map([
+        [
+          ASSET_PRICE_KEY,
+          new Map([
+            [100, 1],
+            [200, 2],
+            [400, 10]
+          ])
+        ]
+      ]),
+      timestamps: [100, 200, 300, 400],
+      selectedVaultKey: VAULT_KEY
+    })
+
+    expect(history[3]?.growthUnderlying).toBeCloseTo(22.5)
+    expect(history[3]?.growthUsd).toBeCloseTo(205)
   })
 
   it('values staking wrapper deposit and withdrawal events with family PPS', () => {
@@ -1871,6 +2167,120 @@ describe('pnl simple protocol return', () => {
     expect(vault.growthUnderlying).toBe(0)
   })
 
+  it('preserves a locked yvUSD lot when its withdrawal and transfer-out lack unlocked PPS', () => {
+    const yvUsdMetadata = new Map<string, VaultMetadata>([
+      [
+        YVUSD_UNLOCKED_KEY,
+        {
+          address: YVUSD_UNLOCKED,
+          chainId: 1,
+          version: 'v3',
+          category: 'stable',
+          token: {
+            address: YVUSD_UNDERLYING,
+            symbol: 'USDC',
+            decimals: 6
+          },
+          decimals: 6
+        }
+      ],
+      [
+        YVUSD_LOCKED_KEY,
+        {
+          address: YVUSD_LOCKED,
+          chainId: 1,
+          version: 'v3',
+          category: 'stable',
+          token: {
+            address: YVUSD_UNLOCKED,
+            symbol: 'yvUSD',
+            decimals: 6
+          },
+          decimals: 6
+        }
+      ]
+    ])
+    const ppsData = new Map([
+      [
+        YVUSD_UNLOCKED_KEY,
+        new Map<number, number>([
+          [100, 1],
+          // Model a missing inner sample after the receipt, followed by a later recovery.
+          [200, Number.NaN],
+          [300, 1.02]
+        ])
+      ],
+      [
+        YVUSD_LOCKED_KEY,
+        new Map([
+          [100, 1],
+          [200, 1.05],
+          [300, 1.05]
+        ])
+      ]
+    ])
+    const events = [
+      baseEvent({
+        kind: 'deposit',
+        id: 'locked-deposit',
+        vaultAddress: YVUSD_LOCKED,
+        familyVaultAddress: YVUSD_LOCKED,
+        blockTimestamp: 100,
+        shares: 100n * YVUSD_ONE,
+        assets: 100n * YVUSD_ONE,
+        owner: USER,
+        sender: USER
+      }),
+      baseEvent({
+        kind: 'withdrawal',
+        id: 'locked-withdrawal-missing-inner-pps',
+        vaultAddress: YVUSD_LOCKED,
+        familyVaultAddress: YVUSD_LOCKED,
+        blockTimestamp: 200,
+        blockNumber: 2,
+        shares: 40n * YVUSD_ONE,
+        assets: 42n * YVUSD_ONE,
+        owner: USER
+      }),
+      baseEvent({
+        kind: 'transfer',
+        id: 'locked-transfer-out-missing-inner-pps',
+        vaultAddress: YVUSD_LOCKED,
+        familyVaultAddress: YVUSD_LOCKED,
+        blockTimestamp: 201,
+        blockNumber: 3,
+        shares: 60n * YVUSD_ONE,
+        sender: USER,
+        receiver: OTHER
+      })
+    ]
+    const ledgers = buildProtocolReturnLedgers({
+      events,
+      userAddress: USER,
+      metadata: yvUsdMetadata,
+      ppsData,
+      priceData: new Map([[`ethereum:${YVUSD_UNDERLYING}`, new Map([[100, 1]])]]),
+      currentTimestamp: 300
+    })
+    const vault = materializeProtocolReturnVaults({
+      ledgers,
+      metadata: yvUsdMetadata,
+      ppsData,
+      currentTimestamp: 300
+    })[0]!
+
+    expect(vault.status).toBe('missing_pps')
+    expect(vault.issues).toContain('missing_pps')
+    expect(vault.sharesFormatted).toBeCloseTo(100)
+    expect(vault.baselineUnderlying).toBeCloseTo(100)
+    expect(vault.currentUnderlying).toBeCloseTo(107.1)
+    expect(vault.realizedBaselineUnderlying).toBeCloseTo(0)
+    expect(vault.realizedGrowthUnderlying).toBeCloseTo(0)
+    expect(vault.growthUnderlying).toBeCloseTo(7.1)
+    expect(vault.exitCount).toBe(0)
+    expect(vault.unmatchedExitSharesFormatted).toBeCloseTo(0)
+  })
+
   it('keeps locked yvUSD withdrawal growth in USDC-root units after a full exit', () => {
     const yvUsdMetadata = new Map<string, VaultMetadata>([
       [
@@ -1927,16 +2337,16 @@ describe('pnl simple protocol return', () => {
         `ethereum:${YVUSD_UNDERLYING}`,
         new Map([
           [100, 1],
-          [200, 1],
-          [300, 1]
+          [200, 2],
+          [300, 3]
         ])
       ],
       [
         `ethereum:${YVUSD_UNLOCKED}`,
         new Map([
-          [100, 1.01],
-          [200, 1.02],
-          [300, 1.02]
+          [100, 7],
+          [200, 11],
+          [300, 13]
         ])
       ]
     ])
@@ -2006,8 +2416,8 @@ describe('pnl simple protocol return', () => {
     ])
     expect(history.map((point) => point.growthUsd)).toEqual([
       expect.closeTo(0),
-      expect.closeTo(7.1),
-      expect.closeTo(7.1)
+      expect.closeTo(14.2),
+      expect.closeTo(14.2)
     ])
   })
 

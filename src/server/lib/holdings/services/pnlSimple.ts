@@ -110,6 +110,8 @@ type TProtocolReturnLedger = {
   baselineExposureWeightUsdSeconds: number
   realizedBaselineUnderlying: number
   realizedGrowthUnderlying: number
+  realizedGrowthUsdAtExit: number
+  unpricedRealizedGrowthUnderlying: number
   realizedBaselineWeightUsd: number
   realizedGrowthWeightUsd: number
   realizedGrowthWeightEth: number
@@ -149,6 +151,8 @@ export interface HoldingsPnLSimpleVault {
   unrealizedBaselineUnderlying: number
   realizedGrowthUnderlying: number
   unrealizedGrowthUnderlying: number
+  realizedGrowthUsdAtExit: number
+  unpricedRealizedGrowthUnderlying: number
   growthUnderlying: number
   baselineWeightUsd: number
   growthWeightUsd: number
@@ -308,6 +312,8 @@ function emptyLedger(chainId: number, vaultAddress: string): TProtocolReturnLedg
     baselineExposureWeightUsdSeconds: 0,
     realizedBaselineUnderlying: 0,
     realizedGrowthUnderlying: 0,
+    realizedGrowthUsdAtExit: 0,
+    unpricedRealizedGrowthUnderlying: 0,
     realizedBaselineWeightUsd: 0,
     realizedGrowthWeightUsd: 0,
     realizedGrowthWeightEth: 0,
@@ -527,6 +533,13 @@ function isReceiptEvent(event: TRawPnlEvent, userAddress: string): boolean {
   return event.kind === 'deposit' || (event.kind === 'transfer' && event.receiver === userAddress)
 }
 
+function isExitEvent(event: TRawPnlEvent, userAddress: string): boolean {
+  return (
+    event.kind === 'withdrawal' ||
+    (event.kind === 'transfer' && event.sender === userAddress && event.receiver !== userAddress)
+  )
+}
+
 export function buildReceiptPriceRequests(args: {
   events: TRawPnlEvent[]
   metadata: Map<string, VaultMetadata>
@@ -563,6 +576,87 @@ export function buildReceiptPriceRequests(args: {
     address: request.address,
     timestamps: Array.from(request.timestamps).sort((a, b) => a - b)
   }))
+}
+
+export function buildExitPriceRequests(args: {
+  events: TRawPnlEvent[]
+  metadata: Map<string, VaultMetadata>
+  userAddress: string
+}): TSimpleReceiptPriceRequest[] {
+  const userAddress = lowerCaseAddress(args.userAddress)
+  return Array.from(
+    args.events
+      .filter((event) => isExitEvent(event, userAddress))
+      .reduce<Map<string, { chainId: number; address: string; timestamps: Set<number> }>>((requests, event) => {
+        const metadata = args.metadata.get(toVaultKey(event.chainId, event.familyVaultAddress))
+
+        if (!metadata) {
+          return requests
+        }
+
+        const tokenKey = tokenPriceMapKey(metadata)
+        const request = requests.get(tokenKey) ?? {
+          chainId: metadata.chainId,
+          address: metadata.token.address,
+          timestamps: new Set<number>()
+        }
+
+        request.timestamps.add(
+          Math.floor(event.blockTimestamp / RECEIPT_PRICE_BUCKET_SECONDS) * RECEIPT_PRICE_BUCKET_SECONDS
+        )
+        requests.set(tokenKey, request)
+        return requests
+      }, new Map())
+      .values()
+  ).map((request) => ({
+    chainId: request.chainId,
+    address: request.address,
+    timestamps: Array.from(request.timestamps).sort((a, b) => a - b)
+  }))
+}
+
+function mergePriceRequests(...requestGroups: TSimpleReceiptPriceRequest[][]): TSimpleReceiptPriceRequest[] {
+  return Array.from(
+    requestGroups
+      .flat()
+      .reduce<Map<string, { chainId: number; address: string; timestamps: Set<number> }>>((merged, request) => {
+        const requestKey = `${getChainPrefix(request.chainId)}:${request.address.toLowerCase()}`
+        const current = merged.get(requestKey) ?? {
+          chainId: request.chainId,
+          address: request.address,
+          timestamps: new Set<number>()
+        }
+        request.timestamps.forEach((timestamp) => {
+          current.timestamps.add(timestamp)
+        })
+        merged.set(requestKey, current)
+        return merged
+      }, new Map())
+      .values()
+  ).map((request) => ({
+    chainId: request.chainId,
+    address: request.address,
+    timestamps: Array.from(request.timestamps).sort((a, b) => a - b)
+  }))
+}
+
+function selectPriceDataForRequests(
+  priceData: Map<string, Map<number, number>>,
+  requests: TSimpleReceiptPriceRequest[]
+): Map<string, Map<number, number>> {
+  return new Map(
+    requests.map((request) => {
+      const requestKey = `${getChainPrefix(request.chainId)}:${request.address.toLowerCase()}`
+      const sourcePrices = priceData.get(requestKey)
+      const selectedPrices = new Map(
+        request.timestamps.flatMap((timestamp) => {
+          const price = sourcePrices?.get(timestamp)
+          return price === undefined ? [] : ([[timestamp, price]] as const)
+        })
+      )
+      return [requestKey, selectedPrices] as const
+    })
+  )
 }
 
 function countReceiptPricePoints(requests: TSimpleReceiptPriceRequest[]): number {
@@ -640,6 +734,27 @@ function getReceiptPriceUsd(
   return priceMap ? getPriceAtTimestamp(priceMap, timestamp) : 0
 }
 
+function getExitPriceUsd(
+  chainId: number,
+  vaultAddress: string,
+  metadata: VaultMetadata | undefined,
+  priceData: Map<string, Map<number, number>>,
+  timestamp: number
+): number | null {
+  const assetAddress = getProtocolReturnAssetAddress(chainId, vaultAddress, metadata)
+  if (!assetAddress) {
+    return null
+  }
+
+  const priceMap = priceData.get(`${getChainPrefix(chainId)}:${assetAddress.toLowerCase()}`)
+  const bucketTimestamp = Math.floor(timestamp / RECEIPT_PRICE_BUCKET_SECONDS) * RECEIPT_PRICE_BUCKET_SECONDS
+  return (
+    [priceMap?.get(timestamp), priceMap?.get(bucketTimestamp)].find(
+      (price): price is number => price !== undefined && Number.isFinite(price) && price > 0
+    ) ?? null
+  )
+}
+
 function getReceiptPriceEth(ethPriceData: Map<number, number>, receiptPriceUsd: number, timestamp: number): number {
   if (receiptPriceUsd <= 0) {
     return 0
@@ -653,6 +768,10 @@ function getEventPps(ppsMap: Map<number, number> | undefined, timestamp: number)
   return ppsMap ? getPPS(ppsMap, timestamp) : null
 }
 
+function isValidPps(pps: number | null): pps is number {
+  return pps !== null && Number.isFinite(pps) && pps > 0
+}
+
 function getYvUsdUnlockedPps(ppsData: Map<string, Map<number, number>>, timestamp: number): number | null {
   return getEventPps(ppsData.get(YVUSD_UNLOCKED_KEY), timestamp)
 }
@@ -664,12 +783,16 @@ function getProtocolReturnPps(args: {
   ppsData: Map<string, Map<number, number>>
   timestamp: number
 }): number | null {
-  if (args.directPps === null || !isLockedYvUsdVault(args.chainId, args.vaultAddress)) {
+  if (!isValidPps(args.directPps)) {
+    return null
+  }
+
+  if (!isLockedYvUsdVault(args.chainId, args.vaultAddress)) {
     return args.directPps
   }
 
   const unlockedPps = getYvUsdUnlockedPps(args.ppsData, args.timestamp)
-  return unlockedPps === null ? null : args.directPps * unlockedPps
+  return isValidPps(unlockedPps) ? args.directPps * unlockedPps : null
 }
 
 function convertYvUsdLockedUnderlyingToRoot(args: {
@@ -684,9 +807,9 @@ function convertYvUsdLockedUnderlyingToRoot(args: {
   }
 
   const unlockedPps = getYvUsdUnlockedPps(args.ppsData, args.timestamp)
-  return unlockedPps === null
-    ? { underlying: 0, missingPps: true }
-    : { underlying: args.directUnderlying * unlockedPps, missingPps: false }
+  return isValidPps(unlockedPps)
+    ? { underlying: args.directUnderlying * unlockedPps, missingPps: false }
+    : { underlying: 0, missingPps: true }
 }
 
 function isKnownStakingWrapperEvent(event: TRawPnlEvent): boolean {
@@ -713,7 +836,7 @@ function valueDepositOrWithdrawalEvent(
   }
 
   const pps = getEventPps(args.ppsMap, event.blockTimestamp)
-  if (pps === null) {
+  if (!isValidPps(pps)) {
     return {
       underlying: formatAmount(event.assets, args.assetDecimals),
       missingPps: true
@@ -883,6 +1006,7 @@ function addExit(
   args: {
     shares: bigint
     exitUnderlying: number
+    exitPriceUsd: number | null
     exitKind: TProtocolReturnExitKind
   }
 ): TProtocolReturnLedger {
@@ -908,12 +1032,17 @@ function addExit(
     0
   )
   const unmatchedExitShares = args.shares - consumed.consumedShares
+  const realizedGrowthUnderlying = matchedExitUnderlying - consumedBaselineUnderlying
 
   return {
     ...ledger,
     lots: consumed.remainingLots,
     realizedBaselineUnderlying: ledger.realizedBaselineUnderlying + consumedBaselineUnderlying,
-    realizedGrowthUnderlying: ledger.realizedGrowthUnderlying + (matchedExitUnderlying - consumedBaselineUnderlying),
+    realizedGrowthUnderlying: ledger.realizedGrowthUnderlying + realizedGrowthUnderlying,
+    realizedGrowthUsdAtExit:
+      ledger.realizedGrowthUsdAtExit + (args.exitPriceUsd === null ? 0 : realizedGrowthUnderlying * args.exitPriceUsd),
+    unpricedRealizedGrowthUnderlying:
+      ledger.unpricedRealizedGrowthUnderlying + (args.exitPriceUsd === null ? realizedGrowthUnderlying : 0),
     realizedBaselineWeightUsd: ledger.realizedBaselineWeightUsd + consumedBaselineWeightUsd,
     realizedGrowthWeightUsd: ledger.realizedGrowthWeightUsd + (consumedExitWeightUsd - consumedBaselineWeightUsd),
     realizedGrowthWeightEth:
@@ -951,6 +1080,7 @@ function processEvent(
     metadata: Map<string, VaultMetadata>
     ppsData: Map<string, Map<number, number>>
     priceData: Map<string, Map<number, number>>
+    exitPriceData: Map<string, Map<number, number>>
     ethPriceData: Map<number, number>
   }
 ): Map<string, TProtocolReturnLedger> {
@@ -1015,11 +1145,23 @@ function processEvent(
       timestamp: event.blockTimestamp
     })
     const missingPps = directValuation.missingPps || valuation.missingPps
+    if (missingPps) {
+      ledgers.set(vaultKey, { ...currentLedger, missingPps: true })
+      return ledgers
+    }
+
     ledgers.set(
       vaultKey,
-      addExit(missingPps ? { ...currentLedger, missingPps: true } : currentLedger, {
+      addExit(currentLedger, {
         shares: event.shares,
         exitUnderlying: valuation.underlying,
+        exitPriceUsd: getExitPriceUsd(
+          event.chainId,
+          event.familyVaultAddress,
+          metadata,
+          args.exitPriceData,
+          event.blockTimestamp
+        ),
         exitKind: 'withdrawal'
       })
     )
@@ -1032,7 +1174,7 @@ function processEvent(
   }
 
   const pps = getEventPps(ppsMap, event.blockTimestamp)
-  if (pps === null) {
+  if (!isValidPps(pps)) {
     ledgers.set(vaultKey, { ...currentLedger, missingPps: true })
     return ledgers
   }
@@ -1076,11 +1218,23 @@ function processEvent(
       ppsData: args.ppsData,
       timestamp: event.blockTimestamp
     })
+    if (valuation.missingPps) {
+      ledgers.set(vaultKey, { ...currentLedger, missingPps: true })
+      return ledgers
+    }
+
     ledgers.set(
       vaultKey,
-      addExit(valuation.missingPps ? { ...currentLedger, missingPps: true } : currentLedger, {
+      addExit(currentLedger, {
         shares: event.shares,
         exitUnderlying: valuation.underlying,
+        exitPriceUsd: getExitPriceUsd(
+          event.chainId,
+          event.familyVaultAddress,
+          metadata,
+          args.exitPriceData,
+          event.blockTimestamp
+        ),
         exitKind: 'transfer_out'
       })
     )
@@ -1969,6 +2123,7 @@ export function buildProtocolReturnLedgers(args: {
   metadata: Map<string, VaultMetadata>
   ppsData: Map<string, Map<number, number>>
   priceData: Map<string, Map<number, number>>
+  exitPriceData?: Map<string, Map<number, number>>
   ethPriceData?: Map<number, number>
   currentTimestamp?: number
 }): Map<string, TProtocolReturnLedger> {
@@ -1982,6 +2137,7 @@ export function buildProtocolReturnLedgers(args: {
           metadata: args.metadata,
           ppsData: args.ppsData,
           priceData: args.priceData,
+          exitPriceData: args.exitPriceData ?? args.priceData,
           ethPriceData: args.ethPriceData ?? new Map()
         })
       })
@@ -2171,6 +2327,8 @@ export function materializeProtocolReturnVaults(args: {
       unrealizedBaselineUnderlying,
       realizedGrowthUnderlying: ledger.realizedGrowthUnderlying,
       unrealizedGrowthUnderlying,
+      realizedGrowthUsdAtExit: ledger.realizedGrowthUsdAtExit,
+      unpricedRealizedGrowthUnderlying: ledger.unpricedRealizedGrowthUnderlying,
       growthUnderlying: ledger.realizedGrowthUnderlying + unrealizedGrowthUnderlying,
       baselineWeightUsd,
       growthWeightUsd,
@@ -2246,8 +2404,12 @@ function buildLatestAssetPriceUsdByVaultKey(
   )
 }
 
-function getLatestPriceGrowthUsd(vault: HoldingsPnLSimpleVault, latestAssetPriceUsd: number | null): number {
-  return latestAssetPriceUsd === null ? 0 : vault.growthUnderlying * latestAssetPriceUsd
+function getGrowthUsd(vault: HoldingsPnLSimpleVault, latestAssetPriceUsd: number | null): number {
+  const growthValuedAtLatestPrice =
+    latestAssetPriceUsd === null
+      ? 0
+      : (vault.unrealizedGrowthUnderlying + vault.unpricedRealizedGrowthUnderlying) * latestAssetPriceUsd
+  return vault.realizedGrowthUsdAtExit + growthValuedAtLatestPrice
 }
 
 function buildPortfolioGrowthVault(
@@ -2268,7 +2430,7 @@ function buildPortfolioGrowthVault(
     issues,
     baselineUsd,
     baselineExposureUsdYears,
-    growthUsd: getLatestPriceGrowthUsd(vault, latestAssetPriceUsd),
+    growthUsd: getGrowthUsd(vault, latestAssetPriceUsd),
     growthPct: protocolReturnPct(vault.growthUnderlying, vault.baselineUnderlying),
     annualizedProtocolReturnPct: annualizedProtocolReturnPct(
       vault.growthUnderlying,
@@ -2362,6 +2524,7 @@ export function buildProtocolReturnHistorySeries(args: {
   metadata: Map<string, VaultMetadata>
   ppsData: Map<string, Map<number, number>>
   priceData: Map<string, Map<number, number>>
+  exitPriceData?: Map<string, Map<number, number>>
   ethPriceData?: Map<number, number>
   timestamps: number[]
   selectedVaultKey?: string
@@ -2391,6 +2554,7 @@ export function buildProtocolReturnHistorySeries(args: {
             metadata: args.metadata,
             ppsData: args.ppsData,
             priceData: args.priceData,
+            exitPriceData: args.exitPriceData ?? args.priceData,
             ethPriceData: args.ethPriceData ?? new Map()
           })
         })
@@ -2417,10 +2581,7 @@ export function buildProtocolReturnHistorySeries(args: {
     const growthUsd = vaults.reduce(
       (total, vault) =>
         total +
-        getLatestPriceGrowthUsd(
-          vault,
-          latestAssetPriceUsdByVaultKey.get(toVaultKey(vault.chainId, vault.vaultAddress)) ?? null
-        ),
+        getGrowthUsd(vault, latestAssetPriceUsdByVaultKey.get(toVaultKey(vault.chainId, vault.vaultAddress)) ?? null),
       0
     )
     const summary = buildSummary(vaults)
@@ -2471,6 +2632,7 @@ export function buildProtocolReturnFamilyHistorySeries(args: {
   metadata: Map<string, VaultMetadata>
   ppsData: Map<string, Map<number, number>>
   priceData: Map<string, Map<number, number>>
+  exitPriceData?: Map<string, Map<number, number>>
   ethPriceData?: Map<number, number>
   timestamps: number[]
   selectedVaults: HoldingsPnLSimpleVault[]
@@ -2527,6 +2689,7 @@ export function buildProtocolReturnFamilyHistorySeries(args: {
             metadata: args.metadata,
             ppsData: args.ppsData,
             priceData: args.priceData,
+            exitPriceData: args.exitPriceData ?? args.priceData,
             ethPriceData: args.ethPriceData ?? new Map()
           })
         })
@@ -2575,7 +2738,7 @@ export function buildProtocolReturnFamilyHistorySeries(args: {
         growthUsd:
           familyVault === undefined
             ? null
-            : getLatestPriceGrowthUsd(familyVault, latestAssetPriceUsdByVaultKey.get(vaultKey) ?? null),
+            : getGrowthUsd(familyVault, latestAssetPriceUsdByVaultKey.get(vaultKey) ?? null),
         growthWeightUsd: familyVault?.growthWeightUsd ?? null,
         growthIndex: hasOpenPosition || closesPosition ? state.growthIndex : null
       })
@@ -2698,33 +2861,48 @@ async function calculateHoldingsProtocolReturnHistory(
     userAddress,
     currentTimestamp: latestTimestamp
   })
+  const baseExitPriceRequests = buildExitPriceRequests({
+    events: effectiveEvents,
+    metadata: vaultMetadata,
+    userAddress
+  })
   const receiptPriceRequests = expandNestedVaultAssetPriceRequests(baseReceiptPriceRequests, vaultMetadata)
+  const exitPriceRequests = expandNestedVaultAssetPriceRequests(baseExitPriceRequests, vaultMetadata)
+  const basePriceRequests = mergePriceRequests(baseReceiptPriceRequests, baseExitPriceRequests)
+  const priceRequests = expandNestedVaultAssetPriceRequests(basePriceRequests, vaultMetadata)
   const ethReceiptPriceTimestamps = Array.from(
     new Set(receiptPriceRequests.flatMap((request) => request.timestamps))
   ).sort((left, right) => left - right)
 
   const ppsIdentifiers = mergeVaultIdentifiers([
     ...filteredVaultIdentifiers,
-    ...getNestedVaultPpsIdentifiersFromPriceRequests(baseReceiptPriceRequests, vaultMetadata)
+    ...getNestedVaultPpsIdentifiersFromPriceRequests(basePriceRequests, vaultMetadata)
   ])
   reportHoldingsProgress(
     52,
     'Prepared historical price requests',
-    `${receiptPriceRequests.length} receipt price series, ${ethReceiptPriceTimestamps.length} ETH price points, ${ppsIdentifiers.length} PPS series`
+    `${priceRequests.length} asset price series, ${ethReceiptPriceTimestamps.length} ETH receipt price points, ${ppsIdentifiers.length} PPS series`
   )
   const [settledContext, receiptPriceResult, ethPriceResult] = await Promise.all([
     ppsContextPromise,
-    fetchReceiptPrices(receiptPriceRequests),
+    fetchReceiptPrices(priceRequests),
     fetchEthReceiptPrices(ethReceiptPriceTimestamps)
   ])
   const fetchedPriceData = receiptPriceResult.priceData
   const ethPriceData = ethPriceResult.priceData
-  reportHoldingsProgress(72, 'Fetched historical receipt prices', `${receiptPriceRequests.length} price series`)
+  reportHoldingsProgress(72, 'Fetched historical asset prices', `${priceRequests.length} price series`)
   const priceData = deriveNestedVaultAssetPriceData({
-    priceData: fetchedPriceData,
+    priceData: selectPriceDataForRequests(fetchedPriceData, receiptPriceRequests),
     priceRequests: receiptPriceRequests,
     vaultMetadata,
     ppsData: settledContext.ppsData
+  })
+  const exitPriceData = deriveNestedVaultAssetPriceData({
+    priceData: selectPriceDataForRequests(fetchedPriceData, exitPriceRequests),
+    priceRequests: exitPriceRequests,
+    vaultMetadata,
+    ppsData: settledContext.ppsData,
+    underlyingPriceLookup: 'exact'
   })
 
   const finalLedgers = buildProtocolReturnLedgers({
@@ -2733,6 +2911,7 @@ async function calculateHoldingsProtocolReturnHistory(
     metadata: vaultMetadata,
     ppsData: settledContext.ppsData,
     priceData,
+    exitPriceData,
     ethPriceData,
     currentTimestamp: latestTimestamp
   })
@@ -2764,6 +2943,7 @@ async function calculateHoldingsProtocolReturnHistory(
       metadata: vaultMetadata,
       ppsData: settledContext.ppsData,
       priceData,
+      exitPriceData,
       ethPriceData,
       timestamps: historyTimestamps,
       selectedVaultKeys,
@@ -2800,6 +2980,7 @@ async function calculateHoldingsProtocolReturnHistory(
     metadata: vaultMetadata,
     ppsData: settledContext.ppsData,
     priceData,
+    exitPriceData,
     ethPriceData,
     timestamps,
     selectedVaults: requestedVaults ? [] : eligibleHistoryFamilies

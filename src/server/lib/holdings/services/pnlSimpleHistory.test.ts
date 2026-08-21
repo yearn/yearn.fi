@@ -17,6 +17,8 @@ const toSettledDayTimestampMock = vi.fn()
 const timestampToDateStringMock = vi.fn()
 const getPPSMock = vi.fn()
 const getPpsFetchFailedVaultsMock = vi.fn()
+const deriveNestedVaultAssetPriceDataMock = vi.fn()
+const expandNestedVaultAssetPriceRequestsMock = vi.fn()
 const getNestedVaultPpsIdentifiersFromPriceRequestsMock = vi.fn()
 const getCachedProtocolReturnHistoryMock = vi.fn()
 const getProtocolReturnHistoryCacheKeyMock = vi.fn()
@@ -69,8 +71,8 @@ vi.mock('./kong', () => ({
 }))
 
 vi.mock('./nestedVaultPrices', () => ({
-  expandNestedVaultAssetPriceRequests: vi.fn((requests: unknown[]) => requests),
-  deriveNestedVaultAssetPriceData: vi.fn(({ priceData }: { priceData: Map<string, Map<number, number>> }) => priceData),
+  expandNestedVaultAssetPriceRequests: expandNestedVaultAssetPriceRequestsMock,
+  deriveNestedVaultAssetPriceData: deriveNestedVaultAssetPriceDataMock,
   getNestedVaultPpsIdentifiersFromPriceRequests: getNestedVaultPpsIdentifiersFromPriceRequestsMock,
   mergeVaultIdentifiers: vi.fn((identifiers: unknown[]) => identifiers)
 }))
@@ -86,7 +88,9 @@ const ASSET = '0x4444444444444444444444444444444444444444'
 const ONE = 10n ** 18n
 const HISTORY_START_TIMESTAMP = 1_704_067_200
 const VAULT_KEY = toVaultKey(1, VAULT)
+const NESTED_VAULT_KEY = toVaultKey(1, NESTED_VAULT)
 const ASSET_PRICE_KEY = `ethereum:${ASSET}`
+const NESTED_VAULT_PRICE_KEY = `ethereum:${NESTED_VAULT}`
 const WETH_PRICE_KEY = 'ethereum:0xc02aaa39b223fe8d0a0e5c4f27ead9083c756cc2'
 
 const metadata = new Map<string, VaultMetadata>([
@@ -94,6 +98,34 @@ const metadata = new Map<string, VaultMetadata>([
     VAULT_KEY,
     {
       address: VAULT,
+      chainId: 1,
+      version: 'v3',
+      category: 'stable',
+      token: {
+        address: ASSET,
+        symbol: 'TST',
+        decimals: 18
+      },
+      decimals: 18
+    }
+  ]
+])
+const nestedMetadata = new Map<string, VaultMetadata>([
+  [
+    VAULT_KEY,
+    {
+      ...metadata.get(VAULT_KEY)!,
+      token: {
+        address: NESTED_VAULT,
+        symbol: 'yvTST',
+        decimals: 18
+      }
+    }
+  ],
+  [
+    NESTED_VAULT_KEY,
+    {
+      address: NESTED_VAULT,
       chainId: 1,
       version: 'v3',
       category: 'stable',
@@ -128,6 +160,7 @@ const event = {
     tx: false
   }
 } as TRawPnlEvent
+const EVENT_RECEIPT_DAY_TIMESTAMP = Math.floor(event.blockTimestamp / 86_400) * 86_400
 
 const settledContext = {
   address: USER,
@@ -164,6 +197,114 @@ function emptyGrowthResponse(generatedAt: string) {
   }
 }
 
+async function runNestedHybridHistoryScenario(hasExitPrice: boolean) {
+  const day = 86_400
+  const depositTimestamp = EVENT_RECEIPT_DAY_TIMESTAMP
+  const exitTimestamp = depositTimestamp + 2 * day
+  const firstHistoryTimestamp = depositTimestamp + day + 1
+  const finalHistoryTimestamp = exitTimestamp + day + 1
+  const events = [
+    { ...event, blockTimestamp: depositTimestamp },
+    {
+      ...event,
+      kind: 'withdrawal',
+      id: 'nested-partial-withdrawal',
+      blockNumber: 2,
+      blockTimestamp: exitTimestamp,
+      transactionHash: '0xnested-partial-withdrawal',
+      shares: 50n * ONE,
+      assets: 60n * ONE
+    }
+  ] as TRawPnlEvent[]
+  const outerPpsData = new Map([
+    [firstHistoryTimestamp, 1],
+    [finalHistoryTimestamp, 1.2]
+  ])
+  const innerPpsData = new Map([
+    [depositTimestamp, 1],
+    [depositTimestamp + day, 1],
+    [exitTimestamp, 3]
+  ])
+  const ppsData = new Map([
+    [VAULT_KEY, outerPpsData],
+    [NESTED_VAULT_KEY, innerPpsData]
+  ])
+  const nestedContext = {
+    ...settledContext,
+    rawEvents: events,
+    selectedEvents: events,
+    vaultMetadata: nestedMetadata,
+    ppsIdentifiers: [
+      { chainId: 1, vaultAddress: VAULT },
+      { chainId: 1, vaultAddress: NESTED_VAULT }
+    ],
+    ppsData
+  }
+  const underlyingPrices = new Map<number, number>([
+    [depositTimestamp, 1],
+    [depositTimestamp + day, 2],
+    ...(hasExitPrice ? ([[exitTimestamp, 9]] as const) : [])
+  ])
+  const nestedVaultPrices = new Map<number, number>(hasExitPrice ? [[exitTimestamp, 27]] : [])
+  const wethPrices = new Map([
+    [depositTimestamp, 1],
+    [depositTimestamp + day, 1]
+  ])
+  const actualNestedVaultPrices = await vi.importActual<typeof import('./nestedVaultPrices')>('./nestedVaultPrices')
+  expandNestedVaultAssetPriceRequestsMock.mockImplementation(
+    actualNestedVaultPrices.expandNestedVaultAssetPriceRequests
+  )
+  deriveNestedVaultAssetPriceDataMock.mockImplementation(actualNestedVaultPrices.deriveNestedVaultAssetPriceData)
+  generateDailyTimestampsMock.mockReturnValue([firstHistoryTimestamp - 1, finalHistoryTimestamp - 1])
+  getSettledAddressScopedContextMock.mockResolvedValue(nestedContext)
+  getSettledVersionedPpsContextMock.mockResolvedValue(nestedContext)
+  selectVersionedEventsMock.mockReturnValue({
+    events,
+    vaultIdentifiers: nestedContext.selectedVaultIdentifiers
+  })
+  getNestedVaultPpsIdentifiersFromPriceRequestsMock.mockReturnValue([{ chainId: 1, vaultAddress: NESTED_VAULT }])
+  getPPSMock.mockImplementation((ppsMap: Map<number, number>, timestamp: number) => {
+    if (ppsMap === innerPpsData) {
+      return timestamp >= exitTimestamp ? 3 : 1
+    }
+    return timestamp >= exitTimestamp ? 1.2 : 1
+  })
+  getPriceAtTimestampMock.mockImplementation((priceMap: Map<number, number>, timestamp: number) => {
+    const latestPrice = Array.from(priceMap.entries())
+      .filter(([priceTimestamp, price]) => priceTimestamp <= timestamp && price > 0)
+      .toSorted(([leftTimestamp], [rightTimestamp]) => leftTimestamp - rightTimestamp)
+      .at(-1)
+    return latestPrice?.[1] ?? 0
+  })
+  fetchHistoricalPricesForTokenTimestampsMock.mockImplementation(async (requests: Array<{ address: string }>) =>
+    requests[0]?.address.toLowerCase() === WETH_PRICE_KEY.split(':')[1]
+      ? new Map([[WETH_PRICE_KEY, wethPrices]])
+      : new Map([
+          [NESTED_VAULT_PRICE_KEY, nestedVaultPrices],
+          [ASSET_PRICE_KEY, underlyingPrices]
+        ])
+  )
+
+  const { getHoldingsProtocolReturnPortfolio } = await import('./pnlSimple')
+  const response = await getHoldingsProtocolReturnPortfolio(USER, 'all', 'seq', 'paged', '1y')
+  const receiptDerivationArgs = deriveNestedVaultAssetPriceDataMock.mock.calls[0]?.[0] as
+    | Parameters<typeof actualNestedVaultPrices.deriveNestedVaultAssetPriceData>[0]
+    | undefined
+  const exitDerivationArgs = deriveNestedVaultAssetPriceDataMock.mock.calls[1]?.[0] as
+    | Parameters<typeof actualNestedVaultPrices.deriveNestedVaultAssetPriceData>[0]
+    | undefined
+
+  return {
+    depositTimestamp,
+    exitTimestamp,
+    firstHistoryTimestamp,
+    finalHistoryTimestamp,
+    response,
+    receiptDerivationArgs,
+    exitDerivationArgs
+  }
+}
+
 describe('getHoldingsProtocolReturnHistory', () => {
   beforeEach(() => {
     vi.resetModules()
@@ -174,6 +315,10 @@ describe('getHoldingsProtocolReturnHistory', () => {
     timestampToDateStringMock.mockImplementation((timestamp: number) => `date-${timestamp}`)
     getPPSMock.mockReturnValue(1)
     getPpsFetchFailedVaultsMock.mockReturnValue(0)
+    expandNestedVaultAssetPriceRequestsMock.mockImplementation((requests: unknown[]) => requests)
+    deriveNestedVaultAssetPriceDataMock.mockImplementation(
+      ({ priceData }: { priceData: Map<string, Map<number, number>> }) => priceData
+    )
     getNestedVaultPpsIdentifiersFromPriceRequestsMock.mockReturnValue([])
     getHistoricalPriceFetchFailedBatchesMock.mockReturnValue(0)
     getPriceAtTimestampMock.mockReturnValue(1)
@@ -182,8 +327,20 @@ describe('getHoldingsProtocolReturnHistory', () => {
     saveCachedProtocolReturnHistoryMock.mockResolvedValue(true)
     fetchHistoricalPricesForTokenTimestampsMock.mockResolvedValue(
       new Map([
-        [ASSET_PRICE_KEY, new Map([[HISTORY_START_TIMESTAMP + 1, 1]])],
-        [WETH_PRICE_KEY, new Map([[HISTORY_START_TIMESTAMP + 1, 1]])]
+        [
+          ASSET_PRICE_KEY,
+          new Map([
+            [EVENT_RECEIPT_DAY_TIMESTAMP, 1],
+            [EVENT_RECEIPT_DAY_TIMESTAMP + 86_400, 1]
+          ])
+        ],
+        [
+          WETH_PRICE_KEY,
+          new Map([
+            [EVENT_RECEIPT_DAY_TIMESTAMP, 1],
+            [EVENT_RECEIPT_DAY_TIMESTAMP + 86_400, 1]
+          ])
+        ]
       ])
     )
     fetchActivityEventsByTransactionHashesMock.mockResolvedValue({
@@ -258,6 +415,147 @@ describe('getHoldingsProtocolReturnHistory', () => {
     ])
   })
 
+  it('requests exit-day USD prices without expanding receipt ETH timestamps', async () => {
+    const day = 86_400
+    const depositTimestamp = Math.floor(event.blockTimestamp / day) * day
+    const exitTimestamp = depositTimestamp + 3 * day
+    const events = [
+      { ...event, blockTimestamp: depositTimestamp },
+      {
+        ...event,
+        kind: 'withdrawal',
+        id: 'withdrawal',
+        blockNumber: 2,
+        blockTimestamp: exitTimestamp,
+        transactionHash: '0xwithdrawal',
+        shares: 50n * ONE,
+        assets: 60n * ONE
+      }
+    ] as TRawPnlEvent[]
+    generateDailyTimestampsMock.mockReturnValue([exitTimestamp + day])
+    selectVersionedEventsMock.mockReturnValue({
+      events,
+      vaultIdentifiers: settledContext.selectedVaultIdentifiers
+    })
+
+    const { getHoldingsProtocolReturnPortfolio } = await import('./pnlSimple')
+    await getHoldingsProtocolReturnPortfolio(USER, 'all', 'seq', 'paged', '1y')
+
+    const requestedSeries = fetchHistoricalPricesForTokenTimestampsMock.mock.calls.flatMap(
+      ([requests]) => requests as Array<{ address: string; timestamps: number[] }>
+    )
+    const assetRequest = requestedSeries.find((request) => request.address.toLowerCase() === ASSET.toLowerCase())
+    const wethRequest = requestedSeries.find(
+      (request) => request.address.toLowerCase() === WETH_PRICE_KEY.split(':')[1]
+    )
+
+    expect(assetRequest?.timestamps).toEqual([depositTimestamp, depositTimestamp + day, exitTimestamp])
+    expect(wethRequest?.timestamps).toEqual([depositTimestamp, depositTimestamp + day])
+  })
+
+  it('keeps exit prices out of the latest reference and conserves hybrid growth history', async () => {
+    const day = 86_400
+    const depositTimestamp = Math.floor(event.blockTimestamp / day) * day
+    const exitTimestamp = depositTimestamp + 2 * day
+    const firstHistoryTimestamp = depositTimestamp + day + 1
+    const finalHistoryTimestamp = exitTimestamp + day + 1
+    const events = [
+      { ...event, blockTimestamp: depositTimestamp },
+      {
+        ...event,
+        kind: 'withdrawal',
+        id: 'partial-withdrawal',
+        blockNumber: 2,
+        blockTimestamp: exitTimestamp,
+        transactionHash: '0xpartial-withdrawal',
+        shares: 50n * ONE,
+        assets: 60n * ONE
+      }
+    ] as TRawPnlEvent[]
+    const assetPrices = new Map([
+      [depositTimestamp, 1],
+      [depositTimestamp + day, 2],
+      [exitTimestamp, 3]
+    ])
+    const wethPrices = new Map([
+      [depositTimestamp, 1],
+      [depositTimestamp + day, 1]
+    ])
+    generateDailyTimestampsMock.mockReturnValue([firstHistoryTimestamp - 1, finalHistoryTimestamp - 1])
+    selectVersionedEventsMock.mockReturnValue({
+      events,
+      vaultIdentifiers: settledContext.selectedVaultIdentifiers
+    })
+    getPPSMock.mockImplementation((_ppsMap: Map<number, number>, timestamp: number) =>
+      timestamp >= exitTimestamp ? 1.2 : 1
+    )
+    getPriceAtTimestampMock.mockImplementation(
+      (priceMap: Map<number, number>, timestamp: number) => priceMap.get(timestamp) ?? 0
+    )
+    fetchHistoricalPricesForTokenTimestampsMock.mockImplementation(async (requests: Array<{ address: string }>) =>
+      requests[0]?.address.toLowerCase() === WETH_PRICE_KEY.split(':')[1]
+        ? new Map([[WETH_PRICE_KEY, wethPrices]])
+        : new Map([[ASSET_PRICE_KEY, assetPrices]])
+    )
+
+    const { getHoldingsProtocolReturnPortfolio } = await import('./pnlSimple')
+    const response = await getHoldingsProtocolReturnPortfolio(USER, 'all', 'seq', 'paged', '1y')
+    const rowGrowthUsd = response.growth.vaults[0]?.growthUsd
+    const aggregateGrowthUsd = response.protocolReturn.dataPoints.at(-1)?.growthUsd
+    const familyGrowthUsd = response.protocolReturn.familySeries[0]?.dataPoints.at(-1)?.growthUsd
+
+    expect(response.protocolReturn.dataPoints.map((point) => point.timestamp)).toEqual([
+      firstHistoryTimestamp,
+      finalHistoryTimestamp
+    ])
+    expect(response.growth.vaults[0]?.baselineUsd).toBeCloseTo(200)
+    expect(rowGrowthUsd).toBeCloseTo(50)
+    expect(aggregateGrowthUsd).toBeCloseTo(rowGrowthUsd ?? Number.NaN)
+    expect(familyGrowthUsd).toBeCloseTo(rowGrowthUsd ?? Number.NaN)
+  })
+
+  it('keeps an exit-only nested price out of the receipt reference series', async () => {
+    const scenario = await runNestedHybridHistoryScenario(true)
+    const rowGrowthUsd = scenario.response.growth.vaults[0]?.growthUsd
+    const aggregateGrowthUsd = scenario.response.protocolReturn.dataPoints.at(-1)?.growthUsd
+    const familyGrowthUsd = scenario.response.protocolReturn.familySeries[0]?.dataPoints.at(-1)?.growthUsd
+
+    expect(scenario.receiptDerivationArgs?.priceData.get(NESTED_VAULT_PRICE_KEY)?.has(scenario.exitTimestamp)).toBe(
+      false
+    )
+    expect(scenario.receiptDerivationArgs?.priceData.get(ASSET_PRICE_KEY)?.has(scenario.exitTimestamp)).toBe(false)
+    expect(scenario.exitDerivationArgs?.priceData.get(NESTED_VAULT_PRICE_KEY)?.get(scenario.exitTimestamp)).toBe(27)
+    expect(scenario.exitDerivationArgs?.underlyingPriceLookup).toBe('exact')
+    expect(scenario.response.growth.vaults[0]).toMatchObject({
+      status: 'ok',
+      issues: [],
+      baselineUsd: 200
+    })
+    expect(rowGrowthUsd).toBeCloseTo(290)
+    expect(aggregateGrowthUsd).toBeCloseTo(rowGrowthUsd ?? Number.NaN)
+    expect(familyGrowthUsd).toBeCloseTo(rowGrowthUsd ?? Number.NaN)
+  })
+
+  it('does not synthesize a missing nested exit price from an older receipt underlying price', async () => {
+    const scenario = await runNestedHybridHistoryScenario(false)
+    const rowGrowthUsd = scenario.response.growth.vaults[0]?.growthUsd
+    const aggregateGrowthUsd = scenario.response.protocolReturn.dataPoints.at(-1)?.growthUsd
+    const familyGrowthUsd = scenario.response.protocolReturn.familySeries[0]?.dataPoints.at(-1)?.growthUsd
+
+    expect(scenario.exitDerivationArgs?.priceData.get(NESTED_VAULT_PRICE_KEY)?.has(scenario.exitTimestamp)).toBe(false)
+    expect(scenario.exitDerivationArgs?.priceData.get(ASSET_PRICE_KEY)?.has(scenario.depositTimestamp)).toBe(false)
+    expect(scenario.exitDerivationArgs?.priceData.get(ASSET_PRICE_KEY)?.has(scenario.exitTimestamp)).toBe(false)
+    expect(scenario.exitDerivationArgs?.underlyingPriceLookup).toBe('exact')
+    expect(scenario.response.growth.vaults[0]).toMatchObject({
+      status: 'ok',
+      issues: [],
+      baselineUsd: 200
+    })
+    expect(rowGrowthUsd).toBeCloseTo(40)
+    expect(aggregateGrowthUsd).toBeCloseTo(rowGrowthUsd ?? Number.NaN)
+    expect(familyGrowthUsd).toBeCloseTo(rowGrowthUsd ?? Number.NaN)
+  })
+
   it('values growth history at the latest price and keeps recoverable missing-price families eligible', async () => {
     const firstTimestamp = event.blockTimestamp + 1
     const secondTimestamp = firstTimestamp + 100
@@ -268,14 +566,8 @@ describe('getHoldingsProtocolReturnHistory', () => {
     )
     fetchHistoricalPricesForTokenTimestampsMock.mockResolvedValue(
       new Map([
-        [
-          ASSET_PRICE_KEY,
-          new Map([
-            [100, 2],
-            [200, 3]
-          ])
-        ],
-        [WETH_PRICE_KEY, new Map([[200, 1]])]
+        [ASSET_PRICE_KEY, new Map([[EVENT_RECEIPT_DAY_TIMESTAMP, 3]])],
+        [WETH_PRICE_KEY, new Map([[EVENT_RECEIPT_DAY_TIMESTAMP, 1]])]
       ])
     )
 
@@ -581,8 +873,14 @@ describe('getHoldingsProtocolReturnHistory', () => {
     )
     fetchHistoricalPricesForTokenTimestampsMock.mockResolvedValue(
       new Map([
-        [ASSET_PRICE_KEY, new Map([[firstDay, 1]])],
-        [WETH_PRICE_KEY, new Map([[firstDay, 1]])]
+        [
+          ASSET_PRICE_KEY,
+          new Map([
+            [EVENT_RECEIPT_DAY_TIMESTAMP, 1],
+            [EVENT_RECEIPT_DAY_TIMESTAMP + 86_400, 1]
+          ])
+        ],
+        [WETH_PRICE_KEY, new Map([[EVENT_RECEIPT_DAY_TIMESTAMP, 1]])]
       ])
     )
 
@@ -593,8 +891,14 @@ describe('getHoldingsProtocolReturnHistory', () => {
     generateDailyTimestampsMock.mockReturnValue([secondDay, thirdDay])
     fetchHistoricalPricesForTokenTimestampsMock.mockResolvedValue(
       new Map([
-        [ASSET_PRICE_KEY, new Map([[thirdDay, 2]])],
-        [WETH_PRICE_KEY, new Map([[thirdDay, 1]])]
+        [
+          ASSET_PRICE_KEY,
+          new Map([
+            [EVENT_RECEIPT_DAY_TIMESTAMP, 1],
+            [EVENT_RECEIPT_DAY_TIMESTAMP + 86_400, 2]
+          ])
+        ],
+        [WETH_PRICE_KEY, new Map([[EVENT_RECEIPT_DAY_TIMESTAMP, 1]])]
       ])
     )
     getCachedProtocolReturnHistoryMock.mockResolvedValue({
