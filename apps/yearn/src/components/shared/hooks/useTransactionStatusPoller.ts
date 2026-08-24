@@ -122,11 +122,11 @@ export function useTransactionStatusPoller(notification: TNotification): void {
                   awaitingExecution: false,
                   ...(receipt.status === 'success' && notification.bridgeProtocol
                     ? {
-                      bridgeStatus: 'pending' as const,
-                      bridgeTrackingState: 'active' as const,
-                      sourceConfirmedAt: Number(block.timestamp),
-                      timeFinished: undefined
-                    }
+                        bridgeStatus: 'pending' as const,
+                        bridgeTrackingState: 'active' as const,
+                        sourceConfirmedAt: Number(block.timestamp),
+                        timeFinished: undefined
+                      }
                     : {})
                 },
                 notificationId
@@ -197,11 +197,11 @@ export function useTransactionStatusPoller(notification: TNotification): void {
             awaitingExecution: false,
             ...(receipt.status === 'success' && notification.bridgeProtocol
               ? {
-                bridgeStatus: 'pending' as const,
-                bridgeTrackingState: 'active' as const,
-                sourceConfirmedAt: Number(block.timestamp),
-                timeFinished: undefined
-              }
+                  bridgeStatus: 'pending' as const,
+                  bridgeTrackingState: 'active' as const,
+                  sourceConfirmedAt: Number(block.timestamp),
+                  timeFinished: undefined
+                }
               : {})
           },
           notificationId
@@ -253,11 +253,11 @@ export function useTransactionStatusPoller(notification: TNotification): void {
             awaitingExecution: false,
             ...(receipt.status === 'success' && notification.bridgeProtocol
               ? {
-                bridgeStatus: 'pending' as const,
-                bridgeTrackingState: 'active' as const,
-                sourceConfirmedAt: timeFinished,
-                timeFinished: undefined
-              }
+                  bridgeStatus: 'pending' as const,
+                  bridgeTrackingState: 'active' as const,
+                  sourceConfirmedAt: timeFinished,
+                  timeFinished: undefined
+                }
               : {})
           },
           notificationId
