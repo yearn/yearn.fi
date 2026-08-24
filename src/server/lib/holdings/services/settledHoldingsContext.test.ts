@@ -39,7 +39,8 @@ vi.mock('@/server/lib/holdings/services/kong', () => ({
 
 import {
   getSettledAddressScopedContext,
-  getSettledVersionedPpsContext
+  getSettledVersionedPpsContext,
+  selectVersionedEvents
 } from '@/server/lib/holdings/services/settledHoldingsContext'
 
 const CACHED_USER = '0x00000000000000000000000000000000000000A1'
@@ -157,5 +158,93 @@ describe('getSettledAddressScopedContext wallet event cache', () => {
         }
       }
     )
+  })
+
+  it('excludes current-day events from the shared versioned PPS scope', async () => {
+    const context = await getSettledAddressScopedContext({
+      userAddress: CACHED_USER,
+      fetchType: 'parallel',
+      paginationMode: 'paged'
+    })
+    const currentDayVault = '0x00000000000000000000000000000000000000B2'
+    const currentDayEvent = {
+      ...context.rawEvents[0]!,
+      id: 'current-day-deposit',
+      vaultAddress: currentDayVault,
+      familyVaultAddress: currentDayVault,
+      blockTimestamp: context.maxTimestamp + 1
+    }
+    const scopedContext = {
+      ...context,
+      rawEvents: [...context.rawEvents, currentDayEvent]
+    }
+    const selection = selectVersionedEvents(scopedContext, 'all')
+
+    expect(selection.events.map((event) => event.id)).toEqual(['deposit-1', 'current-day-deposit'])
+
+    const ppsContext = await getSettledVersionedPpsContext({
+      userAddress: CACHED_USER,
+      version: 'all',
+      fetchType: 'parallel',
+      paginationMode: 'paged',
+      context: scopedContext
+    })
+
+    expect(ppsContext.selectedEvents.map((event) => event.id)).toEqual(['deposit-1'])
+    expect(ppsContext.selectedVaultIdentifiers).toEqual([
+      {
+        chainId: 1,
+        vaultAddress: VAULT_ADDRESS.toLowerCase()
+      }
+    ])
+    expect(serviceMocks.fetchMultipleVaultsPPS).toHaveBeenCalledWith([
+      { chainId: 1, vaultAddress: VAULT_ADDRESS.toLowerCase() }
+    ])
+  })
+
+  it('reuses an unfiltered in-flight versioned PPS request', async () => {
+    const context = await getSettledAddressScopedContext({
+      userAddress: CACHED_USER,
+      fetchType: 'parallel',
+      paginationMode: 'paged'
+    })
+    const args = {
+      userAddress: CACHED_USER,
+      version: 'all' as const,
+      fetchType: 'parallel' as const,
+      paginationMode: 'paged' as const,
+      context
+    }
+
+    await Promise.all([getSettledVersionedPpsContext(args), getSettledVersionedPpsContext(args)])
+
+    expect(serviceMocks.fetchMultipleVaultsPPS).toHaveBeenCalledOnce()
+  })
+
+  it('keeps an explicit empty PPS scope separate from an unfiltered request', async () => {
+    const context = await getSettledAddressScopedContext({
+      userAddress: CACHED_USER,
+      fetchType: 'parallel',
+      paginationMode: 'paged'
+    })
+    const commonArgs = {
+      userAddress: CACHED_USER,
+      version: 'all' as const,
+      fetchType: 'parallel' as const,
+      paginationMode: 'paged' as const,
+      context
+    }
+
+    const [emptyContext, allContext] = await Promise.all([
+      getSettledVersionedPpsContext({ ...commonArgs, vaultIdentifiers: [] }),
+      getSettledVersionedPpsContext(commonArgs)
+    ])
+
+    expect(emptyContext.selectedVaultIdentifiers).toEqual([])
+    expect(allContext.selectedVaultIdentifiers).toEqual([{ chainId: 1, vaultAddress: VAULT_ADDRESS.toLowerCase() }])
+    expect(serviceMocks.fetchMultipleVaultsPPS).toHaveBeenCalledOnce()
+    expect(serviceMocks.fetchMultipleVaultsPPS).toHaveBeenCalledWith([
+      { chainId: 1, vaultAddress: VAULT_ADDRESS.toLowerCase() }
+    ])
   })
 })

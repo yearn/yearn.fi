@@ -50,7 +50,12 @@ import {
 } from './settledHoldingsContext'
 import { getStakingVaultAddress } from './staking'
 
-type TProtocolReturnIssue = 'missing_metadata' | 'missing_pps' | 'missing_receipt_price' | 'unmatched_exit'
+type TProtocolReturnIssue =
+  | 'missing_metadata'
+  | 'missing_pps'
+  | 'missing_receipt_price'
+  | 'missing_exit_price'
+  | 'unmatched_exit'
 
 type TProtocolReturnReceiptKind = 'deposit' | 'transfer_in'
 type TProtocolReturnExitKind = 'withdrawal' | 'transfer_out'
@@ -125,6 +130,7 @@ type TProtocolReturnLedger = {
   transfersOut: number
   missingPps: boolean
   missingReceiptPrice: boolean
+  missingExitPrice: boolean
   missingReceiptEthPrice: boolean
   lastAccruedTimestamp: number | null
 }
@@ -200,6 +206,7 @@ export interface HoldingsPnLSimpleHistoryPoint {
   date: string
   timestamp: number
   growthUsd: number
+  growthUsdEstimated: boolean
   growthWeightUsd: number
   growthWeightEth: number | null
   protocolReturnPct: number | null
@@ -214,6 +221,7 @@ export interface HoldingsPnLSimpleHistoryPoint {
 export interface HoldingsPnLSimpleHistoryFamilyPoint {
   timestamp: number
   growthUsd: number | null
+  growthUsdEstimated: boolean
   growthWeightUsd: number | null
   growthIndex: number | null
 }
@@ -327,6 +335,7 @@ function emptyLedger(chainId: number, vaultAddress: string): TProtocolReturnLedg
     transfersOut: 0,
     missingPps: false,
     missingReceiptPrice: false,
+    missingExitPrice: false,
     missingReceiptEthPrice: false,
     lastAccruedTimestamp: null
   }
@@ -1043,6 +1052,7 @@ function addExit(
       ledger.realizedGrowthUsdAtExit + (args.exitPriceUsd === null ? 0 : realizedGrowthUnderlying * args.exitPriceUsd),
     unpricedRealizedGrowthUnderlying:
       ledger.unpricedRealizedGrowthUnderlying + (args.exitPriceUsd === null ? realizedGrowthUnderlying : 0),
+    missingExitPrice: ledger.missingExitPrice || (args.exitPriceUsd === null && consumed.consumedShares > ZERO),
     realizedBaselineWeightUsd: ledger.realizedBaselineWeightUsd + consumedBaselineWeightUsd,
     realizedGrowthWeightUsd: ledger.realizedGrowthWeightUsd + (consumedExitWeightUsd - consumedBaselineWeightUsd),
     realizedGrowthWeightEth:
@@ -1976,6 +1986,7 @@ function isProtocolReturnHistoryOverlapEqual(
   return (
     cached.date === current.date &&
     cached.timestamp === current.timestamp &&
+    cached.growthUsdEstimated === current.growthUsdEstimated &&
     numericFields.every((field) => areHistoryPointNumbersEqual(cached[field], current[field]))
   )
 }
@@ -2128,7 +2139,9 @@ export function buildProtocolReturnLedgers(args: {
   currentTimestamp?: number
 }): Map<string, TProtocolReturnLedger> {
   const userAddress = lowerCaseAddress(args.userAddress)
-  const effectiveEvents = buildEffectiveSimpleEvents(args.events, userAddress)
+  const effectiveEvents = buildEffectiveSimpleEvents(args.events, userAddress).filter(
+    (event) => args.currentTimestamp === undefined || event.blockTimestamp <= args.currentTimestamp
+  )
   const ledgers = groupEventsByTransaction(effectiveEvents).reduce((nextLedgers, txEvents) => {
     groupTransactionEventsByFamily(txEvents).forEach((txFamilyEvents) => {
       normalizeStakingWrapperEvents(txFamilyEvents, userAddress).forEach((event) => {
@@ -2164,6 +2177,7 @@ function ledgerIssues(args: {
     ...(args.metadata ? [] : (['missing_metadata'] as const)),
     ...(args.ledger.missingPps || args.currentPps === null ? (['missing_pps'] as const) : []),
     ...(args.ledger.missingReceiptPrice ? (['missing_receipt_price'] as const) : []),
+    ...(args.ledger.missingExitPrice ? (['missing_exit_price'] as const) : []),
     ...(args.ledger.unmatchedExitShares > ZERO ? (['unmatched_exit'] as const) : [])
   ]
 }
@@ -2412,6 +2426,10 @@ function getGrowthUsd(vault: HoldingsPnLSimpleVault, latestAssetPriceUsd: number
   return vault.realizedGrowthUsdAtExit + growthValuedAtLatestPrice
 }
 
+function isGrowthUsdEstimated(vault: HoldingsPnLSimpleVault, latestAssetPriceUsd: number | null): boolean {
+  return latestAssetPriceUsd !== null && vault.issues.includes('missing_exit_price')
+}
+
 function buildPortfolioGrowthVault(
   vault: HoldingsPnLSimpleVault,
   priceData: Map<string, Map<number, number>>
@@ -2609,6 +2627,12 @@ export function buildProtocolReturnHistorySeries(args: {
       date: timestampToDateString(timestamp),
       timestamp,
       growthUsd,
+      growthUsdEstimated: vaults.some((vault) =>
+        isGrowthUsdEstimated(
+          vault,
+          latestAssetPriceUsdByVaultKey.get(toVaultKey(vault.chainId, vault.vaultAddress)) ?? null
+        )
+      ),
       growthWeightUsd: summary.growthWeightUsd,
       growthWeightEth,
       protocolReturnPct: summary.protocolReturnPct,
@@ -2739,6 +2763,10 @@ export function buildProtocolReturnFamilyHistorySeries(args: {
           familyVault === undefined
             ? null
             : getGrowthUsd(familyVault, latestAssetPriceUsdByVaultKey.get(vaultKey) ?? null),
+        growthUsdEstimated:
+          familyVault === undefined
+            ? false
+            : isGrowthUsdEstimated(familyVault, latestAssetPriceUsdByVaultKey.get(vaultKey) ?? null),
         growthWeightUsd: familyVault?.growthWeightUsd ?? null,
         growthIndex: hasOpenPosition || closesPosition ? state.growthIndex : null
       })
@@ -2794,32 +2822,40 @@ async function calculateHoldingsProtocolReturnHistory(
         paginationMode
       }))
   const selection = selectVersionedEvents(baseContext, version, singleRequestedVault)
+  const selectedEvents = filterEventsByRequestedVaults(selection.events, requestedVaults)
+  const settledSelectedEvents = selectedEvents.filter((event) => event.blockTimestamp <= baseContext.maxTimestamp)
+  const settledVaultIdentifiers = getVaultIdentifiers(settledSelectedEvents)
   const ppsContextPromise = getSettledVersionedPpsContext({
     userAddress,
     version,
     fetchType,
     paginationMode,
     requestedVault: singleRequestedVault,
-    vaultIdentifiers: requestedVaults,
+    ...(requestedVaults === undefined ? {} : { vaultIdentifiers: settledVaultIdentifiers }),
     context: baseContext
   })
   void ppsContextPromise.catch(() => undefined)
-  const selectedEvents = filterEventsByRequestedVaults(selection.events, requestedVaults)
-  reportHoldingsProgress(30, 'Loaded wallet events and started vault share prices', `${selection.events.length} events`)
+  reportHoldingsProgress(
+    30,
+    'Loaded wallet events and started vault share prices',
+    `${settledSelectedEvents.length} settled events`
+  )
   const rawEvents = await enrichSimpleHistoryRawEvents({
-    events: selectedEvents,
+    events: settledSelectedEvents,
     version,
     maxTimestamp: baseContext.maxTimestamp
   })
   reportHoldingsProgress(40, 'Enriched historical wallet events', `${rawEvents.length} events`)
-  const effectiveEvents = rawEvents
+  const settledEvents = rawEvents.filter((event) => event.blockTimestamp <= baseContext.maxTimestamp)
+  const timestamps = getProtocolReturnTimestamps(settledEvents, timeframe)
+  const latestTimestamp = timestamps[timestamps.length - 1] ?? baseContext.maxTimestamp
   const filteredVaultIdentifiers = filterVaultIdentifiersByRequestedVaults(
-    getVaultIdentifiers(effectiveEvents),
+    getVaultIdentifiers(settledEvents),
     requestedVaults
   )
   const vaultMetadata = baseContext.vaultMetadata
 
-  if (effectiveEvents.length === 0 || filteredVaultIdentifiers.length === 0) {
+  if (settledEvents.length === 0 || filteredVaultIdentifiers.length === 0) {
     await ppsContextPromise
     const generatedAt = new Date().toISOString()
     reportHoldingsProgress(94, 'No historical protocol return events found', null)
@@ -2853,16 +2889,14 @@ async function calculateHoldingsProtocolReturnHistory(
     }
   }
 
-  const timestamps = getProtocolReturnTimestamps(effectiveEvents, timeframe)
-  const latestTimestamp = timestamps[timestamps.length - 1] ?? baseContext.maxTimestamp
   const baseReceiptPriceRequests = buildReceiptPriceRequests({
-    events: effectiveEvents,
+    events: settledEvents,
     metadata: vaultMetadata,
     userAddress,
     currentTimestamp: latestTimestamp
   })
   const baseExitPriceRequests = buildExitPriceRequests({
-    events: effectiveEvents,
+    events: settledEvents,
     metadata: vaultMetadata,
     userAddress
   })
@@ -2906,7 +2940,7 @@ async function calculateHoldingsProtocolReturnHistory(
   })
 
   const finalLedgers = buildProtocolReturnLedgers({
-    events: effectiveEvents,
+    events: settledEvents,
     userAddress,
     metadata: vaultMetadata,
     ppsData: settledContext.ppsData,
@@ -2938,7 +2972,7 @@ async function calculateHoldingsProtocolReturnHistory(
     growthIndexSeed?: { timestamp: number; growthIndex: number | null }
   ) =>
     buildProtocolReturnHistorySeries({
-      events: effectiveEvents,
+      events: settledEvents,
       userAddress,
       metadata: vaultMetadata,
       ppsData: settledContext.ppsData,
@@ -2975,7 +3009,7 @@ async function calculateHoldingsProtocolReturnHistory(
     }
   )
   const familySeries = buildProtocolReturnFamilyHistorySeries({
-    events: effectiveEvents,
+    events: settledEvents,
     userAddress,
     metadata: vaultMetadata,
     ppsData: settledContext.ppsData,

@@ -82,6 +82,7 @@ vi.mock('./pnlEvents', () => ({
 }))
 
 const USER = '0x1111111111111111111111111111111111111111'
+const OTHER = '0x2222222222222222222222222222222222222222'
 const VAULT = '0x3333333333333333333333333333333333333333'
 const NESTED_VAULT = '0x5555555555555555555555555555555555555555'
 const ASSET = '0x4444444444444444444444444444444444444444'
@@ -161,11 +162,12 @@ const event = {
   }
 } as TRawPnlEvent
 const EVENT_RECEIPT_DAY_TIMESTAMP = Math.floor(event.blockTimestamp / 86_400) * 86_400
+const DEFAULT_LATEST_SETTLED_TIMESTAMP = EVENT_RECEIPT_DAY_TIMESTAMP + 4 * 86_400 - 1
 
 const settledContext = {
   address: USER,
-  latestSettledDayTimestamp: 200,
-  maxTimestamp: 201,
+  latestSettledDayTimestamp: DEFAULT_LATEST_SETTLED_TIMESTAMP - 1,
+  maxTimestamp: DEFAULT_LATEST_SETTLED_TIMESTAMP,
   events: {
     deposits: [],
     withdrawals: [],
@@ -309,7 +311,7 @@ describe('getHoldingsProtocolReturnHistory', () => {
   beforeEach(() => {
     vi.resetModules()
     vi.clearAllMocks()
-    generateDailyTimestampsMock.mockReturnValue([200])
+    generateDailyTimestampsMock.mockReturnValue([DEFAULT_LATEST_SETTLED_TIMESTAMP - 1])
     generateDailyTimestampsFromRangeMock.mockReturnValue([HISTORY_START_TIMESTAMP, HISTORY_START_TIMESTAMP + 86_400])
     toSettledDayTimestampMock.mockImplementation((timestamp: number) => timestamp + 1)
     timestampToDateStringMock.mockImplementation((timestamp: number) => `date-${timestamp}`)
@@ -362,7 +364,10 @@ describe('getHoldingsProtocolReturnHistory', () => {
 
     const response = await getHoldingsProtocolReturnHistory(USER, 'all', 'seq', 'paged', 'all')
 
-    expect(generateDailyTimestampsFromRangeMock).toHaveBeenCalledWith(HISTORY_START_TIMESTAMP, 200)
+    expect(generateDailyTimestampsFromRangeMock).toHaveBeenCalledWith(
+      HISTORY_START_TIMESTAMP,
+      DEFAULT_LATEST_SETTLED_TIMESTAMP - 1
+    )
     expect(response.dataPoints.map((point) => point.timestamp)).toEqual([
       HISTORY_START_TIMESTAMP + 1,
       HISTORY_START_TIMESTAMP + 86_401
@@ -375,7 +380,7 @@ describe('getHoldingsProtocolReturnHistory', () => {
         timeframe: 'all',
         vaultScope: undefined
       },
-      'date-201',
+      `date-${DEFAULT_LATEST_SETTLED_TIMESTAMP}`,
       [{ address: VAULT, chainId: 1 }],
       expect.objectContaining({ protocolReturn: response }),
       expect.any(Number)
@@ -404,7 +409,7 @@ describe('getHoldingsProtocolReturnHistory', () => {
         baselineExposureUsdYears: expect.any(Number),
         growthUsd: 0,
         growthPct: 0,
-        annualizedProtocolReturnPct: null,
+        annualizedProtocolReturnPct: 0,
         metadata: {
           symbol: 'TST',
           decimals: 18,
@@ -413,6 +418,59 @@ describe('getHoldingsProtocolReturnHistory', () => {
         }
       }
     ])
+  })
+
+  it.each([
+    'withdrawal',
+    'transfer_out'
+  ] as const)('excludes a current-day %s from settled rows, charts, and price requests', async (exitKind) => {
+    const currentDayTimestamp = DEFAULT_LATEST_SETTLED_TIMESTAMP + 1
+    const currentDayExit = {
+      ...event,
+      ...(exitKind === 'withdrawal'
+        ? { kind: 'withdrawal', owner: USER }
+        : { kind: 'transfer', sender: USER, receiver: OTHER }),
+      id: `current-day-${exitKind}`,
+      blockNumber: 2,
+      blockTimestamp: currentDayTimestamp,
+      transactionHash: `0xcurrent-day-${exitKind}`,
+      shares: 50n * ONE,
+      assets: 1_000n * ONE
+    } as TRawPnlEvent
+    const events = [event, currentDayExit]
+    generateDailyTimestampsMock.mockReturnValue([
+      DEFAULT_LATEST_SETTLED_TIMESTAMP - 86_401,
+      DEFAULT_LATEST_SETTLED_TIMESTAMP - 1
+    ])
+    selectVersionedEventsMock.mockReturnValue({
+      events,
+      vaultIdentifiers: settledContext.selectedVaultIdentifiers
+    })
+    getPPSMock.mockImplementation((_ppsMap: Map<number, number>, timestamp: number) =>
+      timestamp >= DEFAULT_LATEST_SETTLED_TIMESTAMP ? 1.1 : 1
+    )
+
+    const { getHoldingsProtocolReturnPortfolio } = await import('./pnlSimple')
+    const response = await getHoldingsProtocolReturnPortfolio(USER, 'all', 'seq', 'paged', '1y')
+    const rowGrowthUsd = response.growth.vaults[0]?.growthUsd
+    const aggregateGrowthUsd = response.protocolReturn.dataPoints.at(-1)?.growthUsd
+    const familyGrowthUsd = response.protocolReturn.familySeries.reduce(
+      (total, family) => total + (family.dataPoints.at(-1)?.growthUsd ?? 0),
+      0
+    )
+    const requestedSeries = fetchHistoricalPricesForTokenTimestampsMock.mock.calls.flatMap(
+      ([requests]) => requests as Array<{ address: string; timestamps: number[] }>
+    )
+    const assetRequest = requestedSeries.find((request) => request.address.toLowerCase() === ASSET.toLowerCase())
+
+    expect(fetchActivityEventsByTransactionHashesMock.mock.calls[0]?.[0]).toEqual(new Map([[1, ['0xdeposit']]]))
+    expect(fetchActivityEventsByTransactionHashesMock.mock.calls[0]?.[2]).toBe(DEFAULT_LATEST_SETTLED_TIMESTAMP)
+    expect(getSettledVersionedPpsContextMock.mock.calls[0]?.[0]).not.toHaveProperty('vaultIdentifiers')
+    expect(assetRequest?.timestamps).toEqual([EVENT_RECEIPT_DAY_TIMESTAMP, EVENT_RECEIPT_DAY_TIMESTAMP + 86_400])
+    expect(response.growth.vaults[0]?.issues).toEqual([])
+    expect(rowGrowthUsd).toBeCloseTo(10)
+    expect(aggregateGrowthUsd).toBeCloseTo(rowGrowthUsd ?? Number.NaN)
+    expect(familyGrowthUsd).toBeCloseTo(rowGrowthUsd ?? Number.NaN)
   })
 
   it('requests exit-day USD prices without expanding receipt ETH timestamps', async () => {
@@ -534,6 +592,8 @@ describe('getHoldingsProtocolReturnHistory', () => {
     expect(rowGrowthUsd).toBeCloseTo(290)
     expect(aggregateGrowthUsd).toBeCloseTo(rowGrowthUsd ?? Number.NaN)
     expect(familyGrowthUsd).toBeCloseTo(rowGrowthUsd ?? Number.NaN)
+    expect(scenario.response.protocolReturn.dataPoints.at(-1)?.growthUsdEstimated).toBe(false)
+    expect(scenario.response.protocolReturn.familySeries[0]?.dataPoints.at(-1)?.growthUsdEstimated).toBe(false)
   })
 
   it('does not synthesize a missing nested exit price from an older receipt underlying price', async () => {
@@ -548,12 +608,14 @@ describe('getHoldingsProtocolReturnHistory', () => {
     expect(scenario.exitDerivationArgs?.underlyingPriceLookup).toBe('exact')
     expect(scenario.response.growth.vaults[0]).toMatchObject({
       status: 'ok',
-      issues: [],
+      issues: ['missing_exit_price'],
       baselineUsd: 200
     })
     expect(rowGrowthUsd).toBeCloseTo(40)
     expect(aggregateGrowthUsd).toBeCloseTo(rowGrowthUsd ?? Number.NaN)
     expect(familyGrowthUsd).toBeCloseTo(rowGrowthUsd ?? Number.NaN)
+    expect(scenario.response.protocolReturn.dataPoints.at(-1)?.growthUsdEstimated).toBe(true)
+    expect(scenario.response.protocolReturn.familySeries[0]?.dataPoints.at(-1)?.growthUsdEstimated).toBe(true)
   })
 
   it('values growth history at the latest price and keeps recoverable missing-price families eligible', async () => {
@@ -711,7 +773,7 @@ describe('getHoldingsProtocolReturnHistory', () => {
     expect(response.summary.totalVaults).toBe(1)
     expect(saveCachedProtocolReturnHistoryMock).toHaveBeenCalledWith(
       expect.any(Object),
-      'date-201',
+      `date-${DEFAULT_LATEST_SETTLED_TIMESTAMP}`,
       [{ address: VAULT, chainId: 1 }],
       expect.objectContaining({ protocolReturn: response }),
       expect.any(Number)
@@ -767,7 +829,7 @@ describe('getHoldingsProtocolReturnHistory', () => {
 
     expect(saveCachedProtocolReturnHistoryMock).toHaveBeenCalledWith(
       expect.any(Object),
-      'date-201',
+      `date-${DEFAULT_LATEST_SETTLED_TIMESTAMP}`,
       [
         { address: VAULT, chainId: 1 },
         { address: NESTED_VAULT, chainId: 1 }

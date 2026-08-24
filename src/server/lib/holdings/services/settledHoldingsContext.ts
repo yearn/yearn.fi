@@ -97,14 +97,17 @@ function getContextKey(args: {
   requestedVault?: TRequestedVault
   vaultIdentifiers?: TVaultIdentifier[]
 }): string {
-  const normalizedVaultScope = args.vaultIdentifiers?.length
-    ? args.vaultIdentifiers
-        .map((vault) => `${vault.chainId}:${lowerCaseAddress(vault.vaultAddress)}`)
-        .sort()
-        .join(',')
-    : args.requestedVault
-      ? `${args.requestedVault.chainId}:${lowerCaseAddress(args.requestedVault.vaultAddress)}`
-      : 'all'
+  const normalizedVaultScope =
+    args.vaultIdentifiers !== undefined
+      ? args.vaultIdentifiers.length > 0
+        ? args.vaultIdentifiers
+            .map((vault) => `${vault.chainId}:${lowerCaseAddress(vault.vaultAddress)}`)
+            .sort()
+            .join(',')
+        : 'none'
+      : args.requestedVault
+        ? `${args.requestedVault.chainId}:${lowerCaseAddress(args.requestedVault.vaultAddress)}`
+        : 'all'
 
   return [
     lowerCaseAddress(args.userAddress),
@@ -294,7 +297,8 @@ export async function getSettledVersionedPpsContext(args: {
         paginationMode: args.paginationMode
       }))
     const selection = selectVersionedEvents(context, args.version, args.requestedVault)
-    const selectedVaultIdentifiers = args.vaultIdentifiers ?? selection.vaultIdentifiers
+    const settledEvents = selection.events.filter((event) => event.blockTimestamp <= context.maxTimestamp)
+    const selectedVaultIdentifiers = args.vaultIdentifiers ?? getVaultIdentifiers(settledEvents)
     const basePriceRequests = buildUnderlyingTokenRequests(selectedVaultIdentifiers, context.vaultMetadata)
     const ppsIdentifiers = mergeVaultIdentifiers([
       ...selectedVaultIdentifiers,
@@ -305,13 +309,13 @@ export async function getSettledVersionedPpsContext(args: {
         ? new Map()
         : process.env.HOLDINGS_KONG_BATCH_PPS === 'true'
           ? await fetchMultipleVaultsPPS(ppsIdentifiers, {
-              range: getPpsRange(selection.events, context.maxTimestamp)
+              range: getPpsRange(settledEvents, context.maxTimestamp)
             })
           : await fetchMultipleVaultsPPS(ppsIdentifiers)
 
     return {
       ...context,
-      selectedEvents: selection.events,
+      selectedEvents: settledEvents,
       selectedVaultIdentifiers,
       ppsIdentifiers,
       ppsData

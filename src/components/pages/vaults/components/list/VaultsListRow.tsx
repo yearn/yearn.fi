@@ -113,25 +113,26 @@ type TYvUsdListMetrics = {
 
 export type TVaultPortfolioGrowth = {
   usd: number
+  isUsdEstimated: boolean
   percent: number | null
   annualizedPercent: number | null
 }
 
-export function formatSignedPortfolioGrowthUsd(value: number): string | null {
+export function formatSignedPortfolioGrowthUsd(value: number, isEstimated = false): string | null {
   if (!Number.isFinite(value)) {
     return null
   }
 
   const sign = value > 0 ? '+' : value < 0 ? '−' : ''
   if (value !== 0 && Math.abs(value) < 0.01) {
-    return `${sign}<$0.01`
+    return `${isEstimated ? '~' : ''}${sign}<$0.01`
   }
 
   const amount = new Intl.NumberFormat('en-US', {
     notation: 'compact',
     maximumSignificantDigits: 3
   }).format(Math.abs(value))
-  return `${sign}$${amount}`
+  return `${isEstimated ? '~' : ''}${sign}$${amount}`
 }
 
 export function formatSignedPortfolioGrowthPercent(value: number | null): string | null {
@@ -494,7 +495,7 @@ function VaultsListRowPresentationComponent({
       )
     }
 
-    const value = formatSignedPortfolioGrowthUsd(portfolioGrowth.usd)
+    const value = formatSignedPortfolioGrowthUsd(portfolioGrowth.usd, portfolioGrowth.isUsdEstimated)
     if (value === null) {
       return (
         <span className={'font-semibold text-text-secondary max-md:text-lg'} aria-label={'Growth unavailable'}>
@@ -527,6 +528,13 @@ function VaultsListRowPresentationComponent({
               <p className={'border-t border-border pt-2 text-text-secondary'}>
                 {'Simple annualized return based on your actual USD growth and time-weighted capital.'}
               </p>
+              {portfolioGrowth.isUsdEstimated ? (
+                <p className={'border-t border-border pt-2 text-text-secondary'}>
+                  {
+                    '~ means an exit-day price was unavailable, so that portion of Growth uses the latest available asset price.'
+                  }
+                </p>
+              ) : null}
             </div>
           </div>
         }
@@ -536,7 +544,7 @@ function VaultsListRowPresentationComponent({
           className={
             'font-number font-semibold text-text-primary underline decoration-neutral-600/30 decoration-dotted underline-offset-4 max-md:text-lg'
           }
-          aria-label={`Growth ${value}; total protocol return ${totalPercent ?? 'unavailable'}; Real APY ${annualizedPercent ?? 'unavailable'}`}
+          aria-label={`Growth ${value}${portfolioGrowth.isUsdEstimated ? ', estimated using the latest available asset price' : ''}; total protocol return ${totalPercent ?? 'unavailable'}; Real APY ${annualizedPercent ?? 'unavailable'}`}
           onClick={(event): void => event.preventDefault()}
           onMouseEnter={() => handleInteractiveHoverChange(true)}
           onMouseLeave={() => handleInteractiveHoverChange(false)}

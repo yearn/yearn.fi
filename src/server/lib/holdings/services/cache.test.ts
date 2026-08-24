@@ -95,7 +95,7 @@ describe('protocol return history snapshot cache', () => {
     const savedValue = setMock.mock.calls[0]?.[1]
 
     expect(saved).toBe(true)
-    expect(key).toMatch(/^holdings:protocol-return-history:v9:[a-f0-9]{64}:all:1y:all$/)
+    expect(key).toMatch(/^holdings:protocol-return-history:v10:[a-f0-9]{64}:all:1y:all$/)
     expect(key).not.toContain(identity.userAddress)
     expect(savedValue).toEqual(expect.stringMatching(/^br1:/))
     expect(savedValue).not.toContain('2026-07-15')
@@ -118,9 +118,11 @@ describe('protocol return history snapshot cache', () => {
     const vaults = [{ address: '0x00000000000000000000000000000000000000A1', chainId: 1 }]
     const response = {
       summary: { isComplete: true },
+      growth: { vaults: [{ issues: ['missing_exit_price'] }] },
       dataPoints: Array.from({ length: 963 }, (_, index) => ({
         date: `2026-07-${String((index % 28) + 1).padStart(2, '0')}`,
         protocolReturnUsd: index,
+        growthUsdEstimated: index > 900,
         balanceUsd: 10_000
       }))
     }
@@ -225,7 +227,7 @@ describe('protocol return history snapshot cache', () => {
     const key = getProtocolReturnHistoryCacheKey(identity)
 
     expect(key).toBe(getProtocolReturnHistoryCacheKey(reversedIdentity))
-    expect(key).toMatch(/^holdings:protocol-return-history:v9:[a-f0-9]{64}:all:1y:[a-f0-9]{64}$/)
+    expect(key).toMatch(/^holdings:protocol-return-history:v10:[a-f0-9]{64}:all:1y:[a-f0-9]{64}$/)
     expect(key).not.toContain(identity.vaultScope[0].address)
   })
 

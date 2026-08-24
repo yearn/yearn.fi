@@ -12,19 +12,25 @@ import type { ComponentProps } from 'react'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const { mockRouterPush, mockUseMediaQuery, mockUseYvUsdVaults, mockUseVaultSnapshot, mockVaultForwardAPY } = vi.hoisted(
-  () => ({
-    mockRouterPush: vi.fn(),
-    mockUseMediaQuery: vi.fn(() => false),
-    mockUseYvUsdVaults: vi.fn((): any => ({
-      metrics: undefined,
-      unlockedVault: undefined,
-      lockedVault: undefined
-    })),
-    mockUseVaultSnapshot: vi.fn((): any => ({ data: undefined })),
-    mockVaultForwardAPY: vi.fn((_props?: unknown) => <div>{'APY'}</div>)
-  })
-)
+const {
+  mockRouterPush,
+  mockUseMediaQuery,
+  mockUseWeb3,
+  mockUseYvUsdVaults,
+  mockUseVaultSnapshot,
+  mockVaultForwardAPY
+} = vi.hoisted(() => ({
+  mockRouterPush: vi.fn(),
+  mockUseMediaQuery: vi.fn(() => false),
+  mockUseWeb3: vi.fn((): any => ({ address: undefined })),
+  mockUseYvUsdVaults: vi.fn((): any => ({
+    metrics: undefined,
+    unlockedVault: undefined,
+    lockedVault: undefined
+  })),
+  mockUseVaultSnapshot: vi.fn((): any => ({ data: undefined })),
+  mockVaultForwardAPY: vi.fn((_props?: unknown) => <div>{'APY'}</div>)
+}))
 
 vi.mock('next/navigation', () => ({
   useRouter: () => ({
@@ -56,9 +62,7 @@ vi.mock('@shared/contexts/useWallet', () => ({
 }))
 
 vi.mock('@shared/contexts/useWeb3', () => ({
-  useWeb3: () => ({
-    address: undefined
-  })
+  useWeb3: mockUseWeb3
 }))
 
 vi.mock('@hooks/usePlausible', () => ({
@@ -104,6 +108,7 @@ function renderRowHtml(vault: TKongVaultInput, props?: Partial<ComponentProps<ty
 describe('VaultsListRow', () => {
   beforeEach(() => {
     mockUseMediaQuery.mockReturnValue(false)
+    mockUseWeb3.mockReturnValue({ address: undefined })
     mockUseYvUsdVaults.mockReturnValue({
       metrics: undefined,
       unlockedVault: undefined,
@@ -118,6 +123,8 @@ describe('VaultsListRow', () => {
     expect(formatSignedPortfolioGrowthUsd(1476)).toBe('+$1.48K')
     expect(formatSignedPortfolioGrowthUsd(-1_234_567)).toBe('−$1.23M')
     expect(formatSignedPortfolioGrowthUsd(0)).toBe('$0')
+    expect(formatSignedPortfolioGrowthUsd(1476, true)).toBe('~+$1.48K')
+    expect(formatSignedPortfolioGrowthUsd(-0.001, true)).toBe('~−<$0.01')
     expect(formatSignedPortfolioGrowthUsd(Number.NaN)).toBeNull()
   })
 
@@ -125,6 +132,42 @@ describe('VaultsListRow', () => {
     expect(formatSignedPortfolioGrowthPercent(12.345)).toBe('+12.35%')
     expect(formatSignedPortfolioGrowthPercent(-4.5)).toBe('−4.50%')
     expect(formatSignedPortfolioGrowthPercent(null)).toBeNull()
+  })
+
+  it('marks estimated portfolio growth and explains the latest-price fallback', () => {
+    mockUseWeb3.mockReturnValue({ address: '0x1111111111111111111111111111111111111111' })
+    const vault = {
+      version: '3.0.0',
+      chainID: 1,
+      address: '0x0000000000000000000000000000000000000001',
+      name: 'Test Vault',
+      category: 'Test Category',
+      kind: 'Multi Strategy',
+      token: {
+        address: '0x0000000000000000000000000000000000000002',
+        symbol: 'TKN',
+        decimals: 6
+      },
+      tvl: {
+        tvl: 1234,
+        totalAssets: 1234567
+      },
+      info: {
+        riskLevel: 3
+      }
+    } as unknown as TKongVaultInput
+
+    const html = renderRowHtml(vault, {
+      portfolioGrowth: {
+        usd: 1476,
+        isUsdEstimated: true,
+        percent: 2,
+        annualizedPercent: 3
+      }
+    })
+
+    expect(html).toContain('~+$1.48K')
+    expect(html).toContain('estimated using the latest available asset price')
   })
 
   it('renders the desktop TVL tooltip trigger for standard vault rows', () => {

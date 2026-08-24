@@ -7,6 +7,7 @@ import {
 type TProtocolReturnFamilyPoint = {
   timestamp: number
   growthUsd: number | null
+  growthUsdEstimated?: boolean
   growthWeightUsd: number | null
   growthIndex: number | null
 }
@@ -15,8 +16,12 @@ type TProtocolReturnFamilySeries = {
   dataPoints: TProtocolReturnFamilyPoint[]
 }
 
+type TCompactProtocolReturnFamilyPoint = Omit<TProtocolReturnFamilyPoint, 'growthUsdEstimated'> & {
+  growthUsdEstimated: boolean
+}
+
 type TCompactProtocolReturnFamilySeries<TSeries extends TProtocolReturnFamilySeries> = Omit<TSeries, 'dataPoints'> & {
-  dataPoints: TProtocolReturnFamilyPoint[]
+  dataPoints: TCompactProtocolReturnFamilyPoint[]
 }
 
 type TProtocolReturnFamilyWindow = '30d' | '90d' | '1y' | 'all'
@@ -118,6 +123,7 @@ export function selectProtocolReturnFamilySeriesCandidates<TSeries extends TProt
         dataPoints: series.dataPoints.map((point) => ({
           timestamp: point.timestamp,
           growthUsd: point.growthUsd,
+          growthUsdEstimated: point.growthUsdEstimated ?? false,
           growthWeightUsd: point.growthWeightUsd,
           growthIndex: point.growthIndex
         }))

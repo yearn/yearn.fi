@@ -84,6 +84,7 @@ export type TPortfolioVaultGrowthChartPoint = {
 export type TPortfolioVaultGrowthChartSeriesPoint = {
   timestamp: number
   positionValueUsd: number | null
+  positionValueUsdEstimated?: boolean
   indexValue: number | null
 }
 
@@ -121,6 +122,7 @@ type TTransformedPoint = {
   timestamp: number
   date: string
   value: number | null
+  isEstimated?: boolean
 }
 
 type TTransformedSeries = {
@@ -135,7 +137,7 @@ type TTransformedSeries = {
 type TChartPoint = {
   date: string
   timestamp: number
-  [seriesKey: string]: string | number | null
+  [seriesKey: string]: string | number | boolean | null
 }
 
 type TTooltipProps = {
@@ -370,29 +372,41 @@ function buildPrecomputedPositionPoints(points: TPortfolioVaultGrowthChartSeries
   return points.reduce<{
     points: TTransformedPoint[]
     baseValue: number | null
+    baseEstimated: boolean
     lastValue: number | null
+    lastEstimated: boolean
   }>(
     (state, point) => {
       const timestamp = normalizeTimestamp(point.timestamp)
       const nextLastValue = isFiniteNumber(point.positionValueUsd) ? point.positionValueUsd : state.lastValue
+      const nextLastEstimated = isFiniteNumber(point.positionValueUsd)
+        ? Boolean(point.positionValueUsdEstimated)
+        : state.lastEstimated
       const nextBaseValue = state.baseValue ?? nextLastValue
+      const nextBaseEstimated = state.baseValue === null ? nextLastEstimated : state.baseEstimated
+      const isEstimated = nextBaseValue !== null && nextLastValue !== null && (nextBaseEstimated || nextLastEstimated)
 
       state.points.push({
         timestamp,
         date: formatUnixTimestamp(timestamp),
-        value: nextBaseValue !== null && nextLastValue !== null ? nextLastValue - nextBaseValue : null
+        value: nextBaseValue !== null && nextLastValue !== null ? nextLastValue - nextBaseValue : null,
+        ...(isEstimated ? { isEstimated: true } : {})
       })
 
       return {
         points: state.points,
         baseValue: nextBaseValue,
-        lastValue: nextLastValue
+        baseEstimated: nextBaseEstimated,
+        lastValue: nextLastValue,
+        lastEstimated: nextLastEstimated
       }
     },
     {
       points: [],
       baseValue: null,
-      lastValue: null
+      baseEstimated: false,
+      lastValue: null,
+      lastEstimated: false
     }
   ).points
 }
@@ -459,22 +473,27 @@ function buildChartData(series: TTransformedSeries[], mode: TPortfolioVaultGrowt
 
     series.forEach((vaultSeries) => {
       const points = mode === 'position' ? vaultSeries.positionPoints : vaultSeries.indexPoints
-      row[vaultSeries.key] = points.find((point) => point.timestamp === timestamp)?.value ?? null
+      const point = points.find((seriesPoint) => seriesPoint.timestamp === timestamp)
+      row[vaultSeries.key] = point?.value ?? null
+      if (mode === 'position' && point?.isEstimated) {
+        row[`${vaultSeries.key}Estimated`] = true
+      }
     })
 
     return row
   })
 }
 
-function formatPositionValue(value: number): string {
+function formatPositionValue(value: number, isEstimated = false): string {
   const absolute = formatUSD(Math.abs(value), 2, 2)
+  const estimatePrefix = isEstimated ? '~' : ''
   if (value > 0) {
-    return `+${absolute}`
+    return `${estimatePrefix}+${absolute}`
   }
   if (value < 0) {
-    return `-${absolute}`
+    return `${estimatePrefix}-${absolute}`
   }
-  return absolute
+  return `${estimatePrefix}${absolute}`
 }
 
 function formatIndexValue(value: number): string {
@@ -540,6 +559,7 @@ function PortfolioVaultGrowthTooltip({
           key: dataKey,
           label: seriesLabels[dataKey] ?? dataKey,
           value,
+          isEstimated: Boolean(entry.payload?.[`${dataKey}Estimated`]),
           color: typeof entry.color === 'string' ? entry.color : 'var(--color-text-primary)'
         }
       ]
@@ -563,11 +583,16 @@ function PortfolioVaultGrowthTooltip({
               <span>{row.label}</span>
             </span>
             <span className={'text-sm font-semibold text-text-primary'}>
-              {mode === 'position' ? formatPositionValue(row.value) : formatIndexValue(row.value)}
+              {mode === 'position' ? formatPositionValue(row.value, row.isEstimated) : formatIndexValue(row.value)}
             </span>
           </div>
         ))}
       </div>
+      {mode === 'position' && rows.some((row) => row.isEstimated) ? (
+        <p className={'border-t border-border pt-2 text-[11px] text-text-tertiary'}>
+          {'~ uses the latest available asset price where an exit-day price was unavailable.'}
+        </p>
+      ) : null}
     </div>
   )
 }

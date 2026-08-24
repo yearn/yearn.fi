@@ -8,6 +8,7 @@ const YBOLD_CHAIN_ID = 1
 
 export type TPortfolioGrowthDisplay = {
   usd: number
+  isUsdEstimated: boolean
   percent: number | null
   annualizedPercent: number | null
 }
@@ -137,6 +138,7 @@ export function toPortfolioGrowthDisplay(vault: TPortfolioGrowthVault | undefine
 
   return {
     usd: vault.growthUsd,
+    isUsdEstimated: vault.issues.includes('missing_exit_price'),
     percent: vault.growthPct !== null && Number.isFinite(vault.growthPct) ? vault.growthPct : null,
     annualizedPercent:
       vault.annualizedProtocolReturnPct !== null && Number.isFinite(vault.annualizedProtocolReturnPct)

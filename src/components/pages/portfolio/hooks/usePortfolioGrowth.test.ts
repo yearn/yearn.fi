@@ -94,9 +94,22 @@ describe('portfolio growth helpers', () => {
     expect(combined?.status).toBe('ok')
     expect(toPortfolioGrowthDisplay(combined)).toEqual({
       usd: 10,
+      isUsdEstimated: false,
       percent: 10,
       annualizedPercent: 20
     })
+  })
+
+  it('marks combined USD growth as estimated when any variant used the missing exit-price fallback', () => {
+    const unlocked = makeGrowthVault(YVUSD_UNLOCKED_ADDRESS)
+    const locked = makeGrowthVault(YVUSD_LOCKED_ADDRESS, {
+      issues: ['missing_exit_price']
+    })
+
+    const combined = mapPortfolioGrowthVaults([unlocked, locked]).get(getPortfolioGrowthVaultKey(unlocked))
+
+    expect(combined?.status).toBe('ok')
+    expect(toPortfolioGrowthDisplay(combined)?.isUsdEstimated).toBe(true)
   })
 
   it('combines unstaked and staked yBOLD growth under the displayed vault', () => {

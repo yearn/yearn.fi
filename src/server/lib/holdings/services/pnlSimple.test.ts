@@ -96,6 +96,48 @@ function materializeVault(args: {
 }
 
 describe('pnl simple protocol return', () => {
+  it('ignores events after an explicit ledger cutoff', () => {
+    const vault = materializeVault({
+      events: [
+        baseEvent({
+          kind: 'deposit',
+          id: 'settled-deposit',
+          blockTimestamp: 100,
+          shares: 100n * ONE,
+          assets: 100n * ONE,
+          owner: USER,
+          sender: USER
+        }),
+        baseEvent({
+          kind: 'withdrawal',
+          id: 'current-day-withdrawal',
+          blockTimestamp: 301,
+          blockNumber: 2,
+          shares: 100n * ONE,
+          assets: 500n * ONE,
+          owner: USER
+        })
+      ],
+      ppsData: new Map([
+        [
+          VAULT_KEY,
+          new Map([
+            [100, 1],
+            [300, 1.2],
+            [301, 5]
+          ])
+        ]
+      ]),
+      priceData: new Map([[ASSET_PRICE_KEY, new Map([[100, 1]])]]),
+      currentTimestamp: 300
+    })
+
+    expect(vault.sharesFormatted).toBe(100)
+    expect(vault.currentUnderlying).toBeCloseTo(120)
+    expect(vault.growthUnderlying).toBeCloseTo(20)
+    expect(vault.exitCount).toBe(0)
+  })
+
   it('deduplicates receipt price fetches by underlying token and day bucket', () => {
     const requests = buildReceiptPriceRequests({
       events: [
@@ -383,6 +425,7 @@ describe('pnl simple protocol return', () => {
       expect.closeTo(16)
     ])
     expect(history.map((point) => point.growthUsd)).toEqual([expect.closeTo(0), expect.closeTo(38), expect.closeTo(68)])
+    expect(history.map((point) => point.growthUsdEstimated)).toEqual([false, false, false])
   })
 
   it('accumulates multiple partial exits at each exit price', () => {
@@ -567,6 +610,138 @@ describe('pnl simple protocol return', () => {
 
     expect(history[3]?.growthUnderlying).toBeCloseTo(22.5)
     expect(history[3]?.growthUsd).toBeCloseTo(205)
+    expect(history.map((point) => point.growthUsdEstimated)).toEqual([false, false, true, true])
+  })
+
+  it('does not report a latest-price estimate when no fallback price is available', () => {
+    const history = buildProtocolReturnHistorySeries({
+      events: [
+        baseEvent({
+          kind: 'deposit',
+          id: 'unpriced-deposit',
+          blockTimestamp: 100,
+          shares: 100n * ONE,
+          assets: 100n * ONE,
+          owner: USER,
+          sender: USER
+        }),
+        baseEvent({
+          kind: 'withdrawal',
+          id: 'unpriced-withdrawal',
+          blockTimestamp: 200,
+          blockNumber: 2,
+          shares: 100n * ONE,
+          assets: 120n * ONE,
+          owner: USER
+        })
+      ],
+      userAddress: USER,
+      metadata,
+      ppsData: new Map([
+        [
+          VAULT_KEY,
+          new Map([
+            [100, 1],
+            [200, 1.2],
+            [300, 1.2]
+          ])
+        ]
+      ]),
+      priceData: new Map(),
+      timestamps: [100, 200, 300]
+    })
+
+    expect(history.at(-1)?.growthUsd).toBe(0)
+    expect(history.at(-1)?.growthUsdEstimated).toBe(false)
+  })
+
+  it('exposes the latest-price fallback for an unpriced transfer-out', () => {
+    const vault = materializeVault({
+      events: [
+        baseEvent({
+          kind: 'deposit',
+          id: 'deposit',
+          blockTimestamp: 100,
+          shares: 100n * ONE,
+          assets: 100n * ONE,
+          owner: USER,
+          sender: USER
+        }),
+        baseEvent({
+          kind: 'transfer',
+          id: 'unpriced-transfer-out',
+          blockTimestamp: 200,
+          blockNumber: 2,
+          shares: 100n * ONE,
+          sender: USER,
+          receiver: OTHER
+        })
+      ],
+      ppsData: new Map([
+        [
+          VAULT_KEY,
+          new Map([
+            [100, 1],
+            [200, 1.2],
+            [300, 1.2]
+          ])
+        ]
+      ]),
+      priceData: new Map([[ASSET_PRICE_KEY, new Map([[100, 1]])]])
+    })
+
+    expect(vault.status).toBe('ok')
+    expect(vault.issues).toContain('missing_exit_price')
+    expect(vault.unpricedRealizedGrowthUnderlying).toBeCloseTo(20)
+  })
+
+  it('retains the fallback warning when unpriced realized growth chunks cancel', () => {
+    const vault = materializeVault({
+      events: [
+        baseEvent({
+          kind: 'deposit',
+          id: 'deposit',
+          blockTimestamp: 100,
+          shares: 100n * ONE,
+          assets: 100n * ONE,
+          owner: USER,
+          sender: USER
+        }),
+        baseEvent({
+          kind: 'withdrawal',
+          id: 'unpriced-gain',
+          blockTimestamp: 200,
+          blockNumber: 2,
+          shares: 50n * ONE,
+          assets: 60n * ONE,
+          owner: USER
+        }),
+        baseEvent({
+          kind: 'withdrawal',
+          id: 'unpriced-loss',
+          blockTimestamp: 300,
+          blockNumber: 3,
+          shares: 50n * ONE,
+          assets: 40n * ONE,
+          owner: USER
+        })
+      ],
+      ppsData: new Map([
+        [
+          VAULT_KEY,
+          new Map([
+            [100, 1],
+            [200, 1.2],
+            [300, 0.8]
+          ])
+        ]
+      ]),
+      priceData: new Map([[ASSET_PRICE_KEY, new Map([[100, 1]])]])
+    })
+
+    expect(vault.status).toBe('ok')
+    expect(vault.issues).toContain('missing_exit_price')
+    expect(vault.unpricedRealizedGrowthUnderlying).toBeCloseTo(0)
   })
 
   it('values staking wrapper deposit and withdrawal events with family PPS', () => {
@@ -769,6 +944,7 @@ describe('pnl simple protocol return', () => {
       date: '1970-01-01',
       timestamp: 100,
       growthUsd: 0,
+      growthUsdEstimated: false,
       growthWeightUsd: 0,
       growthWeightEth: 0,
       protocolReturnPct: 0,
