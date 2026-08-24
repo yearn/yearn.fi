@@ -113,25 +113,27 @@ type TYvUsdListMetrics = {
 
 export type TVaultPortfolioGrowth = {
   usd: number
+  isUsdEstimated: boolean
   percent: number | null
   annualizedPercent: number | null
 }
 
-export function formatSignedPortfolioGrowthUsd(value: number): string | null {
+export function formatSignedPortfolioGrowthUsd(value: number, isEstimated = false): string | null {
   if (!Number.isFinite(value)) {
     return null
   }
 
   const sign = value > 0 ? '+' : value < 0 ? '−' : ''
+  const estimateSuffix = isEstimated ? '*' : ''
   if (value !== 0 && Math.abs(value) < 0.01) {
-    return `${sign}<$0.01`
+    return `${sign}<$0.01${estimateSuffix}`
   }
 
   const amount = new Intl.NumberFormat('en-US', {
     notation: 'compact',
     maximumSignificantDigits: 3
   }).format(Math.abs(value))
-  return `${sign}$${amount}`
+  return `${sign}$${amount}${estimateSuffix}`
 }
 
 export function formatSignedPortfolioGrowthPercent(value: number | null): string | null {
@@ -494,7 +496,7 @@ function VaultsListRowPresentationComponent({
       )
     }
 
-    const value = formatSignedPortfolioGrowthUsd(portfolioGrowth.usd)
+    const value = formatSignedPortfolioGrowthUsd(portfolioGrowth.usd, portfolioGrowth.isUsdEstimated)
     if (value === null) {
       return (
         <span className={'font-semibold text-text-secondary max-md:text-lg'} aria-label={'Growth unavailable'}>
@@ -502,6 +504,7 @@ function VaultsListRowPresentationComponent({
         </span>
       )
     }
+    const ariaValue = formatSignedPortfolioGrowthUsd(portfolioGrowth.usd) ?? value
     const totalPercent = formatSignedPortfolioGrowthPercent(portfolioGrowth.percent)
     const annualizedPercent = formatSignedPortfolioGrowthPercent(portfolioGrowth.annualizedPercent)
 
@@ -527,6 +530,9 @@ function VaultsListRowPresentationComponent({
               <p className={'border-t border-border pt-2 text-text-secondary'}>
                 {'Simple annualized return based on your actual USD growth and time-weighted capital.'}
               </p>
+              {portfolioGrowth.isUsdEstimated ? (
+                <p className={'border-t border-border pt-2 text-text-secondary'}>{'* Growth may be approximate.'}</p>
+              ) : null}
             </div>
           </div>
         }
@@ -536,7 +542,7 @@ function VaultsListRowPresentationComponent({
           className={
             'font-number font-semibold text-text-primary underline decoration-neutral-600/30 decoration-dotted underline-offset-4 max-md:text-lg'
           }
-          aria-label={`Growth ${value}; total protocol return ${totalPercent ?? 'unavailable'}; Real APY ${annualizedPercent ?? 'unavailable'}`}
+          aria-label={`Growth ${ariaValue}${portfolioGrowth.isUsdEstimated ? '; value may be approximate' : ''}; total protocol return ${totalPercent ?? 'unavailable'}; Real APY ${annualizedPercent ?? 'unavailable'}`}
           onClick={(event): void => event.preventDefault()}
           onMouseEnter={() => handleInteractiveHoverChange(true)}
           onMouseLeave={() => handleInteractiveHoverChange(false)}

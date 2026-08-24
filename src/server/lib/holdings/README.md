@@ -403,7 +403,9 @@ baselineUnderlying = shares received * PPS at receipt
 growthUnderlying = withdrawable underlying now-or-at-exit - baselineUnderlying
 baselineWeightUsd = baselineUnderlying * receiptTokenPriceUsd
 growthWeightUsd = growthUnderlying * receiptTokenPriceUsd
-growthUsd = growthUnderlying * latestFetchedTokenPriceUsd
+realizedGrowthUsdAtExit = sum(realizedGrowthUnderlyingAtExit * exitTokenPriceUsd)
+growthUsd = realizedGrowthUsdAtExit
+  + (unrealizedGrowthUnderlying + unpricedRealizedGrowthUnderlying) * latestFetchedReceiptTokenPriceUsd
 protocolReturnPct = growthWeightUsd / baselineWeightUsd * 100
 ```
 
@@ -448,7 +450,11 @@ Response:
 
 When a vault filter is present, each history point can also include `currentUnderlying`, `growthUnderlying`, `sharesFormatted`, and `pricePerShare`.
 
-The combined portfolio response values each vault row's asset-denominated growth with the latest positive asset price already returned by the receipt-price request. It does not make a separate spot-price request. The history response exposes the same latest-price valuation as `growthUsd` for the aggregate and each family series, so the Growth chart matches its vault rows. Missing earlier receipt prices therefore do not block either display when a later fetched price is available. Receipt-weighted `growthWeightUsd` remains separate and continues to drive protocol-return percentages and indexes.
+The combined portfolio response freezes each realized growth chunk at that withdrawal or transfer-out day's asset price. Unrealized growth is valued with the latest positive asset price from the existing receipt-price series; exit-only prices do not reprice open positions. If a particular exit-day price is unavailable, only that realized chunk falls back to the latest receipt-series price instead of making the whole vault unavailable. When that fallback price exists, the affected growth vault remains `ok` and exposes `missing_exit_price` in `issues`; aggregate and family history points that include the fallback expose `growthUsdEstimated: true`. If no latest receipt-series price is available either, the existing incomplete-price status applies and `growthUsdEstimated` remains false because no USD fallback was used. The portfolio UI appends `*` to estimated USD Growth values and labels them as potentially approximate. Receipt and exit timestamps share one batched historical-price fetch, and no separate spot-price request is made. The history response uses the same hybrid valuation for aggregate and family `growthUsd`, so the Growth chart conserves the vault-row total. Receipt-weighted `growthWeightUsd` remains separate and continues to drive protocol-return percentages and indexes.
+
+Locked yvUSD is accounted in its root USDC unit. Receipt and exit assets are converted with unlocked yvUSD PPS at the event timestamp, while open positions use `locked PPS * unlocked PPS`. Realized locked-yvUSD growth is frozen with exit-day USDC/USD; unrealized growth uses the latest fetched receipt-series USDC/USD. This keeps the locked and unlocked yvUSD rows additive without applying the unlocked PPS only after their baselines have already been subtracted.
+
+The portfolio combines the locked/unlocked yvUSD variants and the base/staked yBOLD variants into their product rows. Their dollar growth is the sum of the hybrid per-variant `growthUsd` values, while protocol return and annualized return are denominator-weighted combinations of the asset-neutral per-variant rates; exit-day USD movement therefore does not leak into those percentages.
 
 Non-empty settled responses are cached in Redis for up to 24 hours and invalidated lazily when one of their vaults changes. Responses produced after a failed or empty historical-price request, failed Kong PPS request, or retryable metadata fallback failure are returned to the caller but are not cached, so a temporary upstream outage cannot preserve incomplete chart data for the rest of the day.
 
@@ -534,7 +540,7 @@ Server-side cache is optional. Development credentials (`*_PORTFOLIO_DEV`) take 
 1. Upstash Redis:
    - `holdings:wallet-events:v2:<addressHash>:<maxTimestamp>`: one Brotli-compressed normalized event set per wallet and event cutoff, overwritten with a five-minute TTL. The version prevents reuse of event sets created by the former 50,000-row query that Envio could silently truncate.
    - `holdings:totals:v2:<addressHash>:<version>`: daily USD totals per hashed user address, vault version, and date. Hash fields are `YYYY-MM-DD`; values include `usdValue` and `updatedAt`.
-   - `holdings:protocol-return-history:v6:<addressHash>:<version>:<timeframe>:<vaultScope>`: successful non-empty protocol-return history and growth snapshots. The payload includes its settled date and relevant vault identifiers for invalidation checks.
+   - `holdings:protocol-return-history:v10:<addressHash>:<version>:<timeframe>:<vaultScope>`: successful non-empty protocol-return history and growth snapshots. The payload is Brotli-compressed and includes its settled date and relevant vault identifiers for invalidation checks. Legacy raw-JSON values using the current prefix remain readable.
    - `holdings:vault-invalidated:<chainId>:<vaultAddress>`: per-vault invalidation timestamps for lazy cache clearing.
    - `holdings:progress:<progressId>`: authoritative short-lived progress records keyed by caller-supplied progress ID for long history requests across Vercel function instances.
 2. HTTP cache:
@@ -584,7 +590,7 @@ No schema migration is required. Redis keys are created lazily:
 |-----|------|-----|---------|
 | `holdings:wallet-events:v2:<addressHash>:<maxTimestamp>` | Brotli string | 5 minutes | Complete bounded-page wallet event snapshot for one settled cutoff. |
 | `holdings:totals:v2:<addressHash>:<version>` | Hash | 30 days from write | Daily holdings chart totals. |
-| `holdings:protocol-return-history:v6:<addressHash>:<version>:<timeframe>:<vaultScope>` | String JSON | 30 days from write | Atomic protocol-return history and growth response snapshot. |
+| `holdings:protocol-return-history:v10:<addressHash>:<version>:<timeframe>:<vaultScope>` | Brotli/base64 string (legacy JSON readable) | 30 days from write | Atomic protocol-return history and growth response snapshot. |
 | `holdings:vault-invalidated:<chainId>:<vaultAddress>` | String timestamp | None | Lazy invalidation marker for totals cache. |
 | `holdings:progress:<progressId>` | String JSON record | 10 minutes | Progress polling state for long requests. |
 

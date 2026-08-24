@@ -81,9 +81,13 @@ describe('getHistoricalHoldings', () => {
       }
 
       const vaults = getUniqueVaultsMock(timeline) ?? []
+      const blockTimestamp =
+        timeline.find((entry: { blockTimestamp?: number }) => typeof entry.blockTimestamp === 'number')
+          ?.blockTimestamp ?? 0
       return vaults.map((vault: { chainId: number; vaultAddress: string }) => ({
         chainId: vault.chainId,
-        familyVaultAddress: vault.vaultAddress
+        familyVaultAddress: vault.vaultAddress,
+        blockTimestamp
       }))
     })
     buildPositionTimelineIndexMock.mockImplementation((timeline: unknown) => timeline)
@@ -578,7 +582,7 @@ describe('getHistoricalHoldings', () => {
           events,
           timeline: [{ id: 'stale-entry' }],
           hasActivity: true,
-          rawEvents: [{ chainId: 1, familyVaultAddress: vaultAddress }],
+          rawEvents: [{ chainId: 1, familyVaultAddress: vaultAddress, blockTimestamp: 100 }],
           rawVaultIdentifiers: [{ chainId: 1, vaultAddress }],
           vaultMetadata,
           metadataFetchFailedVaults: 0

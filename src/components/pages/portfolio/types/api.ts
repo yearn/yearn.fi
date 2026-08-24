@@ -9,6 +9,7 @@ const portfolioProtocolReturnHistoryDataPointSchema = z.object({
   date: z.string(),
   growthWeightUsd: z.number(),
   growthUsd: z.number(),
+  growthUsdEstimated: z.boolean().optional().default(false),
   growthWeightEth: z.number().nullable(),
   protocolReturnPct: z.number().nullable(),
   annualizedProtocolReturnPct: z.number().nullable(),
@@ -33,6 +34,7 @@ const portfolioProtocolReturnHistoryFamilyPointSchema = z.object({
   timestamp: z.number(),
   growthWeightUsd: z.number().nullable(),
   growthUsd: z.number().nullable(),
+  growthUsdEstimated: z.boolean().optional().default(false),
   growthIndex: z.number().nullable()
 })
 
@@ -48,7 +50,9 @@ const portfolioGrowthVaultSchema = z.object({
   chainId: z.number(),
   vaultAddress: z.string(),
   status: z.enum(['ok', 'missing_metadata', 'missing_pps', 'missing_receipt_price', 'partial']),
-  issues: z.array(z.enum(['missing_metadata', 'missing_pps', 'missing_receipt_price', 'unmatched_exit'])),
+  issues: z.array(
+    z.enum(['missing_metadata', 'missing_pps', 'missing_receipt_price', 'missing_exit_price', 'unmatched_exit'])
+  ),
   baselineUsd: z.number(),
   baselineExposureUsdYears: z.number(),
   growthUsd: z.number(),
@@ -239,6 +243,7 @@ export type TPortfolioProtocolReturnHistoryChartData = Array<{
   date: string
   growthWeightUsd: number
   growthUsd: number
+  growthUsdEstimated: boolean
   growthWeightEth: number | null
   protocolReturnPct: number | null
   annualizedProtocolReturnPct: number | null
@@ -253,6 +258,7 @@ export type TPortfolioProtocolReturnHistoryFamilySeries = Array<{
     timestamp: number
     growthWeightUsd: number | null
     growthUsd: number | null
+    growthUsdEstimated: boolean
     growthIndex: number | null
   }>
 }>

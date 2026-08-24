@@ -56,6 +56,7 @@ export function usePortfolioProtocolReturnHistory(timeframe: TPortfolioHistoryTi
       date: point.date,
       growthWeightUsd: point.growthWeightUsd,
       growthUsd: point.growthUsd,
+      growthUsdEstimated: point.growthUsdEstimated,
       growthWeightEth: point.growthWeightEth,
       protocolReturnPct: point.protocolReturnPct,
       annualizedProtocolReturnPct: point.annualizedProtocolReturnPct,

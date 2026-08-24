@@ -8,6 +8,7 @@ const YBOLD_CHAIN_ID = 1
 
 export type TPortfolioGrowthDisplay = {
   usd: number
+  isUsdEstimated: boolean
   percent: number | null
   annualizedPercent: number | null
 }
@@ -21,6 +22,23 @@ function sumGrowthField(
   field: 'baselineUsd' | 'baselineExposureUsdYears' | 'growthUsd'
 ): number {
   return vaults.reduce((total, vault) => total + vault[field], 0)
+}
+
+function combineGrowthRate(
+  vaults: readonly TPortfolioGrowthVault[],
+  rateField: 'growthPct' | 'annualizedProtocolReturnPct',
+  weightField: 'baselineUsd' | 'baselineExposureUsdYears'
+): number | null {
+  const weightedVariants = vaults.filter((vault) => Number.isFinite(vault[weightField]) && vault[weightField] > 0)
+  if (
+    weightedVariants.length === 0 ||
+    weightedVariants.some((vault) => vault[rateField] === null || !Number.isFinite(vault[rateField]))
+  ) {
+    return null
+  }
+
+  const totalWeight = sumGrowthField(weightedVariants, weightField)
+  return weightedVariants.reduce((total, vault) => total + vault[weightField] * vault[rateField]!, 0) / totalWeight
 }
 
 function combineGrowthVariants(
@@ -53,8 +71,8 @@ function combineGrowthVariants(
     baselineUsd,
     baselineExposureUsdYears,
     growthUsd,
-    growthPct: baselineUsd > 0 ? (growthUsd / baselineUsd) * 100 : null,
-    annualizedProtocolReturnPct: baselineExposureUsdYears > 0 ? (growthUsd / baselineExposureUsdYears) * 100 : null
+    growthPct: combineGrowthRate(variants, 'growthPct', 'baselineUsd'),
+    annualizedProtocolReturnPct: combineGrowthRate(variants, 'annualizedProtocolReturnPct', 'baselineExposureUsdYears')
   }
 }
 
@@ -120,6 +138,7 @@ export function toPortfolioGrowthDisplay(vault: TPortfolioGrowthVault | undefine
 
   return {
     usd: vault.growthUsd,
+    isUsdEstimated: vault.issues.includes('missing_exit_price'),
     percent: vault.growthPct !== null && Number.isFinite(vault.growthPct) ? vault.growthPct : null,
     annualizedPercent:
       vault.annualizedProtocolReturnPct !== null && Number.isFinite(vault.annualizedProtocolReturnPct)

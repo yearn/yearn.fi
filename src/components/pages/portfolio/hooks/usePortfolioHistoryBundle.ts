@@ -14,6 +14,7 @@ import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useFetch } from '@shared/hooks/useFetch'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import { useMemo } from 'react'
+import { env } from '@/env'
 
 const PORTFOLIO_HISTORY_CACHE_DURATION = 60 * 60 * 1000
 
@@ -21,12 +22,16 @@ export function buildPortfolioHistoryBundleEndpoint(args: {
   address: string
   denomination: TPortfolioHistoryDenomination
   timeframe: TPortfolioHistoryTimeframe
+  debug?: boolean
 }): string {
   const params = new URLSearchParams({
     address: args.address,
     denomination: args.denomination,
     timeframe: args.timeframe
   })
+  if (args.debug) {
+    params.set('debug', '1')
+  }
   return `/api/holdings/portfolio?${params}`
 }
 
@@ -43,7 +48,10 @@ export function usePortfolioHistoryBundle(
 ) {
   const { address } = useWeb3()
   const endpoint = useMemo(
-    () => (address && enabled ? buildPortfolioHistoryBundleEndpoint({ address, denomination, timeframe }) : null),
+    () =>
+      address && enabled
+        ? buildPortfolioHistoryBundleEndpoint({ address, denomination, timeframe, debug: env.DEV })
+        : null,
     [address, denomination, enabled, timeframe]
   )
   const { data, isLoading, isFetching, error } = useFetch<TPortfolioResponse>({
@@ -77,6 +85,7 @@ export function usePortfolioHistoryBundle(
       date: point.date,
       growthWeightUsd: point.growthWeightUsd,
       growthUsd: point.growthUsd,
+      growthUsdEstimated: point.growthUsdEstimated,
       growthWeightEth: point.growthWeightEth,
       protocolReturnPct: point.protocolReturnPct,
       annualizedProtocolReturnPct: point.annualizedProtocolReturnPct,

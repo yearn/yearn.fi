@@ -13,6 +13,19 @@ describe('portfolio history bundle helpers', () => {
     ).toBe('/api/holdings/portfolio?address=0x0000000000000000000000000000000000000001&denomination=eth&timeframe=all')
   })
 
+  it('enables server debug logs when requested', () => {
+    expect(
+      buildPortfolioHistoryBundleEndpoint({
+        address: '0x0000000000000000000000000000000000000001',
+        denomination: 'usd',
+        timeframe: 'all',
+        debug: true
+      })
+    ).toBe(
+      '/api/holdings/portfolio?address=0x0000000000000000000000000000000000000001&denomination=usd&timeframe=all&debug=1'
+    )
+  })
+
   it('waits for the combined endpoint before considering legacy fallback', () => {
     expect(
       resolvePortfolioHistorySource({

@@ -27,7 +27,7 @@ import {
 import type { TPortfolioHistoryChartTimeframe } from './PortfolioHistoryChart'
 
 type TPortfolioGrowthContributionsChartProps = {
-  totalPoints: Array<{ date: string; value: number | null }>
+  totalPoints: Array<{ date: string; value: number | null; isEstimated?: boolean }>
   familySeries: TPortfolioGrowthContributionFamily[]
   timeframe: TPortfolioHistoryChartTimeframe
 }
@@ -52,15 +52,16 @@ const CHART_MARGIN = {
   bottom: 4
 }
 
-function formatSignedUsd(value: number): string {
+function formatSignedUsd(value: number, isEstimated = false): string {
   const formatted = formatUSD(Math.abs(value), 2, 2)
+  const estimateSuffix = isEstimated ? '*' : ''
   if (value > 0) {
-    return `+${formatted}`
+    return `+${formatted}${estimateSuffix}`
   }
   if (value < 0) {
-    return `−${formatted}`
+    return `−${formatted}${estimateSuffix}`
   }
-  return formatted
+  return `${formatted}${estimateSuffix}`
 }
 
 function formatGrowthTick(value: number | string): string {
@@ -130,10 +131,24 @@ function PortfolioGrowthContributionsTooltip({
 
   const namedRows = series
     .filter((item) => !item.isOther)
-    .map((item) => ({ ...item, value: Number(point[item.key] ?? 0) }))
+    .map((item) => ({
+      ...item,
+      value: Number(point[item.key] ?? 0),
+      isEstimated: Boolean(point[`${item.key}Estimated`])
+    }))
     .toSorted((left, right) => Math.abs(right.value) - Math.abs(left.value))
   const otherSeries = series.find((item) => item.isOther)
-  const rows = otherSeries ? [...namedRows, { ...otherSeries, value: Number(point[otherSeries.key] ?? 0) }] : namedRows
+  const rows = otherSeries
+    ? [
+        ...namedRows,
+        {
+          ...otherSeries,
+          value: Number(point[otherSeries.key] ?? 0),
+          isEstimated: Boolean(point[`${otherSeries.key}Estimated`])
+        }
+      ]
+    : namedRows
+  const hasEstimatedValue = Boolean(point.portfolioGrowthEstimated) || rows.some((row) => row.isEstimated)
 
   return (
     <div
@@ -147,7 +162,7 @@ function PortfolioGrowthContributionsTooltip({
       <div className={'mt-1.5 flex items-center justify-between gap-5'}>
         <span className={'text-xs text-text-secondary'}>{'Portfolio growth'}</span>
         <strong className={'font-number text-sm font-semibold text-text-primary'}>
-          {formatSignedUsd(point.portfolioGrowth)}
+          {formatSignedUsd(point.portfolioGrowth, Boolean(point.portfolioGrowthEstimated))}
         </strong>
       </div>
       <div className={'my-2.5 border-t border-border'} />
@@ -162,11 +177,16 @@ function PortfolioGrowthContributionsTooltip({
               <span className={'truncate'}>{row.label}</span>
             </span>
             <span className={'font-number shrink-0 text-xs font-medium text-text-primary'}>
-              {formatSignedUsd(row.value)}
+              {formatSignedUsd(row.value, row.isEstimated)}
             </span>
           </div>
         ))}
       </div>
+      {hasEstimatedValue ? (
+        <p className={'mt-2.5 border-t border-border pt-2 text-[11px] text-text-tertiary'}>
+          {'* Growth may be approximate.'}
+        </p>
+      ) : null}
     </div>
   )
 }

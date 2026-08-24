@@ -10,7 +10,7 @@ function timestamp(date: string): number {
 
 function makeFamily(args: {
   label: string
-  values: Array<{ date: string; value: number | null; milliseconds?: boolean }>
+  values: Array<{ date: string; value: number | null; milliseconds?: boolean; estimated?: boolean }>
   chainId?: number
   vaultAddress?: string
 }): TPortfolioGrowthContributionFamily {
@@ -20,7 +20,8 @@ function makeFamily(args: {
     label: args.label,
     dataPoints: args.values.map((point) => ({
       timestamp: timestamp(point.date) * (point.milliseconds ? 1000 : 1),
-      growthUsd: point.value
+      growthUsd: point.value,
+      growthUsdEstimated: point.estimated
     }))
   }
 }
@@ -173,6 +174,35 @@ describe('buildPortfolioGrowthContributionChart', () => {
     ])
     expect(chart.data.at(-1)).toMatchObject({ portfolioGrowth: 10, vault_0: 100, vault_1: -90, other: 0 })
     expectConservation(chart)
+  })
+
+  it('propagates estimated pricing through rebased total, vault, and Other values', () => {
+    const chart = buildPortfolioGrowthContributionChart({
+      totalPoints: [
+        { date: '2026-02-01', value: 0, isEstimated: true },
+        { date: '2026-02-02', value: 5, isEstimated: true }
+      ],
+      familySeries: [
+        makeFamily({
+          label: 'Estimated vault',
+          values: [
+            { date: '2026-02-01', value: 10, estimated: true },
+            { date: '2026-02-02', value: 15 }
+          ]
+        })
+      ]
+    })
+
+    expect(chart.data[0]).toMatchObject({
+      portfolioGrowthEstimated: true,
+      vault_0Estimated: true,
+      otherEstimated: true
+    })
+    expect(chart.data[1]).toMatchObject({
+      portfolioGrowthEstimated: true,
+      vault_0Estimated: true,
+      otherEstimated: true
+    })
   })
 
   it('uses stable input-order ties while keeping same-address vaults on different chains distinct', () => {

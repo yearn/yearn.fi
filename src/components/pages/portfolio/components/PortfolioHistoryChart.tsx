@@ -84,6 +84,7 @@ type TChartPoint = {
   date: string
   value: number | null
   isLive?: boolean
+  isEstimated?: boolean
 }
 
 type TPortfolioHistoryTooltipProps = {
@@ -272,17 +273,19 @@ function rebaseIndexPoints(points: TChartPoint[]): TChartPoint[] {
 }
 
 function rebaseDeltaPoints(points: TChartPoint[]): TChartPoint[] {
-  const baseValue = points.find(
-    (point): point is { date: string; value: number } => typeof point.value === 'number' && Number.isFinite(point.value)
-  )?.value
+  const basePoint = points.find(
+    (point): point is TChartPoint & { value: number } => typeof point.value === 'number' && Number.isFinite(point.value)
+  )
 
-  if (baseValue === undefined) {
+  if (!basePoint) {
     return points
   }
 
   return points.map((point) => ({
-    date: point.date,
-    value: typeof point.value === 'number' && Number.isFinite(point.value) ? point.value - baseValue : point.value
+    ...point,
+    value:
+      typeof point.value === 'number' && Number.isFinite(point.value) ? point.value - basePoint.value : point.value,
+    ...(point.isEstimated || basePoint.isEstimated ? { isEstimated: true } : {})
   }))
 }
 
@@ -532,6 +535,7 @@ function buildPortfolioVaultGrowthSeries(
     points: series.dataPoints.map((point) => ({
       timestamp: point.timestamp,
       positionValueUsd: point.growthUsd,
+      positionValueUsdEstimated: point.growthUsdEstimated,
       indexValue: point.growthIndex
     }))
   }))
@@ -696,7 +700,8 @@ export function PortfolioHistoryChart({
     return rebaseDeltaPoints(
       points.map((point) => ({
         date: point.date,
-        value: point.growthUsd
+        value: point.growthUsd,
+        isEstimated: point.growthUsdEstimated
       }))
     )
   }, [protocolReturnData, timeframe])
@@ -774,7 +779,8 @@ export function PortfolioHistoryChart({
         label: getPortfolioVaultSeriesLabel(series, familyLabelByVaultKey),
         dataPoints: series.dataPoints.map((point) => ({
           timestamp: point.timestamp,
-          growthUsd: point.growthUsd
+          growthUsd: point.growthUsd,
+          growthUsdEstimated: point.growthUsdEstimated
         }))
       })),
     [familyLabelByVaultKey, visibleProtocolReturnFamilySeries]
