@@ -26,6 +26,7 @@ interface UseDepositNotificationsProps {
   routeType: DepositRouteType
   routerAddress?: string
   isCrossChain: boolean
+  bridgeProtocol?: 'stargate' | 'ccip' | 'relay'
 }
 
 interface DepositNotificationsResult {
@@ -48,7 +49,8 @@ export const useDepositNotifications = ({
   expectedShareAmount,
   routeType,
   routerAddress,
-  isCrossChain
+  isCrossChain,
+  bridgeProtocol
 }: UseDepositNotificationsProps): DepositNotificationsResult => {
   const isZap = toAddress(depositToken) !== toAddress(assetAddress)
   const isDepositAndStake = stakingAddress && toAddress(destinationToken) === toAddress(stakingAddress) && !isZap
@@ -141,7 +143,8 @@ export const useDepositNotifications = ({
               options: { maximumFractionDigits: 8 }
             })
           : undefined,
-      toChainId: isCrossChain ? chainId : undefined
+      toChainId: isCrossChain ? chainId : undefined,
+      bridgeProtocol: isCrossChain ? bridgeProtocol : undefined
     }
   }, [
     inputToken,
@@ -157,7 +160,8 @@ export const useDepositNotifications = ({
     destinationToken,
     chainId,
     stakingToken,
-    expectedShareAmount
+    expectedShareAmount,
+    bridgeProtocol
   ])
 
   return {

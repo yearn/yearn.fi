@@ -1,3 +1,8 @@
+import {
+  isCrossChainNotificationType,
+  shouldSetNotificationFinishedAt
+} from '@shared/contexts/notificationActions.helpers'
+import { TransactionTrackingCoordinator } from '@shared/hooks/useTransactionTrackingCoordinator'
 import type {
   TCreateNotificationParams,
   TNotificationsActionsContext,
@@ -18,11 +23,12 @@ const defaultProps: TNotificationsActionsContext = {
 const NotificationsActionsContext = createContext<TNotificationsActionsContext>(defaultProps)
 
 export const WithNotificationsActions = ({ children }: { children: React.ReactElement }): React.ReactElement => {
-  const { addNotification, updateEntry } = useNotifications()
+  const { addNotification, cachedEntries, updateEntry } = useNotifications()
   const { address } = useWeb3()
 
   const createNotification = useCallback(
     async (params: TCreateNotificationParams): Promise<number> => {
+      const isCrossChain = isCrossChainNotificationType(params.type)
       const id = await addNotification({
         address: toAddress(address),
         type: params.type,
@@ -40,9 +46,16 @@ export const WithNotificationsActions = ({ children }: { children: React.ReactEl
         spenderName: params.type === 'approve' ? params.toSymbol : undefined,
         status: 'pending',
         txHash: undefined,
+        createdAt: Date.now() / 1000,
         timeFinished: undefined,
         blockNumber: undefined,
-        awaitingExecution: false
+        awaitingExecution: false,
+        bridgeProtocol: params.bridgeProtocol,
+        bridgeTrackingState: isCrossChain ? (params.bridgeProtocol ? 'active' : 'unavailable') : undefined,
+        bridgeError:
+          isCrossChain && !params.bridgeProtocol
+            ? 'Automatic bridge tracking is unavailable for this route. Check the source transaction for progress.'
+            : undefined
       })
       return id
     },
@@ -51,20 +64,20 @@ export const WithNotificationsActions = ({ children }: { children: React.ReactEl
 
   const updateNotification = useCallback(
     async (params: TUpdateNotificationParams): Promise<void> => {
-      const shouldSetTimeFinished = Boolean(
-        params.receipt || (params.status === 'submitted' && !params.awaitingExecution)
-      )
+      const shouldSetTimeFinished = shouldSetNotificationFinishedAt(params)
 
       await updateEntry(
         {
           txHash: params.txHash ?? params.receipt?.transactionHash,
           timeFinished: shouldSetTimeFinished ? Date.now() / 1000 : undefined,
           blockNumber: params.receipt?.blockNumber,
+          ...(params.receipt && params.bridgeStatus === 'pending' ? { sourceConfirmedAt: Date.now() / 1000 } : {}),
           status: params.status,
           awaitingExecution:
             params.receipt || params.status === 'success' || params.status === 'error'
               ? false
-              : params.awaitingExecution
+              : params.awaitingExecution,
+          ...(params.bridgeStatus !== undefined ? { bridgeStatus: params.bridgeStatus } : {})
         },
         params.id
       )
@@ -80,7 +93,12 @@ export const WithNotificationsActions = ({ children }: { children: React.ReactEl
     [createNotification, updateNotification]
   )
 
-  return <NotificationsActionsContext.Provider value={contextValue}>{children}</NotificationsActionsContext.Provider>
+  return (
+    <NotificationsActionsContext.Provider value={contextValue}>
+      <TransactionTrackingCoordinator notifications={cachedEntries} />
+      {children}
+    </NotificationsActionsContext.Provider>
+  )
 }
 
 export const useNotificationsActions = (): TNotificationsActionsContext => {

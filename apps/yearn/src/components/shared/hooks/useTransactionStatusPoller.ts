@@ -1,10 +1,8 @@
 import { useNotifications } from '@shared/contexts/useNotifications'
-import { useWalletActions } from '@shared/contexts/useWallet'
-import { useWeb3 } from '@shared/contexts/useWeb3'
+import { useNotificationAssetRefresh } from '@shared/hooks/useNotificationAssetRefresh'
 import { fetchSafeTransactionDetails } from '@shared/hooks/useSafeTransactionDetails'
 import type { TNotification } from '@shared/types/notifications'
 import { getNetwork, retrieveConfig } from '@shared/utils/wagmi'
-import { useQueryClient } from '@tanstack/react-query'
 import { getConnectorClient, getPublicClient } from '@wagmi/core'
 import { useCallback, useEffect, useRef } from 'react'
 import { TransactionReceiptNotFoundError } from 'viem'
@@ -26,21 +24,16 @@ import {
  ************************************************************************************************/
 export function useTransactionStatusPoller(notification: TNotification): void {
   const { updateEntry } = useNotifications()
-  const { onRefresh } = useWalletActions()
-  const { address } = useWeb3()
-  const queryClient = useQueryClient()
+  const refreshNotificationAssets = useNotificationAssetRefresh()
   const pollIntervalRef = useRef<NodeJS.Timeout | undefined>(undefined)
   const latestNotificationRef = useRef(notification)
   latestNotificationRef.current = notification
 
   const refreshBeforeSettlement = useCallback(async (): Promise<void> => {
-    await queryClient.invalidateQueries()
-    if (address) {
-      await onRefresh().catch((error) => {
-        console.error('Failed to refresh wallet balances after Safe execution:', error)
-      })
-    }
-  }, [address, onRefresh, queryClient])
+    await refreshNotificationAssets(notification).catch((error) => {
+      console.error('Failed to refresh transaction assets before settlement:', error)
+    })
+  }, [notification, refreshNotificationAssets])
 
   /************************************************************************************************
    * Function to check the transaction status and update the notification accordingly.
@@ -109,6 +102,7 @@ export function useTransactionStatusPoller(notification: TNotification): void {
               })
 
               if (
+                !notification.bridgeProtocol &&
                 shouldRefreshBeforeNotificationSettlement({
                   currentStatus: notification.status,
                   awaitingExecution: notification.awaitingExecution,
@@ -120,11 +114,20 @@ export function useTransactionStatusPoller(notification: TNotification): void {
 
               await updateEntry(
                 {
-                  status: receipt.status === 'success' ? 'success' : 'error',
+                  status:
+                    receipt.status === 'success' ? (notification.bridgeProtocol ? 'submitted' : 'success') : 'error',
                   txHash: receipt.transactionHash,
                   timeFinished: Number(block.timestamp),
                   blockNumber: receipt.blockNumber,
-                  awaitingExecution: false
+                  awaitingExecution: false,
+                  ...(receipt.status === 'success' && notification.bridgeProtocol
+                    ? {
+                      bridgeStatus: 'pending' as const,
+                      bridgeTrackingState: 'active' as const,
+                      sourceConfirmedAt: Number(block.timestamp),
+                      timeFinished: undefined
+                    }
+                    : {})
                 },
                 notificationId
               )
@@ -175,6 +178,7 @@ export function useTransactionStatusPoller(notification: TNotification): void {
         })
 
         if (
+          !notification.bridgeProtocol &&
           shouldRefreshBeforeNotificationSettlement({
             currentStatus: notification.status,
             awaitingExecution: notification.awaitingExecution,
@@ -186,11 +190,19 @@ export function useTransactionStatusPoller(notification: TNotification): void {
 
         await updateEntry(
           {
-            status: receipt.status === 'success' ? 'success' : 'error',
+            status: receipt.status === 'success' ? (notification.bridgeProtocol ? 'submitted' : 'success') : 'error',
             txHash: receipt.transactionHash,
             timeFinished: Number(block.timestamp),
             blockNumber: receipt.blockNumber,
-            awaitingExecution: false
+            awaitingExecution: false,
+            ...(receipt.status === 'success' && notification.bridgeProtocol
+              ? {
+                bridgeStatus: 'pending' as const,
+                bridgeTrackingState: 'active' as const,
+                sourceConfirmedAt: Number(block.timestamp),
+                timeFinished: undefined
+              }
+              : {})
           },
           notificationId
         )
@@ -229,12 +241,24 @@ export function useTransactionStatusPoller(notification: TNotification): void {
           return
         }
 
+        if (receipt.status === 'success' && !notification.bridgeProtocol) {
+          await refreshBeforeSettlement()
+        }
+
         await updateEntry(
           {
             status,
             timeFinished,
             blockNumber: receipt.blockNumber,
-            awaitingExecution: false
+            awaitingExecution: false,
+            ...(receipt.status === 'success' && notification.bridgeProtocol
+              ? {
+                bridgeStatus: 'pending' as const,
+                bridgeTrackingState: 'active' as const,
+                sourceConfirmedAt: timeFinished,
+                timeFinished: undefined
+              }
+              : {})
           },
           notificationId
         )

@@ -1,6 +1,5 @@
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { useNotifications } from '@shared/contexts/useNotifications'
-import { useTransactionStatusPoller } from '@shared/hooks/useTransactionStatusPoller'
 import { IconArrow } from '@shared/icons/IconArrow'
 import { IconCheck } from '@shared/icons/IconCheck'
 import { IconClose } from '@shared/icons/IconClose'
@@ -8,6 +7,7 @@ import { IconCross } from '@shared/icons/IconCross'
 import { IconLoader } from '@shared/icons/IconLoader'
 import type { TNotification, TNotificationStatus } from '@shared/types/notifications'
 import { cl, SUPPORTED_NETWORKS, truncateHex } from '@shared/utils'
+import { getNotificationLifecyclePresentation } from '@shared/utils/notificationLifecycle'
 import { getNetwork } from '@shared/utils/wagmi'
 import Link from 'next/link'
 import type { ReactElement } from 'react'
@@ -30,17 +30,17 @@ const STATUS: { [key: string]: [string, string, ReactElement] } = {
   error: ['Error', 'text-white bg-[#C73203] bg-opacity-90', <IconCross className={'size-3'} key={'error'} />]
 }
 
-function NotificationStatus(props: { status: TNotificationStatus }): ReactElement {
+function NotificationStatus(props: { status: TNotificationStatus; label?: string }): ReactElement {
   return (
     <div
       className={cl(
         'flex gap-2 justify-center self-start py-2 px-4 items-center rounded-lg text-xs',
         STATUS[props.status][1]
       )}
-      aria-label={`Status: ${STATUS[props.status][0]}`}
+      aria-label={`Status: ${props.label ?? STATUS[props.status][0]}`}
     >
       {STATUS[props.status][2]}
-      {STATUS[props.status][0]}
+      {props.label ?? STATUS[props.status][0]}
     </div>
   )
 }
@@ -525,12 +525,7 @@ export const Notification = memo(function Notification({
 }): ReactElement {
   const { deleteByID } = useNotifications()
   const [isDeleting, setIsDeleting] = useState(false)
-
-  /************************************************************************************************
-   * Use the transaction status poller to automatically check and update pending transactions
-   * every minute. This will update the notification status when transactions are completed.
-   ************************************************************************************************/
-  useTransactionStatusPoller(notification)
+  const lifecycle = getNotificationLifecyclePresentation(notification)
 
   const formattedDate = useMemo(() => {
     if (!notification.timeFinished || notification.status === 'pending') {
@@ -547,13 +542,13 @@ export const Notification = memo(function Notification({
   }, [notification.timeFinished, notification.status])
 
   const explorerLink = useMemo(() => {
-    if (!notification.txHash) {
+    if (!lifecycle.transactionHash) {
       return null
     }
 
-    const explorerBaseURI = getNetwork(notification.executionChainId ?? notification.chainId).defaultBlockExplorer
-    return explorerBaseURI ? `${explorerBaseURI}/tx/${notification.txHash}` : null
-  }, [notification.chainId, notification.executionChainId, notification.txHash])
+    const explorerBaseURI = getNetwork(lifecycle.transactionChainId).defaultBlockExplorer
+    return explorerBaseURI ? `${explorerBaseURI}/tx/${lifecycle.transactionHash}` : null
+  }, [lifecycle.transactionChainId, lifecycle.transactionHash])
 
   const notificationTitle = useMemo(() => {
     switch (notification.type) {
@@ -637,10 +632,12 @@ export const Notification = memo(function Notification({
       <div className={'relative z-20'}>
         <div className={'mb-4 flex items-center justify-between'}>
           <p className={'font-medium text-text-primary'}>{notificationTitle}</p>
-          <NotificationStatus status={notification.status} />
+          <NotificationStatus status={lifecycle.styleStatus} label={lifecycle.label} />
         </div>
 
         <NotificationContent notification={notification} />
+
+        {lifecycle.detail ? <p className="mt-3 text-xs text-text-secondary">{lifecycle.detail}</p> : null}
 
         {notification.status === 'success' || notification.txHash ? (
           <div
@@ -654,7 +651,7 @@ export const Notification = memo(function Notification({
                 href={explorerLink}
                 target={'_blank'}
                 rel={'noopener noreferrer'}
-                aria-label={`View transaction ${notification.txHash} on explorer`}
+                aria-label={`View transaction ${lifecycle.transactionHash} on explorer`}
                 className={'text-text-primary hover:text-text-secondary'}
               >
                 <button className={'text-xs font-medium underline'}>{'View tx'}</button>

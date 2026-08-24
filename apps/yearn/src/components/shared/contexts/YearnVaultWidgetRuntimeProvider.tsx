@@ -12,6 +12,7 @@ import {
   getVaultTVL,
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
+import { useNotifications } from '@shared/contexts/useNotifications'
 import { useNotificationsActions } from '@shared/contexts/useNotificationsActions'
 import { useWalletActions, useWalletStatus, useWalletTokens } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
@@ -165,6 +166,7 @@ export function YearnVaultWidgetRuntimeProvider({ children }: { children: ReactN
   const trackEvent = usePlausible()
   const { isEnsoFailed } = useEnsoStatus()
   const { createNotification, updateNotification } = useNotificationsActions()
+  const { cachedEntries } = useNotifications()
   const { onRefresh } = useWalletActions()
   const { hasCompletedBalanceLoad, isLoading: isWalletLoading } = useWalletStatus()
   const { balances, getToken } = useWalletTokens()
@@ -269,7 +271,8 @@ export function YearnVaultWidgetRuntimeProvider({ children }: { children: ReactN
         toAmount: notification.toAmount,
         toChainId: notification.toChainId,
         toSymbol: notification.toSymbol,
-        type: notification.type as TNotificationType
+        type: notification.type as TNotificationType,
+        bridgeProtocol: notification.bridgeProtocol
       })
 
       return notificationId >= 0 ? notificationId : undefined
@@ -288,10 +291,29 @@ export function YearnVaultWidgetRuntimeProvider({ children }: { children: ReactN
         id: notification.id,
         receipt: notification.receipt,
         status: notification.status,
-        txHash: notification.txHash
+        txHash: notification.txHash,
+        bridgeStatus: notification.bridgeStatus
       })
     },
     [updateNotification]
+  )
+
+  const getRuntimeNotification = useCallback(
+    (id: number | string | undefined) => {
+      if (typeof id !== 'number') return undefined
+      const notification = cachedEntries.find((entry) => entry.id === id)
+      if (!notification?.id) return undefined
+      return {
+        id: notification.id,
+        status: notification.status,
+        awaitingExecution: notification.awaitingExecution,
+        bridgeStatus: notification.bridgeStatus,
+        bridgeTrackingState: notification.bridgeTrackingState,
+        bridgeError: notification.bridgeError,
+        destinationTxHash: notification.destinationTxHash
+      }
+    },
+    [cachedEntries]
   )
 
   const getSafeTransactionDetails = useCallback(async (safeTxHash: `0x${string}`) => {
@@ -328,7 +350,8 @@ export function YearnVaultWidgetRuntimeProvider({ children }: { children: ReactN
       execution,
       notifications: {
         create: createRuntimeNotification,
-        update: updateRuntimeNotification
+        update: updateRuntimeNotification,
+        get: getRuntimeNotification
       },
       prices: {
         getUsdPrice,
@@ -369,6 +392,7 @@ export function YearnVaultWidgetRuntimeProvider({ children }: { children: ReactN
       execution,
       getChain,
       getRuntimeToken,
+      getRuntimeNotification,
       getSafeTransactionDetails,
       getUsdPrice,
       hasCompletedBalanceLoad,

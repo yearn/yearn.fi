@@ -1,7 +1,9 @@
+import type { TEnsoBridgeProtocol, TEnsoBridgeStatus } from '@shared/types/ensoBridge'
 import type { Hash, TransactionReceipt } from 'viem'
 import type { TAddress } from './address'
 
 export type TNotificationStatus = 'pending' | 'submitted' | 'success' | 'error'
+export type TBridgeTrackingState = 'active' | 'unavailable'
 
 export type TNotificationType =
   | 'approve'
@@ -38,9 +40,17 @@ export type TNotification = {
   toTokenName?: string
   toAmount?: string // Expected output amount for deposits/withdrawals
   txHash?: Hash
+  createdAt?: number
+  sourceConfirmedAt?: number
+  lastBridgeCheckAt?: number
   timeFinished?: number
   blockNumber?: bigint
   awaitingExecution?: boolean
+  bridgeProtocol?: TEnsoBridgeProtocol
+  bridgeStatus?: TEnsoBridgeStatus
+  bridgeTrackingState?: TBridgeTrackingState
+  destinationTxHash?: Hash
+  bridgeError?: string
   status: TNotificationStatus
 }
 
@@ -67,6 +77,7 @@ export type TCreateNotificationParams = {
   toSymbol?: string
   toAmount?: string // expected output amount for deposits/withdrawals
   toChainId?: number // only when cross-chain
+  bridgeProtocol?: TEnsoBridgeProtocol
 }
 
 export type TUpdateNotificationParams = {
@@ -75,6 +86,7 @@ export type TUpdateNotificationParams = {
   status?: TNotificationStatus
   receipt?: TransactionReceipt
   awaitingExecution?: boolean
+  bridgeStatus?: TEnsoBridgeStatus
 }
 
 export type TNotificationsActionsContext = {
