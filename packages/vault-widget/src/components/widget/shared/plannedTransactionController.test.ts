@@ -93,7 +93,12 @@ describe('executePlannedStyledWidgetTransaction', () => {
 
     createGate.resolve('notification-id')
     await expect(execution).resolves.toMatchObject({ status: 'success' })
-    expect(notifications.update).toHaveBeenCalledWith({ id: 'notification-id', receipt, status: 'success' })
+    expect(notifications.update).toHaveBeenCalledWith({
+      id: 'notification-id',
+      receipt,
+      status: 'success',
+      txHash: hash
+    })
   })
 
   it('reports notification persistence failure without retrying the submitted transaction', async () => {
@@ -237,12 +242,8 @@ describe('executePlannedStyledWidgetTransaction', () => {
     })
     expect(states.map(({ status }) => status)).toEqual(['confirming', 'pending', 'error'])
     expect(refresh).not.toHaveBeenCalled()
-    expect(notifications.update).toHaveBeenNthCalledWith(1, {
-      id: 'notification-id',
-      status: 'pending',
-      txHash: hash
-    })
-    expect(notifications.update).toHaveBeenNthCalledWith(2, {
+    expect(notifications.update).toHaveBeenCalledOnce()
+    expect(notifications.update).toHaveBeenCalledWith({
       id: 'notification-id',
       receipt: revertedReceipt,
       status: 'error',
@@ -288,7 +289,8 @@ describe('executePlannedStyledWidgetTransaction', () => {
       { hash: replacementHash, status: 'success' }
     ])
     expect(refresh).toHaveBeenCalledOnce()
-    expect(notifications.update).toHaveBeenNthCalledWith(2, {
+    expect(notifications.update).toHaveBeenCalledOnce()
+    expect(notifications.update).toHaveBeenCalledWith({
       id: 'notification-id',
       receipt: replacementReceipt,
       status: 'success',
@@ -321,7 +323,8 @@ describe('executePlannedStyledWidgetTransaction', () => {
       status: 'error'
     })
     expect(refresh).not.toHaveBeenCalled()
-    expect(notifications.update).toHaveBeenNthCalledWith(2, {
+    expect(notifications.update).toHaveBeenCalledOnce()
+    expect(notifications.update).toHaveBeenCalledWith({
       id: 'notification-id',
       receipt: cancellationReceipt,
       status: 'error',
