@@ -486,14 +486,14 @@ function buildChartData(series: TTransformedSeries[], mode: TPortfolioVaultGrowt
 
 function formatPositionValue(value: number, isEstimated = false): string {
   const absolute = formatUSD(Math.abs(value), 2, 2)
-  const estimatePrefix = isEstimated ? '~' : ''
+  const estimateSuffix = isEstimated ? '*' : ''
   if (value > 0) {
-    return `${estimatePrefix}+${absolute}`
+    return `+${absolute}${estimateSuffix}`
   }
   if (value < 0) {
-    return `${estimatePrefix}-${absolute}`
+    return `-${absolute}${estimateSuffix}`
   }
-  return `${estimatePrefix}${absolute}`
+  return `${absolute}${estimateSuffix}`
 }
 
 function formatIndexValue(value: number): string {
@@ -589,9 +589,7 @@ function PortfolioVaultGrowthTooltip({
         ))}
       </div>
       {mode === 'position' && rows.some((row) => row.isEstimated) ? (
-        <p className={'border-t border-border pt-2 text-[11px] text-text-tertiary'}>
-          {'~ uses the latest available asset price where an exit-day price was unavailable.'}
-        </p>
+        <p className={'border-t border-border pt-2 text-[11px] text-text-tertiary'}>{'* Growth may be approximate.'}</p>
       ) : null}
     </div>
   )

@@ -54,14 +54,14 @@ const CHART_MARGIN = {
 
 function formatSignedUsd(value: number, isEstimated = false): string {
   const formatted = formatUSD(Math.abs(value), 2, 2)
-  const estimatePrefix = isEstimated ? '~' : ''
+  const estimateSuffix = isEstimated ? '*' : ''
   if (value > 0) {
-    return `${estimatePrefix}+${formatted}`
+    return `+${formatted}${estimateSuffix}`
   }
   if (value < 0) {
-    return `${estimatePrefix}−${formatted}`
+    return `−${formatted}${estimateSuffix}`
   }
-  return `${estimatePrefix}${formatted}`
+  return `${formatted}${estimateSuffix}`
 }
 
 function formatGrowthTick(value: number | string): string {
@@ -184,7 +184,7 @@ function PortfolioGrowthContributionsTooltip({
       </div>
       {hasEstimatedValue ? (
         <p className={'mt-2.5 border-t border-border pt-2 text-[11px] text-text-tertiary'}>
-          {'~ uses the latest available asset price where an exit-day price was unavailable.'}
+          {'* Growth may be approximate.'}
         </p>
       ) : null}
     </div>

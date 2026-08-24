@@ -123,8 +123,8 @@ describe('VaultsListRow', () => {
     expect(formatSignedPortfolioGrowthUsd(1476)).toBe('+$1.48K')
     expect(formatSignedPortfolioGrowthUsd(-1_234_567)).toBe('−$1.23M')
     expect(formatSignedPortfolioGrowthUsd(0)).toBe('$0')
-    expect(formatSignedPortfolioGrowthUsd(1476, true)).toBe('~+$1.48K')
-    expect(formatSignedPortfolioGrowthUsd(-0.001, true)).toBe('~−<$0.01')
+    expect(formatSignedPortfolioGrowthUsd(1476, true)).toBe('+$1.48K*')
+    expect(formatSignedPortfolioGrowthUsd(-0.001, true)).toBe('−<$0.01*')
     expect(formatSignedPortfolioGrowthUsd(Number.NaN)).toBeNull()
   })
 
@@ -134,7 +134,7 @@ describe('VaultsListRow', () => {
     expect(formatSignedPortfolioGrowthPercent(null)).toBeNull()
   })
 
-  it('marks estimated portfolio growth and explains the latest-price fallback', () => {
+  it('marks estimated portfolio growth as approximate', () => {
     mockUseWeb3.mockReturnValue({ address: '0x1111111111111111111111111111111111111111' })
     const vault = {
       version: '3.0.0',
@@ -166,8 +166,8 @@ describe('VaultsListRow', () => {
       }
     })
 
-    expect(html).toContain('~+$1.48K')
-    expect(html).toContain('estimated using the latest available asset price')
+    expect(html).toContain('+$1.48K*')
+    expect(html).toContain('Growth +$1.48K; value may be approximate')
   })
 
   it('renders the desktop TVL tooltip trigger for standard vault rows', () => {

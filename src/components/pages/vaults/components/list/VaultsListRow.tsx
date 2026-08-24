@@ -124,15 +124,16 @@ export function formatSignedPortfolioGrowthUsd(value: number, isEstimated = fals
   }
 
   const sign = value > 0 ? '+' : value < 0 ? '−' : ''
+  const estimateSuffix = isEstimated ? '*' : ''
   if (value !== 0 && Math.abs(value) < 0.01) {
-    return `${isEstimated ? '~' : ''}${sign}<$0.01`
+    return `${sign}<$0.01${estimateSuffix}`
   }
 
   const amount = new Intl.NumberFormat('en-US', {
     notation: 'compact',
     maximumSignificantDigits: 3
   }).format(Math.abs(value))
-  return `${isEstimated ? '~' : ''}${sign}$${amount}`
+  return `${sign}$${amount}${estimateSuffix}`
 }
 
 export function formatSignedPortfolioGrowthPercent(value: number | null): string | null {
@@ -503,6 +504,7 @@ function VaultsListRowPresentationComponent({
         </span>
       )
     }
+    const ariaValue = formatSignedPortfolioGrowthUsd(portfolioGrowth.usd) ?? value
     const totalPercent = formatSignedPortfolioGrowthPercent(portfolioGrowth.percent)
     const annualizedPercent = formatSignedPortfolioGrowthPercent(portfolioGrowth.annualizedPercent)
 
@@ -529,11 +531,7 @@ function VaultsListRowPresentationComponent({
                 {'Simple annualized return based on your actual USD growth and time-weighted capital.'}
               </p>
               {portfolioGrowth.isUsdEstimated ? (
-                <p className={'border-t border-border pt-2 text-text-secondary'}>
-                  {
-                    '~ means an exit-day price was unavailable, so that portion of Growth uses the latest available asset price.'
-                  }
-                </p>
+                <p className={'border-t border-border pt-2 text-text-secondary'}>{'* Growth may be approximate.'}</p>
               ) : null}
             </div>
           </div>
@@ -544,7 +542,7 @@ function VaultsListRowPresentationComponent({
           className={
             'font-number font-semibold text-text-primary underline decoration-neutral-600/30 decoration-dotted underline-offset-4 max-md:text-lg'
           }
-          aria-label={`Growth ${value}${portfolioGrowth.isUsdEstimated ? ', estimated using the latest available asset price' : ''}; total protocol return ${totalPercent ?? 'unavailable'}; Real APY ${annualizedPercent ?? 'unavailable'}`}
+          aria-label={`Growth ${ariaValue}${portfolioGrowth.isUsdEstimated ? '; value may be approximate' : ''}; total protocol return ${totalPercent ?? 'unavailable'}; Real APY ${annualizedPercent ?? 'unavailable'}`}
           onClick={(event): void => event.preventDefault()}
           onMouseEnter={() => handleInteractiveHoverChange(true)}
           onMouseLeave={() => handleInteractiveHoverChange(false)}
