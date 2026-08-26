@@ -3,6 +3,7 @@ import {
   getBridgeTrackerLink,
   getSubmittedTransactionCopy,
   resolveCompletionDeferral,
+  resolveCrossChainSourceCompletion,
   shouldAutoContinuePermitSuccess,
   shouldRunDeferredCompletion
 } from './transactionOverlay.helpers'
@@ -161,6 +162,48 @@ describe('resolveCompletionDeferral', () => {
         stepShowsConfetti: false
       })
     ).toBe('immediate')
+  })
+})
+
+describe('resolveCrossChainSourceCompletion', () => {
+  it('defers completion until close while bridge tracking continues', () => {
+    expect(
+      resolveCrossChainSourceCompletion({
+        completedAllSteps: true,
+        isBridgeTrackingAvailable: true,
+        isOpen: true
+      })
+    ).toBe('after-close')
+  })
+
+  it('completes immediately when bridge tracking is unavailable', () => {
+    expect(
+      resolveCrossChainSourceCompletion({
+        completedAllSteps: true,
+        isBridgeTrackingAvailable: false,
+        isOpen: true
+      })
+    ).toBe('immediate')
+  })
+
+  it('completes immediately when the overlay closed during source confirmation', () => {
+    expect(
+      resolveCrossChainSourceCompletion({
+        completedAllSteps: true,
+        isBridgeTrackingAvailable: true,
+        isOpen: false
+      })
+    ).toBe('immediate')
+  })
+
+  it('does not complete a non-terminal transaction step', () => {
+    expect(
+      resolveCrossChainSourceCompletion({
+        completedAllSteps: false,
+        isBridgeTrackingAvailable: false,
+        isOpen: false
+      })
+    ).toBe('none')
   })
 })
 

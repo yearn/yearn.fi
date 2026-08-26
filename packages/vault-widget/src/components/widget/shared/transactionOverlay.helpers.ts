@@ -317,6 +317,16 @@ export function resolveCompletionDeferral(params: {
   return 'immediate'
 }
 
+export function resolveCrossChainSourceCompletion(params: {
+  completedAllSteps: boolean
+  isBridgeTrackingAvailable: boolean
+  isOpen: boolean
+}): CompletionDeferral {
+  if (!params.completedAllSteps) return 'none'
+  if (params.isBridgeTrackingAvailable && params.isOpen) return 'after-close'
+  return 'immediate'
+}
+
 export function shouldRunDeferredCompletion(params: {
   completionDeferral: CompletionDeferral
   trigger: 'close' | 'confetti'

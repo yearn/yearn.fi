@@ -20,8 +20,9 @@ function asRecord(value: unknown): Record<string, unknown> | undefined {
   return value && typeof value === 'object' ? (value as Record<string, unknown>) : undefined
 }
 
-function asRecords(value: unknown): Record<string, unknown>[] {
-  return Array.isArray(value) ? value.map(asRecord).filter((entry) => entry !== undefined) : []
+function getRelayRequestId(data: unknown): `0x${string}` | undefined {
+  const relayRequestId = asRecord(asRecord(data)?.relayRequest)?.id
+  return typeof relayRequestId === 'string' && isHash(relayRequestId) ? relayRequestId : undefined
 }
 
 export function normalizeRelayBridgeStatusResponse(
@@ -68,25 +69,11 @@ export function normalizeRelayBridgeStatusResponse(
   }
 }
 
-async function fetchRelayBridgeStatus(
+async function fetchRelayBridgeStatusByRequestId(
   sourceChainId: number,
-  sourceTxHash?: `0x${string}`,
-  knownRequestId?: `0x${string}`
+  bridgeRequestId: `0x${string}`,
+  sourceTxHash?: `0x${string}`
 ): Promise<BridgeStatusResponse | undefined> {
-  let bridgeRequestId = knownRequestId
-  if (!bridgeRequestId) {
-    if (!sourceTxHash) return undefined
-    const lookupParams = new URLSearchParams({ hash: sourceTxHash })
-    const lookupResponse = await fetch(`${RELAY_API_BASE}/requests/v2?${lookupParams}`, {
-      cache: 'force-cache',
-      next: { revalidate: 10 }
-    })
-    if (!lookupResponse.ok) return undefined
-    const relayRequest = asRecords(asRecord(await lookupResponse.json())?.requests)[0]
-    if (typeof relayRequest?.id !== 'string' || !isHash(relayRequest.id)) return undefined
-    bridgeRequestId = relayRequest.id
-  }
-
   const statusParams = new URLSearchParams({ requestId: bridgeRequestId })
   const response = await fetch(`${RELAY_API_BASE}/intents/status/v3?${statusParams}`, {
     cache: 'force-cache',
@@ -125,15 +112,14 @@ export async function GET(request: Request): Promise<Response> {
   }
 
   try {
-    if (protocol === 'relay') {
+    if (protocol === 'relay' && relayRequestId) {
       try {
-        // Enso can keep returning a stale pending snapshot after Relay has
-        // completed the fill. Resolve and persist Relay's request ID as soon
-        // as the source transaction is indexed, then poll Relay directly.
-        const relayStatus = await fetchRelayBridgeStatus(chainId, sourceTxHash, relayRequestId)
-        if (relayStatus) return json(relayStatus, { headers: RESPONSE_HEADERS })
+        const relayStatus = await fetchRelayBridgeStatusByRequestId(chainId, relayRequestId, sourceTxHash)
+        if (relayStatus && (relayStatus.status !== 'unknown' || !sourceTxHash)) {
+          return json(relayStatus, { headers: RESPONSE_HEADERS })
+        }
       } catch (error) {
-        console.warn('Unable to resolve bridge status through Relay:', error)
+        console.warn('Unable to resolve bridge status through a persisted Relay request ID:', error)
       }
     }
     if (!sourceTxHash) {
@@ -151,6 +137,25 @@ export async function GET(request: Request): Promise<Response> {
     if (!response.ok) return json(data, { status: response.status, headers: RESPONSE_HEADERS })
     if (!isEnsoBridgeStatus(data.status)) {
       return json({ error: 'Invalid Enso bridge status response' }, { status: 502, headers: RESPONSE_HEADERS })
+    }
+
+    if (protocol === 'relay') {
+      const ensoRelayRequestId = getRelayRequestId(data)
+      const ensoStatus = {
+        ...data,
+        ...(ensoRelayRequestId ? { bridgeRequestId: ensoRelayRequestId } : {})
+      }
+      if (ensoRelayRequestId && ['pending', 'inflight', 'unknown'].includes(data.status)) {
+        try {
+          const relayStatus = await fetchRelayBridgeStatusByRequestId(chainId, ensoRelayRequestId, sourceTxHash)
+          if (relayStatus && relayStatus.status !== 'unknown') {
+            return json(relayStatus, { headers: RESPONSE_HEADERS })
+          }
+        } catch (error) {
+          console.warn('Unable to resolve bridge status through Enso Relay metadata:', error)
+        }
+      }
+      return json(ensoStatus, { headers: RESPONSE_HEADERS })
     }
     return json(data, { headers: RESPONSE_HEADERS })
   } catch (error) {

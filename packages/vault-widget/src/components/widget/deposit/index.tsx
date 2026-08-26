@@ -936,16 +936,18 @@ export function WidgetDeposit({
     return targets
   }, [chainId, depositToken, sourceChainId, stakingDepositAddress, vaultAddress])
 
-  // Called by TransactionOverlay after the final tx confirms on-chain, while the
-  // overlay is in "refreshing" state. We await the wallet balance refetch so the
-  // success screen appears only once balances are fresh. Not called for cross-chain
-  // deposits (the host bridge tracker refreshes those on delivery).
+  // Called by TransactionOverlay after the final tx confirms on-chain. Cross-chain
+  // deposits refresh only the spent source asset here; the host bridge tracker
+  // refreshes destination assets after delivery.
   const handleDepositTransactionSuccess = useCallback(
     async (_stepId: string) => {
-      if (isCrossChain) return
+      if (isCrossChain) {
+        await refreshWalletBalances([{ address: depositToken, chainId: sourceChainId }])
+        return
+      }
       await Promise.all([Promise.resolve(refetchVaultUserData()), refreshWalletBalances(depositRefreshTargets)])
     },
-    [isCrossChain, depositRefreshTargets, refreshWalletBalances, refetchVaultUserData]
+    [depositRefreshTargets, depositToken, isCrossChain, refreshWalletBalances, refetchVaultUserData, sourceChainId]
   )
 
   const refetchActiveAllowance = activeFlow.periphery.refetchAllowance

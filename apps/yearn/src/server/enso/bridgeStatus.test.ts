@@ -69,25 +69,25 @@ describe('Enso bridge status proxy', () => {
     await expect(response.json()).resolves.toEqual({ status: 'ready_for_manual_execution' })
   })
 
-  it('uses Relay delivery status instead of a stale Enso pending snapshot', async () => {
+  it('uses the supported Enso endpoint for terminal Relay status', async () => {
     vi.stubEnv('ENSO_API_KEY', 'test-key')
     const destinationTxHash = `0x${'b'.repeat(64)}`
-    const fetchMock = vi
-      .fn()
-      .mockResolvedValueOnce(
-        Response.json({
-          requests: [{ id: REQUEST_ID }]
-        })
-      )
-      .mockResolvedValueOnce(
-        Response.json({ status: 'success', destinationChainId: 747474, txHashes: [destinationTxHash] })
-      )
+    const fetchMock = vi.fn().mockResolvedValue(
+      Response.json({
+        status: 'delivered',
+        sourceChainId: 8453,
+        sourceTxHash: TX_HASH,
+        destinationChainId: 747474,
+        destinationTxHash,
+        relayRequest: { id: REQUEST_ID }
+      })
+    )
     vi.stubGlobal('fetch', fetchMock)
 
     const response = await GET(request({ protocol: 'relay', chainId: '8453', txHash: TX_HASH }))
 
     expect(response.status).toBe(200)
-    await expect(response.json()).resolves.toEqual({
+    await expect(response.json()).resolves.toMatchObject({
       status: 'delivered',
       bridgeRequestId: REQUEST_ID,
       sourceChainId: 8453,
@@ -95,14 +95,11 @@ describe('Enso bridge status proxy', () => {
       destinationChainId: 747474,
       destinationTxHash
     })
-    expect(fetchMock).toHaveBeenNthCalledWith(1, `https://api.relay.link/requests/v2?hash=${TX_HASH}`, {
-      cache: 'force-cache',
-      next: { revalidate: 10 }
-    })
-    expect(fetchMock).toHaveBeenNthCalledWith(2, `https://api.relay.link/intents/status/v3?requestId=${REQUEST_ID}`, {
-      cache: 'force-cache',
-      next: { revalidate: 10 }
-    })
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(fetchMock).toHaveBeenCalledWith(
+      `https://api.enso.finance/api/v1/relay/bridge/check?chainId=8453&txHash=${TX_HASH}`,
+      expect.any(Object)
+    )
   })
 
   it('recovers a missing source hash from a persisted Relay request ID', async () => {
@@ -125,19 +122,56 @@ describe('Enso bridge status proxy', () => {
     )
   })
 
-  it('keeps the Enso response when Relay has no matching request', async () => {
+  it('falls back to Enso when persisted request-ID tracking is unavailable', async () => {
     vi.stubEnv('ENSO_API_KEY', 'test-key')
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(Response.json({ error: 'temporarily unavailable' }, { status: 503 }))
+      .mockResolvedValueOnce(Response.json({ status: 'delivered', destinationChainId: 747474 }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const response = await GET(request({ protocol: 'relay', chainId: '8453', txHash: TX_HASH, requestId: REQUEST_ID }))
+
+    await expect(response.json()).resolves.toEqual({ status: 'delivered', destinationChainId: 747474 })
+    expect(fetchMock).toHaveBeenNthCalledWith(
+      2,
+      `https://api.enso.finance/api/v1/relay/bridge/check?chainId=8453&txHash=${TX_HASH}`,
+      expect.any(Object)
+    )
+  })
+
+  it('uses an Enso-provided request ID to recover from a stale pending status', async () => {
+    vi.stubEnv('ENSO_API_KEY', 'test-key')
+    const destinationTxHash = `0x${'b'.repeat(64)}`
     vi.stubGlobal(
       'fetch',
       vi
         .fn()
-        .mockResolvedValueOnce(Response.json({ requests: [] }))
-        .mockResolvedValueOnce(Response.json({ status: 'unknown' }))
+        .mockResolvedValueOnce(Response.json({ status: 'pending', relayRequest: { id: REQUEST_ID } }))
+        .mockResolvedValueOnce(
+          Response.json({ status: 'success', destinationChainId: 747474, txHashes: [destinationTxHash] })
+        )
     )
 
     const response = await GET(request({ protocol: 'relay', chainId: '8453', txHash: TX_HASH }))
 
-    await expect(response.json()).resolves.toEqual({ status: 'unknown' })
+    await expect(response.json()).resolves.toMatchObject({
+      status: 'delivered',
+      bridgeRequestId: REQUEST_ID,
+      destinationTxHash
+    })
+  })
+
+  it('keeps polling Enso when Relay metadata has no request ID', async () => {
+    vi.stubEnv('ENSO_API_KEY', 'test-key')
+    const fetchMock = vi.fn().mockResolvedValue(Response.json({ status: 'pending' }))
+    vi.stubGlobal('fetch', fetchMock)
+
+    const response = await GET(request({ protocol: 'relay', chainId: '8453', txHash: TX_HASH }))
+
+    await expect(response.json()).resolves.toEqual({ status: 'pending' })
+    expect(fetchMock).toHaveBeenCalledTimes(1)
+    expect(fetchMock.mock.calls.flat().join(' ')).not.toContain('/requests/v2')
   })
 })
 

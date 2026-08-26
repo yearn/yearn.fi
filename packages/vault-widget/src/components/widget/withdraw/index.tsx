@@ -959,19 +959,20 @@ export function WidgetWithdraw({
     setActiveTransactionPlan(undefined)
   }, [])
 
-  // Called by TransactionOverlay after the final tx confirms, while the overlay
-  // is in "refreshing" state. Awaiting the balance refetch ensures the success
-  // screen appears only once balances are fresh.
+  // Called by TransactionOverlay after the final tx confirms. Cross-chain
+  // withdrawals refresh spent vault/staking shares here; the host bridge tracker
+  // refreshes destination assets after delivery.
   const handleWithdrawTransactionSuccess = useCallback(
     async (_stepId: string) => {
-      if (isCrossChain) return
-      const tokensToRefresh = [
-        { address: withdrawToken, chainId: destinationChainId },
-        { address: vaultAddress, chainId: chainId }
-      ]
+      const sourceTokensToRefresh = [{ address: vaultAddress, chainId }]
       if (stakingAddress) {
-        tokensToRefresh.push({ address: stakingAddress, chainId: chainId })
+        sourceTokensToRefresh.push({ address: stakingAddress, chainId })
       }
+      if (isCrossChain) {
+        await Promise.all([Promise.resolve(refetchVaultUserData()), refreshWalletBalances(sourceTokensToRefresh)])
+        return
+      }
+      const tokensToRefresh = [{ address: withdrawToken, chainId: destinationChainId }, ...sourceTokensToRefresh]
       await Promise.all([Promise.resolve(refetchVaultUserData()), refreshWalletBalances(tokensToRefresh)])
     },
     [

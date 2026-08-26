@@ -48,6 +48,7 @@ import {
   isConfirmedSafeTransactionFailure,
   type OverlayState,
   resolveCompletionDeferral,
+  resolveCrossChainSourceCompletion,
   resolveExecutionTrackingHash,
   resolveOverlayConnectedChainId,
   resolvePendingSafeOverlayState,
@@ -390,6 +391,8 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   const writeContractResetRef = useRef(writeContract.reset)
   const sendCallsResetRef = useRef(sendCalls.reset)
   const pendingCompletionRef = useRef<CompletionDeferral>('none')
+  const hasRunAllCompleteRef = useRef(false)
+  const isOpenRef = useRef(isOpen)
   const handledConfettiRequestRef = useRef(0)
   const handledSuccessReceiptRef = useRef<`0x${string}` | null>(null)
   const processingSuccessReceiptRef = useRef<`0x${string}` | null>(null)
@@ -398,6 +401,12 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   const [isWaitingForNextStep, setIsWaitingForNextStep] = useState(false)
   const [failedStepSuccessId, setFailedStepSuccessId] = useState<string | null>(null)
 
+  // Async source-confirmation work can finish after the overlay closes, so keep
+  // the latest visibility available without restarting receipt processing.
+  useEffect(() => {
+    isOpenRef.current = isOpen
+  }, [isOpen])
+
   useEffect(() => {
     writeContractResetRef.current = writeContract.reset
   }, [writeContract.reset])
@@ -405,6 +414,14 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   useEffect(() => {
     sendCallsResetRef.current = sendCalls.reset
   }, [sendCalls.reset])
+
+  const runAllComplete = useCallback(() => {
+    if (hasRunAllCompleteRef.current) return
+
+    hasRunAllCompleteRef.current = true
+    pendingCompletionRef.current = 'none'
+    onAllComplete?.()
+  }, [onAllComplete])
 
   const runAllCompleteIfPending = useCallback(
     (trigger: 'close' | 'confetti') => {
@@ -417,10 +434,9 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
         return
       }
 
-      pendingCompletionRef.current = 'none'
-      onAllComplete?.()
+      runAllComplete()
     },
-    [onAllComplete]
+    [runAllComplete]
   )
 
   const confettiId = useId()
@@ -524,10 +540,9 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
         return
       }
 
-      pendingCompletionRef.current = 'none'
-      onAllComplete?.()
+      runAllComplete()
     },
-    [deferOnAllCompleteUntilClose, deferOnAllCompleteUntilConfettiEnd, onAllComplete]
+    [deferOnAllCompleteUntilClose, deferOnAllCompleteUntilConfettiEnd, runAllComplete]
   )
 
   const setStepExecutionContext = useCallback((nextStep: TransactionStep, nextIsLastStep: boolean) => {
@@ -538,6 +553,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     setCompletedStepSnapshot(null)
     setFailedStepSuccessId(null)
     setLocalBridgeTracking({ status: 'idle' })
+    hasRunAllCompleteRef.current = false
   }, [])
 
   const resetTxState = useCallback(
@@ -1367,14 +1383,40 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
             status: 'submitted',
             bridgeStatus: 'pending'
           })
-          if (didPersistSourceConfirmation && capturedStep?.notification?.bridgeProtocol) {
+          const isBridgeTrackingAvailable = Boolean(
+            didPersistSourceConfirmation && capturedStep?.notification?.bridgeProtocol
+          )
+          if (isBridgeTrackingAvailable) {
             setLocalBridgeTracking({ status: 'active' })
-          } else if (!didPersistSourceConfirmation) {
+          } else {
             setLocalBridgeTracking({ status: 'unavailable', message: BRIDGE_TRACKING_UNAVAILABLE_MESSAGE })
           }
           handledSuccessReceiptRef.current = receiptHash
           processingSuccessReceiptRef.current = null
           setOverlayState('submitted')
+
+          if (completedAllSteps && onBeforeSuccess) {
+            try {
+              await onBeforeSuccess(capturedStep?.id ?? '')
+            } catch (error) {
+              console.warn('[TransactionOverlay] Failed to refresh source-chain balances after confirmation', error)
+            }
+          }
+
+          // Delivery may finish while the source-chain refresh is still running.
+          // Preserve the delivery completion policy in that race.
+          if (hasRunAllCompleteRef.current || pendingCompletionRef.current !== 'none') return
+
+          const completionDeferral = resolveCrossChainSourceCompletion({
+            completedAllSteps,
+            isBridgeTrackingAvailable,
+            isOpen: isOpenRef.current
+          })
+          if (completionDeferral === 'after-close') {
+            pendingCompletionRef.current = completionDeferral
+          } else if (completionDeferral === 'immediate') {
+            runAllComplete()
+          }
         })()
         return
       }
@@ -1419,6 +1461,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     executedStepLabel,
     advanceToNextStep,
     finalizeSuccessState,
+    runAllComplete,
     isWalletSafe,
     waitForAutoContinueBlock,
     setActiveNotificationId
