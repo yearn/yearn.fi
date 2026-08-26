@@ -1,6 +1,6 @@
 import { YBOLD_STAKING_ADDRESS, YBOLD_VAULT_ADDRESS } from '@pages/vaults/domain/yBoldProduct'
 import { buildVaultSnapshotEndpoint } from '@shared/data/publicQueryEndpoints'
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { buildVaultMetadataFromInput, buildVaultStructuredDataFromInput, fetchVaultMetadataSnapshot } from './metadata'
 
 const { fetchWithSchemaMock } = vi.hoisted(() => ({
@@ -42,6 +42,11 @@ const STAKED_SNAPSHOT = {
 describe('yBOLD vault metadata', () => {
   beforeEach(() => {
     fetchWithSchemaMock.mockReset()
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+  })
+
+  afterEach(() => {
+    vi.restoreAllMocks()
   })
 
   it('fetches and merges the staked snapshot for the vanilla yBOLD route', async () => {
@@ -88,5 +93,25 @@ describe('yBOLD vault metadata', () => {
     expect(metadata.description).toContain('Est. APY 4.95%')
     expect(metadata.description).not.toContain('20.00%')
     expect(structuredData.annualPercentageRate.value).toBe(5.1)
+  })
+
+  it('keeps base metadata without APY when the staked snapshot fails', async () => {
+    fetchWithSchemaMock.mockResolvedValueOnce(BASE_SNAPSHOT).mockRejectedValueOnce(new Error('timeout'))
+
+    const snapshot = await fetchVaultMetadataSnapshot('1', YBOLD_VAULT_ADDRESS)
+    const metadata = buildVaultMetadataFromInput({ chainID: '1', address: YBOLD_VAULT_ADDRESS, snapshot })
+    const structuredData = buildVaultStructuredDataFromInput({
+      chainID: '1',
+      address: YBOLD_VAULT_ADDRESS,
+      snapshot
+    }) as { annualPercentageRate?: unknown; name: string }
+
+    expect(snapshot?.meta).toEqual(BASE_SNAPSHOT.meta)
+    expect(snapshot?.tvl).toEqual(BASE_SNAPSHOT.tvl)
+    expect(metadata.title).toBe('yBOLD (yBOLD)')
+    expect(metadata.description).toContain('TVL $5.89M')
+    expect(metadata.description).not.toContain('Est. APY')
+    expect(structuredData.name).toBe('yBOLD (yBOLD)')
+    expect(structuredData.annualPercentageRate).toBeUndefined()
   })
 })

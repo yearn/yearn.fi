@@ -1,4 +1,4 @@
-import { mergeYBoldSnapshot } from '@pages/vaults/domain/normalizeVault'
+import { mergeYBoldSnapshot, stripYBoldBaseMetrics } from '@pages/vaults/domain/normalizeVault'
 import { isYBoldProductAddress, isYBoldVaultAddress, YBOLD_STAKING_ADDRESS } from '@pages/vaults/domain/yBoldProduct'
 import landingManifest from '@shared/data/landing-manifest.json'
 import { buildVaultSnapshotEndpoint } from '@shared/data/publicQueryEndpoints'
@@ -92,7 +92,10 @@ export const fetchVaultMetadataSnapshot = cache(async function fetchVaultMetadat
     fetchVaultMetadataSnapshotForAddress(chainID, address),
     fetchVaultMetadataSnapshotForAddress(chainID, YBOLD_STAKING_ADDRESS)
   ])
-  return snapshot && stakedSnapshot ? mergeYBoldSnapshot(snapshot, stakedSnapshot) : null
+  if (!snapshot) {
+    return null
+  }
+  return stakedSnapshot ? mergeYBoldSnapshot(snapshot, stakedSnapshot) : stripYBoldBaseMetrics(snapshot)
 })
 
 function pickFirstText(...values: Array<string | null | undefined>): string {

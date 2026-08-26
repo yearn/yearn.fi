@@ -34,6 +34,7 @@ import {
 import {
   mergeYBoldSnapshot,
   mergeYBoldVault,
+  stripYBoldBaseMetrics,
   YBOLD_STAKING_ADDRESS,
   YBOLD_VAULT_ADDRESS
 } from '@pages/vaults/domain/normalizeVault'
@@ -676,8 +677,8 @@ function Index(): ReactElement | null {
 
   const mergedSnapshot = useMemo(() => {
     if (!snapshotVault) return undefined
-    if (isYBold && yBoldSnapshot) {
-      return mergeYBoldSnapshot(snapshotVault, yBoldSnapshot)
+    if (isYBold) {
+      return yBoldSnapshot ? mergeYBoldSnapshot(snapshotVault, yBoldSnapshot) : stripYBoldBaseMetrics(snapshotVault)
     }
     return snapshotVault
   }, [isYBold, snapshotVault, yBoldSnapshot])

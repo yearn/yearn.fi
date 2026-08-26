@@ -5,6 +5,7 @@ import {
   isYBoldProductAddress,
   mergeYBoldSnapshot,
   mergeYBoldVault,
+  stripYBoldBaseMetrics,
   YBOLD_STAKING_ADDRESS,
   YBOLD_VAULT_ADDRESS
 } from './normalizeVault'
@@ -51,6 +52,43 @@ describe('yBOLD product helpers', () => {
 
     expect(merged.performance?.oracle).toEqual(stakedOracle)
     expect(merged.apy?.weeklyNet).toBe(0.046)
+  })
+
+  it('does not fall back to vanilla metrics when staked snapshot fields are missing', () => {
+    const merged = mergeYBoldSnapshot(
+      {
+        apy: { net: 0.06, weeklyNet: 0.06, pricePerShare: '1100000000000000000' },
+        fees: { performanceFee: 0, managementFee: 0 },
+        performance: {
+          estimated: { apy: 0.06 },
+          oracle: { netAPY: 0.06 },
+          historical: { weeklyNet: 0.06 }
+        }
+      } as any,
+      {} as any
+    )
+
+    expect(merged.apy?.net).toBeNull()
+    expect(merged.apy?.weeklyNet).toBeNull()
+    expect(merged.apy?.pricePerShare).toBeNull()
+    expect(merged.fees?.performanceFee).toBeNull()
+    expect(merged.performance?.estimated).toBeUndefined()
+    expect(merged.performance?.oracle).toBeUndefined()
+    expect(merged.performance?.historical).toBeUndefined()
+  })
+
+  it('preserves base metadata while removing vanilla financial metrics', () => {
+    const stripped = stripYBoldBaseMetrics({
+      meta: { displayName: 'Yearn BOLD' },
+      tvl: { close: 5_000_000 },
+      apy: { weeklyNet: 0.06 },
+      performance: { oracle: { netAPY: 0.06 } }
+    } as any)
+
+    expect(stripped.meta?.displayName).toBe('Yearn BOLD')
+    expect(stripped.tvl?.close).toBe(5_000_000)
+    expect(stripped.apy?.weeklyNet).toBeNull()
+    expect(stripped.performance?.oracle).toBeUndefined()
   })
 })
 

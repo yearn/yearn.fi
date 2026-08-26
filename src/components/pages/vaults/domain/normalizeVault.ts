@@ -27,9 +27,9 @@ export function mergeYBoldVault(baseVault: TKongVaultListItem, stakedVault: TKon
     },
     performance: {
       ...(baseVault.performance ?? {}),
-      historical: stakedVault.performance?.historical ?? baseVault.performance?.historical,
-      estimated: stakedVault.performance?.estimated ?? baseVault.performance?.estimated,
-      oracle: stakedVault.performance?.oracle ?? baseVault.performance?.oracle
+      historical: stakedVault.performance?.historical ?? null,
+      estimated: stakedVault.performance?.estimated ?? null,
+      oracle: stakedVault.performance?.oracle ?? null
     },
     fees: {
       managementFee: baseVault.fees?.managementFee ?? 0,
@@ -38,12 +38,45 @@ export function mergeYBoldVault(baseVault: TKongVaultListItem, stakedVault: TKon
   }
 }
 
+export function stripYBoldBaseMetrics(baseSnapshot: TKongVaultSnapshot): TKongVaultSnapshot {
+  return {
+    ...baseSnapshot,
+    apy: baseSnapshot.apy
+      ? {
+          ...baseSnapshot.apy,
+          net: null,
+          grossApr: null,
+          weeklyNet: null,
+          monthlyNet: null,
+          inceptionNet: null,
+          pricePerShare: null,
+          weeklyPricePerShare: null,
+          monthlyPricePerShare: null
+        }
+      : baseSnapshot.apy,
+    fees: baseSnapshot.fees
+      ? {
+          ...baseSnapshot.fees,
+          performanceFee: null
+        }
+      : baseSnapshot.fees,
+    performance: {
+      ...baseSnapshot.performance,
+      historical: undefined,
+      oracle: undefined,
+      estimated: undefined
+    }
+  }
+}
+
 export function mergeYBoldSnapshot(
   baseSnapshot: TKongVaultSnapshot,
   stakedSnapshot: TKongVaultSnapshot
 ): TKongVaultSnapshot {
+  const baseSnapshotWithoutStakedMetrics = stripYBoldBaseMetrics(baseSnapshot)
+
   return {
-    ...baseSnapshot,
+    ...baseSnapshotWithoutStakedMetrics,
     staking: {
       ...(baseSnapshot.staking ?? {}),
       address: YBOLD_STAKING_ADDRESS,
@@ -67,26 +100,27 @@ export function mergeYBoldSnapshot(
             ]
     },
     apy: {
-      ...(baseSnapshot.apy ?? null),
-      net: stakedSnapshot.apy?.net ?? baseSnapshot.apy?.net,
-      weeklyNet: stakedSnapshot.apy?.weeklyNet ?? baseSnapshot.apy?.weeklyNet,
-      monthlyNet: stakedSnapshot.apy?.monthlyNet ?? baseSnapshot.apy?.monthlyNet,
-      inceptionNet: stakedSnapshot.apy?.inceptionNet ?? baseSnapshot.apy?.inceptionNet,
-      pricePerShare: stakedSnapshot.apy?.pricePerShare ?? baseSnapshot.apy?.pricePerShare,
-      weeklyPricePerShare: stakedSnapshot.apy?.weeklyPricePerShare ?? baseSnapshot.apy?.weeklyPricePerShare,
-      monthlyPricePerShare: stakedSnapshot.apy?.monthlyPricePerShare ?? baseSnapshot.apy?.monthlyPricePerShare,
+      ...(baseSnapshotWithoutStakedMetrics.apy ?? null),
+      net: stakedSnapshot.apy?.net ?? null,
+      grossApr: stakedSnapshot.apy?.grossApr ?? null,
+      weeklyNet: stakedSnapshot.apy?.weeklyNet ?? null,
+      monthlyNet: stakedSnapshot.apy?.monthlyNet ?? null,
+      inceptionNet: stakedSnapshot.apy?.inceptionNet ?? null,
+      pricePerShare: stakedSnapshot.apy?.pricePerShare ?? null,
+      weeklyPricePerShare: stakedSnapshot.apy?.weeklyPricePerShare ?? null,
+      monthlyPricePerShare: stakedSnapshot.apy?.monthlyPricePerShare ?? null,
       label: stakedSnapshot.apy?.label ?? baseSnapshot.apy?.label ?? ''
     },
     fees: {
-      ...(baseSnapshot.fees ?? null),
-      performanceFee: stakedSnapshot.fees?.performanceFee ?? baseSnapshot.fees?.performanceFee,
+      ...(baseSnapshotWithoutStakedMetrics.fees ?? null),
+      performanceFee: stakedSnapshot.fees?.performanceFee ?? null,
       managementFee: baseSnapshot.fees?.managementFee
     },
     performance: {
-      ...(baseSnapshot.performance ?? {}),
-      historical: stakedSnapshot.performance?.historical ?? baseSnapshot.performance?.historical,
-      oracle: stakedSnapshot.performance?.oracle ?? baseSnapshot.performance?.oracle,
-      estimated: stakedSnapshot.performance?.estimated ?? baseSnapshot.performance?.estimated
+      ...baseSnapshotWithoutStakedMetrics.performance,
+      historical: stakedSnapshot.performance?.historical,
+      oracle: stakedSnapshot.performance?.oracle,
+      estimated: stakedSnapshot.performance?.estimated
     }
   }
 }
