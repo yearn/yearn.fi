@@ -21,8 +21,12 @@ function asRecord(value: unknown): Record<string, unknown> | undefined {
 }
 
 function getRelayRequestId(data: unknown): `0x${string}` | undefined {
-  const relayRequestId = asRecord(asRecord(data)?.relayRequest)?.id
-  return typeof relayRequestId === 'string' && isHash(relayRequestId) ? relayRequestId : undefined
+  const requests = asRecord(data)?.requests
+  if (!Array.isArray(requests)) return undefined
+
+  return requests
+    .map((request) => asRecord(request)?.id)
+    .find((requestId): requestId is `0x${string}` => typeof requestId === 'string' && isHash(requestId))
 }
 
 export function normalizeRelayBridgeStatusResponse(
@@ -83,6 +87,25 @@ async function fetchRelayBridgeStatusByRequestId(
   return normalizeRelayBridgeStatusResponse(await response.json(), sourceChainId, sourceTxHash, bridgeRequestId)
 }
 
+async function fetchRelayRequestIdBySourceTxHash(
+  sourceChainId: number,
+  sourceTxHash: `0x${string}`,
+  apiKey: string
+): Promise<`0x${string}` | undefined> {
+  const requestParams = new URLSearchParams({
+    depositTxHash: sourceTxHash,
+    originChainId: String(sourceChainId),
+    limit: '1'
+  })
+  const response = await fetch(`${RELAY_API_BASE}/requests/v3?${requestParams}`, {
+    headers: { 'x-api-key': apiKey },
+    cache: 'force-cache',
+    next: { revalidate: 10 }
+  })
+  if (!response.ok) return undefined
+  return getRelayRequestId(await response.json())
+}
+
 export function OPTIONS(): Response {
   return noContent(GET_CORS_HEADERS)
 }
@@ -92,7 +115,7 @@ export async function GET(request: Request): Promise<Response> {
   const chainId = Number(queryString(request, 'chainId'))
   const txHash = queryString(request, 'txHash')
   const requestId = queryString(request, 'requestId')
-  const relayRequestId = requestId && isHash(requestId) ? requestId : undefined
+  const persistedRelayRequestId = requestId && isHash(requestId) ? requestId : undefined
 
   if (!isEnsoBridgeProtocol(protocol)) {
     return json({ error: 'Unsupported bridge protocol' }, { status: 400, headers: RESPONSE_HEADERS })
@@ -104,14 +127,23 @@ export async function GET(request: Request): Promise<Response> {
   if (txHash && !sourceTxHash) {
     return json({ error: 'Missing or invalid txHash' }, { status: 400, headers: RESPONSE_HEADERS })
   }
-  if (requestId && !relayRequestId) {
+  if (requestId && !persistedRelayRequestId) {
     return json({ error: 'Invalid requestId' }, { status: 400, headers: RESPONSE_HEADERS })
   }
-  if (!sourceTxHash && !(protocol === 'relay' && relayRequestId)) {
+  if (!sourceTxHash && !(protocol === 'relay' && persistedRelayRequestId)) {
     return json({ error: 'Missing or invalid txHash' }, { status: 400, headers: RESPONSE_HEADERS })
   }
 
   try {
+    const relayApiKey = process.env.RELAY_API_KEY?.trim()
+    const relayRequestId =
+      protocol === 'relay' && !persistedRelayRequestId && sourceTxHash && relayApiKey
+        ? await fetchRelayRequestIdBySourceTxHash(chainId, sourceTxHash, relayApiKey).catch((error) => {
+            console.warn('Unable to resolve Relay request ID from the source transaction:', error)
+            return undefined
+          })
+        : persistedRelayRequestId
+
     if (protocol === 'relay' && relayRequestId) {
       try {
         const relayStatus = await fetchRelayBridgeStatusByRequestId(chainId, relayRequestId, sourceTxHash)
@@ -119,7 +151,7 @@ export async function GET(request: Request): Promise<Response> {
           return json(relayStatus, { headers: RESPONSE_HEADERS })
         }
       } catch (error) {
-        console.warn('Unable to resolve bridge status through a persisted Relay request ID:', error)
+        console.warn('Unable to resolve bridge status through a Relay request ID:', error)
       }
     }
     if (!sourceTxHash) {
@@ -140,20 +172,9 @@ export async function GET(request: Request): Promise<Response> {
     }
 
     if (protocol === 'relay') {
-      const ensoRelayRequestId = getRelayRequestId(data)
       const ensoStatus = {
         ...data,
-        ...(ensoRelayRequestId ? { bridgeRequestId: ensoRelayRequestId } : {})
-      }
-      if (ensoRelayRequestId && ['pending', 'inflight', 'unknown'].includes(data.status)) {
-        try {
-          const relayStatus = await fetchRelayBridgeStatusByRequestId(chainId, ensoRelayRequestId, sourceTxHash)
-          if (relayStatus && relayStatus.status !== 'unknown') {
-            return json(relayStatus, { headers: RESPONSE_HEADERS })
-          }
-        } catch (error) {
-          console.warn('Unable to resolve bridge status through Enso Relay metadata:', error)
-        }
+        ...(relayRequestId ? { bridgeRequestId: relayRequestId } : {})
       }
       return json(ensoStatus, { headers: RESPONSE_HEADERS })
     }
