@@ -1,6 +1,9 @@
 import {
+  buildEnsoBridgeCheckFailureUpdate,
   buildEnsoBridgeNotificationUpdate,
+  ENSO_BRIDGE_CHECK_FAILURE_TIMEOUT_SECONDS,
   ENSO_BRIDGE_TRACKING_TIMEOUT_MESSAGE,
+  ENSO_BRIDGE_TRACKING_TIMEOUT_SECONDS,
   isTrackableEnsoBridgeNotification,
   normalizeEnsoBridgeStatusResponse,
   selectNextEnsoBridgeNotification
@@ -23,6 +26,7 @@ function bridgeNotification(overrides: Partial<TNotification> = {}): TNotificati
     bridgeProtocol: 'relay',
     bridgeStatus: 'pending',
     bridgeTrackingState: 'active',
+    sourceConfirmedAt: 10,
     ...overrides
   }
 }
@@ -32,6 +36,8 @@ describe('Enso bridge status tracking', () => {
     expect(isTrackableEnsoBridgeNotification(bridgeNotification({ status: 'pending', bridgeStatus: undefined }))).toBe(
       false
     )
+    expect(isTrackableEnsoBridgeNotification(bridgeNotification({ sourceConfirmedAt: undefined }))).toBe(false)
+    expect(isTrackableEnsoBridgeNotification(bridgeNotification({ awaitingExecution: true }))).toBe(false)
     expect(isTrackableEnsoBridgeNotification(bridgeNotification())).toBe(true)
   })
 
@@ -64,11 +70,17 @@ describe('Enso bridge status tracking', () => {
     ).toEqual({ status: 'delivered', bridgeRequestId, destinationChainId: 8453, destinationTxHash })
   })
 
+  it('normalizes bridges that need manual destination execution', () => {
+    expect(normalizeEnsoBridgeStatusResponse({ status: 'READY_FOR_MANUAL_EXECUTION' })).toEqual({
+      status: 'ready_for_manual_execution'
+    })
+  })
+
   it('keeps the newest active bridge in front of historical unfinished entries', () => {
     expect(
       selectNextEnsoBridgeNotification([
-        bridgeNotification({ id: 1, createdAt: 10, lastBridgeCheckAt: 0 }),
-        bridgeNotification({ id: 2, createdAt: 20, lastBridgeCheckAt: 30 })
+        bridgeNotification({ id: 1, sourceConfirmedAt: 10, lastBridgeCheckAt: 0 }),
+        bridgeNotification({ id: 2, sourceConfirmedAt: 20, lastBridgeCheckAt: 30 })
       ])?.id
     ).toBe(2)
   })
@@ -95,13 +107,46 @@ describe('Enso bridge status tracking', () => {
     })
   })
 
-  it('stops indefinite unknown polling with actionable fallback copy', () => {
-    expect(buildEnsoBridgeNotificationUpdate({ status: 'unknown' }, 700, { sourceConfirmedAt: 10 })).toMatchObject({
-      status: 'submitted',
-      bridgeStatus: 'unknown',
+  it('stops every non-terminal bridge state after the total tracking deadline', () => {
+    const timeFinished = 10 + ENSO_BRIDGE_TRACKING_TIMEOUT_SECONDS
+    ;(['pending', 'inflight', 'ready_for_manual_execution', 'unknown'] as const).forEach((status) => {
+      expect(buildEnsoBridgeNotificationUpdate({ status }, timeFinished, { sourceConfirmedAt: 10 })).toMatchObject({
+        status: 'submitted',
+        bridgeStatus: status,
+        bridgeTrackingState: 'unavailable',
+        bridgeError: ENSO_BRIDGE_TRACKING_TIMEOUT_MESSAGE,
+        timeFinished
+      })
+    })
+  })
+
+  it('gives up after continuous status-check failures and resets the failure window after a valid response', () => {
+    const firstFailureAt = 100
+    expect(buildEnsoBridgeCheckFailureUpdate(firstFailureAt, { sourceConfirmedAt: 10 })).toEqual({
+      bridgeCheckFailureStartedAt: firstFailureAt,
+      lastBridgeCheckAt: firstFailureAt
+    })
+
+    const timeFinished = firstFailureAt + ENSO_BRIDGE_CHECK_FAILURE_TIMEOUT_SECONDS
+    expect(
+      buildEnsoBridgeCheckFailureUpdate(timeFinished, {
+        sourceConfirmedAt: 10,
+        bridgeCheckFailureStartedAt: firstFailureAt
+      })
+    ).toMatchObject({
       bridgeTrackingState: 'unavailable',
       bridgeError: ENSO_BRIDGE_TRACKING_TIMEOUT_MESSAGE,
-      timeFinished: 700
+      timeFinished
+    })
+
+    expect(
+      buildEnsoBridgeNotificationUpdate({ status: 'inflight' }, 200, {
+        sourceConfirmedAt: 10,
+        bridgeCheckFailureStartedAt: firstFailureAt
+      })
+    ).toMatchObject({
+      bridgeTrackingState: 'active',
+      bridgeCheckFailureStartedAt: undefined
     })
   })
 })

@@ -43,6 +43,7 @@ export type TNotification = {
   createdAt?: number
   sourceConfirmedAt?: number
   lastBridgeCheckAt?: number
+  bridgeCheckFailureStartedAt?: number
   timeFinished?: number
   blockNumber?: bigint
   awaitingExecution?: boolean

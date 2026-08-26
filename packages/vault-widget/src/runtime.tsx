@@ -50,7 +50,13 @@ export type VaultWidgetSafeTransactionDetails = {
 
 export type VaultWidgetNotificationId = number | string
 export type VaultWidgetBridgeProtocol = 'stargate' | 'ccip' | 'relay'
-export type VaultWidgetBridgeStatus = 'pending' | 'inflight' | 'delivered' | 'failed' | 'unknown'
+export type VaultWidgetBridgeStatus =
+  | 'pending'
+  | 'inflight'
+  | 'delivered'
+  | 'failed'
+  | 'ready_for_manual_execution'
+  | 'unknown'
 export type VaultWidgetBridgeTrackingState = 'active' | 'unavailable'
 
 export type VaultWidgetNotificationInput = {

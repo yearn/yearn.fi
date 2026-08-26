@@ -35,6 +35,14 @@ export function getNotificationLifecyclePresentation(notification: TNotification
       ...sourceTransaction
     }
   }
+  if (notification.bridgeStatus === 'ready_for_manual_execution') {
+    return {
+      label: 'Manual action required',
+      detail: 'The destination action needs manual completion. Check the bridge tracker or source transaction.',
+      styleStatus: 'submitted',
+      ...sourceTransaction
+    }
+  }
   if (notification.bridgeTrackingState === 'unavailable') {
     return {
       label: 'Tracking unavailable',

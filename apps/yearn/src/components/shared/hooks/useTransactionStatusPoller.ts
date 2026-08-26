@@ -225,7 +225,8 @@ export function useTransactionStatusPoller(notification: TNotification): void {
       if (receipt) {
         const status = resolvePolledTransactionStatus({
           receipt,
-          requestedHash: txHash
+          requestedHash: txHash,
+          isBridgeTransaction: Boolean(notification.bridgeProtocol)
         })
         const block = await getBlock(config, {
           chainId: pollingChainId,

@@ -10,6 +10,7 @@ import {
 import { cl } from '@yearn/vault-widget/internal/utils/index'
 import {
   useVaultWidgetRuntime,
+  type VaultWidgetBridgeStatus,
   type VaultWidgetNotificationId,
   type VaultWidgetNotificationInput
 } from '@yearn/vault-widget/runtime'
@@ -620,7 +621,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
         status?: 'pending' | 'submitted' | 'success' | 'error'
         receipt?: TransactionReceipt
         awaitingExecution?: boolean
-        bridgeStatus?: 'pending' | 'inflight' | 'delivered' | 'failed' | 'unknown'
+        bridgeStatus?: VaultWidgetBridgeStatus
       }
     ): Promise<boolean> => {
       if (activeNotificationId === undefined) return false
@@ -1122,17 +1123,19 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   const bridgeAction = successStep?.notification?.type.includes('withdraw') ? 'withdrawal' : 'deposit'
   const isBridgeDelivered =
     trackedNotification?.status === 'success' && trackedNotification.bridgeStatus === 'delivered'
+  const needsManualBridgeExecution = trackedNotification?.bridgeStatus === 'ready_for_manual_execution'
   const destinationExplorerTxUrl =
     trackedNotification?.destinationTxHash && destinationChain?.blockExplorerUrl
       ? `${destinationChain.blockExplorerUrl}/tx/${trackedNotification.destinationTxHash}`
       : ''
-  const bridgeTrackerLink = isTrackingBridge
-    ? getBridgeTrackerLink({
-        bridgeProtocol: trackedNotification?.bridgeProtocol,
-        bridgeRequestId: trackedNotification?.bridgeRequestId,
-        sourceTxHash: trackedNotification?.sourceTxHash
-      })
-    : undefined
+  const bridgeTrackerLink =
+    isTrackingBridge || needsManualBridgeExecution
+      ? getBridgeTrackerLink({
+          bridgeProtocol: trackedNotification?.bridgeProtocol,
+          bridgeRequestId: trackedNotification?.bridgeRequestId,
+          sourceTxHash: trackedNotification?.sourceTxHash
+        })
+      : undefined
   const { title: submittedTitle, detail: submittedDetail } = getSubmittedTransactionCopy({
     isCrossChain: isCrossChainStep,
     isBridgeTrackingActive: isTrackingBridge,

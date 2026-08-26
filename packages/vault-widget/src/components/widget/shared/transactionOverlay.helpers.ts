@@ -1,4 +1,4 @@
-import type { VaultWidgetSafeTransactionStatus } from '@yearn/vault-widget/runtime'
+import type { VaultWidgetBridgeStatus, VaultWidgetSafeTransactionStatus } from '@yearn/vault-widget/runtime'
 
 export type OverlayState = 'idle' | 'confirming' | 'pending' | 'submitted' | 'refreshing' | 'success' | 'error'
 export type CompletionDeferral = 'none' | 'immediate' | 'after-close' | 'after-confetti'
@@ -74,7 +74,7 @@ export function getSubmittedTransactionCopy(params: {
   isCrossChain: boolean
   isBridgeTrackingActive: boolean
   isBridgeTrackingUnavailable: boolean
-  bridgeStatus?: 'pending' | 'inflight' | 'delivered' | 'failed' | 'unknown'
+  bridgeStatus?: VaultWidgetBridgeStatus
   bridgeTrackingError?: string
   sourceChainName: string
   destinationChainName: string
@@ -85,6 +85,15 @@ export function getSubmittedTransactionCopy(params: {
       title: 'Transaction submitted',
       detail: `Your transaction has been submitted to your Safe.
 Execution may happen separately after the required confirmations are collected.`
+    }
+  }
+
+  if (params.bridgeStatus === 'ready_for_manual_execution') {
+    return {
+      title: 'Manual bridge action required',
+      detail:
+        params.bridgeTrackingError ||
+        'The destination action needs manual completion. Open the bridge tracker or source transaction for recovery details.'
     }
   }
 

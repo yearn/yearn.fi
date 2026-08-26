@@ -90,6 +90,16 @@ describe('resolvePolledTransactionStatus', () => {
     ).toBe('error')
   })
 
+  it('keeps a confirmed bridge source transaction submitted for destination tracking', () => {
+    expect(
+      resolvePolledTransactionStatus({
+        receipt: successfulReceipt,
+        requestedHash: submittedHash,
+        isBridgeTransaction: true
+      })
+    ).toBe('submitted')
+  })
+
   it('rejects a mismatched receipt without replacement evidence', () => {
     expect(() =>
       resolvePolledTransactionStatus({

@@ -3,9 +3,20 @@ import type { TNotification } from '@shared/types/notifications'
 import { isHash } from 'viem'
 
 export const ENSO_BRIDGE_POLL_INTERVAL_MS = 10_000
-export const ENSO_BRIDGE_UNKNOWN_TIMEOUT_SECONDS = 10 * 60
+export const ENSO_BRIDGE_CHECK_FAILURE_TIMEOUT_SECONDS = 10 * 60
+export const ENSO_BRIDGE_TRACKING_TIMEOUT_SECONDS = 24 * 60 * 60
 export const ENSO_BRIDGE_TRACKING_TIMEOUT_MESSAGE =
   'The bridge status could not be verified automatically. Check the source transaction for progress.'
+
+type TBridgeTrackingTimestamps = Pick<TNotification, 'bridgeCheckFailureStartedAt' | 'createdAt' | 'sourceConfirmedAt'>
+
+function getBridgeTrackingStartedAt(notification: TBridgeTrackingTimestamps, nowSeconds: number): number {
+  return notification.sourceConfirmedAt ?? notification.createdAt ?? nowSeconds
+}
+
+function isBridgeTrackingTimedOut(notification: TBridgeTrackingTimestamps, nowSeconds: number): boolean {
+  return nowSeconds - getBridgeTrackingStartedAt(notification, nowSeconds) >= ENSO_BRIDGE_TRACKING_TIMEOUT_SECONDS
+}
 
 export function isTrackableEnsoBridgeNotification(notification: TNotification): boolean {
   const hasSourceReference = Boolean(
@@ -14,6 +25,8 @@ export function isTrackableEnsoBridgeNotification(notification: TNotification): 
   return Boolean(
     notification.id &&
       notification.status === 'submitted' &&
+      notification.awaitingExecution !== true &&
+      notification.sourceConfirmedAt !== undefined &&
       notification.bridgeProtocol &&
       hasSourceReference &&
       notification.bridgeTrackingState !== 'unavailable'
@@ -56,29 +69,46 @@ export function normalizeEnsoBridgeStatusResponse(data: unknown): TEnsoBridgeSta
 export function buildEnsoBridgeNotificationUpdate(
   result: TEnsoBridgeStatusResponse,
   nowSeconds: number,
-  notification: Pick<TNotification, 'createdAt' | 'sourceConfirmedAt'>
+  notification: TBridgeTrackingTimestamps
 ): Partial<TNotification> {
-  const trackingStartedAt = notification.sourceConfirmedAt ?? notification.createdAt ?? nowSeconds
-  const isUnknownTimedOut =
-    result.status === 'unknown' && nowSeconds - trackingStartedAt >= ENSO_BRIDGE_UNKNOWN_TIMEOUT_SECONDS
   const isDelivered = result.status === 'delivered'
   const isFailed = result.status === 'failed'
+  const isTrackingTimedOut = !isDelivered && !isFailed && isBridgeTrackingTimedOut(notification, nowSeconds)
 
   return {
     status: isDelivered ? 'success' : isFailed ? 'error' : 'submitted',
     bridgeStatus: result.status,
-    bridgeTrackingState: isUnknownTimedOut ? 'unavailable' : 'active',
+    bridgeTrackingState: isTrackingTimedOut ? 'unavailable' : 'active',
+    bridgeCheckFailureStartedAt: undefined,
     lastBridgeCheckAt: nowSeconds,
     ...(result.bridgeRequestId ? { bridgeRequestId: result.bridgeRequestId } : {}),
     ...(result.sourceTxHash ? { txHash: result.sourceTxHash } : {}),
     ...(result.destinationChainId !== undefined ? { toChainId: result.destinationChainId } : {}),
     ...(result.destinationTxHash ? { destinationTxHash: result.destinationTxHash } : {}),
-    ...(isUnknownTimedOut
-      ? { bridgeError: ENSO_BRIDGE_TRACKING_TIMEOUT_MESSAGE }
-      : result.error
-        ? { bridgeError: result.error }
-        : {}),
-    timeFinished: isDelivered || isFailed || isUnknownTimedOut ? nowSeconds : undefined
+    bridgeError: isTrackingTimedOut ? ENSO_BRIDGE_TRACKING_TIMEOUT_MESSAGE : result.error,
+    timeFinished: isDelivered || isFailed || isTrackingTimedOut ? nowSeconds : undefined
+  }
+}
+
+export function buildEnsoBridgeCheckFailureUpdate(
+  nowSeconds: number,
+  notification: TBridgeTrackingTimestamps
+): Partial<TNotification> {
+  const failureStartedAt = notification.bridgeCheckFailureStartedAt ?? nowSeconds
+  const isFailureTimedOut =
+    nowSeconds - failureStartedAt >= ENSO_BRIDGE_CHECK_FAILURE_TIMEOUT_SECONDS ||
+    isBridgeTrackingTimedOut(notification, nowSeconds)
+
+  return {
+    bridgeCheckFailureStartedAt: failureStartedAt,
+    lastBridgeCheckAt: nowSeconds,
+    ...(isFailureTimedOut
+      ? {
+          bridgeTrackingState: 'unavailable' as const,
+          bridgeError: ENSO_BRIDGE_TRACKING_TIMEOUT_MESSAGE,
+          timeFinished: nowSeconds
+        }
+      : {})
   }
 }
 

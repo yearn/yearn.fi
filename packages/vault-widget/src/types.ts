@@ -348,5 +348,5 @@ export type TUpdateNotificationParams = {
   status?: TNotificationStatus
   receipt?: TransactionReceipt
   awaitingExecution?: boolean
-  bridgeStatus?: 'pending' | 'inflight' | 'delivered' | 'failed' | 'unknown'
+  bridgeStatus?: 'pending' | 'inflight' | 'delivered' | 'failed' | 'ready_for_manual_execution' | 'unknown'
 }

@@ -5,6 +5,7 @@ import {
   getAutoContinueConfirmDelayMs,
   getInitialOverlayState,
   getPendingTransactionTitle,
+  getSubmittedTransactionCopy,
   hasExecutableWalletConnector,
   isConfirmedSafeTransactionFailure,
   resolveCompletionDeferral,
@@ -118,6 +119,24 @@ describe('transactionOverlay.helpers', () => {
         fallbackLabel: 'Approve'
       })
     ).toBe('Transaction confirmed')
+  })
+
+  it('shows an actionable state when destination execution needs manual completion', () => {
+    expect(
+      getSubmittedTransactionCopy({
+        isCrossChain: true,
+        isBridgeTrackingActive: true,
+        isBridgeTrackingUnavailable: false,
+        bridgeStatus: 'ready_for_manual_execution',
+        sourceChainName: 'Ethereum',
+        destinationChainName: 'Base',
+        bridgeAction: 'deposit'
+      })
+    ).toEqual({
+      title: 'Manual bridge action required',
+      detail:
+        'The destination action needs manual completion. Open the bridge tracker or source transaction for recovery details.'
+    })
   })
 
   it('determines whether permit success should auto-continue', () => {

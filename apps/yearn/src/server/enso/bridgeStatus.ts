@@ -1,4 +1,4 @@
-import { isEnsoBridgeProtocol, isEnsoBridgeStatus } from '@shared/types/ensoBridge'
+import { isEnsoBridgeProtocol, isEnsoBridgeStatus, type TEnsoBridgeStatus } from '@shared/types/ensoBridge'
 import { isHash } from 'viem'
 import { GET_CORS_HEADERS, json, noContent, queryString, WALLET_SCOPED_CACHE_CONTROL } from '@/server/http'
 
@@ -7,7 +7,7 @@ const RELAY_API_BASE = 'https://api.relay.link'
 const RESPONSE_HEADERS = { ...GET_CORS_HEADERS, 'Cache-Control': WALLET_SCOPED_CACHE_CONTROL }
 
 type BridgeStatusResponse = {
-  status: 'pending' | 'inflight' | 'delivered' | 'failed' | 'unknown'
+  status: TEnsoBridgeStatus
   bridgeRequestId?: `0x${string}`
   sourceChainId?: number
   sourceTxHash?: `0x${string}`

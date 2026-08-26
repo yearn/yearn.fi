@@ -59,6 +59,16 @@ describe('Enso bridge status proxy', () => {
     expect((await GET(request({ protocol: 'ccip', chainId: '1', txHash: TX_HASH }))).status).toBe(502)
   })
 
+  it('passes through a recoverable manual-execution status', async () => {
+    vi.stubEnv('ENSO_API_KEY', 'test-key')
+    vi.stubGlobal('fetch', vi.fn().mockResolvedValue(Response.json({ status: 'ready_for_manual_execution' })))
+
+    const response = await GET(request({ protocol: 'stargate', chainId: '1', txHash: TX_HASH }))
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toEqual({ status: 'ready_for_manual_execution' })
+  })
+
   it('uses Relay delivery status instead of a stale Enso pending snapshot', async () => {
     vi.stubEnv('ENSO_API_KEY', 'test-key')
     const destinationTxHash = `0x${'b'.repeat(64)}`

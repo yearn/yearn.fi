@@ -1,5 +1,6 @@
 import { useNotifications } from '@shared/contexts/useNotifications'
 import {
+  buildEnsoBridgeCheckFailureUpdate,
   buildEnsoBridgeNotificationUpdate,
   ENSO_BRIDGE_POLL_INTERVAL_MS,
   fetchEnsoBridgeStatus,
@@ -39,9 +40,14 @@ export function useEnsoBridgeStatusPoller(notifications: TNotification[]): void 
       const update = buildEnsoBridgeNotificationUpdate(result, Date.now() / 1000, latestCandidate)
       await updateEntry(update, candidate.id)
     } catch (error) {
-      await updateEntry({ lastBridgeCheckAt: Date.now() / 1000 }, candidate.id).catch((persistenceError) => {
-        console.warn('[Enso] Failed to persist bridge tracking error', persistenceError)
-      })
+      const latestCandidate = latestNotificationsRef.current.find((notification) => notification.id === candidate.id)
+      if (latestCandidate && isTrackableEnsoBridgeNotification(latestCandidate)) {
+        await updateEntry(buildEnsoBridgeCheckFailureUpdate(Date.now() / 1000, latestCandidate), candidate.id).catch(
+          (persistenceError) => {
+            console.warn('[Enso] Failed to persist bridge tracking error', persistenceError)
+          }
+        )
+      }
       console.warn('[Enso] Bridge status check failed', {
         protocol: candidate.bridgeProtocol,
         chainId: candidate.chainId,

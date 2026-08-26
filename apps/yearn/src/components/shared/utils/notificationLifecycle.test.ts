@@ -48,4 +48,17 @@ describe('notification lifecycle presentation', () => {
       })
     ).toMatchObject({ label: 'Tracking unavailable', detail: 'Check the source transaction.' })
   })
+
+  it('makes recoverable manual bridge execution explicit', () => {
+    expect(
+      getNotificationLifecyclePresentation({
+        ...notification,
+        bridgeStatus: 'ready_for_manual_execution'
+      })
+    ).toMatchObject({
+      label: 'Manual action required',
+      detail: 'The destination action needs manual completion. Check the bridge tracker or source transaction.',
+      styleStatus: 'submitted'
+    })
+  })
 })
