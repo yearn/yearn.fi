@@ -321,7 +321,9 @@ export function resolveCrossChainSourceCompletion(params: {
   completedAllSteps: boolean
   isBridgeTrackingAvailable: boolean
   isOpen: boolean
+  hasBridgeFailed: boolean
 }): CompletionDeferral {
+  if (params.hasBridgeFailed) return 'none'
   if (!params.completedAllSteps) return 'none'
   if (params.isBridgeTrackingAvailable && params.isOpen) return 'after-close'
   return 'immediate'
@@ -330,8 +332,11 @@ export function resolveCrossChainSourceCompletion(params: {
 export function shouldRunDeferredCompletion(params: {
   completionDeferral: CompletionDeferral
   trigger: 'close' | 'confetti'
+  hasBridgeFailed: boolean
 }): boolean {
-  const { completionDeferral, trigger } = params
+  const { completionDeferral, trigger, hasBridgeFailed } = params
+
+  if (hasBridgeFailed) return false
 
   if (completionDeferral === 'after-confetti') {
     return trigger === 'confetti' || trigger === 'close'

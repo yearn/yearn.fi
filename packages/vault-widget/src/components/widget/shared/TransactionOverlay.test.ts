@@ -171,7 +171,8 @@ describe('resolveCrossChainSourceCompletion', () => {
       resolveCrossChainSourceCompletion({
         completedAllSteps: true,
         isBridgeTrackingAvailable: true,
-        isOpen: true
+        isOpen: true,
+        hasBridgeFailed: false
       })
     ).toBe('after-close')
   })
@@ -181,7 +182,8 @@ describe('resolveCrossChainSourceCompletion', () => {
       resolveCrossChainSourceCompletion({
         completedAllSteps: true,
         isBridgeTrackingAvailable: false,
-        isOpen: true
+        isOpen: true,
+        hasBridgeFailed: false
       })
     ).toBe('immediate')
   })
@@ -191,7 +193,8 @@ describe('resolveCrossChainSourceCompletion', () => {
       resolveCrossChainSourceCompletion({
         completedAllSteps: true,
         isBridgeTrackingAvailable: true,
-        isOpen: false
+        isOpen: false,
+        hasBridgeFailed: false
       })
     ).toBe('immediate')
   })
@@ -201,7 +204,19 @@ describe('resolveCrossChainSourceCompletion', () => {
       resolveCrossChainSourceCompletion({
         completedAllSteps: false,
         isBridgeTrackingAvailable: false,
-        isOpen: false
+        isOpen: false,
+        hasBridgeFailed: false
+      })
+    ).toBe('none')
+  })
+
+  it('does not re-arm completion when bridge failure wins the source-refresh race', () => {
+    expect(
+      resolveCrossChainSourceCompletion({
+        completedAllSteps: true,
+        isBridgeTrackingAvailable: true,
+        isOpen: true,
+        hasBridgeFailed: true
       })
     ).toBe('none')
   })
@@ -212,7 +227,8 @@ describe('shouldRunDeferredCompletion', () => {
     expect(
       shouldRunDeferredCompletion({
         completionDeferral: 'after-close',
-        trigger: 'confetti'
+        trigger: 'confetti',
+        hasBridgeFailed: false
       })
     ).toBe(false)
   })
@@ -221,7 +237,8 @@ describe('shouldRunDeferredCompletion', () => {
     expect(
       shouldRunDeferredCompletion({
         completionDeferral: 'after-confetti',
-        trigger: 'confetti'
+        trigger: 'confetti',
+        hasBridgeFailed: false
       })
     ).toBe(true)
   })
@@ -230,8 +247,19 @@ describe('shouldRunDeferredCompletion', () => {
     expect(
       shouldRunDeferredCompletion({
         completionDeferral: 'after-confetti',
-        trigger: 'close'
+        trigger: 'close',
+        hasBridgeFailed: false
       })
     ).toBe(true)
+  })
+
+  it('does not flush a deferred success callback after bridge failure', () => {
+    expect(
+      shouldRunDeferredCompletion({
+        completionDeferral: 'after-close',
+        trigger: 'close',
+        hasBridgeFailed: true
+      })
+    ).toBe(false)
   })
 })

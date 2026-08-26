@@ -391,6 +391,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   const writeContractResetRef = useRef(writeContract.reset)
   const sendCallsResetRef = useRef(sendCalls.reset)
   const pendingCompletionRef = useRef<CompletionDeferral>('none')
+  const completionFlowRef = useRef({ hasBridgeFailed: false })
   const hasRunAllCompleteRef = useRef(false)
   const isOpenRef = useRef(isOpen)
   const handledConfettiRequestRef = useRef(0)
@@ -415,20 +416,30 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     sendCallsResetRef.current = sendCalls.reset
   }, [sendCalls.reset])
 
-  const runAllComplete = useCallback(() => {
-    if (hasRunAllCompleteRef.current) return
+  const runAllComplete = useCallback(
+    (completionFlow = completionFlowRef.current) => {
+      if (
+        completionFlow !== completionFlowRef.current ||
+        completionFlow.hasBridgeFailed ||
+        hasRunAllCompleteRef.current
+      ) {
+        return
+      }
 
-    hasRunAllCompleteRef.current = true
-    pendingCompletionRef.current = 'none'
-    onAllComplete?.()
-  }, [onAllComplete])
+      hasRunAllCompleteRef.current = true
+      pendingCompletionRef.current = 'none'
+      onAllComplete?.()
+    },
+    [onAllComplete]
+  )
 
   const runAllCompleteIfPending = useCallback(
     (trigger: 'close' | 'confetti') => {
       if (
         !shouldRunDeferredCompletion({
           completionDeferral: pendingCompletionRef.current,
-          trigger
+          trigger,
+          hasBridgeFailed: completionFlowRef.current.hasBridgeFailed
         })
       ) {
         return
@@ -553,6 +564,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     setCompletedStepSnapshot(null)
     setFailedStepSuccessId(null)
     setLocalBridgeTracking({ status: 'idle' })
+    completionFlowRef.current = { hasBridgeFailed: false }
     hasRunAllCompleteRef.current = false
   }, [])
 
@@ -1377,6 +1389,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       setIsWaitingForNextStep(false)
 
       if (isCrossChain) {
+        const completionFlow = completionFlowRef.current
         void (async () => {
           const didPersistSourceConfirmation = await updateNotificationById(notificationIdRef.current, {
             receipt: capturedReceipt,
@@ -1405,17 +1418,24 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
 
           // Delivery may finish while the source-chain refresh is still running.
           // Preserve the delivery completion policy in that race.
-          if (hasRunAllCompleteRef.current || pendingCompletionRef.current !== 'none') return
+          if (
+            completionFlow !== completionFlowRef.current ||
+            hasRunAllCompleteRef.current ||
+            pendingCompletionRef.current !== 'none'
+          ) {
+            return
+          }
 
           const completionDeferral = resolveCrossChainSourceCompletion({
             completedAllSteps,
             isBridgeTrackingAvailable,
-            isOpen: isOpenRef.current
+            isOpen: isOpenRef.current,
+            hasBridgeFailed: completionFlow.hasBridgeFailed
           })
           if (completionDeferral === 'after-close') {
             pendingCompletionRef.current = completionDeferral
           } else if (completionDeferral === 'immediate') {
-            runAllComplete()
+            runAllComplete(completionFlow)
           }
         })()
         return
@@ -1472,6 +1492,8 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     if (overlayState !== 'submitted' || !trackedNotification?.bridgeStatus) return
     if (trackedNotification.status !== 'error' && trackedNotification.bridgeStatus !== 'failed') return
 
+    completionFlowRef.current.hasBridgeFailed = true
+    pendingCompletionRef.current = 'none'
     setOverlayState('error')
     setErrorMessage(trackedNotification.bridgeError || 'The cross-chain transaction failed.')
     setActiveNotificationId(undefined)

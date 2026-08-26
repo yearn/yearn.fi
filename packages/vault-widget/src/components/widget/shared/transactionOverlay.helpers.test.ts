@@ -182,14 +182,16 @@ describe('transactionOverlay.helpers', () => {
     expect(
       shouldRunDeferredCompletion({
         completionDeferral: 'after-confetti',
-        trigger: 'close'
+        trigger: 'close',
+        hasBridgeFailed: false
       })
     ).toBe(true)
 
     expect(
       shouldRunDeferredCompletion({
         completionDeferral: 'after-close',
-        trigger: 'confetti'
+        trigger: 'confetti',
+        hasBridgeFailed: false
       })
     ).toBe(false)
   })
