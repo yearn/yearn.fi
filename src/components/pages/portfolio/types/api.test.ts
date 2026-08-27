@@ -1,5 +1,78 @@
 import { describe, expect, it } from 'vitest'
-import { portfolioActivityFacetsResponseSchema, portfolioActivityResponseSchema } from './api'
+import { portfolioActivityFacetsResponseSchema, portfolioActivityResponseSchema, portfolioResponseSchema } from './api'
+
+describe('portfolioResponseSchema', () => {
+  it('accepts the non-fatal missing exit-price warning and defaults legacy estimate flags', () => {
+    const parsed = portfolioResponseSchema.parse({
+      address: '0x2222222222222222222222222222222222222222',
+      version: 'all',
+      denomination: 'usd',
+      timeframe: '1y',
+      balance: {
+        address: '0x2222222222222222222222222222222222222222',
+        denomination: 'usd',
+        timeframe: '1y',
+        dataPoints: []
+      },
+      protocolReturn: {
+        address: '0x2222222222222222222222222222222222222222',
+        timeframe: '1y',
+        summary: {
+          totalVaults: 1,
+          completeVaults: 1,
+          partialVaults: 0,
+          recommendedGrowthDisplay: 'usd',
+          recommendedGrowthDisplayReason: 'stable_dominant',
+          openBaselineCompositionUsd: { stable: 100, ethFamily: 0, other: 0 },
+          isComplete: true
+        },
+        dataPoints: [
+          {
+            date: '2026-08-23',
+            growthWeightUsd: 2,
+            growthUsd: 2,
+            growthWeightEth: null,
+            protocolReturnPct: 2,
+            annualizedProtocolReturnPct: 2,
+            growthIndex: 102
+          }
+        ],
+        familySeries: []
+      },
+      growth: {
+        generatedAt: '2026-08-24T00:00:00.000Z',
+        summary: {
+          totalVaults: 1,
+          completeVaults: 1,
+          partialVaults: 0,
+          isComplete: true
+        },
+        vaults: [
+          {
+            chainId: 1,
+            vaultAddress: '0x3333333333333333333333333333333333333333',
+            status: 'ok',
+            issues: ['missing_exit_price'],
+            baselineUsd: 100,
+            baselineExposureUsdYears: 1,
+            growthUsd: 2,
+            growthPct: 2,
+            annualizedProtocolReturnPct: 2,
+            metadata: {
+              symbol: 'yvTEST',
+              decimals: 18,
+              assetDecimals: 18,
+              tokenAddress: '0x4444444444444444444444444444444444444444'
+            }
+          }
+        ]
+      }
+    })
+
+    expect(parsed.growth.vaults[0]?.issues).toEqual(['missing_exit_price'])
+    expect(parsed.protocolReturn.dataPoints[0]?.growthUsdEstimated).toBe(false)
+  })
+})
 
 describe('portfolioActivityResponseSchema', () => {
   it('accepts transfer activity entries with a direction', () => {

@@ -33,6 +33,12 @@ export function toVaultKey(chainId: number, vaultAddress: string): string {
   return `${chainId}:${vaultAddress.toLowerCase()}`
 }
 
+export function normalizeTokenDecimals(value: unknown, fallback = 18): number {
+  const parsed =
+    typeof value === 'number' ? value : typeof value === 'string' && value.trim() !== '' ? Number(value) : Number.NaN
+  return Number.isInteger(parsed) && parsed >= 0 && parsed <= 255 ? parsed : fallback
+}
+
 export function isKnownZeroBasisRewardDistribution(
   chainId: number,
   distributorAddress: string,
