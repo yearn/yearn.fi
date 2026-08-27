@@ -1,3 +1,4 @@
+import { isYBoldProductAddress } from '@pages/vaults/domain/yBoldProduct'
 import { normalizeVaultCategory } from '@pages/vaults/utils/normalizeVaultCategory'
 import { toAddress, toBigInt, toNormalizedBN } from '@shared/utils'
 import type { TKongVaultListItem, TKongVaultListItemStakingReward } from '@shared/utils/schemas/kongVaultListSchema'
@@ -606,8 +607,9 @@ export const getVaultAPR = (vault: TKongVaultInput, snapshot?: TKongVaultSnapsho
   const oracle = snapshot?.performance?.oracle ?? vault.performance?.oracle
   const estimated = snapshot?.performance?.estimated ?? vault.performance?.estimated
   const isKatanaVault = getVaultChainID(vault) === 747474
+  const isYBoldVault = isYBoldProductAddress(getVaultAddress(vault))
 
-  const forwardNet = isKatanaVault
+  const defaultForwardNet = isKatanaVault
     ? pickNumber(
         snapshot?.performance?.estimated?.apy,
         snapshot?.performance?.estimated?.apr,
@@ -637,14 +639,18 @@ export const getVaultAPR = (vault: TKongVaultInput, snapshot?: TKongVaultSnapsho
         vault.performance?.historical?.net,
         historical?.net
       )
+  const forwardNet = isYBoldVault
+    ? pickNumber(snapshot?.performance?.oracle?.netAPY, vault.performance?.oracle?.netAPY)
+    : defaultForwardNet
 
-  const forwardType = snapshot?.performance?.estimated
+  const defaultForwardType = snapshot?.performance?.estimated
     ? 'estimated'
     : snapshot?.performance?.oracle?.apr !== null && snapshot?.performance?.oracle?.apr !== undefined
       ? 'oracle'
       : oracle?.apy !== null && oracle?.apy !== undefined
         ? 'oracle'
         : (estimated?.type ?? '')
+  const forwardType = isYBoldVault ? 'oracle' : defaultForwardType
 
   return {
     type:

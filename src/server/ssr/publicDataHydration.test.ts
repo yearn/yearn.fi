@@ -1,4 +1,5 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { YBOLD_STAKING_ADDRESS, YBOLD_VAULT_ADDRESS } from '@/components/pages/vaults/domain/normalizeVault'
 import { YVBTC_CHAIN_ID, YVBTC_UNLOCKED_ADDRESS } from '@/components/pages/vaults/utils/yvBtc'
 import { YVUSD_CHAIN_ID, YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@/components/pages/vaults/utils/yvUsd'
 import {
@@ -99,5 +100,17 @@ describe('public data SSR hydration', () => {
     )
     expect(keys).not.toContainEqual(['fetch', YEARN_VAULT_LIST_ENDPOINT])
     expect(keys).not.toContainEqual(['fetch', buildVaultSnapshotEndpoint(YVBTC_CHAIN_ID, YVBTC_UNLOCKED_ADDRESS)])
+  })
+
+  it('hydrates the staked snapshot for vanilla yBOLD vault details', async () => {
+    const state = await getVaultDetailPageDehydratedState(1, YBOLD_VAULT_ADDRESS)
+    const keys = queryKeys(state)
+
+    expect(keys).toEqual(
+      expect.arrayContaining([
+        ['fetch', buildVaultSnapshotEndpoint(1, YBOLD_VAULT_ADDRESS)],
+        ['fetch', buildVaultSnapshotEndpoint(1, YBOLD_STAKING_ADDRESS)]
+      ])
+    )
   })
 })
