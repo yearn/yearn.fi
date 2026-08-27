@@ -5,7 +5,6 @@ import { GET_CORS_HEADERS, json, noContent, queryString, WALLET_SCOPED_CACHE_CON
 const ENSO_API_BASE = 'https://api.enso.finance'
 const RELAY_API_BASE = 'https://api.relay.link'
 const RESPONSE_HEADERS = { ...GET_CORS_HEADERS, 'Cache-Control': WALLET_SCOPED_CACHE_CONTROL }
-const LOG_PREFIX = '[BridgeStatus]'
 
 type BridgeStatusResponse = {
   status: TEnsoBridgeStatus
@@ -19,11 +18,6 @@ type BridgeStatusResponse = {
 
 function asRecord(value: unknown): Record<string, unknown> | undefined {
   return value && typeof value === 'object' ? (value as Record<string, unknown>) : undefined
-}
-
-function logBridgeStatus(event: string, details: Record<string, unknown>): void {
-  if (process.env.NODE_ENV === 'test') return
-  console.info(`${LOG_PREFIX} ${event}`, details)
 }
 
 function getRelayRequestId(data: unknown): `0x${string}` | undefined {
@@ -85,32 +79,11 @@ async function fetchRelayBridgeStatusByRequestId(
   sourceTxHash?: `0x${string}`
 ): Promise<BridgeStatusResponse | undefined> {
   const statusParams = new URLSearchParams({ requestId: bridgeRequestId })
-  logBridgeStatus('relay-status-start', { sourceChainId, sourceTxHash, bridgeRequestId })
   const response = await fetch(`${RELAY_API_BASE}/intents/status/v3?${statusParams}`, {
     cache: 'no-store'
   })
-  if (!response.ok) {
-    logBridgeStatus('relay-status-upstream-error', {
-      sourceChainId,
-      sourceTxHash,
-      bridgeRequestId,
-      httpStatus: response.status
-    })
-    return undefined
-  }
-  const data = await response.json()
-  const result = normalizeRelayBridgeStatusResponse(data, sourceChainId, sourceTxHash, bridgeRequestId)
-  logBridgeStatus('relay-status-result', {
-    sourceChainId,
-    sourceTxHash,
-    bridgeRequestId,
-    httpStatus: response.status,
-    upstreamStatus: asRecord(data)?.status,
-    normalizedStatus: result?.status,
-    destinationChainId: result?.destinationChainId,
-    destinationTxHash: result?.destinationTxHash
-  })
-  return result
+  if (!response.ok) return undefined
+  return normalizeRelayBridgeStatusResponse(await response.json(), sourceChainId, sourceTxHash, bridgeRequestId)
 }
 
 async function fetchRelayRequestIdBySourceTxHash(
@@ -123,30 +96,12 @@ async function fetchRelayRequestIdBySourceTxHash(
     originChainId: String(sourceChainId),
     limit: '1'
   })
-  logBridgeStatus('relay-request-lookup-start', { sourceChainId, sourceTxHash })
   const response = await fetch(`${RELAY_API_BASE}/requests/v3?${requestParams}`, {
     headers: { 'x-api-key': apiKey },
     cache: 'no-store'
   })
-  if (!response.ok) {
-    logBridgeStatus('relay-request-lookup-upstream-error', {
-      sourceChainId,
-      sourceTxHash,
-      httpStatus: response.status
-    })
-    return undefined
-  }
-  const data = await response.json()
-  const requests = asRecord(data)?.requests
-  const bridgeRequestId = getRelayRequestId(data)
-  logBridgeStatus('relay-request-lookup-result', {
-    sourceChainId,
-    sourceTxHash,
-    httpStatus: response.status,
-    requestCount: Array.isArray(requests) ? requests.length : undefined,
-    bridgeRequestId
-  })
-  return bridgeRequestId
+  if (!response.ok) return undefined
+  return getRelayRequestId(await response.json())
 }
 
 export function OPTIONS(): Response {
@@ -179,22 +134,10 @@ export async function GET(request: Request): Promise<Response> {
 
   try {
     const relayApiKey = process.env.RELAY_API_KEY?.trim()
-    logBridgeStatus('request', {
-      protocol,
-      chainId,
-      sourceTxHash,
-      persistedRelayRequestId,
-      relayApiConfigured: Boolean(relayApiKey),
-      ensoApiConfigured: Boolean(process.env.ENSO_API_KEY)
-    })
     const relayRequestId =
       protocol === 'relay' && !persistedRelayRequestId && sourceTxHash && relayApiKey
         ? await fetchRelayRequestIdBySourceTxHash(chainId, sourceTxHash, relayApiKey).catch((error) => {
-            console.warn(`${LOG_PREFIX} relay-request-lookup-failed`, {
-              chainId,
-              sourceTxHash,
-              error: (error as Error)?.message || error
-            })
+            console.warn('Unable to resolve Relay request ID from the source transaction:', error)
             return undefined
           })
         : persistedRelayRequestId
@@ -203,53 +146,24 @@ export async function GET(request: Request): Promise<Response> {
       try {
         const relayStatus = await fetchRelayBridgeStatusByRequestId(chainId, relayRequestId, sourceTxHash)
         if (relayStatus && (relayStatus.status !== 'unknown' || !sourceTxHash)) {
-          logBridgeStatus('response', {
-            source: 'relay',
-            protocol,
-            chainId,
-            sourceTxHash,
-            bridgeRequestId: relayRequestId,
-            status: relayStatus.status
-          })
           return json(relayStatus, { headers: RESPONSE_HEADERS })
         }
       } catch (error) {
-        console.warn(`${LOG_PREFIX} relay-status-failed`, {
-          chainId,
-          sourceTxHash,
-          bridgeRequestId: relayRequestId,
-          error: (error as Error)?.message || error
-        })
+        console.warn('Unable to resolve bridge status through a Relay request ID:', error)
       }
     }
     if (!sourceTxHash) {
       return json({ error: 'Unable to resolve Relay bridge status' }, { status: 502, headers: RESPONSE_HEADERS })
     }
-    if (protocol === 'relay') {
-      logBridgeStatus('fallback-to-enso', {
-        chainId,
-        sourceTxHash,
-        bridgeRequestId: relayRequestId,
-        reason: relayRequestId ? 'relay-status-unavailable' : 'relay-request-id-unavailable'
-      })
-    }
     const apiKey = process.env.ENSO_API_KEY
     if (!apiKey) return json({ error: 'Enso API not configured' }, { status: 500, headers: RESPONSE_HEADERS })
     const params = new URLSearchParams({ chainId: String(chainId), txHash: sourceTxHash })
-    logBridgeStatus('enso-status-start', { protocol, chainId, sourceTxHash })
     const response = await fetch(`${ENSO_API_BASE}/api/v1/${protocol}/bridge/check?${params}`, {
       headers: { Authorization: `Bearer ${apiKey}` },
       cache: 'force-cache',
       next: { revalidate: 10 }
     })
     const data = (await response.json()) as Record<string, unknown>
-    logBridgeStatus('enso-status-result', {
-      protocol,
-      chainId,
-      sourceTxHash,
-      httpStatus: response.status,
-      upstreamStatus: data.status
-    })
     if (!response.ok) return json(data, { status: response.status, headers: RESPONSE_HEADERS })
     if (!isEnsoBridgeStatus(data.status)) {
       return json({ error: 'Invalid Enso bridge status response' }, { status: 502, headers: RESPONSE_HEADERS })
@@ -260,26 +174,11 @@ export async function GET(request: Request): Promise<Response> {
         ...data,
         ...(relayRequestId ? { bridgeRequestId: relayRequestId } : {})
       }
-      logBridgeStatus('response', {
-        source: 'enso',
-        protocol,
-        chainId,
-        sourceTxHash,
-        bridgeRequestId: relayRequestId,
-        status: data.status
-      })
       return json(ensoStatus, { headers: RESPONSE_HEADERS })
     }
-    logBridgeStatus('response', { source: 'enso', protocol, chainId, sourceTxHash, status: data.status })
     return json(data, { headers: RESPONSE_HEADERS })
   } catch (error) {
-    console.error(`${LOG_PREFIX} request-failed`, {
-      protocol,
-      chainId,
-      sourceTxHash,
-      persistedRelayRequestId,
-      error: (error as Error)?.message || error
-    })
+    console.error('Error proxying Enso bridge status request:', error)
     return json({ error: 'Unable to check bridge status' }, { status: 502, headers: RESPONSE_HEADERS })
   }
 }

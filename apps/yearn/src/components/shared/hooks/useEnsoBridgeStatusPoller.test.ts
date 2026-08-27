@@ -57,7 +57,6 @@ function notificationsContext(updateEntry: TNotificationsContext['updateEntry'])
 describe('useEnsoBridgeStatusPoller', () => {
   beforeEach(() => {
     vi.useFakeTimers()
-    vi.spyOn(console, 'info').mockImplementation(() => undefined)
     fetchEnsoBridgeStatusMock.mockResolvedValue({ status: 'pending' })
     useNotificationAssetRefreshMock.mockReturnValue(vi.fn().mockResolvedValue(undefined))
     useNotificationsMock.mockReturnValue(notificationsContext(vi.fn().mockResolvedValue(undefined)))
