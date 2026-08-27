@@ -1,7 +1,7 @@
 import { usePublicClient } from '@yearn/vault-widget/internal/hooks/useAppWagmi'
 import { useVaultWidgetRuntime } from '@yearn/vault-widget/runtime'
 import type { TRawTransaction, TRawTransactionPreparation } from '@yearn/vault-widget/types'
-import { useCallback, useEffect, useMemo, useState } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
 export type TEnsoTransaction = TRawTransaction
 
@@ -23,6 +23,21 @@ export class EnsoSimulationError extends Error {
     super('This route can no longer execute. The quote is refreshing; please try again.', { cause })
     this.name = 'EnsoSimulationError'
   }
+}
+
+type TFailedEnsoSimulation = {
+  error: EnsoSimulationError
+  transactionFingerprint: string
+}
+
+function getEnsoTransactionFingerprint(transaction: TEnsoTransaction): string {
+  return [
+    transaction.chainId,
+    transaction.from.toLowerCase(),
+    transaction.to.toLowerCase(),
+    transaction.value,
+    transaction.data
+  ].join(':')
 }
 
 export async function simulateEnsoOrder(
@@ -52,16 +67,30 @@ export const useEnsoOrder = ({
   const runtime = useVaultWidgetRuntime()
   const [isExecuting, setIsExecuting] = useState(false)
   const [error, setError] = useState<Error | null>(null)
+  const [failedSimulation, setFailedSimulation] = useState<TFailedEnsoSimulation | undefined>(undefined)
+  const failedSimulationRef = useRef<TFailedEnsoSimulation | undefined>(undefined)
   const executionChainId = runtime.chains.resolveExecutionChainId(chainId)
   const publicClient = usePublicClient({ chainId })
 
   const executeOrder = useCallback(async () => {
+    const ensoTx = getEnsoTransaction()
+    if (!ensoTx) {
+      const missingTransactionError = new Error('No Enso transaction data')
+      setError(missingTransactionError)
+      throw missingTransactionError
+    }
+
+    const transactionFingerprint = getEnsoTransactionFingerprint(ensoTx)
+    const blockedSimulation = failedSimulationRef.current
+    if (blockedSimulation?.transactionFingerprint === transactionFingerprint) {
+      setError(blockedSimulation.error)
+      throw blockedSimulation.error
+    }
+
     setIsExecuting(true)
     setError(null)
 
     try {
-      const ensoTx = getEnsoTransaction()
-      if (!ensoTx) throw new Error('No Enso transaction data')
       if (!publicClient) throw new Error('No public client available')
       if (!executionChainId) throw new Error(`No execution chain configured for chain ${chainId}`)
 
@@ -76,20 +105,44 @@ export const useEnsoOrder = ({
         }
       })
     } catch (executionError) {
-      setError(executionError as Error)
+      const normalizedError = executionError as Error
+      setError(normalizedError)
+      if (normalizedError instanceof EnsoSimulationError) {
+        const failedEnsoSimulation = { error: normalizedError, transactionFingerprint }
+        failedSimulationRef.current = failedEnsoSimulation
+        setFailedSimulation(failedEnsoSimulation)
+        await refreshEnsoTransaction?.().catch(() => undefined)
+      }
       throw executionError
     } finally {
       setIsExecuting(false)
     }
-  }, [chainId, executionChainId, getEnsoTransaction, publicClient, runtime.execution])
+  }, [chainId, executionChainId, getEnsoTransaction, publicClient, refreshEnsoTransaction, runtime.execution])
 
   const ensoTx = getEnsoTransaction()
-  const preparationError = useMemo(() => error ?? (routeError ? new Error(routeError) : null), [error, routeError])
+  const transactionFingerprint = ensoTx ? getEnsoTransactionFingerprint(ensoTx) : undefined
+  const blockedSimulation =
+    transactionFingerprint && failedSimulation?.transactionFingerprint === transactionFingerprint
+      ? failedSimulation
+      : undefined
+  const preparationError = useMemo(
+    () => blockedSimulation?.error ?? error ?? (routeError ? new Error(routeError) : null),
+    [blockedSimulation?.error, error, routeError]
+  )
 
   useEffect(() => {
-    if (isExecuting) return
+    if (!failedSimulation || !transactionFingerprint) return
+    if (failedSimulation.transactionFingerprint === transactionFingerprint) return
+
+    failedSimulationRef.current = undefined
+    setFailedSimulation(undefined)
+    setError((currentError) => (currentError === failedSimulation.error ? null : currentError))
+  }, [failedSimulation, transactionFingerprint])
+
+  useEffect(() => {
+    if (isExecuting || blockedSimulation) return
     setError(null)
-  }, [ensoTx?.data, ensoTx?.to, ensoTx?.value, isExecuting])
+  }, [blockedSimulation, ensoTx?.data, ensoTx?.to, ensoTx?.value, isExecuting])
 
   const prepareEnsoOrder = useMemo(
     (): TRawTransactionPreparation => ({
