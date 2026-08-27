@@ -512,7 +512,7 @@ function VaultOverviewCard({
 }): ReactElement {
   const currentVault = getVaultView(currentVaultInput)
   const estimatedApyTooltip = isYBoldProductAddress(currentVault.address)
-    ? 'Projected APY based on 7 day historical performance'
+    ? 'Higher of the Oracle APY and 7 day historical performance'
     : 'Projected APY based on underlying markets'
   const totalAssets = toNormalizedBN(currentVault.tvl.totalAssets, currentVault.decimals).normalized
   const listKind = deriveListKind(currentVault)

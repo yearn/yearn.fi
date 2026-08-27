@@ -68,7 +68,7 @@ export function getVaultForwardAPY(vault: TKongVaultInput): number {
   const apr = getVaultAPR(vault)
 
   if (isYBoldProductAddress(getVaultAddress(vault))) {
-    return apr.points.weekAgo
+    return Math.max(apr.points.weekAgo, apr.forwardAPR.netAPR)
   }
 
   return apr.forwardAPR?.netAPR || 0
