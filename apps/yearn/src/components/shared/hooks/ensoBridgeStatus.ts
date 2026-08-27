@@ -25,7 +25,6 @@ export function isTrackableEnsoBridgeNotification(notification: TNotification): 
   return Boolean(
     notification.id &&
       notification.status === 'submitted' &&
-      notification.awaitingExecution !== true &&
       notification.sourceConfirmedAt !== undefined &&
       notification.bridgeProtocol &&
       hasSourceReference &&
@@ -126,8 +125,25 @@ export async function fetchEnsoBridgeStatus(
   })
   if (notification.txHash) params.set('txHash', notification.txHash)
   if (notification.bridgeRequestId) params.set('requestId', notification.bridgeRequestId)
+  console.info('[EnsoBridgePoller] request', {
+    notificationId: notification.id,
+    protocol: notification.bridgeProtocol,
+    chainId: notification.chainId,
+    txHash: notification.txHash,
+    bridgeRequestId: notification.bridgeRequestId
+  })
   const response = await fetch(`/api/enso/bridge-status?${params}`, { signal })
   const data = await response.json()
+  console.info('[EnsoBridgePoller] response', {
+    notificationId: notification.id,
+    httpStatus: response.status,
+    ok: response.ok,
+    status: typeof data?.status === 'string' ? data.status : undefined,
+    bridgeRequestId: typeof data?.bridgeRequestId === 'string' ? data.bridgeRequestId : undefined,
+    destinationChainId: typeof data?.destinationChainId === 'number' ? data.destinationChainId : undefined,
+    destinationTxHash: typeof data?.destinationTxHash === 'string' ? data.destinationTxHash : undefined,
+    error: typeof data?.error === 'string' ? data.error : undefined
+  })
   if (!response.ok) throw new Error(typeof data?.error === 'string' ? data.error : 'Unable to check bridge status')
   const normalized = normalizeEnsoBridgeStatusResponse(data)
   if (!normalized) throw new Error('Invalid bridge status response')

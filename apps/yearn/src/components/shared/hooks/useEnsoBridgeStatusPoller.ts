@@ -13,25 +13,59 @@ import { useCallback, useEffect, useRef } from 'react'
 
 const BRIDGE_STATUS_REQUEST_TIMEOUT_MS = 9_000
 
+function getBridgeTrackingLogDetails(notification: TNotification): Record<string, unknown> {
+  return {
+    notificationId: notification.id,
+    status: notification.status,
+    awaitingExecution: notification.awaitingExecution,
+    sourceConfirmedAt: notification.sourceConfirmedAt,
+    protocol: notification.bridgeProtocol,
+    txHash: notification.txHash,
+    bridgeRequestId: notification.bridgeRequestId,
+    bridgeStatus: notification.bridgeStatus,
+    bridgeTrackingState: notification.bridgeTrackingState,
+    lastBridgeCheckAt: notification.lastBridgeCheckAt
+  }
+}
+
 export function useEnsoBridgeStatusPoller(notifications: TNotification[]): void {
   const { updateEntry } = useNotifications()
   const refreshNotificationAssets = useNotificationAssetRefresh()
   const isPollingRef = useRef(false)
   const latestNotificationsRef = useRef(notifications)
+  const checkNextBridgeRef = useRef<() => Promise<void>>(async () => undefined)
   latestNotificationsRef.current = notifications
 
   const checkNextBridge = useCallback(async (): Promise<void> => {
-    if (isPollingRef.current) return
+    if (isPollingRef.current) {
+      console.info('[EnsoBridgePoller] skipped', { reason: 'request-in-flight' })
+      return
+    }
     const candidate = selectNextEnsoBridgeNotification(latestNotificationsRef.current)
-    if (!candidate?.id) return
+    if (!candidate?.id) {
+      console.info('[EnsoBridgePoller] skipped', { reason: 'no-trackable-notification' })
+      return
+    }
 
+    console.info('[EnsoBridgePoller] selected', {
+      ...getBridgeTrackingLogDetails(candidate),
+      chainId: candidate.chainId
+    })
     isPollingRef.current = true
     const controller = new AbortController()
     const timeoutId = window.setTimeout(() => controller.abort(), BRIDGE_STATUS_REQUEST_TIMEOUT_MS)
     try {
       const result = await fetchEnsoBridgeStatus(candidate, controller.signal)
       const latestCandidate = latestNotificationsRef.current.find((notification) => notification.id === candidate.id)
-      if (!latestCandidate || !isTrackableEnsoBridgeNotification(latestCandidate)) return
+      if (!latestCandidate || !isTrackableEnsoBridgeNotification(latestCandidate)) {
+        console.info('[EnsoBridgePoller] discarded', {
+          notificationId: candidate.id,
+          reason: latestCandidate ? 'no-longer-trackable' : 'notification-missing',
+          resultStatus: result.status,
+          ...(latestCandidate ? { latestNotification: getBridgeTrackingLogDetails(latestCandidate) } : {})
+        })
+        return
+      }
       if (result.status === 'delivered') {
         await refreshNotificationAssets(latestCandidate).catch((error) => {
           console.warn('[Enso] Bridge delivered, but asset refresh failed', error)
@@ -39,6 +73,15 @@ export function useEnsoBridgeStatusPoller(notifications: TNotification[]): void 
       }
       const update = buildEnsoBridgeNotificationUpdate(result, Date.now() / 1000, latestCandidate)
       await updateEntry(update, candidate.id)
+      console.info('[EnsoBridgePoller] applied', {
+        notificationId: candidate.id,
+        resultStatus: result.status,
+        notificationStatus: update.status,
+        bridgeStatus: update.bridgeStatus,
+        bridgeTrackingState: update.bridgeTrackingState,
+        bridgeRequestId: update.bridgeRequestId,
+        destinationTxHash: update.destinationTxHash
+      })
     } catch (error) {
       const latestCandidate = latestNotificationsRef.current.find((notification) => notification.id === candidate.id)
       if (latestCandidate && isTrackableEnsoBridgeNotification(latestCandidate)) {
@@ -49,9 +92,12 @@ export function useEnsoBridgeStatusPoller(notifications: TNotification[]): void 
         )
       }
       console.warn('[Enso] Bridge status check failed', {
+        notificationId: candidate.id,
         protocol: candidate.bridgeProtocol,
         chainId: candidate.chainId,
         txHash: candidate.txHash,
+        bridgeRequestId: candidate.bridgeRequestId,
+        aborted: controller.signal.aborted,
         error: (error as Error)?.message || error
       })
     } finally {
@@ -59,12 +105,33 @@ export function useEnsoBridgeStatusPoller(notifications: TNotification[]): void 
       isPollingRef.current = false
     }
   }, [refreshNotificationAssets, updateEntry])
+  checkNextBridgeRef.current = checkNextBridge
 
   const hasTrackableNotification = notifications.some(isTrackableEnsoBridgeNotification)
   useEffect(() => {
     if (!hasTrackableNotification) return
-    void checkNextBridge()
-    const intervalId = window.setInterval(() => void checkNextBridge(), ENSO_BRIDGE_POLL_INTERVAL_MS)
-    return () => window.clearInterval(intervalId)
-  }, [checkNextBridge, hasTrackableNotification])
+
+    let isStopped = false
+    let timeoutId: number | undefined
+    const poll = async (): Promise<void> => {
+      console.info('[EnsoBridgePoller] tick')
+      await checkNextBridgeRef.current()
+      if (isStopped) return
+      timeoutId = window.setTimeout(() => void poll(), ENSO_BRIDGE_POLL_INTERVAL_MS)
+      console.info('[EnsoBridgePoller] scheduled', { delayMs: ENSO_BRIDGE_POLL_INTERVAL_MS })
+    }
+
+    console.info('[EnsoBridgePoller] started', { intervalMs: ENSO_BRIDGE_POLL_INTERVAL_MS })
+    void poll()
+
+    return () => {
+      isStopped = true
+      if (timeoutId !== undefined) window.clearTimeout(timeoutId)
+      console.info('[EnsoBridgePoller] stopped', {
+        submittedBridges: latestNotificationsRef.current
+          .filter((notification) => notification.status === 'submitted' && notification.bridgeProtocol)
+          .map(getBridgeTrackingLogDetails)
+      })
+    }
+  }, [hasTrackableNotification])
 }

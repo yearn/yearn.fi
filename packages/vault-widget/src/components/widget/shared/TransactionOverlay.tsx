@@ -51,7 +51,7 @@ import {
   resolveCrossChainSourceCompletion,
   resolveExecutionTrackingHash,
   resolveOverlayConnectedChainId,
-  resolvePendingSafeOverlayState,
+  resolvePendingSafeOverlayTransition,
   resolveTransactionReceiptOutcome,
   shouldAutoContinueFromSuccessState,
   shouldAutoContinuePermitSuccess,
@@ -1247,7 +1247,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   }, [executeStep, isOpen, isStepReady, isWaitingForNextStep, step])
 
   useEffect(() => {
-    const nextOverlayState = resolvePendingSafeOverlayState({
+    const pendingSafeTransition = resolvePendingSafeOverlayTransition({
       overlayState,
       isWalletSafe,
       hasExecutionReceipt: Boolean(receipt.data?.transactionHash),
@@ -1255,13 +1255,13 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       callsStatus: safeCallsStatus.data?.status
     })
 
-    if (nextOverlayState === 'submitted') {
+    if (pendingSafeTransition === 'submitted') {
       setOverlayState('submitted')
       void updateNotificationById(notificationIdRef.current, { status: 'submitted', awaitingExecution: true })
       return
     }
 
-    if (nextOverlayState === 'error') {
+    if (pendingSafeTransition === 'error') {
       const isConfirmedSafeFailure = isConfirmedSafeTransactionFailure({
         isWalletSafe,
         submittedTxHash: txHash,

@@ -165,15 +165,12 @@ describe('Enso bridge status proxy', () => {
       `https://api.relay.link/requests/v3?depositTxHash=${TX_HASH}&originChainId=8453&limit=1`,
       {
         headers: { 'x-api-key': 'relay-key' },
-        cache: 'force-cache',
-        next: { revalidate: 10 }
+        cache: 'no-store'
       }
     )
-    expect(fetchMock).toHaveBeenNthCalledWith(
-      2,
-      `https://api.relay.link/intents/status/v3?requestId=${REQUEST_ID}`,
-      expect.any(Object)
-    )
+    expect(fetchMock).toHaveBeenNthCalledWith(2, `https://api.relay.link/intents/status/v3?requestId=${REQUEST_ID}`, {
+      cache: 'no-store'
+    })
   })
 
   it('persists a recovered request ID when Relay status falls back to Enso', async () => {

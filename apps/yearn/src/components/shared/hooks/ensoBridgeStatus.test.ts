@@ -37,8 +37,11 @@ describe('Enso bridge status tracking', () => {
       false
     )
     expect(isTrackableEnsoBridgeNotification(bridgeNotification({ sourceConfirmedAt: undefined }))).toBe(false)
-    expect(isTrackableEnsoBridgeNotification(bridgeNotification({ awaitingExecution: true }))).toBe(false)
     expect(isTrackableEnsoBridgeNotification(bridgeNotification())).toBe(true)
+  })
+
+  it('keeps a source-confirmed bridge trackable despite a stale awaiting-execution flag', () => {
+    expect(isTrackableEnsoBridgeNotification(bridgeNotification({ awaitingExecution: true }))).toBe(true)
   })
 
   it('does not poll a cross-chain record with unavailable tracking metadata', () => {

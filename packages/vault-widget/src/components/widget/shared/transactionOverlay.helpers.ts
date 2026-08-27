@@ -163,29 +163,29 @@ export function resolveOverlayConnectedChainId(params: {
   return params.currentChainId
 }
 
-export function resolvePendingSafeOverlayState(params: {
+export function resolvePendingSafeOverlayTransition(params: {
   overlayState: OverlayState
   isWalletSafe: boolean
   hasExecutionReceipt: boolean
   safeTxStatus?: SafeTransactionStatus
   callsStatus?: 'pending' | 'success' | 'failure'
-}): OverlayState {
+}): Extract<OverlayState, 'submitted' | 'error'> | undefined {
   const { overlayState, isWalletSafe, hasExecutionReceipt, safeTxStatus, callsStatus } = params
   const normalizedSafeTxStatus = safeTxStatus?.replaceAll('-', '_').toUpperCase()
 
-  if (overlayState !== 'pending' && overlayState !== 'submitted') return overlayState
-  if (!isWalletSafe) return overlayState
-  if (hasExecutionReceipt) return overlayState
+  if (overlayState !== 'pending' && overlayState !== 'submitted') return undefined
+  if (!isWalletSafe) return undefined
+  if (hasExecutionReceipt) return undefined
 
   if (normalizedSafeTxStatus === 'FAILED' || normalizedSafeTxStatus === 'CANCELLED') return 'error'
   if (normalizedSafeTxStatus === 'AWAITING_CONFIRMATIONS' || normalizedSafeTxStatus === 'AWAITING_EXECUTION') {
-    return 'submitted'
+    return overlayState === 'pending' ? 'submitted' : undefined
   }
 
   if (callsStatus === 'failure') return 'error'
-  if (callsStatus === 'pending') return 'submitted'
+  if (callsStatus === 'pending') return overlayState === 'pending' ? 'submitted' : undefined
 
-  return overlayState
+  return undefined
 }
 
 export function isConfirmedSafeTransactionFailure(params: {
