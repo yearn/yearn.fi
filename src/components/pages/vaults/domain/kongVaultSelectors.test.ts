@@ -133,6 +133,56 @@ describe('getVaultTVL', () => {
     expect(tvl.tvl).toBe(0)
     expect(tvl.price).toBe(0)
   })
+
+  it('fills compact SSR TVL fields from the snapshot', () => {
+    const tvl = getVaultTVL(
+      {
+        version: '3.0.0',
+        chainID: 1,
+        token: { decimals: 6 },
+        tvl: {
+          totalAssets: 0n,
+          tvl: 200,
+          price: 0
+        }
+      } as any,
+      {
+        totalAssets: '100000000',
+        tvl: {
+          close: 250
+        }
+      } as any
+    )
+
+    expect(tvl.totalAssets).toBe(100_000_000n)
+    expect(tvl.tvl).toBe(200)
+    expect(tvl.price).toBe(2)
+  })
+
+  it('preserves a genuine zero TVL in the compact SSR model', () => {
+    const tvl = getVaultTVL(
+      {
+        version: '3.0.0',
+        chainID: 1,
+        token: { decimals: 6 },
+        tvl: {
+          totalAssets: 0n,
+          tvl: 0,
+          price: 0
+        }
+      } as any,
+      {
+        totalAssets: '100000000',
+        tvl: {
+          close: 250
+        }
+      } as any
+    )
+
+    expect(tvl.totalAssets).toBe(100_000_000n)
+    expect(tvl.tvl).toBe(0)
+    expect(tvl.price).toBe(0)
+  })
 })
 
 describe('getVaultStaking', () => {
@@ -468,6 +518,36 @@ describe('getVaultStrategies', () => {
     chainId: 1,
     address: '0x1111111111111111111111111111111111111111'
   } as any
+
+  it('fills an empty compact SSR strategy list from snapshot composition', () => {
+    const strategies = getVaultStrategies(
+      {
+        version: '3.0.0',
+        chainID: 1,
+        strategies: []
+      } as any,
+      {
+        totalAssets: '1000000',
+        composition: [
+          {
+            address: '0x5555555555555555555555555555555555555555',
+            name: 'Snapshot Strategy',
+            status: 'active',
+            totalDebt: '750000'
+          }
+        ]
+      } as any
+    )
+
+    expect(strategies).toHaveLength(1)
+    expect(strategies[0]).toMatchObject({
+      name: 'Snapshot Strategy',
+      details: {
+        totalDebt: '750000',
+        debtRatio: 7500
+      }
+    })
+  })
 
   it('prefers composition estimated apy over oracle apy', () => {
     const strategies = getVaultStrategies(vault, {

@@ -526,7 +526,17 @@ export const getVaultCategory = (vault: TKongVaultInput, snapshot?: TKongVaultSn
 
 export const getVaultTVL = (vault: TKongVaultInput, snapshot?: TKongVaultSnapshot): TKongVaultTvl => {
   if (isVaultView(vault)) {
-    return vault.tvl
+    const snapshotTotalAssets = toBigIntValue(snapshot?.totalAssets)
+    const totalAssets = vault.tvl.totalAssets > 0n ? vault.tvl.totalAssets : snapshotTotalAssets
+    const tvl = vault.tvl.tvl
+    const normalizedAssets = toNormalizedBN(totalAssets, vault.token.decimals).normalized
+    const price = vault.tvl.price || (tvl > 0 && normalizedAssets > 0 ? tvl / normalizedAssets : 0)
+
+    return {
+      totalAssets,
+      tvl,
+      price
+    }
   }
   const token = getVaultToken(vault, snapshot)
   const totalAssetsRaw = snapshot?.totalAssets ?? '0'
@@ -906,11 +916,11 @@ const resolveTotalDebtForRatios = (snapshot?: TKongVaultSnapshot): string => {
 }
 
 export const getVaultStrategies = (vault: TKongVaultInput, snapshot?: TKongVaultSnapshot): TKongVaultStrategy[] => {
-  if (isVaultView(vault)) {
-    return vault.strategies ?? []
+  if (isVaultView(vault) && vault.strategies?.length) {
+    return vault.strategies
   }
   if (!snapshot) {
-    return []
+    return isVaultView(vault) ? (vault.strategies ?? []) : []
   }
 
   const totalAssetsForRatios = resolveTotalAssetsForRatios(snapshot)
@@ -927,7 +937,15 @@ export const getVaultFeaturingScore = (vault: TKongVaultInput): number =>
 
 export const getVaultView = (vault: TKongVaultInput, snapshot?: TKongVaultSnapshot): TKongVaultView => {
   if (isVaultView(vault)) {
-    return vault
+    if (!snapshot) {
+      return vault
+    }
+
+    return {
+      ...vault,
+      tvl: getVaultTVL(vault, snapshot),
+      strategies: getVaultStrategies(vault, snapshot)
+    }
   }
 
   return {
