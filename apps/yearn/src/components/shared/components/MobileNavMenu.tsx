@@ -2,6 +2,7 @@ import { Dialog, Transition, TransitionChild } from '@headlessui/react'
 import { setThemePreference, useThemePreference } from '@hooks/useThemePreference'
 import { BottomDrawer } from '@pages/vaults/components/detail/BottomDrawer'
 import { useAppSettings } from '@pages/vaults/contexts/useAppSettings'
+import { MobileSiteStatus } from '@shared/components/SiteStatus'
 import { useWalletStatus } from '@shared/contexts/useWallet'
 import { useWalletVaultTotals } from '@shared/contexts/useWalletVaultTotals'
 import { useWeb3 } from '@shared/contexts/useWeb3'
@@ -655,6 +656,9 @@ export function MobileNavMenu({
                     >
                       <IconTwitter className={cl('size-6', isDarkTheme ? 'text-white' : 'text-text-primary')} />
                     </Link>
+                  </div>
+                  <div className={'mt-1.5'}>
+                    <MobileSiteStatus />
                   </div>
                 </div>
               </div>
