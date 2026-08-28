@@ -1,148 +1,177 @@
-import {
-  type AppUseSimulateContractReturnType,
-  usePublicClient,
-  useWaitForTransactionReceipt
-} from '@yearn/vault-widget/internal/hooks/useAppWagmi'
+import { usePublicClient } from '@yearn/vault-widget/internal/hooks/useAppWagmi'
 import { useVaultWidgetRuntime } from '@yearn/vault-widget/runtime'
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import type { Address, Hash, Hex } from 'viem'
-import { useWalletClient } from 'wagmi'
+import type { TRawTransaction, TRawTransactionPreparation } from '@yearn/vault-widget/types'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
 
-interface EnsoTransaction {
-  to: Address
-  data: Hex
-  value: string
-  from: Address
-  chainId: number
-}
+export type TEnsoTransaction = TRawTransaction
 
 interface UseEnsoOrderProps {
-  getEnsoTransaction: () => EnsoTransaction | undefined
+  getEnsoTransaction: () => TEnsoTransaction | undefined
+  refreshEnsoTransaction?: () => Promise<void>
+  routeError?: string
+  isPreparingRoute?: boolean
   enabled?: boolean
   chainId: number
 }
 
 interface UseEnsoOrderReturn {
-  prepareEnsoOrder: AppUseSimulateContractReturnType
-  receiptSuccess: boolean
-  txHash: Hash | undefined
+  prepareEnsoOrder: TRawTransactionPreparation
 }
 
-// This hook wraps Enso transaction execution to work like a regular contract interaction
+export class EnsoSimulationError extends Error {
+  constructor(cause: unknown) {
+    super('This route can no longer execute. The quote is refreshing; please try again.', { cause })
+    this.name = 'EnsoSimulationError'
+  }
+}
+
+type TFailedEnsoSimulation = {
+  error: EnsoSimulationError
+  transactionFingerprint: string
+}
+
+function getEnsoTransactionFingerprint(transaction: TEnsoTransaction): string {
+  return [
+    transaction.chainId,
+    transaction.from.toLowerCase(),
+    transaction.to.toLowerCase(),
+    transaction.value,
+    transaction.data
+  ].join(':')
+}
+
+export async function simulateEnsoOrder(
+  publicClient: NonNullable<ReturnType<typeof usePublicClient>>,
+  transaction: TEnsoTransaction
+): Promise<void> {
+  try {
+    await publicClient.call({
+      account: transaction.from,
+      to: transaction.to,
+      data: transaction.data,
+      value: BigInt(transaction.value || 0)
+    })
+  } catch (error) {
+    throw new EnsoSimulationError(error)
+  }
+}
+
 export const useEnsoOrder = ({
   getEnsoTransaction,
+  refreshEnsoTransaction,
+  routeError,
+  isPreparingRoute = false,
   enabled = true,
   chainId
 }: UseEnsoOrderProps): UseEnsoOrderReturn => {
   const runtime = useVaultWidgetRuntime()
   const [isExecuting, setIsExecuting] = useState(false)
   const [error, setError] = useState<Error | null>(null)
-  const [txHash, setTxHash] = useState<Hash | undefined>()
-  const [waitingForTx, setWaitingForTx] = useState(false)
+  const [failedSimulation, setFailedSimulation] = useState<TFailedEnsoSimulation | undefined>(undefined)
+  const failedSimulationRef = useRef<TFailedEnsoSimulation | undefined>(undefined)
   const executionChainId = runtime.chains.resolveExecutionChainId(chainId)
-  // Don't specify chainId - use current chain. TxButton handles chain switching before execution.
-  const publicClient = usePublicClient()
-  const { data: walletClient } = useWalletClient()
-  const { data: receipt, isSuccess: receiptSuccess } = useWaitForTransactionReceipt({
-    hash: txHash,
-    chainId: executionChainId
-  })
+  const publicClient = usePublicClient({ chainId })
 
   const executeOrder = useCallback(async () => {
+    const ensoTx = getEnsoTransaction()
+    if (!ensoTx) {
+      const missingTransactionError = new Error('No Enso transaction data')
+      setError(missingTransactionError)
+      throw missingTransactionError
+    }
+
+    const transactionFingerprint = getEnsoTransactionFingerprint(ensoTx)
+    const blockedSimulation = failedSimulationRef.current
+    if (blockedSimulation?.transactionFingerprint === transactionFingerprint) {
+      setError(blockedSimulation.error)
+      throw blockedSimulation.error
+    }
+
     setIsExecuting(true)
     setError(null)
 
     try {
-      const ensoTx = getEnsoTransaction()
-      if (!ensoTx) throw new Error('No Enso transaction data')
-      if (!walletClient) throw new Error('No wallet client available')
       if (!publicClient) throw new Error('No public client available')
       if (!executionChainId) throw new Error(`No execution chain configured for chain ${chainId}`)
 
-      // Note: Chain switching is handled by TransactionOverlay before calling executeOrder
-      // We use the target chain from props, not walletClient.chain which may be stale
-      // Send the transaction
-      const hash = await walletClient.sendTransaction({
-        to: ensoTx.to,
-        data: ensoTx.data,
-        value: BigInt(ensoTx.value || 0),
-        chain: walletClient.chain
+      await simulateEnsoOrder(publicClient, ensoTx)
+      return await runtime.execution.execute({
+        account: ensoTx.from,
+        request: {
+          chainId,
+          to: ensoTx.to,
+          data: ensoTx.data,
+          value: BigInt(ensoTx.value || 0)
+        }
       })
-
-      // Store hash for receipt monitoring
-      setTxHash(hash)
+    } catch (executionError) {
+      const normalizedError = executionError as Error
+      setError(normalizedError)
+      if (normalizedError instanceof EnsoSimulationError) {
+        const failedEnsoSimulation = { error: normalizedError, transactionFingerprint }
+        failedSimulationRef.current = failedEnsoSimulation
+        setFailedSimulation(failedEnsoSimulation)
+        await refreshEnsoTransaction?.().catch(() => undefined)
+      }
+      throw executionError
+    } finally {
       setIsExecuting(false)
-      setWaitingForTx(true)
-      return { success: true, hash, waitingForReceipt: true }
-    } catch (err) {
-      setError(err as Error)
-      setIsExecuting(false)
-      throw err
     }
-  }, [chainId, executionChainId, getEnsoTransaction, walletClient, publicClient])
+  }, [chainId, executionChainId, getEnsoTransaction, publicClient, refreshEnsoTransaction, runtime.execution])
 
   const ensoTx = getEnsoTransaction()
+  const transactionFingerprint = ensoTx ? getEnsoTransactionFingerprint(ensoTx) : undefined
+  const blockedSimulation =
+    transactionFingerprint && failedSimulation?.transactionFingerprint === transactionFingerprint
+      ? failedSimulation
+      : undefined
+  const preparationError = useMemo(
+    () => blockedSimulation?.error ?? error ?? (routeError ? new Error(routeError) : null),
+    [blockedSimulation?.error, error, routeError]
+  )
+
   useEffect(() => {
-    if (isExecuting || waitingForTx) return
+    if (!failedSimulation || !transactionFingerprint) return
+    if (failedSimulation.transactionFingerprint === transactionFingerprint) return
+
+    failedSimulationRef.current = undefined
+    setFailedSimulation(undefined)
+    setError((currentError) => (currentError === failedSimulation.error ? null : currentError))
+  }, [failedSimulation, transactionFingerprint])
+
+  useEffect(() => {
+    if (isExecuting || blockedSimulation) return
     setError(null)
-    setTxHash(undefined)
-    setWaitingForTx(false)
-  }, [ensoTx?.data, ensoTx?.to, ensoTx?.value, isExecuting, waitingForTx])
+  }, [blockedSimulation, ensoTx?.data, ensoTx?.to, ensoTx?.value, isExecuting])
 
-  // Handle receipt
-  useEffect(() => {
-    if (receipt && waitingForTx) {
-      setWaitingForTx(false)
-      if (receipt.status === 'reverted') {
-        setError(new Error('Transaction reverted'))
-      }
-    }
-  }, [receipt, waitingForTx])
-
-  // Create a mock simulate contract result that TxButton can understand
-  const prepareEnsoOrder: AppUseSimulateContractReturnType = useMemo(() => {
-    return {
-      data:
-        enabled && ensoTx && executionChainId
-          ? {
-              request: {
-                // Standard contract fields for gas estimation
-                address: ensoTx.to,
-                abi: [] as const,
-                functionName: 'execute' as any,
-                args: [] as readonly unknown[],
-                data: ensoTx.data,
-                value: BigInt(ensoTx.value || 0),
-                chainId: executionChainId,
-                account: ensoTx.from,
-                // Custom marker to identify this as an Enso order
-                __isEnsoOrder: true,
-                // Override writeContractAsync to execute our custom order
-                writeContractAsync: executeOrder,
-                // Pass transaction hash for monitoring
-                __txHash: txHash,
-                __waitingForTx: waitingForTx
-              } as any,
-              result: undefined
-            }
-          : undefined,
-      error: null,
-      isError: false,
-      isLoading: isExecuting || waitingForTx,
-      isSuccess: enabled && !!ensoTx && !!executionChainId && !isExecuting && !waitingForTx,
+  const prepareEnsoOrder = useMemo(
+    (): TRawTransactionPreparation => ({
+      kind: 'raw',
+      transaction: ensoTx,
+      chainId: executionChainId ?? chainId,
+      execute: executeOrder,
+      error: preparationError,
+      isError: Boolean(preparationError),
+      isLoading: isPreparingRoute || isExecuting,
+      isSuccess: enabled && !!ensoTx && !!executionChainId && !preparationError && !isPreparingRoute && !isExecuting,
       isFetching: false,
-      isPending: false,
-      isRefetching: false,
-      refetch: async () => ({ data: undefined, error: null }),
-      status: isExecuting ? 'pending' : error ? 'error' : 'success',
-      fetchStatus: 'idle',
-      dataUpdatedAt: Date.now()
-    } as AppUseSimulateContractReturnType
-  }, [enabled, error, executeOrder, executionChainId, isExecuting, ensoTx, txHash, waitingForTx])
+      refetch: async () => {
+        await refreshEnsoTransaction?.()
+      },
+      status: isPreparingRoute || isExecuting ? 'pending' : preparationError ? 'error' : 'success'
+    }),
+    [
+      chainId,
+      enabled,
+      ensoTx,
+      executeOrder,
+      executionChainId,
+      isExecuting,
+      isPreparingRoute,
+      preparationError,
+      refreshEnsoTransaction
+    ]
+  )
 
-  return {
-    prepareEnsoOrder,
-    receiptSuccess,
-    txHash
-  }
+  return { prepareEnsoOrder }
 }

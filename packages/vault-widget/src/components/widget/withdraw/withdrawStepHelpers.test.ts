@@ -141,6 +141,7 @@ describe('withdrawStepHelpers', () => {
     expect(
       isWithdrawLastStep({
         currentStep: {
+          id: 'approve',
           prepare: mockPrepare,
           label: 'Approve',
           confirmMessage: '',
@@ -155,6 +156,7 @@ describe('withdrawStepHelpers', () => {
     expect(
       isWithdrawLastStep({
         currentStep: {
+          id: 'unstake',
           prepare: mockPrepare,
           label: 'Unstake',
           confirmMessage: '',
@@ -169,6 +171,7 @@ describe('withdrawStepHelpers', () => {
     expect(
       isWithdrawLastStep({
         currentStep: {
+          id: 'withdraw',
           prepare: mockPrepare,
           label: 'Withdraw',
           confirmMessage: '',

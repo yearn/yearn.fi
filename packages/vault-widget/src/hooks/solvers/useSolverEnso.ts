@@ -1,12 +1,14 @@
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   type AppUseSimulateContractReturnType,
   useSimulateContract
 } from '@yearn/vault-widget/internal/hooks/useAppWagmi'
 import { isZeroAddress, toNormalizedBN } from '@yearn/vault-widget/internal/utils'
 import { getApproveAbi } from '@yearn/vault-widget/internal/utils/approve'
+import { MIN_CROSS_CHAIN_ENSO_SLIPPAGE_BPS } from '@yearn/vault-widget/internal/utils/slippage'
 import { useVaultWidgetRuntime } from '@yearn/vault-widget/runtime'
 import type { TNormalizedBN } from '@yearn/vault-widget/types'
-import { useCallback, useEffect, useRef, useState } from 'react'
+import { useCallback, useMemo } from 'react'
 import type { Address } from 'viem'
 import {
   getKnownEnsoRouterAddress,
@@ -14,10 +16,22 @@ import {
   UNKNOWN_ENSO_APPROVAL_ROUTER_MESSAGE
 } from '../../utils/ensoRouters'
 import { useTokenAllowance } from '../useTokenAllowance'
-import { type EnsoError, type EnsoRouteResponse, normalizeEnsoRouteResponse, routeHasSwapStep } from './ensoRoute'
+import {
+  type EnsoError,
+  type EnsoRouteResponse,
+  getEnsoBridgeProtocol,
+  normalizeEnsoRouteResponse,
+  routeHasSwapStep
+} from './ensoRoute'
 
 const ENSO_ROUTE_PROXY = '/api/enso/route'
 export type EnsoRoutingStrategy = 'router' | 'delegate' | 'router-legacy' | 'delegate-legacy' | 'ensowallet'
+export type EnsoQuotePurpose = 'calibration' | 'execution'
+
+export function getEffectiveEnsoRequestSlippage(requestedSlippage: number, isCrossChain: boolean): number {
+  const normalizedSlippage = Number.isFinite(requestedSlippage) ? Math.max(0, Math.floor(requestedSlippage)) : 0
+  return isCrossChain && normalizedSlippage === 0 ? MIN_CROSS_CHAIN_ENSO_SLIPPAGE_BPS : normalizedSlippage
+}
 
 interface UseSolverEnsoProps {
   tokenIn: Address
@@ -28,6 +42,7 @@ interface UseSolverEnsoProps {
   chainId: number
   destinationChainId?: number
   slippage?: number // in basis points (e.g., 100 = 1%)
+  quotePurpose?: EnsoQuotePurpose
   routingStrategy?: EnsoRoutingStrategy
   requestKey?: string
   enabled?: boolean
@@ -47,6 +62,7 @@ interface UseSolverEnsoReturn {
     isAllowanceSufficient: boolean
     route: EnsoRouteResponse | undefined
     routeHasSwap: boolean
+    bridgeProtocol: ReturnType<typeof getEnsoBridgeProtocol>
     error: EnsoError | undefined
     isLoadingRoute: boolean
     isLoadingAllowance: boolean
@@ -72,22 +88,76 @@ export const useSolverEnso = ({
   chainId,
   destinationChainId,
   slippage = 100, // 1% default
+  quotePurpose = 'execution',
   routingStrategy,
   requestKey = 'default',
   decimalsOut = 18,
   enabled = true
 }: UseSolverEnsoProps): UseSolverEnsoReturn => {
   const runtime = useVaultWidgetRuntime()
-  const [route, setRoute] = useState<EnsoRouteResponse | undefined>()
-  const [error, setError] = useState<EnsoError | undefined>()
-  const [resolvedRequestKey, setResolvedRequestKey] = useState<string | undefined>()
-  const [errorRequestKey, setErrorRequestKey] = useState<string | undefined>()
-  const [isLoadingRoute, setIsLoadingRoute] = useState(false)
-  const routeRequestIdRef = useRef(0)
-  const routeAbortControllerRef = useRef<AbortController | null>(null)
-
   const isCrossChain = destinationChainId !== undefined && destinationChainId !== chainId
-  const requestedRoute = resolvedRequestKey === requestKey ? route : undefined
+  const normalizedSlippage = Number.isFinite(slippage) ? Math.max(0, Math.floor(slippage)) : 0
+  const effectiveSlippage = getEffectiveEnsoRequestSlippage(normalizedSlippage, isCrossChain)
+  const canRequestRoute =
+    enabled && !!fromAddress && amountIn > 0n && !isZeroAddress(tokenIn) && !isZeroAddress(tokenOut)
+  const routeQueryKey = useMemo(
+    () =>
+      [
+        'enso-route',
+        quotePurpose,
+        requestKey,
+        chainId,
+        destinationChainId ?? 'same-chain',
+        tokenIn,
+        tokenOut,
+        amountIn.toString(),
+        fromAddress ?? 'no-account',
+        receiver ?? 'no-receiver',
+        normalizedSlippage,
+        effectiveSlippage,
+        routingStrategy ?? 'default-strategy'
+      ] as const,
+    [
+      amountIn,
+      chainId,
+      destinationChainId,
+      effectiveSlippage,
+      fromAddress,
+      normalizedSlippage,
+      quotePurpose,
+      receiver,
+      requestKey,
+      routingStrategy,
+      tokenIn,
+      tokenOut
+    ]
+  )
+  const queryClient = useQueryClient()
+  const routeEndpoint = runtime.routing.ensoRouteEndpoint ?? ENSO_ROUTE_PROXY
+  const routeQuery = useQuery({
+    queryKey: routeQueryKey,
+    enabled: canRequestRoute,
+    retry: false,
+    staleTime: 0,
+    queryFn: async ({ signal }) => {
+      if (!fromAddress) return undefined
+      const params = new URLSearchParams({
+        fromAddress,
+        chainId: chainId.toString(),
+        tokenIn,
+        tokenOut,
+        amountIn: amountIn.toString(),
+        slippage: effectiveSlippage.toString(),
+        ...(routingStrategy && { routingStrategy }),
+        ...(isCrossChain && { destinationChainId: destinationChainId!.toString() }),
+        ...(receiver && { receiver })
+      })
+      const response = await fetch(`${routeEndpoint}?${params}`, { signal })
+      const data = await response.json()
+      return normalizeEnsoRouteResponse(data, response.status, chainId)
+    }
+  })
+  const requestedRoute = routeQuery.data?.route
   const requestedRouterAddress = requestedRoute?.tx?.to
   const routerAddress = getValidatedEnsoRouterAddress({
     chainId,
@@ -103,9 +173,14 @@ export const useSolverEnso = ({
           message: UNKNOWN_ENSO_APPROVAL_ROUTER_MESSAGE,
           statusCode: 0
         }
-      : errorRequestKey === requestKey
-        ? error
-        : undefined
+      : (routeQuery.data?.error ??
+        (routeQuery.error
+          ? {
+              error: routeQuery.error.name || 'EnsoRouteFetchFailed',
+              message: routeQuery.error.message || 'Failed to get Enso route',
+              statusCode: 0
+            }
+          : undefined))
   const visibleRouteHasSwap = routeHasSwapStep(visibleRoute)
 
   // Use known Enso router for pre-fetching allowance, fall back to actual router from route
@@ -125,148 +200,21 @@ export const useSolverEnso = ({
     enabled: !!allowanceSpender
   })
 
-  const getRoute = useCallback(async () => {
-    if (!enabled || !fromAddress || amountIn <= 0n) return
-    if (isZeroAddress(tokenIn) || isZeroAddress(tokenOut)) return
-    const normalizedSlippage = Number.isFinite(slippage) ? Math.max(0, Math.floor(slippage)) : 0
-
-    const requestId = routeRequestIdRef.current + 1
-    routeRequestIdRef.current = requestId
-    routeAbortControllerRef.current?.abort()
-    const abortController = new AbortController()
-    routeAbortControllerRef.current = abortController
-
-    setIsLoadingRoute(true)
-    try {
-      const params = new URLSearchParams({
-        fromAddress,
-        chainId: chainId.toString(),
-        tokenIn,
-        tokenOut,
-        amountIn: amountIn.toString(),
-        slippage: normalizedSlippage.toString(),
-        ...(routingStrategy && { routingStrategy }),
-        ...(isCrossChain && { destinationChainId: destinationChainId!.toString() }),
-        ...(receiver && { receiver })
-      })
-
-      const routeEndpoint = runtime.routing.ensoRouteEndpoint ?? ENSO_ROUTE_PROXY
-      const response = await fetch(`${routeEndpoint}?${params}`, { signal: abortController.signal })
-
-      const data = await response.json()
-      const isLatestRequest = routeRequestIdRef.current === requestId && !abortController.signal.aborted
-
-      if (!isLatestRequest) {
-        return
-      }
-
-      const normalizedResponse = normalizeEnsoRouteResponse(data, response.status, chainId)
-      if (normalizedResponse.error) {
-        console.warn('[Enso] Route error', {
-          chainId,
-          destinationChainId,
-          tokenIn,
-          tokenOut,
-          amountIn: amountIn.toString(),
-          statusCode: normalizedResponse.error.statusCode,
-          message: normalizedResponse.error.message,
-          requestId: normalizedResponse.error.requestId
-        })
-        setRoute(undefined)
-        setError(normalizedResponse.error)
-        setResolvedRequestKey(undefined)
-        setErrorRequestKey(requestKey)
-
-        return
-      }
-      const resolvedRoute = normalizedResponse.route
-      setError(undefined)
-      setRoute(resolvedRoute)
-      setResolvedRequestKey(requestKey)
-      setErrorRequestKey(undefined)
-      if (runtime.assets.isDevelopment && resolvedRoute) {
-        console.log('[ENSO] route response', {
-          chainId,
-          destinationChainId,
-          tokenIn,
-          tokenOut,
-          amountIn: amountIn.toString(),
-          routeHasSwap: routeHasSwapStep(resolvedRoute),
-          route: resolvedRoute.route
-        })
-      }
-    } catch (err) {
-      if (abortController.signal.aborted || routeRequestIdRef.current !== requestId) {
-        return
-      }
-      setRoute(undefined)
-      setError({
-        error: err instanceof Error ? err.name : 'EnsoRouteFetchFailed',
-        message: err instanceof Error ? err.message : 'Failed to get Enso route',
-        statusCode: 0
-      })
-      setResolvedRequestKey(undefined)
-      setErrorRequestKey(requestKey)
-      console.error('Failed to get Enso route:', err, {
-        chainId,
-        destinationChainId,
-        tokenIn,
-        tokenOut,
-        amountIn: amountIn.toString()
-      })
-    } finally {
-      if (routeRequestIdRef.current === requestId) {
-        setIsLoadingRoute(false)
-        if (routeAbortControllerRef.current === abortController) {
-          routeAbortControllerRef.current = null
-        }
-      }
-    }
-  }, [
-    tokenIn,
-    tokenOut,
-    amountIn,
-    fromAddress,
-    receiver,
-    chainId,
-    destinationChainId,
-    slippage,
-    routingStrategy,
-    requestKey,
-    enabled,
-    isCrossChain,
-    runtime.assets.isDevelopment,
-    runtime.routing.ensoRouteEndpoint
-  ])
+  const getRoute = useCallback(async (): Promise<void> => {
+    await routeQuery.refetch({ cancelRefetch: false })
+  }, [routeQuery.refetch])
 
   const getEnsoTransaction = useCallback((): EnsoRouteResponse['tx'] | undefined => {
     return visibleRoute?.tx
   }, [visibleRoute])
 
   const resetRoute = useCallback(() => {
-    routeRequestIdRef.current += 1
-    routeAbortControllerRef.current?.abort()
-    routeAbortControllerRef.current = null
-    setRoute(undefined)
-    setError(undefined)
-    setResolvedRequestKey(undefined)
-    setErrorRequestKey(undefined)
-    setIsLoadingRoute(false)
-  }, [])
-
-  useEffect(() => {
-    return () => {
-      routeAbortControllerRef.current?.abort()
-      routeAbortControllerRef.current = null
-    }
-  }, [])
+    void queryClient.cancelQueries({ queryKey: routeQueryKey, exact: true })
+    queryClient.removeQueries({ queryKey: routeQueryKey, exact: true })
+  }, [queryClient, routeQueryKey])
 
   const isValidInput = amountIn > 0n
-  const canRequestRoute =
-    enabled && !!fromAddress && isValidInput && !isZeroAddress(tokenIn) && !isZeroAddress(tokenOut)
-  const hasCurrentRoute = resolvedRequestKey === requestKey
-  const hasCurrentError = errorRequestKey === requestKey
-  const isLoadingCurrentRequest = isLoadingRoute || (canRequestRoute && !hasCurrentRoute && !hasCurrentError)
+  const isLoadingCurrentRequest = canRequestRoute && (routeQuery.isLoading || routeQuery.isFetching)
   const isAllowanceSufficient = !allowanceSpender || allowance >= amountIn
   const prepareApproveEnabled = routerAddress && !isAllowanceSufficient && isValidInput && enabled
   const prepareApprove: AppUseSimulateContractReturnType = useSimulateContract({
@@ -297,6 +245,7 @@ export const useSolverEnso = ({
       isAllowanceSufficient,
       route: visibleRoute,
       routeHasSwap: visibleRouteHasSwap,
+      bridgeProtocol: getEnsoBridgeProtocol(visibleRoute),
       error: visibleError,
       isLoadingRoute: isLoadingCurrentRequest,
       isLoadingAllowance,

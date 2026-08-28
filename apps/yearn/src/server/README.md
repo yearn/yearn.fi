@@ -29,6 +29,7 @@ There is no standalone Bun API mirror and no catch-all pathname dispatcher. Loca
 | `/api/enso/status` | `GET` | Next Node | Returns whether `ENSO_API_KEY` is configured |
 | `/api/enso/balances` | `GET` | Next Node | Proxies Enso wallet balances |
 | `/api/enso/route` | `GET` | Next Node | Proxies Enso route quotes/transactions |
+| `/api/enso/bridge-status` | `GET` | Next Node | Tracks bridge settlement through Relay with an Enso fallback |
 | `/api/merkl/rewards` | `GET` | Next Node | Proxies Merkl user rewards with `MERKL_API_KEY` |
 | `/api/optimization/change` | `GET` | Next Node | Latest or historical optimization payloads from Redis |
 | `/api/optimization/alignment` | `GET` | Next Node | Envio keeper-event alignment for a selected optimization |
@@ -57,6 +58,7 @@ The holdings implementation is the largest API surface here. See [`lib/holdings/
 - `/api/enso/status` returns `{ "configured": boolean }`.
 - `/api/enso/balances` requires `eoaAddress` and requests `chainId=all` upstream.
 - `/api/enso/route` requires `fromAddress`, `chainId`, `tokenIn`, `tokenOut`, and `amountIn`. Optional params are `slippage`, `routingStrategy`, `destinationChainId`, and `receiver`.
+- `/api/enso/bridge-status` uses `RELAY_API_KEY` server-side to recover Relay request IDs from source transaction hashes before polling Relay directly. It falls back to Enso when the key or Relay status is unavailable.
 - `/api/enso/balances` sets `Cache-Control: private, no-store, max-age=0, must-revalidate`.
 
 ## Merkl Proxy
@@ -113,6 +115,7 @@ Required env for a configured chain:
 | Variable | Used by | Description |
 |----------|---------|-------------|
 | `ENSO_API_KEY` | Enso routes | Bearer token for Enso upstream requests |
+| `RELAY_API_KEY` | Enso bridge-status route | Server-only key for Relay request lookup by source transaction hash |
 | `MERKL_API_KEY` | Merkl route | API key sent to Merkl as `X-API-Key` |
 | `KONG_REST_URL` | machine-readable vault routes | Optional server-only Kong REST base URL override |
 | `NEXT_PUBLIC_KONG_REST_URL` | vault pages, machine-readable vault routes | Public Kong REST base URL |

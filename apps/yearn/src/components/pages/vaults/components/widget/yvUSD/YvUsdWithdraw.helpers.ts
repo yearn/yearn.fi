@@ -504,6 +504,7 @@ export function buildLockedWithdrawTransactionStep({
   if (phase === 'withdraw') {
     if (mode === 'unlock') {
       return {
+        id: 'unlock',
         prepare: prepareLockedWithdraw,
         label: 'Unlock',
         confirmMessage:
@@ -517,6 +518,7 @@ export function buildLockedWithdrawTransactionStep({
     }
 
     return {
+      id: 'unlock',
       prepare: prepareLockedWithdraw,
       label: 'Unlock to yvUSD',
       confirmMessage:
@@ -530,6 +532,7 @@ export function buildLockedWithdrawTransactionStep({
   }
 
   return {
+    id: 'withdraw',
     prepare: prepareUnlockedWithdraw,
     label: 'Withdraw to USDC',
     confirmMessage: `Withdrawing ${formattedUnderlyingOut} ${underlyingSymbol} from unlocked yvUSD`,

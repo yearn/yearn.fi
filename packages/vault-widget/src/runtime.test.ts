@@ -49,6 +49,18 @@ describe('createVaultWidgetRuntime', () => {
         type: 'deposit'
       })
     ).toBeUndefined()
+    expect(
+      await runtime.notifications.createSubmitted({
+        amount: '1',
+        fromAddress: TOKEN.address,
+        fromChainId: 1,
+        fromSymbol: 'TOKEN',
+        ownerAddress: ACCOUNT,
+        type: 'deposit',
+        status: 'pending',
+        txHash: HASH
+      })
+    ).toBeUndefined()
     await expect(runtime.notifications.update({ id: 1, status: 'success' })).resolves.toBeUndefined()
     await expect(runtime.execution.switchChain({ chainId: 1 })).rejects.toThrow(
       'Vault widget transaction execution is not configured'

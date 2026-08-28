@@ -254,6 +254,7 @@ export const WidgetMigrate: FC<Props> = ({
       // Step 1: Sign permit
       if (needsPermitSign) {
         return {
+          id: 'permit',
           prepare: { isSuccess: true, data: { request: {} } } as any, // Permit doesn't need prepare
           label: 'Sign Permit',
           confirmMessage: `Sign permit for ${formattedBalance} ${vaultSymbol}`,
@@ -275,6 +276,7 @@ export const WidgetMigrate: FC<Props> = ({
 
       // Step 2: Execute multicall (selfPermit + migrate)
       return {
+        id: 'migrate',
         prepare: actions.prepareMulticall,
         label: 'Migrate',
         confirmMessage: `Migrating ${formattedBalance} ${vaultSymbol}`,
@@ -298,6 +300,7 @@ export const WidgetMigrate: FC<Props> = ({
     // Step 1: Approve
     if (needsApproval) {
       return {
+        id: 'approve',
         prepare: actions.prepareApprove,
         label: 'Approve',
         confirmMessage: `Approving ${formattedBalance} ${vaultSymbol} for migration`,
@@ -316,6 +319,7 @@ export const WidgetMigrate: FC<Props> = ({
 
     // Step 2: Migrate
     return {
+      id: 'migrate',
       prepare: actions.prepareMigrate,
       label: 'Migrate',
       confirmMessage: `Migrating ${formattedBalance} ${vaultSymbol}`,
@@ -528,7 +532,7 @@ export const WidgetMigrate: FC<Props> = ({
         step={currentStep}
         isLastStep={isLastStep}
         autoContinueToNextStep
-        autoContinueStepLabels={['Approve', 'Sign Permit']}
+        autoContinueStepIds={['approve', 'permit']}
         onAllComplete={handleMigrateSuccess}
       />
     </div>

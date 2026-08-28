@@ -40,14 +40,16 @@ export function shouldRefreshBeforeNotificationSettlement(params: {
 export function resolvePolledTransactionStatus(params: {
   receipt: TransactionReceipt
   requestedHash: Hash
-}): 'error' | 'success' {
+  isBridgeTransaction?: boolean
+}): 'error' | 'submitted' | 'success' {
   const receiptHash = params.receipt.transactionHash
   if (!isHash(receiptHash)) throw new Error('Transaction poller received an invalid receipt hash')
   if (receiptHash.toLowerCase() !== params.requestedHash.toLowerCase()) {
     throw new Error('Transaction poller received a receipt for an unexpected transaction')
   }
 
-  return params.receipt.status === 'success' ? 'success' : 'error'
+  if (params.receipt.status !== 'success') return 'error'
+  return params.isBridgeTransaction ? 'submitted' : 'success'
 }
 
 export function shouldApplyPolledTransactionSettlement(

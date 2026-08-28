@@ -24,6 +24,14 @@ const notification = {
   type: 'deposit'
 }
 
+function createDeferred<T>(): { promise: Promise<T>; resolve: (value: T) => void } {
+  let resolve!: (value: T) => void
+  const promise = new Promise<T>((resolvePromise) => {
+    resolve = resolvePromise
+  })
+  return { promise, resolve }
+}
+
 const intent: VaultWidgetTransactionIntent = {
   id: 'deposit:direct:10',
   mode: 'deposit',
@@ -49,14 +57,74 @@ function createAdapter(overrides: Partial<VaultWidgetExecutionAdapter> = {}): Va
   }
 }
 
-function createNotifications(): Pick<VaultWidgetNotificationsRuntime, 'create' | 'update'> {
+function createNotifications(): Pick<VaultWidgetNotificationsRuntime, 'createSubmitted' | 'update'> {
   return {
-    create: vi.fn().mockResolvedValue('notification-id'),
+    createSubmitted: vi.fn().mockResolvedValue('notification-id'),
     update: vi.fn().mockResolvedValue(undefined)
   }
 }
 
 describe('executePlannedStyledWidgetTransaction', () => {
+  it('does not let a fast receipt outrun durable notification creation', async () => {
+    const createGate = createDeferred<'notification-id'>()
+    const notifications = {
+      createSubmitted: vi.fn().mockReturnValue(createGate.promise),
+      update: vi.fn().mockResolvedValue(undefined)
+    }
+    const execution = executePlannedStyledWidgetTransaction({
+      account,
+      adapter: createAdapter(),
+      notification,
+      notifications,
+      plan: buildTransactionPlan({ intent, connectedChainId: 1 }),
+      refresh: vi.fn().mockResolvedValue(undefined)
+    })
+
+    await vi.waitFor(() => {
+      expect(notifications.createSubmitted).toHaveBeenCalledWith({
+        ...notification,
+        executionChainId: undefined,
+        ownerAddress: account,
+        status: 'pending',
+        txHash: hash
+      })
+    })
+    expect(notifications.update).not.toHaveBeenCalled()
+
+    createGate.resolve('notification-id')
+    await expect(execution).resolves.toMatchObject({ status: 'success' })
+    expect(notifications.update).toHaveBeenCalledWith({
+      id: 'notification-id',
+      receipt,
+      status: 'success',
+      txHash: hash
+    })
+  })
+
+  it('reports notification persistence failure without retrying the submitted transaction', async () => {
+    const persistenceError = new Error('IndexedDB unavailable')
+    const onNotificationError = vi.fn()
+    const notifications = {
+      createSubmitted: vi.fn().mockRejectedValue(persistenceError),
+      update: vi.fn().mockResolvedValue(undefined)
+    }
+
+    await expect(
+      executePlannedStyledWidgetTransaction({
+        account,
+        adapter: createAdapter(),
+        notification,
+        notifications,
+        onNotificationError,
+        plan: buildTransactionPlan({ intent, connectedChainId: 1 }),
+        refresh: vi.fn().mockResolvedValue(undefined)
+      })
+    ).resolves.toMatchObject({ status: 'success' })
+
+    expect(onNotificationError).toHaveBeenCalledWith(persistenceError)
+    expect(notifications.update).not.toHaveBeenCalled()
+  })
+
   it('preserves pending/success notifications, confirmation callback, refresh, and UI states', async () => {
     const states: TPlannedTransactionControllerState[] = []
     const notifications = createNotifications()
@@ -78,13 +146,14 @@ describe('executePlannedStyledWidgetTransaction', () => {
     expect(states.map(({ status }) => status)).toEqual(['confirming', 'pending', 'refreshing', 'success'])
     expect(onTransactionConfirmed).toHaveBeenCalledOnce()
     expect(refresh).toHaveBeenCalledOnce()
-    expect(notifications.create).toHaveBeenCalledWith({ ...notification, executionChainId: 73571 })
-    expect(notifications.update).toHaveBeenNthCalledWith(1, {
-      id: 'notification-id',
+    expect(notifications.createSubmitted).toHaveBeenCalledWith({
+      ...notification,
+      executionChainId: 73571,
+      ownerAddress: account,
       status: 'pending',
       txHash: hash
     })
-    expect(notifications.update).toHaveBeenNthCalledWith(2, {
+    expect(notifications.update).toHaveBeenCalledWith({
       id: 'notification-id',
       receipt,
       status: 'success',
@@ -140,7 +209,7 @@ describe('executePlannedStyledWidgetTransaction', () => {
     })
 
     expect(result).toMatchObject({ failureKind: 'submitted-unconfirmed', hash, status: 'error' })
-    expect(notifications.update).toHaveBeenCalledTimes(1)
+    expect(notifications.update).not.toHaveBeenCalled()
     expect(getPlannedTransactionErrorPresentation('submitted-unconfirmed', 'Receipt unavailable')).toEqual({
       actionLabel: 'Close',
       canRetry: false,
@@ -173,12 +242,8 @@ describe('executePlannedStyledWidgetTransaction', () => {
     })
     expect(states.map(({ status }) => status)).toEqual(['confirming', 'pending', 'error'])
     expect(refresh).not.toHaveBeenCalled()
-    expect(notifications.update).toHaveBeenNthCalledWith(1, {
-      id: 'notification-id',
-      status: 'pending',
-      txHash: hash
-    })
-    expect(notifications.update).toHaveBeenNthCalledWith(2, {
+    expect(notifications.update).toHaveBeenCalledOnce()
+    expect(notifications.update).toHaveBeenCalledWith({
       id: 'notification-id',
       receipt: revertedReceipt,
       status: 'error',
@@ -224,7 +289,8 @@ describe('executePlannedStyledWidgetTransaction', () => {
       { hash: replacementHash, status: 'success' }
     ])
     expect(refresh).toHaveBeenCalledOnce()
-    expect(notifications.update).toHaveBeenNthCalledWith(2, {
+    expect(notifications.update).toHaveBeenCalledOnce()
+    expect(notifications.update).toHaveBeenCalledWith({
       id: 'notification-id',
       receipt: replacementReceipt,
       status: 'success',
@@ -257,7 +323,8 @@ describe('executePlannedStyledWidgetTransaction', () => {
       status: 'error'
     })
     expect(refresh).not.toHaveBeenCalled()
-    expect(notifications.update).toHaveBeenNthCalledWith(2, {
+    expect(notifications.update).toHaveBeenCalledOnce()
+    expect(notifications.update).toHaveBeenCalledWith({
       id: 'notification-id',
       receipt: cancellationReceipt,
       status: 'error',

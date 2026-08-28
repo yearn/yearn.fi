@@ -49,6 +49,7 @@ export function MerkleRewardRow(props: TMerkleRewardRowProps): ReactElement {
       return undefined
     }
     return {
+      id: 'claim-merkle-reward',
       prepare,
       label: 'Claim',
       confirmMessage: `Claim ${formattedAmount} ${groupedReward.token.symbol}`,

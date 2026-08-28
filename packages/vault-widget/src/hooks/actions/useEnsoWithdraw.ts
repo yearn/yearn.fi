@@ -1,15 +1,15 @@
 import type { UseWidgetWithdrawFlowReturn } from '@yearn/vault-widget/types'
-import { useEffect, useMemo } from 'react'
+import { useCallback, useMemo } from 'react'
 import type { Address } from 'viem'
-import type { EnsoRoutingStrategy } from '../solvers/useSolverEnso'
+import type { EnsoQuotePurpose, EnsoRoutingStrategy } from '../solvers/useSolverEnso'
 import { useSolverEnso } from '../solvers/useSolverEnso'
 import { useEnsoOrder } from '../useEnsoOrder'
+import { refreshEnsoReadiness } from './ensoReadiness'
 
 interface UseEnsoWithdrawParams {
   vaultAddress: Address
   withdrawToken: Address
   amount: bigint
-  currentAmount?: bigint // Raw undebounced amount for reset triggering
   account?: Address
   receiver?: Address
   chainId: number
@@ -17,6 +17,7 @@ interface UseEnsoWithdrawParams {
   decimalsOut: number
   enabled: boolean
   slippage?: number
+  quotePurpose?: EnsoQuotePurpose
   routingStrategy?: EnsoRoutingStrategy
 }
 
@@ -56,6 +57,7 @@ export function useEnsoWithdraw(params: UseEnsoWithdrawParams): UseWidgetWithdra
     destinationChainId: params.destinationChainId,
     decimalsOut: params.decimalsOut,
     slippage: params.slippage,
+    quotePurpose: params.quotePurpose,
     routingStrategy: params.routingStrategy,
     requestKey: routeQueryKey,
     enabled: params.enabled
@@ -64,21 +66,16 @@ export function useEnsoWithdraw(params: UseEnsoWithdrawParams): UseWidgetWithdra
   // Calculate if allowance is sufficient
   const isAllowanceSufficient = !ensoFlow.periphery.routerAddress || ensoFlow.periphery.allowance >= params.amount
 
-  useEffect(() => {
-    ensoFlow.methods.resetRoute()
-  }, [params.currentAmount, routeQueryKey, ensoFlow.methods.resetRoute])
-
-  // Re-quote whenever any route-defining input changes, not just the amount.
-  useEffect(() => {
-    if (params.amount > 0n && params.enabled) {
-      void ensoFlow.methods.getRoute()
-    }
-  }, [params.amount, params.enabled, routeQueryKey, ensoFlow.methods.getRoute])
-
   // Prepare Enso order for withdrawal
   const canWithdraw = ensoFlow.periphery.route && params.amount > 0n && isAllowanceSufficient
+  const refreshReadiness = useCallback(async () => {
+    await refreshEnsoReadiness(ensoFlow.periphery.refetchAllowance, ensoFlow.methods.getRoute)
+  }, [ensoFlow.methods.getRoute, ensoFlow.periphery.refetchAllowance])
   const { prepareEnsoOrder } = useEnsoOrder({
     getEnsoTransaction: ensoFlow.methods.getEnsoTransaction,
+    refreshEnsoTransaction: refreshReadiness,
+    routeError: ensoFlow.periphery.error?.message,
+    isPreparingRoute: ensoFlow.periphery.isLoadingRoute,
     enabled: canWithdraw,
     chainId: params.chainId
   })
@@ -101,6 +98,7 @@ export function useEnsoWithdraw(params: UseEnsoWithdrawParams): UseWidgetWithdra
         isLoadingRoute: ensoFlow.periphery.isLoadingRoute,
         isCrossChain: ensoFlow.periphery.isCrossChain,
         routeHasSwap: ensoFlow.periphery.routeHasSwap,
+        bridgeProtocol: ensoFlow.periphery.bridgeProtocol,
         routerAddress: ensoFlow.periphery.routerAddress,
         error: ensoFlow.periphery.error?.message,
         tx: ensoFlow.periphery.route?.tx,

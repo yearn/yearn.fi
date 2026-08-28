@@ -5,12 +5,13 @@ import {
   getAutoContinueConfirmDelayMs,
   getInitialOverlayState,
   getPendingTransactionTitle,
+  getSubmittedTransactionCopy,
   hasExecutableWalletConnector,
   isConfirmedSafeTransactionFailure,
   resolveCompletionDeferral,
   resolveExecutionTrackingHash,
   resolveOverlayConnectedChainId,
-  resolvePendingSafeOverlayState,
+  resolvePendingSafeOverlayTransition,
   resolveTransactionReceiptOutcome,
   SAFE_AUTO_CONTINUE_CONFIRM_DELAY_MS,
   shouldAutoContinueFromSuccessState,
@@ -120,6 +121,24 @@ describe('transactionOverlay.helpers', () => {
     ).toBe('Transaction confirmed')
   })
 
+  it('shows an actionable state when destination execution needs manual completion', () => {
+    expect(
+      getSubmittedTransactionCopy({
+        isCrossChain: true,
+        isBridgeTrackingActive: true,
+        isBridgeTrackingUnavailable: false,
+        bridgeStatus: 'ready_for_manual_execution',
+        sourceChainName: 'Ethereum',
+        destinationChainName: 'Base',
+        bridgeAction: 'deposit'
+      })
+    ).toEqual({
+      title: 'Manual bridge action required',
+      detail:
+        'The destination action needs manual completion. Open the bridge tracker or source transaction for recovery details.'
+    })
+  })
+
   it('determines whether permit success should auto-continue', () => {
     expect(
       shouldAutoContinuePermitSuccess({
@@ -127,8 +146,8 @@ describe('transactionOverlay.helpers', () => {
         executedStepIsPermit: true,
         executedStepAutoContinues: true,
         executedStepCompletesFlow: false,
-        currentStepLabel: 'Deposit',
-        executedStepLabel: 'Permit',
+        currentStepId: 'deposit',
+        executedStepId: 'permit',
         isStepReady: true,
         hasAdvancedFromStep: null,
         hasAutoContinuedFromStep: null
@@ -141,8 +160,8 @@ describe('transactionOverlay.helpers', () => {
         executedStepIsPermit: true,
         executedStepAutoContinues: true,
         executedStepCompletesFlow: false,
-        currentStepLabel: 'Deposit',
-        executedStepLabel: 'Permit',
+        currentStepId: 'deposit',
+        executedStepId: 'permit',
         isStepReady: true,
         hasAdvancedFromStep: null,
         hasAutoContinuedFromStep: null
@@ -163,14 +182,16 @@ describe('transactionOverlay.helpers', () => {
     expect(
       shouldRunDeferredCompletion({
         completionDeferral: 'after-confetti',
-        trigger: 'close'
+        trigger: 'close',
+        hasBridgeFailed: false
       })
     ).toBe(true)
 
     expect(
       shouldRunDeferredCompletion({
         completionDeferral: 'after-close',
-        trigger: 'confetti'
+        trigger: 'confetti',
+        hasBridgeFailed: false
       })
     ).toBe(false)
   })
@@ -208,10 +229,10 @@ describe('shouldStartStepOnOpen', () => {
   })
 })
 
-describe('resolvePendingSafeOverlayState', () => {
+describe('resolvePendingSafeOverlayTransition', () => {
   it('moves a Safe transaction overlay into a submitted state when the Safe tx is awaiting confirmations', () => {
     expect(
-      resolvePendingSafeOverlayState({
+      resolvePendingSafeOverlayTransition({
         overlayState: 'pending',
         isWalletSafe: true,
         hasExecutionReceipt: false,
@@ -223,7 +244,7 @@ describe('resolvePendingSafeOverlayState', () => {
 
   it('moves a Safe transaction overlay into a submitted state when the Safe tx is queued but not executed', () => {
     expect(
-      resolvePendingSafeOverlayState({
+      resolvePendingSafeOverlayTransition({
         overlayState: 'pending',
         isWalletSafe: true,
         hasExecutionReceipt: false,
@@ -235,7 +256,7 @@ describe('resolvePendingSafeOverlayState', () => {
 
   it('accepts runtime Safe status names', () => {
     expect(
-      resolvePendingSafeOverlayState({
+      resolvePendingSafeOverlayTransition({
         overlayState: 'pending',
         isWalletSafe: true,
         hasExecutionReceipt: false,
@@ -245,7 +266,7 @@ describe('resolvePendingSafeOverlayState', () => {
     ).toBe('submitted')
 
     expect(
-      resolvePendingSafeOverlayState({
+      resolvePendingSafeOverlayTransition({
         overlayState: 'submitted',
         isWalletSafe: true,
         hasExecutionReceipt: false,
@@ -257,7 +278,7 @@ describe('resolvePendingSafeOverlayState', () => {
 
   it('falls back to wallet_getCallsStatus when Safe tx details are not available yet', () => {
     expect(
-      resolvePendingSafeOverlayState({
+      resolvePendingSafeOverlayTransition({
         overlayState: 'pending',
         isWalletSafe: true,
         hasExecutionReceipt: false,
@@ -269,19 +290,43 @@ describe('resolvePendingSafeOverlayState', () => {
 
   it('keeps non-Safe pending overlays waiting for a normal receipt', () => {
     expect(
-      resolvePendingSafeOverlayState({
+      resolvePendingSafeOverlayTransition({
         overlayState: 'pending',
         isWalletSafe: false,
         hasExecutionReceipt: false,
         safeTxStatus: 'AWAITING_EXECUTION',
         callsStatus: 'pending'
       })
-    ).toBe('pending')
+    ).toBeUndefined()
+  })
+
+  it('does not reclassify a confirmed cross-chain receipt as awaiting Safe execution', () => {
+    expect(
+      resolvePendingSafeOverlayTransition({
+        overlayState: 'submitted',
+        isWalletSafe: false,
+        hasExecutionReceipt: true,
+        safeTxStatus: undefined,
+        callsStatus: undefined
+      })
+    ).toBeUndefined()
+  })
+
+  it('does not emit a duplicate transition for an already submitted Safe transaction', () => {
+    expect(
+      resolvePendingSafeOverlayTransition({
+        overlayState: 'submitted',
+        isWalletSafe: true,
+        hasExecutionReceipt: false,
+        safeTxStatus: 'AWAITING_EXECUTION',
+        callsStatus: 'pending'
+      })
+    ).toBeUndefined()
   })
 
   it('surfaces Safe detail failures as overlay errors', () => {
     expect(
-      resolvePendingSafeOverlayState({
+      resolvePendingSafeOverlayTransition({
         overlayState: 'pending',
         isWalletSafe: true,
         hasExecutionReceipt: false,
@@ -293,7 +338,7 @@ describe('resolvePendingSafeOverlayState', () => {
 
   it('surfaces cancelled Safe transactions as overlay errors', () => {
     expect(
-      resolvePendingSafeOverlayState({
+      resolvePendingSafeOverlayTransition({
         overlayState: 'pending',
         isWalletSafe: true,
         hasExecutionReceipt: false,
@@ -305,7 +350,7 @@ describe('resolvePendingSafeOverlayState', () => {
 
   it('keeps polling submitted Safe overlays so failures can still surface', () => {
     expect(
-      resolvePendingSafeOverlayState({
+      resolvePendingSafeOverlayTransition({
         overlayState: 'submitted',
         isWalletSafe: true,
         hasExecutionReceipt: false,
@@ -409,8 +454,8 @@ describe('shouldRefetchNextStepAfterReceipt', () => {
         overlayState: 'submitted',
         hasReceiptTransactionHash: true,
         wasLastStep: false,
-        currentStepLabel: 'Deposit',
-        executedStepLabel: 'Approve',
+        currentStepId: 'deposit',
+        executedStepId: 'approve',
         isStepReady: false
       })
     ).toBe(true)
@@ -423,8 +468,8 @@ describe('shouldRefetchNextStepAfterReceipt', () => {
         overlayState: 'submitted',
         hasReceiptTransactionHash: true,
         wasLastStep: false,
-        currentStepLabel: 'Deposit',
-        executedStepLabel: 'Approve',
+        currentStepId: 'deposit',
+        executedStepId: 'approve',
         isStepReady: true
       })
     ).toBe(false)

@@ -185,6 +185,54 @@ export type AppUseSimulateContractReturnType = {
   [key: string]: unknown
 }
 
+export type TRawTransaction = {
+  to: TAddress
+  data: Hex
+  value: string
+  from: TAddress
+  chainId: number
+}
+
+export type TRawTransactionPreparation = {
+  kind: 'raw'
+  transaction?: TRawTransaction
+  chainId: number
+  execute: () => Promise<Hash>
+  refetch: () => Promise<unknown>
+  error: Error | null
+  isError: boolean
+  isLoading: boolean
+  isFetching: boolean
+  isSuccess: boolean
+  status: 'pending' | 'error' | 'success'
+}
+
+export type TTransactionPreparation = AppUseSimulateContractReturnType | TRawTransactionPreparation
+
+export function isRawTransactionPreparation(
+  preparation?: TTransactionPreparation
+): preparation is TRawTransactionPreparation {
+  return Boolean(preparation && 'kind' in preparation && preparation.kind === 'raw')
+}
+
+export function getContractTransactionRequest(preparation?: TTransactionPreparation): unknown {
+  return preparation && !isRawTransactionPreparation(preparation) ? preparation.data?.request : undefined
+}
+
+export function getTransactionPreparationChainId(preparation?: TTransactionPreparation): number | undefined {
+  if (!preparation) return undefined
+  return isRawTransactionPreparation(preparation)
+    ? preparation.chainId
+    : (preparation.data?.request as { chainId?: number } | undefined)?.chainId
+}
+
+export function isTransactionPreparationReady(preparation?: TTransactionPreparation): boolean {
+  if (!preparation?.isSuccess) return false
+  return isRawTransactionPreparation(preparation)
+    ? Boolean(preparation.transaction)
+    : Boolean(preparation.data?.request)
+}
+
 type WidgetFlow<TActions, TPeriphery> = {
   actions: TActions
   periphery: TPeriphery
@@ -192,8 +240,8 @@ type WidgetFlow<TActions, TPeriphery> = {
 
 export type UseWidgetDepositFlowReturn = WidgetFlow<
   {
-    prepareApprove: AppUseSimulateContractReturnType
-    prepareDeposit: AppUseSimulateContractReturnType
+    prepareApprove: TTransactionPreparation
+    prepareDeposit: TTransactionPreparation
   },
   {
     prepareApproveEnabled: boolean
@@ -206,6 +254,7 @@ export type UseWidgetDepositFlowReturn = WidgetFlow<
     isLoadingRoute: boolean
     isCrossChain: boolean
     routeHasSwap?: boolean
+    bridgeProtocol?: 'stargate' | 'ccip' | 'relay'
     tx?: {
       to: TAddress
       data: Hex
@@ -223,8 +272,8 @@ export type UseWidgetDepositFlowReturn = WidgetFlow<
 
 export type UseWidgetWithdrawFlowReturn = WidgetFlow<
   {
-    prepareWithdraw: AppUseSimulateContractReturnType
-    prepareApprove?: AppUseSimulateContractReturnType
+    prepareWithdraw: TTransactionPreparation
+    prepareApprove?: TTransactionPreparation
   },
   {
     prepareWithdrawEnabled: boolean
@@ -238,6 +287,7 @@ export type UseWidgetWithdrawFlowReturn = WidgetFlow<
     isLoadingRoute: boolean
     isCrossChain: boolean
     routeHasSwap?: boolean
+    bridgeProtocol?: 'stargate' | 'ccip' | 'relay'
     routerAddress?: TAddress
     tx?: {
       to: TAddress
@@ -282,6 +332,14 @@ export type TCreateNotificationParams = {
   toSymbol?: string
   toAmount?: string
   toChainId?: number
+  bridgeProtocol?: 'stargate' | 'ccip' | 'relay'
+}
+
+export type TCreateSubmittedNotificationParams = TCreateNotificationParams & {
+  awaitingExecution?: boolean
+  ownerAddress: TAddress
+  status: Extract<TNotificationStatus, 'pending' | 'submitted'>
+  txHash: Hash
 }
 
 export type TUpdateNotificationParams = {
@@ -290,4 +348,5 @@ export type TUpdateNotificationParams = {
   status?: TNotificationStatus
   receipt?: TransactionReceipt
   awaitingExecution?: boolean
+  bridgeStatus?: 'pending' | 'inflight' | 'delivered' | 'failed' | 'ready_for_manual_execution' | 'unknown'
 }

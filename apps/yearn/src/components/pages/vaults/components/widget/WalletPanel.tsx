@@ -18,7 +18,6 @@ import { useWeb3 } from '@shared/contexts/useWeb3'
 import { yvUsdLockedVaultAbi } from '@shared/contracts/abi/yvUsdLockedVault.abi'
 import { useReadContract } from '@shared/hooks/useAppWagmi'
 import { useChainTimestamp } from '@shared/hooks/useChainTimestamp'
-import { useTransactionStatusPoller } from '@shared/hooks/useTransactionStatusPoller'
 import { useYearnSpotPrices } from '@shared/hooks/useYearnSpotPrices'
 import { IconCheck } from '@shared/icons/IconCheck'
 import { IconCross } from '@shared/icons/IconCross'
@@ -34,6 +33,7 @@ import {
   toNormalizedBN,
   truncateHex
 } from '@shared/utils'
+import { getNotificationLifecyclePresentation } from '@shared/utils/notificationLifecycle'
 import { getNetwork } from '@shared/utils/wagmi/utils'
 import { useRouter } from 'next/navigation'
 import { type FC, type ReactElement, useCallback, useMemo, useState } from 'react'
@@ -65,21 +65,6 @@ const STATUS_STYLES: Record<TNotificationStatus, { label: string; className: str
     icon: <IconLoader className="size-3 animate-spin" />
   },
   error: { label: 'Error', className: 'bg-[#C73203] text-white', icon: <IconCross className="size-3" /> }
-}
-
-function WalletNotificationPoller({ entry }: { entry: TNotification }): null {
-  useTransactionStatusPoller(entry)
-  return null
-}
-
-function WalletNotificationPollers({ entries }: { entries: TNotification[] }): ReactElement {
-  return (
-    <>
-      {entries.map((entry) => (
-        <WalletNotificationPoller key={entry.id ?? `${entry.type}-${entry.txHash}`} entry={entry} />
-      ))}
-    </>
-  )
 }
 
 function YvUsdVaultBalances({ account }: { account?: `0x${string}` }): ReactElement {
@@ -353,11 +338,6 @@ export const WalletPanel: FC<WalletPanelProps> = ({
 
   const recentEntries = useMemo(() => relatedEntries.slice(0, 3), [relatedEntries])
   const awaitingExecutionEntries = useMemo(() => getAwaitingExecutionEntries(relatedEntries), [relatedEntries])
-  const polledEntries = useMemo(
-    () => relatedEntries.filter((entry) => entry.status === 'pending' || entry.awaitingExecution),
-    [relatedEntries]
-  )
-
   return (
     <div
       className={cl(
@@ -367,7 +347,6 @@ export const WalletPanel: FC<WalletPanelProps> = ({
       aria-hidden={!isPanelActive}
       data-tour="vault-detail-wallet-panel"
     >
-      <WalletNotificationPollers entries={polledEntries} />
       <div className="bg-surface border border-border rounded-lg flex flex-col flex-1 min-h-0">
         <div className="flex items-center justify-between gap-3 px-6 py-3">
           <h3 className="text-base font-semibold text-text-primary">Wallet</h3>
@@ -531,8 +510,9 @@ export const WalletPanel: FC<WalletPanelProps> = ({
 }
 
 function RecentTransactionRow({ entry }: { entry: TNotification }): ReactElement {
-  const explorerBaseURI = getNetwork(entry.chainId).defaultBlockExplorer
-  const statusMeta = STATUS_STYLES[entry.status]
+  const lifecycle = getNotificationLifecyclePresentation(entry)
+  const explorerBaseURI = getNetwork(lifecycle.transactionChainId).defaultBlockExplorer
+  const statusMeta = STATUS_STYLES[lifecycle.styleStatus]
   const baseAmount = entry.fromTokenName ? entry.amount.replace(entry.fromTokenName, '').trim() : entry.amount
   const amountLabel =
     entry.fromTokenName && baseAmount
@@ -544,20 +524,21 @@ function RecentTransactionRow({ entry }: { entry: TNotification }): ReactElement
       <div className="min-w-0">
         <div className="text-xs font-semibold text-text-primary capitalize">{entry.type}</div>
         <div className="text-xs text-text-secondary truncate">{amountLabel}</div>
-        {entry.txHash && explorerBaseURI ? (
+        {lifecycle.detail ? <div className="text-[10px] text-text-secondary">{lifecycle.detail}</div> : null}
+        {lifecycle.transactionHash && explorerBaseURI ? (
           <a
-            href={`${explorerBaseURI}/tx/${entry.txHash}`}
+            href={`${explorerBaseURI}/tx/${lifecycle.transactionHash}`}
             target="_blank"
             rel="noopener noreferrer"
             className="text-[10px] text-text-secondary hover:text-text-primary"
           >
-            {truncateHex(entry.txHash, 4)}
+            {truncateHex(lifecycle.transactionHash, 4)}
           </a>
         ) : null}
       </div>
       <div className={cl('flex items-center gap-1 rounded-full px-2 py-1 text-[10px]', statusMeta.className)}>
         {statusMeta.icon}
-        {statusMeta.label}
+        {lifecycle.label}
       </div>
     </div>
   )

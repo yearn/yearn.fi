@@ -28,6 +28,8 @@ export interface EnsoRouteStep {
   [key: string]: unknown
 }
 
+export type EnsoBridgeProtocol = 'stargate' | 'ccip' | 'relay'
+
 type EnsoRouteErrorPayload = {
   error?: string | string[]
   message?: string | string[]
@@ -137,4 +139,9 @@ export function routeHasSwapStep(route: EnsoRouteResponse | undefined): boolean 
   }
 
   return route.route.some((step) => typeof step.action === 'string' && step.action.toLowerCase().includes('swap'))
+}
+
+export function getEnsoBridgeProtocol(route: EnsoRouteResponse | undefined): EnsoBridgeProtocol | undefined {
+  const protocol = route?.route.find((step) => step.action?.toLowerCase() === 'bridge')?.protocol?.toLowerCase()
+  return protocol === 'stargate' || protocol === 'ccip' || protocol === 'relay' ? protocol : undefined
 }

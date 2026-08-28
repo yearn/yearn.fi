@@ -25,6 +25,7 @@ interface UseWithdrawNotificationsProps {
   routeType: WithdrawRouteType
   routerAddress?: string
   isCrossChain: boolean
+  bridgeProtocol?: 'stargate' | 'ccip' | 'relay'
   // Source info
   withdrawalSource: WithdrawalSource
 }
@@ -51,6 +52,7 @@ export const useWithdrawNotifications = ({
   routeType,
   routerAddress,
   isCrossChain,
+  bridgeProtocol,
   withdrawalSource
 }: UseWithdrawNotificationsProps): WithdrawNotificationsResult => {
   const isZap = toAddress(withdrawToken) !== toAddress(assetAddress)
@@ -150,7 +152,8 @@ export const useWithdrawNotifications = ({
       toAddress: toAddress(withdrawToken),
       toSymbol: outputToken.symbol || '',
       toAmount: expectedOut ? formatTAmount({ value: expectedOut, decimals: outputToken.decimals ?? 18 }) : undefined,
-      toChainId: isCrossChain ? destinationChainId : undefined
+      toChainId: isCrossChain ? destinationChainId : undefined,
+      bridgeProtocol: isCrossChain ? bridgeProtocol : undefined
     }
   }, [
     vault,
@@ -167,7 +170,8 @@ export const useWithdrawNotifications = ({
     chainId,
     withdrawToken,
     expectedOut,
-    destinationChainId
+    destinationChainId,
+    bridgeProtocol
   ])
 
   return {
