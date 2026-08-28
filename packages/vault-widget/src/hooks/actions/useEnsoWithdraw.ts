@@ -1,7 +1,8 @@
 import type { UseWidgetWithdrawFlowReturn } from '@yearn/vault-widget/types'
 import { useCallback, useMemo } from 'react'
 import type { Address } from 'viem'
-import type { EnsoQuotePurpose, EnsoRoutingStrategy } from '../solvers/useSolverEnso'
+import { VAULT_ENSO_ROUTING_STRATEGY } from '../solvers/ensoRouteRequest'
+import type { EnsoQuotePurpose } from '../solvers/useSolverEnso'
 import { useSolverEnso } from '../solvers/useSolverEnso'
 import { useEnsoOrder } from '../useEnsoOrder'
 import { refreshEnsoReadiness } from './ensoReadiness'
@@ -18,7 +19,6 @@ interface UseEnsoWithdrawParams {
   enabled: boolean
   slippage?: number
   quotePurpose?: EnsoQuotePurpose
-  routingStrategy?: EnsoRoutingStrategy
 }
 
 export function useEnsoWithdraw(params: UseEnsoWithdrawParams): UseWidgetWithdrawFlowReturn {
@@ -32,7 +32,7 @@ export function useEnsoWithdraw(params: UseEnsoWithdrawParams): UseWidgetWithdra
         params.account ?? 'no-account',
         params.receiver ?? 'no-receiver',
         params.slippage ?? 'default',
-        params.routingStrategy ?? 'default-strategy'
+        VAULT_ENSO_ROUTING_STRATEGY
       ].join(':'),
     [
       params.chainId,
@@ -41,8 +41,7 @@ export function useEnsoWithdraw(params: UseEnsoWithdrawParams): UseWidgetWithdra
       params.withdrawToken,
       params.account,
       params.receiver,
-      params.slippage,
-      params.routingStrategy
+      params.slippage
     ]
   )
 
@@ -58,7 +57,7 @@ export function useEnsoWithdraw(params: UseEnsoWithdrawParams): UseWidgetWithdra
     decimalsOut: params.decimalsOut,
     slippage: params.slippage,
     quotePurpose: params.quotePurpose,
-    routingStrategy: params.routingStrategy,
+    routingStrategy: VAULT_ENSO_ROUTING_STRATEGY,
     requestKey: routeQueryKey,
     enabled: params.enabled
   })

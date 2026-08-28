@@ -4,7 +4,7 @@ import { useDirectStake } from '@yearn/vault-widget/internal/hooks/actions/useDi
 import { useEnsoDeposit } from '@yearn/vault-widget/internal/hooks/actions/useEnsoDeposit'
 import { useYBoldZapperDeposit } from '@yearn/vault-widget/internal/hooks/actions/useYBoldZapperDeposit'
 import { useYvUsdLockedZapDeposit } from '@yearn/vault-widget/internal/hooks/actions/useYvUsdLockedZapDeposit'
-import type { EnsoQuotePurpose, EnsoRoutingStrategy } from '@yearn/vault-widget/internal/hooks/solvers/useSolverEnso'
+import type { EnsoQuotePurpose } from '@yearn/vault-widget/internal/hooks/solvers/useSolverEnso'
 import { toAddress } from '@yearn/vault-widget/internal/utils'
 import { toBasisPoints } from '@yearn/vault-widget/internal/utils/slippage'
 import { YVUSD_LOCKED_ADDRESS } from '@yearn/vault-widget/internal/utils/yvUsd'
@@ -38,7 +38,6 @@ interface UseDepositFlowProps {
   slippage: number
   ensoQuotePurpose: EnsoQuotePurpose
   ensoEnabled: boolean
-  ensoRoutingStrategy?: EnsoRoutingStrategy
   routeRefreshKey?: number
   stakingSource?: string
 }
@@ -99,7 +98,6 @@ export const useDepositFlow = ({
   slippage,
   ensoQuotePurpose,
   ensoEnabled,
-  ensoRoutingStrategy,
   routeRefreshKey,
   stakingSource
 }: UseDepositFlowProps): DepositFlowResult => {
@@ -173,7 +171,6 @@ export const useDepositFlow = ({
     enabled: routeType === 'ENSO' && !!depositToken && amount > 0n && currentAmount > 0n,
     slippage: toBasisPoints(slippage),
     quotePurpose: ensoQuotePurpose,
-    routingStrategy: ensoRoutingStrategy,
     routeRefreshKey
   })
 
