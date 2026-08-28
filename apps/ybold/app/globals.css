@@ -1,0 +1,60 @@
+@import "tailwindcss";
+@import "@yearn/vault-widget/styles.css";
+
+@source "../../../packages/vault-widget/src";
+
+/* Design tokens — see DESIGNSYSTEM.md. Flat, geometric; no gradients or shadows. */
+:root {
+  --background: #f2efe9;
+  --surface: #ffffff;
+  --navy: #111b4d;
+  --yearn-blue: #0657f9;
+  --electric-blue: #405be5;
+  --bold-green: #5fd67c;
+  --yellow: #ffdc37;
+  --muted-text: #858cae;
+  --border: rgba(17, 27, 77, 0.12);
+  --good-text: #1d7a4f;
+  --bad-text: #c2452d;
+}
+
+@theme inline {
+  --color-background: var(--background);
+  --color-surface: var(--surface);
+  --color-navy: var(--navy);
+  --color-yearn: var(--yearn-blue);
+  --color-electric: var(--electric-blue);
+  --color-green: var(--bold-green);
+  --color-yellow: var(--yellow);
+  --color-muted: var(--muted-text);
+  --color-line: var(--border);
+  --color-good: var(--good-text);
+  --color-bad: var(--bad-text);
+  --font-sans: var(--font-geist-sans);
+  --font-mono: var(--font-geist-mono);
+}
+
+body {
+  background: var(--background);
+  color: var(--navy);
+  font-family: var(--font-geist-sans), system-ui, sans-serif;
+}
+
+/* Join the action tabs and panel into one continuous yBOLD control. */
+.ybold-widget [data-widget-part="action-shell"] {
+  border-radius: 0.5rem;
+}
+
+.ybold-widget [data-widget-part="action-tabs"] {
+  border-radius: 0.5rem 0.5rem 0 0;
+}
+
+.ybold-widget [data-widget-part="action-panel"],
+.ybold-widget [data-widget-part="action-panel"] > div {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.ybold-widget [data-widget-part="action-panel"] > div {
+  border-top-width: 0;
+}

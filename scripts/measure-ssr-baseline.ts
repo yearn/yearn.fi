@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import { gzipSync } from 'node:zlib'
 
-const PROJECT_ROOT = process.cwd()
+const PROJECT_ROOT = path.join(process.cwd(), 'apps/yearn')
 const BUILD_DIR = path.join(PROJECT_ROOT, '.next')
 const STATIC_CHUNKS_DIR = path.join(BUILD_DIR, 'static', 'chunks')
 const BASE_URL = process.env.BASE_URL ?? 'http://127.0.0.1:3000'

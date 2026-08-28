@@ -1,0 +1,63 @@
+{
+  "name": "@yearn/vault-widget",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "exports": {
+    ".": "./src/index.tsx",
+    "./advanced": "./src/advanced.ts",
+    "./headless": "./src/headless/index.ts",
+    "./icons": "./src/components/widget/shared/Icons.tsx",
+    "./internal/components/widget": "./src/components/widget/index.tsx",
+    "./internal/components/widget/deposit": "./src/components/widget/deposit/index.tsx",
+    "./internal/components/widget/withdraw": "./src/components/widget/withdraw/index.tsx",
+    "./internal/components/shared/*": "./src/components/shared/*.tsx",
+    "./internal/components/widget/InputTokenAmount": "./src/components/widget/InputTokenAmount.tsx",
+    "./internal/components/widget/TokenSelector": "./src/components/widget/TokenSelector.tsx",
+    "./internal/components/widget/deposit/safeDepositBatch": "./src/components/widget/deposit/safeDepositBatch.ts",
+    "./internal/components/widget/deposit/types": "./src/components/widget/deposit/types.ts",
+    "./internal/components/widget/shared/valueDisplay": "./src/components/widget/shared/valueDisplay.ts",
+    "./internal/components/widget/shared/*": "./src/components/widget/shared/*.tsx",
+    "./internal/components/widget/tokenLogo.utils": "./src/components/widget/tokenLogo.utils.ts",
+    "./internal/components/widget/tokenSelectorList.utils": "./src/components/widget/tokenSelectorList.utils.ts",
+    "./internal/contracts/abi/*": "./src/contracts/abi/*.ts",
+    "./internal/hooks/*": "./src/hooks/*.ts",
+    "./internal/icons/*": "./src/icons/*.tsx",
+    "./internal/utils": "./src/utils/index.ts",
+    "./internal/utils/*": "./src/utils/*.ts",
+    "./runtime": "./src/runtime.tsx",
+    "./styles.css": "./styles.css",
+    "./types": "./src/types.ts",
+    "./wagmi": "./src/adapters/wagmiExecutionAdapter.ts",
+    "./ybold": "./src/ybold.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "peerDependencies": {
+    "@tanstack/react-query": "5.101.4",
+    "@wagmi/core": "2.22.1",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "react-rewards": "2.1.0",
+    "viem": "2.55.11",
+    "wagmi": "2.18.2"
+  },
+  "devDependencies": {
+    "@tanstack/react-query": "5.101.4",
+    "@wagmi/core": "2.22.1",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.4",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "react-rewards": "2.1.0",
+    "typescript": "5.9.3",
+    "viem": "2.55.11",
+    "vitest": "4.1.10",
+    "wagmi": "2.18.2"
+  }
+}

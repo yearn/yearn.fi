@@ -1,0 +1,37 @@
+{
+  "name": "@yearn/ybold",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev --hostname 127.0.0.1 --port 3002",
+    "build": "next build",
+    "start": "next start --hostname 127.0.0.1 --port 3002",
+    "lint": "biome check .",
+    "lint:fix": "biome check --write .",
+    "test": "vitest run",
+    "tslint": "tsc -p tsconfig.json --noEmit"
+  },
+  "dependencies": {
+    "@rainbow-me/rainbowkit": "2.2.11",
+    "@tanstack/react-query": "5.101.4",
+    "@wagmi/core": "2.22.1",
+    "@yearn/vault-widget": "workspace:*",
+    "next": "16.3.0",
+    "react": "19.2.8",
+    "react-dom": "19.2.8",
+    "react-rewards": "2.1.0",
+    "viem": "2.55.11",
+    "wagmi": "2.18.2"
+  },
+  "devDependencies": {
+    "@biomejs/biome": "2.4.16",
+    "@tailwindcss/postcss": "4.3.3",
+    "@types/node": "25.3.0",
+    "@types/react": "19.2.18",
+    "@types/react-dom": "19.2.4",
+    "postcss": "8.5.26",
+    "tailwindcss": "4.3.3",
+    "typescript": "5.9.3",
+    "vitest": "4.1.10"
+  }
+}

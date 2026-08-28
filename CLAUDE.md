@@ -5,14 +5,16 @@ Yearn Finance vaults interface — Next.js 16 App Router + React 19 + TypeScript
 ## Commands
 
 ```bash
-bun install                              # Install dependencies
-bun run dev                              # Next dev server on 127.0.0.1:3000
-bun run preview                          # Next production server on 127.0.0.1:3000 after a build
-bun run build                            # Next production build
-bun run test                             # Full Vitest suite
-bunx vitest run src/path/to/test.ts      # Single test file
-bun run lint:fix                         # Biome format and fix
-bun run tslint                           # TypeScript type check only
+bun install                                      # Install all workspace dependencies
+bun run dev                                      # Yearn dev server on 127.0.0.1:3000
+bun run preview                                  # Yearn production server after a build
+bun run build                                    # Build the Yearn app
+bun run dev:ybold                                # yBOLD dev server on 127.0.0.1:3002
+bun run build:ybold                              # Build the yBOLD app
+bun run test                                     # Run the Yearn Vitest suite
+bun run --cwd apps/yearn test -- src/path.test.ts # Run one Yearn test file
+bun run lint:fix                                 # Biome format and fix
+bun run tslint                                   # Type-check the Yearn app
 ```
 
 ## Verification
@@ -62,17 +64,22 @@ When writing a new `useEffect`, add a brief comment explaining why an alternativ
 
 **Tech stack:** Next.js 16 App Router, React 19, Tailwind CSS 4, TanStack Query, Wagmi/Viem/RainbowKit
 
-**Path aliases** (defined in tsconfig.json and next.config.ts):
+The repository is a Bun workspace. The production application lives in
+`apps/yearn`; reusable packages live in `packages`.
+
+**Path aliases** (defined in `apps/yearn/tsconfig.json` and its Next config):
 - `@/*` → `src/*`
 - `@shared/*` → `src/components/shared/*`
 - `@pages/*` → `src/components/pages/*`
 - `@components/*` → `src/components/*`
 
 **Key directories:**
-- `app/` — Next App Router pages, route handlers, metadata, redirects, and root layout
-- `src/components/shared/` — shared library (contexts, hooks, utils, types, contracts)
-- `src/components/pages/` — route pages (landing, portfolio, vaults)
-- `src/server/` — focused API endpoint implementations and shared server-side helpers used by `app/api/**/route.ts`
+- `apps/yearn/app/` — Next App Router pages, route handlers, metadata, redirects, and root layout
+- `apps/ybold/` — standalone yBOLD app and second shared-widget consumer
+- `apps/yearn/src/components/shared/` — shared library (contexts, hooks, utils, types, contracts)
+- `apps/yearn/src/components/pages/` — route pages (landing, portfolio, vaults)
+- `apps/yearn/src/server/` — API implementations used by `apps/yearn/app/api/**/route.ts`
+- `packages/` — reusable workspace packages that must not import application code
 
 **Key patterns:**
 - Context provider chain defined in `App.tsx` — read that file for the full order

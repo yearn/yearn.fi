@@ -2,7 +2,7 @@
 
 import { resolve as resolvePath } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { parseTenderlyServerChains, type TTenderlyServerChainConfig } from '../src/config/tenderlyServer'
+import { parseTenderlyServerChains, type TTenderlyServerChainConfig } from '../apps/yearn/src/config/tenderlyServer'
 import { buildPredictablePublicRpcUrl, readEnvFile, sanitizeConsoleText } from './tenderly-vnet'
 
 type TParsedCliArgs = {

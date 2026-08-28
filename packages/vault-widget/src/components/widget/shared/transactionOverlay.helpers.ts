@@ -1,0 +1,259 @@
+import type { VaultWidgetSafeTransactionStatus } from '@yearn/vault-widget/runtime'
+
+export type OverlayState = 'idle' | 'confirming' | 'pending' | 'submitted' | 'refreshing' | 'success' | 'error'
+export type CompletionDeferral = 'none' | 'immediate' | 'after-close' | 'after-confetti'
+export type SafeTransactionStatus =
+  | VaultWidgetSafeTransactionStatus
+  | 'AWAITING_CONFIRMATIONS'
+  | 'AWAITING_EXECUTION'
+  | 'CANCELLED'
+  | 'FAILED'
+  | 'SUCCESS'
+export const AUTO_CONTINUE_SUCCESS_DELAY_MS = 1600
+export const SAFE_AUTO_CONTINUE_CONFIRM_DELAY_MS = 700
+
+export function resolveTransactionReceiptOutcome(params: {
+  isSuccess: boolean
+  isError: boolean
+  status?: 'success' | 'reverted'
+}): 'pending' | 'success' | 'error' {
+  if (params.isError || (params.isSuccess && params.status === 'reverted')) return 'error'
+  if (params.isSuccess && params.status === 'success') return 'success'
+  return 'pending'
+}
+
+export function getInitialOverlayState(): OverlayState {
+  return 'idle'
+}
+
+function capitalizeWord(value: string): string {
+  if (!value) return value
+  return `${value[0]?.toUpperCase() || ''}${value.slice(1)}`
+}
+
+export function formatPendingTransactionFunctionName(params: {
+  functionName?: unknown
+  fallbackLabel?: string
+}): string | undefined {
+  const { functionName, fallbackLabel } = params
+
+  if (typeof functionName === 'string' && functionName.length > 0) {
+    return `${capitalizeWord(functionName)}()`
+  }
+
+  if (fallbackLabel) {
+    return `${fallbackLabel}()`
+  }
+
+  return undefined
+}
+
+export function getPendingTransactionTitle(params: {
+  isPreparingNextStep: boolean
+  functionName?: unknown
+  fallbackLabel?: string
+}): string {
+  const { isPreparingNextStep, functionName, fallbackLabel } = params
+
+  if (isPreparingNextStep) {
+    return 'Transaction confirmed'
+  }
+
+  const pendingFunctionName = formatPendingTransactionFunctionName({
+    functionName,
+    fallbackLabel
+  })
+
+  if (!pendingFunctionName) {
+    return 'Transaction pending'
+  }
+  return `${pendingFunctionName} transaction pending`
+}
+
+export function resolveOverlayConnectedChainId(params: {
+  accountChainId: number | undefined
+  currentChainId: number
+  targetChainId: number | undefined
+  isWalletSafe: boolean
+}): number {
+  if (params.accountChainId) {
+    return params.accountChainId
+  }
+
+  if (params.isWalletSafe && params.targetChainId) {
+    return params.targetChainId
+  }
+
+  return params.currentChainId
+}
+
+export function resolvePendingSafeOverlayState(params: {
+  overlayState: OverlayState
+  isWalletSafe: boolean
+  hasExecutionReceipt: boolean
+  safeTxStatus?: SafeTransactionStatus
+  callsStatus?: 'pending' | 'success' | 'failure'
+}): OverlayState {
+  const { overlayState, isWalletSafe, hasExecutionReceipt, safeTxStatus, callsStatus } = params
+  const normalizedSafeTxStatus = safeTxStatus?.replaceAll('-', '_').toUpperCase()
+
+  if (overlayState !== 'pending' && overlayState !== 'submitted') return overlayState
+  if (!isWalletSafe) return overlayState
+  if (hasExecutionReceipt) return overlayState
+
+  if (normalizedSafeTxStatus === 'FAILED' || normalizedSafeTxStatus === 'CANCELLED') return 'error'
+  if (normalizedSafeTxStatus === 'AWAITING_CONFIRMATIONS' || normalizedSafeTxStatus === 'AWAITING_EXECUTION') {
+    return 'submitted'
+  }
+
+  if (callsStatus === 'failure') return 'error'
+  if (callsStatus === 'pending') return 'submitted'
+
+  return overlayState
+}
+
+export function isConfirmedSafeTransactionFailure(params: {
+  isWalletSafe: boolean
+  submittedTxHash?: string
+  safeTxHash?: string
+  safeTxStatus?: SafeTransactionStatus
+}): boolean {
+  if (!params.isWalletSafe || !params.submittedTxHash || !params.safeTxHash) return false
+  if (params.submittedTxHash.toLowerCase() !== params.safeTxHash.toLowerCase()) return false
+
+  const normalizedSafeTxStatus = params.safeTxStatus?.replaceAll('-', '_').toUpperCase()
+  return normalizedSafeTxStatus === 'FAILED' || normalizedSafeTxStatus === 'CANCELLED'
+}
+
+export function resolveExecutionTrackingHash(params: {
+  isWalletSafe: boolean
+  submittedTxHash?: `0x${string}`
+  safeExecutionTxHash?: `0x${string}`
+  callsReceiptTxHash?: `0x${string}`
+}): `0x${string}` | undefined {
+  if (!params.isWalletSafe) {
+    return params.submittedTxHash
+  }
+
+  return params.safeExecutionTxHash ?? params.callsReceiptTxHash
+}
+
+export function hasExecutableWalletConnector(connector: unknown): boolean {
+  const candidate = connector as { getAccounts?: unknown; getChainId?: unknown } | null | undefined
+  return typeof candidate?.getAccounts === 'function' && typeof candidate.getChainId === 'function'
+}
+
+export function shouldAutoContinuePermitSuccess(params: {
+  overlayState: OverlayState
+  executedStepIsPermit?: boolean
+  executedStepAutoContinues: boolean
+  executedStepCompletesFlow: boolean
+  currentStepLabel?: string
+  executedStepLabel?: string
+  isStepReady: boolean
+  hasAdvancedFromStep?: string | null
+  hasAutoContinuedFromStep?: string | null
+}): boolean {
+  const {
+    overlayState,
+    executedStepIsPermit,
+    executedStepAutoContinues,
+    executedStepCompletesFlow,
+    currentStepLabel,
+    executedStepLabel,
+    isStepReady,
+    hasAdvancedFromStep,
+    hasAutoContinuedFromStep
+  } = params
+
+  if (overlayState !== 'success') return false
+  if (!executedStepIsPermit) return false
+  if (!executedStepAutoContinues) return false
+  if (executedStepCompletesFlow) return false
+  if (!currentStepLabel || currentStepLabel === executedStepLabel) return false
+  if (!isStepReady) return false
+  if (hasAdvancedFromStep === executedStepLabel) return false
+  if (hasAutoContinuedFromStep === executedStepLabel) return false
+
+  return true
+}
+
+export function shouldRefetchNextStepAfterReceipt(params: {
+  isOpen: boolean
+  overlayState: OverlayState
+  hasReceiptTransactionHash: boolean
+  wasLastStep: boolean
+  currentStepLabel?: string
+  executedStepLabel?: string
+  isStepReady: boolean
+}): boolean {
+  if (!params.isOpen) return false
+  if (params.overlayState !== 'pending' && params.overlayState !== 'submitted') return false
+  if (!params.hasReceiptTransactionHash) return false
+  if (params.wasLastStep) return false
+  if (!params.currentStepLabel || params.currentStepLabel === params.executedStepLabel) return false
+  if (params.isStepReady) return false
+
+  return true
+}
+
+export function shouldAutoContinueFromSuccessState(params: {
+  canShowSuccess: boolean
+  executedStepAutoContinues: boolean
+  wasLastStep: boolean
+}): boolean {
+  return params.canShowSuccess && params.executedStepAutoContinues && !params.wasLastStep
+}
+
+export function shouldStartStepOnOpen(params: {
+  isOpen: boolean
+  overlayState: OverlayState
+  hasStep: boolean
+  hasStarted: boolean
+  isStepReady: boolean
+  isPermitStepReady: boolean
+  hasPrepareError: boolean
+}): boolean {
+  if (!params.isOpen) return false
+  if (params.overlayState !== 'idle') return false
+  if (!params.hasStep) return false
+  if (params.hasStarted) return false
+
+  return params.isStepReady || params.isPermitStepReady || params.hasPrepareError
+}
+
+export function getAutoContinueConfirmDelayMs(params: { isWalletSafe: boolean }): number {
+  return params.isWalletSafe ? SAFE_AUTO_CONTINUE_CONFIRM_DELAY_MS : 0
+}
+
+export function resolveCompletionDeferral(params: {
+  completedAllSteps: boolean
+  deferOnAllCompleteUntilClose: boolean
+  deferOnAllCompleteUntilConfettiEnd: boolean
+  stepShowsConfetti: boolean
+}): CompletionDeferral {
+  const { completedAllSteps, deferOnAllCompleteUntilClose, deferOnAllCompleteUntilConfettiEnd, stepShowsConfetti } =
+    params
+
+  if (!completedAllSteps) return 'none'
+  if (deferOnAllCompleteUntilClose) return 'after-close'
+  if (deferOnAllCompleteUntilConfettiEnd && stepShowsConfetti) return 'after-confetti'
+  return 'immediate'
+}
+
+export function shouldRunDeferredCompletion(params: {
+  completionDeferral: CompletionDeferral
+  trigger: 'close' | 'confetti'
+}): boolean {
+  const { completionDeferral, trigger } = params
+
+  if (completionDeferral === 'after-confetti') {
+    return trigger === 'confetti' || trigger === 'close'
+  }
+
+  if (completionDeferral === 'after-close') {
+    return trigger === 'close'
+  }
+
+  return false
+}
