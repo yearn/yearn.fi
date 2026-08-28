@@ -107,6 +107,7 @@ export function SiteStatus(): ReactElement {
 
   return (
     <aside
+      data-site-status
       aria-label={'Site status'}
       aria-busy={statusQuery.isPending}
       className={

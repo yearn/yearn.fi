@@ -177,7 +177,7 @@ export function VaultDetailsWelcomeTour({ onTourStateChange }: VaultDetailsWelco
   return (
     <>
       {!isDismissed && !isTourOpen ? (
-        <div className="fixed bottom-4 right-4 z-60 w-[calc(100%-2rem)] max-w-[360px] min-[1700px]:bottom-24">
+        <div data-site-tour-notification className="fixed right-4 bottom-4 z-60 w-[calc(100%-2rem)] max-w-[360px]">
           <div className="rounded-2xl border border-border bg-surface p-4 shadow-xl">
             <div className="flex items-start gap-3">
               <div className="flex-1">
