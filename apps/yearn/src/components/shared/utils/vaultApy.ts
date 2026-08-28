@@ -1,0 +1,150 @@
+import {
+  getVaultAddress,
+  getVaultAPR,
+  getVaultChainID,
+  type TKongVaultInput
+} from '@pages/vaults/domain/kongVaultSelectors'
+import { isYBoldProductAddress } from '@pages/vaults/domain/normalizeVault'
+import { isZero } from '@shared/utils'
+
+const KATANA_CHAIN_ID = 747474
+
+export type TKatanaAprData = {
+  katanaAppRewardsAPR?: number
+  steerPointsPerDollar?: number
+}
+
+const normalizeFiniteNumber = (value: unknown): number | undefined => {
+  if (typeof value !== 'number') {
+    return undefined
+  }
+  if (!Number.isFinite(value)) {
+    return undefined
+  }
+  return value
+}
+
+export function calculateKatanaTotalApr(
+  katanaExtras?: Partial<TKatanaAprData>,
+  baseAprOverride?: number
+): number | undefined {
+  if (!katanaExtras) {
+    return undefined
+  }
+
+  const appRewardsApr = katanaExtras.katanaAppRewardsAPR
+  const parts = [baseAprOverride, appRewardsApr].filter((value): value is number => {
+    return typeof value === 'number' && !Number.isNaN(value)
+  })
+
+  if (parts.length === 0) {
+    return undefined
+  }
+  return parts.reduce((acc, value) => acc + value, 0)
+}
+
+export function getKatanaAprData(vault: TKongVaultInput): TKatanaAprData | undefined {
+  if (getVaultChainID(vault) !== KATANA_CHAIN_ID) {
+    return undefined
+  }
+
+  const apr = getVaultAPR(vault)
+  const katanaAppRewardsAPR = normalizeFiniteNumber(apr.extra.katanaAppRewardsAPR)
+  const steerPointsPerDollar = normalizeFiniteNumber(apr.extra.steerPointsPerDollar)
+
+  const hasKatanaComponentData = [katanaAppRewardsAPR, steerPointsPerDollar].some((value) => value !== undefined)
+
+  if (!hasKatanaComponentData) {
+    return undefined
+  }
+
+  return {
+    katanaAppRewardsAPR,
+    steerPointsPerDollar
+  }
+}
+
+export function getVaultForwardAPY(vault: TKongVaultInput): number {
+  const apr = getVaultAPR(vault)
+
+  if (isYBoldProductAddress(getVaultAddress(vault))) {
+    return Math.max(apr.points.weekAgo, apr.forwardAPR.netAPR)
+  }
+
+  return apr.forwardAPR?.netAPR || 0
+}
+
+export function calculateVaultEstimatedAPY(vault: TKongVaultInput): number {
+  const apr = getVaultAPR(vault)
+  const chainID = getVaultChainID(vault)
+  const forwardAPY = getVaultForwardAPY(vault)
+
+  if (isYBoldProductAddress(getVaultAddress(vault))) {
+    return forwardAPY
+  }
+
+  if (chainID === KATANA_CHAIN_ID) {
+    const katanaAprData = getKatanaAprData(vault)
+    if (katanaAprData) {
+      const katanaEstimatedApr = calculateKatanaTotalApr(katanaAprData, forwardAPY)
+      return katanaEstimatedApr ?? forwardAPY
+    }
+    return forwardAPY
+  }
+
+  if (apr.forwardAPR?.type === '') {
+    return (apr.extra?.stakingRewardsAPR || 0) + (apr?.netAPR || 0)
+  }
+
+  if (chainID === 1 && apr.forwardAPR?.composite?.boost > 0 && !apr.extra?.stakingRewardsAPR) {
+    return forwardAPY
+  }
+
+  const sumOfRewardsAPY = (apr.extra?.stakingRewardsAPR || 0) + (apr.extra?.gammaRewardAPR || 0)
+  const hasCurrentAPY = !isZero(forwardAPY)
+
+  if (sumOfRewardsAPY > 0) {
+    return sumOfRewardsAPY + forwardAPY
+  }
+  if (hasCurrentAPY) {
+    return forwardAPY
+  }
+  return apr?.netAPR || 0
+}
+
+export function calculateKatanaThirtyDayAPY(vault: TKongVaultInput): number | undefined {
+  if (getVaultChainID(vault) !== KATANA_CHAIN_ID) {
+    return undefined
+  }
+  const apr = getVaultAPR(vault)
+  const katanaAprData = getKatanaAprData(vault)
+  if (!katanaAprData) {
+    return undefined
+  }
+  const monthlyAPY = apr.points?.monthAgo
+  const weeklyAPY = apr.points?.weekAgo
+  const chosenBaseApr = !isZero(monthlyAPY || 0) ? monthlyAPY : weeklyAPY
+
+  if (typeof chosenBaseApr !== 'number') {
+    return undefined
+  }
+
+  return calculateKatanaTotalApr(katanaAprData, chosenBaseApr)
+}
+
+export function calculateVaultHistoricalAPY(vault: TKongVaultInput): number | null {
+  const apr = getVaultAPR(vault)
+  const katanaAPY = calculateKatanaThirtyDayAPY(vault)
+
+  if (getVaultChainID(vault) === KATANA_CHAIN_ID && typeof katanaAPY === 'number') {
+    return katanaAPY
+  }
+  if (typeof katanaAPY === 'number') {
+    return katanaAPY
+  }
+
+  const monthlyAPY = apr.points?.monthAgo
+  const weeklyAPY = apr.points?.weekAgo
+  const chosenAPY = !isZero(monthlyAPY || 0) ? monthlyAPY : weeklyAPY
+  return typeof chosenAPY === 'number' ? chosenAPY : null
+}

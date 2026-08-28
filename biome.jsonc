@@ -45,7 +45,8 @@
   "css": {
     "parser": {
       "cssModules": false,
-      "allowWrongLineComments": false
+      "allowWrongLineComments": false,
+      "tailwindDirectives": true
     }
   },
   "javascript": {
@@ -69,16 +70,15 @@
       "!**/build",
       "!**/node_modules",
       "!**/.next",
-      "!**/.codex",
+      "!.codex",
       "!**/.git",
       "!**/generated",
       "!**/wagmi.ts",
       "!**/wagmi.d.ts",
-      "!next-env.d.ts",
+      "!**/next-env.d.ts",
       "!**/bun.lock",
-      "!style.css",
-      "!**/yearn.fi-worktree-*",
-      "!**/apps/lib/style.css"
+      "!apps/yearn/style.css",
+      "!**/yearn.fi-worktree-*"
     ]
   }
 }

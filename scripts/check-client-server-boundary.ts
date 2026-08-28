@@ -2,7 +2,7 @@ import fs from 'node:fs'
 import path from 'node:path'
 import * as ts from 'typescript'
 
-const PROJECT_ROOT = process.cwd()
+const PROJECT_ROOT = path.join(process.cwd(), 'apps/yearn')
 const SOURCE_ROOTS = ['app', 'src', 'pages']
 const SOURCE_EXTENSIONS = ['.ts', '.tsx', '.js', '.jsx']
 const SERVER_ONLY_ROOTS = ['src/server', 'app/api'].map((root) => path.join(PROJECT_ROOT, root))

@@ -1,0 +1,350 @@
+import type { VaultWidgetBridgeStatus, VaultWidgetSafeTransactionStatus } from '@yearn/vault-widget/runtime'
+
+export type OverlayState = 'idle' | 'confirming' | 'pending' | 'submitted' | 'refreshing' | 'success' | 'error'
+export type CompletionDeferral = 'none' | 'immediate' | 'after-close' | 'after-confetti'
+export type SafeTransactionStatus =
+  | VaultWidgetSafeTransactionStatus
+  | 'AWAITING_CONFIRMATIONS'
+  | 'AWAITING_EXECUTION'
+  | 'CANCELLED'
+  | 'FAILED'
+  | 'SUCCESS'
+export const AUTO_CONTINUE_SUCCESS_DELAY_MS = 1600
+export const SAFE_AUTO_CONTINUE_CONFIRM_DELAY_MS = 700
+
+export function resolveTransactionReceiptOutcome(params: {
+  isSuccess: boolean
+  isError: boolean
+  status?: 'success' | 'reverted'
+}): 'pending' | 'success' | 'error' {
+  if (params.isError || (params.isSuccess && params.status === 'reverted')) return 'error'
+  if (params.isSuccess && params.status === 'success') return 'success'
+  return 'pending'
+}
+
+export function getInitialOverlayState(): OverlayState {
+  return 'idle'
+}
+
+function capitalizeWord(value: string): string {
+  if (!value) return value
+  return `${value[0]?.toUpperCase() || ''}${value.slice(1)}`
+}
+
+export function formatPendingTransactionFunctionName(params: {
+  functionName?: unknown
+  fallbackLabel?: string
+}): string | undefined {
+  const { functionName, fallbackLabel } = params
+
+  if (typeof functionName === 'string' && functionName.length > 0) {
+    return `${capitalizeWord(functionName)}()`
+  }
+
+  if (fallbackLabel) {
+    return `${fallbackLabel}()`
+  }
+
+  return undefined
+}
+
+export function getPendingTransactionTitle(params: {
+  isPreparingNextStep: boolean
+  functionName?: unknown
+  fallbackLabel?: string
+}): string {
+  const { isPreparingNextStep, functionName, fallbackLabel } = params
+
+  if (isPreparingNextStep) {
+    return 'Transaction confirmed'
+  }
+
+  const pendingFunctionName = formatPendingTransactionFunctionName({
+    functionName,
+    fallbackLabel
+  })
+
+  if (!pendingFunctionName) {
+    return 'Transaction pending'
+  }
+  return `${pendingFunctionName} transaction pending`
+}
+
+export function getSubmittedTransactionCopy(params: {
+  isCrossChain: boolean
+  isBridgeTrackingActive: boolean
+  isBridgeTrackingUnavailable: boolean
+  bridgeStatus?: VaultWidgetBridgeStatus
+  bridgeTrackingError?: string
+  sourceChainName: string
+  destinationChainName: string
+  bridgeAction: string
+}): { title: string; detail: string } {
+  if (!params.isCrossChain) {
+    return {
+      title: 'Transaction submitted',
+      detail: `Your transaction has been submitted to your Safe.
+Execution may happen separately after the required confirmations are collected.`
+    }
+  }
+
+  if (params.bridgeStatus === 'ready_for_manual_execution') {
+    return {
+      title: 'Manual bridge action required',
+      detail:
+        params.bridgeTrackingError ||
+        'The destination action needs manual completion. Open the bridge tracker or source transaction for recovery details.'
+    }
+  }
+
+  if (params.isBridgeTrackingUnavailable) {
+    return {
+      title: 'Tracking unavailable',
+      detail: params.bridgeTrackingError || 'Check the source transaction for bridge progress.'
+    }
+  }
+
+  if (!params.isBridgeTrackingActive) {
+    return {
+      title: 'Transaction submitted',
+      detail: 'Waiting for the source transaction to be confirmed.'
+    }
+  }
+
+  if (params.bridgeStatus === 'inflight') {
+    return {
+      title: `Bridging to ${params.destinationChainName}`,
+      detail: `Waiting for the ${params.bridgeAction} to complete on ${params.destinationChainName}.`
+    }
+  }
+
+  return {
+    title: `Transaction complete on ${params.sourceChainName}`,
+    detail: `Bridging to ${params.destinationChainName}…`
+  }
+}
+
+export function getBridgeTrackerLink(params: {
+  bridgeProtocol?: 'stargate' | 'ccip' | 'relay'
+  bridgeRequestId?: string
+  sourceTxHash?: string
+}): { label: string; url: string } | undefined {
+  if (params.bridgeProtocol === 'relay' && params.bridgeRequestId) {
+    return {
+      label: 'Track bridge on Relay',
+      url: `https://relay.link/transaction/${params.bridgeRequestId}`
+    }
+  }
+
+  if (params.bridgeProtocol === 'stargate' && params.sourceTxHash) {
+    return {
+      label: 'Track bridge on LayerZero',
+      url: `https://layerzeroscan.com/tx/${params.sourceTxHash}`
+    }
+  }
+
+  return undefined
+}
+
+export function resolveOverlayConnectedChainId(params: {
+  accountChainId: number | undefined
+  currentChainId: number
+  targetChainId: number | undefined
+  isWalletSafe: boolean
+}): number {
+  if (params.accountChainId) {
+    return params.accountChainId
+  }
+
+  if (params.isWalletSafe && params.targetChainId) {
+    return params.targetChainId
+  }
+
+  return params.currentChainId
+}
+
+export function resolvePendingSafeOverlayTransition(params: {
+  overlayState: OverlayState
+  isWalletSafe: boolean
+  hasExecutionReceipt: boolean
+  safeTxStatus?: SafeTransactionStatus
+  callsStatus?: 'pending' | 'success' | 'failure'
+}): Extract<OverlayState, 'submitted' | 'error'> | undefined {
+  const { overlayState, isWalletSafe, hasExecutionReceipt, safeTxStatus, callsStatus } = params
+  const normalizedSafeTxStatus = safeTxStatus?.replaceAll('-', '_').toUpperCase()
+
+  if (overlayState !== 'pending' && overlayState !== 'submitted') return undefined
+  if (!isWalletSafe) return undefined
+  if (hasExecutionReceipt) return undefined
+
+  if (normalizedSafeTxStatus === 'FAILED' || normalizedSafeTxStatus === 'CANCELLED') return 'error'
+  if (normalizedSafeTxStatus === 'AWAITING_CONFIRMATIONS' || normalizedSafeTxStatus === 'AWAITING_EXECUTION') {
+    return overlayState === 'pending' ? 'submitted' : undefined
+  }
+
+  if (callsStatus === 'failure') return 'error'
+  if (callsStatus === 'pending') return overlayState === 'pending' ? 'submitted' : undefined
+
+  return undefined
+}
+
+export function isConfirmedSafeTransactionFailure(params: {
+  isWalletSafe: boolean
+  submittedTxHash?: string
+  safeTxHash?: string
+  safeTxStatus?: SafeTransactionStatus
+}): boolean {
+  if (!params.isWalletSafe || !params.submittedTxHash || !params.safeTxHash) return false
+  if (params.submittedTxHash.toLowerCase() !== params.safeTxHash.toLowerCase()) return false
+
+  const normalizedSafeTxStatus = params.safeTxStatus?.replaceAll('-', '_').toUpperCase()
+  return normalizedSafeTxStatus === 'FAILED' || normalizedSafeTxStatus === 'CANCELLED'
+}
+
+export function resolveExecutionTrackingHash(params: {
+  isWalletSafe: boolean
+  submittedTxHash?: `0x${string}`
+  safeExecutionTxHash?: `0x${string}`
+  callsReceiptTxHash?: `0x${string}`
+}): `0x${string}` | undefined {
+  if (!params.isWalletSafe) {
+    return params.submittedTxHash
+  }
+
+  return params.safeExecutionTxHash ?? params.callsReceiptTxHash
+}
+
+export function hasExecutableWalletConnector(connector: unknown): boolean {
+  const candidate = connector as { getAccounts?: unknown; getChainId?: unknown } | null | undefined
+  return typeof candidate?.getAccounts === 'function' && typeof candidate.getChainId === 'function'
+}
+
+export function shouldAutoContinuePermitSuccess(params: {
+  overlayState: OverlayState
+  executedStepIsPermit?: boolean
+  executedStepAutoContinues: boolean
+  executedStepCompletesFlow: boolean
+  currentStepId?: string
+  executedStepId?: string
+  isStepReady: boolean
+  hasAdvancedFromStep?: string | null
+  hasAutoContinuedFromStep?: string | null
+}): boolean {
+  const {
+    overlayState,
+    executedStepIsPermit,
+    executedStepAutoContinues,
+    executedStepCompletesFlow,
+    currentStepId,
+    executedStepId,
+    isStepReady,
+    hasAdvancedFromStep,
+    hasAutoContinuedFromStep
+  } = params
+
+  if (overlayState !== 'success') return false
+  if (!executedStepIsPermit) return false
+  if (!executedStepAutoContinues) return false
+  if (executedStepCompletesFlow) return false
+  if (!currentStepId || currentStepId === executedStepId) return false
+  if (!isStepReady) return false
+  if (hasAdvancedFromStep === executedStepId) return false
+  if (hasAutoContinuedFromStep === executedStepId) return false
+
+  return true
+}
+
+export function shouldRefetchNextStepAfterReceipt(params: {
+  isOpen: boolean
+  overlayState: OverlayState
+  hasReceiptTransactionHash: boolean
+  wasLastStep: boolean
+  currentStepId?: string
+  executedStepId?: string
+  isStepReady: boolean
+}): boolean {
+  if (!params.isOpen) return false
+  if (params.overlayState !== 'pending' && params.overlayState !== 'submitted') return false
+  if (!params.hasReceiptTransactionHash) return false
+  if (params.wasLastStep) return false
+  if (!params.currentStepId || params.currentStepId === params.executedStepId) return false
+  if (params.isStepReady) return false
+
+  return true
+}
+
+export function shouldAutoContinueFromSuccessState(params: {
+  canShowSuccess: boolean
+  executedStepAutoContinues: boolean
+  wasLastStep: boolean
+}): boolean {
+  return params.canShowSuccess && params.executedStepAutoContinues && !params.wasLastStep
+}
+
+export function shouldStartStepOnOpen(params: {
+  isOpen: boolean
+  overlayState: OverlayState
+  hasStep: boolean
+  hasStarted: boolean
+  isStepReady: boolean
+  isPermitStepReady: boolean
+  hasPrepareError: boolean
+}): boolean {
+  if (!params.isOpen) return false
+  if (params.overlayState !== 'idle') return false
+  if (!params.hasStep) return false
+  if (params.hasStarted) return false
+
+  return params.isStepReady || params.isPermitStepReady || params.hasPrepareError
+}
+
+export function getAutoContinueConfirmDelayMs(params: { isWalletSafe: boolean }): number {
+  return params.isWalletSafe ? SAFE_AUTO_CONTINUE_CONFIRM_DELAY_MS : 0
+}
+
+export function resolveCompletionDeferral(params: {
+  completedAllSteps: boolean
+  deferOnAllCompleteUntilClose: boolean
+  deferOnAllCompleteUntilConfettiEnd: boolean
+  stepShowsConfetti: boolean
+}): CompletionDeferral {
+  const { completedAllSteps, deferOnAllCompleteUntilClose, deferOnAllCompleteUntilConfettiEnd, stepShowsConfetti } =
+    params
+
+  if (!completedAllSteps) return 'none'
+  if (deferOnAllCompleteUntilClose) return 'after-close'
+  if (deferOnAllCompleteUntilConfettiEnd && stepShowsConfetti) return 'after-confetti'
+  return 'immediate'
+}
+
+export function resolveCrossChainSourceCompletion(params: {
+  completedAllSteps: boolean
+  isBridgeTrackingAvailable: boolean
+  isOpen: boolean
+  hasBridgeFailed: boolean
+}): CompletionDeferral {
+  if (params.hasBridgeFailed) return 'none'
+  if (!params.completedAllSteps) return 'none'
+  if (params.isBridgeTrackingAvailable && params.isOpen) return 'after-close'
+  return 'immediate'
+}
+
+export function shouldRunDeferredCompletion(params: {
+  completionDeferral: CompletionDeferral
+  trigger: 'close' | 'confetti'
+  hasBridgeFailed: boolean
+}): boolean {
+  const { completionDeferral, trigger, hasBridgeFailed } = params
+
+  if (hasBridgeFailed) return false
+
+  if (completionDeferral === 'after-confetti') {
+    return trigger === 'confetti' || trigger === 'close'
+  }
+
+  if (completionDeferral === 'after-close') {
+    return trigger === 'close'
+  }
+
+  return false
+}

@@ -1,0 +1,86 @@
+import { useClaimStakingRewards } from '@pages/vaults/hooks/rewards/useClaimStakingRewards'
+import { useChainId } from '@shared/hooks/useAppWagmi'
+import { toNormalizedValue } from '@shared/utils'
+import type { TransactionStep } from '@yearn/vault-widget/advanced'
+import type { ReactElement } from 'react'
+import { useCallback, useMemo } from 'react'
+import { useWriteContract } from 'wagmi'
+import { RewardRow } from './RewardRow'
+import type { TStakingReward } from './types'
+
+type TStakingRewardRowProps = {
+  reward: TStakingReward
+  stakingAddress: `0x${string}`
+  stakingSource: string
+  chainId: number
+  onStartClaim: (step: TransactionStep, merkleRewardKeys?: string[]) => void
+  isFirst?: boolean
+  isAllChainsView?: boolean
+  onSwitchChain?: () => void
+  claimButtonClassName?: string
+}
+
+export function StakingRewardRow(props: TStakingRewardRowProps): ReactElement {
+  const {
+    reward,
+    stakingAddress,
+    stakingSource,
+    chainId,
+    onStartClaim,
+    isFirst,
+    isAllChainsView,
+    onSwitchChain,
+    claimButtonClassName
+  } = props
+
+  const currentChainId = useChainId()
+  const { isPending } = useWriteContract()
+
+  const { prepare } = useClaimStakingRewards({
+    stakingAddress,
+    stakingSource,
+    chainId,
+    enabled: true
+  })
+
+  const normalizedAmount = toNormalizedValue(reward.amount, reward.decimals)
+  const formattedAmount = normalizedAmount.toFixed(4)
+
+  const step = useMemo((): TransactionStep | undefined => {
+    if (!prepare.isSuccess || !prepare.data?.request) {
+      return undefined
+    }
+    return {
+      id: 'claim-staking-reward',
+      prepare,
+      label: 'Claim',
+      confirmMessage: `Claim ${formattedAmount} ${reward.symbol}`,
+      successTitle: 'Rewards Claimed',
+      successMessage: `You claimed ${formattedAmount} ${reward.symbol}`,
+      showConfetti: true
+    }
+  }, [prepare, formattedAmount, reward.symbol])
+
+  const handleClaim = useCallback(() => {
+    if (!step) return
+    onStartClaim(step)
+  }, [step, onStartClaim])
+
+  return (
+    <RewardRow
+      chainId={chainId}
+      currentChainId={currentChainId}
+      tokenAddress={reward.tokenAddress}
+      symbol={reward.symbol}
+      amount={normalizedAmount.toString()}
+      usdValue={reward.usdValue}
+      onClaim={handleClaim}
+      isClaimPending={isPending}
+      isClaimReady={prepare.isSuccess}
+      isFirst={isFirst}
+      isAllChainsView={isAllChainsView}
+      onSwitchChain={onSwitchChain}
+      claimButtonClassName={claimButtonClassName}
+    />
+  )
+}

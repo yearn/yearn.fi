@@ -1,0 +1,1336 @@
+import type { VaultWidgetTransactionPlan } from '@yearn/vault-widget/headless'
+import { Button } from '@yearn/vault-widget/internal/components/shared/Button'
+import { buildEligibleStyledWidgetPlan } from '@yearn/vault-widget/internal/components/widget/shared/plannedTransaction'
+import { useDebouncedInput } from '@yearn/vault-widget/internal/hooks/useDebouncedInput'
+import { useVaultWidgetSpotPrices } from '@yearn/vault-widget/internal/hooks/useVaultWidgetSpotPrices'
+import { IconChevron } from '@yearn/vault-widget/internal/icons/IconChevron'
+import { IconCross } from '@yearn/vault-widget/internal/icons/IconCross'
+import { IconSettings } from '@yearn/vault-widget/internal/icons/IconSettings'
+import { cl, formatTAmount, toAddress, toNormalizedBN } from '@yearn/vault-widget/internal/utils'
+import { toBasisPoints } from '@yearn/vault-widget/internal/utils/slippage'
+import { isVaultWidgetExecutionConfigured, useVaultWidgetRuntime } from '@yearn/vault-widget/runtime'
+import type { ReactElement, ReactNode } from 'react'
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { formatUnits } from 'viem'
+import { ApprovalOverlay } from '../deposit/ApprovalOverlay'
+import { InputTokenAmount } from '../InputTokenAmount'
+import { SettingsPanel } from '../SettingsPanel'
+import { PriceImpactWarning } from '../shared/PriceImpactWarning'
+import { getProtectedEnsoQuoteError } from '../shared/protectedEnsoQuoteError'
+import { isProtectedEnsoTransactionStepEnabled } from '../shared/protectedEnsoTransaction'
+import { TokenSelectorOverlay } from '../shared/TokenSelectorOverlay'
+import { TransactionOverlay, type TransactionStep } from '../shared/TransactionOverlay'
+import {
+  getProtectedEnsoQuoteCandidate,
+  type ProtectedEnsoQuoteRequest,
+  useProtectedEnsoQuoteState
+} from '../shared/useProtectedEnsoQuoteState'
+import { useResetEnsoSelection } from '../shared/useResetEnsoSelection'
+import { useWidgetContext } from '../shared/useWidgetContext'
+import { formatWidgetAllowance, formatWidgetPreciseValue, formatWidgetValue } from '../shared/valueDisplay'
+import { WidgetHeader } from '../shared/WidgetHeader'
+import { WidgetLoadingSkeleton } from '../shared/WidgetLoadingSkeleton'
+import { getPriorityTokens } from './constants'
+import { SourceSelector } from './SourceSelector'
+import { buildSafeWithdrawBatch } from './safeWithdrawBatch'
+import type { WithdrawalSource, WithdrawWidgetProps } from './types'
+import { useWithdrawError } from './useWithdrawError'
+import { useWithdrawFlow } from './useWithdrawFlow'
+import { useWithdrawNotifications } from './useWithdrawNotifications'
+import { calculateWithdrawValueInfo } from './valuation'
+import { WithdrawDetails } from './WithdrawDetails'
+import { WithdrawDetailsOverlay } from './WithdrawDetailsOverlay'
+import {
+  buildWithdrawTransactionStep,
+  getWithdrawCtaLabel,
+  getWithdrawTransactionName,
+  isWithdrawCtaDisabled,
+  isWithdrawLastStep
+} from './withdrawStepHelpers'
+
+type WidgetWithdrawProps = WithdrawWidgetProps & {
+  hideSettings?: boolean
+  disableBorderRadius?: boolean
+  collapseDetails?: boolean
+  contentBelowInput?: ReactNode
+  hideContainerBorder?: boolean
+  onTokenSelectionChange?: (address: `0x${string}`, chainId: number) => void
+}
+
+function resolveWithdrawalSource(hasVaultBalance: boolean, hasStakingBalance: boolean): WithdrawalSource | undefined {
+  if (hasVaultBalance && !hasStakingBalance) {
+    return 'vault'
+  }
+  if (!hasVaultBalance && hasStakingBalance) {
+    return 'staking'
+  }
+  return undefined
+}
+
+function getWithdrawActionLabel(isUnstake: boolean, withdrawalSource: WithdrawalSource): string {
+  if (isUnstake) {
+    return 'You will unstake'
+  }
+  if (withdrawalSource === 'staking') {
+    return 'You will unstake and redeem'
+  }
+  return 'You will redeem'
+}
+
+function getZapNotificationText(isUnstake: boolean, shouldShowZapUi: boolean): string | undefined {
+  if (isUnstake) {
+    return 'This transaction will unstake'
+  }
+  if (shouldShowZapUi) {
+    return '⚡ This transaction will use Enso to Zap to:'
+  }
+  return undefined
+}
+
+type ApprovalState = {
+  hasApprovalStep: boolean
+  isAllowanceSufficient: boolean
+  needsApproval: boolean
+  tokenSymbol?: string
+  tokenDecimals: number
+  spenderAddress: `0x${string}`
+  spenderName?: string
+}
+
+export function WidgetWithdraw({
+  vaultAddress,
+  assetAddress,
+  displayAssetAddress,
+  stakingAddress,
+  chainId,
+  vaultSymbol,
+  stakingSource,
+  vaultVersion,
+  vaultUserData,
+  inputBalanceOverride,
+  inputDisplayBalanceOverride,
+  maxWithdrawAssets,
+  requiredSharesOverride,
+  expectedOutOverride,
+  isActionDisabled = false,
+  actionDisabledReason,
+  customErrorMessage,
+  disableFlow = false,
+  disableTokenSelector = false,
+  forcedWithdrawalSource,
+  hideZapForTokens,
+  disableAmountInput = false,
+  hideActionButton = false,
+  prefill,
+  prefillRequestKey,
+  onPrefillApplied,
+  headerActions,
+  onAmountChange,
+  onTokenSelectionChange,
+  handleWithdrawSuccess: onWithdrawSuccess,
+  onOpenSettings,
+  isSettingsOpen,
+  disableBorderRadius,
+  collapseDetails,
+  contentBelowInput,
+  hideContainerBorder = false
+}: WidgetWithdrawProps): ReactElement {
+  const bootstrapEnsoQuoteDebugRef = useRef<Record<string, unknown> | null>(null)
+  const lastBootstrapEnsoQuoteDebugKeyRef = useRef<string | null>(null)
+  const lastProtectedEnsoQuoteDebugKeyRef = useRef<string | null>(null)
+  const {
+    account,
+    openLoginModal,
+    refreshWalletBalances,
+    getToken,
+    zapSlippage,
+    trackEvent,
+    ensoEnabled,
+    isWalletSafe
+  } = useWidgetContext({ chainId, vaultAddress })
+  const runtime = useVaultWidgetRuntime()
+  const enableTokenListFetch = runtime.catalog.enableTokenList
+
+  const resolvedDisplayAssetAddress = displayAssetAddress ?? assetAddress
+
+  const [showWithdrawDetailsModal, setShowWithdrawDetailsModal] = useState(false)
+  const [showApprovalOverlay, setShowApprovalOverlay] = useState(false)
+  const [showTransactionOverlay, setShowTransactionOverlay] = useState(false)
+  const [activeTransactionPlan, setActiveTransactionPlan] = useState<VaultWidgetTransactionPlan | undefined>()
+  const [internalWithdrawalSource, setWithdrawalSource] = useState<WithdrawalSource>(stakingAddress ? null : 'vault')
+  const withdrawalSource = forcedWithdrawalSource ?? internalWithdrawalSource
+  const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false)
+  const [fallbackStep, setFallbackStep] = useState<'unstake' | 'withdraw'>('unstake')
+  const [redeemSharesOverride, setRedeemSharesOverride] = useState<bigint>(0n)
+  const [awaitingPostUnstakeShares, setAwaitingPostUnstakeShares] = useState(false)
+  const [vaultSharesBeforeUnstake, setVaultSharesBeforeUnstake] = useState<bigint>(0n)
+  const [optimisticApprovedShares, setOptimisticApprovedShares] = useState<bigint | null>(null)
+  const [ensoQuoteRequest, setEnsoQuoteRequest] = useState<ProtectedEnsoQuoteRequest>({
+    purpose: 'calibration',
+    slippagePercentage: 0
+  })
+  const ensoQuoteSlippage = ensoQuoteRequest.slippagePercentage
+  const requestExecutionQuote = useCallback((slippagePercentage: number) => {
+    setEnsoQuoteRequest({ purpose: 'execution', slippagePercentage })
+  }, [])
+
+  const {
+    assetToken,
+    vaultToken: vault,
+    stakingToken,
+    stakingWithdrawableAssets,
+    stakingRedeemableShares,
+    pricePerShare,
+    isLoading: isLoadingVaultData,
+    refetch: refetchVaultUserData
+  } = vaultUserData
+
+  const priorityTokens = getPriorityTokens(chainId, vaultAddress, stakingAddress)
+
+  const [selectedToken, setSelectedToken] = useState<`0x${string}` | undefined>(
+    prefill?.address ?? resolvedDisplayAssetAddress
+  )
+  const [selectedChainId, setSelectedChainId] = useState<number | undefined>(prefill?.chainId)
+  const [showTokenSelector, setShowTokenSelector] = useState(false)
+  const appliedPrefillRef = useRef<string | null>(null)
+
+  const withdrawInput = useDebouncedInput(assetToken?.decimals ?? 18)
+  const [withdrawAmount, , setWithdrawInput] = withdrawInput
+
+  useResetEnsoSelection({
+    ensoEnabled,
+    selectedToken,
+    selectedChainId,
+    assetAddress: resolvedDisplayAssetAddress,
+    chainId,
+    showTokenSelector,
+    setSelectedToken,
+    setSelectedChainId,
+    setShowTokenSelector
+  })
+
+  useEffect(() => {
+    if (!prefill) return
+    const key = `${prefillRequestKey ?? ''}-${prefill.address}-${prefill.chainId}-${prefill.amount}`
+    if (appliedPrefillRef.current === key) return
+    appliedPrefillRef.current = key
+    setSelectedToken(prefill.address)
+    setSelectedChainId(prefill.chainId)
+    if (prefill.amount !== undefined) {
+      setWithdrawInput(prefill.amount)
+    }
+    onPrefillApplied?.()
+  }, [prefill, prefillRequestKey, setWithdrawInput, onPrefillApplied])
+
+  // Derived token values
+  const withdrawToken = selectedToken || resolvedDisplayAssetAddress
+  const destinationChainId = selectedChainId || chainId
+
+  const outputToken = useMemo(() => {
+    if (destinationChainId === chainId && withdrawToken === resolvedDisplayAssetAddress) {
+      return assetToken
+    }
+    return getToken({ address: withdrawToken, chainId: destinationChainId })
+  }, [getToken, withdrawToken, destinationChainId, chainId, resolvedDisplayAssetAddress, assetToken])
+  const { getUsdPrice } = useVaultWidgetSpotPrices([assetToken, outputToken])
+
+  const hideZapTokenSet = useMemo(
+    () => new Set((hideZapForTokens || []).map((address) => toAddress(address))),
+    [hideZapForTokens]
+  )
+
+  const isBaseWithdrawToken = useMemo(() => {
+    const normalizedWithdrawToken = toAddress(withdrawToken)
+    return (
+      normalizedWithdrawToken === toAddress(resolvedDisplayAssetAddress) || hideZapTokenSet.has(normalizedWithdrawToken)
+    )
+  }, [withdrawToken, resolvedDisplayAssetAddress, hideZapTokenSet])
+
+  const hasVaultBalance = (vault?.balance.raw ?? 0n) > 0n
+  const hasStakingBalance = stakingWithdrawableAssets > 0n
+  const hasBothBalances = hasVaultBalance && hasStakingBalance
+  const singleSource = resolveWithdrawalSource(hasVaultBalance, hasStakingBalance)
+
+  // Render-time state adjustments
+  if (!forcedWithdrawalSource && singleSource && internalWithdrawalSource !== singleSource) {
+    setWithdrawalSource(singleSource)
+  }
+  if (!collapseDetails && isDetailsPanelOpen) {
+    setIsDetailsPanelOpen(false)
+  }
+
+  useEffect(() => {
+    if (!showTransactionOverlay) {
+      setFallbackStep('unstake')
+      setRedeemSharesOverride(0n)
+      setAwaitingPostUnstakeShares(false)
+      setVaultSharesBeforeUnstake(0n)
+    }
+  }, [showTransactionOverlay])
+
+  const sourceVaultSharesRaw = useMemo(() => {
+    if (withdrawalSource === 'vault') return vault?.balance.raw ?? 0n
+    if (withdrawalSource === 'staking') return stakingWithdrawableAssets
+    return 0n
+  }, [withdrawalSource, vault?.balance.raw, stakingWithdrawableAssets])
+
+  const sourceToken =
+    withdrawalSource === 'vault'
+      ? vaultAddress
+      : withdrawalSource === 'staking' && stakingAddress
+        ? stakingAddress
+        : vaultAddress
+
+  const isUnstake = withdrawalSource === 'staking' && toAddress(withdrawToken) === toAddress(vaultAddress)
+
+  const sharesDecimals = vault?.decimals ?? stakingToken?.decimals ?? 18
+  const vaultDecimals = vault?.decimals ?? 18
+
+  const totalBalanceInUnderlying = useMemo(() => {
+    if (pricePerShare === 0n || sourceVaultSharesRaw === 0n || !assetToken) {
+      return toNormalizedBN(0n, assetToken?.decimals ?? 18)
+    }
+    const underlyingAmount = (sourceVaultSharesRaw * pricePerShare) / 10n ** BigInt(vaultDecimals)
+    return toNormalizedBN(underlyingAmount, assetToken.decimals ?? 18)
+  }, [sourceVaultSharesRaw, pricePerShare, vaultDecimals, assetToken])
+
+  useEffect(() => {
+    onAmountChange?.(withdrawAmount.bn)
+  }, [withdrawAmount.bn, onAmountChange])
+
+  useEffect(() => {
+    onTokenSelectionChange?.(withdrawToken, destinationChainId)
+  }, [destinationChainId, onTokenSelectionChange, withdrawToken])
+
+  const usesErc4626 = Boolean(vaultVersion?.startsWith('3') || vaultVersion?.startsWith('~3'))
+  const effectiveMaxWithdrawAssets = useMemo(() => {
+    if (maxWithdrawAssets === undefined) {
+      return totalBalanceInUnderlying.raw
+    }
+
+    // Wrapper-owned flows like locked yvUSD can provide an authoritative contract-quoted max
+    // that is slightly above the widget's PPS-derived balance estimate.
+    if (inputBalanceOverride !== undefined || disableFlow) {
+      return maxWithdrawAssets
+    }
+
+    return maxWithdrawAssets < totalBalanceInUnderlying.raw ? maxWithdrawAssets : totalBalanceInUnderlying.raw
+  }, [maxWithdrawAssets, totalBalanceInUnderlying.raw, inputBalanceOverride, disableFlow])
+  const inputBalance = inputBalanceOverride ?? effectiveMaxWithdrawAssets
+  const displayedInputBalance = inputDisplayBalanceOverride ?? inputBalance
+
+  const isMaxWithdraw = useMemo(() => {
+    return (
+      withdrawAmount.bn > 0n &&
+      totalBalanceInUnderlying.raw > 0n &&
+      withdrawAmount.bn === effectiveMaxWithdrawAssets &&
+      effectiveMaxWithdrawAssets === totalBalanceInUnderlying.raw
+    )
+  }, [withdrawAmount.bn, effectiveMaxWithdrawAssets, totalBalanceInUnderlying.raw])
+
+  // ============================================================================
+  // Required Shares Calculation
+  // ============================================================================
+  const requiredShares = useMemo(() => {
+    if (!withdrawAmount.bn || withdrawAmount.bn === 0n) return 0n
+    if (isMaxWithdraw && sourceVaultSharesRaw > 0n) return sourceVaultSharesRaw
+
+    if (pricePerShare > 0n) {
+      const numerator = withdrawAmount.bn * 10n ** BigInt(vaultDecimals)
+      return (numerator + pricePerShare - 1n) / pricePerShare
+    }
+
+    return 0n
+  }, [withdrawAmount.bn, isMaxWithdraw, sourceVaultSharesRaw, pricePerShare, vaultDecimals])
+  const effectiveRequiredShares = requiredSharesOverride ?? requiredShares
+  const flowCurrentAmount = disableFlow ? 0n : withdrawAmount.bn
+  const flowDebouncedAmount = disableFlow ? 0n : withdrawAmount.debouncedBn
+  const flowRequiredShares = disableFlow ? 0n : effectiveRequiredShares
+  const flowIsMaxWithdraw = disableFlow ? false : isMaxWithdraw
+  useEffect(() => {
+    if (!awaitingPostUnstakeShares || fallbackStep !== 'withdraw') return
+
+    const currentVaultShares = vault?.balance.raw ?? 0n
+    if (currentVaultShares <= vaultSharesBeforeUnstake) return
+
+    setRedeemSharesOverride(currentVaultShares - vaultSharesBeforeUnstake)
+    setAwaitingPostUnstakeShares(false)
+  }, [awaitingPostUnstakeShares, fallbackStep, vault?.balance.raw, vaultSharesBeforeUnstake])
+
+  const blockDirectWithdrawStep = fallbackStep === 'withdraw' && awaitingPostUnstakeShares
+
+  const { routeType, activeFlow, directWithdrawFlow, directUnstakeFlow } = useWithdrawFlow({
+    withdrawToken,
+    assetAddress,
+    vaultAddress,
+    sourceToken,
+    stakingAddress,
+    stakingSource,
+    amount: flowDebouncedAmount,
+    currentAmount: flowCurrentAmount,
+    requiredShares: flowRequiredShares,
+    maxShares: sourceVaultSharesRaw,
+    redeemSharesOverride,
+    isMaxWithdraw: flowIsMaxWithdraw,
+    unstakeMaxRedeemShares: withdrawalSource === 'staking' ? stakingRedeemableShares : 0n,
+    allowDirectWithdrawStep: !disableFlow && !blockDirectWithdrawStep,
+    optimisticApprovedShares,
+    account,
+    chainId,
+    destinationChainId,
+    outputChainId: outputToken?.chainId ?? chainId,
+    vaultDecimals: vault?.decimals ?? 18,
+    outputDecimals: outputToken?.decimals ?? 18,
+    pricePerShare,
+    slippage: ensoQuoteSlippage,
+    ensoQuotePurpose: ensoQuoteRequest.purpose,
+    ensoEnabled,
+    withdrawalSource,
+    isUnstake,
+    isDebouncing: disableFlow ? false : withdrawAmount.isDebouncing,
+    useErc4626: usesErc4626
+  })
+  const effectiveDirectWithdrawPrepare = blockDirectWithdrawStep
+    ? undefined
+    : directWithdrawFlow.actions.prepareWithdraw
+  const effectiveWithdrawAmountRaw = expectedOutOverride ?? withdrawAmount.bn
+
+  // Render-time adjustment: clear optimistic approval when actual allowance catches up
+  if (optimisticApprovedShares !== null && activeFlow.periphery.allowance >= optimisticApprovedShares) {
+    setOptimisticApprovedShares(null)
+  }
+
+  useEffect(() => {
+    if (optimisticApprovedShares === null) return
+    if (activeFlow.actions.prepareWithdraw.isSuccess) return
+    void activeFlow.actions.prepareWithdraw.refetch?.()
+  }, [
+    optimisticApprovedShares,
+    activeFlow.actions.prepareWithdraw.isSuccess,
+    activeFlow.actions.prepareWithdraw.refetch
+  ])
+
+  const isCrossChain = destinationChainId !== chainId
+  const isEnsoRoute = routeType === 'ENSO'
+  const ensoRouteHasSwap = isEnsoRoute && Boolean(activeFlow.periphery.routeHasSwap)
+  const effectiveSourceShares = activeFlow.periphery.shareAmount ?? effectiveRequiredShares
+  const effectiveExpectedOut = expectedOutOverride ?? activeFlow.periphery.expectedOut
+  const effectiveMinExpectedOut = expectedOutOverride ?? activeFlow.periphery.minExpectedOut
+  const currentDisplayedExpectedOut = isEnsoRoute ? effectiveMinExpectedOut : effectiveExpectedOut
+  const { approveNotificationParams, unstakeNotificationParams, withdrawNotificationParams } = useWithdrawNotifications(
+    {
+      vault,
+      outputToken,
+      stakingToken,
+      sourceToken,
+      assetAddress,
+      withdrawToken,
+      account,
+      chainId,
+      destinationChainId,
+      withdrawAmount: withdrawAmount.debouncedBn,
+      requiredShares: effectiveSourceShares,
+      expectedOut: currentDisplayedExpectedOut,
+      routeType,
+      routerAddress: activeFlow.periphery.routerAddress,
+      isCrossChain,
+      bridgeProtocol: activeFlow.periphery.bridgeProtocol,
+      withdrawalSource: withdrawalSource || 'vault'
+    }
+  )
+
+  const withdrawError = useWithdrawError({
+    amount: flowCurrentAmount,
+    debouncedAmount: flowDebouncedAmount,
+    isDebouncing: disableFlow ? false : withdrawAmount.isDebouncing,
+    requiredShares: flowRequiredShares,
+    totalBalance: sourceVaultSharesRaw,
+    account,
+    isLoadingRoute: activeFlow.periphery.isLoadingRoute,
+    flowError: activeFlow.periphery.error,
+    routeType,
+    hasBothBalances: !!hasBothBalances,
+    withdrawalSource
+  })
+  const exceedsExternalWithdrawLimit = maxWithdrawAssets !== undefined && withdrawAmount.bn > effectiveMaxWithdrawAssets
+  const baseWithdrawError =
+    customErrorMessage ||
+    actionDisabledReason ||
+    (exceedsExternalWithdrawLimit ? 'Amount exceeds currently available withdraw limit.' : undefined) ||
+    withdrawError
+  const isFetchingQuote = routeType === 'ENSO' && Boolean(activeFlow.periphery.isLoadingRoute)
+
+  const actionLabel = getWithdrawActionLabel(isUnstake, withdrawalSource)
+  const transactionName = getWithdrawTransactionName(routeType, isFetchingQuote)
+
+  const approvalState = useMemo((): ApprovalState => {
+    const hasApprovalStep = Boolean(activeFlow.actions.prepareApprove)
+    const isAllowanceSufficient =
+      activeFlow.periphery.isAllowanceSufficient ||
+      (optimisticApprovedShares !== null && optimisticApprovedShares >= effectiveSourceShares)
+    const approvalToken = withdrawalSource === 'staking' ? stakingToken : vault
+
+    return {
+      hasApprovalStep,
+      isAllowanceSufficient,
+      needsApproval: hasApprovalStep && !isAllowanceSufficient,
+      tokenSymbol: approvalToken?.symbol,
+      tokenDecimals: approvalToken?.decimals ?? 18,
+      spenderAddress: toAddress(activeFlow.periphery.routerAddress || sourceToken),
+      spenderName: routeType === 'ENSO' ? 'Enso Router' : activeFlow.periphery.routerAddress ? 'Yearn Zap' : undefined
+    }
+  }, [
+    activeFlow.actions.prepareApprove,
+    activeFlow.periphery.isAllowanceSufficient,
+    activeFlow.periphery.routerAddress,
+    optimisticApprovedShares,
+    effectiveSourceShares,
+    withdrawalSource,
+    stakingToken,
+    vault,
+    sourceToken,
+    routeType
+  ])
+
+  const assetTokenPrice =
+    assetToken?.address && assetToken?.chainId
+      ? getUsdPrice({ address: toAddress(assetToken.address), chainId: assetToken.chainId })
+      : 0
+
+  const outputTokenPrice =
+    outputToken?.address && outputToken?.chainId
+      ? getUsdPrice({ address: toAddress(outputToken.address), chainId: outputToken.chainId })
+      : 0
+
+  const hasAssetTokenPrice = assetTokenPrice > 0
+  const hasOutputTokenPrice = outputTokenPrice > 0
+
+  // ENSO slippage is calibrated from USD price impact, so re-arm the second
+  // quote pass once those price inputs resolve after a cold load.
+  const ensoSlippageCalibrationKey = useMemo(
+    () =>
+      [
+        chainId,
+        destinationChainId,
+        sourceToken,
+        withdrawToken,
+        withdrawalSource ?? 'none',
+        account ?? 'no-account',
+        flowRequiredShares.toString(),
+        zapSlippage,
+        hasAssetTokenPrice,
+        hasOutputTokenPrice
+      ].join(':'),
+    [
+      account,
+      chainId,
+      destinationChainId,
+      flowRequiredShares,
+      hasAssetTokenPrice,
+      hasOutputTokenPrice,
+      sourceToken,
+      withdrawToken,
+      withdrawalSource,
+      zapSlippage
+    ]
+  )
+
+  useEffect(() => {
+    setEnsoQuoteRequest({ purpose: 'calibration', slippagePercentage: 0 })
+  }, [ensoSlippageCalibrationKey])
+
+  useEffect(() => {
+    if (!runtime.assets.isDevelopment) {
+      return
+    }
+
+    bootstrapEnsoQuoteDebugRef.current = null
+    lastBootstrapEnsoQuoteDebugKeyRef.current = null
+    lastProtectedEnsoQuoteDebugKeyRef.current = null
+  }, [ensoSlippageCalibrationKey])
+
+  const withdrawValueInfo = useMemo(
+    () =>
+      calculateWithdrawValueInfo({
+        withdrawAmountBn: withdrawAmount.bn,
+        assetTokenDecimals: assetToken?.decimals ?? 18,
+        assetUsdPrice: assetTokenPrice,
+        expectedOut: effectiveExpectedOut,
+        minExpectedOut: effectiveMinExpectedOut,
+        outputDecimals: outputToken?.decimals ?? 18,
+        outputUsdPrice: outputTokenPrice
+      }),
+    [
+      assetToken?.decimals,
+      assetTokenPrice,
+      effectiveExpectedOut,
+      effectiveMinExpectedOut,
+      outputToken?.decimals,
+      outputTokenPrice,
+      withdrawAmount.bn
+    ]
+  )
+  const withdrawQuoteDisplay = useMemo(
+    () => ({
+      expectedOut: currentDisplayedExpectedOut,
+      routeHasSwap: ensoRouteHasSwap
+    }),
+    [currentDisplayedExpectedOut, ensoRouteHasSwap]
+  )
+  const protectedEnsoQuote = useProtectedEnsoQuoteState({
+    stateKey: ensoSlippageCalibrationKey,
+    isEnsoRoute,
+    isCrossChain,
+    amount: flowRequiredShares,
+    quoteRequest: ensoQuoteRequest,
+    requestExecutionQuote,
+    isLoadingQuote: isFetchingQuote,
+    userTolerancePercentage: zapSlippage,
+    localPriceImpactPercentage: withdrawValueInfo.priceImpactPercentage,
+    localWorstCasePriceImpactPercentage: withdrawValueInfo.worstCasePriceImpactPercentage,
+    hasIncompleteUsdValuation: withdrawValueInfo.hasIncompleteUsdValuation,
+    ensoPriceImpact: activeFlow.periphery.priceImpact,
+    expectedOut: activeFlow.periphery.expectedOut,
+    minExpectedOut: activeFlow.periphery.minExpectedOut,
+    quote: getProtectedEnsoQuoteCandidate({
+      isEnsoRoute,
+      purpose: ensoQuoteRequest.purpose,
+      tx: activeFlow.periphery.tx
+    }),
+    display: withdrawQuoteDisplay
+  })
+  const {
+    desiredSlippage: desiredEnsoQuoteSlippage,
+    ensoPriceImpactPercentage,
+    estimatedPriceImpactPercentage,
+    worstCaseRouteImpactPercentage,
+    priceImpactInfo,
+    isPreparing: isPreparingEnsoQuote,
+    isDisplayLoading: isDisplayLoadingEnsoQuote,
+    isWaitingForProtectedQuote: isWaitingForProtectedEnsoQuote,
+    canExecute: canExecuteProtectedEnsoQuote,
+    executableTx: executableEnsoTx
+  } = protectedEnsoQuote
+
+  useEffect(() => {
+    if (
+      !runtime.assets.isDevelopment ||
+      routeType !== 'ENSO' ||
+      isFetchingQuote ||
+      withdrawAmount.isDebouncing ||
+      withdrawAmount.debouncedBn === 0n ||
+      (activeFlow.periphery.expectedOut === 0n && activeFlow.periphery.minExpectedOut === 0n)
+    ) {
+      return
+    }
+
+    const quoteSummary = {
+      calibrationKey: ensoSlippageCalibrationKey,
+      requestSlippagePercentage: ensoQuoteSlippage,
+      desiredProtectedSlippagePercentage: desiredEnsoQuoteSlippage,
+      userTolerancePercentage: zapSlippage,
+      inputAmountRaw: flowRequiredShares.toString(),
+      expectedOutRaw: activeFlow.periphery.expectedOut.toString(),
+      minExpectedOutRaw: activeFlow.periphery.minExpectedOut.toString(),
+      localPriceImpactPercentage: withdrawValueInfo.priceImpactPercentage,
+      ensoPriceImpactPercentage,
+      selectedPriceImpactPercentage: estimatedPriceImpactPercentage,
+      localWorstCasePriceImpactPercentage: withdrawValueInfo.worstCasePriceImpactPercentage,
+      selectedWorstCasePriceImpactPercentage: worstCaseRouteImpactPercentage,
+      sourceTokenSymbol: assetToken?.symbol,
+      destinationTokenSymbol: outputToken?.symbol
+    }
+
+    if (ensoQuoteRequest.purpose === 'calibration') {
+      const bootstrapLogKey = [
+        ensoSlippageCalibrationKey,
+        activeFlow.periphery.expectedOut.toString(),
+        activeFlow.periphery.minExpectedOut.toString()
+      ].join(':')
+
+      if (lastBootstrapEnsoQuoteDebugKeyRef.current === bootstrapLogKey) {
+        return
+      }
+
+      bootstrapEnsoQuoteDebugRef.current = quoteSummary
+      lastBootstrapEnsoQuoteDebugKeyRef.current = bootstrapLogKey
+      console.log('[ENSO][withdraw] bootstrap quote', quoteSummary)
+      return
+    }
+
+    const protectedLogKey = [
+      ensoSlippageCalibrationKey,
+      ensoQuoteSlippage.toString(),
+      activeFlow.periphery.expectedOut.toString(),
+      activeFlow.periphery.minExpectedOut.toString()
+    ].join(':')
+
+    if (lastProtectedEnsoQuoteDebugKeyRef.current === protectedLogKey) {
+      return
+    }
+
+    lastProtectedEnsoQuoteDebugKeyRef.current = protectedLogKey
+    console.log('[ENSO][withdraw] protected quote comparison', {
+      bootstrapQuote: bootstrapEnsoQuoteDebugRef.current,
+      protectedQuote: quoteSummary,
+      note: 'localPriceImpactPercentage comes from amountOut; localWorstCasePriceImpactPercentage comes from minAmountOut; selected values also include Enso priceImpact when Enso is stricter.'
+    })
+  }, [
+    activeFlow.periphery.expectedOut,
+    activeFlow.periphery.minExpectedOut,
+    assetToken?.symbol,
+    desiredEnsoQuoteSlippage,
+    ensoPriceImpactPercentage,
+    ensoQuoteRequest.purpose,
+    ensoQuoteSlippage,
+    ensoSlippageCalibrationKey,
+    estimatedPriceImpactPercentage,
+    flowRequiredShares,
+    isFetchingQuote,
+    outputToken?.symbol,
+    routeType,
+    withdrawAmount.debouncedBn,
+    withdrawAmount.isDebouncing,
+    withdrawValueInfo.priceImpactPercentage,
+    withdrawValueInfo.worstCasePriceImpactPercentage,
+    worstCaseRouteImpactPercentage,
+    zapSlippage
+  ])
+
+  const protectedEnsoWithdrawError = getProtectedEnsoQuoteError({
+    blockedReason: protectedEnsoQuote.blockedReason,
+    hasUnpricedQuoteError: protectedEnsoQuote.hasUnpricedQuoteError,
+    isDebouncing: withdrawAmount.isDebouncing,
+    flow: 'withdraw'
+  })
+  const effectiveWithdrawError = baseWithdrawError || protectedEnsoWithdrawError
+
+  const canOpenTokenSelector = ensoEnabled && !disableTokenSelector
+  const shouldShowZapUi = !isBaseWithdrawToken
+  const canShowAssetTokenSelector = canOpenTokenSelector && !shouldShowZapUi
+  const openTokenSelector = (): void => {
+    enableTokenListFetch()
+    setShowTokenSelector(true)
+  }
+  const displayedExpectedOut = isEnsoRoute ? protectedEnsoQuote.display.expectedOut : currentDisplayedExpectedOut
+  const displayedEnsoRouteHasSwap = isEnsoRoute ? protectedEnsoQuote.display.routeHasSwap : false
+  const shouldRevealEnsoRouteDetails = !isEnsoRoute || !isDisplayLoadingEnsoQuote
+  const displayedPriceImpactPercentage = isEnsoRoute
+    ? worstCaseRouteImpactPercentage
+    : withdrawValueInfo.priceImpactPercentage
+  const shouldHighlightDisplayedPriceImpact =
+    isEnsoRoute && (priceImpactInfo.isAboveTolerance || priceImpactInfo.isBlocking)
+
+  const zapToken = useMemo(() => {
+    if (!shouldShowZapUi) return undefined
+
+    const getExpectedAmount = () => {
+      if (isUnstake) {
+        return effectiveRequiredShares > 0n
+          ? formatWidgetPreciseValue(effectiveRequiredShares, vault?.decimals ?? 18)
+          : '0'
+      }
+      return displayedExpectedOut > 0n
+        ? formatWidgetPreciseValue(displayedExpectedOut, outputToken?.decimals ?? 18)
+        : '0'
+    }
+
+    return {
+      symbol: outputToken?.symbol || 'Select Token',
+      address: outputToken?.address || '',
+      chainId: outputToken?.chainId || chainId,
+      expectedAmount: getExpectedAmount(),
+      expectedAmountRaw: isUnstake ? effectiveRequiredShares : displayedExpectedOut,
+      expectedAmountDecimals: isUnstake ? (vault?.decimals ?? 18) : (outputToken?.decimals ?? 18),
+      isLoading: isUnstake ? false : isEnsoRoute ? isDisplayLoadingEnsoQuote : isFetchingQuote
+    }
+  }, [
+    shouldShowZapUi,
+    isUnstake,
+    effectiveRequiredShares,
+    vault?.decimals,
+    displayedExpectedOut,
+    isDisplayLoadingEnsoQuote,
+    isEnsoRoute,
+    isFetchingQuote,
+    outputToken?.symbol,
+    outputToken?.address,
+    outputToken?.chainId,
+    outputToken?.decimals,
+    chainId
+  ])
+
+  const formattedWithdrawAmount = formatTAmount({
+    value: effectiveWithdrawAmountRaw,
+    decimals: assetToken?.decimals ?? 18
+  })
+  const formattedRequiredShares = formatTAmount({ value: effectiveRequiredShares, decimals: sharesDecimals })
+  const formattedApprovalAmount = formatTAmount({ value: effectiveSourceShares, decimals: sharesDecimals })
+  const safeWithdrawBatch = useMemo(() => {
+    if (!isWalletSafe || !approvalState.needsApproval) {
+      return undefined
+    }
+
+    return buildSafeWithdrawBatch({
+      routeType,
+      account,
+      sourceToken: toAddress(sourceToken),
+      amount: effectiveSourceShares,
+      currentAllowance: activeFlow.periphery.allowance,
+      chainId,
+      approvalSpenderAddress: approvalState.spenderAddress,
+      routerAddress: activeFlow.periphery.routerAddress ? toAddress(activeFlow.periphery.routerAddress) : undefined,
+      maxLoss: BigInt(toBasisPoints(zapSlippage)),
+      ensoTx: executableEnsoTx
+        ? {
+            to: toAddress(executableEnsoTx.to),
+            data: executableEnsoTx.data,
+            value: executableEnsoTx.value
+          }
+        : undefined
+    })
+  }, [
+    account,
+    activeFlow.periphery.allowance,
+    activeFlow.periphery.routerAddress,
+    approvalState.needsApproval,
+    approvalState.spenderAddress,
+    chainId,
+    effectiveSourceShares,
+    executableEnsoTx,
+    isWalletSafe,
+    routeType,
+    sourceToken,
+    zapSlippage
+  ])
+
+  const currentStep: TransactionStep | undefined = useMemo(
+    () =>
+      buildWithdrawTransactionStep({
+        needsApproval: approvalState.needsApproval,
+        approvePrepare: activeFlow.actions.prepareApprove,
+        activeWithdrawPrepare: activeFlow.actions.prepareWithdraw,
+        directUnstakePrepare: directUnstakeFlow.actions.prepareWithdraw,
+        directWithdrawPrepare: effectiveDirectWithdrawPrepare,
+        fallbackStep,
+        routeType,
+        isCrossChain,
+        formattedApprovalAmount,
+        approvalTokenSymbol: approvalState.tokenSymbol,
+        formattedRequiredShares,
+        formattedWithdrawAmount,
+        assetTokenSymbol: assetToken?.symbol,
+        vaultSymbol: vault?.symbol,
+        stakingTokenSymbol: stakingToken?.symbol,
+        approveNotificationParams,
+        unstakeNotificationParams,
+        withdrawNotificationParams,
+        safeWithdrawBatch,
+        prepareApproveEnabled: !isWaitingForProtectedEnsoQuote && Boolean(activeFlow.periphery.prepareApproveEnabled),
+        prepareWithdrawEnabled: isProtectedEnsoTransactionStepEnabled({
+          canExecute: canExecuteProtectedEnsoQuote,
+          prepareEnabled: Boolean(activeFlow.periphery.prepareWithdrawEnabled)
+        }),
+        directUnstakePrepareEnabled: Boolean(directUnstakeFlow.periphery.prepareWithdrawEnabled),
+        directWithdrawPrepareEnabled: Boolean(directWithdrawFlow.periphery.prepareWithdrawEnabled)
+      }),
+    [
+      approvalState.needsApproval,
+      activeFlow.actions.prepareApprove,
+      activeFlow.actions.prepareWithdraw,
+      directUnstakeFlow.actions.prepareWithdraw,
+      directUnstakeFlow.periphery.prepareWithdrawEnabled,
+      directWithdrawFlow.periphery.prepareWithdrawEnabled,
+      effectiveDirectWithdrawPrepare,
+      fallbackStep,
+      routeType,
+      isCrossChain,
+      formattedApprovalAmount,
+      approvalState.tokenSymbol,
+      formattedRequiredShares,
+      formattedWithdrawAmount,
+      assetToken?.symbol,
+      vault?.symbol,
+      stakingToken?.symbol,
+      approveNotificationParams,
+      unstakeNotificationParams,
+      withdrawNotificationParams,
+      safeWithdrawBatch,
+      activeFlow.periphery.prepareApproveEnabled,
+      activeFlow.periphery.prepareWithdrawEnabled,
+      isWaitingForProtectedEnsoQuote,
+      canExecuteProtectedEnsoQuote
+    ]
+  )
+
+  const eligibleTransactionPlan = useMemo(
+    () =>
+      buildEligibleStyledWidgetPlan({
+        canonicalChainId: chainId,
+        connectedCanonicalChainId: runtime.chains.resolveCanonicalChainId(runtime.wallet.chainId),
+        hasBatch: Boolean(currentStep?.batch),
+        id: [
+          'withdraw',
+          routeType,
+          sourceToken,
+          withdrawToken,
+          destinationChainId,
+          withdrawAmount.debouncedBn.toString()
+        ].join(':'),
+        isCrossChain,
+        isEnabled: currentStep?.isEnabled,
+        isExecutionConfigured: isVaultWidgetExecutionConfigured(runtime),
+        isPermit: Boolean(currentStep?.isPermit),
+        isWalletSafe,
+        label: currentStep?.label ?? 'Withdraw',
+        mode: 'withdraw',
+        needsApproval: approvalState.needsApproval,
+        prepare: currentStep?.prepare,
+        routeType
+      }),
+    [
+      approvalState.needsApproval,
+      chainId,
+      currentStep,
+      destinationChainId,
+      isCrossChain,
+      isWalletSafe,
+      routeType,
+      runtime.chains,
+      runtime.execution,
+      runtime.wallet.chainId,
+      sourceToken,
+      withdrawAmount.debouncedBn,
+      withdrawToken
+    ]
+  )
+
+  const isLastStep = useMemo(
+    () =>
+      isWithdrawLastStep({
+        currentStep,
+        needsApproval: approvalState.needsApproval,
+        routeType
+      }),
+    [currentStep, approvalState.needsApproval, routeType]
+  )
+
+  const handleTransactionStepSuccess = useCallback(
+    (stepId: string) => {
+      if (routeType === 'DIRECT_UNSTAKE_WITHDRAW' && stepId === 'unstake') {
+        setFallbackStep('withdraw')
+        setWithdrawalSource('vault')
+        setAwaitingPostUnstakeShares(isMaxWithdraw)
+        setRedeemSharesOverride(isMaxWithdraw ? 0n : effectiveRequiredShares)
+        const tokensToRefresh = [{ address: vaultAddress, chainId: chainId }]
+        if (stakingAddress) {
+          tokensToRefresh.push({ address: stakingAddress, chainId: chainId })
+        }
+        void refreshWalletBalances(tokensToRefresh)
+        refetchVaultUserData()
+      } else if (stepId === 'approve') {
+        setOptimisticApprovedShares(effectiveSourceShares)
+      }
+    },
+    [
+      routeType,
+      isMaxWithdraw,
+      effectiveRequiredShares,
+      effectiveSourceShares,
+      vaultAddress,
+      chainId,
+      stakingAddress,
+      refreshWalletBalances,
+      refetchVaultUserData
+    ]
+  )
+
+  const handleOpenTransactionOverlay = useCallback(() => {
+    if (routeType === 'DIRECT_UNSTAKE_WITHDRAW' && fallbackStep === 'unstake' && isMaxWithdraw) {
+      setVaultSharesBeforeUnstake(vault?.balance.raw ?? 0n)
+    }
+    setActiveTransactionPlan(eligibleTransactionPlan)
+    setShowTransactionOverlay(true)
+  }, [eligibleTransactionPlan, routeType, fallbackStep, isMaxWithdraw, vault?.balance.raw])
+
+  const handleCloseTransactionOverlay = useCallback(() => {
+    setShowTransactionOverlay(false)
+    setActiveTransactionPlan(undefined)
+  }, [])
+
+  // Called by TransactionOverlay after the final tx confirms. Cross-chain
+  // withdrawals refresh spent vault/staking shares here; the host bridge tracker
+  // refreshes destination assets after delivery.
+  const handleWithdrawTransactionSuccess = useCallback(
+    async (_stepId: string) => {
+      const sourceTokensToRefresh = [{ address: vaultAddress, chainId }]
+      if (stakingAddress) {
+        sourceTokensToRefresh.push({ address: stakingAddress, chainId })
+      }
+      if (isCrossChain) {
+        await Promise.all([Promise.resolve(refetchVaultUserData()), refreshWalletBalances(sourceTokensToRefresh)])
+        return
+      }
+      const tokensToRefresh = [{ address: withdrawToken, chainId: destinationChainId }, ...sourceTokensToRefresh]
+      await Promise.all([Promise.resolve(refetchVaultUserData()), refreshWalletBalances(tokensToRefresh)])
+    },
+    [
+      withdrawToken,
+      destinationChainId,
+      vaultAddress,
+      chainId,
+      stakingAddress,
+      isCrossChain,
+      refreshWalletBalances,
+      refetchVaultUserData
+    ]
+  )
+
+  const handleWithdrawSuccess = useCallback(() => {
+    const sharesToWithdraw = formatUnits(effectiveWithdrawAmountRaw, assetToken?.decimals ?? 18)
+    const priceUsd = assetTokenPrice
+    const valueUsd = Number(sharesToWithdraw) * assetTokenPrice
+
+    trackEvent('withdraw', {
+      props: {
+        chainID: String(chainId),
+        vaultAddress,
+        vaultSymbol,
+        sharesToWithdraw,
+        tokenAddress: toAddress(withdrawToken),
+        tokenSymbol: outputToken?.symbol || '',
+        priceUsd: String(priceUsd),
+        valueUsd: String(valueUsd),
+        isZap: String(routeType === 'ENSO'),
+        action: 'withdraw'
+      }
+    })
+
+    setWithdrawInput('')
+    onWithdrawSuccess?.()
+  }, [
+    effectiveWithdrawAmountRaw,
+    assetToken?.decimals,
+    outputToken?.symbol,
+    assetTokenPrice,
+    trackEvent,
+    chainId,
+    vaultAddress,
+    vaultSymbol,
+    withdrawToken,
+    routeType,
+    setWithdrawInput,
+    onWithdrawSuccess
+  ])
+
+  if (isLoadingVaultData && !showTransactionOverlay) {
+    return <WidgetLoadingSkeleton title="Withdraw" actions={headerActions} disableBorderRadius={disableBorderRadius} />
+  }
+
+  // ============================================================================
+  // Render
+  // ============================================================================
+  const isSettingsVisible = !!account && !!isSettingsOpen
+  const onAllowanceClick =
+    approvalState.hasApprovalStep && activeFlow.periphery.allowance > 0n && pricePerShare > 0n
+      ? (): void => {
+          const underlyingAmount =
+            (activeFlow.periphery.allowance * pricePerShare) / 10n ** BigInt(vault?.decimals ?? 18)
+          setWithdrawInput(formatUnits(underlyingAmount, assetToken?.decimals ?? 18))
+        }
+      : undefined
+  const zapNotificationText = getZapNotificationText(isUnstake, shouldShowZapUi)
+  const onRemoveZap = canOpenTokenSelector
+    ? (): void => {
+        setSelectedToken(resolvedDisplayAssetAddress)
+        setSelectedChainId(chainId)
+      }
+    : undefined
+
+  const detailsSection = (
+    <WithdrawDetails
+      actionLabel={actionLabel}
+      requiredShares={effectiveRequiredShares}
+      sharesDecimals={sharesDecimals}
+      isLoadingQuote={isEnsoRoute ? isDisplayLoadingEnsoQuote : isFetchingQuote}
+      isQuoteStale={withdrawAmount.isDebouncing || withdrawAmount.bn !== withdrawAmount.debouncedBn}
+      expectedOut={displayedExpectedOut}
+      outputDecimals={outputToken?.decimals ?? 18}
+      outputSymbol={outputToken?.symbol}
+      showSwapRow={shouldRevealEnsoRouteDetails && displayedEnsoRouteHasSwap && !isUnstake}
+      withdrawAmountSimple={
+        withdrawAmount.bn > 0n ? formatWidgetValue(withdrawAmount.bn, assetToken?.decimals ?? 18) : '0'
+      }
+      withdrawAmountBn={withdrawAmount.bn}
+      assetDecimals={assetToken?.decimals ?? 18}
+      assetUsdPrice={assetTokenPrice}
+      assetSymbol={assetToken?.symbol}
+      outputUsdPrice={outputTokenPrice}
+      expectedPriceImpactPercentage={estimatedPriceImpactPercentage}
+      priceImpactPercentage={displayedPriceImpactPercentage}
+      shouldHighlightPriceImpact={shouldHighlightDisplayedPriceImpact}
+      usesMinExpectedOut={isEnsoRoute}
+      onShowDetailsModal={() => setShowWithdrawDetailsModal(true)}
+      allowance={approvalState.hasApprovalStep ? activeFlow.periphery.allowance : undefined}
+      allowanceTokenDecimals={approvalState.hasApprovalStep ? approvalState.tokenDecimals : undefined}
+      allowanceTokenSymbol={approvalState.hasApprovalStep ? approvalState.tokenSymbol : undefined}
+      approvalSpenderName={approvalState.hasApprovalStep ? approvalState.spenderName : undefined}
+      isApprovalLoading={isEnsoRoute && isDisplayLoadingEnsoQuote && approvalState.hasApprovalStep}
+      onAllowanceClick={onAllowanceClick}
+      onShowApprovalOverlay={approvalState.hasApprovalStep ? () => setShowApprovalOverlay(true) : undefined}
+    />
+  )
+
+  const priceImpactWarning = (
+    <PriceImpactWarning
+      percentage={priceImpactInfo.percentage}
+      userTolerancePercentage={zapSlippage}
+      isBlocking={priceImpactInfo.isBlocking}
+      isLoading={isEnsoRoute ? isDisplayLoadingEnsoQuote : isFetchingQuote}
+      isDebouncing={withdrawAmount.isDebouncing}
+      isAmountSynced={withdrawAmount.bn === withdrawAmount.debouncedBn}
+      hasAmount={withdrawAmount.bn > 0n}
+    />
+  )
+
+  const showSettingsButton = !!account && !!onOpenSettings
+  const withdrawButtonLabel = getWithdrawCtaLabel({
+    isFetchingQuote: isPreparingEnsoQuote,
+    showApprove: approvalState.hasApprovalStep,
+    isAllowanceSufficient: approvalState.isAllowanceSufficient,
+    transactionName
+  })
+  const isWithdrawButtonDisabled =
+    isWithdrawCtaDisabled({
+      hasError: !!effectiveWithdrawError || isActionDisabled,
+      withdrawAmountRaw: withdrawAmount.bn,
+      isFetchingQuote: isPreparingEnsoQuote,
+      isDebouncing: withdrawAmount.isDebouncing,
+      showApprove: approvalState.hasApprovalStep,
+      isAllowanceSufficient: approvalState.isAllowanceSufficient,
+      prepareApproveEnabled: Boolean(activeFlow.periphery.prepareApproveEnabled),
+      prepareWithdrawEnabled: Boolean(activeFlow.periphery.prepareWithdrawEnabled)
+    }) ||
+    (isEnsoRoute && (priceImpactInfo.isBlocking || priceImpactInfo.isAboveTolerance))
+
+  const actionRow = (
+    <div className="flex flex-col gap-3">
+      {priceImpactWarning}
+      <div className="flex items-center gap-2">
+        <div className="flex-1">
+          {!account ? (
+            <Button
+              onClick={openLoginModal}
+              variant="filled"
+              className="w-full"
+              classNameOverride="yearn--button--nextgen w-full"
+            >
+              Connect Wallet
+            </Button>
+          ) : (
+            <Button
+              onClick={handleOpenTransactionOverlay}
+              variant={isPreparingEnsoQuote ? 'busy' : 'filled'}
+              isBusy={isPreparingEnsoQuote}
+              disabled={isWithdrawButtonDisabled}
+              className="w-full"
+              classNameOverride="yearn--button--nextgen w-full"
+            >
+              {withdrawButtonLabel}
+            </Button>
+          )}
+        </div>
+        {showSettingsButton ? (
+          <button
+            type="button"
+            onClick={onOpenSettings}
+            aria-label="Open transaction settings"
+            aria-pressed={isSettingsOpen}
+            className={cl(
+              'flex items-center justify-center rounded-md border border-transparent px-3 py-2 text-text-secondary transition-all duration-200',
+              'min-h-11',
+              isSettingsOpen
+                ? 'bg-surface text-text-primary !border-border'
+                : 'bg-surface-secondary hover:bg-surface hover:text-text-primary'
+            )}
+          >
+            <IconSettings className="h-4 w-4" />
+          </button>
+        ) : null}
+      </div>
+    </div>
+  )
+
+  return (
+    <div
+      className={cl('flex flex-col relative h-full', {
+        'border border-border': !hideContainerBorder,
+        'rounded-lg': !hideContainerBorder && !disableBorderRadius
+      })}
+      data-tour="vault-detail-withdraw-widget"
+    >
+      <WidgetHeader title="Withdraw" actions={headerActions} />
+      <div className="flex flex-col flex-1 p-6 pt-2 gap-3">
+        <div>
+          {/* Withdraw From Selector */}
+          {hasBothBalances && !forcedWithdrawalSource ? (
+            <SourceSelector value={withdrawalSource} onChange={setWithdrawalSource} />
+          ) : null}
+
+          {/* Amount Section */}
+          <div className="flex flex-col gap-4">
+            <InputTokenAmount
+              input={withdrawInput}
+              title="Amount"
+              placeholder="0.00"
+              balance={inputBalance}
+              displayBalance={displayedInputBalance}
+              decimals={assetToken?.decimals ?? 18}
+              symbol={assetToken?.symbol || 'tokens'}
+              disabled={disableAmountInput || (!!hasBothBalances && !withdrawalSource)}
+              openLoginModal={openLoginModal}
+              errorMessage={effectiveWithdrawError || undefined}
+              inputTokenUsdPrice={assetTokenPrice}
+              outputTokenUsdPrice={outputTokenPrice}
+              tokenAddress={assetToken?.address}
+              tokenChainId={assetToken?.chainId}
+              showTokenSelector={canShowAssetTokenSelector}
+              onTokenSelectorClick={canOpenTokenSelector ? openTokenSelector : undefined}
+              onInputChange={(value: bigint) => {
+                if (value === inputBalance) {
+                  const exactAmount = formatUnits(inputBalance, assetToken?.decimals ?? 18)
+                  withdrawInput[2](exactAmount)
+                }
+              }}
+              zapToken={zapToken}
+              onRemoveZap={onRemoveZap}
+              zapNotificationText={zapNotificationText}
+            />
+          </div>
+
+          {contentBelowInput}
+        </div>
+
+        {!hideActionButton ? (
+          collapseDetails ? (
+            <>
+              <button
+                type="button"
+                onClick={() => setIsDetailsPanelOpen(true)}
+                aria-expanded={isDetailsPanelOpen}
+                className="flex w-full items-center justify-between gap-3 rounded-lg border border-border bg-surface-secondary px-4 py-3 text-sm font-semibold text-text-primary transition-colors hover:bg-surface"
+              >
+                <span>Your Transaction Details</span>
+                <IconChevron className="size-4 text-text-secondary" direction="right" />
+              </button>
+              {!hideActionButton ? actionRow : null}
+            </>
+          ) : (
+            <>
+              {/* Details Section */}
+              {detailsSection}
+
+              {/* Action Button */}
+              {!hideActionButton ? actionRow : null}
+            </>
+          )
+        ) : null}
+      </div>
+
+      {collapseDetails && isDetailsPanelOpen && !hideActionButton ? (
+        <div className="absolute inset-0 z-10 bg-surface rounded-lg flex flex-col">
+          <div className="flex items-center justify-between gap-3 px-6 py-4 border-b border-border">
+            <span className="text-base font-semibold text-text-primary">Your Transaction Details</span>
+            <button
+              type="button"
+              onClick={() => setIsDetailsPanelOpen(false)}
+              aria-label="Close transaction details"
+              className="flex size-7 items-center justify-center rounded-md text-text-secondary transition-colors hover:bg-surface-secondary hover:text-text-primary"
+            >
+              <IconCross className="size-3.5" />
+            </button>
+          </div>
+          <div className="flex-1 min-h-0 overflow-y-auto px-6 py-4">{detailsSection}</div>
+          {!hideActionButton ? <div className="border-t border-border px-6 py-4">{actionRow}</div> : null}
+        </div>
+      ) : null}
+
+      {onOpenSettings ? (
+        <SettingsPanel isActive={isSettingsVisible} onClose={onOpenSettings} variant="overlay" />
+      ) : null}
+
+      {/* Transaction Overlay */}
+      <TransactionOverlay
+        isOpen={showTransactionOverlay}
+        onClose={handleCloseTransactionOverlay}
+        plan={activeTransactionPlan}
+        step={currentStep}
+        isLastStep={isLastStep}
+        autoContinueToNextStep
+        autoContinueStepIds={['approve', 'permit', 'unstake']}
+        onStepSuccess={handleTransactionStepSuccess}
+        onBeforeSuccess={handleWithdrawTransactionSuccess}
+        onAllComplete={handleWithdrawSuccess}
+      />
+
+      {/* Withdraw Details Overlay */}
+      <WithdrawDetailsOverlay
+        isOpen={showWithdrawDetailsModal}
+        onClose={() => setShowWithdrawDetailsModal(false)}
+        sourceTokenSymbol={withdrawalSource === 'staking' ? stakingToken?.symbol || vaultSymbol : vaultSymbol}
+        vaultAssetSymbol={assetToken?.symbol || ''}
+        outputTokenSymbol={outputToken?.symbol || ''}
+        withdrawAmount={effectiveRequiredShares > 0n ? formatWidgetValue(effectiveRequiredShares, sharesDecimals) : '0'}
+        expectedOutput={
+          displayedExpectedOut > 0n ? formatWidgetValue(displayedExpectedOut, outputToken?.decimals ?? 18) : undefined
+        }
+        hasInputValue={withdrawAmount.bn > 0n}
+        stakingAddress={stakingAddress}
+        withdrawalSource={withdrawalSource}
+        routeType={routeType}
+        isZap={routeType === 'ENSO' && shouldShowZapUi}
+        hasSwap={shouldRevealEnsoRouteDetails && displayedEnsoRouteHasSwap}
+        usesMinExpectedOut={isEnsoRoute}
+        isLoadingQuote={isEnsoRoute ? isDisplayLoadingEnsoQuote : isFetchingQuote}
+      />
+
+      <ApprovalOverlay
+        isOpen={showApprovalOverlay}
+        onClose={() => {
+          setShowApprovalOverlay(false)
+          setOptimisticApprovedShares(null)
+        }}
+        tokenSymbol={approvalState.tokenSymbol || ''}
+        tokenAddress={toAddress(sourceToken)}
+        tokenDecimals={approvalState.tokenDecimals}
+        spenderAddress={approvalState.spenderAddress}
+        spenderName={approvalState.spenderName || 'Vault'}
+        chainId={chainId}
+        currentAllowance={formatWidgetAllowance(activeFlow.periphery.allowance, approvalState.tokenDecimals) || '0'}
+      />
+
+      {showTokenSelector ? (
+        <TokenSelectorOverlay
+          onClose={() => setShowTokenSelector(false)}
+          onChange={(address, chainIdValue) => {
+            setWithdrawInput('')
+            setSelectedToken(address)
+            setSelectedChainId(chainIdValue)
+            setShowTokenSelector(false)
+            activeFlow.periphery.resetQuote?.()
+          }}
+          chainId={chainId}
+          value={selectedToken}
+          excludeTokens={stakingAddress ? [stakingAddress] : undefined}
+          mode={'withdraw'}
+          priorityTokens={priorityTokens}
+          topTokens={priorityTokens}
+          assetAddress={resolvedDisplayAssetAddress}
+          vaultAddress={vaultAddress}
+          stakingAddress={stakingAddress}
+          allowHiddenVaultTokenSelection={withdrawalSource === 'staking'}
+        />
+      ) : null}
+    </div>
+  )
+}
