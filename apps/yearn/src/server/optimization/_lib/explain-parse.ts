@@ -8,21 +8,11 @@ export interface ExplainMetadata {
   changesFiltered: number | null
 }
 
-export interface ExplainNoChangeStrategy {
-  name: string
-  currentRatio: number
-  targetRatio: number
-  currentApr: number | null
-  targetApr: number | null
-}
-
 const EXPLAIN_VAULT_LINE_PATTERN = /^(.+)\s+\((\d+):\s*(0x[a-fA-F0-9]{40})\)/
 const EXPLAIN_TVL_LINE_PATTERN = /^TVL:\s*(.+)$/im
 const EXPLAIN_TVL_VALUE_PATTERN = /^\s*(\$)?\s*([\d,]+(?:\.\d+)?)\s*([A-Za-z][A-Za-z0-9._-]*)?\s*$/
 const EXPLAIN_OPTIMIZATION_PATTERN = /Optimization:\s*(.+)/
 const EXPLAIN_CHANGES_FILTERED_PATTERN = /Changes filtered:\s*(\d+)/
-const FILTERED_NO_CHANGE_LINE_PATTERN = /^\s{2}(.+?):\s*(-?\d+(?:\.\d+)?)%\s*=>\s*no change \(filtered\)\s*$/i
-const STRATEGY_APR_LINE_PATTERN = /^\s*\((-?\d+(?:\.\d+)?)%\)\s*\((-?\d+(?:\.\d+)?)%\s*=>\s*(-?\d+(?:\.\d+)?)%\)\s*$/
 
 function getChainName(chainId: number | null): string | null {
   if (chainId === null) return null
@@ -103,53 +93,4 @@ export function parseExplainMetadata(explain: string): ExplainMetadata {
     optimizationMethod: optimizationMatch?.[1]?.trim() ?? null,
     changesFiltered: changesFilteredMatch?.[1] ? parseInt(changesFilteredMatch[1], 10) : null
   }
-}
-
-function percentToBps(percent: number): number {
-  return Math.round(percent * 100)
-}
-
-export function parseFilteredNoChangeStrategies(explain: string): ExplainNoChangeStrategy[] {
-  const lines = explain.split('\n')
-  const strategies: ExplainNoChangeStrategy[] = []
-
-  for (let index = 0; index < lines.length; index += 1) {
-    const match = lines[index].match(FILTERED_NO_CHANGE_LINE_PATTERN)
-    if (!match) {
-      continue
-    }
-
-    const name = match[1]?.trim()
-    const currentRatioPct = Number.parseFloat(match[2])
-    if (!name || !Number.isFinite(currentRatioPct) || currentRatioPct <= 0) {
-      continue
-    }
-
-    let currentApr: number | null = null
-    let targetApr: number | null = null
-    const aprLine = lines[index + 1]
-    if (aprLine) {
-      const aprMatch = aprLine.match(STRATEGY_APR_LINE_PATTERN)
-      if (aprMatch) {
-        const currentAprPct = Number.parseFloat(aprMatch[2])
-        const targetAprPct = Number.parseFloat(aprMatch[3])
-        if (Number.isFinite(currentAprPct) && currentAprPct >= 0) {
-          currentApr = percentToBps(currentAprPct)
-        }
-        if (Number.isFinite(targetAprPct) && targetAprPct >= 0) {
-          targetApr = percentToBps(targetAprPct)
-        }
-      }
-    }
-
-    strategies.push({
-      name,
-      currentRatio: percentToBps(currentRatioPct),
-      targetRatio: percentToBps(currentRatioPct),
-      currentApr,
-      targetApr
-    })
-  }
-
-  return strategies
 }

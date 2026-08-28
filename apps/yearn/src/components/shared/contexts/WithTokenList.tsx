@@ -52,22 +52,6 @@ export function toTokenListToken(token: TToken): TTokenList['tokens'][0] {
   }
 }
 
-/******************************************************************************
- ** Helper function to convert a token from the token list to a TToken type
- ******************************************************************************/
-export function toTToken(token: TTokenList['tokens'][0]): TToken {
-  return {
-    address: token.address,
-    chainID: token.chainId,
-    decimals: token.decimals,
-    logoURI: token.logoURI,
-    name: token.name,
-    symbol: token.symbol,
-    value: 0,
-    balance: zeroNormalizedBN
-  }
-}
-
 export function getUnloadedTokenListURIs({
   hashList,
   loadedURIs

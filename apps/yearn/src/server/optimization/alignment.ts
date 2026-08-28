@@ -1,6 +1,5 @@
 import { GET_CORS_HEADERS, json, noContent, queryString } from '../http'
 import { getVercelCdnCacheHeaders } from '../lib/cacheHeaders'
-import { getVaultDecimals } from './_lib/assetLogos'
 import { fetchAlignedEvents } from './_lib/envio'
 import { parseExplainMetadata } from './_lib/explain-parse'
 import {
@@ -11,6 +10,7 @@ import {
   REDIS_CONNECTIVITY_ERROR_MESSAGE,
   readOptimizations
 } from './_lib/redis'
+import { getVaultDecimals } from './_lib/vaultDecimals'
 
 const CDN_CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=30'
 const RESPONSE_HEADERS = {

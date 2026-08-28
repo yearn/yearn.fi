@@ -29,10 +29,6 @@ const FIXED_TERM_MARKETS: TFixedTermMarket[] = [
   } as TFixedTermMarket
 ]
 
-export function getFixedTermMarket(address: string): TFixedTermMarket | undefined {
-  return getFixedTermMarkets(address)[0]
-}
-
 export function getFixedTermMarkets(address: string): TFixedTermMarket[] {
   const normalized = address.toLowerCase()
   return FIXED_TERM_MARKETS.filter((entry) => entry.address === normalized)

@@ -25,7 +25,7 @@ const {
   }
 })
 
-vi.mock('./_lib/assetLogos', () => ({
+vi.mock('./_lib/vaultDecimals', () => ({
   getVaultDecimals: getVaultDecimalsMock
 }))
 

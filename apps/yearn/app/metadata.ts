@@ -302,23 +302,6 @@ export function buildVaultStructuredDataFromInput({
   }
 }
 
-export async function buildVaultMetadata(chainID: string, address: string): Promise<Metadata> {
-  const snapshot = isValidVaultMetadataParams(chainID, address)
-    ? await fetchVaultMetadataSnapshot(chainID, address)
-    : null
-  return buildVaultMetadataFromInput({ chainID, address, snapshot })
-}
-
-export async function buildVaultStructuredData(
-  chainID: string,
-  address: string
-): Promise<Record<string, unknown> | null> {
-  const snapshot = isValidVaultMetadataParams(chainID, address)
-    ? await fetchVaultMetadataSnapshot(chainID, address)
-    : null
-  return buildVaultStructuredDataFromInput({ chainID, address, snapshot })
-}
-
 export const landingMetadata = buildManifestMetadata(landingManifest)
 export const vaultsMetadata = buildManifestMetadata(vaultsManifest)
 export const portfolioMetadata: Metadata = {

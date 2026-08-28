@@ -3,8 +3,6 @@ import type { TVaultListKind } from './vaultListFacets'
 
 export const TOOLTIP_DELAY_MS = 400
 
-export const ALL_CHAINS_DESCRIPTION = 'Shows vaults across all supported chains.'
-
 const CHAIN_DESCRIPTIONS: Record<number, string> = {
   1: 'Ethereum mainnet is the heart of the Ethereum ecosystem. Good liquidity and security, but transaction fees can be higher.',
   10: 'Optimism is the coordination layer of the "SuperChain". It is an optimistic rollup on Ethereum with lower fees and fast confirmations.',
@@ -28,8 +26,6 @@ export const RETIRED_TAG_DESCRIPTION = 'Deposits are disabled; withdrawals remai
 export const MIGRATABLE_TAG_DESCRIPTION = 'A retired vault with a migration path available to a newer vault.'
 export const HIDDEN_TAG_DESCRIPTION = 'Hidden from the default list. Enable hidden vaults to view.'
 export const NOT_YEARN_TAG_DESCRIPTION = 'This vault is not managed by Yearn. Review the issuer and risks carefully.'
-export const TEMPORARY_OVERRIDE_TAG_DESCRIPTION =
-  'Temporarily force-shown in the default list while Kong and CMS metadata catch up.'
 
 export function getChainDescription(chainId: number): string {
   return CHAIN_DESCRIPTIONS[chainId] || `${getNetwork(chainId).name} network.`
