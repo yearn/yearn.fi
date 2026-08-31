@@ -64,6 +64,7 @@ describe('getHoldingsPortfolio', () => {
           issues: [],
           baselineUsd: 100,
           baselineExposureUsdYears: 0.5,
+          growthUnderlying: 5,
           growthUsd: 5,
           growthPct: 5,
           annualizedProtocolReturnPct: 10,

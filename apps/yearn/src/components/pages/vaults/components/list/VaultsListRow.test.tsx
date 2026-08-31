@@ -1,4 +1,5 @@
 import {
+  formatSignedPortfolioGrowthAsset,
   formatSignedPortfolioGrowthPercent,
   formatSignedPortfolioGrowthUsd,
   VaultsListRow
@@ -134,6 +135,13 @@ describe('VaultsListRow', () => {
     expect(formatSignedPortfolioGrowthPercent(null)).toBeNull()
   })
 
+  it('formats growth in the underlying asset with its symbol', () => {
+    expect(formatSignedPortfolioGrowthAsset(1476.1234567, 'TKN')).toBe('+1,476.12 TKN')
+    expect(formatSignedPortfolioGrowthAsset(-0.0000001, 'ETH')).toBe('−<0.01 ETH')
+    expect(formatSignedPortfolioGrowthAsset(0, 'USDC')).toBe('0 USDC')
+    expect(formatSignedPortfolioGrowthAsset(Number.NaN, 'TKN')).toBeNull()
+  })
+
   it('marks estimated portfolio growth as approximate', () => {
     mockUseWeb3.mockReturnValue({ address: '0x1111111111111111111111111111111111111111' })
     const vault = {
@@ -160,6 +168,7 @@ describe('VaultsListRow', () => {
     const html = renderRowHtml(vault, {
       portfolioGrowth: {
         usd: 1476,
+        assetGrowth: [{ amount: 123.456, symbol: null }],
         isUsdEstimated: true,
         percent: 2,
         annualizedPercent: 3
@@ -167,7 +176,7 @@ describe('VaultsListRow', () => {
     })
 
     expect(html).toContain('+$1.48K*')
-    expect(html).toContain('Growth +$1.48K; value may be approximate')
+    expect(html).toContain('Growth +$1.48K; value may be approximate; asset growth +123.46 TKN')
   })
 
   it('renders the desktop TVL tooltip trigger for standard vault rows', () => {

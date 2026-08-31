@@ -55,6 +55,7 @@ describe('portfolioResponseSchema', () => {
             issues: ['missing_exit_price'],
             baselineUsd: 100,
             baselineExposureUsdYears: 1,
+            growthUnderlying: 2,
             growthUsd: 2,
             growthPct: 2,
             annualizedProtocolReturnPct: 2,

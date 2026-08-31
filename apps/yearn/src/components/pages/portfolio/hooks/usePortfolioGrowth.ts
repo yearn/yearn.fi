@@ -8,9 +8,20 @@ const YBOLD_CHAIN_ID = 1
 
 export type TPortfolioGrowthDisplay = {
   usd: number
+  assetGrowth: TPortfolioGrowthAssetDisplay[]
   isUsdEstimated: boolean
   percent: number | null
   annualizedPercent: number | null
+}
+
+export type TPortfolioGrowthAssetDisplay = {
+  amount: number
+  symbol: string | null
+}
+
+export type TMappedPortfolioGrowthVault = Omit<TPortfolioGrowthVault, 'growthUnderlying'> & {
+  growthUnderlying: number | null
+  assetGrowth: TPortfolioGrowthAssetDisplay[]
 }
 
 export function getPortfolioGrowthVaultKey(vault: Pick<TPortfolioGrowthVault, 'chainId' | 'vaultAddress'>): string {
@@ -18,14 +29,14 @@ export function getPortfolioGrowthVaultKey(vault: Pick<TPortfolioGrowthVault, 'c
 }
 
 function sumGrowthField(
-  vaults: readonly TPortfolioGrowthVault[],
+  vaults: readonly TMappedPortfolioGrowthVault[],
   field: 'baselineUsd' | 'baselineExposureUsdYears' | 'growthUsd'
 ): number {
   return vaults.reduce((total, vault) => total + vault[field], 0)
 }
 
 function combineGrowthRate(
-  vaults: readonly TPortfolioGrowthVault[],
+  vaults: readonly TMappedPortfolioGrowthVault[],
   rateField: 'growthPct' | 'annualizedProtocolReturnPct',
   weightField: 'baselineUsd' | 'baselineExposureUsdYears'
 ): number | null {
@@ -42,15 +53,16 @@ function combineGrowthRate(
 }
 
 function combineGrowthVariants(
-  vaultsByKey: Map<string, TPortfolioGrowthVault>,
+  vaultsByKey: Map<string, TMappedPortfolioGrowthVault>,
   chainId: number,
   displayAddress: string,
-  variantAddresses: readonly string[]
-): TPortfolioGrowthVault | null {
+  variantAddresses: readonly string[],
+  assetMode: 'combined' | 'separate'
+): TMappedPortfolioGrowthVault | null {
   const displayKey = getPortfolioGrowthVaultKey({ chainId, vaultAddress: displayAddress })
   const variants = variantAddresses
     .map((vaultAddress) => vaultsByKey.get(getPortfolioGrowthVaultKey({ chainId, vaultAddress })))
-    .filter((vault): vault is TPortfolioGrowthVault => Boolean(vault))
+    .filter((vault): vault is TMappedPortfolioGrowthVault => Boolean(vault))
 
   if (variants.length === 0) {
     return null
@@ -58,6 +70,10 @@ function combineGrowthVariants(
 
   const baselineUsd = sumGrowthField(variants, 'baselineUsd')
   const baselineExposureUsdYears = sumGrowthField(variants, 'baselineExposureUsdYears')
+  const growthUnderlying =
+    assetMode === 'combined' || variants.length === 1
+      ? variants.reduce((total, vault) => total + (vault.growthUnderlying ?? 0), 0)
+      : null
   const growthUsd = sumGrowthField(variants, 'growthUsd')
   const issues = Array.from(new Set(variants.flatMap((vault) => vault.issues)))
   const isComplete = variants.every((vault) => vault.status === 'ok')
@@ -70,30 +86,52 @@ function combineGrowthVariants(
     issues,
     baselineUsd,
     baselineExposureUsdYears,
+    growthUnderlying,
+    assetGrowth:
+      assetMode === 'combined'
+        ? [{ amount: growthUnderlying ?? 0, symbol: null }]
+        : variants.flatMap((vault) => vault.assetGrowth),
     growthUsd,
     growthPct: combineGrowthRate(variants, 'growthPct', 'baselineUsd'),
     annualizedProtocolReturnPct: combineGrowthRate(variants, 'annualizedProtocolReturnPct', 'baselineExposureUsdYears')
   }
 }
 
-function combineYvUsdGrowth(vaultsByKey: Map<string, TPortfolioGrowthVault>): TPortfolioGrowthVault | null {
-  return combineGrowthVariants(vaultsByKey, YVUSD_CHAIN_ID, YVUSD_UNLOCKED_ADDRESS, [
+function combineYvUsdGrowth(vaultsByKey: Map<string, TMappedPortfolioGrowthVault>): TMappedPortfolioGrowthVault | null {
+  return combineGrowthVariants(
+    vaultsByKey,
+    YVUSD_CHAIN_ID,
     YVUSD_UNLOCKED_ADDRESS,
-    YVUSD_LOCKED_ADDRESS
-  ])
+    [YVUSD_UNLOCKED_ADDRESS, YVUSD_LOCKED_ADDRESS],
+    'combined'
+  )
 }
 
-function combineYBoldGrowth(vaultsByKey: Map<string, TPortfolioGrowthVault>): TPortfolioGrowthVault | null {
-  return combineGrowthVariants(vaultsByKey, YBOLD_CHAIN_ID, YBOLD_VAULT_ADDRESS, [
+function combineYBoldGrowth(vaultsByKey: Map<string, TMappedPortfolioGrowthVault>): TMappedPortfolioGrowthVault | null {
+  return combineGrowthVariants(
+    vaultsByKey,
+    YBOLD_CHAIN_ID,
     YBOLD_VAULT_ADDRESS,
-    YBOLD_STAKING_ADDRESS
-  ])
+    [YBOLD_VAULT_ADDRESS, YBOLD_STAKING_ADDRESS],
+    'separate'
+  )
 }
 
 export function mapPortfolioGrowthVaults(
   vaults: readonly TPortfolioGrowthVault[]
-): ReadonlyMap<string, TPortfolioGrowthVault> {
-  const vaultsByKey = new Map(vaults.map((vault) => [getPortfolioGrowthVaultKey(vault), vault] as const))
+): ReadonlyMap<string, TMappedPortfolioGrowthVault> {
+  const vaultsByKey = new Map<string, TMappedPortfolioGrowthVault>(
+    vaults.map(
+      (vault) =>
+        [
+          getPortfolioGrowthVaultKey(vault),
+          {
+            ...vault,
+            assetGrowth: [{ amount: vault.growthUnderlying, symbol: vault.metadata.symbol }]
+          }
+        ] as const
+    )
+  )
 
   for (const combinedGrowth of [combineYvUsdGrowth(vaultsByKey), combineYBoldGrowth(vaultsByKey)]) {
     if (combinedGrowth) {
@@ -104,13 +142,15 @@ export function mapPortfolioGrowthVaults(
   return vaultsByKey
 }
 
-function getGrowthSortValue(vault: TPortfolioGrowthVault | undefined): number | null {
+type TComparablePortfolioGrowthVault = Pick<TPortfolioGrowthVault, 'growthUsd' | 'status'>
+
+function getGrowthSortValue(vault: TComparablePortfolioGrowthVault | undefined): number | null {
   return vault?.status === 'ok' && Number.isFinite(vault.growthUsd) ? vault.growthUsd : null
 }
 
 export function comparePortfolioGrowthVaults(
-  left: TPortfolioGrowthVault | undefined,
-  right: TPortfolioGrowthVault | undefined,
+  left: TComparablePortfolioGrowthVault | undefined,
+  right: TComparablePortfolioGrowthVault | undefined,
   sortDirection: TSortDirection
 ): number {
   const leftValue = getGrowthSortValue(left)
@@ -131,13 +171,16 @@ export function comparePortfolioGrowthVaults(
   return 0
 }
 
-export function toPortfolioGrowthDisplay(vault: TPortfolioGrowthVault | undefined): TPortfolioGrowthDisplay | null {
+export function toPortfolioGrowthDisplay(
+  vault: TMappedPortfolioGrowthVault | undefined
+): TPortfolioGrowthDisplay | null {
   if (vault?.status !== 'ok' || !Number.isFinite(vault.growthUsd)) {
     return null
   }
 
   return {
     usd: vault.growthUsd,
+    assetGrowth: vault.assetGrowth,
     isUsdEstimated: vault.issues.includes('missing_exit_price'),
     percent: vault.growthPct !== null && Number.isFinite(vault.growthPct) ? vault.growthPct : null,
     annualizedPercent:

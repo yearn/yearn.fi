@@ -122,11 +122,14 @@ import {
   useLocalActivityReceiptStatuses
 } from './hooks/useLocalActivityReceiptStatuses'
 import { usePortfolioActivity } from './hooks/usePortfolioActivity'
-import { comparePortfolioGrowthVaults, toPortfolioGrowthDisplay } from './hooks/usePortfolioGrowth'
+import {
+  comparePortfolioGrowthVaults,
+  type TMappedPortfolioGrowthVault,
+  toPortfolioGrowthDisplay
+} from './hooks/usePortfolioGrowth'
 import type {
   TPortfolioActivityEntry,
   TPortfolioActivityTypeFilter,
-  TPortfolioGrowthVault,
   TPortfolioHistoryDenomination,
   TPortfolioHistoryTimeframe
 } from './types/api'
@@ -171,7 +174,7 @@ type TPortfolioHoldingsProps = Pick<
   | 'setSortDirection'
   | 'vaultFlags'
 > & {
-  growthVaultsByKey: ReadonlyMap<string, TPortfolioGrowthVault>
+  growthVaultsByKey: ReadonlyMap<string, TMappedPortfolioGrowthVault>
   isGrowthLoading: boolean
 }
 

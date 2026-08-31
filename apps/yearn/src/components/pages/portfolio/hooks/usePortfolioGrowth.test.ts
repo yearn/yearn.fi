@@ -17,6 +17,7 @@ function makeGrowthVault(vaultAddress: string, overrides: Partial<TPortfolioGrow
     issues: [],
     baselineUsd: 100,
     baselineExposureUsdYears: 0.5,
+    growthUnderlying: 10,
     growthUsd: 10,
     growthPct: 10,
     annualizedProtocolReturnPct: 20,
@@ -41,11 +42,13 @@ describe('portfolio growth helpers', () => {
     const unlocked = makeGrowthVault(YVUSD_UNLOCKED_ADDRESS, {
       baselineUsd: 100,
       baselineExposureUsdYears: 50,
+      growthUnderlying: 10,
       growthUsd: 10
     })
     const locked = makeGrowthVault(YVUSD_LOCKED_ADDRESS, {
       baselineUsd: 50,
       baselineExposureUsdYears: 25,
+      growthUnderlying: 5,
       growthUsd: 5,
       metadata: {
         symbol: 'styvUSD',
@@ -63,6 +66,8 @@ describe('portfolio growth helpers', () => {
       status: 'ok',
       baselineUsd: 150,
       baselineExposureUsdYears: 75,
+      growthUnderlying: 15,
+      assetGrowth: [{ amount: 15, symbol: null }],
       growthUsd: 15,
       growthPct: 10,
       annualizedProtocolReturnPct: 20
@@ -94,6 +99,7 @@ describe('portfolio growth helpers', () => {
     expect(combined?.status).toBe('ok')
     expect(toPortfolioGrowthDisplay(combined)).toEqual({
       usd: 10,
+      assetGrowth: [{ amount: 10, symbol: null }],
       isUsdEstimated: false,
       percent: 10,
       annualizedPercent: 20
@@ -116,18 +122,26 @@ describe('portfolio growth helpers', () => {
     const unstaked = makeGrowthVault(YBOLD_VAULT_ADDRESS, {
       baselineUsd: 100,
       baselineExposureUsdYears: 50,
+      growthUnderlying: 5,
       growthUsd: 0,
       growthPct: 5,
-      annualizedProtocolReturnPct: 8
+      annualizedProtocolReturnPct: 8,
+      metadata: {
+        symbol: 'BOLD',
+        decimals: 18,
+        assetDecimals: 18,
+        tokenAddress: '0x0000000000000000000000000000000000000001'
+      }
     })
     const staked = makeGrowthVault(YBOLD_STAKING_ADDRESS, {
       baselineUsd: 200,
       baselineExposureUsdYears: 100,
+      growthUnderlying: 3,
       growthUsd: 30,
       growthPct: 20,
       annualizedProtocolReturnPct: 26,
       metadata: {
-        symbol: 'ysyBOLD',
+        symbol: 'yBOLD',
         decimals: 18,
         assetDecimals: 18,
         tokenAddress: YBOLD_VAULT_ADDRESS
@@ -142,11 +156,16 @@ describe('portfolio growth helpers', () => {
       status: 'ok',
       baselineUsd: 300,
       baselineExposureUsdYears: 150,
+      growthUnderlying: null,
+      assetGrowth: [
+        { amount: 5, symbol: 'BOLD' },
+        { amount: 3, symbol: 'yBOLD' }
+      ],
       growthUsd: 30,
       growthPct: 15,
       annualizedProtocolReturnPct: 20
     })
-    expect(combined?.metadata.symbol).toBe('yvTEST')
+    expect(combined?.metadata.symbol).toBe('BOLD')
   })
 
   it('does not derive combined protocol returns from hybrid USD growth', () => {

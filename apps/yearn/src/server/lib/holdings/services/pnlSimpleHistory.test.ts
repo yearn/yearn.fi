@@ -407,6 +407,7 @@ describe('getHoldingsProtocolReturnHistory', () => {
         issues: [],
         baselineUsd: 100,
         baselineExposureUsdYears: expect.any(Number),
+        growthUnderlying: 0,
         growthUsd: 0,
         growthPct: 0,
         annualizedProtocolReturnPct: 0,
@@ -467,6 +468,7 @@ describe('getHoldingsProtocolReturnHistory', () => {
       expect(getSettledVersionedPpsContextMock.mock.calls[0]?.[0]).not.toHaveProperty('vaultIdentifiers')
       expect(assetRequest?.timestamps).toEqual([EVENT_RECEIPT_DAY_TIMESTAMP, EVENT_RECEIPT_DAY_TIMESTAMP + 86_400])
       expect(response.growth.vaults[0]?.issues).toEqual([])
+      expect(response.growth.vaults[0]?.growthUnderlying).toBeCloseTo(10)
       expect(rowGrowthUsd).toBeCloseTo(10)
       expect(aggregateGrowthUsd).toBeCloseTo(rowGrowthUsd ?? Number.NaN)
       expect(familyGrowthUsd).toBeCloseTo(rowGrowthUsd ?? Number.NaN)
@@ -698,6 +700,7 @@ describe('getHoldingsProtocolReturnHistory', () => {
             issues: [],
             baselineUsd: 100,
             baselineExposureUsdYears: 1,
+            growthUnderlying: 1,
             growthUsd: 1,
             growthPct: 1,
             annualizedProtocolReturnPct: 1,

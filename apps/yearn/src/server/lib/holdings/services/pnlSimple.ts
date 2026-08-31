@@ -263,6 +263,7 @@ export interface HoldingsPortfolioGrowthVault {
   issues: TProtocolReturnIssue[]
   baselineUsd: number
   baselineExposureUsdYears: number
+  growthUnderlying: number
   growthUsd: number
   growthPct: number | null
   annualizedProtocolReturnPct: number | null
@@ -2448,6 +2449,7 @@ function buildPortfolioGrowthVault(
     issues,
     baselineUsd,
     baselineExposureUsdYears,
+    growthUnderlying: vault.growthUnderlying,
     growthUsd: getGrowthUsd(vault, latestAssetPriceUsd),
     growthPct: protocolReturnPct(vault.growthUnderlying, vault.baselineUnderlying),
     annualizedProtocolReturnPct: annualizedProtocolReturnPct(

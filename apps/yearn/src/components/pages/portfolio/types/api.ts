@@ -55,6 +55,7 @@ const portfolioGrowthVaultSchema = z.object({
   ),
   baselineUsd: z.number(),
   baselineExposureUsdYears: z.number(),
+  growthUnderlying: z.number(),
   growthUsd: z.number(),
   growthPct: z.number().nullable(),
   annualizedProtocolReturnPct: z.number().nullable(),
