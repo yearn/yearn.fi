@@ -1980,6 +1980,7 @@ describe('pnl simple protocol return', () => {
         ]
       ]),
       priceData: new Map([[ASSET_PRICE_KEY, new Map([[100, 1]])]]),
+      ethPriceData: new Map([[100, 2]]),
       timestamps: [100, 200],
       selectedVaults: [selectedVault]
     })
@@ -1987,7 +1988,9 @@ describe('pnl simple protocol return', () => {
     expect(familyHistory).toHaveLength(1)
     expect(familyHistory[0]?.vaultAddress).toBe(VAULT)
     expect(familyHistory[0]?.dataPoints[0]?.growthIndex).toBeCloseTo(100)
+    expect(familyHistory[0]?.dataPoints[0]?.growthWeightEth).toBeCloseTo(0)
     expect(familyHistory[0]?.dataPoints[1]?.growthIndex).toBeCloseTo(110)
+    expect(familyHistory[0]?.dataPoints[1]?.growthWeightEth).toBeCloseTo(5)
   })
 
   it('chains family PPS returns without treating added deposits or partial withdrawals as performance', () => {

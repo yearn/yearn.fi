@@ -1,6 +1,7 @@
 import {
   buildPortfolioGrowthContributionChart,
-  type TPortfolioGrowthContributionFamily
+  type TPortfolioGrowthContributionFamily,
+  toPortfolioGrowthContributionPoint
 } from '@pages/portfolio/utils/portfolioGrowthContributions'
 import { describe, expect, it } from 'vitest'
 
@@ -20,20 +21,41 @@ function makeFamily(args: {
     label: args.label,
     dataPoints: args.values.map((point) => ({
       timestamp: timestamp(point.date) * (point.milliseconds ? 1000 : 1),
-      growthUsd: point.value,
-      growthUsdEstimated: point.estimated
+      value: point.value,
+      isEstimated: point.estimated
     }))
   }
 }
 
 function expectConservation(chart: ReturnType<typeof buildPortfolioGrowthContributionChart>, precision = 10): void {
   chart.data.forEach((point) => {
-    const contributionTotal = chart.series.reduce((total, series) => total + Number(point[series.key] ?? 0), 0)
-    expect(contributionTotal).toBeCloseTo(point.portfolioGrowth, precision)
+    if (point.portfolioGrowth !== null) {
+      const contributionTotal = chart.series.reduce((total, series) => total + Number(point[series.key] ?? 0), 0)
+      expect(contributionTotal).toBeCloseTo(point.portfolioGrowth, precision)
+    }
   })
 }
 
 describe('buildPortfolioGrowthContributionChart', () => {
+  it('selects the matching per-vault value for USD and ETH modes', () => {
+    const point = {
+      timestamp: timestamp('2026-01-01'),
+      growthUsd: 25,
+      growthUsdEstimated: true,
+      growthWeightEth: 0.01
+    }
+
+    expect(toPortfolioGrowthContributionPoint(point, 'usd')).toEqual({
+      timestamp: point.timestamp,
+      value: 25,
+      isEstimated: true
+    })
+    expect(toPortfolioGrowthContributionPoint(point, 'eth')).toEqual({
+      timestamp: point.timestamp,
+      value: 0.01
+    })
+  })
+
   it('keeps the top four vaults and puts the remaining contribution in Other', () => {
     const dates = ['2026-01-01', '2026-01-02', '2026-01-03']
     const chart = buildPortfolioGrowthContributionChart({
@@ -173,6 +195,91 @@ describe('buildPortfolioGrowthContributionChart', () => {
       ['Loss', -90]
     ])
     expect(chart.data.at(-1)).toMatchObject({ portfolioGrowth: 10, vault_0: 100, vault_1: -90, other: 0 })
+    expectConservation(chart)
+  })
+
+  it('ranks and conserves fractional ETH-denominated contributions', () => {
+    const dates = ['2026-02-01', '2026-02-02', '2026-02-03']
+    const chart = buildPortfolioGrowthContributionChart({
+      totalPoints: [
+        { date: dates[0]!, value: 0 },
+        { date: dates[1]!, value: 0.5 },
+        { date: dates[2]!, value: 0.75 }
+      ],
+      familySeries: [
+        makeFamily({
+          label: 'Small ETH gain',
+          values: dates.map((date, index) => ({ date, value: [1, 1.1, 1.2][index]! }))
+        }),
+        makeFamily({
+          label: 'Large ETH gain',
+          values: dates.map((date, index) => ({ date, value: [2, 2.4, 2.6][index]! }))
+        })
+      ]
+    })
+
+    expect(chart.series.slice(0, -1).map((series) => [series.label, series.terminalValue])).toEqual([
+      ['Large ETH gain', expect.closeTo(0.6)],
+      ['Small ETH gain', expect.closeTo(0.2)]
+    ])
+    expect(chart.data.at(-1)).toMatchObject({
+      portfolioGrowth: 0.75,
+      vault_0: expect.closeTo(0.6),
+      vault_1: expect.closeTo(0.2),
+      other: expect.closeTo(-0.05)
+    })
+    expectConservation(chart)
+  })
+
+  it('preserves unavailable ETH totals and family values as gaps', () => {
+    const dates = ['2026-02-01', '2026-02-02', '2026-02-03', '2026-02-04']
+    const chart = buildPortfolioGrowthContributionChart({
+      totalPoints: [
+        { date: dates[0]!, value: 0 },
+        { date: dates[1]!, value: 1 },
+        { date: dates[2]!, value: null },
+        { date: dates[3]!, value: 2 }
+      ],
+      familySeries: [
+        makeFamily({
+          label: 'Unavailable ETH growth',
+          values: dates.map((date, index) => ({ date, value: [0, 1, null, 2][index]! }))
+        })
+      ],
+      preserveNullValues: true
+    })
+
+    expect(chart.data).toEqual([
+      { date: dates[0], portfolioGrowth: 0, vault_0: 0, other: 0 },
+      { date: dates[1], portfolioGrowth: 1, vault_0: 1, other: 0 },
+      { date: dates[2], portfolioGrowth: null, vault_0: null, other: null },
+      { date: dates[3], portfolioGrowth: 2, vault_0: 2, other: 0 }
+    ])
+  })
+
+  it('leaves explicitly unavailable ETH families out of a still-valued aggregate', () => {
+    const dates = ['2026-02-01', '2026-02-02', '2026-02-03']
+    const chart = buildPortfolioGrowthContributionChart({
+      totalPoints: [
+        { date: dates[0]!, value: 0 },
+        { date: dates[1]!, value: 1 },
+        { date: dates[2]!, value: 1.5 }
+      ],
+      familySeries: [
+        makeFamily({
+          label: 'Unavailable ETH growth',
+          values: dates.map((date, index) => ({ date, value: [0, 1, null][index]! }))
+        })
+      ],
+      preserveNullValues: true
+    })
+
+    expect(chart.series.map((series) => series.label)).toEqual(['Other'])
+    expect(chart.data.at(-1)).toEqual({
+      date: dates[2],
+      portfolioGrowth: 1.5,
+      other: 1.5
+    })
     expectConservation(chart)
   })
 

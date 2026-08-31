@@ -657,8 +657,8 @@ describe('getHoldingsProtocolReturnHistory', () => {
       chainId: 1,
       vaultAddress: VAULT,
       dataPoints: [
-        { timestamp: firstTimestamp, growthUsd: 0, growthWeightUsd: 0 },
-        { timestamp: secondTimestamp, growthWeightUsd: 0 }
+        { timestamp: firstTimestamp, growthUsd: 0, growthWeightUsd: 0, growthWeightEth: null },
+        { timestamp: secondTimestamp, growthWeightUsd: 0, growthWeightEth: null }
       ]
     })
     expect(response.protocolReturn.familySeries[0]?.dataPoints[1]?.growthUsd).toBeCloseTo(30)

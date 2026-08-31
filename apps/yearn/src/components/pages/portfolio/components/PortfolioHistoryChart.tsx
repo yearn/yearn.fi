@@ -1,4 +1,5 @@
 import { usePlausible } from '@hooks/usePlausible'
+import { toPortfolioGrowthContributionPoint } from '@pages/portfolio/utils/portfolioGrowthContributions'
 import type { ChartConfig } from '@pages/vaults/components/detail/charts/ChartPrimitives'
 import { ChartContainer, ChartTooltip } from '@pages/vaults/components/detail/charts/ChartPrimitives'
 import {
@@ -37,6 +38,7 @@ import type {
   TPortfolioProtocolReturnHistorySummary
 } from '../types/api'
 import { PortfolioGrowthContributionsChart } from './PortfolioGrowthContributionsChart'
+import { PortfolioGrowthIndexChart } from './PortfolioGrowthIndexChart'
 import { PortfolioHistoryBreakdownModal } from './PortfolioHistoryBreakdownModal'
 import type {
   TPortfolioVaultGrowthChartMode,
@@ -777,10 +779,21 @@ export function PortfolioHistoryChart({
         chainId: series.chainId,
         vaultAddress: series.vaultAddress,
         label: getPortfolioVaultSeriesLabel(series, familyLabelByVaultKey),
+        dataPoints: series.dataPoints.map((point) =>
+          toPortfolioGrowthContributionPoint(point, resolvedGrowthDisplayMode === 'eth' ? 'eth' : 'usd')
+        )
+      })),
+    [familyLabelByVaultKey, resolvedGrowthDisplayMode, visibleProtocolReturnFamilySeries]
+  )
+  const growthIndexFamilySeries = useMemo(
+    () =>
+      visibleProtocolReturnFamilySeries.map((series) => ({
+        chainId: series.chainId,
+        vaultAddress: series.vaultAddress,
+        label: getPortfolioVaultSeriesLabel(series, familyLabelByVaultKey),
         dataPoints: series.dataPoints.map((point) => ({
           timestamp: point.timestamp,
-          growthUsd: point.growthUsd,
-          growthUsdEstimated: point.growthUsdEstimated
+          value: point.growthIndex
         }))
       })),
     [familyLabelByVaultKey, visibleProtocolReturnFamilySeries]
@@ -1120,14 +1133,34 @@ export function PortfolioHistoryChart({
     )
   }
 
-  if (activeTab === 'growth' && resolvedGrowthDisplayMode === 'usd') {
+  if (activeTab === 'growth' && resolvedGrowthDisplayMode === 'index') {
+    return (
+      <section className={cl(sectionClassName, className)}>
+        <div className={'min-h-0 flex-1'}>
+          <PortfolioGrowthIndexChart
+            totalPoints={filteredGrowthIndexData}
+            familySeries={growthIndexFamilySeries}
+            timeframe={timeframe}
+          />
+        </div>
+        <PortfolioHistoryBreakdownModal
+          date={selectedBreakdownDate}
+          isOpen={isBreakdownModalOpen}
+          onClose={() => setIsBreakdownModalOpen(false)}
+        />
+      </section>
+    )
+  }
+
+  if (activeTab === 'growth') {
     return (
       <section className={cl(sectionClassName, className)}>
         <div className={'min-h-0 flex-1'}>
           <PortfolioGrowthContributionsChart
-            totalPoints={filteredGrowthUsdData}
+            totalPoints={resolvedGrowthDisplayMode === 'eth' ? filteredGrowthEthData : filteredGrowthUsdData}
             familySeries={growthContributionFamilySeries}
             timeframe={timeframe}
+            mode={resolvedGrowthDisplayMode === 'eth' ? 'eth' : 'usd'}
           />
         </div>
         <PortfolioHistoryBreakdownModal

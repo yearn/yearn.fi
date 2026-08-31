@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { selectProtocolReturnFamilySeriesCandidates } from '@/server/lib/holdings/services/protocolReturnFamilySeries'
 
 type TWindow = '30d' | '90d' | '1y' | 'all'
-type TMode = 'position' | 'index'
+type TMode = 'position' | 'eth' | 'index'
 
 const WINDOW_LIMITS: Record<TWindow, number> = {
   '30d': 30,
@@ -28,13 +28,14 @@ function buildIsolatedSeries(args: { id: string; mode: TMode; window: TWindow; s
       protocolReturnPct: 123,
       growthUsd: args.mode === 'position' ? (index === windowStartIndex ? 0 : args.score) : null,
       growthWeightUsd: args.mode === 'position' ? args.score * 100 : null,
+      growthWeightEth: args.mode === 'eth' ? (index === windowStartIndex ? 0 : args.score) : null,
       growthIndex: args.mode === 'index' ? (index === windowStartIndex ? 100 : 100 + args.score) : null
     }))
   }
 }
 
 function buildRankingGroups(windows: TWindow[], pointCount: number) {
-  return (['position', 'index'] as const).flatMap((mode) =>
+  return (['position', 'eth', 'index'] as const).flatMap((mode) =>
     windows.flatMap((window) =>
       SCORES.map((score) =>
         buildIsolatedSeries({
@@ -57,7 +58,7 @@ describe('selectProtocolReturnFamilySeriesCandidates', () => {
       .filter((series) => Math.abs(Number(series.vaultAddress.split('-').at(-1))) >= 2)
       .map((series) => series.vaultAddress)
 
-    expect(selected).toHaveLength(60)
+    expect(selected).toHaveLength(90)
     expect(selected.map((series) => series.vaultAddress)).toEqual(expectedIds)
   })
 
@@ -68,7 +69,7 @@ describe('selectProtocolReturnFamilySeriesCandidates', () => {
       .filter((series) => Math.abs(Number(series.vaultAddress.split('-').at(-1))) >= 2)
       .map((series) => series.vaultAddress)
 
-    expect(selected).toHaveLength(80)
+    expect(selected).toHaveLength(120)
     expect(selected.map((series) => series.vaultAddress)).toEqual(expectedIds)
   })
 
@@ -90,6 +91,7 @@ describe('selectProtocolReturnFamilySeriesCandidates', () => {
       growthUsd: 5,
       growthUsdEstimated: false,
       growthWeightUsd: 500,
+      growthWeightEth: null,
       growthIndex: null
     })
   })
@@ -101,8 +103,14 @@ describe('selectProtocolReturnFamilySeriesCandidates', () => {
       symbol: `latest-price-${index}`,
       status: 'ok' as const,
       dataPoints: [
-        { timestamp: 0, growthUsd: 0, growthWeightUsd: 0, growthIndex: null },
-        { timestamp: 1, growthUsd: index, growthWeightUsd: index === 6 ? 1_000 : index, growthIndex: null }
+        { timestamp: 0, growthUsd: 0, growthWeightUsd: 0, growthWeightEth: null, growthIndex: null },
+        {
+          timestamp: 1,
+          growthUsd: index,
+          growthWeightUsd: index === 6 ? 1_000 : index,
+          growthWeightEth: null,
+          growthIndex: null
+        }
       ]
     }))
 
@@ -110,5 +118,24 @@ describe('selectProtocolReturnFamilySeriesCandidates', () => {
 
     expect(selected.map((series) => series.vaultAddress)).toContain('latest-price-11')
     expect(selected.map((series) => series.vaultAddress)).not.toContain('latest-price-6')
+  })
+
+  it('keeps candidates that are relevant only to receipt-weighted ETH growth', () => {
+    const familySeries = Array.from({ length: 12 }, (_, index) => ({
+      chainId: 1,
+      vaultAddress: `eth-growth-${index}`,
+      symbol: `eth-growth-${index}`,
+      status: 'ok' as const,
+      dataPoints: [
+        { timestamp: 0, growthUsd: null, growthWeightUsd: null, growthWeightEth: 0, growthIndex: null },
+        { timestamp: 1, growthUsd: null, growthWeightUsd: null, growthWeightEth: index, growthIndex: null }
+      ]
+    }))
+
+    const selected = selectProtocolReturnFamilySeriesCandidates(familySeries, '1y')
+
+    expect(selected.map((series) => series.vaultAddress)).toContain('eth-growth-11')
+    expect(selected.map((series) => series.vaultAddress)).not.toContain('eth-growth-6')
+    expect(selected.find((series) => series.vaultAddress === 'eth-growth-11')?.dataPoints[1]?.growthWeightEth).toBe(11)
   })
 })

@@ -37,7 +37,23 @@ describe('portfolioResponseSchema', () => {
             growthIndex: 102
           }
         ],
-        familySeries: []
+        familySeries: [
+          {
+            chainId: 1,
+            vaultAddress: '0x3333333333333333333333333333333333333333',
+            symbol: 'yvTEST',
+            status: 'ok',
+            dataPoints: [
+              {
+                timestamp: 1776902400,
+                growthWeightUsd: 2,
+                growthWeightEth: 0.001,
+                growthUsd: 2,
+                growthIndex: 102
+              }
+            ]
+          }
+        ]
       },
       growth: {
         generatedAt: '2026-08-24T00:00:00.000Z',
@@ -72,6 +88,10 @@ describe('portfolioResponseSchema', () => {
 
     expect(parsed.growth.vaults[0]?.issues).toEqual(['missing_exit_price'])
     expect(parsed.protocolReturn.dataPoints[0]?.growthUsdEstimated).toBe(false)
+    expect(parsed.protocolReturn.familySeries[0]?.dataPoints[0]).toMatchObject({
+      growthWeightEth: 0.001,
+      growthUsdEstimated: false
+    })
   })
 })
 

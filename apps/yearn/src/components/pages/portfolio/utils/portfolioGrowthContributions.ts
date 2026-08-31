@@ -7,8 +7,8 @@ export type TPortfolioGrowthContributionFamily = {
   label: string
   dataPoints: Array<{
     timestamp: number
-    growthUsd: number | null
-    growthUsdEstimated?: boolean
+    value: number | null
+    isEstimated?: boolean
   }>
 }
 
@@ -23,9 +23,9 @@ export type TPortfolioGrowthContributionSeries = {
 
 export type TPortfolioGrowthContributionChartPoint = {
   date: string
-  portfolioGrowth: number
+  portfolioGrowth: number | null
   portfolioGrowthEstimated?: boolean
-  [key: string]: string | number | boolean | undefined
+  [key: string]: string | number | boolean | null | undefined
 }
 
 export type TPortfolioGrowthContributionChart = {
@@ -33,9 +33,25 @@ export type TPortfolioGrowthContributionChart = {
   series: TPortfolioGrowthContributionSeries[]
 }
 
+export function toPortfolioGrowthContributionPoint(
+  point: {
+    timestamp: number
+    growthUsd: number | null
+    growthUsdEstimated: boolean
+    growthWeightEth: number | null
+  },
+  mode: 'usd' | 'eth'
+): TPortfolioGrowthContributionFamily['dataPoints'][number] {
+  return {
+    timestamp: point.timestamp,
+    value: mode === 'eth' ? point.growthWeightEth : point.growthUsd,
+    ...(mode === 'usd' ? { isEstimated: point.growthUsdEstimated } : {})
+  }
+}
+
 type TPreparedFamily = TPortfolioGrowthContributionFamily & {
   originalIndex: number
-  values: number[]
+  values: Array<number | null>
   estimatedValues: boolean[]
   terminalValue: number
 }
@@ -63,12 +79,13 @@ function normalizeZero(value: number): number {
 
 function buildRebasedFamilyValues(
   points: TPortfolioGrowthContributionFamily['dataPoints'],
-  dates: string[]
-): { values: number[]; estimatedValues: boolean[] } {
+  dates: string[],
+  preserveNullValues: boolean
+): { values: Array<number | null>; estimatedValues: boolean[] } {
   const sortedPoints = points
     .flatMap((point) => {
       const date = timestampToUtcDate(point.timestamp)
-      return date ? [{ date, value: point.growthUsd, isEstimated: point.growthUsdEstimated ?? false }] : []
+      return date ? [{ date, value: point.value, isEstimated: point.isEstimated ?? false }] : []
     })
     .toSorted((left, right) => left.date.localeCompare(right.date))
 
@@ -78,7 +95,7 @@ function buildRebasedFamilyValues(
     baselineEstimated: false,
     lastValue: null as number | null,
     lastEstimated: false,
-    values: [] as number[],
+    values: [] as Array<number | null>,
     estimatedValues: [] as boolean[]
   }
 
@@ -88,6 +105,9 @@ function buildRebasedFamilyValues(
       if (isFiniteNumber(nextValue)) {
         state.lastValue = nextValue
         state.lastEstimated = sortedPoints[state.pointIndex]!.isEstimated
+      } else if (preserveNullValues) {
+        state.lastValue = null
+        state.lastEstimated = false
       }
       state.pointIndex += 1
     }
@@ -100,7 +120,9 @@ function buildRebasedFamilyValues(
     state.values.push(
       state.baselineValue !== null && state.lastValue !== null
         ? normalizeZero(state.lastValue - state.baselineValue)
-        : 0
+        : preserveNullValues
+          ? null
+          : 0
     )
     state.estimatedValues.push(
       state.baselineValue !== null && state.lastValue !== null ? state.baselineEstimated || state.lastEstimated : false
@@ -109,10 +131,14 @@ function buildRebasedFamilyValues(
   }, initialState)
 }
 
-function prepareFamilies(familySeries: TPortfolioGrowthContributionFamily[], dates: string[]): TPreparedFamily[] {
+function prepareFamilies(
+  familySeries: TPortfolioGrowthContributionFamily[],
+  dates: string[],
+  preserveNullValues: boolean
+): TPreparedFamily[] {
   return familySeries
     .map((family, originalIndex) => {
-      const { values, estimatedValues } = buildRebasedFamilyValues(family.dataPoints, dates)
+      const { values, estimatedValues } = buildRebasedFamilyValues(family.dataPoints, dates, preserveNullValues)
       return {
         ...family,
         originalIndex,
@@ -132,13 +158,15 @@ export function buildPortfolioGrowthContributionChart(args: {
   totalPoints: Array<{ date: string; value: number | null; isEstimated?: boolean }>
   familySeries: TPortfolioGrowthContributionFamily[]
   maxVaults?: number
+  preserveNullValues?: boolean
 }): TPortfolioGrowthContributionChart {
   const dates = args.totalPoints.map((point) => point.date)
   const requestedMaxVaults = args.maxVaults ?? DEFAULT_MAX_VAULTS
   const maxVaults = Number.isFinite(requestedMaxVaults)
     ? Math.max(0, Math.floor(requestedMaxVaults))
     : DEFAULT_MAX_VAULTS
-  const selectedFamilies = prepareFamilies(args.familySeries, dates).slice(0, maxVaults)
+  const preserveNullValues = args.preserveNullValues ?? false
+  const selectedFamilies = prepareFamilies(args.familySeries, dates, preserveNullValues).slice(0, maxVaults)
   const namedSeries: TPortfolioGrowthContributionSeries[] = selectedFamilies.map((family, index) => ({
     key: `vault_${index}`,
     label: family.label,
@@ -149,30 +177,40 @@ export function buildPortfolioGrowthContributionChart(args: {
   }))
 
   const data = args.totalPoints.map<TPortfolioGrowthContributionChartPoint>((totalPoint, pointIndex) => {
-    const portfolioGrowth = isFiniteNumber(totalPoint.value) ? totalPoint.value : 0
+    if (!isFiniteNumber(totalPoint.value)) {
+      return {
+        date: totalPoint.date,
+        portfolioGrowth: null,
+        ...Object.fromEntries([...selectedFamilies.map((_, index) => [`vault_${index}`, null]), ['other', null]])
+      }
+    }
+
+    const portfolioGrowth = totalPoint.value
     const row: TPortfolioGrowthContributionChartPoint = {
       date: totalPoint.date,
       portfolioGrowth,
       ...(totalPoint.isEstimated ? { portfolioGrowthEstimated: true } : {})
     }
-    let displayedGrowth = 0
 
     selectedFamilies.forEach((family, familyIndex) => {
-      const value = family.values[pointIndex] ?? 0
+      const value = family.values[pointIndex]
       row[`vault_${familyIndex}`] = value
-      if (family.estimatedValues[pointIndex]) {
+      if (isFiniteNumber(value) && family.estimatedValues[pointIndex]) {
         row[`vault_${familyIndex}Estimated`] = true
       }
-      displayedGrowth += value
     })
 
+    const displayedGrowth = selectedFamilies.reduce((total, family) => {
+      const value = family.values[pointIndex]
+      return total + (isFiniteNumber(value) ? value : 0)
+    }, 0)
     row.other = normalizeZero(portfolioGrowth - displayedGrowth)
     if (totalPoint.isEstimated || selectedFamilies.some((family) => family.estimatedValues[pointIndex])) {
       row.otherEstimated = true
     }
     return row
   })
-  const otherTerminalValue = Number(data.at(-1)?.other ?? 0)
+  const otherTerminalValue = data.map((point) => point.other).findLast(isFiniteNumber) ?? 0
 
   return {
     data,

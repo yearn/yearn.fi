@@ -33,6 +33,7 @@ const portfolioProtocolReturnHistorySummarySchema = z.object({
 const portfolioProtocolReturnHistoryFamilyPointSchema = z.object({
   timestamp: z.number(),
   growthWeightUsd: z.number().nullable(),
+  growthWeightEth: z.number().nullable(),
   growthUsd: z.number().nullable(),
   growthUsdEstimated: z.boolean().optional().default(false),
   growthIndex: z.number().nullable()
@@ -258,6 +259,7 @@ export type TPortfolioProtocolReturnHistoryFamilySeries = Array<{
   dataPoints: Array<{
     timestamp: number
     growthWeightUsd: number | null
+    growthWeightEth: number | null
     growthUsd: number | null
     growthUsdEstimated: boolean
     growthIndex: number | null

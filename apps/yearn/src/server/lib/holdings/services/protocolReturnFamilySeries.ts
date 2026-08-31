@@ -9,6 +9,7 @@ type TProtocolReturnFamilyPoint = {
   growthUsd: number | null
   growthUsdEstimated?: boolean
   growthWeightUsd: number | null
+  growthWeightEth: number | null
   growthIndex: number | null
 }
 
@@ -25,6 +26,7 @@ type TCompactProtocolReturnFamilySeries<TSeries extends TProtocolReturnFamilySer
 }
 
 type TProtocolReturnFamilyWindow = '30d' | '90d' | '1y' | 'all'
+type TProtocolReturnFamilyRankingMode = TPortfolioVaultGrowthChartMode | 'eth'
 
 const MAX_FAMILY_SERIES_PER_RANKING = 5
 const FAMILY_SERIES_WINDOW_LIMITS: Record<TProtocolReturnFamilyWindow, number> = {
@@ -37,7 +39,7 @@ const FAMILY_SERIES_WINDOWS: Record<'1y' | 'all', TProtocolReturnFamilyWindow[]>
   '1y': ['30d', '90d', '1y'],
   all: ['30d', '90d', '1y', 'all']
 }
-const FAMILY_SERIES_MODES: TPortfolioVaultGrowthChartMode[] = ['position', 'index']
+const FAMILY_SERIES_MODES: TProtocolReturnFamilyRankingMode[] = ['position', 'eth', 'index']
 const FAMILY_SERIES_SORT_DIRECTIONS: TPortfolioVaultGrowthChartSortDirection[] = ['desc', 'asc']
 
 function normalizeTimestamp(timestamp: number): number {
@@ -48,14 +50,17 @@ function isFiniteNumber(value: unknown): value is number {
   return typeof value === 'number' && Number.isFinite(value)
 }
 
-function buildPositionRankPoints(points: TProtocolReturnFamilyPoint[]): Array<{ value: number | null }> {
-  const firstFiniteIndex = points.findIndex((point) => isFiniteNumber(point.growthUsd))
+function buildPositionRankPoints(
+  points: TProtocolReturnFamilyPoint[],
+  valueKey: 'growthUsd' | 'growthWeightEth'
+): Array<{ value: number | null }> {
+  const firstFiniteIndex = points.findIndex((point) => isFiniteNumber(point[valueKey]))
   if (firstFiniteIndex < 0 || points.length - firstFiniteIndex < 2) {
     return []
   }
 
-  const firstValue = points[firstFiniteIndex]?.growthUsd
-  const lastValue = points.findLast((point) => isFiniteNumber(point.growthUsd))?.growthUsd
+  const firstValue = points[firstFiniteIndex]?.[valueKey]
+  const lastValue = points.findLast((point) => isFiniteNumber(point[valueKey]))?.[valueKey]
   if (!isFiniteNumber(firstValue) || !isFiniteNumber(lastValue)) {
     return []
   }
@@ -94,7 +99,8 @@ export function selectProtocolReturnFamilySeriesCandidates<TSeries extends TProt
         const points = limit >= series.sortedPoints.length ? series.sortedPoints : series.sortedPoints.slice(-limit)
         return {
           originalIndex: series.originalIndex,
-          positionPoints: buildPositionRankPoints(points),
+          positionPoints: buildPositionRankPoints(points, 'growthUsd'),
+          ethPoints: buildPositionRankPoints(points, 'growthWeightEth'),
           indexPoints: buildIndexRankPoints(points)
         }
       })
@@ -102,8 +108,12 @@ export function selectProtocolReturnFamilySeriesCandidates<TSeries extends TProt
       return FAMILY_SERIES_MODES.flatMap((mode) =>
         FAMILY_SERIES_SORT_DIRECTIONS.flatMap((sortDirection) =>
           rankPortfolioVaultGrowthChartSeries({
-            series: rankableSeries,
-            mode,
+            series: rankableSeries.map((series) => ({
+              originalIndex: series.originalIndex,
+              positionPoints: mode === 'eth' ? series.ethPoints : series.positionPoints,
+              indexPoints: series.indexPoints
+            })),
+            mode: mode === 'index' ? 'index' : 'position',
             sortDirection,
             maxVaults: MAX_FAMILY_SERIES_PER_RANKING
           }).map((series) => series.originalIndex)
@@ -125,6 +135,7 @@ export function selectProtocolReturnFamilySeriesCandidates<TSeries extends TProt
           growthUsd: point.growthUsd,
           growthUsdEstimated: point.growthUsdEstimated ?? false,
           growthWeightUsd: point.growthWeightUsd,
+          growthWeightEth: point.growthWeightEth,
           growthIndex: point.growthIndex
         }))
       }

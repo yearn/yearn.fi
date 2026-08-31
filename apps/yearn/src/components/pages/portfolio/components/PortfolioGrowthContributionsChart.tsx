@@ -30,6 +30,7 @@ type TPortfolioGrowthContributionsChartProps = {
   totalPoints: Array<{ date: string; value: number | null; isEstimated?: boolean }>
   familySeries: TPortfolioGrowthContributionFamily[]
   timeframe: TPortfolioHistoryChartTimeframe
+  mode: 'usd' | 'eth'
 }
 
 type TTooltipProps = {
@@ -52,8 +53,20 @@ const CHART_MARGIN = {
   bottom: 4
 }
 
-function formatSignedUsd(value: number, isEstimated = false): string {
-  const formatted = formatUSD(Math.abs(value), 2, 2)
+function formatEthValue(value: number): string {
+  const absoluteValue = Math.abs(value)
+  const formattedValue =
+    absoluteValue >= 100
+      ? absoluteValue.toFixed(2)
+      : absoluteValue >= 1
+        ? absoluteValue.toFixed(3)
+        : absoluteValue.toFixed(4)
+
+  return `${formattedValue} ETH`
+}
+
+function formatSignedGrowth(value: number, mode: 'usd' | 'eth', isEstimated = false): string {
+  const formatted = mode === 'eth' ? formatEthValue(value) : formatUSD(Math.abs(value), 2, 2)
   const estimateSuffix = isEstimated ? '*' : ''
   if (value > 0) {
     return `+${formatted}${estimateSuffix}`
@@ -64,11 +77,21 @@ function formatSignedUsd(value: number, isEstimated = false): string {
   return `${formatted}${estimateSuffix}`
 }
 
-function formatGrowthTick(value: number | string): string {
+function formatGrowthTick(value: number | string, mode: 'usd' | 'eth'): string {
   const numericValue = Number(value)
   const absoluteValue = Math.abs(numericValue)
   if (!Number.isFinite(numericValue) || numericValue === 0) {
     return ''
+  }
+  if (mode === 'eth') {
+    if (absoluteValue >= 1_000) {
+      return `${numericValue < 0 ? '−' : ''}${(absoluteValue / 1_000).toFixed(1)}k`
+    }
+    return absoluteValue >= 10
+      ? numericValue.toFixed(1)
+      : absoluteValue >= 1
+        ? numericValue.toFixed(2)
+        : numericValue.toFixed(3)
   }
   if (absoluteValue >= 1_000_000) {
     return `${numericValue < 0 ? '−' : ''}$${(absoluteValue / 1_000_000).toFixed(1)}M`
@@ -118,36 +141,43 @@ function getStackDomain(
 function PortfolioGrowthContributionsTooltip({
   active,
   payload,
-  series
-}: TTooltipProps & { series: TPresentedContributionSeries[] }): ReactElement | null {
+  series,
+  mode
+}: TTooltipProps & {
+  series: TPresentedContributionSeries[]
+  mode: 'usd' | 'eth'
+}): ReactElement | null {
   if (!active || !payload?.length) {
     return null
   }
 
   const point = payload[0]?.payload
-  if (!point?.date) {
+  if (!point?.date || typeof point.portfolioGrowth !== 'number' || !Number.isFinite(point.portfolioGrowth)) {
     return null
   }
 
   const namedRows = series
     .filter((item) => !item.isOther)
-    .map((item) => ({
-      ...item,
-      value: Number(point[item.key] ?? 0),
-      isEstimated: Boolean(point[`${item.key}Estimated`])
-    }))
+    .flatMap((item) => {
+      const value = point[item.key]
+      return typeof value === 'number' && Number.isFinite(value)
+        ? [{ ...item, value, isEstimated: Boolean(point[`${item.key}Estimated`]) }]
+        : []
+    })
     .toSorted((left, right) => Math.abs(right.value) - Math.abs(left.value))
   const otherSeries = series.find((item) => item.isOther)
-  const rows = otherSeries
-    ? [
-        ...namedRows,
-        {
-          ...otherSeries,
-          value: Number(point[otherSeries.key] ?? 0),
-          isEstimated: Boolean(point[`${otherSeries.key}Estimated`])
-        }
-      ]
-    : namedRows
+  const otherValue = otherSeries ? point[otherSeries.key] : null
+  const rows =
+    otherSeries && typeof otherValue === 'number' && Number.isFinite(otherValue)
+      ? [
+          ...namedRows,
+          {
+            ...otherSeries,
+            value: otherValue,
+            isEstimated: Boolean(point[`${otherSeries.key}Estimated`])
+          }
+        ]
+      : namedRows
   const hasEstimatedValue = Boolean(point.portfolioGrowthEstimated) || rows.some((row) => row.isEstimated)
 
   return (
@@ -162,7 +192,7 @@ function PortfolioGrowthContributionsTooltip({
       <div className={'mt-1.5 flex items-center justify-between gap-5'}>
         <span className={'text-xs text-text-secondary'}>{'Portfolio growth'}</span>
         <strong className={'font-number text-sm font-semibold text-text-primary'}>
-          {formatSignedUsd(point.portfolioGrowth, Boolean(point.portfolioGrowthEstimated))}
+          {formatSignedGrowth(point.portfolioGrowth, mode, Boolean(point.portfolioGrowthEstimated))}
         </strong>
       </div>
       <div className={'my-2.5 border-t border-border'} />
@@ -177,7 +207,7 @@ function PortfolioGrowthContributionsTooltip({
               <span className={'truncate'}>{row.label}</span>
             </span>
             <span className={'font-number shrink-0 text-xs font-medium text-text-primary'}>
-              {formatSignedUsd(row.value, row.isEstimated)}
+              {formatSignedGrowth(row.value, mode, row.isEstimated)}
             </span>
           </div>
         ))}
@@ -194,11 +224,12 @@ function PortfolioGrowthContributionsTooltip({
 export function PortfolioGrowthContributionsChart({
   totalPoints,
   familySeries,
-  timeframe
+  timeframe,
+  mode
 }: TPortfolioGrowthContributionsChartProps): ReactElement {
   const contributionChart = useMemo(
-    () => buildPortfolioGrowthContributionChart({ totalPoints, familySeries }),
-    [familySeries, totalPoints]
+    () => buildPortfolioGrowthContributionChart({ totalPoints, familySeries, preserveNullValues: mode === 'eth' }),
+    [familySeries, mode, totalPoints]
   )
   const series = useMemo<TPresentedContributionSeries[]>(
     () =>
@@ -212,9 +243,9 @@ export function PortfolioGrowthContributionsChart({
     () =>
       Object.fromEntries([
         ...series.map((item) => [item.key, { label: item.label, color: item.color }] as const),
-        ['portfolioGrowth', { label: 'Portfolio growth', color: TOTAL_COLOR }]
+        ['portfolioGrowth', { label: `Portfolio growth (${mode.toUpperCase()})`, color: TOTAL_COLOR }]
       ]),
-    [series]
+    [mode, series]
   )
   const yAxisDomain = useMemo(() => getStackDomain(contributionChart.data, series), [contributionChart.data, series])
   const isShortRange = timeframe === '30d' || contributionChart.data.length <= 45
@@ -239,7 +270,7 @@ export function PortfolioGrowthContributionsChart({
           domain={yAxisDomain}
           allowDataOverflow
           tickCount={5}
-          tickFormatter={formatGrowthTick}
+          tickFormatter={(value) => formatGrowthTick(value, mode)}
           mirror
           width={CHART_Y_AXIS_WIDTH}
           tickMargin={CHART_Y_AXIS_TICK_MARGIN}
@@ -249,7 +280,7 @@ export function PortfolioGrowthContributionsChart({
         />
         <ChartTooltip
           cursor={{ stroke: 'var(--chart-cursor-line)', strokeWidth: 1 }}
-          content={(props) => <PortfolioGrowthContributionsTooltip {...props} series={series} />}
+          content={(props) => <PortfolioGrowthContributionsTooltip {...props} series={series} mode={mode} />}
         />
         {series.map((item) => (
           <Area

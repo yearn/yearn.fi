@@ -223,6 +223,7 @@ export interface HoldingsPnLSimpleHistoryFamilyPoint {
   growthUsd: number | null
   growthUsdEstimated: boolean
   growthWeightUsd: number | null
+  growthWeightEth: number | null
   growthIndex: number | null
 }
 
@@ -2739,6 +2740,7 @@ export function buildProtocolReturnFamilyHistorySeries(args: {
 
     selectedVaultKeys.forEach((vaultKey) => {
       const familyVault = vaultsByKey.get(vaultKey)
+      const familyLedger = ledgers.get(vaultKey)
       const state = familyIndexState.get(vaultKey)
 
       if (!state) {
@@ -2770,6 +2772,15 @@ export function buildProtocolReturnFamilyHistorySeries(args: {
             ? false
             : isGrowthUsdEstimated(familyVault, latestAssetPriceUsdByVaultKey.get(vaultKey) ?? null),
         growthWeightUsd: familyVault?.growthWeightUsd ?? null,
+        growthWeightEth:
+          familyLedger === undefined
+            ? null
+            : computeVaultGrowthWeightEth({
+                ledger: familyLedger,
+                metadata: args.metadata.get(vaultKey),
+                ppsData: args.ppsData,
+                currentTimestamp: timestamp
+              }),
         growthIndex: hasOpenPosition || closesPosition ? state.growthIndex : null
       })
     })
