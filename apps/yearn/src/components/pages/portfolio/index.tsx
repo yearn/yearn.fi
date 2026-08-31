@@ -19,6 +19,10 @@ import type { TGovernanceReward } from '@pages/portfolio/governance/types'
 import { useGovernancePositions } from '@pages/portfolio/governance/useGovernancePositions'
 import { usePortfolioEntryRefresh } from '@pages/portfolio/hooks/usePortfolioEntryRefresh'
 import {
+  shouldLoadPortfolioHistory,
+  usePortfolioHistoryCoordinator
+} from '@pages/portfolio/hooks/usePortfolioHistoryCoordinator'
+import {
   type TPortfolioModel,
   type TPortfolioSortBy,
   usePortfolioModel
@@ -119,7 +123,6 @@ import {
 } from './hooks/useLocalActivityReceiptStatuses'
 import { usePortfolioActivity } from './hooks/usePortfolioActivity'
 import { comparePortfolioGrowthVaults, toPortfolioGrowthDisplay } from './hooks/usePortfolioGrowth'
-import { usePortfolioHistoryCoordinator } from './hooks/usePortfolioHistoryCoordinator'
 import type {
   TPortfolioActivityEntry,
   TPortfolioActivityTypeFilter,
@@ -3229,7 +3232,11 @@ function PortfolioPage(): ReactElement {
     }
     return 'positions'
   }, [searchParams])
-  const shouldLoadPositionsHistory = activeTab === 'positions' && model.isActive && !model.isHoldingsLoading
+  const shouldLoadPositionsHistory = shouldLoadPortfolioHistory({
+    isActive: model.isActive,
+    isHoldingsLoading: model.isHoldingsLoading,
+    isPositionsTab: activeTab === 'positions'
+  })
   const portfolioHistory = usePortfolioHistoryCoordinator(
     historyDenomination,
     historyFetchTimeframe,

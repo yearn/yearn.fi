@@ -1,5 +1,8 @@
 import { buildPortfolioHistoryBundleEndpoint } from '@pages/portfolio/hooks/usePortfolioHistoryBundle'
-import { resolvePortfolioHistorySource } from '@pages/portfolio/hooks/usePortfolioHistoryCoordinator'
+import {
+  resolvePortfolioHistorySource,
+  shouldLoadPortfolioHistory
+} from '@pages/portfolio/hooks/usePortfolioHistoryCoordinator'
 import { describe, expect, it } from 'vitest'
 
 describe('portfolio history bundle helpers', () => {
@@ -54,5 +57,12 @@ describe('portfolio history bundle helpers', () => {
         combinedError: new Error('refresh failed')
       })
     ).toEqual({ shouldUseLegacy: false, isCombinedPending: false })
+  })
+
+  it('starts history while wallet balance discovery is still loading', () => {
+    expect(shouldLoadPortfolioHistory({ isActive: true, isHoldingsLoading: true, isPositionsTab: true })).toBe(true)
+    expect(shouldLoadPortfolioHistory({ isActive: true, isHoldingsLoading: false, isPositionsTab: true })).toBe(true)
+    expect(shouldLoadPortfolioHistory({ isActive: false, isHoldingsLoading: true, isPositionsTab: true })).toBe(false)
+    expect(shouldLoadPortfolioHistory({ isActive: true, isHoldingsLoading: true, isPositionsTab: false })).toBe(false)
   })
 })

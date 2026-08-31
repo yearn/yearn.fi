@@ -20,6 +20,15 @@ export function resolvePortfolioHistorySource(args: {
   }
 }
 
+export function shouldLoadPortfolioHistory(args: {
+  isActive: boolean
+  isHoldingsLoading: boolean
+  isPositionsTab: boolean
+}): boolean {
+  // History is server-derived, so wallet balance discovery does not gate it.
+  return args.isActive && args.isPositionsTab
+}
+
 export function usePortfolioHistoryCoordinator(
   denomination: TPortfolioHistoryDenomination = 'usd',
   timeframe: TPortfolioHistoryTimeframe = '1y',
