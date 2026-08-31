@@ -88,6 +88,8 @@ export type TPortfolioBlendedMetrics = {
   estimatedAnnualReturn: number | null
 }
 
+export type TPortfolioSortBy = TPossibleSortBy | 'growth'
+
 export type TPortfolioModel = {
   blendedMetrics: TPortfolioBlendedMetrics
   hasClaimableRewards: boolean
@@ -98,13 +100,13 @@ export type TPortfolioModel = {
   isSearchingBalances: boolean
   hasKatanaHoldings: boolean
   openLoginModal: () => void
-  sortBy: TPossibleSortBy
+  sortBy: TPortfolioSortBy
   sortDirection: TSortDirection
   suggestedRows: TSuggestedItem[]
   liveBalanceSnapshot: TPortfolioLiveBalanceSnapshot | null
   totalPortfolioValue: number
   vaultFlags: Record<string, TVaultFlags>
-  setSortBy: TSortStateSetter<TPossibleSortBy>
+  setSortBy: TSortStateSetter<TPortfolioSortBy>
   setSortDirection: TSortStateSetter<TSortDirection>
 }
 
@@ -205,7 +207,7 @@ export function usePortfolioModel(): TPortfolioModel {
   const { apyData: yvUsdHistoricalApyData } = useYvUsdCharts()
   const { shouldHideDust } = useAppSettings()
   const showHiddenVaults = usePersistedShowHiddenVaults()
-  const [sortBy, setSortBy] = useState<TPossibleSortBy>('deposited')
+  const [sortBy, setSortBy] = useState<TPortfolioSortBy>('deposited')
   const [sortDirection, setSortDirection] = useState<TSortDirection>('desc')
   const governancePositions = useGovernancePositions(isActive)
   const ycrvPosition = useYcrvPosition(isActive)
@@ -394,7 +396,7 @@ export function usePortfolioModel(): TPortfolioModel {
     [vaults]
   )
 
-  const sortedHoldings = useSortVaults(visibleHoldingsVaults, sortBy, sortDirection, {
+  const sortedHoldings = useSortVaults(visibleHoldingsVaults, sortBy === 'growth' ? 'none' : sortBy, sortDirection, {
     yvUsdApyOverride: yvUsdPosition.currentApyBreakdown.blendedApy
   })
   const sortedCandidates = useSortVaults(suggestedVaultCandidates, 'tvl', 'desc')

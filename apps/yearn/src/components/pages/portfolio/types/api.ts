@@ -8,6 +8,8 @@ const portfolioHistorySimpleDataPointSchema = z.object({
 const portfolioProtocolReturnHistoryDataPointSchema = z.object({
   date: z.string(),
   growthWeightUsd: z.number(),
+  growthUsd: z.number(),
+  growthUsdEstimated: z.boolean().optional().default(false),
   growthWeightEth: z.number().nullable(),
   protocolReturnPct: z.number().nullable(),
   annualizedProtocolReturnPct: z.number().nullable(),
@@ -31,6 +33,8 @@ const portfolioProtocolReturnHistorySummarySchema = z.object({
 const portfolioProtocolReturnHistoryFamilyPointSchema = z.object({
   timestamp: z.number(),
   growthWeightUsd: z.number().nullable(),
+  growthUsd: z.number().nullable(),
+  growthUsdEstimated: z.boolean().optional().default(false),
   growthIndex: z.number().nullable()
 })
 
@@ -40,6 +44,26 @@ const portfolioProtocolReturnHistoryFamilySeriesSchema = z.object({
   symbol: z.string().nullable(),
   status: z.enum(['ok', 'missing_metadata', 'missing_pps', 'missing_receipt_price', 'partial']),
   dataPoints: z.array(portfolioProtocolReturnHistoryFamilyPointSchema)
+})
+
+const portfolioGrowthVaultSchema = z.object({
+  chainId: z.number(),
+  vaultAddress: z.string(),
+  status: z.enum(['ok', 'missing_metadata', 'missing_pps', 'missing_receipt_price', 'partial']),
+  issues: z.array(
+    z.enum(['missing_metadata', 'missing_pps', 'missing_receipt_price', 'missing_exit_price', 'unmatched_exit'])
+  ),
+  baselineUsd: z.number(),
+  baselineExposureUsdYears: z.number(),
+  growthUsd: z.number(),
+  growthPct: z.number().nullable(),
+  annualizedProtocolReturnPct: z.number().nullable(),
+  metadata: z.object({
+    symbol: z.string().nullable(),
+    decimals: z.number(),
+    assetDecimals: z.number(),
+    tokenAddress: z.string().nullable()
+  })
 })
 
 const portfolioBreakdownVaultSchema = z.object({
@@ -73,6 +97,25 @@ export const portfolioProtocolReturnHistoryResponseSchema = z.object({
   summary: portfolioProtocolReturnHistorySummarySchema,
   dataPoints: z.array(portfolioProtocolReturnHistoryDataPointSchema),
   familySeries: z.array(portfolioProtocolReturnHistoryFamilySeriesSchema).optional().default([])
+})
+
+export const portfolioResponseSchema = z.object({
+  address: z.string(),
+  version: z.enum(['all', 'v2', 'v3']),
+  denomination: z.enum(['usd', 'eth']),
+  timeframe: z.enum(['1y', 'all']),
+  balance: portfolioHistorySimpleResponseSchema,
+  protocolReturn: portfolioProtocolReturnHistoryResponseSchema,
+  growth: z.object({
+    generatedAt: z.string(),
+    summary: z.object({
+      totalVaults: z.number(),
+      completeVaults: z.number(),
+      partialVaults: z.number(),
+      isComplete: z.boolean()
+    }),
+    vaults: z.array(portfolioGrowthVaultSchema)
+  })
 })
 
 export const portfolioHistoryProgressResponseSchema = z.object({
@@ -168,6 +211,8 @@ export const portfolioActivityFacetsResponseSchema = z.object({
 
 export type TPortfolioHistorySimpleResponse = z.infer<typeof portfolioHistorySimpleResponseSchema>
 export type TPortfolioProtocolReturnHistoryResponse = z.infer<typeof portfolioProtocolReturnHistoryResponseSchema>
+export type TPortfolioResponse = z.infer<typeof portfolioResponseSchema>
+export type TPortfolioGrowthVault = z.infer<typeof portfolioGrowthVaultSchema>
 export type TPortfolioHistoryProgressResponse = z.infer<typeof portfolioHistoryProgressResponseSchema>
 export type TPortfolioProtocolReturnHistorySummary = z.infer<typeof portfolioProtocolReturnHistorySummarySchema>
 export type TPortfolioBreakdownResponse = z.infer<typeof portfolioBreakdownResponseSchema>
@@ -197,6 +242,8 @@ export type TPortfolioLiveBalanceSnapshot = {
 export type TPortfolioProtocolReturnHistoryChartData = Array<{
   date: string
   growthWeightUsd: number
+  growthUsd: number
+  growthUsdEstimated: boolean
   growthWeightEth: number | null
   protocolReturnPct: number | null
   annualizedProtocolReturnPct: number | null
@@ -210,6 +257,8 @@ export type TPortfolioProtocolReturnHistoryFamilySeries = Array<{
   dataPoints: Array<{
     timestamp: number
     growthWeightUsd: number | null
+    growthUsd: number | null
+    growthUsdEstimated: boolean
     growthIndex: number | null
   }>
 }>
