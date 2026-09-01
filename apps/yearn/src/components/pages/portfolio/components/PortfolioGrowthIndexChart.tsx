@@ -45,7 +45,18 @@ type TPresentedIndexSeries = TPortfolioGrowthIndexSeries & {
   color: string
 }
 
-const INDEX_COLORS = ['#2578ff', '#46a2ff', '#7bb3a8', '#e1a23b', '#b67ae5'] as const
+const MAX_VAULTS = 8
+const INDEX_COLORS = [
+  '#2578ff',
+  '#46a2ff',
+  '#7bb3a8',
+  '#e1a23b',
+  '#b67ae5',
+  '#f472b6',
+  '#f97316',
+  '#14b8a6',
+  '#94adf2'
+] as const
 const INDEX_BASE = 100
 const INDEX_HEADROOM = 1.05
 const CHART_MARGIN = {
@@ -98,29 +109,24 @@ function PortfolioGrowthIndexTooltip({
     return null
   }
 
-  const orderByKey = new Map([['portfolioIndex', 0], ...series.map((item, index) => [item.key, index + 1] as const)])
-  const labelByKey = new Map([
-    ['portfolioIndex', 'Portfolio'],
-    ...series.map((item) => [item.key, item.label] as const)
-  ])
-  const rows = payload
-    .flatMap((entry) => {
-      const key = typeof entry.dataKey === 'string' ? entry.dataKey : ''
-      const value = typeof entry.value === 'number' ? entry.value : Number(entry.value ?? Number.NaN)
-      if (!key || !Number.isFinite(value)) {
-        return []
-      }
-
-      return [
-        {
-          key,
-          label: labelByKey.get(key) ?? key,
-          value,
-          color: typeof entry.color === 'string' ? entry.color : 'var(--color-text-primary)'
-        }
-      ]
+  const rows = [
+    ...(typeof point.portfolioIndex === 'number' && Number.isFinite(point.portfolioIndex)
+      ? [
+          {
+            key: 'portfolioIndex',
+            label: 'Portfolio',
+            value: point.portfolioIndex,
+            color: INDEX_COLORS[0]
+          }
+        ]
+      : []),
+    ...series.flatMap((item) => {
+      const value = point[item.key]
+      return typeof value === 'number' && Number.isFinite(value)
+        ? [{ key: item.key, label: item.label, value, color: item.color }]
+        : []
     })
-    .toSorted((left, right) => (orderByKey.get(left.key) ?? 0) - (orderByKey.get(right.key) ?? 0))
+  ]
 
   return (
     <div
@@ -154,7 +160,7 @@ export function PortfolioGrowthIndexChart({
   timeframe
 }: TPortfolioGrowthIndexChartProps): ReactElement {
   const comparison = useMemo(
-    () => buildPortfolioGrowthIndexComparison({ totalPoints, familySeries }),
+    () => buildPortfolioGrowthIndexComparison({ totalPoints, familySeries, maxVaults: MAX_VAULTS }),
     [familySeries, totalPoints]
   )
   const series = useMemo<TPresentedIndexSeries[]>(
@@ -204,6 +210,7 @@ export function PortfolioGrowthIndexChart({
         />
         <ChartTooltip
           cursor={{ stroke: 'var(--chart-cursor-line)', strokeWidth: 1 }}
+          wrapperStyle={{ zIndex: 20 }}
           content={(props) => <PortfolioGrowthIndexTooltip {...props} series={series} />}
         />
         <Line

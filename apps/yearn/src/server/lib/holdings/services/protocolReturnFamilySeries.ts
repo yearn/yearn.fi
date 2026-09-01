@@ -28,7 +28,7 @@ type TCompactProtocolReturnFamilySeries<TSeries extends TProtocolReturnFamilySer
 type TProtocolReturnFamilyWindow = '30d' | '90d' | '1y' | 'all'
 type TProtocolReturnFamilyRankingMode = TPortfolioVaultGrowthChartMode | 'eth'
 
-const MAX_FAMILY_SERIES_PER_RANKING = 5
+const MAX_FAMILY_SERIES_PER_RANKING = 8
 const FAMILY_SERIES_WINDOW_LIMITS: Record<TProtocolReturnFamilyWindow, number> = {
   '30d': 30,
   '90d': 90,

@@ -83,6 +83,40 @@ describe('buildPortfolioGrowthIndexComparison', () => {
     ])
   })
 
+  it('supports eight vaults for the chart comparison', () => {
+    const dates = ['2026-01-01', '2026-01-02']
+    const chart = buildPortfolioGrowthIndexComparison({
+      totalPoints: [
+        { date: dates[0]!, value: 100 },
+        { date: dates[1]!, value: 105 }
+      ],
+      familySeries: Array.from({ length: 9 }, (_, index) => {
+        const movement = 9 - index
+        return makeFamily({
+          label: `Vault ${movement}`,
+          values: [
+            { date: dates[0]!, value: 100 },
+            { date: dates[1]!, value: 100 + movement }
+          ]
+        })
+      }),
+      maxVaults: 8
+    })
+
+    expect(chart.series.map((series) => series.label)).toEqual([
+      'Vault 9',
+      'Vault 8',
+      'Vault 7',
+      'Vault 6',
+      'Vault 5',
+      'Vault 4',
+      'Vault 3',
+      'Vault 2'
+    ])
+    expect(chart.data.at(-1)).toMatchObject({ vault_7: 102 })
+    expect(chart.data.at(-1)).not.toHaveProperty('vault_8')
+  })
+
   it('rebases to the selected dates and aligns by normalized date instead of array position', () => {
     const chart = buildPortfolioGrowthIndexComparison({
       totalPoints: [

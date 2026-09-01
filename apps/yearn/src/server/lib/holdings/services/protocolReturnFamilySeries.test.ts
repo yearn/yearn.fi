@@ -10,7 +10,7 @@ const WINDOW_LIMITS: Record<TWindow, number> = {
   '1y': 365,
   all: Number.MAX_SAFE_INTEGER
 }
-const SCORES = [-6, -5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 6]
+const SCORES = [-10, -9, -8, -7, -6, -5, -4, -3, -2, -1, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 
 function buildIsolatedSeries(args: { id: string; mode: TMode; window: TWindow; score: number; pointCount: number }) {
   const windowLimit = WINDOW_LIMITS[args.window]
@@ -51,14 +51,14 @@ function buildRankingGroups(windows: TWindow[], pointCount: number) {
 }
 
 describe('selectProtocolReturnFamilySeriesCandidates', () => {
-  it('keeps the best and worst five candidates for every 1y-response window and mode', () => {
+  it('keeps the best and worst eight candidates for every 1y-response window and mode', () => {
     const familySeries = buildRankingGroups(['30d', '90d', '1y'], 365)
     const selected = selectProtocolReturnFamilySeriesCandidates(familySeries, '1y')
     const expectedIds = familySeries
-      .filter((series) => Math.abs(Number(series.vaultAddress.split('-').at(-1))) >= 2)
+      .filter((series) => Math.abs(Number(series.vaultAddress.split('-').at(-1))) >= 3)
       .map((series) => series.vaultAddress)
 
-    expect(selected).toHaveLength(90)
+    expect(selected).toHaveLength(144)
     expect(selected.map((series) => series.vaultAddress)).toEqual(expectedIds)
   })
 
@@ -66,15 +66,15 @@ describe('selectProtocolReturnFamilySeriesCandidates', () => {
     const familySeries = buildRankingGroups(['30d', '90d', '1y', 'all'], 400)
     const selected = selectProtocolReturnFamilySeriesCandidates(familySeries, 'all')
     const expectedIds = familySeries
-      .filter((series) => Math.abs(Number(series.vaultAddress.split('-').at(-1))) >= 2)
+      .filter((series) => Math.abs(Number(series.vaultAddress.split('-').at(-1))) >= 3)
       .map((series) => series.vaultAddress)
 
-    expect(selected).toHaveLength(120)
+    expect(selected).toHaveLength(192)
     expect(selected.map((series) => series.vaultAddress)).toEqual(expectedIds)
   })
 
   it('preserves original-order tie breaks and removes unused point fields', () => {
-    const familySeries = Array.from({ length: 6 }, (_, index) =>
+    const familySeries = Array.from({ length: 9 }, (_, index) =>
       buildIsolatedSeries({
         id: `tie-${index}`,
         mode: 'position',
@@ -85,7 +85,16 @@ describe('selectProtocolReturnFamilySeriesCandidates', () => {
     )
     const selected = selectProtocolReturnFamilySeriesCandidates(familySeries, '1y')
 
-    expect(selected.map((series) => series.vaultAddress)).toEqual(['tie-0', 'tie-1', 'tie-2', 'tie-3', 'tie-4'])
+    expect(selected.map((series) => series.vaultAddress)).toEqual([
+      'tie-0',
+      'tie-1',
+      'tie-2',
+      'tie-3',
+      'tie-4',
+      'tie-5',
+      'tie-6',
+      'tie-7'
+    ])
     expect(selected[0]?.dataPoints[0]).toEqual({
       timestamp: 0,
       growthUsd: 5,
@@ -97,7 +106,7 @@ describe('selectProtocolReturnFamilySeriesCandidates', () => {
   })
 
   it('ranks position candidates by latest-price growth instead of receipt-weighted growth', () => {
-    const familySeries = Array.from({ length: 12 }, (_, index) => ({
+    const familySeries = Array.from({ length: 20 }, (_, index) => ({
       chainId: 1,
       vaultAddress: `latest-price-${index}`,
       symbol: `latest-price-${index}`,
@@ -107,7 +116,7 @@ describe('selectProtocolReturnFamilySeriesCandidates', () => {
         {
           timestamp: 1,
           growthUsd: index,
-          growthWeightUsd: index === 6 ? 1_000 : index,
+          growthWeightUsd: index === 10 ? 1_000 : index,
           growthWeightEth: null,
           growthIndex: null
         }
@@ -116,12 +125,12 @@ describe('selectProtocolReturnFamilySeriesCandidates', () => {
 
     const selected = selectProtocolReturnFamilySeriesCandidates(familySeries, '1y')
 
-    expect(selected.map((series) => series.vaultAddress)).toContain('latest-price-11')
-    expect(selected.map((series) => series.vaultAddress)).not.toContain('latest-price-6')
+    expect(selected.map((series) => series.vaultAddress)).toContain('latest-price-19')
+    expect(selected.map((series) => series.vaultAddress)).not.toContain('latest-price-10')
   })
 
   it('keeps candidates that are relevant only to receipt-weighted ETH growth', () => {
-    const familySeries = Array.from({ length: 12 }, (_, index) => ({
+    const familySeries = Array.from({ length: 20 }, (_, index) => ({
       chainId: 1,
       vaultAddress: `eth-growth-${index}`,
       symbol: `eth-growth-${index}`,
@@ -134,8 +143,8 @@ describe('selectProtocolReturnFamilySeriesCandidates', () => {
 
     const selected = selectProtocolReturnFamilySeriesCandidates(familySeries, '1y')
 
-    expect(selected.map((series) => series.vaultAddress)).toContain('eth-growth-11')
-    expect(selected.map((series) => series.vaultAddress)).not.toContain('eth-growth-6')
-    expect(selected.find((series) => series.vaultAddress === 'eth-growth-11')?.dataPoints[1]?.growthWeightEth).toBe(11)
+    expect(selected.map((series) => series.vaultAddress)).toContain('eth-growth-19')
+    expect(selected.map((series) => series.vaultAddress)).not.toContain('eth-growth-10')
+    expect(selected.find((series) => series.vaultAddress === 'eth-growth-19')?.dataPoints[1]?.growthWeightEth).toBe(19)
   })
 })

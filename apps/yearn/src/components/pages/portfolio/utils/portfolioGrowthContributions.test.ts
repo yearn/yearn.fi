@@ -103,6 +103,40 @@ describe('buildPortfolioGrowthContributionChart', () => {
     expectConservation(chart)
   })
 
+  it('supports eight chart vaults while keeping the remainder in Other', () => {
+    const dates = ['2026-01-01', '2026-01-02']
+    const chart = buildPortfolioGrowthContributionChart({
+      totalPoints: [
+        { date: dates[0]!, value: 0 },
+        { date: dates[1]!, value: 45 }
+      ],
+      familySeries: Array.from({ length: 9 }, (_, index) => {
+        const terminalValue = 9 - index
+        return makeFamily({
+          label: `Vault ${terminalValue}`,
+          values: [
+            { date: dates[0]!, value: 0 },
+            { date: dates[1]!, value: terminalValue }
+          ]
+        })
+      }),
+      maxVaults: 8
+    })
+
+    expect(chart.series.slice(0, -1).map((series) => series.label)).toEqual([
+      'Vault 9',
+      'Vault 8',
+      'Vault 7',
+      'Vault 6',
+      'Vault 5',
+      'Vault 4',
+      'Vault 3',
+      'Vault 2'
+    ])
+    expect(chart.data.at(-1)).toMatchObject({ vault_7: 2, other: 1 })
+    expectConservation(chart)
+  })
+
   it('rebases and ranks families within the dates supplied by the total series', () => {
     const chart = buildPortfolioGrowthContributionChart({
       totalPoints: [

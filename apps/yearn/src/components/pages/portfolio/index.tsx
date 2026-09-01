@@ -3293,7 +3293,7 @@ function PortfolioPage(): ReactElement {
       protocolReturnError={protocolReturnHistoryError}
       embedded
       loadingProgress={historyChartProgress}
-      className="min-h-0 flex-1"
+      className="min-h-0 flex-1 rounded-t-lg min-[920px]:rounded-tr-none min-[920px]:rounded-bl-lg"
     />
   )
 
@@ -3384,7 +3384,12 @@ function PortfolioPage(): ReactElement {
         return (
           <div className="flex flex-col gap-6 sm:gap-4">
             {model.isActive ? (
-              <div className="flex flex-col overflow-hidden rounded-lg border border-border bg-surface shadow-[0_1px_0_rgba(15,23,42,0.02)]">
+              <div
+                className={cl(
+                  'flex flex-col rounded-lg border border-border bg-surface shadow-[0_1px_0_rgba(15,23,42,0.02)]',
+                  historyChartTab === 'growth' ? 'overflow-visible' : 'overflow-hidden'
+                )}
+              >
                 <div className="grid items-stretch min-[920px]:grid-cols-[minmax(640px,1fr)_minmax(200px,340px)]">
                   <PortfolioHistoryChartControls
                     activeTab={historyChartTab}
@@ -3398,11 +3403,11 @@ function PortfolioPage(): ReactElement {
                     vaultGrowthMode={historyVaultGrowthMode}
                     onVaultGrowthModeChange={setHistoryVaultGrowthMode}
                     isEthGrowthAvailable={isEthGrowthAvailable}
-                    className="h-full bg-linear-to-b from-surface to-surface-secondary/20"
+                    className="h-full rounded-t-lg bg-linear-to-b from-surface to-surface-secondary/20 min-[920px]:rounded-tr-none min-[920px]:rounded-bl-lg"
                   >
                     {historyChartElement}
                   </PortfolioHistoryChartControls>
-                  <div className="border-t border-border bg-linear-to-b from-surface to-surface-secondary/25 min-[920px]:border-t-0 min-[920px]:border-l">
+                  <div className="overflow-hidden rounded-b-lg border-t border-border bg-linear-to-b from-surface to-surface-secondary/25 min-[920px]:rounded-tr-lg min-[920px]:rounded-bl-none min-[920px]:border-t-0 min-[920px]:border-l">
                     <PortfolioHeaderSection
                       blendedMetrics={model.blendedMetrics}
                       isHoldingsLoading={model.isHoldingsLoading}

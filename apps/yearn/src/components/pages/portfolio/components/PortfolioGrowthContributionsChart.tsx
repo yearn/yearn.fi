@@ -44,7 +44,17 @@ type TPresentedContributionSeries = TPortfolioGrowthContributionSeries & {
   color: string
 }
 
-const CONTRIBUTION_COLORS = ['#2578ff', '#46a2ff', '#7bb3a8', '#e1a23b'] as const
+const MAX_VAULTS = 8
+const CONTRIBUTION_COLORS = [
+  '#46a2ff',
+  '#7bb3a8',
+  '#e1a23b',
+  '#b67ae5',
+  '#f472b6',
+  '#f97316',
+  '#14b8a6',
+  '#94adf2'
+] as const
 const OTHER_COLOR = '#94a3b8'
 const TOTAL_COLOR = '#2578ff'
 const STACK_HEADROOM = 1.05
@@ -183,23 +193,23 @@ function PortfolioGrowthContributionsTooltip({
   return (
     <div
       className={
-        'pointer-events-none flex w-[min(17rem,calc(100vw-2rem))] flex-col rounded-xl border border-border bg-surface px-3 py-3 shadow-xl'
+        'pointer-events-none flex w-[min(17rem,calc(100vw-2rem))] flex-col rounded-xl border border-border bg-surface px-3 py-2 shadow-xl'
       }
     >
       <span className={'text-xs font-medium uppercase tracking-[0.12em] text-text-tertiary'}>
         {formatChartTooltipDate(point.date)}
       </span>
-      <div className={'mt-1.5 flex items-center justify-between gap-5'}>
+      <div className={'mt-1 flex items-center justify-between gap-5'}>
         <span className={'text-xs text-text-secondary'}>{'Portfolio growth'}</span>
         <strong className={'font-number text-sm font-semibold text-text-primary'}>
           {formatSignedGrowth(point.portfolioGrowth, mode, Boolean(point.portfolioGrowthEstimated))}
         </strong>
       </div>
-      <div className={'my-2.5 border-t border-border'} />
+      <div className={'my-1.5 border-t border-border'} />
       <span className={'text-[11px] font-medium uppercase tracking-[0.12em] text-text-tertiary'}>
         {'Vault contributions'}
       </span>
-      <div className={'mt-2 flex flex-col gap-1.5'}>
+      <div className={'mt-1 flex flex-col gap-0.5'}>
         {rows.map((row) => (
           <div key={row.key} className={'flex items-center justify-between gap-4'}>
             <span className={'inline-flex min-w-0 items-center gap-2 text-xs text-text-secondary'}>
@@ -213,7 +223,7 @@ function PortfolioGrowthContributionsTooltip({
         ))}
       </div>
       {hasEstimatedValue ? (
-        <p className={'mt-2.5 border-t border-border pt-2 text-[11px] text-text-tertiary'}>
+        <p className={'mt-1.5 border-t border-border pt-1 text-[11px] text-text-tertiary'}>
           {'* Growth may be approximate.'}
         </p>
       ) : null}
@@ -228,7 +238,13 @@ export function PortfolioGrowthContributionsChart({
   mode
 }: TPortfolioGrowthContributionsChartProps): ReactElement {
   const contributionChart = useMemo(
-    () => buildPortfolioGrowthContributionChart({ totalPoints, familySeries, preserveNullValues: mode === 'eth' }),
+    () =>
+      buildPortfolioGrowthContributionChart({
+        totalPoints,
+        familySeries,
+        maxVaults: MAX_VAULTS,
+        preserveNullValues: mode === 'eth'
+      }),
     [familySeries, mode, totalPoints]
   )
   const series = useMemo<TPresentedContributionSeries[]>(
@@ -280,6 +296,7 @@ export function PortfolioGrowthContributionsChart({
         />
         <ChartTooltip
           cursor={{ stroke: 'var(--chart-cursor-line)', strokeWidth: 1 }}
+          wrapperStyle={{ zIndex: 20 }}
           content={(props) => <PortfolioGrowthContributionsTooltip {...props} series={series} mode={mode} />}
         />
         {series.map((item) => (
