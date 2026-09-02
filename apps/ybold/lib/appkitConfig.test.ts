@@ -6,7 +6,9 @@ import {
   resolveYboldRpcUrl,
   YBOLD_APPKIT_FEATURES,
   YBOLD_APPKIT_NETWORKS,
-  YBOLD_WAGMI_RECONNECT_ON_MOUNT
+  YBOLD_WAGMI_RECONNECT_ON_MOUNT,
+  YBOLD_WALLETCONNECT_WALLET_IDS,
+  YBOLD_WALLETCONNECT_WALLETS
 } from '@ybold/lib/appkitConfig'
 import { createBaseAccountSDK } from '@ybold/lib/disabledBaseAccount'
 import { describe, expect, it } from 'vitest'
@@ -44,10 +46,29 @@ describe('yBOLD AppKit configuration', () => {
       enableReconnect: true,
       enableWallets: true,
       features: YBOLD_APPKIT_FEATURES,
+      includeWalletIds: YBOLD_WALLETCONNECT_WALLET_IDS,
       networks: YBOLD_APPKIT_NETWORKS,
       projectId: 'project-id'
     })
     expect(YBOLD_WAGMI_RECONNECT_ON_MOUNT).toBe(false)
+  })
+
+  it('limits the WalletConnect catalog to ten ranked wallets plus Safe', () => {
+    expect(YBOLD_WALLETCONNECT_WALLETS.map(({ name }) => name)).toEqual([
+      'Trust Wallet',
+      'MetaMask',
+      'Binance Wallet',
+      'SafePal',
+      'TokenPocket',
+      'Fireblocks',
+      'IronWallet',
+      'Bitget Wallet',
+      'OKX Wallet',
+      'Ledger Wallet',
+      'Safe'
+    ])
+    expect(YBOLD_WALLETCONNECT_WALLET_IDS).toHaveLength(11)
+    expect(new Set(YBOLD_WALLETCONNECT_WALLET_IDS).size).toBe(11)
   })
 
   it('disables non-wallet AppKit product surfaces', () => {

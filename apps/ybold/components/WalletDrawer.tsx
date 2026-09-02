@@ -1,10 +1,11 @@
 'use client'
 
 import { useAppKit } from '@reown/appkit/react'
+import { ReownWalletModalOverrides } from '@ybold/components/ReownWalletModalOverrides'
 import {
   getBrowserWalletLabel,
   getWalletConnectionErrorMessage,
-  selectBrowserWalletConnector
+  selectBrowserWalletConnectors
 } from '@ybold/lib/walletDrawer'
 import {
   createContext,
@@ -18,9 +19,9 @@ import {
   useRef,
   useState
 } from 'react'
-import { useAccount, useConnect } from 'wagmi'
+import { useAccount, useConnect, type Connector as WagmiConnector } from 'wagmi'
 
-type TWalletMethod = 'browser' | 'more' | 'walletConnect'
+type TWalletMethod = 'more' | 'walletConnect'
 
 type TCloseWalletDrawerOptions = {
   restoreFocus?: boolean
@@ -43,7 +44,12 @@ function Spinner() {
   return <span aria-hidden className="size-4 animate-spin rounded-full border-2 border-current border-r-transparent" />
 }
 
-function BrowserWalletIcon() {
+function BrowserWalletIcon({ icon }: { icon?: string }) {
+  if (icon) {
+    // biome-ignore lint/performance/noImgElement: EIP-6963 wallet icons are runtime data URIs supplied by extensions.
+    return <img aria-hidden src={icon} alt="" className="size-6 rounded-md" />
+  }
+
   return (
     <svg aria-hidden viewBox="0 0 24 24" className="size-5 fill-none stroke-current" strokeWidth="1.8">
       <rect x="3.5" y="5" width="17" height="14" rx="2.5" />
@@ -148,16 +154,20 @@ export function WalletDrawerProvider({ children }: { children: ReactNode }) {
   const [hasLegacyInjectedProvider, setHasLegacyInjectedProvider] = useState(false)
   const [mobileViewport, setMobileViewport] = useState(isMobileViewport)
   const [pendingMethod, setPendingMethod] = useState<TWalletMethod>()
+  const [pendingConnectorUid, setPendingConnectorUid] = useState<string>()
   const [errorMessage, setErrorMessage] = useState<string>()
   const dialogRef = useRef<HTMLElement>(null)
   const operationIdRef = useRef(0)
   const restoreFocusOnCloseRef = useRef(true)
   const titleId = useId()
   const descriptionId = useId()
-  const browserConnectorCandidate = useMemo(() => selectBrowserWalletConnector(connectors), [connectors])
-  const browserConnector =
-    browserConnectorCandidate?.id === 'injected' && !hasLegacyInjectedProvider ? undefined : browserConnectorCandidate
-  const browserWalletLabel = getBrowserWalletLabel(browserConnector)
+  const browserConnectors = useMemo(
+    () =>
+      selectBrowserWalletConnectors(connectors).filter(
+        (connector) => connector.id !== 'injected' || hasLegacyInjectedProvider
+      ),
+    [connectors, hasLegacyInjectedProvider]
+  )
 
   // Wallet providers and viewport mode are browser capabilities, so they are synchronized after hydration.
   useEffect(() => {
@@ -176,6 +186,7 @@ export function WalletDrawerProvider({ children }: { children: ReactNode }) {
     operationIdRef.current += 1
     restoreFocusOnCloseRef.current = options?.restoreFocus ?? true
     setErrorMessage(undefined)
+    setPendingConnectorUid(undefined)
     setPendingMethod(undefined)
     setIsOpen(false)
   }, [])
@@ -184,6 +195,7 @@ export function WalletDrawerProvider({ children }: { children: ReactNode }) {
     operationIdRef.current += 1
     restoreFocusOnCloseRef.current = true
     setErrorMessage(undefined)
+    setPendingConnectorUid(undefined)
     setPendingMethod(undefined)
     setIsOpen(true)
   }, [])
@@ -284,33 +296,31 @@ export function WalletDrawerProvider({ children }: { children: ReactNode }) {
     }
   }, [closeWalletDrawer, isOpen, mobileViewport])
 
-  const connectBrowserWallet = useCallback(async () => {
-    if (!browserConnector) {
-      setErrorMessage('No browser wallet was detected. Enable an extension or use WalletConnect.')
-      return
-    }
+  const connectBrowserWallet = useCallback(
+    async (browserConnector: WagmiConnector) => {
+      const operationId = operationIdRef.current + 1
+      operationIdRef.current = operationId
+      setPendingConnectorUid(browserConnector.uid)
+      setErrorMessage(undefined)
 
-    const operationId = operationIdRef.current + 1
-    operationIdRef.current = operationId
-    setPendingMethod('browser')
-    setErrorMessage(undefined)
+      try {
+        await connectAsync({ connector: browserConnector })
 
-    try {
-      await connectAsync({ connector: browserConnector })
-
-      if (operationIdRef.current === operationId) {
-        closeWalletDrawer()
+        if (operationIdRef.current === operationId) {
+          closeWalletDrawer()
+        }
+      } catch (error) {
+        if (operationIdRef.current === operationId) {
+          setErrorMessage(getWalletConnectionErrorMessage(error))
+        }
+      } finally {
+        if (operationIdRef.current === operationId) {
+          setPendingConnectorUid(undefined)
+        }
       }
-    } catch (error) {
-      if (operationIdRef.current === operationId) {
-        setErrorMessage(getWalletConnectionErrorMessage(error))
-      }
-    } finally {
-      if (operationIdRef.current === operationId) {
-        setPendingMethod(undefined)
-      }
-    }
-  }, [browserConnector, closeWalletDrawer, connectAsync])
+    },
+    [closeWalletDrawer, connectAsync]
+  )
 
   const openReownView = useCallback(
     async (method: Extract<TWalletMethod, 'more' | 'walletConnect'>) => {
@@ -346,7 +356,7 @@ export function WalletDrawerProvider({ children }: { children: ReactNode }) {
     () => ({ isOpen, openWalletDrawer, toggleWalletDrawer }),
     [isOpen, openWalletDrawer, toggleWalletDrawer]
   )
-  const allMethodsDisabled = pendingMethod !== undefined
+  const allMethodsDisabled = pendingMethod !== undefined || pendingConnectorUid !== undefined
 
   const handleBackdropMouseDown = (event: ReactMouseEvent<HTMLDivElement>) => {
     if (event.target === event.currentTarget) {
@@ -356,6 +366,7 @@ export function WalletDrawerProvider({ children }: { children: ReactNode }) {
 
   return (
     <WalletDrawerContext.Provider value={contextValue}>
+      <ReownWalletModalOverrides />
       <div className="contents" inert={isOpen && mobileViewport ? true : undefined}>
         {children}
       </div>
@@ -397,15 +408,34 @@ export function WalletDrawerProvider({ children }: { children: ReactNode }) {
 
             <div className="overflow-y-auto px-4 pb-4">
               <div className="divide-y divide-line overflow-hidden rounded-xl border border-line">
-                <WalletMethodButton
-                  label={browserWalletLabel}
-                  pendingLabel={`Waiting for ${browserWalletLabel}…`}
-                  detail={browserConnector ? 'Detected' : 'Not detected'}
-                  disabled={allMethodsDisabled || !browserConnector}
-                  icon={<BrowserWalletIcon />}
-                  isPending={pendingMethod === 'browser'}
-                  onClick={() => void connectBrowserWallet()}
-                />
+                {browserConnectors.length > 0 ? (
+                  browserConnectors.map((browserConnector) => {
+                    const browserWalletLabel = getBrowserWalletLabel(browserConnector)
+
+                    return (
+                      <WalletMethodButton
+                        key={browserConnector.uid}
+                        label={browserWalletLabel}
+                        pendingLabel={`Waiting for ${browserWalletLabel}…`}
+                        detail="Detected"
+                        disabled={allMethodsDisabled}
+                        icon={<BrowserWalletIcon icon={browserConnector.icon} />}
+                        isPending={pendingConnectorUid === browserConnector.uid}
+                        onClick={() => void connectBrowserWallet(browserConnector)}
+                      />
+                    )
+                  })
+                ) : (
+                  <WalletMethodButton
+                    label="Browser wallet"
+                    pendingLabel="Waiting for browser wallet…"
+                    detail="Not detected"
+                    disabled
+                    icon={<BrowserWalletIcon />}
+                    isPending={false}
+                    onClick={() => undefined}
+                  />
+                )}
                 <WalletMethodButton
                   label="WalletConnect"
                   pendingLabel="Opening WalletConnect…"

@@ -2,7 +2,7 @@ import {
   formatWalletAddress,
   getBrowserWalletLabel,
   getWalletConnectionErrorMessage,
-  selectBrowserWalletConnector,
+  selectBrowserWalletConnectors,
   type TWalletConnectorSummary
 } from '@ybold/lib/walletDrawer'
 import { describe, expect, it } from 'vitest'
@@ -15,26 +15,52 @@ const connector = (overrides: Partial<TWalletConnectorSummary>): TWalletConnecto
 })
 
 describe('wallet drawer connector selection', () => {
-  it('prefers a discovered MetaMask connector over generic injected and unrelated connectors', () => {
-    const selected = selectBrowserWalletConnector([
+  it('returns every discovered browser wallet and removes the generic fallback', () => {
+    const selected = selectBrowserWalletConnectors([
       connector({}),
       connector({ id: 'walletConnect', name: 'WalletConnect', type: 'walletConnect' }),
       connector({ id: 'com.rabby', name: 'Rabby' }),
       connector({ id: 'io.metamask', name: 'MetaMask' })
     ])
 
-    expect(selected?.id).toBe('io.metamask')
+    expect(selected.map(({ id }) => id)).toEqual(['com.rabby', 'io.metamask'])
   })
 
-  it('uses another discovered browser wallet before the generic injected fallback', () => {
-    const selected = selectBrowserWalletConnector([
+  it('excludes browser wallets outside the supported product set', () => {
+    const selected = selectBrowserWalletConnectors([
       connector({}),
-      connector({ id: 'com.rabby', name: 'Rabby' }),
+      connector({ id: 'app.phantom', name: 'Phantom' }),
+      connector({ id: 'io.metamask', name: 'MetaMask' })
+    ])
+
+    expect(selected.map(({ id }) => id)).toEqual(['io.metamask'])
+  })
+
+  it('does not expose the legacy fallback when only an excluded wallet was announced', () => {
+    const selected = selectBrowserWalletConnectors([connector({}), connector({ id: 'app.phantom', name: 'Phantom' })])
+
+    expect(selected).toEqual([])
+  })
+
+  it('keeps the generic injected connector when no announced wallet exists', () => {
+    const selected = selectBrowserWalletConnectors([
+      connector({}),
+      connector({ id: 'walletConnect', name: 'WalletConnect', type: 'walletConnect' }),
       connector({ id: 'safe', name: 'Safe', type: 'safe' })
     ])
 
-    expect(selected?.id).toBe('com.rabby')
-    expect(getBrowserWalletLabel(selected)).toBe('Rabby')
+    expect(selected).toHaveLength(1)
+    expect(selected[0]?.id).toBe('injected')
+  })
+
+  it('excludes unrelated and non-injected connectors', () => {
+    const selected = selectBrowserWalletConnectors([
+      connector({ id: 'walletConnect', name: 'WalletConnect', type: 'walletConnect' }),
+      connector({ id: 'safe', name: 'Safe', type: 'safe' }),
+      connector({ id: 'coinbaseWalletSDK', name: 'Coinbase Wallet', type: 'coinbaseWallet' })
+    ])
+
+    expect(selected).toEqual([])
   })
 
   it('labels the generic injected connector as a browser wallet', () => {

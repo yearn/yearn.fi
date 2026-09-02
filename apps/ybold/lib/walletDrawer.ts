@@ -5,20 +5,22 @@ export type TWalletConnectorSummary = {
 }
 
 const NON_BROWSER_CONNECTOR_IDS = new Set(['auth', 'baseAccount', 'coinbaseWalletSDK', 'safe', 'walletConnect'])
+const EXCLUDED_BROWSER_WALLET_RDNS = new Set(['app.phantom'])
 
-export function selectBrowserWalletConnector<TConnector extends TWalletConnectorSummary>(
+export function selectBrowserWalletConnectors<TConnector extends TWalletConnectorSummary>(
   connectors: readonly TConnector[]
-): TConnector | undefined {
+): TConnector[] {
   const browserConnectors = connectors.filter(
     (connector) => connector.type === 'injected' && !NON_BROWSER_CONNECTOR_IDS.has(connector.id)
   )
   const discoveredConnectors = browserConnectors.filter((connector) => connector.id !== 'injected')
-
-  return (
-    discoveredConnectors.find((connector) => /metamask/i.test(`${connector.id} ${connector.name}`)) ??
-    discoveredConnectors[0] ??
-    browserConnectors.find((connector) => connector.id === 'injected')
+  const supportedDiscoveredConnectors = discoveredConnectors.filter(
+    (connector) => !EXCLUDED_BROWSER_WALLET_RDNS.has(connector.id.toLowerCase())
   )
+
+  return discoveredConnectors.length > 0
+    ? supportedDiscoveredConnectors
+    : browserConnectors.filter((connector) => connector.id === 'injected')
 }
 
 export function getBrowserWalletLabel(connector: TWalletConnectorSummary | undefined): string {
