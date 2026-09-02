@@ -1,3 +1,4 @@
+import { unstable_cache } from 'next/cache'
 import { canonicalChains } from '@/config/chainDefinitions'
 import { GET_CORS_HEADERS, json, noContent } from '@/server/http'
 import { KONG_VAULT_LIST_URL } from '@/server/lib/aio'
@@ -5,10 +6,25 @@ import { getVercelCdnCacheHeaders } from '@/server/lib/cacheHeaders'
 import type { TSiteHealth, TSiteHealthChain, TSiteHealthState } from '@/types/siteStatus'
 
 const HEALTH_CHECK_TIMEOUT_MS = 4_000
+const STATUS_DATA_CACHE_TTL_SECONDS = 30
 const STATUS_CACHE_HEADERS = {
   ...GET_CORS_HEADERS,
   ...getVercelCdnCacheHeaders('public, s-maxage=30, stale-while-revalidate=30')
 } as const
+
+type TSiteHealthCache = {
+  current?: Promise<TSiteHealth>
+}
+
+const siteHealthCache: TSiteHealthCache = {}
+
+function normalizeTimestamp(value: string | null | undefined): string | undefined {
+  if (!value) {
+    return undefined
+  }
+  const timestamp = new Date(value)
+  return Number.isNaN(timestamp.getTime()) ? undefined : timestamp.toISOString()
+}
 
 function getRpcUrl(chain: (typeof canonicalChains)[number]): string {
   return process.env[`NEXT_PUBLIC_RPC_URI_FOR_${chain.id}`]?.trim() || chain.rpcUrls.default.http[0] || ''
@@ -25,7 +41,8 @@ async function checkKong(): Promise<TSiteHealth['services']['kong']> {
     })
     return {
       state: response.ok ? 'operational' : 'unavailable',
-      latencyMs: Math.round(performance.now() - startedAt)
+      latencyMs: Math.round(performance.now() - startedAt),
+      representationUpdatedAt: normalizeTimestamp(response.headers.get('last-modified'))
     }
   } catch {
     return { state: 'unavailable', latencyMs: Math.round(performance.now() - startedAt) }
@@ -79,25 +96,56 @@ export function OPTIONS(): Response {
   return noContent(GET_CORS_HEADERS)
 }
 
-export async function GET(): Promise<Response> {
+async function checkSiteHealth(): Promise<TSiteHealth> {
   const [kong, chains] = await Promise.all([checkKong(), Promise.all(canonicalChains.map(checkRpc))])
   const operational = chains.filter((chain) => chain.state === 'operational').length
+  const checkedAt = new Date().toISOString()
 
-  return json(
-    {
-      checkedAt: new Date().toISOString(),
-      services: {
-        kong,
-        rpc: {
-          state: getRpcState(operational, chains.length),
-          operational,
-          total: chains.length,
-          chains
-        }
+  return {
+    checkedAt,
+    generatedAt: new Date().toISOString(),
+    builtAt: normalizeTimestamp(process.env.NEXT_PUBLIC_SITE_UPDATED_AT),
+    services: {
+      kong,
+      rpc: {
+        state: getRpcState(operational, chains.length),
+        operational,
+        total: chains.length,
+        chains
       }
-    } satisfies TSiteHealth,
-    { headers: STATUS_CACHE_HEADERS }
-  )
+    }
+  }
+}
+
+// Route handlers and server pages compile into separate bundles. A bound callback has the same
+// serialized form in both, so the explicit key below resolves to one shared Next Data Cache entry.
+const getDataCachedSiteHealth = unstable_cache(checkSiteHealth.bind(null), ['yearn-site-health-v1'], {
+  revalidate: STATUS_DATA_CACHE_TTL_SECONDS,
+  tags: ['site-health']
+})
+
+export function clearSiteHealthCache(): void {
+  siteHealthCache.current = undefined
+}
+
+export function getSiteHealth(): Promise<TSiteHealth> {
+  if (siteHealthCache.current) {
+    return siteHealthCache.current
+  }
+
+  const value = getDataCachedSiteHealth()
+  siteHealthCache.current = value
+  const clearInFlight = (): void => {
+    if (siteHealthCache.current === value) {
+      siteHealthCache.current = undefined
+    }
+  }
+  void value.then(clearInFlight, clearInFlight)
+  return value
+}
+
+export async function GET(): Promise<Response> {
+  return json(await getSiteHealth(), { headers: STATUS_CACHE_HEADERS })
 }
 
 export default GET

@@ -1,3 +1,4 @@
+import { VaultsCatalogIntro } from '@pages/vaults/components/VaultsCatalogIntro'
 import { buildInitialVaultsQuerySnapshot, DEFAULT_VAULT_QUERY_DEFAULTS } from '@pages/vaults/utils/vaultsQueryState'
 import type { ReactElement } from 'react'
 import { getVaultsPageInitialPayload } from '@/server/ssr/publicDataHydration'
@@ -11,5 +12,10 @@ export default async function Page(): Promise<ReactElement> {
   const initialQueryState = buildInitialVaultsQuerySnapshot(undefined, DEFAULT_VAULT_QUERY_DEFAULTS)
   const initialVaults = await getVaultsPageInitialPayload()
 
-  return <VaultsPageClient initialQueryState={initialQueryState} initialVaults={initialVaults} />
+  return (
+    <>
+      <VaultsCatalogIntro initialVaults={initialVaults} />
+      <VaultsPageClient initialQueryState={initialQueryState} initialVaults={initialVaults} />
+    </>
+  )
 }

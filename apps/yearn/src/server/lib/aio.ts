@@ -20,11 +20,7 @@ export const CHAIN_NAMES: Record<number, string> = {
   747474: 'Katana'
 }
 
-export const SITEMAP_STATIC_PAGES = [
-  { path: '/', priority: '1.0', changefreq: 'daily' },
-  { path: '/vaults', priority: '0.9', changefreq: 'hourly' },
-  { path: '/portfolio', priority: '0.7', changefreq: 'daily' }
-]
+export const SITEMAP_STATIC_PAGES = [{ path: '/' }, { path: '/vaults' }, { path: '/portfolio' }, { path: '/status' }]
 
 // --- Types ---
 
@@ -54,6 +50,8 @@ export type TVaultListEntry = {
   kind?: string | null
   inclusion?: Record<string, boolean>
   origin?: string | null
+  updatedAt?: string | number | null
+  lastModified?: string | number | null
 }
 
 export type TSnapshotStrategy = {
@@ -85,6 +83,11 @@ export type TVaultSnapshot = {
   meta?: { description?: string; isRetired?: boolean; isBoosted?: boolean } | null
 }
 
+export type TAioDocumentTimestamps = {
+  generatedAt?: string | number | Date
+  sourceUpdatedAt?: string | number | Date | null
+}
+
 // --- Formatters ---
 
 function escapeMdPipe(str: string): string {
@@ -97,6 +100,57 @@ function sanitizeStrategyText(str: string): string {
 
 function normalizeSnapshotStrategy(strategy: TSnapshotStrategy | string): TSnapshotStrategy {
   return typeof strategy === 'string' ? { address: strategy } : strategy
+}
+
+function escapeXml(value: string): string {
+  return value
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&apos;')
+}
+
+function toDate(value: unknown): Date | null {
+  if (value instanceof Date) {
+    return Number.isFinite(value.getTime()) ? value : null
+  }
+
+  const numericValue =
+    typeof value === 'number'
+      ? value
+      : typeof value === 'string' && /^\d+(?:\.\d+)?$/.test(value.trim())
+        ? Number(value)
+        : null
+  const timestamp =
+    numericValue == null ? value : numericValue < 1_000_000_000_000 ? numericValue * 1_000 : numericValue
+  const date = typeof timestamp === 'string' || typeof timestamp === 'number' ? new Date(timestamp) : null
+  return date && Number.isFinite(date.getTime()) ? date : null
+}
+
+export function resolveSourceUpdatedAt(...values: unknown[]): string | undefined {
+  const dates = values.map(toDate).filter((date): date is Date => date !== null)
+  const latest = dates.reduce<Date | null>((current, date) => (!current || date > current ? date : current), null)
+  return latest?.toISOString()
+}
+
+function resolveDocumentTimestamps(timestamps?: TAioDocumentTimestamps): {
+  generatedAt: string
+  sourceUpdatedAt?: string
+} {
+  return {
+    generatedAt: resolveSourceUpdatedAt(timestamps?.generatedAt) ?? new Date().toISOString(),
+    sourceUpdatedAt: resolveSourceUpdatedAt(timestamps?.sourceUpdatedAt)
+  }
+}
+
+function sitemapUrl(location: string, lastModified?: string): string {
+  const lastModifiedXml = lastModified ? `\n    <lastmod>${escapeXml(lastModified)}</lastmod>` : ''
+  return `  <url>\n    <loc>${escapeXml(location)}</loc>${lastModifiedXml}\n  </url>`
+}
+
+function hasValidVaultIdentity(vault: TVaultListEntry): boolean {
+  return Number.isSafeInteger(vault.chainId) && vault.chainId > 0 && /^0x[a-fA-F0-9]{40}$/.test(vault.address)
 }
 
 export function formatUsd(value: number | null | undefined): string {
@@ -177,19 +231,20 @@ export function shouldIncludeVaultsMarkdownEntry(vault: TVaultListEntry): boolea
 // --- Builders ---
 
 export function buildSitemap(vaults: TVaultListEntry[]): string {
-  const today = new Date().toISOString().slice(0, 10)
+  const staticUrls = SITEMAP_STATIC_PAGES.map(({ path }) => sitemapUrl(`${SITE_URL}${path}`)).join('\n')
 
-  const staticUrls = SITEMAP_STATIC_PAGES.map(
-    ({ path, priority, changefreq }) =>
-      `  <url>\n    <loc>${SITE_URL}${path}</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>${changefreq}</changefreq>\n    <priority>${priority}</priority>\n  </url>`
-  ).join('\n')
-
-  const vaultUrls = vaults
-    .filter((v) => !v.isHidden && !v.isRetired)
-    .map(
-      (v) =>
-        `  <url>\n    <loc>${SITE_URL}/vaults/${v.chainId}/${v.address}</loc>\n    <lastmod>${today}</lastmod>\n    <changefreq>hourly</changefreq>\n    <priority>0.6</priority>\n  </url>`
-    )
+  const uniqueVaults = [
+    ...new Map(
+      vaults
+        .filter((vault) => shouldIncludeVaultsMarkdownEntry(vault) && hasValidVaultIdentity(vault))
+        .map((vault) => [`${vault.chainId}:${vault.address.toLowerCase()}`, vault])
+    ).values()
+  ]
+  const vaultUrls = uniqueVaults
+    .map((vault) => {
+      const lastModified = resolveSourceUpdatedAt(vault.lastModified, vault.updatedAt)
+      return sitemapUrl(`${SITE_URL}/vaults/${vault.chainId}/${vault.address}`, lastModified)
+    })
     .join('\n')
 
   return `<?xml version="1.0" encoding="UTF-8"?>
@@ -199,7 +254,11 @@ ${vaultUrls}
 </urlset>`
 }
 
-export function buildVaultsMarkdown(vaults: TVaultListEntry[], chainId?: number): string {
+export function buildVaultsMarkdown(
+  vaults: TVaultListEntry[],
+  chainId?: number,
+  timestamps?: TAioDocumentTimestamps
+): string {
   const filtered = vaults.filter((v) => {
     if (!shouldIncludeVaultsMarkdownEntry(v)) return false
     if (chainId != null) return v.chainId === chainId
@@ -208,6 +267,8 @@ export function buildVaultsMarkdown(vaults: TVaultListEntry[], chainId?: number)
 
   const chainIds = [...new Set(filtered.map((v) => v.chainId))].sort((a, b) => a - b)
   const chainLabel = chainId != null ? ` — ${CHAIN_NAMES[chainId] ?? `Chain ${chainId}`}` : ''
+  const { generatedAt, sourceUpdatedAt } = resolveDocumentTimestamps(timestamps)
+  const sourceUpdatedAtFrontmatter = sourceUpdatedAt ? `\nsource_updated_at: ${sourceUpdatedAt}` : ''
 
   const chainSections = chainIds
     .map((id) => {
@@ -231,7 +292,7 @@ description: Kong-derived active public Yearn single asset and LP vault summary 
 source: ${KONG_VAULT_LIST_URL}
 canonical_data: ${KONG_VAULT_LIST_URL}
 derived_from_kong: true
-updated: ${new Date().toISOString()}
+generated_at: ${generatedAt}${sourceUpdatedAtFrontmatter}
 total_vaults: ${filtered.length}
 ---
 
@@ -252,7 +313,12 @@ ${chainSections}
 `
 }
 
-export function buildVaultMarkdown(snapshot: TVaultSnapshot, chainId: number, address: string): string {
+export function buildVaultMarkdown(
+  snapshot: TVaultSnapshot,
+  chainId: number,
+  address: string,
+  timestamps?: TAioDocumentTimestamps
+): string {
   const chainName = CHAIN_NAMES[chainId] ?? `Chain ${chainId}`
   const name = snapshot.name ?? 'Unknown Vault'
   const symbol = snapshot.symbol ?? ''
@@ -270,6 +336,8 @@ export function buildVaultMarkdown(snapshot: TVaultSnapshot, chainId: number, ad
   const description = snapshot.meta?.description ?? `Automated yield vault for ${tokenName} (${token}) on ${chainName}.`
   const vaultUrl = `${SITE_URL}/vaults/${chainId}/${address}`
   const sourceUrl = `${KONG_REST_BASE}/snapshot/${chainId}/${address}`
+  const { generatedAt, sourceUpdatedAt } = resolveDocumentTimestamps(timestamps)
+  const sourceUpdatedAtFrontmatter = sourceUpdatedAt ? `\nsource_updated_at: ${sourceUpdatedAt}` : ''
 
   const allStrategies = [...(snapshot.strategies ?? []), ...(snapshot.composition ?? [])].map(normalizeSnapshotStrategy)
   const strategiesSection =
@@ -298,7 +366,7 @@ url: ${vaultUrl}
 source: ${sourceUrl}
 canonical_data: ${sourceUrl}
 derived_from_kong: true
-updated: ${new Date().toISOString()}
+generated_at: ${generatedAt}${sourceUpdatedAtFrontmatter}
 ---
 
 # ${name}${symbol ? ` (${symbol})` : ''}

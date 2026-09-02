@@ -1,7 +1,13 @@
 import { YBOLD_STAKING_ADDRESS, YBOLD_VAULT_ADDRESS } from '@pages/vaults/domain/yBoldProduct'
 import { buildVaultSnapshotEndpoint } from '@shared/data/publicQueryEndpoints'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { buildVaultMetadataFromInput, buildVaultStructuredDataFromInput, fetchVaultMetadataSnapshot } from './metadata'
+import {
+  buildVaultMetadataFromInput,
+  buildVaultStructuredDataFromInput,
+  fetchVaultMetadataSnapshot,
+  landingMetadata,
+  vaultsMetadata
+} from './metadata'
 
 const { fetchWithSchemaMock } = vi.hoisted(() => ({
   fetchWithSchemaMock: vi.fn()
@@ -38,6 +44,30 @@ const STAKED_SNAPSHOT = {
     oracle: { netAPY: 0.0495 }
   }
 } as any
+
+describe('page metadata', () => {
+  it('publishes the real homepage as its canonical and Open Graph URL', () => {
+    expect(landingMetadata).toMatchObject({
+      alternates: { canonical: 'https://yearn.fi/' },
+      openGraph: { url: 'https://yearn.fi/' }
+    })
+  })
+
+  it('advertises the vault catalog markdown representation', () => {
+    expect(vaultsMetadata).toMatchObject({
+      alternates: {
+        types: {
+          'text/markdown': [
+            {
+              title: 'Yearn vault catalog',
+              url: 'https://yearn.fi/api/vaults/markdown'
+            }
+          ]
+        }
+      }
+    })
+  })
+})
 
 describe('yBOLD vault metadata', () => {
   beforeEach(() => {

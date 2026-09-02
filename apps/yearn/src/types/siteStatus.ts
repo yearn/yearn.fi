@@ -9,10 +9,13 @@ export type TSiteHealthChain = {
 
 export type TSiteHealth = {
   checkedAt: string
+  generatedAt: string
+  builtAt?: string
   services: {
     kong: {
       state: Exclude<TSiteHealthState, 'degraded'>
       latencyMs: number
+      representationUpdatedAt?: string
     }
     rpc: {
       state: TSiteHealthState

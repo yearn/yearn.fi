@@ -31,6 +31,7 @@ import {
 import { AccountDropdown } from './AccountDropdown'
 import { HeaderNavMenu } from './HeaderNavMenu'
 import { MobileNavMenu } from './MobileNavMenu'
+import { HeaderSiteStatus } from './SiteStatus'
 
 type TWalletSelectorProps = {
   onAccountClick: () => void
@@ -267,16 +268,19 @@ function AppHeader(): ReactElement {
               <>
                 <div className={'hidden items-center justify-end md:flex gap-2'} data-tour="vaults-header-user">
                   <TenderlyBadge />
-                  <div className={'hidden md:flex gap-4'}>
-                    <Link href={'/vaults'} prefetch={false}>
-                      <span
-                        className={
-                          'text-base font-medium text-text-secondary transition-colors hover:text-text-primary'
-                        }
-                      >
-                        {'Vaults'}
-                      </span>
-                    </Link>
+                  <div className={'hidden items-center gap-4 md:flex'}>
+                    <div className={'flex items-center gap-0.5'}>
+                      <HeaderSiteStatus />
+                      <Link href={'/vaults'} prefetch={false}>
+                        <span
+                          className={
+                            'text-base font-medium text-text-secondary transition-colors hover:text-text-primary'
+                          }
+                        >
+                          {'Vaults'}
+                        </span>
+                      </Link>
+                    </div>
 
                     <Link href={'/portfolio'} prefetch={false}>
                       <span
