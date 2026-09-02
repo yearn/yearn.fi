@@ -3264,6 +3264,7 @@ function PortfolioPage(): ReactElement {
     isEmpty: protocolReturnHistoryEmpty
   } = portfolioHistory.protocolReturn
   const annualizedProtocolReturnPct = protocolReturnHistoryData?.at(-1)?.annualizedProtocolReturnPct
+  const hasProtocolReturnSnapshot = protocolReturnHistoryData !== null
   const resolvedGrowthDisplayMode = resolvePortfolioGrowthDisplayMode(
     historyGrowthDisplayModeOverride ?? protocolReturnHistorySummary?.recommendedGrowthDisplay ?? 'index',
     protocolReturnHistoryData
@@ -3413,7 +3414,9 @@ function PortfolioPage(): ReactElement {
                       isHoldingsLoading={model.isHoldingsLoading}
                       isSearchingBalances={model.isSearchingBalances}
                       hasKatanaHoldings={model.hasKatanaHoldings}
-                      isProtocolReturnLoading={model.isHoldingsLoading || protocolReturnHistoryLoading}
+                      isProtocolReturnLoading={
+                        model.isHoldingsLoading || (protocolReturnHistoryLoading && !hasProtocolReturnSnapshot)
+                      }
                       annualizedProtocolReturnPct={annualizedProtocolReturnPct}
                       totalPortfolioValue={model.totalPortfolioValue}
                     />

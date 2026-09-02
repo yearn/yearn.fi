@@ -40,6 +40,35 @@ function getErrorStatus(error: Error | null): number | undefined {
   return requestError?.response?.status ?? requestError?.status
 }
 
+export function resolvePortfolioHistoryBundleData(args: {
+  address?: string
+  data?: TPortfolioResponse
+  isPlaceholderData: boolean
+}): { currentData: TPortfolioResponse | null; retainedData: TPortfolioResponse | null } {
+  const normalizedAddress = args.address?.toLowerCase()
+  const retainedData = normalizedAddress && args.data?.address.toLowerCase() === normalizedAddress ? args.data : null
+
+  return {
+    currentData: args.isPlaceholderData ? null : retainedData,
+    retainedData
+  }
+}
+
+export function resolvePortfolioHistoryBundleLoading(args: {
+  hasCurrentData: boolean
+  hasRetainedGrowth: boolean
+  isFetching: boolean
+  isLoading: boolean
+  isPlaceholderData: boolean
+}): { historyIsLoading: boolean; growthIsLoading: boolean } {
+  const requestIsPending = args.isLoading || args.isFetching || args.isPlaceholderData
+
+  return {
+    historyIsLoading: !args.hasCurrentData && requestIsPending,
+    growthIsLoading: !args.hasRetainedGrowth && requestIsPending
+  }
+}
+
 export function usePortfolioHistoryBundle(
   denomination: TPortfolioHistoryDenomination = 'usd',
   timeframe: TPortfolioHistoryTimeframe = '1y',
@@ -54,34 +83,39 @@ export function usePortfolioHistoryBundle(
         : null,
     [address, denomination, enabled, timeframe]
   )
-  const { data, isLoading, isFetching, error } = useFetch<TPortfolioResponse>({
+  const { data, isLoading, isFetching, isPlaceholderData, error } = useFetch<TPortfolioResponse>({
     endpoint,
     schema: portfolioResponseSchema,
     config: {
       cacheDuration: PORTFOLIO_HISTORY_CACHE_DURATION,
       gcTime: PORTFOLIO_HISTORY_CACHE_DURATION,
-      keepPreviousData: false,
+      keepPreviousData: true,
       maxRetries: 0,
       timeout: 5 * 60 * 1000
     }
   })
+  const { currentData, retainedData } = resolvePortfolioHistoryBundleData({
+    address,
+    data,
+    isPlaceholderData
+  })
   const balanceData = useMemo<TPortfolioHistoryChartData | null>(() => {
-    if (!data?.balance.dataPoints) {
+    if (!currentData?.balance.dataPoints) {
       return null
     }
 
     return upsertLivePortfolioBalancePoint({
-      data: data.balance.dataPoints.map((point) => ({ date: point.date, value: point.value })),
+      data: currentData.balance.dataPoints.map((point) => ({ date: point.date, value: point.value })),
       denomination,
       liveSnapshot
     })
-  }, [data, denomination, liveSnapshot])
+  }, [currentData, denomination, liveSnapshot])
   const protocolReturnData = useMemo<TPortfolioProtocolReturnHistoryChartData | null>(() => {
-    if (!data?.protocolReturn.dataPoints) {
+    if (!retainedData?.protocolReturn.dataPoints) {
       return null
     }
 
-    return data.protocolReturn.dataPoints.map((point) => ({
+    return retainedData.protocolReturn.dataPoints.map((point) => ({
       date: point.date,
       growthWeightUsd: point.growthWeightUsd,
       growthUsd: point.growthUsd,
@@ -91,16 +125,23 @@ export function usePortfolioHistoryBundle(
       annualizedProtocolReturnPct: point.annualizedProtocolReturnPct,
       growthIndex: point.growthIndex
     }))
-  }, [data])
-  const growthVaults = useMemo(() => data?.growth.vaults ?? [], [data?.growth.vaults])
+  }, [retainedData])
+  const growthVaults = useMemo(() => retainedData?.growth.vaults ?? [], [retainedData?.growth.vaults])
   const growthVaultsByKey = useMemo(() => mapPortfolioGrowthVaults(growthVaults), [growthVaults])
-  const hasResponse = Boolean(data)
-  const isLoadingState = !hasResponse && (isLoading || isFetching)
+  const hasResponse = Boolean(currentData)
+  const hasRetainedGrowth = Boolean(retainedData?.growth)
+  const { historyIsLoading, growthIsLoading } = resolvePortfolioHistoryBundleLoading({
+    hasCurrentData: hasResponse,
+    hasRetainedGrowth,
+    isFetching,
+    isLoading,
+    isPlaceholderData
+  })
   const errorStatus = getErrorStatus(error)
   const balanceIsEmpty =
-    !isLoadingState && Boolean(address) && (errorStatus === 404 || Boolean(balanceData && balanceData.length === 0))
+    !historyIsLoading && Boolean(address) && (errorStatus === 404 || Boolean(balanceData && balanceData.length === 0))
   const protocolReturnIsEmpty =
-    !isLoadingState &&
+    !historyIsLoading &&
     Boolean(address) &&
     (errorStatus === 404 || Boolean(protocolReturnData && protocolReturnData.length === 0))
 
@@ -109,52 +150,52 @@ export function usePortfolioHistoryBundle(
     loadKey: endpoint ? `${endpoint}:balance` : null,
     timeframe,
     denomination,
-    isLoading: isLoadingState,
+    isLoading: historyIsLoading,
     isEmpty: balanceIsEmpty,
     error,
-    pointCount: data?.balance.dataPoints.length
+    pointCount: currentData?.balance.dataPoints.length
   })
   usePortfolioHistoryLoadTracking({
     eventName: PLAUSIBLE_EVENTS.PORTFOLIO_PROTOCOL_RETURN_HISTORY_LOAD,
     loadKey: endpoint ? `${endpoint}:protocol-return` : null,
     timeframe,
-    isLoading: isLoadingState,
+    isLoading: historyIsLoading,
     isEmpty: protocolReturnIsEmpty,
     error,
-    pointCount: data?.protocolReturn.dataPoints.length
+    pointCount: currentData?.protocolReturn.dataPoints.length
   })
 
   return {
     balance: {
       data: balanceData,
-      denomination: data?.balance.denomination ?? denomination,
-      timeframe: data?.balance.timeframe ?? timeframe,
-      isLoading: isLoadingState,
+      denomination: currentData?.balance.denomination ?? denomination,
+      timeframe: currentData?.balance.timeframe ?? timeframe,
+      isLoading: historyIsLoading,
       progress: null,
       error: balanceIsEmpty ? null : error,
       isEmpty: balanceIsEmpty
     },
     protocolReturn: {
       data: protocolReturnData,
-      summary: data?.protocolReturn.summary ?? null,
-      familySeries: data?.protocolReturn.familySeries ?? [],
-      timeframe: data?.protocolReturn.timeframe ?? timeframe,
-      isLoading: isLoadingState,
+      summary: retainedData?.protocolReturn.summary ?? null,
+      familySeries: retainedData?.protocolReturn.familySeries ?? [],
+      timeframe: currentData?.protocolReturn.timeframe ?? timeframe,
+      isLoading: historyIsLoading,
       progress: null,
       error: protocolReturnIsEmpty ? null : error,
       isEmpty: protocolReturnIsEmpty
     },
     growth: {
-      data: data?.growth ?? null,
-      summary: data?.growth.summary ?? null,
+      data: retainedData?.growth ?? null,
+      summary: retainedData?.growth.summary ?? null,
       vaults: growthVaults,
       vaultsByKey: growthVaultsByKey,
-      isLoading: isLoadingState,
-      error,
-      isEmpty: !isLoadingState && !error && hasResponse && growthVaults.length === 0
+      isLoading: growthIsLoading,
+      error: hasRetainedGrowth ? null : error,
+      isEmpty: !growthIsLoading && !error && hasResponse && growthVaults.length === 0
     },
     hasResponse,
     requestError: error,
-    rawData: data ?? null
+    rawData: currentData
   }
 }
