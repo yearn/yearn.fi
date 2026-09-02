@@ -14,7 +14,10 @@ export interface HoldingsDebugContext {
   pendingProgressWrites: Promise<void>[]
 }
 
+export type THoldingsProgressReporter = (progress: number, message: string, detail?: string | null) => void
+
 const storage = new AsyncLocalStorage<HoldingsDebugContext>()
+const progressReporterStorage = new AsyncLocalStorage<THoldingsProgressReporter>()
 
 function formatPayload(payload?: Record<string, unknown>): string {
   if (!payload || Object.keys(payload).length === 0) {
@@ -72,6 +75,10 @@ export function getHoldingsDebugContext(): HoldingsDebugContext | undefined {
   return storage.getStore()
 }
 
+export function withHoldingsProgressReporter<T>(reporter: THoldingsProgressReporter, fn: () => Promise<T>): Promise<T> {
+  return progressReporterStorage.run(reporter, fn)
+}
+
 export function debugLog(scope: string, message: string, payload?: Record<string, unknown>): void {
   const context = getHoldingsDebugContext()
 
@@ -86,6 +93,12 @@ export function debugLog(scope: string, message: string, payload?: Record<string
 }
 
 export function reportHoldingsProgress(progress: number, message: string, detail?: string | null): void {
+  const reporter = progressReporterStorage.getStore()
+  if (reporter) {
+    reporter(progress, message, detail)
+    return
+  }
+
   const context = getHoldingsDebugContext()
   if (!context) {
     return

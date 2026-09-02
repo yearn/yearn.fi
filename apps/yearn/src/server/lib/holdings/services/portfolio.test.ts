@@ -3,6 +3,7 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 const getHistoricalHoldingsChartMock = vi.fn()
 const getHoldingsProtocolReturnPortfolioMock = vi.fn()
 const getSettledAddressScopedContextMock = vi.fn()
+const updateHoldingsProgressMock = vi.fn()
 
 vi.mock('./aggregator', () => ({
   getHistoricalHoldingsChart: getHistoricalHoldingsChartMock
@@ -16,6 +17,10 @@ vi.mock('./settledHoldingsContext', () => ({
   getSettledAddressScopedContext: getSettledAddressScopedContextMock
 }))
 
+vi.mock('@/server/lib/holdings/services/progress', () => ({
+  updateHoldingsProgress: updateHoldingsProgressMock
+}))
+
 const USER = '0x1111111111111111111111111111111111111111'
 const VAULT = '0x2222222222222222222222222222222222222222'
 
@@ -23,6 +28,7 @@ describe('getHoldingsPortfolio', () => {
   beforeEach(() => {
     vi.resetModules()
     vi.clearAllMocks()
+    updateHoldingsProgressMock.mockResolvedValue(undefined)
   })
 
   it('preserves cached responses without constructing the deferred settled context', async () => {
@@ -149,6 +155,8 @@ describe('getHoldingsPortfolio', () => {
     getSettledAddressScopedContextMock.mockResolvedValue({ address: USER })
     getHistoricalHoldingsChartMock.mockImplementation(async (...args: unknown[]) => {
       await loadContextArgument(...args)
+      const { reportHoldingsProgress } = await import('@/server/lib/holdings/services/debug')
+      reportHoldingsProgress(76, 'Fetched historical token prices')
       return {
         address: USER,
         periodDays: 1,
@@ -160,6 +168,8 @@ describe('getHoldingsPortfolio', () => {
     })
     getHoldingsProtocolReturnPortfolioMock.mockImplementation(async (...args: unknown[]) => {
       await loadContextArgument(...args)
+      const { reportHoldingsProgress } = await import('@/server/lib/holdings/services/debug')
+      reportHoldingsProgress(52, 'Prepared historical price requests')
       return {
         protocolReturn: {
           address: USER,
@@ -187,13 +197,18 @@ describe('getHoldingsPortfolio', () => {
     })
 
     const { getHoldingsPortfolio } = await import('./portfolio')
-    await getHoldingsPortfolio(USER)
+    await getHoldingsPortfolio(USER, 'all', 'seq', 'paged', 'usd', '1y', 'portfolio:test')
 
     expect(getSettledAddressScopedContextMock).toHaveBeenCalledTimes(1)
     expect(getSettledAddressScopedContextMock).toHaveBeenCalledWith({
       userAddress: USER,
       fetchType: 'seq',
       paginationMode: 'paged'
+    })
+    expect(updateHoldingsProgressMock).toHaveBeenLastCalledWith('portfolio:test', {
+      progress: 98,
+      message: 'Saving and finalizing portfolio history',
+      detail: null
     })
   })
 })

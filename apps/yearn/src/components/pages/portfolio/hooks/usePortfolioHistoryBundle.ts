@@ -2,6 +2,10 @@ import { mapPortfolioGrowthVaults } from '@pages/portfolio/hooks/usePortfolioGro
 import { upsertLivePortfolioBalancePoint } from '@pages/portfolio/hooks/usePortfolioHistory.helpers'
 import { usePortfolioHistoryLoadTracking } from '@pages/portfolio/hooks/usePortfolioHistoryLoadTracking'
 import {
+  createPortfolioHistoryProgressId,
+  usePortfolioHistoryProgress
+} from '@pages/portfolio/hooks/usePortfolioHistoryProgress'
+import {
   portfolioResponseSchema,
   type TPortfolioHistoryChartData,
   type TPortfolioHistoryDenomination,
@@ -23,16 +27,28 @@ export function buildPortfolioHistoryBundleEndpoint(args: {
   denomination: TPortfolioHistoryDenomination
   timeframe: TPortfolioHistoryTimeframe
   debug?: boolean
+  progressId?: string
 }): string {
   const params = new URLSearchParams({
     address: args.address,
     denomination: args.denomination,
     timeframe: args.timeframe
   })
+  if (args.progressId) {
+    params.set('progressId', args.progressId)
+  }
   if (args.debug) {
     params.set('debug', '1')
   }
   return `/api/holdings/portfolio?${params}`
+}
+
+export function buildPortfolioHistoryBundleCacheKey(args: {
+  address: string
+  denomination: TPortfolioHistoryDenomination
+  timeframe: TPortfolioHistoryTimeframe
+}): readonly string[] {
+  return ['fetch', 'portfolio-history-bundle', args.address.toLowerCase(), args.denomination, args.timeframe]
 }
 
 function getErrorStatus(error: Error | null): number | undefined {
@@ -76,17 +92,29 @@ export function usePortfolioHistoryBundle(
   liveSnapshot: TPortfolioLiveBalanceSnapshot | null = null
 ) {
   const { address } = useWeb3()
-  const endpoint = useMemo(
+  const progressId = useMemo(
     () =>
       address && enabled
-        ? buildPortfolioHistoryBundleEndpoint({ address, denomination, timeframe, debug: env.DEV })
+        ? createPortfolioHistoryProgressId(['portfolio-history-bundle', denomination, timeframe])
         : null,
+    [address, denomination, enabled, timeframe]
+  )
+  const endpoint = useMemo(
+    () =>
+      address && enabled && progressId
+        ? buildPortfolioHistoryBundleEndpoint({ address, denomination, timeframe, progressId, debug: env.DEV })
+        : null,
+    [address, denomination, enabled, progressId, timeframe]
+  )
+  const cacheKey = useMemo(
+    () => (address && enabled ? buildPortfolioHistoryBundleCacheKey({ address, denomination, timeframe }) : undefined),
     [address, denomination, enabled, timeframe]
   )
   const { data, isLoading, isFetching, isPlaceholderData, error } = useFetch<TPortfolioResponse>({
     endpoint,
     schema: portfolioResponseSchema,
     config: {
+      cacheKey,
       cacheDuration: PORTFOLIO_HISTORY_CACHE_DURATION,
       gcTime: PORTFOLIO_HISTORY_CACHE_DURATION,
       keepPreviousData: true,
@@ -137,6 +165,7 @@ export function usePortfolioHistoryBundle(
     isLoading,
     isPlaceholderData
   })
+  const progress = usePortfolioHistoryProgress(progressId, historyIsLoading, false)
   const errorStatus = getErrorStatus(error)
   const balanceIsEmpty =
     !historyIsLoading && Boolean(address) && (errorStatus === 404 || Boolean(balanceData && balanceData.length === 0))
@@ -171,7 +200,7 @@ export function usePortfolioHistoryBundle(
       denomination: currentData?.balance.denomination ?? denomination,
       timeframe: currentData?.balance.timeframe ?? timeframe,
       isLoading: historyIsLoading,
-      progress: null,
+      progress,
       error: balanceIsEmpty ? null : error,
       isEmpty: balanceIsEmpty
     },
@@ -181,7 +210,7 @@ export function usePortfolioHistoryBundle(
       familySeries: retainedData?.protocolReturn.familySeries ?? [],
       timeframe: currentData?.protocolReturn.timeframe ?? timeframe,
       isLoading: historyIsLoading,
-      progress: null,
+      progress,
       error: protocolReturnIsEmpty ? null : error,
       isEmpty: protocolReturnIsEmpty
     },

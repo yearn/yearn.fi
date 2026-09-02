@@ -1,5 +1,6 @@
 import type { HoldingsHistoryDenomination, HoldingsHistoryTimeframe } from '@/server/lib/holdings/services/aggregator'
 import { getHistoricalHoldingsChart } from '@/server/lib/holdings/services/aggregator'
+import { withHoldingsProgressReporter } from '@/server/lib/holdings/services/debug'
 import type {
   HoldingsEventFetchType,
   HoldingsEventPaginationMode,
@@ -10,6 +11,7 @@ import type {
   HoldingsPortfolioGrowthResponse
 } from '@/server/lib/holdings/services/pnlSimple'
 import { getHoldingsProtocolReturnPortfolio } from '@/server/lib/holdings/services/pnlSimple'
+import { createHoldingsPortfolioProgressTracker } from '@/server/lib/holdings/services/portfolioProgress'
 import {
   getSettledAddressScopedContext,
   type TSettledAddressScopedContext
@@ -38,8 +40,10 @@ export async function getHoldingsPortfolio(
   fetchType: HoldingsEventFetchType = 'seq',
   paginationMode: HoldingsEventPaginationMode = 'paged',
   denomination: HoldingsHistoryDenomination = 'usd',
-  timeframe: HoldingsHistoryTimeframe = '1y'
+  timeframe: HoldingsHistoryTimeframe = '1y',
+  progressId: string | null = null
 ): Promise<HoldingsPortfolioResponse> {
+  const progressTracker = createHoldingsPortfolioProgressTracker(progressId)
   const settledContextState: { request?: Promise<TSettledAddressScopedContext> } = {}
   const getSettledContext = (): Promise<TSettledAddressScopedContext> => {
     if (settledContextState.request) {
@@ -54,16 +58,21 @@ export async function getHoldingsPortfolio(
     settledContextState.request = request
     return request
   }
-  const protocolReturnPortfolioPromise = getHoldingsProtocolReturnPortfolio(
-    userAddress,
-    version,
-    fetchType,
-    paginationMode,
-    timeframe,
-    undefined,
-    undefined,
-    getSettledContext
-  )
+  const protocolReturnPortfolioPromise = withHoldingsProgressReporter(progressTracker.reportGrowthProgress, () =>
+    getHoldingsProtocolReturnPortfolio(
+      userAddress,
+      version,
+      fetchType,
+      paginationMode,
+      timeframe,
+      undefined,
+      undefined,
+      getSettledContext
+    )
+  ).then((portfolio) => {
+    progressTracker.markGrowthComplete()
+    return portfolio
+  })
   const loadCacheValidationVaults = (): Promise<Array<{ chainId: number; vaultAddress: string }>> =>
     protocolReturnPortfolioPromise.then((portfolio) =>
       portfolio.growth.vaults.map((vault) => ({
@@ -71,34 +80,46 @@ export async function getHoldingsPortfolio(
         vaultAddress: vault.vaultAddress
       }))
     )
-  const balancePromise = getHistoricalHoldingsChart(
-    userAddress,
-    version,
-    fetchType,
-    paginationMode,
-    denomination,
-    timeframe,
-    undefined,
-    getSettledContext,
-    loadCacheValidationVaults
-  )
-  const [balance, protocolReturnPortfolio] = await Promise.all([balancePromise, protocolReturnPortfolioPromise])
+  const balancePromise = withHoldingsProgressReporter(progressTracker.reportBalanceProgress, () =>
+    getHistoricalHoldingsChart(
+      userAddress,
+      version,
+      fetchType,
+      paginationMode,
+      denomination,
+      timeframe,
+      undefined,
+      getSettledContext,
+      loadCacheValidationVaults
+    )
+  ).then((balance) => {
+    progressTracker.markBalanceComplete()
+    return balance
+  })
 
-  return {
-    address: balance.address,
-    version,
-    denomination,
-    timeframe,
-    balance: {
+  try {
+    const [balance, protocolReturnPortfolio] = await Promise.all([balancePromise, protocolReturnPortfolioPromise])
+    await progressTracker.finish()
+
+    return {
       address: balance.address,
-      denomination: balance.denomination,
-      timeframe: balance.timeframe,
-      dataPoints: balance.dataPoints.map((point) => ({
-        date: point.date,
-        value: point.value
-      }))
-    },
-    protocolReturn: protocolReturnPortfolio.protocolReturn,
-    growth: protocolReturnPortfolio.growth
+      version,
+      denomination,
+      timeframe,
+      balance: {
+        address: balance.address,
+        denomination: balance.denomination,
+        timeframe: balance.timeframe,
+        dataPoints: balance.dataPoints.map((point) => ({
+          date: point.date,
+          value: point.value
+        }))
+      },
+      protocolReturn: protocolReturnPortfolio.protocolReturn,
+      growth: protocolReturnPortfolio.growth
+    }
+  } catch (error) {
+    await progressTracker.abort()
+    throw error
   }
 }

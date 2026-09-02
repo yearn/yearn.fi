@@ -127,7 +127,9 @@ Combined balance, protocol-return, and per-vault growth response used by the por
 curl "http://localhost:3000/api/holdings/portfolio?address=0x...&denomination=usd&timeframe=1y"
 ```
 
-Query params are `address`, `version`, `denomination`, `timeframe`, and `debug`. The response contains `balance`, `protocolReturn`, and `growth` sections.
+Query params are `address`, `version`, `denomination`, `timeframe`, `progressId`, and `debug`. The response contains `balance`, `protocolReturn`, and `growth` sections. When `progressId` is supplied, the route reports one combined progress record while tracking the balance and Growth calculations separately. The portfolio UI displays only the primary message from the lane with the most weighted work remaining.
+
+Combined progress weights the balance lane at 40% and the protocol-return/Growth lane at 60%. It is capped at 98% until both parallel branches finish, then the route marks the record complete at 100%. Cache hits skip completed stages without artificial delays.
 
 ### `GET /api/holdings/history`
 
@@ -175,7 +177,7 @@ Returns `404` when the wallet has no indexed holdings activity for the request.
 
 ### `GET /api/holdings/progress`
 
-Reads Redis-backed progress for long-running holdings routes. `history` and `protocol-return/history` can write progress when the caller passes a valid `progressId`.
+Reads Redis-backed progress for long-running holdings routes. `portfolio`, `history`, and `protocol-return/history` can write progress when the caller passes a valid `progressId`.
 
 Example:
 
@@ -602,7 +604,7 @@ No schema migration is required. Redis keys are created lazily:
 - Keep `API_KEY_PORTFOLIO` or `YEARN_PRICES_API_KEY` configured if `HOLDINGS_PRICE_PROVIDER=auto` should prefer yearn-prices.
 - Set `HOLDINGS_KONG_BATCH_PPS=true` to use Kong's bounded PPS batch route. `KONG_PPS_REST_URL` can target a PPS-only preview without moving vault metadata traffic; the range starts at the wallet's earliest relevant event so protocol replay retains legacy semantics.
 - Configure `RPC_URI_FOR_<chainId>` for chains where activity rows should include richer zap, reward-claim, and direct V2 vault enrichment.
-- Pass a stable `progressId` from the frontend for long history and protocol-return requests, then poll `/api/holdings/progress?id=...`; progress rows are Redis-backed and expire quickly.
+- Pass a stable `progressId` from the frontend for long portfolio, history, and protocol-return requests, then poll `/api/holdings/progress?id=...`; progress rows are Redis-backed and expire quickly.
 - Use `/api/admin/invalidate-cache` after indexer deployments add or repair vault coverage.
 - Rate-limit and progress cleanup is handled by Redis TTLs.
 - If Redis progress is unavailable, clients show a neutral loading placeholder instead of estimated progress.

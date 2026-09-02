@@ -1,4 +1,7 @@
-import { buildPortfolioHistoryBundleEndpoint } from '@pages/portfolio/hooks/usePortfolioHistoryBundle'
+import {
+  buildPortfolioHistoryBundleCacheKey,
+  buildPortfolioHistoryBundleEndpoint
+} from '@pages/portfolio/hooks/usePortfolioHistoryBundle'
 import {
   resolvePortfolioHistorySource,
   shouldLoadPortfolioHistory
@@ -27,6 +30,26 @@ describe('portfolio history bundle helpers', () => {
     ).toBe(
       '/api/holdings/portfolio?address=0x0000000000000000000000000000000000000001&denomination=usd&timeframe=all&debug=1'
     )
+  })
+
+  it('adds progress without changing the response cache identity', () => {
+    expect(
+      buildPortfolioHistoryBundleEndpoint({
+        address: '0x0000000000000000000000000000000000000001',
+        denomination: 'usd',
+        timeframe: 'all',
+        progressId: 'portfolio:test'
+      })
+    ).toBe(
+      '/api/holdings/portfolio?address=0x0000000000000000000000000000000000000001&denomination=usd&timeframe=all&progressId=portfolio%3Atest'
+    )
+    expect(
+      buildPortfolioHistoryBundleCacheKey({
+        address: '0xABCDEF0000000000000000000000000000000001',
+        denomination: 'usd',
+        timeframe: 'all'
+      })
+    ).toEqual(['fetch', 'portfolio-history-bundle', '0xabcdef0000000000000000000000000000000001', 'usd', 'all'])
   })
 
   it('waits for the combined endpoint before considering legacy fallback', () => {

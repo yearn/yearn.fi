@@ -11,6 +11,7 @@ import {
   isHoldingsDebugRequested,
   withHoldingsDebugContext
 } from '@/server/lib/holdings/services/debug'
+import { startHoldingsProgress, updateHoldingsProgress } from '@/server/lib/holdings/services/progress'
 
 function isValidAddress(address: string): boolean {
   return /^0x[a-fA-F0-9]{40}$/.test(address)
@@ -56,6 +57,7 @@ export async function GET(request: Request): Promise<Response> {
   const timeframeParam = queryValue(request, 'timeframe')
   const fetchTypeParam = queryValue(request, 'fetchType')
   const debugParam = queryValue(request, 'debug')
+  const progressIdParam = queryValue(request, 'progressId')
 
   if (!address || typeof address !== 'string') {
     return json({ error: 'Missing required parameter: address' }, { status: 400, headers: GET_CORS_HEADERS })
@@ -70,13 +72,26 @@ export async function GET(request: Request): Promise<Response> {
   const timeframe = parseHoldingsHistoryTimeframe(timeframeParam)
   const fetchType = parseHoldingsEventFetchType(fetchTypeParam)
   const debugEnabled = isHoldingsDebugRequested(typeof debugParam === 'string' ? debugParam : null)
+  const progressId = typeof progressIdParam === 'string' ? progressIdParam : null
 
   try {
+    const activeProgressId = await startHoldingsProgress({
+      id: progressId,
+      route: 'portfolio',
+      address,
+      message: 'Checking saved portfolio history'
+    })
     const { getHoldingsPortfolio } = await import('../lib/holdings')
     const portfolio = await withHoldingsDebugContext(
       createHoldingsDebugContext('portfolio', address, debugEnabled),
-      () => getHoldingsPortfolio(address, version, fetchType, 'paged', denomination, timeframe)
+      () => getHoldingsPortfolio(address, version, fetchType, 'paged', denomination, timeframe, activeProgressId)
     )
+    await updateHoldingsProgress(activeProgressId, {
+      status: 'complete',
+      progress: 100,
+      message: 'Portfolio history ready',
+      detail: null
+    })
 
     return json(portfolio, {
       headers: {
@@ -85,6 +100,11 @@ export async function GET(request: Request): Promise<Response> {
       }
     })
   } catch (error) {
+    await updateHoldingsProgress(progressId, {
+      status: 'error',
+      message: 'Failed to build portfolio history',
+      detail: error instanceof Error ? error.message : String(error)
+    })
     console.error('Holdings portfolio error:', error)
 
     if (process.env.NODE_ENV === 'development') {

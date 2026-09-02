@@ -2,6 +2,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const ensureHoldingsStorageInitializedMock = vi.fn()
 const getHoldingsPortfolioMock = vi.fn()
+const startHoldingsProgressMock = vi.fn()
+const updateHoldingsProgressMock = vi.fn()
 const USER = '0x1111111111111111111111111111111111111111'
 
 vi.mock('../lib/holdings', () => ({
@@ -9,11 +11,18 @@ vi.mock('../lib/holdings', () => ({
   getHoldingsPortfolio: getHoldingsPortfolioMock
 }))
 
+vi.mock('@/server/lib/holdings/services/progress', () => ({
+  startHoldingsProgress: startHoldingsProgressMock,
+  updateHoldingsProgress: updateHoldingsProgressMock
+}))
+
 describe('holdings portfolio route', () => {
   beforeEach(() => {
     vi.resetModules()
     vi.clearAllMocks()
     ensureHoldingsStorageInitializedMock.mockResolvedValue(undefined)
+    startHoldingsProgressMock.mockImplementation(async ({ id }: { id: string | null }) => id)
+    updateHoldingsProgressMock.mockResolvedValue(undefined)
     process.env.ENVIO_GRAPHQL_URL = 'https://envio.example/graphql'
   })
 
@@ -54,7 +63,7 @@ describe('holdings portfolio route', () => {
     }
     getHoldingsPortfolioMock.mockResolvedValue(portfolio)
 
-    const { default: handler } = await import('./portfolio')
+    const { default: handler } = await import('@/server/holdings/portfolio')
     const response = await handler(
       new Request(
         `https://yearn.fi/api/holdings/portfolio?${new URLSearchParams({
@@ -70,7 +79,7 @@ describe('holdings portfolio route', () => {
     expect(response.status).toBe(200)
     expect(response.headers.get('Cache-Control')).toBe('private, no-store, max-age=0, must-revalidate')
     await expect(response.json()).resolves.toEqual(portfolio)
-    expect(getHoldingsPortfolioMock).toHaveBeenCalledWith(USER, 'v3', 'parallel', 'paged', 'eth', 'all')
+    expect(getHoldingsPortfolioMock).toHaveBeenCalledWith(USER, 'v3', 'parallel', 'paged', 'eth', 'all', null)
   })
 
   it('uses bounded parallel event pagination by default', async () => {
@@ -84,10 +93,82 @@ describe('holdings portfolio route', () => {
       growth: { vaults: [] }
     })
 
-    const { default: handler } = await import('./portfolio')
+    const { default: handler } = await import('@/server/holdings/portfolio')
     const response = await handler(new Request(`https://yearn.fi/api/holdings/portfolio?address=${USER}`))
 
     expect(response.status).toBe(200)
-    expect(getHoldingsPortfolioMock).toHaveBeenCalledWith(USER, 'all', 'parallel', 'paged', 'usd', '1y')
+    expect(getHoldingsPortfolioMock).toHaveBeenCalledWith(USER, 'all', 'parallel', 'paged', 'usd', '1y', null)
+  })
+
+  it('starts and completes progress for the combined request', async () => {
+    getHoldingsPortfolioMock.mockResolvedValue({
+      address: USER,
+      version: 'all',
+      denomination: 'usd',
+      timeframe: 'all',
+      balance: {
+        address: USER,
+        denomination: 'usd',
+        timeframe: 'all',
+        dataPoints: [{ date: '2026-08-13', value: 100 }]
+      },
+      protocolReturn: { dataPoints: [{ date: '2026-08-13' }] },
+      growth: { vaults: [] }
+    })
+
+    const { default: handler } = await import('@/server/holdings/portfolio')
+    const response = await handler(
+      new Request(
+        `https://yearn.fi/api/holdings/portfolio?${new URLSearchParams({
+          address: USER,
+          timeframe: 'all',
+          progressId: 'portfolio:test'
+        })}`
+      )
+    )
+
+    expect(response.status).toBe(200)
+    expect(startHoldingsProgressMock).toHaveBeenCalledWith({
+      id: 'portfolio:test',
+      route: 'portfolio',
+      address: USER,
+      message: 'Checking saved portfolio history'
+    })
+    expect(getHoldingsPortfolioMock).toHaveBeenCalledWith(
+      USER,
+      'all',
+      'parallel',
+      'paged',
+      'usd',
+      'all',
+      'portfolio:test'
+    )
+    expect(updateHoldingsProgressMock).toHaveBeenLastCalledWith('portfolio:test', {
+      status: 'complete',
+      progress: 100,
+      message: 'Portfolio history ready',
+      detail: null
+    })
+  })
+
+  it('marks combined progress as failed when the request errors', async () => {
+    getHoldingsPortfolioMock.mockRejectedValue(new Error('price request failed'))
+
+    const { default: handler } = await import('@/server/holdings/portfolio')
+    const response = await handler(
+      new Request(
+        `https://yearn.fi/api/holdings/portfolio?${new URLSearchParams({
+          address: USER,
+          progressId: 'portfolio:test'
+        })}`
+      )
+    )
+
+    expect(response.status).toBe(502)
+    expect(updateHoldingsProgressMock).toHaveBeenLastCalledWith('portfolio:test', {
+      status: 'error',
+      message: 'Failed to build portfolio history',
+      detail: 'price request failed'
+    })
   })
 })
