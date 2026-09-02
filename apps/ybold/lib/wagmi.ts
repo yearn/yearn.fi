@@ -1,31 +1,31 @@
-import { getDefaultConfig } from '@rainbow-me/rainbowkit'
-import { createConfig, http, type Config } from 'wagmi'
-import { mainnet } from 'wagmi/chains'
-import { injected } from 'wagmi/connectors'
+'use client'
 
-const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID?.trim()
-const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL?.trim() || 'https://ethereum-rpc.publicnode.com'
-const transports = {
-  [mainnet.id]: http(rpcUrl)
-}
+import { createAppKit } from '@reown/appkit/react'
+import { mainnet } from '@reown/appkit/networks'
+import { WagmiAdapter } from '@reown/appkit-adapter-wagmi'
+import {
+  createYboldAppKitOptions,
+  createYboldCustomRpcUrls,
+  requireWalletConnectProjectId,
+  resolveYboldRpcUrl,
+  YBOLD_APPKIT_NETWORKS
+} from '@ybold/lib/appkitConfig'
+import { http } from 'wagmi'
 
-function createWagmiConfig(): Config {
-  if (projectId) {
-    return getDefaultConfig({
-      appName: 'yBOLD by Yearn',
-      projectId,
-      chains: [mainnet],
-      transports,
-      ssr: true
-    })
+const projectId = requireWalletConnectProjectId()
+const rpcUrl = resolveYboldRpcUrl()
+const customRpcUrls = createYboldCustomRpcUrls(rpcUrl)
+
+export const wagmiAdapter = new WagmiAdapter({
+  customRpcUrls,
+  networks: YBOLD_APPKIT_NETWORKS,
+  projectId,
+  ssr: true,
+  transports: {
+    [mainnet.id]: http(rpcUrl)
   }
+})
 
-  return createConfig({
-    chains: [mainnet],
-    connectors: [injected()],
-    transports,
-    ssr: true
-  })
-}
+export const wagmiConfig = wagmiAdapter.wagmiConfig
 
-export const wagmiConfig = createWagmiConfig()
+export const appKit = createAppKit(createYboldAppKitOptions(wagmiAdapter, projectId, customRpcUrls))

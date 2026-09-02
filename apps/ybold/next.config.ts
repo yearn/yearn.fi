@@ -1,4 +1,17 @@
+import { createRequire } from 'node:module'
+import { dirname, resolve } from 'node:path'
+import { fileURLToPath } from 'node:url'
+import { loadEnvConfig } from '@next/env'
 import type { NextConfig } from 'next'
+
+export const YBOLD_ENV_DIRECTORY = fileURLToPath(new URL('../..', import.meta.url))
+loadEnvConfig(YBOLD_ENV_DIRECTORY, process.env.NODE_ENV !== 'production', console, true)
+
+const DISABLED_BASE_ACCOUNT_MODULE = resolve(import.meta.dirname, 'lib/disabledBaseAccount.ts')
+const DISABLED_BASE_ACCOUNT_TURBOPACK_ALIAS = './lib/disabledBaseAccount.ts'
+const requireFromYbold = createRequire(import.meta.url)
+const YBOLD_WAGMI_MODULE = dirname(requireFromYbold.resolve('wagmi/package.json'))
+const YBOLD_WAGMI_TURBOPACK_ALIAS = './node_modules/wagmi'
 
 const securityHeaders = [
   {
@@ -24,7 +37,22 @@ const nextConfig: NextConfig = {
   transpilePackages: ['@yearn/vault-widget'],
   turbopack: {
     resolveAlias: {
-      '@safe-global/safe-apps-sdk': '../../node_modules/@safe-global/safe-apps-sdk/dist/esm'
+      '@base-org/account': DISABLED_BASE_ACCOUNT_TURBOPACK_ALIAS,
+      '@safe-global/safe-apps-sdk': '../../node_modules/@safe-global/safe-apps-sdk/dist/esm',
+      wagmi: YBOLD_WAGMI_TURBOPACK_ALIAS
+    }
+  },
+  webpack(config) {
+    return {
+      ...config,
+      resolve: {
+        ...config.resolve,
+        alias: {
+          ...config.resolve.alias,
+          '@base-org/account': DISABLED_BASE_ACCOUNT_MODULE,
+          wagmi: YBOLD_WAGMI_MODULE
+        }
+      }
     }
   },
   async headers() {

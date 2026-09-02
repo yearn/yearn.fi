@@ -12,7 +12,9 @@
     "tslint": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@rainbow-me/rainbowkit": "2.2.11",
+    "@next/env": "16.3.0",
+    "@reown/appkit": "1.8.23",
+    "@reown/appkit-adapter-wagmi": "1.8.23",
     "@tanstack/react-query": "5.101.4",
     "@wagmi/core": "2.22.1",
     "@yearn/vault-widget": "workspace:*",
@@ -21,7 +23,7 @@
     "react-dom": "19.2.8",
     "react-rewards": "2.1.0",
     "viem": "2.55.11",
-    "wagmi": "2.18.2"
+    "wagmi": "2.19.5"
   },
   "devDependencies": {
     "@biomejs/biome": "2.4.16",

@@ -45,7 +45,7 @@
     "react-dom": "19.2.8",
     "react-rewards": "2.1.0",
     "viem": "2.55.11",
-    "wagmi": "2.18.2"
+    "wagmi": ">=2.18.2 <=2.19.5"
   },
   "devDependencies": {
     "@tanstack/react-query": "5.101.4",

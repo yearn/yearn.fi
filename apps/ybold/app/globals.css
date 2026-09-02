@@ -40,6 +40,48 @@ body {
   font-family: var(--font-geist-sans), system-ui, sans-serif;
 }
 
+@keyframes ybold-wallet-backdrop-in {
+  from {
+    background-color: transparent;
+  }
+}
+
+@keyframes ybold-wallet-sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(2rem);
+  }
+}
+
+.ybold-wallet-backdrop {
+  animation: ybold-wallet-backdrop-in 140ms ease-out both;
+}
+
+.ybold-wallet-panel {
+  animation: ybold-wallet-sheet-in 180ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+@media (min-width: 640px) {
+  @keyframes ybold-wallet-popover-in {
+    from {
+      opacity: 0;
+      transform: translateY(-0.375rem) scale(0.985);
+    }
+  }
+
+  .ybold-wallet-panel {
+    animation-name: ybold-wallet-popover-in;
+    transform-origin: top right;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .ybold-wallet-backdrop,
+  .ybold-wallet-panel {
+    animation-duration: 1ms;
+  }
+}
+
 /* Join the action tabs and panel into one continuous yBOLD control. */
 .ybold-widget [data-widget-part="action-shell"] {
   border-radius: 0.5rem;
