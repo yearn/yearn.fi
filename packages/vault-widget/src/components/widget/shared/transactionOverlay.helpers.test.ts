@@ -11,7 +11,7 @@ import {
   resolveCompletionDeferral,
   resolveExecutionTrackingHash,
   resolveOverlayConnectedChainId,
-  resolvePendingSafeOverlayTransition,
+  resolvePendingBatchOverlayTransition,
   resolveTransactionReceiptOutcome,
   SAFE_AUTO_CONTINUE_CONFIRM_DELAY_MS,
   shouldAutoContinueFromSuccessState,
@@ -120,6 +120,17 @@ describe('transactionOverlay.helpers', () => {
         fallbackLabel: 'Withdraw'
       })
     ).toBe('Withdraw() transaction pending')
+  })
+
+  it('uses the complete step label for atomic batches', () => {
+    expect(
+      getPendingTransactionTitle({
+        isPreparingNextStep: false,
+        isBatch: true,
+        functionName: 'approve',
+        fallbackLabel: 'Approve & Deposit'
+      })
+    ).toBe('Approve & Deposit transaction pending')
   })
 
   it('keeps the confirmed copy while preparing a follow-up step', () => {
@@ -240,12 +251,13 @@ describe('shouldStartStepOnOpen', () => {
   })
 })
 
-describe('resolvePendingSafeOverlayTransition', () => {
+describe('resolvePendingBatchOverlayTransition', () => {
   it('moves a Safe transaction overlay into a submitted state when the Safe tx is awaiting confirmations', () => {
     expect(
-      resolvePendingSafeOverlayTransition({
+      resolvePendingBatchOverlayTransition({
         overlayState: 'pending',
         isWalletSafe: true,
+        isCallBundle: true,
         hasExecutionReceipt: false,
         safeTxStatus: 'AWAITING_CONFIRMATIONS',
         callsStatus: undefined
@@ -255,9 +267,10 @@ describe('resolvePendingSafeOverlayTransition', () => {
 
   it('moves a Safe transaction overlay into a submitted state when the Safe tx is queued but not executed', () => {
     expect(
-      resolvePendingSafeOverlayTransition({
+      resolvePendingBatchOverlayTransition({
         overlayState: 'pending',
         isWalletSafe: true,
+        isCallBundle: true,
         hasExecutionReceipt: false,
         safeTxStatus: 'AWAITING_EXECUTION',
         callsStatus: undefined
@@ -267,9 +280,10 @@ describe('resolvePendingSafeOverlayTransition', () => {
 
   it('accepts runtime Safe status names', () => {
     expect(
-      resolvePendingSafeOverlayTransition({
+      resolvePendingBatchOverlayTransition({
         overlayState: 'pending',
         isWalletSafe: true,
+        isCallBundle: true,
         hasExecutionReceipt: false,
         safeTxStatus: 'awaiting-confirmations',
         callsStatus: undefined
@@ -277,9 +291,10 @@ describe('resolvePendingSafeOverlayTransition', () => {
     ).toBe('submitted')
 
     expect(
-      resolvePendingSafeOverlayTransition({
+      resolvePendingBatchOverlayTransition({
         overlayState: 'submitted',
         isWalletSafe: true,
+        isCallBundle: false,
         hasExecutionReceipt: false,
         safeTxStatus: 'failed',
         callsStatus: undefined
@@ -289,9 +304,10 @@ describe('resolvePendingSafeOverlayTransition', () => {
 
   it('falls back to wallet_getCallsStatus when Safe tx details are not available yet', () => {
     expect(
-      resolvePendingSafeOverlayTransition({
+      resolvePendingBatchOverlayTransition({
         overlayState: 'pending',
         isWalletSafe: true,
+        isCallBundle: true,
         hasExecutionReceipt: false,
         safeTxStatus: undefined,
         callsStatus: 'pending'
@@ -301,9 +317,10 @@ describe('resolvePendingSafeOverlayTransition', () => {
 
   it('keeps non-Safe pending overlays waiting for a normal receipt', () => {
     expect(
-      resolvePendingSafeOverlayTransition({
+      resolvePendingBatchOverlayTransition({
         overlayState: 'pending',
         isWalletSafe: false,
+        isCallBundle: true,
         hasExecutionReceipt: false,
         safeTxStatus: 'AWAITING_EXECUTION',
         callsStatus: 'pending'
@@ -313,9 +330,10 @@ describe('resolvePendingSafeOverlayTransition', () => {
 
   it('does not reclassify a confirmed cross-chain receipt as awaiting Safe execution', () => {
     expect(
-      resolvePendingSafeOverlayTransition({
+      resolvePendingBatchOverlayTransition({
         overlayState: 'submitted',
         isWalletSafe: false,
+        isCallBundle: false,
         hasExecutionReceipt: true,
         safeTxStatus: undefined,
         callsStatus: undefined
@@ -325,9 +343,10 @@ describe('resolvePendingSafeOverlayTransition', () => {
 
   it('does not emit a duplicate transition for an already submitted Safe transaction', () => {
     expect(
-      resolvePendingSafeOverlayTransition({
+      resolvePendingBatchOverlayTransition({
         overlayState: 'submitted',
         isWalletSafe: true,
+        isCallBundle: true,
         hasExecutionReceipt: false,
         safeTxStatus: 'AWAITING_EXECUTION',
         callsStatus: 'pending'
@@ -337,9 +356,10 @@ describe('resolvePendingSafeOverlayTransition', () => {
 
   it('surfaces Safe detail failures as overlay errors', () => {
     expect(
-      resolvePendingSafeOverlayTransition({
+      resolvePendingBatchOverlayTransition({
         overlayState: 'pending',
         isWalletSafe: true,
+        isCallBundle: true,
         hasExecutionReceipt: false,
         safeTxStatus: 'FAILED',
         callsStatus: undefined
@@ -349,9 +369,10 @@ describe('resolvePendingSafeOverlayTransition', () => {
 
   it('surfaces cancelled Safe transactions as overlay errors', () => {
     expect(
-      resolvePendingSafeOverlayTransition({
+      resolvePendingBatchOverlayTransition({
         overlayState: 'pending',
         isWalletSafe: true,
+        isCallBundle: true,
         hasExecutionReceipt: false,
         safeTxStatus: 'CANCELLED',
         callsStatus: undefined
@@ -361,11 +382,24 @@ describe('resolvePendingSafeOverlayTransition', () => {
 
   it('keeps polling submitted Safe overlays so failures can still surface', () => {
     expect(
-      resolvePendingSafeOverlayTransition({
+      resolvePendingBatchOverlayTransition({
         overlayState: 'submitted',
         isWalletSafe: true,
+        isCallBundle: false,
         hasExecutionReceipt: false,
         safeTxStatus: undefined,
+        callsStatus: 'failure'
+      })
+    ).toBe('error')
+  })
+
+  it('surfaces call-bundle failures for atomic non-Safe wallets', () => {
+    expect(
+      resolvePendingBatchOverlayTransition({
+        overlayState: 'pending',
+        isWalletSafe: false,
+        isCallBundle: true,
+        hasExecutionReceipt: false,
         callsStatus: 'failure'
       })
     ).toBe('error')
@@ -427,6 +461,7 @@ describe('resolveExecutionTrackingHash', () => {
     expect(
       resolveExecutionTrackingHash({
         isWalletSafe: true,
+        isCallBundle: true,
         submittedTxHash: '0xsafe',
         safeExecutionTxHash: '0xexecuted',
         callsReceiptTxHash: '0xfallback'
@@ -438,6 +473,7 @@ describe('resolveExecutionTrackingHash', () => {
     expect(
       resolveExecutionTrackingHash({
         isWalletSafe: true,
+        isCallBundle: true,
         submittedTxHash: '0xsafe',
         safeExecutionTxHash: undefined,
         callsReceiptTxHash: '0xfallback'
@@ -449,11 +485,23 @@ describe('resolveExecutionTrackingHash', () => {
     expect(
       resolveExecutionTrackingHash({
         isWalletSafe: false,
+        isCallBundle: false,
         submittedTxHash: '0xnormal',
         safeExecutionTxHash: '0xexecuted',
         callsReceiptTxHash: '0xfallback'
       })
     ).toBe('0xnormal')
+  })
+
+  it('waits for the receipt hash instead of treating a non-Safe bundle ID as a transaction hash', () => {
+    expect(
+      resolveExecutionTrackingHash({
+        isWalletSafe: false,
+        isCallBundle: true,
+        submittedTxHash: '0xbundle',
+        callsReceiptTxHash: '0xexecuted'
+      })
+    ).toBe('0xexecuted')
   })
 })
 

@@ -43,6 +43,22 @@ describe('yBOLD wallet activity', () => {
     expect(updated).toMatchObject({ finishedAt: 500, status: 'success', txHash })
   })
 
+  it('replaces a submitted bundle ID with the mined transaction hash', () => {
+    const bundleId = `0x${'b'.repeat(64)}` as Hash
+    const transactionHash = `0x${'c'.repeat(64)}` as Hash
+    const [updated] = updateYboldWalletActivity(
+      [activity({ txHash: bundleId })],
+      {
+        id: 'activity-1',
+        receipt: { transactionHash } as Parameters<typeof updateYboldWalletActivity>[1]['receipt'],
+        status: 'success'
+      },
+      500
+    )
+
+    expect(updated?.txHash).toBe(transactionHash)
+  })
+
   it('selects only the active wallet and sorts recent entries', () => {
     const selected = selectRecentYboldWalletActivities(
       [

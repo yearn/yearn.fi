@@ -87,7 +87,7 @@ export function updateYboldWalletActivity(
       awaitingExecution: update.awaitingExecution ?? activity.awaitingExecution,
       finishedAt: isFinished ? (activity.finishedAt ?? updatedAt) : activity.finishedAt,
       status,
-      txHash: update.txHash ?? activity.txHash
+      txHash: update.txHash ?? update.receipt?.transactionHash ?? activity.txHash
     }
   })
 }

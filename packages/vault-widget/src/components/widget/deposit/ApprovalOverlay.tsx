@@ -83,6 +83,7 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
   })
   const executionTrackingHash = resolveExecutionTrackingHash({
     isWalletSafe,
+    isCallBundle: false,
     submittedTxHash: txHash,
     safeExecutionTxHash: safeTransactionDetails.data?.executionTxHash,
     callsReceiptTxHash: safeCallsStatus.data?.receipts?.[0]?.transactionHash

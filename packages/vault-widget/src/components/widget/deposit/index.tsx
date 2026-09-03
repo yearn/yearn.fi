@@ -1,8 +1,9 @@
 import type { VaultWidgetTransactionPlan } from '@yearn/vault-widget/headless'
 import { Button } from '@yearn/vault-widget/internal/components/shared/Button'
-import { buildSafeDepositBatch } from '@yearn/vault-widget/internal/components/widget/deposit/safeDepositBatch'
+import { buildDepositBatch } from '@yearn/vault-widget/internal/components/widget/deposit/safeDepositBatch'
 import { InputTokenAmount } from '@yearn/vault-widget/internal/components/widget/InputTokenAmount'
 import { buildEligibleStyledWidgetPlan } from '@yearn/vault-widget/internal/components/widget/shared/plannedTransaction'
+import { useAtomicBatchSupport } from '@yearn/vault-widget/internal/hooks/useAtomicBatchSupport'
 import { useDebouncedInput } from '@yearn/vault-widget/internal/hooks/useDebouncedInput'
 import type { VaultUserData } from '@yearn/vault-widget/internal/hooks/useVaultUserData'
 import { useVaultWidgetSpotPrices } from '@yearn/vault-widget/internal/hooks/useVaultWidgetSpotPrices'
@@ -239,6 +240,7 @@ export function WidgetDeposit({
   // Derived token values
   const depositToken = selectedToken || assetAddress
   const sourceChainId = selectedChainId || chainId
+  const supportsAtomicBatch = useAtomicBatchSupport({ account, chainId: sourceChainId, enabled: !isWalletSafe })
   const isNativeToken = toAddress(depositToken) === toAddress(ETH_TOKEN_ADDRESS)
   const selectedExtraToken = useMemo(
     () =>
@@ -728,12 +730,12 @@ export function WidgetDeposit({
   const [completedApprovalFlowKey, setCompletedApprovalFlowKey] = useState<string | null>(null)
   const hasCompletedApprovalInActiveFlow = completedApprovalFlowKey === approvalFlowKey
   const effectiveNeedsApproval = needsApproval && !hasCompletedApprovalInActiveFlow
-  const safeDepositBatch = useMemo(() => {
-    if (!isWalletSafe || !needsApproval) {
+  const depositBatch = useMemo(() => {
+    if ((!isWalletSafe && !supportsAtomicBatch) || !needsApproval) {
       return undefined
     }
 
-    return buildSafeDepositBatch({
+    return buildDepositBatch({
       routeType,
       account,
       depositToken: toAddress(depositToken),
@@ -769,19 +771,20 @@ export function WidgetDeposit({
     sourceChainId,
     stakingDepositAddress,
     stakingSource,
+    supportsAtomicBatch,
     vaultAddress
   ])
 
   const currentStep: TransactionStep | undefined = useMemo(() => {
     const { actionLabel, progressLabel, pastTenseLabel } = getDepositActionCopy(routeType)
 
-    if (safeDepositBatch) {
+    if (depositBatch) {
       return {
         id: 'deposit-batch',
         prepare: activeFlow.actions.prepareApprove,
-        batch: safeDepositBatch,
+        batch: depositBatch,
         label: `Approve & ${actionLabel}`,
-        confirmMessage: `Submitting approval and ${actionLabel.toLowerCase()} to your Safe`,
+        confirmMessage: `Confirm approval and ${actionLabel.toLowerCase()} in your wallet`,
         successTitle: isCrossChain ? 'Transaction Submitted' : `${actionLabel} successful!`,
         successMessage: isCrossChain
           ? `Your cross-chain ${actionLabel.toLowerCase()} has been submitted.\nIt may take a few minutes to complete on the destination chain.`
@@ -789,7 +792,7 @@ export function WidgetDeposit({
         isEnabled:
           !isWaitingForProtectedEnsoQuote &&
           activeFlow.periphery.prepareApproveEnabled &&
-          safeDepositBatch.calls.length > 0,
+          depositBatch.calls.length > 0,
         completesFlow: true,
         showConfetti: true,
         notification: depositNotificationParams
@@ -849,7 +852,7 @@ export function WidgetDeposit({
     activeFlow.actions.prepareDeposit,
     activeFlow.periphery.prepareApproveEnabled,
     activeFlow.periphery.prepareDepositEnabled,
-    safeDepositBatch,
+    depositBatch,
     formattedDepositAmount,
     inputToken?.symbol,
     vaultSymbol,

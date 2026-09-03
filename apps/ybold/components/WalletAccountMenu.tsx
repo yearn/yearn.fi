@@ -133,7 +133,7 @@ function ActivityRow({ activity }: { activity: TYboldWalletActivity }) {
     </>
   )
   const rowClassName =
-    'flex min-h-14 items-center justify-between gap-4 rounded-lg px-1 transition-colors hover:bg-background focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yearn'
+    'flex min-h-14 items-center justify-between gap-4 rounded-lg pr-2 pl-1 transition-colors hover:bg-background focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yearn'
 
   if (activity.txHash) {
     return (

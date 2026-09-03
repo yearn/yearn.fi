@@ -19,6 +19,7 @@
     "./internal/components/widget/TokenSelector": "./src/components/widget/TokenSelector.tsx",
     "./internal/components/widget/deposit/safeDepositBatch": "./src/components/widget/deposit/safeDepositBatch.ts",
     "./internal/components/widget/deposit/types": "./src/components/widget/deposit/types.ts",
+    "./internal/components/widget/withdraw/safeWithdrawBatch": "./src/components/widget/withdraw/safeWithdrawBatch.ts",
     "./internal/components/widget/shared/valueDisplay": "./src/components/widget/shared/valueDisplay.ts",
     "./internal/components/widget/shared/*": "./src/components/widget/shared/*.tsx",
     "./internal/components/widget/tokenLogo.utils": "./src/components/widget/tokenLogo.utils.ts",

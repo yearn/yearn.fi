@@ -7,7 +7,7 @@ import type { Address, Hex } from 'viem'
 import { encodeFunctionData, isAddressEqual } from 'viem'
 import type { WithdrawRouteType } from './types'
 
-type TSafeBatchCall = {
+type TWithdrawBatchCall = {
   to: Address
   data: Hex
   value?: bigint
@@ -19,7 +19,7 @@ type TEnsoTransaction = {
   value: string
 }
 
-type TBuildSafeWithdrawBatchParams = {
+type TBuildWithdrawBatchParams = {
   routeType: WithdrawRouteType
   account?: Address
   sourceToken: Address
@@ -40,7 +40,7 @@ function buildApproveCall({
   sourceToken: Address
   approvalSpenderAddress: Address
   amount: bigint
-}): TSafeBatchCall {
+}): TWithdrawBatchCall {
   return {
     to: sourceToken,
     data: encodeFunctionData({
@@ -62,7 +62,7 @@ function buildApprovalCalls({
   approvalSpenderAddress: Address
   amount: bigint
   currentAllowance?: bigint
-}): TSafeBatchCall[] {
+}): TWithdrawBatchCall[] {
   const approveAmountCall = buildApproveCall({
     sourceToken,
     approvalSpenderAddress,
@@ -83,7 +83,7 @@ function buildApprovalCalls({
   ]
 }
 
-function buildYvUsdLockedZapWithdrawCall(params: TBuildSafeWithdrawBatchParams & { account: Address }): TSafeBatchCall {
+function buildYvUsdLockedZapWithdrawCall(params: TBuildWithdrawBatchParams & { account: Address }): TWithdrawBatchCall {
   return {
     to: YVUSD_LOCKED_ZAP_ADDRESS,
     data: encodeFunctionData({
@@ -95,7 +95,7 @@ function buildYvUsdLockedZapWithdrawCall(params: TBuildSafeWithdrawBatchParams &
   }
 }
 
-function buildYBoldZapperWithdrawCall(params: TBuildSafeWithdrawBatchParams & { account: Address }): TSafeBatchCall {
+function buildYBoldZapperWithdrawCall(params: TBuildWithdrawBatchParams & { account: Address }): TWithdrawBatchCall {
   return {
     to: YBOLD_ZAPPER_ADDRESS,
     data: encodeFunctionData({
@@ -107,7 +107,7 @@ function buildYBoldZapperWithdrawCall(params: TBuildSafeWithdrawBatchParams & { 
   }
 }
 
-function buildEnsoCall(ensoTx?: TEnsoTransaction): TSafeBatchCall | undefined {
+function buildEnsoCall(ensoTx?: TEnsoTransaction): TWithdrawBatchCall | undefined {
   if (!ensoTx) {
     return undefined
   }
@@ -119,9 +119,9 @@ function buildEnsoCall(ensoTx?: TEnsoTransaction): TSafeBatchCall | undefined {
   }
 }
 
-export function buildSafeWithdrawBatch(
-  params: TBuildSafeWithdrawBatchParams
-): { calls: readonly TSafeBatchCall[]; chainId: number } | undefined {
+export function buildWithdrawBatch(
+  params: TBuildWithdrawBatchParams
+): { calls: readonly TWithdrawBatchCall[]; chainId: number } | undefined {
   if (!params.account || !params.approvalSpenderAddress || params.amount <= 0n) {
     return undefined
   }
