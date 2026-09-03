@@ -553,11 +553,6 @@ export function prefetchGlobalVaultMetadata(): Promise<void> {
   return loadVaultList()
 }
 
-export async function fetchVaultMetadata(chainId: number, vaultAddress: string): Promise<VaultMetadata | null> {
-  const metadata = await fetchMultipleVaultsMetadata([{ chainId, vaultAddress }])
-  return metadata.get(`${chainId}:${vaultAddress.toLowerCase()}`) ?? null
-}
-
 export async function fetchMultipleVaultsMetadata(
   vaults: Array<{ chainId: number; vaultAddress: string }>,
   options?: { skipSnapshotFallback?: boolean }

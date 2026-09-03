@@ -1,7 +1,7 @@
 import type { VaultMetadata } from '../types'
-import { getChainPrefix, getPriceAtTimestamp, type THistoricalPriceRequest } from './defillama'
 import { getPPS, type PPSTimeline } from './kong'
 import { toVaultKey } from './pnlShared'
+import { getChainPrefix, getPriceAtTimestamp, type THistoricalPriceRequest } from './prices'
 
 type TPriceRequestDraft = {
   chainId: number

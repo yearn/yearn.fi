@@ -2,11 +2,6 @@ import type { HoldingsHistoryDenomination, HoldingsHistoryTimeframe } from '@/se
 import { getHistoricalHoldingsChart } from '@/server/lib/holdings/services/aggregator'
 import { withHoldingsProgressReporter } from '@/server/lib/holdings/services/debug'
 import type {
-  HoldingsEventFetchType,
-  HoldingsEventPaginationMode,
-  VaultVersion
-} from '@/server/lib/holdings/services/graphql'
-import type {
   HoldingsPnLSimpleHistoryResponse,
   HoldingsPortfolioGrowthResponse
 } from '@/server/lib/holdings/services/pnlSimple'
@@ -26,7 +21,7 @@ export interface HoldingsPortfolioBalanceResponse {
 
 export interface HoldingsPortfolioResponse {
   address: string
-  version: VaultVersion
+  version: 'all'
   denomination: HoldingsHistoryDenomination
   timeframe: HoldingsHistoryTimeframe
   balance: HoldingsPortfolioBalanceResponse
@@ -36,9 +31,6 @@ export interface HoldingsPortfolioResponse {
 
 export async function getHoldingsPortfolio(
   userAddress: string,
-  version: VaultVersion = 'all',
-  fetchType: HoldingsEventFetchType = 'seq',
-  paginationMode: HoldingsEventPaginationMode = 'paged',
   denomination: HoldingsHistoryDenomination = 'usd',
   timeframe: HoldingsHistoryTimeframe = '1y',
   progressId: string | null = null
@@ -50,25 +42,12 @@ export async function getHoldingsPortfolio(
       return settledContextState.request
     }
 
-    const request = getSettledAddressScopedContext({
-      userAddress,
-      fetchType,
-      paginationMode
-    })
+    const request = getSettledAddressScopedContext({ userAddress })
     settledContextState.request = request
     return request
   }
   const protocolReturnPortfolioPromise = withHoldingsProgressReporter(progressTracker.reportGrowthProgress, () =>
-    getHoldingsProtocolReturnPortfolio(
-      userAddress,
-      version,
-      fetchType,
-      paginationMode,
-      timeframe,
-      undefined,
-      undefined,
-      getSettledContext
-    )
+    getHoldingsProtocolReturnPortfolio(userAddress, timeframe, undefined, getSettledContext)
   ).then((portfolio) => {
     progressTracker.markGrowthComplete()
     return portfolio
@@ -83,9 +62,6 @@ export async function getHoldingsPortfolio(
   const balancePromise = withHoldingsProgressReporter(progressTracker.reportBalanceProgress, () =>
     getHistoricalHoldingsChart(
       userAddress,
-      version,
-      fetchType,
-      paginationMode,
       denomination,
       timeframe,
       undefined,
@@ -103,7 +79,7 @@ export async function getHoldingsPortfolio(
 
     return {
       address: balance.address,
-      version,
+      version: 'all',
       denomination,
       timeframe,
       balance: {

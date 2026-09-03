@@ -57,7 +57,7 @@ describe('protocol return in-flight progress', () => {
     const secondReporter = vi.fn()
 
     const firstRequest = withHoldingsProgressReporter(firstReporter, () =>
-      getHoldingsProtocolReturnPortfolio(USER, 'all', 'seq', 'paged', '1y', undefined, undefined, loadContext)
+      getHoldingsProtocolReturnPortfolio(USER, '1y', undefined, loadContext)
     )
     await vi.waitFor(() =>
       expect(firstReporter).toHaveBeenCalledWith(
@@ -68,7 +68,7 @@ describe('protocol return in-flight progress', () => {
     )
 
     const secondRequest = withHoldingsProgressReporter(secondReporter, () =>
-      getHoldingsProtocolReturnPortfolio(USER, 'all', 'seq', 'paged', '1y', undefined, undefined, loadContext)
+      getHoldingsProtocolReturnPortfolio(USER, '1y', undefined, loadContext)
     )
 
     expect(secondReporter).toHaveBeenCalledWith(12, 'Fetching historical user data', 'Starting protocol return history')

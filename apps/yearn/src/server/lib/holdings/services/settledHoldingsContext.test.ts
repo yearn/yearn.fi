@@ -1,4 +1,4 @@
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { UserEvents, VaultMetadata } from '@/server/lib/holdings/types'
 
 const serviceMocks = vi.hoisted(() => ({
@@ -39,8 +39,8 @@ vi.mock('@/server/lib/holdings/services/kong', () => ({
 
 import {
   getSettledAddressScopedContext,
-  getSettledVersionedPpsContext,
-  selectVersionedEvents
+  getSettledPpsContext,
+  selectEvents
 } from '@/server/lib/holdings/services/settledHoldingsContext'
 
 const CACHED_USER = '0x00000000000000000000000000000000000000A1'
@@ -84,10 +84,6 @@ const VAULT_METADATA: VaultMetadata = {
 }
 
 describe('getSettledAddressScopedContext wallet event cache', () => {
-  afterEach(() => {
-    delete process.env.HOLDINGS_KONG_BATCH_PPS
-  })
-
   beforeEach(() => {
     vi.clearAllMocks()
     serviceMocks.fetchUserEvents.mockResolvedValue(EVENTS)
@@ -100,31 +96,16 @@ describe('getSettledAddressScopedContext wallet event cache', () => {
     serviceMocks.resolveNestedVaultAssetMetadata.mockImplementation(async (metadata) => metadata)
     serviceMocks.getVaultMetadataFetchFailedVaults.mockReturnValue(0)
     serviceMocks.fetchMultipleVaultsPPS.mockResolvedValue(new Map())
-    delete process.env.HOLDINGS_KONG_BATCH_PPS
   })
 
   it('feeds cached and Envio events through the same calculators and saves only an Envio miss', async () => {
-    const cachedContext = await getSettledAddressScopedContext({
-      userAddress: CACHED_USER,
-      fetchType: 'parallel',
-      paginationMode: 'paged'
-    })
-    const envioContext = await getSettledAddressScopedContext({
-      userAddress: ENVIO_USER,
-      fetchType: 'parallel',
-      paginationMode: 'paged'
-    })
+    const cachedContext = await getSettledAddressScopedContext({ userAddress: CACHED_USER })
+    const envioContext = await getSettledAddressScopedContext({ userAddress: ENVIO_USER })
     const activityMaxTimestamp = envioContext.maxTimestamp + 24 * 60 * 60
 
     expect(envioContext).toEqual({ ...cachedContext, address: ENVIO_USER.toLowerCase() })
     expect(serviceMocks.fetchUserEvents).toHaveBeenCalledOnce()
-    expect(serviceMocks.fetchUserEvents).toHaveBeenCalledWith(
-      ENVIO_USER,
-      'all',
-      activityMaxTimestamp,
-      'parallel',
-      'paged'
-    )
+    expect(serviceMocks.fetchUserEvents).toHaveBeenCalledWith(ENVIO_USER, activityMaxTimestamp)
     expect(serviceMocks.saveCachedWalletEvents).toHaveBeenCalledOnce()
     expect(serviceMocks.saveCachedWalletEvents).toHaveBeenCalledWith(
       { userAddress: ENVIO_USER, maxTimestamp: activityMaxTimestamp },
@@ -132,40 +113,21 @@ describe('getSettledAddressScopedContext wallet event cache', () => {
     )
   })
 
-  it('bounds batch PPS from the earliest selected event through the settled day', async () => {
-    process.env.HOLDINGS_KONG_BATCH_PPS = 'true'
-    const context = await getSettledAddressScopedContext({
-      userAddress: CACHED_USER,
-      fetchType: 'parallel',
-      paginationMode: 'paged'
-    })
+  it('requests PPS for each selected vault', async () => {
+    const context = await getSettledAddressScopedContext({ userAddress: CACHED_USER })
 
-    await getSettledVersionedPpsContext({
+    await getSettledPpsContext({
       userAddress: CACHED_USER,
-      version: 'all',
-      fetchType: 'parallel',
-      paginationMode: 'paged',
       context
     })
 
-    const utcDaySeconds = 24 * 60 * 60
-    expect(serviceMocks.fetchMultipleVaultsPPS).toHaveBeenCalledWith(
-      [{ chainId: 1, vaultAddress: VAULT_ADDRESS.toLowerCase() }],
-      {
-        range: {
-          start: Math.floor(EVENTS.deposits[0]!.blockTimestamp / utcDaySeconds) * utcDaySeconds,
-          finish: Math.floor(context.maxTimestamp / utcDaySeconds) * utcDaySeconds
-        }
-      }
-    )
+    expect(serviceMocks.fetchMultipleVaultsPPS).toHaveBeenCalledWith([
+      { chainId: 1, vaultAddress: VAULT_ADDRESS.toLowerCase() }
+    ])
   })
 
-  it('excludes current-day events from the shared versioned PPS scope', async () => {
-    const context = await getSettledAddressScopedContext({
-      userAddress: CACHED_USER,
-      fetchType: 'parallel',
-      paginationMode: 'paged'
-    })
+  it('excludes current-day events from the shared PPS scope', async () => {
+    const context = await getSettledAddressScopedContext({ userAddress: CACHED_USER })
     const currentDayVault = '0x00000000000000000000000000000000000000B2'
     const currentDayEvent = {
       ...context.rawEvents[0]!,
@@ -178,15 +140,12 @@ describe('getSettledAddressScopedContext wallet event cache', () => {
       ...context,
       rawEvents: [...context.rawEvents, currentDayEvent]
     }
-    const selection = selectVersionedEvents(scopedContext, 'all')
+    const selection = selectEvents(scopedContext)
 
     expect(selection.events.map((event) => event.id)).toEqual(['deposit-1', 'current-day-deposit'])
 
-    const ppsContext = await getSettledVersionedPpsContext({
+    const ppsContext = await getSettledPpsContext({
       userAddress: CACHED_USER,
-      version: 'all',
-      fetchType: 'parallel',
-      paginationMode: 'paged',
       context: scopedContext
     })
 
@@ -202,42 +161,28 @@ describe('getSettledAddressScopedContext wallet event cache', () => {
     ])
   })
 
-  it('reuses an unfiltered in-flight versioned PPS request', async () => {
-    const context = await getSettledAddressScopedContext({
-      userAddress: CACHED_USER,
-      fetchType: 'parallel',
-      paginationMode: 'paged'
-    })
+  it('reuses an unfiltered in-flight PPS request', async () => {
+    const context = await getSettledAddressScopedContext({ userAddress: CACHED_USER })
     const args = {
       userAddress: CACHED_USER,
-      version: 'all' as const,
-      fetchType: 'parallel' as const,
-      paginationMode: 'paged' as const,
       context
     }
 
-    await Promise.all([getSettledVersionedPpsContext(args), getSettledVersionedPpsContext(args)])
+    await Promise.all([getSettledPpsContext(args), getSettledPpsContext(args)])
 
     expect(serviceMocks.fetchMultipleVaultsPPS).toHaveBeenCalledOnce()
   })
 
   it('keeps an explicit empty PPS scope separate from an unfiltered request', async () => {
-    const context = await getSettledAddressScopedContext({
-      userAddress: CACHED_USER,
-      fetchType: 'parallel',
-      paginationMode: 'paged'
-    })
+    const context = await getSettledAddressScopedContext({ userAddress: CACHED_USER })
     const commonArgs = {
       userAddress: CACHED_USER,
-      version: 'all' as const,
-      fetchType: 'parallel' as const,
-      paginationMode: 'paged' as const,
       context
     }
 
     const [emptyContext, allContext] = await Promise.all([
-      getSettledVersionedPpsContext({ ...commonArgs, vaultIdentifiers: [] }),
-      getSettledVersionedPpsContext(commonArgs)
+      getSettledPpsContext({ ...commonArgs, vaultIdentifiers: [] }),
+      getSettledPpsContext(commonArgs)
     ])
 
     expect(emptyContext.selectedVaultIdentifiers).toEqual([])

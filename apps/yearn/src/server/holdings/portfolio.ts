@@ -1,11 +1,5 @@
 import { GET_CORS_HEADERS, json, noContent, queryValue, WALLET_SCOPED_CACHE_CONTROL } from '@/server/http'
-import type {
-  HoldingsEventFetchType,
-  HoldingsHistoryDenomination,
-  HoldingsHistoryTimeframe,
-  VaultVersion
-} from '@/server/lib/holdings'
-import { ensureHoldingsStorageInitialized } from '@/server/lib/holdings'
+import type { HoldingsHistoryDenomination, HoldingsHistoryTimeframe } from '@/server/lib/holdings'
 import {
   createHoldingsDebugContext,
   isHoldingsDebugRequested,
@@ -15,10 +9,6 @@ import { startHoldingsProgress, updateHoldingsProgress } from '@/server/lib/hold
 
 function isValidAddress(address: string): boolean {
   return /^0x[a-fA-F0-9]{40}$/.test(address)
-}
-
-function parseHoldingsEventFetchType(value: string | string[] | undefined): HoldingsEventFetchType {
-  return value === 'seq' ? 'seq' : 'parallel'
 }
 
 function parseHoldingsHistoryDenomination(value: string | string[] | undefined): HoldingsHistoryDenomination {
@@ -34,13 +24,6 @@ export function OPTIONS(): Response {
 }
 
 export async function GET(request: Request): Promise<Response> {
-  try {
-    await ensureHoldingsStorageInitialized()
-  } catch (error) {
-    console.error('Holdings portfolio storage initialization error:', error)
-    return json({ error: 'Failed to initialize holdings storage' }, { status: 500, headers: GET_CORS_HEADERS })
-  }
-
   if (!process.env.ENVIO_GRAPHQL_URL) {
     return json(
       {
@@ -52,10 +35,8 @@ export async function GET(request: Request): Promise<Response> {
   }
 
   const address = queryValue(request, 'address')
-  const versionParam = queryValue(request, 'version')
   const denominationParam = queryValue(request, 'denomination')
   const timeframeParam = queryValue(request, 'timeframe')
-  const fetchTypeParam = queryValue(request, 'fetchType')
   const debugParam = queryValue(request, 'debug')
   const progressIdParam = queryValue(request, 'progressId')
 
@@ -67,10 +48,8 @@ export async function GET(request: Request): Promise<Response> {
     return json({ error: 'Invalid Ethereum address' }, { status: 400, headers: GET_CORS_HEADERS })
   }
 
-  const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
   const denomination = parseHoldingsHistoryDenomination(denominationParam)
   const timeframe = parseHoldingsHistoryTimeframe(timeframeParam)
-  const fetchType = parseHoldingsEventFetchType(fetchTypeParam)
   const debugEnabled = isHoldingsDebugRequested(typeof debugParam === 'string' ? debugParam : null)
   const progressId = typeof progressIdParam === 'string' ? progressIdParam : null
 
@@ -84,7 +63,7 @@ export async function GET(request: Request): Promise<Response> {
     const { getHoldingsPortfolio } = await import('../lib/holdings')
     const portfolio = await withHoldingsDebugContext(
       createHoldingsDebugContext('portfolio', address, debugEnabled),
-      () => getHoldingsPortfolio(address, version, fetchType, 'paged', denomination, timeframe, activeProgressId)
+      () => getHoldingsPortfolio(address, denomination, timeframe, activeProgressId)
     )
     await updateHoldingsProgress(activeProgressId, {
       status: 'complete',
@@ -121,5 +100,3 @@ export async function GET(request: Request): Promise<Response> {
     return json({ error: 'Failed to fetch holdings portfolio' }, { status: 502, headers: GET_CORS_HEADERS })
   }
 }
-
-export default GET

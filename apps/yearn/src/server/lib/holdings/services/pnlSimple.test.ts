@@ -1781,7 +1781,7 @@ describe('pnl simple protocol return', () => {
     expect(history[1]?.growthIndex).toBeCloseTo(109.0909090909)
   })
 
-  it('recovers router-mediated staking basis when tx activity is merged into address-scoped simple-history events', () => {
+  it('recovers router-mediated staking basis when tx activity is merged into address-scoped protocol-return events', () => {
     const UNDERLYING_VAULT = '0x182863131F9a4630fF9E27830d945B1413e347E8'
     const STAKING_VAULT = '0xd57aea3686d623da2dcebc87010a4f2f38ac7b15'
     const STAKING_VAULT_KEY = toVaultKey(1, UNDERLYING_VAULT)

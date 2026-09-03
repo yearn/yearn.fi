@@ -396,29 +396,18 @@ function hasAnyRows(rows: Array<{ id: string }> | null | undefined): boolean {
   return Boolean(rows?.length)
 }
 
-function hasActivityForVersion(data: ChainPresenceQuery, version: VaultVersion): boolean {
-  const hasV3Activity =
+function hasActivity(data: ChainPresenceQuery): boolean {
+  return (
     hasAnyRows(data.deposits) ||
     hasAnyRows(data.withdrawals) ||
     hasAnyRows(data.transfersIn) ||
-    hasAnyRows(data.transfersOut)
-  const hasV2Activity = hasAnyRows(data.v2Deposits) || hasAnyRows(data.v2Withdrawals)
-
-  if (version === 'v2') {
-    return hasV2Activity
-  }
-
-  if (version === 'v3') {
-    return hasV3Activity
-  }
-
-  return hasV3Activity || hasV2Activity
+    hasAnyRows(data.transfersOut) ||
+    hasAnyRows(data.v2Deposits) ||
+    hasAnyRows(data.v2Withdrawals)
+  )
 }
 
-export async function fetchAddressActivityChainIdsByExistence(
-  userAddress: string,
-  version: VaultVersion = 'all'
-): Promise<number[]> {
+export async function fetchAddressActivityChainIdsByExistence(userAddress: string): Promise<number[]> {
   const address = getGraphqlAddress(userAddress)
   const addressLower = address.toLowerCase()
 
@@ -429,7 +418,7 @@ export async function fetchAddressActivityChainIdsByExistence(
         chainId: chain.id
       })
 
-      return hasActivityForVersion(data, version) ? chain.id : null
+      return hasActivity(data) ? chain.id : null
     })
   )
 
@@ -439,7 +428,6 @@ export async function fetchAddressActivityChainIdsByExistence(
 
   debugLog('graphql', 'loaded address activity chain presence', {
     address: addressLower,
-    version,
     chainIds
   })
 
@@ -451,73 +439,6 @@ export async function fetchAddressActivityChainIdsByExistence(
 const DEFAULT_MAX_TIMESTAMP = 2000000000 // ~year 2033, safe 32-bit integer
 const TX_HASH_BATCH_SIZE = 200
 const TX_HASH_QUERY_CONCURRENCY = 5
-
-// Sequential pagination - fetch pages until we get fewer results than BATCH_SIZE
-async function fetchAllSequential<T>(
-  query: string,
-  variableKey: string,
-  address: string,
-  resultKey: string,
-  maxTimestamp?: number
-): Promise<T[]> {
-  const allResults: T[] = []
-  let offset = 0
-  const ts = maxTimestamp ?? DEFAULT_MAX_TIMESTAMP
-  let pages = 0
-
-  while (true) {
-    const variables: Record<string, unknown> = { [variableKey]: address, limit: BATCH_SIZE, offset, maxTimestamp: ts }
-    let data: Record<string, T[]>
-    const pageNumber = pages + 1
-    const startedAt = Date.now()
-
-    try {
-      data = await executeQuery<Record<string, T[]>>(query, variables)
-    } catch (error) {
-      debugError('graphql', 'sequential event fetch failed', error, {
-        resultKey,
-        variableKey,
-        address,
-        offset,
-        maxTimestamp: ts
-      })
-      throw error
-    }
-    const batch = data[resultKey] || []
-    pages += 1
-    const durationMs = Date.now() - startedAt
-
-    debugLog('graphql', 'fetched sequential event page', {
-      resultKey,
-      variableKey,
-      address,
-      page: pageNumber,
-      offset,
-      limit: BATCH_SIZE,
-      batchCount: batch.length,
-      durationMs,
-      maxTimestamp: ts
-    })
-
-    allResults.push(...batch)
-
-    if (batch.length < BATCH_SIZE) {
-      break
-    }
-
-    offset += BATCH_SIZE
-  }
-
-  debugLog('graphql', 'fetched sequential event set', {
-    resultKey,
-    variableKey,
-    address,
-    count: allResults.length,
-    pages,
-    maxTimestamp: ts
-  })
-  return allResults
-}
 
 function chunkArray<T>(items: T[], chunkSize: number): T[][] {
   const chunks: T[][] = []
@@ -776,10 +697,6 @@ function normalizeV2Withdraw(v2: V2WithdrawEvent): WithdrawEvent {
   }
 }
 
-export type VaultVersion = 'v2' | 'v3' | 'all'
-export type HoldingsEventFetchType = 'seq' | 'parallel'
-export type HoldingsEventPaginationMode = 'paged' | 'all'
-
 type AddressEventFetches = [
   Promise<DepositEvent[]>,
   Promise<WithdrawEvent[]>,
@@ -820,39 +737,14 @@ function sortByBlockDesc<T extends { blockTimestamp: number; blockNumber: number
   )
 }
 
-function getDepositsByVersion(
-  v3Deposits: DepositEvent[],
-  v2DepositsRaw: V2DepositEvent[],
-  version: VaultVersion
-): DepositEvent[] {
+function mergeDeposits(v3Deposits: DepositEvent[], v2DepositsRaw: V2DepositEvent[]): DepositEvent[] {
   const v2Deposits = v2DepositsRaw.map(normalizeV2Deposit)
-
-  return version === 'v3' ? v3Deposits : version === 'v2' ? v2Deposits : sortByBlock([...v3Deposits, ...v2Deposits])
+  return sortByBlock([...v3Deposits, ...v2Deposits])
 }
 
-function getWithdrawalsByVersion(
-  v3Withdrawals: WithdrawEvent[],
-  v2WithdrawalsRaw: V2WithdrawEvent[],
-  version: VaultVersion
-): WithdrawEvent[] {
+function mergeWithdrawals(v3Withdrawals: WithdrawEvent[], v2WithdrawalsRaw: V2WithdrawEvent[]): WithdrawEvent[] {
   const v2Withdrawals = v2WithdrawalsRaw.map(normalizeV2Withdraw)
-
-  return version === 'v3'
-    ? v3Withdrawals
-    : version === 'v2'
-      ? v2Withdrawals
-      : sortByBlock([...v3Withdrawals, ...v2Withdrawals])
-}
-
-function getSequentialAddressEventFetches(addressLower: string, maxTimestamp?: number): AddressEventFetches {
-  return [
-    fetchAllSequential<DepositEvent>(DEPOSITS_QUERY, 'owner', addressLower, 'Deposit', maxTimestamp),
-    fetchAllSequential<WithdrawEvent>(WITHDRAWALS_QUERY, 'owner', addressLower, 'Withdraw', maxTimestamp),
-    fetchAllSequential<V2DepositEvent>(V2_DEPOSITS_QUERY, 'recipient', addressLower, 'V2Deposit', maxTimestamp),
-    fetchAllSequential<V2WithdrawEvent>(V2_WITHDRAWALS_QUERY, 'recipient', addressLower, 'V2Withdraw', maxTimestamp),
-    fetchAllSequential<TransferEvent>(TRANSFERS_IN_QUERY, 'receiver', addressLower, 'Transfer', maxTimestamp),
-    fetchAllSequential<TransferEvent>(TRANSFERS_OUT_QUERY, 'sender', addressLower, 'Transfer', maxTimestamp)
-  ]
+  return sortByBlock([...v3Withdrawals, ...v2Withdrawals])
 }
 
 async function fetchRecentLimited<T>(
@@ -919,47 +811,35 @@ function getCountFreeParallelAddressEventFetches(addressLower: string, maxTimest
   ]
 }
 
-function getAddressScopedEventFetchKey(
-  addressLower: string,
-  maxTimestamp: number | undefined,
-  fetchType: HoldingsEventFetchType
-): string {
-  return `${addressLower}:${maxTimestamp ?? DEFAULT_MAX_TIMESTAMP}:${fetchType}`
+function getAddressScopedEventFetchKey(addressLower: string, maxTimestamp: number | undefined): string {
+  return `${addressLower}:${maxTimestamp ?? DEFAULT_MAX_TIMESTAMP}`
 }
 
 async function fetchAddressScopedEventsUncached(
   addressLower: string,
-  maxTimestamp: number | undefined,
-  fetchType: HoldingsEventFetchType
+  maxTimestamp: number | undefined
 ): Promise<AddressEventResults> {
-  const fetches =
-    fetchType === 'seq'
-      ? getSequentialAddressEventFetches(addressLower, maxTimestamp)
-      : getCountFreeParallelAddressEventFetches(addressLower, maxTimestamp)
-
-  return Promise.all(fetches) as Promise<AddressEventResults>
+  return Promise.all(
+    getCountFreeParallelAddressEventFetches(addressLower, maxTimestamp)
+  ) as Promise<AddressEventResults>
 }
 
 async function fetchAddressScopedEvents(
   addressLower: string,
-  maxTimestamp: number | undefined,
-  fetchType: HoldingsEventFetchType,
-  paginationMode: HoldingsEventPaginationMode
+  maxTimestamp: number | undefined
 ): Promise<AddressEventResults> {
-  const key = getAddressScopedEventFetchKey(addressLower, maxTimestamp, fetchType)
+  const key = getAddressScopedEventFetchKey(addressLower, maxTimestamp)
   const existing = inFlightAddressScopedEventFetches.get(key)
 
   if (existing) {
     debugLog('graphql', 'reusing in-flight address-scoped event fetch', {
       address: addressLower,
-      maxTimestamp: maxTimestamp ?? DEFAULT_MAX_TIMESTAMP,
-      fetchType,
-      paginationMode
+      maxTimestamp: maxTimestamp ?? DEFAULT_MAX_TIMESTAMP
     })
     return existing
   }
 
-  const request = fetchAddressScopedEventsUncached(addressLower, maxTimestamp, fetchType)
+  const request = fetchAddressScopedEventsUncached(addressLower, maxTimestamp)
     .then(filterSupportedAddressEventResults)
     .finally(() => {
       inFlightAddressScopedEventFetches.delete(key)
@@ -969,34 +849,16 @@ async function fetchAddressScopedEvents(
   return request
 }
 
-// Main export - paginationMode is retained for API compatibility; both values use bounded pages.
-export async function fetchUserEvents(
-  userAddress: string,
-  version: VaultVersion = 'all',
-  maxTimestamp?: number,
-  fetchType: HoldingsEventFetchType = 'seq',
-  paginationMode: HoldingsEventPaginationMode = 'paged'
-): Promise<UserEvents> {
+export async function fetchUserEvents(userAddress: string, maxTimestamp?: number): Promise<UserEvents> {
   const address = getGraphqlAddress(userAddress)
   const addressLower = address.toLowerCase()
 
   const [v3Deposits, v3Withdrawals, v2DepositsRaw, v2WithdrawalsRaw, transfersIn, transfersOut] =
-    await fetchAddressScopedEvents(address, maxTimestamp, fetchType, paginationMode)
+    await fetchAddressScopedEvents(address, maxTimestamp)
 
-  const processed = processEvents(
-    v3Deposits,
-    v3Withdrawals,
-    v2DepositsRaw,
-    v2WithdrawalsRaw,
-    transfersIn,
-    transfersOut,
-    version
-  )
+  const processed = processEvents(v3Deposits, v3Withdrawals, v2DepositsRaw, v2WithdrawalsRaw, transfersIn, transfersOut)
   debugLog('graphql', 'fetched user events', {
     address: addressLower,
-    version,
-    fetchType,
-    paginationMode,
     deposits: processed.deposits.length,
     withdrawals: processed.withdrawals.length,
     transfersIn: processed.transfersIn.length,
@@ -1025,7 +887,6 @@ export interface TransactionActivityEvents {
 
 export async function fetchRecentAddressScopedActivityEvents(
   userAddress: string,
-  version: VaultVersion = 'all',
   limitPerSource = 25,
   maxTimestamp?: number,
   offsetPerSource = 0
@@ -1101,28 +962,17 @@ export async function fetchRecentAddressScopedActivityEvents(
     supportedTransfersIn,
     supportedTransfersOut
   ] = supportedEventGroups
-  const deposits = sortByBlockDesc(getDepositsByVersion(supportedV3Deposits, supportedV2Deposits, version))
-  const withdrawals = sortByBlockDesc(getWithdrawalsByVersion(supportedV3Withdrawals, supportedV2Withdrawals, version))
+  const deposits = sortByBlockDesc(mergeDeposits(supportedV3Deposits, supportedV2Deposits))
+  const withdrawals = sortByBlockDesc(mergeWithdrawals(supportedV3Withdrawals, supportedV2Withdrawals))
   const sortedTransfersIn = sortByBlockDesc(supportedTransfersIn)
   const sortedTransfersOut = sortByBlockDesc(supportedTransfersOut)
-  const hasMoreDeposits =
-    version === 'v3'
-      ? v3Deposits.length === boundedLimit
-      : version === 'v2'
-        ? v2DepositsRaw.length === boundedLimit
-        : v3Deposits.length === boundedLimit || v2DepositsRaw.length === boundedLimit
-  const hasMoreWithdrawals =
-    version === 'v3'
-      ? v3Withdrawals.length === boundedLimit
-      : version === 'v2'
-        ? v2WithdrawalsRaw.length === boundedLimit
-        : v3Withdrawals.length === boundedLimit || v2WithdrawalsRaw.length === boundedLimit
+  const hasMoreDeposits = v3Deposits.length === boundedLimit || v2DepositsRaw.length === boundedLimit
+  const hasMoreWithdrawals = v3Withdrawals.length === boundedLimit || v2WithdrawalsRaw.length === boundedLimit
   const hasMoreTransfersIn = transfersIn.length === boundedLimit
   const hasMoreTransfersOut = transfersOut.length === boundedLimit
 
   debugLog('graphql', 'fetched recent address-scoped activity events', {
     address: addressLower,
-    version,
     limitPerSource: boundedLimit,
     deposits: deposits.length,
     withdrawals: withdrawals.length,
@@ -1150,7 +1000,6 @@ export async function fetchRecentAddressScopedActivityEvents(
 
 export async function fetchActivityEventsByTransactionHashes(
   transactionHashesByChain: Map<number, string[]>,
-  version: VaultVersion = 'all',
   maxTimestamp?: number
 ): Promise<TransactionActivityEvents> {
   const supportedTransactionHashesByChain = new Map(
@@ -1191,10 +1040,8 @@ export async function fetchActivityEventsByTransactionHashes(
     ])
 
   return {
-    deposits: sortByBlock(dedupeById([...getDepositsByVersion(txHashV3Deposits, txHashV2DepositsRaw, version)])),
-    withdrawals: sortByBlock(
-      dedupeById([...getWithdrawalsByVersion(txHashV3Withdrawals, txHashV2WithdrawalsRaw, version)])
-    ),
+    deposits: sortByBlock(dedupeById(mergeDeposits(txHashV3Deposits, txHashV2DepositsRaw))),
+    withdrawals: sortByBlock(dedupeById(mergeWithdrawals(txHashV3Withdrawals, txHashV2WithdrawalsRaw))),
     transfers: sortByBlock(dedupeById(txHashTransfers))
   }
 }
@@ -1206,8 +1053,7 @@ function processEvents(
   v2DepositsRaw: V2DepositEvent[],
   v2WithdrawalsRaw: V2WithdrawEvent[],
   transfersIn: TransferEvent[],
-  transfersOut: TransferEvent[],
-  version: VaultVersion
+  transfersOut: TransferEvent[]
 ): UserEvents {
   const v2Deposits = v2DepositsRaw.map(normalizeV2Deposit)
   const v2Withdrawals = v2WithdrawalsRaw.map(normalizeV2Withdraw)
@@ -1237,19 +1083,10 @@ function processEvents(
     }
   }
 
-  // Filter deposits/withdrawals by version
-  const deposits = getDepositsByVersion(v3Deposits, v2DepositsRaw, version)
+  const deposits = mergeDeposits(v3Deposits, v2DepositsRaw)
+  const withdrawals = mergeWithdrawals(v3Withdrawals, v2WithdrawalsRaw)
 
-  const withdrawals = getWithdrawalsByVersion(v3Withdrawals, v2WithdrawalsRaw, version)
-
-  // Filter transfers by vault version
-  // For "all" version, include transfer-only vaults (vaults where user has no deposits/withdrawals but received shares via transfer)
-  const allowedVaults =
-    version === 'v3'
-      ? v3VaultAddresses
-      : version === 'v2'
-        ? v2VaultAddresses
-        : new Set([...v3VaultAddresses, ...v2VaultAddresses, ...transferOnlyVaults])
+  const allowedVaults = new Set([...v3VaultAddresses, ...v2VaultAddresses, ...transferOnlyVaults])
 
   // Filter transfers:
   // - For vaults WITH deposit/withdraw events: exclude mints (from zero) and burns (to zero) since they're covered by Deposit/Withdraw events

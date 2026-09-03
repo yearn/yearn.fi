@@ -2,11 +2,9 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const TEST_ADDRESS = '0x2222222222222222222222222222222222222222'
 
-const ensureHoldingsStorageInitializedMock = vi.fn()
 const getHoldingsActivityMock = vi.fn()
 
 vi.mock('../lib/holdings', () => ({
-  ensureHoldingsStorageInitialized: ensureHoldingsStorageInitializedMock,
   getHoldingsActivity: getHoldingsActivityMock
 }))
 
@@ -18,7 +16,6 @@ describe('holdings activity route', () => {
   beforeEach(() => {
     vi.resetModules()
     vi.clearAllMocks()
-    ensureHoldingsStorageInitializedMock.mockResolvedValue(undefined)
     process.env.ENVIO_GRAPHQL_URL = 'https://envio.example/graphql'
   })
 
@@ -51,7 +48,7 @@ describe('holdings activity route', () => {
       ]
     })
 
-    const { default: handler } = await import('./activity')
+    const { GET: handler } = await import('./activity')
     const response = await handler(
       createRequest({
         address: TEST_ADDRESS,
@@ -60,7 +57,7 @@ describe('holdings activity route', () => {
       })
     )
 
-    expect(getHoldingsActivityMock).toHaveBeenCalledWith(TEST_ADDRESS, 'all', 10, 0, {
+    expect(getHoldingsActivityMock).toHaveBeenCalledWith(TEST_ADDRESS, 10, 0, {
       type: 'all',
       chainId: null,
       startTimestamp: null,
@@ -110,7 +107,7 @@ describe('holdings activity route', () => {
       entries: []
     })
 
-    const { default: handler } = await import('./activity')
+    const { GET: handler } = await import('./activity')
     const response = await handler(
       createRequest({
         address: TEST_ADDRESS
@@ -144,7 +141,7 @@ describe('holdings activity route', () => {
       entries: []
     })
 
-    const { default: handler } = await import('./activity')
+    const { GET: handler } = await import('./activity')
     const response = await handler(
       createRequest({
         address: TEST_ADDRESS,
@@ -155,7 +152,7 @@ describe('holdings activity route', () => {
       })
     )
 
-    expect(getHoldingsActivityMock).toHaveBeenCalledWith(TEST_ADDRESS, 'all', 10, 0, {
+    expect(getHoldingsActivityMock).toHaveBeenCalledWith(TEST_ADDRESS, 10, 0, {
       type: 'withdraw',
       chainId: 137,
       startTimestamp: 1776729600,
@@ -177,7 +174,7 @@ describe('holdings activity route', () => {
       entries: []
     })
 
-    const { default: handler } = await import('./activity')
+    const { GET: handler } = await import('./activity')
     const response = await handler(
       createRequest({
         address: TEST_ADDRESS,
@@ -185,7 +182,7 @@ describe('holdings activity route', () => {
       })
     )
 
-    expect(getHoldingsActivityMock).toHaveBeenCalledWith(TEST_ADDRESS, 'all', 10, 0, {
+    expect(getHoldingsActivityMock).toHaveBeenCalledWith(TEST_ADDRESS, 10, 0, {
       type: 'transfer',
       chainId: null,
       startTimestamp: null,
@@ -207,7 +204,7 @@ describe('holdings activity route', () => {
       entries: []
     })
 
-    const { default: handler } = await import('./activity')
+    const { GET: handler } = await import('./activity')
     const response = await handler(
       createRequest({
         address: TEST_ADDRESS,
@@ -215,7 +212,7 @@ describe('holdings activity route', () => {
       })
     )
 
-    expect(getHoldingsActivityMock).toHaveBeenCalledWith(TEST_ADDRESS, 'all', 10, 0, {
+    expect(getHoldingsActivityMock).toHaveBeenCalledWith(TEST_ADDRESS, 10, 0, {
       type: 'swap',
       chainId: null,
       startTimestamp: null,

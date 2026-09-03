@@ -1,13 +1,8 @@
 import { GET_CORS_HEADERS, json, noContent, queryValue, WALLET_SCOPED_CACHE_CONTROL } from '../http'
-import type { HoldingsActivityTypeFilter, VaultVersion } from '../lib/holdings'
-import { ensureHoldingsStorageInitialized } from '../lib/holdings'
+import type { HoldingsActivityTypeFilter } from '../lib/holdings'
 
 function isValidAddress(address: string): boolean {
   return /^0x[a-fA-F0-9]{40}$/.test(address)
-}
-
-function parseVersion(value: string | string[] | undefined): VaultVersion {
-  return value === 'v2' || value === 'v3' ? value : 'all'
 }
 
 function parseLimit(value: string | string[] | undefined): number {
@@ -68,13 +63,6 @@ export function OPTIONS(): Response {
 }
 
 export async function GET(request: Request): Promise<Response> {
-  try {
-    await ensureHoldingsStorageInitialized()
-  } catch (error) {
-    console.error('Holdings activity storage initialization error:', error)
-    return json({ error: 'Failed to initialize holdings storage' }, { status: 500, headers: GET_CORS_HEADERS })
-  }
-
   const envioUrl = process.env.ENVIO_GRAPHQL_URL
   if (!envioUrl) {
     return json(
@@ -87,7 +75,6 @@ export async function GET(request: Request): Promise<Response> {
   }
 
   const address = queryValue(request, 'address')
-  const versionParam = queryValue(request, 'version')
   const limitParam = queryValue(request, 'limit')
   const offsetParam = queryValue(request, 'offset')
   const typeParam = queryValue(request, 'type')
@@ -105,18 +92,12 @@ export async function GET(request: Request): Promise<Response> {
 
   try {
     const { getHoldingsActivity } = await import('../lib/holdings')
-    const activity = await getHoldingsActivity(
-      address,
-      parseVersion(versionParam),
-      parseLimit(limitParam),
-      parseOffset(offsetParam),
-      {
-        type: parseType(typeParam),
-        chainId: parseChainId(chainIdParam),
-        startTimestamp: parseTimestamp(startTimestampParam),
-        endTimestamp: parseTimestamp(endTimestampParam)
-      }
-    )
+    const activity = await getHoldingsActivity(address, parseLimit(limitParam), parseOffset(offsetParam), {
+      type: parseType(typeParam),
+      chainId: parseChainId(chainIdParam),
+      startTimestamp: parseTimestamp(startTimestampParam),
+      endTimestamp: parseTimestamp(endTimestampParam)
+    })
 
     return json(activity, {
       headers: {
@@ -143,5 +124,3 @@ export async function GET(request: Request): Promise<Response> {
     return json({ error: 'Failed to fetch holdings activity' }, { status: 502, headers: GET_CORS_HEADERS })
   }
 }
-
-export default GET

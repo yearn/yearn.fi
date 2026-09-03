@@ -103,7 +103,7 @@ export const portfolioProtocolReturnHistoryResponseSchema = z.object({
 
 export const portfolioResponseSchema = z.object({
   address: z.string(),
-  version: z.enum(['all', 'v2', 'v3']),
+  version: z.literal('all'),
   denomination: z.enum(['usd', 'eth']),
   timeframe: z.enum(['1y', 'all']),
   balance: portfolioHistorySimpleResponseSchema,
@@ -145,7 +145,7 @@ export const portfolioHistoryProgressResponseSchema = z.object({
 
 export const portfolioBreakdownResponseSchema = z.object({
   address: z.string(),
-  version: z.string(),
+  version: z.literal('all'),
   date: z.string(),
   timestamp: z.number(),
   summary: z.object({
@@ -193,7 +193,7 @@ const portfolioActivityEntrySchema = z.object({
 
 export const portfolioActivityResponseSchema = z.object({
   address: z.string(),
-  version: z.enum(['all', 'v2', 'v3']).optional().default('all'),
+  version: z.literal('all'),
   limit: z.number(),
   offset: z.number(),
   pageInfo: z.object({
@@ -205,7 +205,7 @@ export const portfolioActivityResponseSchema = z.object({
 
 export const portfolioActivityFacetsResponseSchema = z.object({
   address: z.string(),
-  version: z.enum(['all', 'v2', 'v3']).optional().default('all'),
+  version: z.literal('all'),
   facets: z.object({
     chainIds: z.array(z.number())
   })

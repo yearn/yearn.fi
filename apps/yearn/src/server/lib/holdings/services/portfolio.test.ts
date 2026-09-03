@@ -34,7 +34,7 @@ describe('getHoldingsPortfolio', () => {
   it('preserves cached responses without constructing the deferred settled context', async () => {
     const protocolReturn = {
       address: USER,
-      version: 'v3' as const,
+      version: 'all' as const,
       timeframe: 'all' as const,
       generatedAt: '2026-08-14T00:00:00.000Z',
       summary: {
@@ -98,11 +98,11 @@ describe('getHoldingsPortfolio', () => {
     getHoldingsProtocolReturnPortfolioMock.mockResolvedValue({ protocolReturn, growth })
 
     const { getHoldingsPortfolio } = await import('./portfolio')
-    const response = await getHoldingsPortfolio(USER, 'v3', 'parallel', 'paged', 'eth', 'all')
+    const response = await getHoldingsPortfolio(USER, 'eth', 'all')
 
     expect(response).toEqual({
       address: USER,
-      version: 'v3',
+      version: 'all',
       denomination: 'eth',
       timeframe: 'all',
       balance: {
@@ -119,42 +119,26 @@ describe('getHoldingsPortfolio', () => {
     })
     expect(getHistoricalHoldingsChartMock).toHaveBeenCalledWith(
       USER,
-      'v3',
-      'parallel',
-      'paged',
       'eth',
       'all',
       undefined,
       expect.any(Function),
       expect.any(Function)
     )
-    expect(getHoldingsProtocolReturnPortfolioMock).toHaveBeenCalledWith(
-      USER,
-      'v3',
-      'parallel',
-      'paged',
-      'all',
-      undefined,
-      undefined,
-      expect.any(Function)
-    )
+    expect(getHoldingsProtocolReturnPortfolioMock).toHaveBeenCalledWith(USER, 'all', undefined, expect.any(Function))
     expect(getSettledAddressScopedContextMock).not.toHaveBeenCalled()
-    expect(getHistoricalHoldingsChartMock.mock.calls[0]?.[7]).toBe(
-      getHoldingsProtocolReturnPortfolioMock.mock.calls[0]?.[7]
+    expect(getHistoricalHoldingsChartMock.mock.calls[0]?.[4]).toBe(
+      getHoldingsProtocolReturnPortfolioMock.mock.calls[0]?.[3]
     )
-    const loadCacheValidationVaults = getHistoricalHoldingsChartMock.mock.calls[0]?.[8] as () => Promise<unknown>
+    const loadCacheValidationVaults = getHistoricalHoldingsChartMock.mock.calls[0]?.[5] as () => Promise<unknown>
     await expect(loadCacheValidationVaults()).resolves.toEqual([{ chainId: 1, vaultAddress: VAULT }])
   })
 
   it('constructs the shared settled context once when both cold paths request it', async () => {
     const generatedAt = '2026-08-14T00:00:00.000Z'
-    const loadContextArgument = async (...args: unknown[]): Promise<void> => {
-      const loadContext = args[7] as () => Promise<unknown>
-      await loadContext()
-    }
     getSettledAddressScopedContextMock.mockResolvedValue({ address: USER })
     getHistoricalHoldingsChartMock.mockImplementation(async (...args: unknown[]) => {
-      await loadContextArgument(...args)
+      await (args[4] as () => Promise<unknown>)()
       const { reportHoldingsProgress } = await import('@/server/lib/holdings/services/debug')
       reportHoldingsProgress(76, 'Fetched historical token prices')
       return {
@@ -167,7 +151,7 @@ describe('getHoldingsPortfolio', () => {
       }
     })
     getHoldingsProtocolReturnPortfolioMock.mockImplementation(async (...args: unknown[]) => {
-      await loadContextArgument(...args)
+      await (args[3] as () => Promise<unknown>)()
       const { reportHoldingsProgress } = await import('@/server/lib/holdings/services/debug')
       reportHoldingsProgress(52, 'Prepared historical price requests')
       return {
@@ -197,14 +181,10 @@ describe('getHoldingsPortfolio', () => {
     })
 
     const { getHoldingsPortfolio } = await import('./portfolio')
-    await getHoldingsPortfolio(USER, 'all', 'seq', 'paged', 'usd', '1y', 'portfolio:test')
+    await getHoldingsPortfolio(USER, 'usd', '1y', 'portfolio:test')
 
     expect(getSettledAddressScopedContextMock).toHaveBeenCalledTimes(1)
-    expect(getSettledAddressScopedContextMock).toHaveBeenCalledWith({
-      userAddress: USER,
-      fetchType: 'seq',
-      paginationMode: 'paged'
-    })
+    expect(getSettledAddressScopedContextMock).toHaveBeenCalledWith({ userAddress: USER })
     expect(updateHoldingsProgressMock).toHaveBeenLastCalledWith('portfolio:test', {
       progress: 98,
       message: 'Saving and finalizing portfolio history',

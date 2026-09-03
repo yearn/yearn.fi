@@ -102,7 +102,7 @@ describe('fetchUserEvents', () => {
     vi.stubGlobal('fetch', fetchStub)
 
     const { fetchUserEvents } = await importGraphqlModule()
-    const events = await fetchUserEvents(USER, 'all', undefined, 'parallel')
+    const events = await fetchUserEvents(USER)
 
     expect(events.transfersIn).toHaveLength(2)
     expect(events.transfersIn[0]).toEqual(
@@ -167,7 +167,7 @@ describe('fetchUserEvents', () => {
     vi.stubGlobal('fetch', fetchStub)
 
     const { fetchUserEvents } = await importGraphqlModule()
-    const events = await fetchUserEvents(USER, 'all', undefined, 'parallel')
+    const events = await fetchUserEvents(USER)
     const transferRequests = fetchStub.mock.calls
       .map(([, init]) => JSON.parse(String((init as RequestInit | undefined)?.body ?? '{}')))
       .filter(({ query }) => String(query).includes('GetTransfersIn'))
@@ -178,74 +178,6 @@ describe('fetchUserEvents', () => {
       0, 1000, 2000, 3000, 4000, 5000, 6000, 7000, 8000
     ])
     expect(transferRequests.every(({ variables }) => variables.limit === 1000)).toBe(true)
-  })
-
-  it('uses bounded count-free pages for paginationMode=all without aggregate preflight', async () => {
-    const fetchStub = vi.fn(async (_input: string | URL | Request, init?: RequestInit) => {
-      const body = JSON.parse(String(init?.body ?? '{}')) as {
-        query: string
-        variables: Record<string, unknown>
-      }
-      const query = body.query
-      const variables = body.variables
-
-      if (query.includes('GetUserEventCountsAggregate')) {
-        throw new Error('Aggregate preflight should be skipped in paginationMode=all')
-      }
-
-      if (query.includes('GetTransfersIn')) {
-        expect(query).toContain('receiver: { _eq: $receiver }')
-        expect(variables.receiver).toBe(getAddress(USER))
-        expect(variables.limit).toBe(1000)
-        expect(variables.offset).toBe(0)
-
-        return createGraphqlResponse({
-          Transfer: [
-            {
-              id: 'bounded-page-transfer-in',
-              vaultAddress: VAULT,
-              chainId: 1,
-              blockNumber: 2,
-              blockTimestamp: 200,
-              logIndex: 2,
-              transactionHash: TX_HASH,
-              transactionFrom: ROUTER,
-              sender: ROUTER,
-              receiver: USER,
-              value: '900'
-            }
-          ]
-        })
-      }
-
-      if (
-        query.includes('GetDeposits(') ||
-        query.includes('GetWithdrawals(') ||
-        query.includes('GetTransfersOut') ||
-        query.includes('GetV2Deposits(') ||
-        query.includes('GetV2Withdrawals(')
-      ) {
-        return createGraphqlResponse({ [getEmptyResultKey(query)]: [] })
-      }
-
-      throw new Error(`Unexpected query: ${query}`)
-    })
-
-    vi.stubGlobal('fetch', fetchStub)
-
-    const { fetchUserEvents } = await importGraphqlModule()
-    const events = await fetchUserEvents(USER, 'all', undefined, 'parallel', 'all')
-
-    expect(events.transfersIn).toEqual([
-      expect.objectContaining({
-        id: 'bounded-page-transfer-in'
-      })
-    ])
-    expect(
-      fetchStub.mock.calls.some(([, init]) =>
-        String((init as RequestInit | undefined)?.body ?? '').includes('GetUserEventCountsAggregate')
-      )
-    ).toBe(false)
   })
 
   it('filters events from unsupported chains', async () => {
@@ -277,7 +209,7 @@ describe('fetchUserEvents', () => {
     vi.stubGlobal('fetch', fetchStub)
 
     const { fetchUserEvents } = await importGraphqlModule()
-    const events = await fetchUserEvents(USER, 'all', undefined, 'parallel', 'all')
+    const events = await fetchUserEvents(USER)
 
     expect(events.transfersIn).toEqual([
       expect.objectContaining({
@@ -330,10 +262,7 @@ describe('fetchUserEvents', () => {
     vi.stubGlobal('fetch', fetchStub)
 
     const { fetchUserEvents } = await importGraphqlModule()
-    const [leftEvents, rightEvents] = await Promise.all([
-      fetchUserEvents(USER, 'all', 123456),
-      fetchUserEvents(USER, 'all', 123456)
-    ])
+    const [leftEvents, rightEvents] = await Promise.all([fetchUserEvents(USER, 123456), fetchUserEvents(USER, 123456)])
 
     expect(leftEvents.transfersIn).toEqual([
       expect.objectContaining({
@@ -390,13 +319,13 @@ describe('fetchAddressActivityChainIdsByExistence', () => {
     vi.stubGlobal('fetch', fetchStub)
 
     const { fetchAddressActivityChainIdsByExistence } = await importGraphqlModule()
-    const chainIds = await fetchAddressActivityChainIdsByExistence(USER, 'all')
+    const chainIds = await fetchAddressActivityChainIdsByExistence(USER)
 
     expect(chainIds).toEqual([1, 8453])
     expect(fetchStub).toHaveBeenCalledTimes(7)
   })
 
-  it('respects the requested vault version when checking chain presence', async () => {
+  it('includes both v2 and v3 activity when checking chain presence', async () => {
     const fetchStub = vi.fn(async (_input: string | URL | Request, init?: RequestInit) => {
       const body = JSON.parse(String(init?.body ?? '{}')) as {
         variables: Record<string, unknown>
@@ -417,7 +346,6 @@ describe('fetchAddressActivityChainIdsByExistence', () => {
 
     const { fetchAddressActivityChainIdsByExistence } = await importGraphqlModule()
 
-    await expect(fetchAddressActivityChainIdsByExistence(USER, 'v3')).resolves.toEqual([1])
-    await expect(fetchAddressActivityChainIdsByExistence(USER, 'v2')).resolves.toEqual([137])
+    await expect(fetchAddressActivityChainIdsByExistence(USER)).resolves.toEqual([1, 137])
   })
 })

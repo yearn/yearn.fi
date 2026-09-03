@@ -7,9 +7,9 @@ const fetchHistoricalPricesForTokenTimestampsMock = vi.fn()
 const getHistoricalPriceFetchFailedBatchesMock = vi.fn()
 const getPriceAtTimestampMock = vi.fn()
 const getSettledAddressScopedContextMock = vi.fn()
-const getSettledVersionedPpsContextMock = vi.fn()
+const getSettledPpsContextMock = vi.fn()
 const getVaultIdentifiersMock = vi.fn()
-const selectVersionedEventsMock = vi.fn()
+const selectEventsMock = vi.fn()
 const fetchActivityEventsByTransactionHashesMock = vi.fn()
 const generateDailyTimestampsMock = vi.fn()
 const generateDailyTimestampsFromRangeMock = vi.fn()
@@ -37,10 +37,12 @@ vi.mock('./cache', () => ({
 vi.mock('./debug', () => ({
   debugError: vi.fn(),
   debugLog: debugLogMock,
-  reportHoldingsProgress: vi.fn()
+  getHoldingsProgressReporter: vi.fn(() => undefined),
+  reportHoldingsProgress: vi.fn(),
+  withHoldingsProgressReporter: (_reporter: unknown, fn: () => Promise<unknown>) => fn()
 }))
 
-vi.mock('./defillama', () => ({
+vi.mock('./prices', () => ({
   fetchHistoricalPricesForTokenTimestamps: fetchHistoricalPricesForTokenTimestampsMock,
   getChainPrefix: vi.fn(() => 'ethereum'),
   getHistoricalPriceFetchFailedBatches: getHistoricalPriceFetchFailedBatchesMock,
@@ -49,9 +51,9 @@ vi.mock('./defillama', () => ({
 
 vi.mock('./settledHoldingsContext', () => ({
   getSettledAddressScopedContext: getSettledAddressScopedContextMock,
-  getSettledVersionedPpsContext: getSettledVersionedPpsContextMock,
+  getSettledPpsContext: getSettledPpsContextMock,
   getVaultIdentifiers: getVaultIdentifiersMock,
-  selectVersionedEvents: selectVersionedEventsMock
+  selectEvents: selectEventsMock
 }))
 
 vi.mock('./graphql', () => ({
@@ -259,8 +261,8 @@ async function runNestedHybridHistoryScenario(hasExitPrice: boolean) {
   deriveNestedVaultAssetPriceDataMock.mockImplementation(actualNestedVaultPrices.deriveNestedVaultAssetPriceData)
   generateDailyTimestampsMock.mockReturnValue([firstHistoryTimestamp - 1, finalHistoryTimestamp - 1])
   getSettledAddressScopedContextMock.mockResolvedValue(nestedContext)
-  getSettledVersionedPpsContextMock.mockResolvedValue(nestedContext)
-  selectVersionedEventsMock.mockReturnValue({
+  getSettledPpsContextMock.mockResolvedValue(nestedContext)
+  selectEventsMock.mockReturnValue({
     events,
     vaultIdentifiers: nestedContext.selectedVaultIdentifiers
   })
@@ -288,7 +290,7 @@ async function runNestedHybridHistoryScenario(hasExitPrice: boolean) {
   )
 
   const { getHoldingsProtocolReturnPortfolio } = await import('./pnlSimple')
-  const response = await getHoldingsProtocolReturnPortfolio(USER, 'all', 'seq', 'paged', '1y')
+  const response = await getHoldingsProtocolReturnPortfolio(USER, '1y')
   const receiptDerivationArgs = deriveNestedVaultAssetPriceDataMock.mock.calls[0]?.[0] as
     | Parameters<typeof actualNestedVaultPrices.deriveNestedVaultAssetPriceData>[0]
     | undefined
@@ -352,8 +354,8 @@ describe('getHoldingsProtocolReturnHistory', () => {
     })
     getVaultIdentifiersMock.mockReturnValue([{ chainId: 1, vaultAddress: VAULT }])
     getSettledAddressScopedContextMock.mockResolvedValue(settledContext)
-    getSettledVersionedPpsContextMock.mockResolvedValue(settledContext)
-    selectVersionedEventsMock.mockReturnValue({
+    getSettledPpsContextMock.mockResolvedValue(settledContext)
+    selectEventsMock.mockReturnValue({
       events: settledContext.selectedEvents,
       vaultIdentifiers: settledContext.selectedVaultIdentifiers
     })
@@ -362,7 +364,7 @@ describe('getHoldingsProtocolReturnHistory', () => {
   it('starts all timeframe at the supported history floor', async () => {
     const { getHoldingsProtocolReturnHistory } = await import('./pnlSimple')
 
-    const response = await getHoldingsProtocolReturnHistory(USER, 'all', 'seq', 'paged', 'all')
+    const response = await getHoldingsProtocolReturnHistory(USER, 'all')
 
     expect(generateDailyTimestampsFromRangeMock).toHaveBeenCalledWith(
       HISTORY_START_TIMESTAMP,
@@ -376,7 +378,6 @@ describe('getHoldingsProtocolReturnHistory', () => {
     expect(saveCachedProtocolReturnHistoryMock).toHaveBeenCalledWith(
       {
         userAddress: USER,
-        version: 'all',
         timeframe: 'all',
         vaultScope: undefined
       },
@@ -390,7 +391,7 @@ describe('getHoldingsProtocolReturnHistory', () => {
   it('derives portfolio growth from the final protocol-return vaults', async () => {
     const { getHoldingsProtocolReturnPortfolio } = await import('./pnlSimple')
 
-    const response = await getHoldingsProtocolReturnPortfolio(USER, 'all', 'seq', 'paged', '1y')
+    const response = await getHoldingsProtocolReturnPortfolio(USER, '1y')
 
     expect(response.growth.generatedAt).toBe(response.protocolReturn.generatedAt)
     expect(response.growth.summary).toEqual({
@@ -442,7 +443,7 @@ describe('getHoldingsProtocolReturnHistory', () => {
         DEFAULT_LATEST_SETTLED_TIMESTAMP - 86_401,
         DEFAULT_LATEST_SETTLED_TIMESTAMP - 1
       ])
-      selectVersionedEventsMock.mockReturnValue({
+      selectEventsMock.mockReturnValue({
         events,
         vaultIdentifiers: settledContext.selectedVaultIdentifiers
       })
@@ -451,7 +452,7 @@ describe('getHoldingsProtocolReturnHistory', () => {
       )
 
       const { getHoldingsProtocolReturnPortfolio } = await import('./pnlSimple')
-      const response = await getHoldingsProtocolReturnPortfolio(USER, 'all', 'seq', 'paged', '1y')
+      const response = await getHoldingsProtocolReturnPortfolio(USER, '1y')
       const rowGrowthUsd = response.growth.vaults[0]?.growthUsd
       const aggregateGrowthUsd = response.protocolReturn.dataPoints.at(-1)?.growthUsd
       const familyGrowthUsd = response.protocolReturn.familySeries.reduce(
@@ -464,8 +465,8 @@ describe('getHoldingsProtocolReturnHistory', () => {
       const assetRequest = requestedSeries.find((request) => request.address.toLowerCase() === ASSET.toLowerCase())
 
       expect(fetchActivityEventsByTransactionHashesMock.mock.calls[0]?.[0]).toEqual(new Map([[1, ['0xdeposit']]]))
-      expect(fetchActivityEventsByTransactionHashesMock.mock.calls[0]?.[2]).toBe(DEFAULT_LATEST_SETTLED_TIMESTAMP)
-      expect(getSettledVersionedPpsContextMock.mock.calls[0]?.[0]).not.toHaveProperty('vaultIdentifiers')
+      expect(fetchActivityEventsByTransactionHashesMock.mock.calls[0]?.[1]).toBe(DEFAULT_LATEST_SETTLED_TIMESTAMP)
+      expect(getSettledPpsContextMock.mock.calls[0]?.[0]).not.toHaveProperty('vaultIdentifiers')
       expect(assetRequest?.timestamps).toEqual([EVENT_RECEIPT_DAY_TIMESTAMP, EVENT_RECEIPT_DAY_TIMESTAMP + 86_400])
       expect(response.growth.vaults[0]?.issues).toEqual([])
       expect(response.growth.vaults[0]?.growthUnderlying).toBeCloseTo(10)
@@ -493,13 +494,13 @@ describe('getHoldingsProtocolReturnHistory', () => {
       }
     ] as TRawPnlEvent[]
     generateDailyTimestampsMock.mockReturnValue([exitTimestamp + day])
-    selectVersionedEventsMock.mockReturnValue({
+    selectEventsMock.mockReturnValue({
       events,
       vaultIdentifiers: settledContext.selectedVaultIdentifiers
     })
 
     const { getHoldingsProtocolReturnPortfolio } = await import('./pnlSimple')
-    await getHoldingsProtocolReturnPortfolio(USER, 'all', 'seq', 'paged', '1y')
+    await getHoldingsProtocolReturnPortfolio(USER, '1y')
 
     const requestedSeries = fetchHistoricalPricesForTokenTimestampsMock.mock.calls.flatMap(
       ([requests]) => requests as Array<{ address: string; timestamps: number[] }>
@@ -542,7 +543,7 @@ describe('getHoldingsProtocolReturnHistory', () => {
       [depositTimestamp + day, 1]
     ])
     generateDailyTimestampsMock.mockReturnValue([firstHistoryTimestamp - 1, finalHistoryTimestamp - 1])
-    selectVersionedEventsMock.mockReturnValue({
+    selectEventsMock.mockReturnValue({
       events,
       vaultIdentifiers: settledContext.selectedVaultIdentifiers
     })
@@ -559,7 +560,7 @@ describe('getHoldingsProtocolReturnHistory', () => {
     )
 
     const { getHoldingsProtocolReturnPortfolio } = await import('./pnlSimple')
-    const response = await getHoldingsProtocolReturnPortfolio(USER, 'all', 'seq', 'paged', '1y')
+    const response = await getHoldingsProtocolReturnPortfolio(USER, '1y')
     const rowGrowthUsd = response.growth.vaults[0]?.growthUsd
     const aggregateGrowthUsd = response.protocolReturn.dataPoints.at(-1)?.growthUsd
     const familyGrowthUsd = response.protocolReturn.familySeries[0]?.dataPoints.at(-1)?.growthUsd
@@ -636,7 +637,7 @@ describe('getHoldingsProtocolReturnHistory', () => {
     )
 
     const { getHoldingsProtocolReturnPortfolio } = await import('./pnlSimple')
-    const response = await getHoldingsProtocolReturnPortfolio(USER, 'all', 'seq', 'paged', '1y')
+    const response = await getHoldingsProtocolReturnPortfolio(USER, '1y')
     const growthVault = response.growth.vaults[0]
 
     expect(response.protocolReturn.summary.isComplete).toBe(false)
@@ -716,7 +717,7 @@ describe('getHoldingsProtocolReturnHistory', () => {
     })
 
     const { getHoldingsProtocolReturnPortfolio } = await import('./pnlSimple')
-    const response = await getHoldingsProtocolReturnPortfolio(USER, 'all', 'seq', 'paged', '1y')
+    const response = await getHoldingsProtocolReturnPortfolio(USER, '1y')
 
     expect(response.growth.vaults[0]?.metadata).toMatchObject({
       decimals: 18,
@@ -749,20 +750,11 @@ describe('getHoldingsProtocolReturnHistory', () => {
     })
 
     const { getHoldingsProtocolReturnHistory } = await import('./pnlSimple')
-    const response = await getHoldingsProtocolReturnHistory(
-      USER,
-      'all',
-      'parallel',
-      'paged',
-      '1y',
-      undefined,
-      undefined,
-      loadSettledContext
-    )
+    const response = await getHoldingsProtocolReturnHistory(USER, '1y', undefined, loadSettledContext)
 
     expect(response).toBe(cachedResponse)
     expect(loadSettledContext).not.toHaveBeenCalled()
-    expect(getSettledVersionedPpsContextMock).not.toHaveBeenCalled()
+    expect(getSettledPpsContextMock).not.toHaveBeenCalled()
     expect(saveCachedProtocolReturnHistoryMock).not.toHaveBeenCalled()
   })
 
@@ -770,7 +762,7 @@ describe('getHoldingsProtocolReturnHistory', () => {
     getPPSMock.mockReturnValue(null)
 
     const { getHoldingsProtocolReturnHistory } = await import('./pnlSimple')
-    const response = await getHoldingsProtocolReturnHistory(USER, 'all', 'parallel', 'paged', '1y')
+    const response = await getHoldingsProtocolReturnHistory(USER, '1y')
 
     expect(response.summary.isComplete).toBe(false)
     expect(response.summary.totalVaults).toBe(1)
@@ -787,7 +779,7 @@ describe('getHoldingsProtocolReturnHistory', () => {
     fetchHistoricalPricesForTokenTimestampsMock.mockResolvedValue(new Map())
 
     const { getHoldingsProtocolReturnHistory } = await import('./pnlSimple')
-    const response = await getHoldingsProtocolReturnHistory(USER, 'all', 'parallel', 'paged', '1y')
+    const response = await getHoldingsProtocolReturnHistory(USER, '1y')
 
     expect(response.summary.totalVaults).toBe(1)
     expect(saveCachedProtocolReturnHistoryMock).not.toHaveBeenCalled()
@@ -797,7 +789,7 @@ describe('getHoldingsProtocolReturnHistory', () => {
     getHistoricalPriceFetchFailedBatchesMock.mockReturnValue(1)
 
     const { getHoldingsProtocolReturnHistory } = await import('./pnlSimple')
-    const response = await getHoldingsProtocolReturnHistory(USER, 'all', 'parallel', 'paged', '1y')
+    const response = await getHoldingsProtocolReturnHistory(USER, '1y')
 
     expect(response.summary.totalVaults).toBe(1)
     expect(saveCachedProtocolReturnHistoryMock).not.toHaveBeenCalled()
@@ -807,19 +799,19 @@ describe('getHoldingsProtocolReturnHistory', () => {
     getPpsFetchFailedVaultsMock.mockReturnValue(1)
 
     const { getHoldingsProtocolReturnHistory } = await import('./pnlSimple')
-    await getHoldingsProtocolReturnHistory(USER, 'all', 'parallel', 'paged', '1y')
+    await getHoldingsProtocolReturnHistory(USER, '1y')
 
     expect(saveCachedProtocolReturnHistoryMock).not.toHaveBeenCalled()
   })
 
   it('does not cache protocol return history when a metadata fallback fails', async () => {
-    getSettledVersionedPpsContextMock.mockResolvedValue({
+    getSettledPpsContextMock.mockResolvedValue({
       ...settledContext,
       metadataFetchFailedVaults: 1
     })
 
     const { getHoldingsProtocolReturnHistory } = await import('./pnlSimple')
-    await getHoldingsProtocolReturnHistory(USER, 'all', 'parallel', 'paged', '1y')
+    await getHoldingsProtocolReturnHistory(USER, '1y')
 
     expect(saveCachedProtocolReturnHistoryMock).not.toHaveBeenCalled()
   })
@@ -828,7 +820,7 @@ describe('getHoldingsProtocolReturnHistory', () => {
     getNestedVaultPpsIdentifiersFromPriceRequestsMock.mockReturnValue([{ chainId: 1, vaultAddress: NESTED_VAULT }])
 
     const { getHoldingsProtocolReturnHistory } = await import('./pnlSimple')
-    const response = await getHoldingsProtocolReturnHistory(USER, 'all', 'parallel', 'paged', '1y')
+    const response = await getHoldingsProtocolReturnHistory(USER, '1y')
 
     expect(saveCachedProtocolReturnHistoryMock).toHaveBeenCalledWith(
       expect.any(Object),
@@ -855,7 +847,7 @@ describe('getHoldingsProtocolReturnHistory', () => {
     generateDailyTimestampsMock.mockReturnValue([firstDay, secondDay, thirdDay, fourthDay])
 
     const { getHoldingsProtocolReturnHistory } = await import('./pnlSimple')
-    await getHoldingsProtocolReturnHistory(USER, 'all', 'parallel', 'paged', '1y')
+    await getHoldingsProtocolReturnHistory(USER, '1y')
 
     const firstSavedResponse = saveCachedProtocolReturnHistoryMock.mock.calls[0]?.[3]
     expect(firstSavedResponse).toBeDefined()
@@ -867,7 +859,7 @@ describe('getHoldingsProtocolReturnHistory', () => {
     })
     saveCachedProtocolReturnHistoryMock.mockClear()
 
-    const appended = await getHoldingsProtocolReturnHistory(USER, 'all', 'parallel', 'paged', '1y')
+    const appended = await getHoldingsProtocolReturnHistory(USER, '1y')
     expect(appended.dataPoints.map((point) => point.timestamp)).toEqual([
       secondDay + 1,
       thirdDay + 1,
@@ -881,7 +873,7 @@ describe('getHoldingsProtocolReturnHistory', () => {
     )
 
     getCachedProtocolReturnHistoryMock.mockResolvedValue(null)
-    const rebuilt = await getHoldingsProtocolReturnHistory(USER, 'all', 'parallel', 'paged', '1y')
+    const rebuilt = await getHoldingsProtocolReturnHistory(USER, '1y')
     const withoutGeneratedAtAndAggregateIndex = (response: typeof rebuilt) => ({
       ...response,
       generatedAt: '',
@@ -906,7 +898,7 @@ describe('getHoldingsProtocolReturnHistory', () => {
     generateDailyTimestampsMock.mockReturnValue([firstDay, secondDay])
 
     const { getHoldingsProtocolReturnHistory } = await import('./pnlSimple')
-    await getHoldingsProtocolReturnHistory(USER, 'all', 'parallel', 'paged', '1y')
+    await getHoldingsProtocolReturnHistory(USER, '1y')
     const cachedResponse = saveCachedProtocolReturnHistoryMock.mock.calls[0]?.[3]
 
     generateDailyTimestampsMock.mockReturnValue([secondDay, thirdDay])
@@ -919,7 +911,7 @@ describe('getHoldingsProtocolReturnHistory', () => {
     })
     debugLogMock.mockClear()
 
-    await getHoldingsProtocolReturnHistory(USER, 'all', 'parallel', 'paged', '1y')
+    await getHoldingsProtocolReturnHistory(USER, '1y')
 
     expect(debugLogMock).toHaveBeenCalledWith(
       'protocol-return-history',
@@ -950,7 +942,7 @@ describe('getHoldingsProtocolReturnHistory', () => {
     )
 
     const { getHoldingsProtocolReturnHistory } = await import('./pnlSimple')
-    await getHoldingsProtocolReturnHistory(USER, 'all', 'parallel', 'paged', '1y')
+    await getHoldingsProtocolReturnHistory(USER, '1y')
     const cachedResponse = saveCachedProtocolReturnHistoryMock.mock.calls[0]?.[3]
 
     generateDailyTimestampsMock.mockReturnValue([secondDay, thirdDay])
@@ -972,7 +964,7 @@ describe('getHoldingsProtocolReturnHistory', () => {
     })
     debugLogMock.mockClear()
 
-    await getHoldingsProtocolReturnHistory(USER, 'all', 'parallel', 'paged', '1y')
+    await getHoldingsProtocolReturnHistory(USER, '1y')
 
     expect(debugLogMock).toHaveBeenCalledWith(
       'protocol-return-history',
@@ -1010,12 +1002,12 @@ describe('getHoldingsProtocolReturnHistory', () => {
     getCachedProtocolReturnHistoryMock.mockReturnValue(cacheLookupPromise)
 
     const { getHoldingsProtocolReturnHistory } = await import('./pnlSimple')
-    const firstRequest = getHoldingsProtocolReturnHistory(USER, 'all', 'parallel', 'paged', '1y')
-    const secondRequest = getHoldingsProtocolReturnHistory(USER, 'all', 'parallel', 'paged', '1y')
+    const firstRequest = getHoldingsProtocolReturnHistory(USER, '1y')
+    const secondRequest = getHoldingsProtocolReturnHistory(USER, '1y')
 
     expect(getCachedProtocolReturnHistoryMock).toHaveBeenCalledTimes(1)
     cacheLookup.resolve?.(cachedPortfolioResponse)
     await expect(Promise.all([firstRequest, secondRequest])).resolves.toEqual([cachedResponse, cachedResponse])
-    expect(getSettledVersionedPpsContextMock).not.toHaveBeenCalled()
+    expect(getSettledPpsContextMock).not.toHaveBeenCalled()
   })
 })

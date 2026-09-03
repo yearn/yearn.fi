@@ -1,611 +1,212 @@
 # Holdings APIs
 
-Calculates historical holdings value, per-vault breakdowns, recent activity, and protocol-return history for Yearn vault positions.
+The holdings system calculates settled balance history, current per-vault balances, recent activity, protocol return, and per-vault growth for Yearn positions.
 
-## Runtime Shape
+## Runtime shape
 
-```
-Frontend hooks
-  │
-  ├─ GET /api/holdings/portfolio
+```text
+Portfolio UI
+  └─ GET /api/holdings/portfolio
+       ├─ balance history
+       ├─ protocol-return history
+       └─ per-vault growth
+
+Standalone consumers
   ├─ GET /api/holdings/history
-  ├─ GET /api/holdings/progress
   ├─ GET /api/holdings/breakdown
   ├─ GET /api/holdings/activity
   ├─ GET /api/holdings/activity-facets
   ├─ GET /api/holdings/protocol-return/history
-  └─ GET /api/holdings/pnl/simple-history
-      │
-      ▼
-Holdings services
-  │
-  ├─ Envio GraphQL: deposits, withdrawals, transfers
-  ├─ Kong: vault metadata and historical PPS
-  ├─ yearn-prices or DefiLlama: historical token prices
-  └─ Upstash Redis: optional server-side cache, progress, invalidations
+  └─ GET /api/holdings/progress
+
+Upstreams
+  ├─ Envio GraphQL: V2 and V3 deposits, withdrawals, and transfers
+  ├─ Kong: vault metadata and historical price per share
+  ├─ yearn-prices: historical asset prices
+  └─ Upstash Redis: optional event, result, invalidation, and progress storage
 ```
 
-Next exposes the holdings endpoints through explicit files under `app/api/holdings/**/route.ts`; implementation modules live under `src/server/holdings/**`.
+The portfolio route is the UI's only history loader. Balance and Growth calculations begin in parallel and share a lazily-created wallet context when either path needs it. A complete cache hit can return without fetching wallet events.
 
-## Core Model
-
-### Holdings Value
+## Valuation model
 
 ```text
-USD value = vault shares * price per share * vault asset USD price
+USD value = vault shares × price per share × vault asset USD price
 ```
 
-- `vault shares`: reconstructed from indexed deposits, withdrawals, and transfers.
-- `price per share`: fetched from Kong historical PPS data.
-- `vault asset USD price`: fetched from yearn-prices when configured, otherwise DefiLlama.
+- Shares are reconstructed from deposits, withdrawals, and transfers.
+- Historical price per share comes from Kong's deployed per-vault endpoint.
+- Historical asset prices come from yearn-prices.
+- Nested Yearn vault assets are resolved recursively using their own price-per-share history.
 
-LP and nested-vault assets are valued the same way: the vault asset token receives a USD price, then vault shares and PPS convert the user's position into that asset amount.
+History contains settled UTC days only. `1y` returns the latest 365 settled days. `all` starts at `2024-01-01` and ends at the latest settled day. Daily valuation is performed at `23:59:59 UTC`.
 
-### Settled Daily History
+## Event model
 
-History endpoints return settled UTC days only. The latest point is the previous settled UTC day, not an intraday moving "today" point.
+The fixed event pipeline fetches both V2 and V3 activity with bounded, count-free parallel pagination. There is no public vault-version or event-fetch strategy selector.
 
-- `timeframe=1y`: last `365` settled UTC days.
-- `timeframe=all`: supported range from `2024-01-01T00:00:00Z` through the latest settled UTC day.
+- V3 deposits and withdrawals use the `owner` field.
+- V2 deposits and withdrawals use the `recipient` field.
+- Transfers account for share movement outside direct deposits and withdrawals.
+- Mint and burn transfers are removed when an indexed deposit or withdrawal already represents them.
+- Transfer-only vaults retain mint and burn transfers.
+- Staking positions are mapped to their underlying vault family.
+- Vaults marked `isHidden=true` by Kong are excluded everywhere.
 
-The API internally values each day at `23:59:59 UTC`.
+Recent activity may use chain receipts to classify zaps, swaps, rewards, and direct V2 vault calls. Receipt enrichment is best effort; indexed events remain authoritative when RPC enrichment is unavailable.
 
 ## Services
 
-| Service | Source | Purpose |
-|---------|--------|---------|
-| `graphql.ts` | Envio indexer | Fetch V2/V3 deposits, withdrawals, and transfers with bounded count-free pages |
-| `settledHoldingsContext.ts` | Local orchestration | Build reusable settled event, timeline, metadata, raw PnL, and PPS contexts |
-| `vaults.ts` | Kong | Fetch global vault metadata, staking-to-family mappings, hidden flags, and snapshot fallback metadata |
-| `kong.ts` | Kong | Fetch historical PPS timelines with request dedupe/retries and optional bounded multi-vault batches |
-| `defillama.ts` | yearn-prices / DefiLlama | Switchable historical price client with request batching and retries |
-| `nestedVaultPrices.ts` | Local | Expand and derive nested vault asset pricing where a vault asset is another Yearn vault |
-| `aggregator.ts` | Local | Holdings history, ETH-denominated history, and breakdown calculations |
-| `activity.ts` | Local | Recent user activity classification: deposit, withdraw, stake, unstake, transfer, swap |
-| `activityReceiptEnrichment.ts` | Chain RPC | Optional transaction and receipt enrichment for zaps, reward claims, and direct V2 vault actions |
-| `pnlEvents.ts` | Local | Shared raw event records for protocol-return history |
-| `pnlSimple.ts` | Local | Protocol-return exposure history without FIFO cost-basis accounting |
-| `cache.ts` | Upstash Redis | Daily totals and lazy vault invalidation |
-| `progress.ts` | Upstash Redis | Short-lived progress records and logs for long history requests |
+| File | Responsibility |
+|------|----------------|
+| `graphql.ts` | Fetch combined V2/V3 wallet events and activity pages from Envio |
+| `settledHoldingsContext.ts` | Share wallet events, position timeline, metadata, and PPS work across calculations |
+| `walletEventCache.ts` | Cache the combined bounded wallet event response |
+| `vaults.ts` | Resolve Kong metadata, hidden flags, staking families, and metadata snapshots |
+| `kong.ts` | Fetch historical PPS from the deployed Kong route with retries, deduplication, and one global concurrency limit |
+| `prices.ts` | Fetch yearn-prices batch and range history with retries, splitting, and one global concurrency limit |
+| `nestedVaultPrices.ts` | Resolve nested Yearn vault asset prices |
+| `aggregator.ts` | Calculate balance history, ETH-denominated history, and breakdowns |
+| `activity.ts` | Classify recent activity |
+| `pnlSimple.ts` | Calculate protocol-return history and current per-vault growth |
+| `portfolio.ts` | Run balance and Growth lanes together and merge the response |
+| `cache.ts` | Store daily totals and compressed protocol-return snapshots |
+| `progress.ts` | Store short-lived progress records |
 
-## Event Semantics
+## Historical prices
 
-The API supports Yearn V2 and V3 vaults.
+`prices.ts` always uses yearn-prices.
 
-| Version | Deposit event | Withdraw event | User field |
-|---------|---------------|----------------|------------|
-| V3 | `Deposit` | `Withdraw` | `owner` |
-| V2 | `V2Deposit` | `V2Withdraw` | `recipient` |
+- Base URL: `YEARN_PRICES_BASE_URL`, then `YEARN_PRICES_API_URL`, then `https://prices.yearn.dev`.
+- Authentication: `YEARN_PRICES_API_KEY`, falling back to `API_KEY_PORTFOLIO`, sent as a bearer token.
+- Contiguous daily requests of up to 366 days use `/api/prices/rangeHistorical`.
+- Sparse and single-day requests use `/api/prices/batchHistorical`.
+- Requested timestamps are normalized to UTC day end for the upstream call and mapped back to their original timestamps locally.
+- Failed or incomplete batches are recorded so an incomplete portfolio result is not persisted as a valid long-lived snapshot.
 
-Transfers are also indexed to account for share movement not represented by direct deposits or withdrawals.
+## Historical PPS
 
-- Transfers in: user received vault shares.
-- Transfers out: user sent vault shares.
-- Mint transfers are excluded when deposit events already cover the vault.
-- Burn transfers are excluded when withdraw events already cover the vault.
-- Transfer-only vaults keep mint/burn transfers because there may be no indexed deposit/withdraw events.
-- Staking vaults are mapped to the underlying family vault through Kong metadata and local staking mappings.
-- Vaults marked `isHidden=true` in authoritative Kong metadata are excluded from holdings totals, breakdown rows, activity rows, and protocol-return history.
+`kong.ts` uses Kong's deployed per-vault PPS endpoint as its only source.
 
-## Price Provider
-
-`defillama.ts` is intentionally still named for compatibility, but it now selects between yearn-prices and DefiLlama.
-
-Provider selection:
-
-- `HOLDINGS_PRICE_PROVIDER=auto`: use yearn-prices when `YEARN_PRICES_API_KEY` or `API_KEY_PORTFOLIO` is present; otherwise use DefiLlama.
-- `HOLDINGS_PRICE_PROVIDER=yearn-prices`: require yearn-prices credentials and fail fast if missing.
-- `HOLDINGS_PRICE_PROVIDER=defillama`: force DefiLlama.
-
-yearn-prices behavior:
-
-- Base URL defaults to `https://prices.yearn.dev`.
-- API key is sent as `Authorization: Bearer <key>`.
-- `YEARN_PRICES_API_KEY` has priority; `API_KEY_PORTFOLIO` is the fallback.
-- Timestamps are normalized to UTC day end before the API request.
-- Contiguous daily histories up to `366` days use `/api/prices/rangeHistorical`.
-- Sparse or single-day lookups use `/api/prices/batchHistorical`.
-- Returned UTC day-end prices are materialized back onto the originally requested timestamps for the response map.
-- Prices are not read from or written to the local database.
-
-DefiLlama behavior:
-
-- Free route: `https://coins.llama.fi/batchHistorical?coins=...`.
-- Pro route is used when `DEFILLAMA_API_KEY` is set: `https://pro-api.llama.fi/{key}/coins/batchHistorical?coins=...`.
-- Strict timestamp mode only accepts exact or near-exact prior prices; UTC-day mode accepts prices within the day window.
-- Prices and misses are not read from or written to the local database.
+- Duplicate requests for the same vault share one in-flight promise.
+- Initial requests, retries, and concurrent portfolio callers share one global request limit.
+- A failed PPS request is marked incomplete and prevents the calculated zero balance history from entering the long-lived cache.
 
 ## Endpoints
 
-Public holdings data routes support CORS, `GET`, and `OPTIONS`. Request rate limiting is handled by Vercel Firewall project configuration before requests reach the Next.js route handlers.
+All public holdings routes support `GET` and `OPTIONS` and use Vercel Firewall for request rate limiting.
 
 ### `GET /api/holdings/portfolio`
 
-Combined balance, protocol-return, and per-vault growth response used by the portfolio page. It shares one deferred wallet context across cold calculations and can serve complete balance and protocol snapshots without loading wallet events. The route defaults to bounded parallel event fetching; legacy standalone routes keep their existing sequential default.
+Combined response used by the Portfolio page.
 
-```bash
-curl "http://localhost:3000/api/holdings/portfolio?address=0x...&denomination=usd&timeframe=1y"
+```text
+address=<EVM address>                       required
+denomination=usd|eth                       default: usd
+timeframe=1y|all                           default: 1y
+progressId=<client-generated id>           optional
+debug=true                                 optional
 ```
 
-Query params are `address`, `version`, `denomination`, `timeframe`, `progressId`, and `debug`. The response contains `balance`, `protocolReturn`, and `growth` sections. When `progressId` is supplied, the route reports one combined progress record while tracking the balance and Growth calculations separately. The portfolio UI displays only the primary message from the lane with the most weighted work remaining.
+The response contains `balance`, `protocolReturn`, and `growth`. Its `version` is always `all` because V2 and V3 events are one portfolio.
 
-Combined progress weights the balance lane at 40% and the protocol-return/Growth lane at 60%. It is capped at 98% until both parallel branches finish, then the route marks the record complete at 100%. Cache hits skip completed stages without artificial delays.
+With `progressId`, balance contributes 40% and Growth contributes 60% to one combined progress record. Only the lane with the greater remaining weighted work supplies the visible progress message. The result stays below 100% until both lanes finish.
 
 ### `GET /api/holdings/history`
 
-Daily holdings chart.
+Standalone settled balance chart.
 
-Examples:
-
-```bash
-curl "http://localhost:3000/api/holdings/history?address=0x..."
-curl "http://localhost:3000/api/holdings/history?address=0x...&denomination=eth&timeframe=all"
-curl "http://localhost:3000/api/holdings/history?address=0x...&vaults=1:0x...,1:0x..."
+```text
+address=<EVM address>                       required
+denomination=usd|eth                       default: usd
+timeframe=1y|all                           default: 1y
+vault=<address>&chainId=<id>                optional single-vault filter
+vaults=<chainId:address,...>                optional multi-vault filter
+progressId=<client-generated id>           optional
+debug=true                                 optional
 ```
 
-Query params:
-
-| Param | Required | Default | Description |
-|-------|----------|---------|-------------|
-| `address` | Yes | - | User EVM address |
-| `version` | No | `all` | `v2`, `v3`, or `all` |
-| `denomination` | No | `usd` | `usd` or `eth` |
-| `timeframe` | No | `1y` | `1y` or `all` |
-| `vault` + `chainId` | No | - | Single family vault filter |
-| `vaults` | No | - | Comma-separated multi-vault filter, e.g. `1:0xvault,8453:0xvault` |
-| `fetchType` | No | `seq` | `seq` or `parallel` |
-| `paginationMode` | No | `paged` | Compatibility selector; both `paged` and `all` use bounded 1,000-row pages |
-| `progressId` | No | - | Stable progress ID clients can poll through `/api/holdings/progress` |
-| `debug` | No | - | Enables the route debug context |
-
-Response:
-
-```json
-{
-  "address": "0x...",
-  "version": "all",
-  "denomination": "usd",
-  "timeframe": "1y",
-  "dataPoints": [
-    { "date": "2026-05-05", "value": 1000.5 },
-    { "date": "2026-05-06", "value": 1005.25 }
-  ]
-}
-```
-
-Returns `404` when the wallet has no indexed holdings activity for the request.
-
-### `GET /api/holdings/progress`
-
-Reads Redis-backed progress for long-running holdings routes. `portfolio`, `history`, and `protocol-return/history` can write progress when the caller passes a valid `progressId`.
-
-Example:
-
-```bash
-curl "http://localhost:3000/api/holdings/progress?id=portfolio:0x..."
-```
-
-Query params:
-
-| Param | Required | Default | Description |
-|-------|----------|---------|-------------|
-| `id` | Yes | - | Progress ID previously passed to a progress-enabled holdings route |
-
-Response:
-
-```json
-{
-  "id": "portfolio:0x...",
-  "route": "history",
-  "addressHash": "sha256...",
-  "status": "running",
-  "progress": 45,
-  "message": "Fetching historical prices",
-  "detail": null,
-  "startedAt": 1778111999000,
-  "updatedAt": 1778112005000,
-  "logs": []
-}
-```
-
-Progress records expire after 10 minutes. The route returns `404` when the ID is invalid, expired, missing, or Redis progress is unavailable, and it always sends `Cache-Control: no-store`.
-
-### `GET /api/holdings/breakdown`
-
-Per-vault valuation for a settled UTC date. Without `date`, it uses the latest settled holdings-history day.
-
-Examples:
-
-```bash
-curl "http://localhost:3000/api/holdings/breakdown?address=0x..."
-curl "http://localhost:3000/api/holdings/breakdown?address=0x...&date=2026-05-06"
-```
-
-Query params:
-
-| Param | Required | Default | Description |
-|-------|----------|---------|-------------|
-| `address` | Yes | - | User EVM address |
-| `date` | No | latest settled UTC day | UTC date in `YYYY-MM-DD` format |
-| `version` | No | `all` | `v2`, `v3`, or `all` |
-| `fetchType` | No | `seq` | `seq` or `parallel` |
-| `paginationMode` | No | `paged` | Compatibility selector; both `paged` and `all` use bounded 1,000-row pages |
-| `debug` | No | - | Enables the route debug context |
-
-Response is intentionally verbose because it is used to explain the latest chart point:
-
-```json
-{
-  "address": "0x...",
-  "version": "all",
-  "date": "2026-05-06",
-  "timestamp": 1778111999,
-  "summary": {
-    "totalVaults": 3,
-    "vaultsWithShares": 2,
-    "totalUsdValue": 1250.5,
-    "missingMetadata": 0,
-    "missingPps": 0,
-    "missingPrice": 1
-  },
-  "vaults": [
-    {
-      "chainId": 1,
-      "vaultAddress": "0x...",
-      "shares": "1000000000000000000",
-      "sharesFormatted": 1,
-      "pricePerShare": 1.05,
-      "tokenPrice": 1,
-      "usdValue": 1.05,
-      "metadata": {
-        "symbol": "USDC",
-        "decimals": 18,
-        "tokenAddress": "0x..."
-      },
-      "status": "ok"
-    }
-  ],
-  "issues": {
-    "missingMetadata": [],
-    "missingPps": [],
-    "missingPrice": ["1:0x..."]
-  }
-}
-```
-
-### `GET /api/holdings/activity`
-
-Recent classified vault activity.
-
-```bash
-curl "http://localhost:3000/api/holdings/activity?address=0x..."
-curl "http://localhost:3000/api/holdings/activity?address=0x...&limit=20&offset=20"
-curl "http://localhost:3000/api/holdings/activity?address=0x...&type=withdraw&chainId=1&includeFacets=1"
-```
-
-Query params:
-
-| Param | Required | Default | Description |
-|-------|----------|---------|-------------|
-| `address` | Yes | - | User EVM address |
-| `version` | No | `all` | `v2`, `v3`, or `all` |
-| `limit` | No | `10` | Integer clamped to `1..50` |
-| `offset` | No | `0` | Non-negative integer |
-| `type` | No | `all` | `deposit`, `withdraw`, `stake`, `unstake`, `transfer`, `swap`, or `all` |
-| `chainId` | No | - | Positive integer chain filter |
-| `startTimestamp` | No | - | Inclusive Unix timestamp lower bound |
-| `endTimestamp` | No | - | Inclusive Unix timestamp upper bound |
-| `includeFacets` | No | `false` | `true` or `1` includes `facets.chainIds` for the returned page |
-
-Response (`facets` appears only when `includeFacets=true` or `includeFacets=1`):
-
-```json
-{
-  "address": "0x...",
-  "version": "all",
-  "limit": 10,
-  "offset": 0,
-  "facets": {
-    "chainIds": [1, 8453]
-  },
-  "pageInfo": {
-    "hasMore": true,
-    "nextOffset": 10
-  },
-  "entries": [
-    {
-      "chainId": 1,
-      "txHash": "0x...",
-      "timestamp": 1778111999,
-      "action": "deposit",
-      "displayType": "zap",
-      "transferDirection": "in",
-      "vaultAddress": "0x...",
-      "familyVaultAddress": "0x...",
-      "assetSymbol": "USDC",
-      "assetAmount": "1000000",
-      "assetAmountFormatted": 1,
-      "inputTokenAddress": "0x...",
-      "inputTokenSymbol": "USDC",
-      "inputTokenAmount": "1000000",
-      "inputTokenAmountFormatted": 1,
-      "outputTokenAddress": "0x...",
-      "outputTokenSymbol": "yvUSDC",
-      "outputTokenAmount": "1000000",
-      "outputTokenAmountFormatted": 1,
-      "shareAmount": "1000000",
-      "shareAmountFormatted": 1,
-      "status": "ok"
-    }
-  ]
-}
-```
-
-Activity classification merges address-scoped events with transaction-scoped context, so router-mediated staking, unstaking, deposit, withdraw, transfer, and swap flows can be represented as user actions. Configure `RPC_URI_FOR_<chainId>` for richer server-side receipt enrichment of zaps, reward claims, and direct V2 vault actions; without it the API falls back to `NEXT_PUBLIC_RPC_URI_FOR_<chainId>`. If neither is configured, the API still returns indexed activity rows, but some enriched input/output fields may be absent.
-
-### `GET /api/holdings/activity-facets`
-
-Returns activity chain facets without fetching the full paginated activity response. This is useful for building chain filter controls before the user requests activity rows.
-
-```bash
-curl "http://localhost:3000/api/holdings/activity-facets?address=0x..."
-```
-
-Query params:
-
-| Param | Required | Default | Description |
-|-------|----------|---------|-------------|
-| `address` | Yes | - | User EVM address |
-| `version` | No | `all` | `v2`, `v3`, or `all` |
-
-Response:
-
-```json
-{
-  "address": "0x...",
-  "version": "all",
-  "facets": {
-    "chainIds": [1, 8453]
-  }
-}
-```
+Returns `404` when the wallet has no indexed holdings activity.
 
 ### `GET /api/holdings/protocol-return/history`
 
-Protocol-return history for a user's vault exposure. This is not a cost-basis PnL engine. It measures how much Yearn changed the user's withdrawable underlying amount while the user held vault shares. Receipt-time token prices weight different assets into one portfolio percentage.
-
-The compatibility alias `/api/holdings/pnl/simple-history` routes to the same handler.
-
-Examples:
-
-```bash
-curl "http://localhost:3000/api/holdings/protocol-return/history?address=0x..."
-curl "http://localhost:3000/api/holdings/protocol-return/history?address=0x...&timeframe=all"
-curl "http://localhost:3000/api/holdings/protocol-return/history?address=0x...&vaults=1:0x...,1:0x..."
-```
-
-Query params:
-
-| Param | Required | Default | Description |
-|-------|----------|---------|-------------|
-| `address` | Yes | - | User EVM address |
-| `version` | No | `all` | `v2`, `v3`, or `all` |
-| `timeframe` | No | `1y` | `1y` or `all` |
-| `vault` + `chainId` | No | - | Single family vault filter |
-| `vaults` | No | - | Comma-separated multi-vault filter |
-| `fetchType` | No | `seq` | `seq` or `parallel` |
-| `paginationMode` | No | `paged` | Compatibility selector; both `paged` and `all` use bounded 1,000-row pages |
-| `progressId` | No | - | Stable progress ID clients can poll through `/api/holdings/progress` |
-| `debug` | No | - | Enables the route debug context |
-
-Metric model:
+Standalone settled protocol-return chart.
 
 ```text
-baselineUnderlying = shares received * PPS at receipt
-growthUnderlying = withdrawable underlying now-or-at-exit - baselineUnderlying
-baselineWeightUsd = baselineUnderlying * receiptTokenPriceUsd
-growthWeightUsd = growthUnderlying * receiptTokenPriceUsd
-realizedGrowthUsdAtExit = sum(realizedGrowthUnderlyingAtExit * exitTokenPriceUsd)
-growthUsd = realizedGrowthUsdAtExit
-  + (unrealizedGrowthUnderlying + unpricedRealizedGrowthUnderlying) * latestFetchedReceiptTokenPriceUsd
-protocolReturnPct = growthWeightUsd / baselineWeightUsd * 100
+address=<EVM address>                       required
+timeframe=1y|all                           default: 1y
+vault=<address>&chainId=<id>                optional single-vault filter
+vaults=<chainId:address,...>                optional multi-vault filter
+progressId=<client-generated id>           optional
+debug=true                                 optional
 ```
 
-Because numerator and denominator use the same receipt-time token price, later asset price movement does not affect `protocolReturnPct`.
+Protocol return measures vault performance while capital was exposed. It excludes the effect of deposits, withdrawals, and transfers. The response includes aggregate chart points and compact family series used by Portfolio Growth charts.
 
-Response:
+### `GET /api/holdings/breakdown`
 
-```json
-{
-  "address": "0x...",
-  "version": "all",
-  "timeframe": "1y",
-  "generatedAt": "2026-05-07T00:00:00.000Z",
-  "summary": {
-    "totalVaults": 5,
-    "completeVaults": 5,
-    "partialVaults": 0,
-    "recommendedGrowthDisplay": "index",
-    "recommendedGrowthDisplayReason": "mixed",
-    "openBaselineCompositionUsd": {
-      "stable": 100,
-      "ethFamily": 50,
-      "other": 0
-    },
-    "isComplete": true
-  },
-  "dataPoints": [
-    {
-      "date": "2026-05-06",
-      "timestamp": 1778111999,
-      "growthWeightUsd": 100,
-      "growthUsd": 105,
-      "growthWeightEth": null,
-      "protocolReturnPct": 10,
-      "annualizedProtocolReturnPct": 12,
-      "growthIndex": 110
-    }
-  ],
-  "familySeries": []
-}
+Current or historical per-vault valuation.
+
+```text
+address=<EVM address>                       required
+date=YYYY-MM-DD                             optional settled UTC date
 ```
 
-When a vault filter is present, each history point can also include `currentUnderlying`, `growthUnderlying`, `sharesFormatted`, and `pricePerShare`.
+Each row reports shares, PPS, asset price, USD value, metadata, and an explicit missing-data status.
 
-The combined portfolio response freezes each realized growth chunk at that withdrawal or transfer-out day's asset price. Unrealized growth is valued with the latest positive asset price from the existing receipt-price series; exit-only prices do not reprice open positions. If a particular exit-day price is unavailable, only that realized chunk falls back to the latest receipt-series price instead of making the whole vault unavailable. When that fallback price exists, the affected growth vault remains `ok` and exposes `missing_exit_price` in `issues`; aggregate and family history points that include the fallback expose `growthUsdEstimated: true`. If no latest receipt-series price is available either, the existing incomplete-price status applies and `growthUsdEstimated` remains false because no USD fallback was used. The portfolio UI appends `*` to estimated USD Growth values and labels them as potentially approximate. Receipt and exit timestamps share one batched historical-price fetch, and no separate spot-price request is made. The history response uses the same hybrid valuation for aggregate and family `growthUsd`, so the Growth chart conserves the vault-row total. Receipt-weighted `growthWeightUsd` remains separate and continues to drive protocol-return percentages and indexes. Each compact family point also includes nullable receipt-weighted `growthWeightEth`, and candidate compaction retains the best and worst eight families for each growth mode and supported chart window.
+### `GET /api/holdings/activity`
 
-Each combined portfolio growth vault also exposes `growthUnderlying`, the protocol growth denominated in that vault's underlying asset. It is not derived from `growthUsd` because realized USD growth remains valued at its exit-day price. The portfolio Growth tooltip shows this asset amount alongside the visible USD value. When a combined product contains different asset units, such as BOLD and staked yBOLD, the tooltip keeps those amounts separate instead of adding unlike units.
+Paginated classified wallet activity.
 
-Locked yvUSD is accounted in its root USDC unit. Receipt and exit assets are converted with unlocked yvUSD PPS at the event timestamp, while open positions use `locked PPS * unlocked PPS`. Realized locked-yvUSD growth is frozen with exit-day USDC/USD; unrealized growth uses the latest fetched receipt-series USDC/USD. This keeps the locked and unlocked yvUSD rows additive without applying the unlocked PPS only after their baselines have already been subtracted.
-
-The portfolio combines the locked/unlocked yvUSD variants and the base/staked yBOLD variants into their product rows. Their dollar growth is the sum of the hybrid per-variant `growthUsd` values, while protocol return and annualized return are denominator-weighted combinations of the asset-neutral per-variant rates; exit-day USD movement therefore does not leak into those percentages.
-
-Non-empty settled responses are cached in Redis for up to 24 hours and invalidated lazily when one of their vaults changes. Responses produced after a failed or empty historical-price request, failed Kong PPS request, or retryable metadata fallback failure are returned to the caller but are not cached, so a temporary upstream outage cannot preserve incomplete chart data for the rest of the day.
-
-### `POST /api/admin/invalidate-cache`
-
-Marks vaults as invalidated so affected user daily totals are lazily cleared and recomputed on the next cached history request. Requires `x-admin-secret: $ADMIN_SECRET` and DB caching.
-
-```bash
-curl -X POST \
-  -H "content-type: application/json" \
-  -H "x-admin-secret: $ADMIN_SECRET" \
-  -d '{"vaults":[{"address":"0x...","chainId":1}]}' \
-  "http://localhost:3000/api/admin/invalidate-cache"
+```text
+address=<EVM address>                       required
+limit=<integer>                             default: 10
+offset=<integer>                            default: 0
+type=<deposit|withdraw|stake|unstake|...>   optional
+chainId=<id>                                optional
+startTimestamp=<unix seconds>               optional
+endTimestamp=<unix seconds>                 optional
 ```
 
-Response:
+### `GET /api/holdings/activity-facets`
 
-```json
-{
-  "success": true,
-  "invalidated": 1,
-  "vaults": ["1:0x..."],
-  "timestamp": "2026-05-07T00:00:00.000Z"
-}
-```
+Returns the chains that contain activity for the address. `address` is required.
 
-## Supported Chains
+### `GET /api/holdings/progress`
 
-| Chain | ID | Price prefix |
-|-------|----|--------------|
-| Ethereum | 1 | `ethereum` |
-| Optimism | 10 | `optimism` |
-| Fantom | 250 | `fantom` |
-| Polygon | 137 | `polygon` |
-| Base | 8453 | `base` |
-| Arbitrum | 42161 | `arbitrum` |
-| Katana | 747474 | `katana` |
+Reads a progress record by `id`. Records expire after 10 minutes and the route always returns `Cache-Control: no-store`.
 
-`getChainPrefix` falls back to `ethereum` for unknown chain IDs, so new chains should be added to `SUPPORTED_CHAINS` before requests are expected to value correctly.
+## Cache and invalidation
 
-## Environment Variables
+Redis is optional. Routes continue without cache or progress persistence when it is unavailable; clients are created lazily on first use.
 
-| Variable | Required | Default | Description |
-|----------|----------|---------|-------------|
-| `ENVIO_GRAPHQL_URL` | No | `http://localhost:8080/v1/graphql` | Envio indexer GraphQL endpoint |
-| `ENVIO_PASSWORD` | No | `''` | Envio Hasura admin secret; skipped when empty or `testing` |
-| `UPSTASH_REDIS_REST_URL_PORTFOLIO_DEV` | No | Portfolio URL fallback | Preferred development Upstash Redis REST URL for holdings storage |
-| `UPSTASH_REDIS_REST_TOKEN_PORTFOLIO_DEV` | No | Portfolio token fallback | Preferred development Upstash Redis REST token for holdings storage |
-| `UPSTASH_REDIS_REST_URL_PORTFOLIO` | No | `null` | Upstash Redis REST URL for holdings cache, progress, and invalidations |
-| `UPSTASH_REDIS_REST_TOKEN_PORTFOLIO` | No | `null` | Upstash Redis REST token for holdings storage |
-| `RPC_URI_FOR_<id>` | No | `NEXT_PUBLIC_RPC_URI_FOR_<id>` | Optional server-only chain RPC URL for activity receipt and transaction enrichment |
-| `HOLDINGS_PRICE_PROVIDER` | No | `auto` | `auto`, `yearn-prices`, or `defillama` |
-| `YEARN_PRICES_BASE_URL` | No | `https://prices.yearn.dev` | Base URL for yearn-prices; `/api/prices/...` is appended automatically |
-| `YEARN_PRICES_API_URL` | No | `YEARN_PRICES_BASE_URL` fallback | Legacy alias for `YEARN_PRICES_BASE_URL` |
-| `YEARN_PRICES_API_KEY` | No | `API_KEY_PORTFOLIO` fallback | Bearer token for yearn-prices |
-| `API_KEY_PORTFOLIO` | No | `''` | Shared portfolio API key used as the yearn-prices fallback token |
-| `DEFILLAMA_API_KEY` | No | `''` | Enables DefiLlama Pro GET route |
-| `ADMIN_SECRET` | Admin only | `null` | Secret for `/api/admin/invalidate-cache` |
-| `HOLDINGS_DEBUG` | No | `false` | Enables holdings debug logs |
+Keys:
 
-Hardcoded service bases:
+- `holdings:wallet-events:*`: combined wallet event history.
+- `holdings:totals:v3:<walletHash>`: aggregate settled USD totals by date.
+- `holdings:protocol-return-history:v13:<walletHash>:<timeframe>:<vaultScope>`: compressed protocol-return and Growth snapshot.
+- `holdings:vault-invalidated:<chainId>:<vaultAddress>`: lazy invalidation timestamp.
+- `holdings:progress:*`: short-lived route progress.
 
-- Kong: `https://kong.yearn.fi`
-- DefiLlama free: `https://coins.llama.fi`
-- DefiLlama pro: `https://pro-api.llama.fi`
+Wallet addresses are SHA-256 hashed in result-cache keys. Protocol-return snapshots are Brotli encoded with the `br1:` prefix. Oversized encoded values are skipped, and reads enforce both encoded and decoded size limits.
 
-## Event Fetching
+`POST /api/admin/invalidate-cache` requires `Authorization: Bearer <ADMIN_SECRET>`. It writes vault invalidation timestamps. Later reads compare those timestamps with the oldest cached calculation timestamp and rebuild stale results.
 
-Envio hosted GraphQL has a practical `1000`-row page limit. Every address-scoped event path is therefore count-free and caps each `limit/offset` query at `1000` rows:
+## Environment
 
-- `fetchType=seq`: continue each event family one bounded page at a time.
-- `fetchType=parallel`: fetch the first bounded page, then continue full event families in bounded parallel waves.
-- `paginationMode=paged` and `paginationMode=all`: retained for API compatibility and use the same safe bounded paginator. `all` no longer requests a 50,000-row page.
+| Variable | Required | Purpose |
+|----------|----------|---------|
+| `ENVIO_GRAPHQL_URL` | Yes | Envio GraphQL endpoint |
+| `ENVIO_PASSWORD` | No | Envio bearer token |
+| `YEARN_PRICES_BASE_URL` | No | yearn-prices base URL |
+| `YEARN_PRICES_API_URL` | No | Older alias for the base URL |
+| `YEARN_PRICES_API_KEY` | One price key | Primary yearn-prices bearer token |
+| `API_KEY_PORTFOLIO` | One price key | Fallback yearn-prices bearer token |
+| `UPSTASH_REDIS_REST_URL_PORTFOLIO` | No | Holdings Redis URL |
+| `UPSTASH_REDIS_REST_TOKEN_PORTFOLIO` | No | Holdings Redis token |
+| `ADMIN_SECRET` | For invalidation | Admin endpoint bearer token |
+| `RPC_URI_FOR_<chainId>` | No | Server-side receipt enrichment RPC |
+| `NEXT_PUBLIC_RPC_URI_FOR_<chainId>` | No | Receipt-enrichment RPC fallback |
+| `HOLDINGS_DEBUG` | No | Holdings debug logging |
 
-No aggregate GraphQL roots are required. A full page always triggers another bounded page, so an Envio response cap cannot silently truncate the cached wallet event set.
-
-## Caching
-
-Server-side cache is optional. Development credentials (`*_PORTFOLIO_DEV`) take precedence over the standard portfolio credentials. When neither pair is available, the APIs still work but recompute history and refetch events, prices, and PPS on each request.
-
-### Cache Layers
-
-1. Upstash Redis:
-   - `holdings:wallet-events:v2:<addressHash>:<maxTimestamp>`: one Brotli-compressed normalized event set per wallet and event cutoff, overwritten with a five-minute TTL. The version prevents reuse of event sets created by the former 50,000-row query that Envio could silently truncate.
-   - `holdings:totals:v2:<addressHash>:<version>`: daily USD totals per hashed user address, vault version, and date. Hash fields are `YYYY-MM-DD`; values include `usdValue` and `updatedAt`.
-   - `holdings:protocol-return-history:v13:<addressHash>:<version>:<timeframe>:<vaultScope>`: successful non-empty protocol-return history and growth snapshots, including each vault's underlying-asset growth and compact family histories sufficient for eight-vault growth charts. The payload is Brotli-compressed and includes its settled date and relevant vault identifiers for invalidation checks. Legacy raw-JSON values using the current prefix remain readable.
-   - `holdings:vault-invalidated:<chainId>:<vaultAddress>`: per-vault invalidation timestamps for lazy cache clearing.
-   - `holdings:progress:<progressId>`: authoritative short-lived progress records keyed by caller-supplied progress ID for long history requests across Vercel function instances.
-2. HTTP cache:
-   - Wallet-scoped holdings responses use `Cache-Control: private, no-store, max-age=0, must-revalidate`.
-   - This applies to the combined portfolio route, history, breakdown, activity, activity facets, and protocol-return history.
-   - Progress: `Cache-Control: no-store`.
-3. Client TanStack Query cache:
-   - Portfolio history and protocol-return history hooks keep chart responses fresh for one hour.
-   - Other frontend hooks configure their own durations.
-
-### Daily Totals
-
-The history cache stores aggregate daily totals, not per-vault breakdown rows. Cache keys use SHA-256 of the normalized user address, not the raw address.
-
-Cache behavior:
-
-- Unfiltered history can read/write `holdings:totals:v2:<addressHash>:<version>`.
-- Vault-filtered history skips aggregate daily total cache because the cache is user/version scoped, not vault-filter scoped.
-- Cache staleness is checked against `holdings:vault-invalidated:<chainId>:<vaultAddress>` only after the request has enough cached daily totals to potentially serve from cache.
-- On the combined route, a complete totals hash is validated with the vault list stored in the protocol snapshot, so a true warm request does not need to load wallet events or metadata.
-- If any relevant vault was invalidated after the oldest cached row was written, the user's cached totals for that version are cleared and recomputed.
-- Recalculated totals are not cached when any token price batch failed, because a temporary transport failure can undercount chart totals. Successfully returned provider data keeps the established partial-data behavior: unsupported vault/day prices contribute zero and the response can still be cached.
-
-### Protocol Return History Snapshots
-
-- Protocol-return history is path-dependent, so the cache stores one atomic response instead of independent public rows.
-- Cache keys use the normalized wallet hash plus version, timeframe, and a hashed vault scope. A calculation-version prefix prevents incompatible response logic from reusing older snapshots.
-- Snapshots expire 30 days after their latest write and are rejected when any stored vault invalidation marker is newer than the calculation start.
-- An exact settled-date hit returns immediately. An older valid snapshot replays current inputs, uses its latest aggregate point to preserve index continuity, appends only missing aggregate dates, trims the rolling one-year window, and rebuilds compact per-vault family candidates and current growth.
-- Successful non-empty responses are cached even when some vault histories are partial; empty responses are not cached.
-- Identical requests in the same server process share one in-flight calculation.
-
-### Progress
-
-- Progress writes only when Redis persistence is enabled and the supplied `progressId` matches `[a-zA-Z0-9:_-]{1,160}`.
-- Progress status is `running`, `complete`, or `error`; progress is clamped to `0..100`, logs are capped to the latest `20` entries, and rows expire after `10 minutes`.
-
-### Token Prices
-
-Token prices are fetched from the selected provider for each request. Holdings Redis storage does not cache positive token prices or price misses.
-
-## Redis Keys
-
-No schema migration is required. Redis keys are created lazily:
-
-| Key | Type | TTL | Purpose |
-|-----|------|-----|---------|
-| `holdings:wallet-events:v2:<addressHash>:<maxTimestamp>` | Brotli string | 5 minutes | Complete bounded-page wallet event snapshot for one settled cutoff. |
-| `holdings:totals:v2:<addressHash>:<version>` | Hash | 30 days from write | Daily holdings chart totals. |
-| `holdings:protocol-return-history:v13:<addressHash>:<version>:<timeframe>:<vaultScope>` | Brotli/base64 string (legacy JSON readable) | 30 days from write | Atomic protocol-return history and growth response snapshot. |
-| `holdings:vault-invalidated:<chainId>:<vaultAddress>` | String timestamp | None | Lazy invalidation marker for totals cache. |
-| `holdings:progress:<progressId>` | String JSON record | 10 minutes | Progress polling state for long requests. |
-
-## Operational Notes
-
-- Enable Redis storage in shared environments; otherwise a history request must rebuild events, PPS, and prices every time.
-- Keep `API_KEY_PORTFOLIO` or `YEARN_PRICES_API_KEY` configured if `HOLDINGS_PRICE_PROVIDER=auto` should prefer yearn-prices.
-- Set `HOLDINGS_KONG_BATCH_PPS=true` to use Kong's bounded PPS batch route. The range starts at the wallet's earliest relevant event so protocol replay retains legacy semantics.
-- Configure `RPC_URI_FOR_<chainId>` for chains where activity rows should include richer zap, reward-claim, and direct V2 vault enrichment.
-- Pass a stable `progressId` from the frontend for long portfolio, history, and protocol-return requests, then poll `/api/holdings/progress?id=...`; progress rows are Redis-backed and expire quickly.
-- Use `/api/admin/invalidate-cache` after indexer deployments add or repair vault coverage.
-- Rate-limit and progress cleanup is handled by Redis TTLs.
-- If Redis progress is unavailable, clients show a neutral loading placeholder instead of estimated progress.
-- `timeframe=all` grows over time from `2024-01-01`, so cache row counts are no longer fixed at `365` per user/version.
+Kong PPS uses the public production Kong origin configured in the service. It does not attach a deployment bypass secret or use a development PPS origin.

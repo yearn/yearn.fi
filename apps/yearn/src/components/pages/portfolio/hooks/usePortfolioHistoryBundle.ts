@@ -223,8 +223,6 @@ export function usePortfolioHistoryBundle(
       error: hasRetainedGrowth ? null : error,
       isEmpty: !growthIsLoading && !error && hasResponse && growthVaults.length === 0
     },
-    hasResponse,
-    requestError: error,
-    rawData: currentData
+    hasResponse
   }
 }

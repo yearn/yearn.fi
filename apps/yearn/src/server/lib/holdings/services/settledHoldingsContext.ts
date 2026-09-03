@@ -2,15 +2,9 @@ import { getCachedWalletEvents, saveCachedWalletEvents } from '@/server/lib/hold
 import { holdingsConfig } from '../config'
 import type { UserEvents, VaultMetadata } from '../types'
 import { debugLog } from './debug'
-import type { THistoricalPriceRequest } from './defillama'
-import {
-  fetchUserEvents,
-  type HoldingsEventFetchType,
-  type HoldingsEventPaginationMode,
-  type VaultVersion
-} from './graphql'
+import { fetchUserEvents } from './graphql'
 import { buildPositionTimeline, generateDailyTimestamps, getUniqueVaults, toSettledDayTimestamp } from './holdings'
-import { fetchMultipleVaultsPPS, type PPSTimeline, type TPpsRange } from './kong'
+import { fetchMultipleVaultsPPS, type PPSTimeline } from './kong'
 import {
   getNestedVaultPpsIdentifiersFromPriceRequests,
   mergeVaultIdentifiers,
@@ -19,6 +13,7 @@ import {
 import { buildAddressScopedRawPnlEvents } from './pnlEvents'
 import { lowerCaseAddress, toVaultKey } from './pnlShared'
 import type { TRawPnlEvent } from './pnlTypes'
+import type { THistoricalPriceRequest } from './prices'
 import { fetchMultipleVaultsMetadata, getVaultMetadataFetchFailedVaults, prefetchGlobalVaultMetadata } from './vaults'
 
 type TVaultIdentifier = {
@@ -56,12 +51,12 @@ export function resolveSettledAddressScopedContext(
   return typeof source === 'function' ? source() : source
 }
 
-export interface TSettledVersionedSelection {
+interface TSettledSelection {
   events: TRawPnlEvent[]
   vaultIdentifiers: TVaultIdentifier[]
 }
 
-export interface TSettledVersionedPpsContext extends TSettledAddressScopedContext {
+export interface TSettledPpsContext extends TSettledAddressScopedContext {
   selectedEvents: TRawPnlEvent[]
   selectedVaultIdentifiers: TVaultIdentifier[]
   ppsIdentifiers: TVaultIdentifier[]
@@ -69,31 +64,10 @@ export interface TSettledVersionedPpsContext extends TSettledAddressScopedContex
 }
 
 const inFlightSettledAddressScopedContexts = new Map<string, Promise<TSettledAddressScopedContext>>()
-const inFlightSettledVersionedPpsContexts = new Map<string, Promise<TSettledVersionedPpsContext>>()
+const inFlightSettledPpsContexts = new Map<string, Promise<TSettledPpsContext>>()
 const CURRENT_DAY_LOOKAHEAD_SECONDS = 24 * 60 * 60
-const UTC_DAY_SECONDS = 24 * 60 * 60
-
-function toUtcDayStart(timestamp: number): number {
-  return Math.floor(timestamp / UTC_DAY_SECONDS) * UTC_DAY_SECONDS
-}
-
-function getPpsRange(events: TRawPnlEvent[], finishTimestamp: number): TPpsRange {
-  const earliestEventTimestamp = events.reduce(
-    (earliest, event) => (Number.isFinite(event.blockTimestamp) ? Math.min(earliest, event.blockTimestamp) : earliest),
-    finishTimestamp
-  )
-
-  return {
-    start: toUtcDayStart(earliestEventTimestamp),
-    finish: toUtcDayStart(finishTimestamp)
-  }
-}
-
 function getContextKey(args: {
   userAddress: string
-  version?: VaultVersion
-  fetchType: HoldingsEventFetchType
-  paginationMode: HoldingsEventPaginationMode
   requestedVault?: TRequestedVault
   vaultIdentifiers?: TVaultIdentifier[]
 }): string {
@@ -109,13 +83,7 @@ function getContextKey(args: {
         ? `${args.requestedVault.chainId}:${lowerCaseAddress(args.requestedVault.vaultAddress)}`
         : 'all'
 
-  return [
-    lowerCaseAddress(args.userAddress),
-    args.version ?? 'all',
-    args.fetchType,
-    args.paginationMode,
-    normalizedVaultScope
-  ].join(':')
+  return [lowerCaseAddress(args.userAddress), normalizedVaultScope].join(':')
 }
 
 export function getVaultIdentifiers(events: TRawPnlEvent[]): TVaultIdentifier[] {
@@ -137,7 +105,7 @@ export function getVaultIdentifiers(events: TRawPnlEvent[]): TVaultIdentifier[] 
   )
 }
 
-export function filterEventsByRequestedVault(events: TRawPnlEvent[], requestedVault?: TRequestedVault): TRawPnlEvent[] {
+function filterEventsByRequestedVault(events: TRawPnlEvent[], requestedVault?: TRequestedVault): TRawPnlEvent[] {
   if (!requestedVault) {
     return events
   }
@@ -148,23 +116,10 @@ export function filterEventsByRequestedVault(events: TRawPnlEvent[], requestedVa
   )
 }
 
-export function filterEventsByAuthoritativeVersion(
-  events: TRawPnlEvent[],
-  metadata: Map<string, VaultMetadata>,
-  version: VaultVersion
-): TRawPnlEvent[] {
+function filterVisibleEvents(events: TRawPnlEvent[], metadata: Map<string, VaultMetadata>): TRawPnlEvent[] {
   return events.filter((event) => {
     const eventMetadata = metadata.get(toVaultKey(event.chainId, event.familyVaultAddress))
-
-    if (eventMetadata?.isHidden) {
-      return false
-    }
-
-    if (version === 'all') {
-      return true
-    }
-
-    return eventMetadata?.version === version
+    return !eventMetadata?.isHidden
   })
 }
 
@@ -196,13 +151,12 @@ function buildUnderlyingTokenRequests(
   )
 }
 
-export function selectVersionedEvents(
+export function selectEvents(
   context: TSettledAddressScopedContext,
-  version: VaultVersion,
   requestedVault?: TRequestedVault
-): TSettledVersionedSelection {
+): TSettledSelection {
   const selectedEvents = filterEventsByRequestedVault(
-    filterEventsByAuthoritativeVersion(context.rawEvents, context.vaultMetadata, version),
+    filterVisibleEvents(context.rawEvents, context.vaultMetadata),
     requestedVault
   )
 
@@ -214,8 +168,6 @@ export function selectVersionedEvents(
 
 export async function getSettledAddressScopedContext(args: {
   userAddress: string
-  fetchType: HoldingsEventFetchType
-  paginationMode: HoldingsEventPaginationMode
 }): Promise<TSettledAddressScopedContext> {
   const key = getContextKey(args)
   const existing = inFlightSettledAddressScopedContexts.get(key)
@@ -236,9 +188,7 @@ export async function getSettledAddressScopedContext(args: {
       maxTimestamp: activityMaxTimestamp
     }
     const cachedEvents = await getCachedWalletEvents(eventCacheIdentity)
-    const events =
-      cachedEvents ??
-      (await fetchUserEvents(args.userAddress, 'all', activityMaxTimestamp, args.fetchType, args.paginationMode))
+    const events = cachedEvents ?? (await fetchUserEvents(args.userAddress, activityMaxTimestamp))
     const eventCacheSave = cachedEvents ? Promise.resolve(false) : saveCachedWalletEvents(eventCacheIdentity, events)
 
     const timeline = buildPositionTimeline(events.deposits, events.withdrawals, events.transfersIn, events.transfersOut)
@@ -271,32 +221,23 @@ export async function getSettledAddressScopedContext(args: {
   return request
 }
 
-export async function getSettledVersionedPpsContext(args: {
+export async function getSettledPpsContext(args: {
   userAddress: string
-  version: VaultVersion
-  fetchType: HoldingsEventFetchType
-  paginationMode: HoldingsEventPaginationMode
   requestedVault?: TRequestedVault
   vaultIdentifiers?: TVaultIdentifier[]
   context?: TSettledAddressScopedContext
-}): Promise<TSettledVersionedPpsContext> {
+}): Promise<TSettledPpsContext> {
   const key = getContextKey(args)
-  const existing = inFlightSettledVersionedPpsContexts.get(key)
+  const existing = inFlightSettledPpsContexts.get(key)
 
   if (existing) {
-    debugLog('holdings-context', 'reusing in-flight settled versioned PPS context', { key })
+    debugLog('holdings-context', 'reusing in-flight settled PPS context', { key })
     return existing
   }
 
   const request = (async () => {
-    const context =
-      args.context ??
-      (await getSettledAddressScopedContext({
-        userAddress: args.userAddress,
-        fetchType: args.fetchType,
-        paginationMode: args.paginationMode
-      }))
-    const selection = selectVersionedEvents(context, args.version, args.requestedVault)
+    const context = args.context ?? (await getSettledAddressScopedContext({ userAddress: args.userAddress }))
+    const selection = selectEvents(context, args.requestedVault)
     const settledEvents = selection.events.filter((event) => event.blockTimestamp <= context.maxTimestamp)
     const selectedVaultIdentifiers = args.vaultIdentifiers ?? getVaultIdentifiers(settledEvents)
     const basePriceRequests = buildUnderlyingTokenRequests(selectedVaultIdentifiers, context.vaultMetadata)
@@ -304,14 +245,7 @@ export async function getSettledVersionedPpsContext(args: {
       ...selectedVaultIdentifiers,
       ...getNestedVaultPpsIdentifiersFromPriceRequests(basePriceRequests, context.vaultMetadata)
     ])
-    const ppsData =
-      ppsIdentifiers.length === 0
-        ? new Map()
-        : process.env.HOLDINGS_KONG_BATCH_PPS === 'true'
-          ? await fetchMultipleVaultsPPS(ppsIdentifiers, {
-              range: getPpsRange(settledEvents, context.maxTimestamp)
-            })
-          : await fetchMultipleVaultsPPS(ppsIdentifiers)
+    const ppsData = ppsIdentifiers.length === 0 ? new Map() : await fetchMultipleVaultsPPS(ppsIdentifiers)
 
     return {
       ...context,
@@ -321,9 +255,9 @@ export async function getSettledVersionedPpsContext(args: {
       ppsData
     }
   })().finally(() => {
-    inFlightSettledVersionedPpsContexts.delete(key)
+    inFlightSettledPpsContexts.delete(key)
   })
 
-  inFlightSettledVersionedPpsContexts.set(key, request)
+  inFlightSettledPpsContexts.set(key, request)
   return request
 }

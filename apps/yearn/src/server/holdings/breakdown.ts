@@ -1,17 +1,7 @@
 import { GET_CORS_HEADERS, json, noContent, queryValue, WALLET_SCOPED_CACHE_CONTROL } from '../http'
-import type { HoldingsEventFetchType, HoldingsEventPaginationMode, VaultVersion } from '../lib/holdings'
-import { ensureHoldingsStorageInitialized } from '../lib/holdings'
 
 function isValidAddress(address: string): boolean {
   return /^0x[a-fA-F0-9]{40}$/.test(address)
-}
-
-function parseHoldingsEventFetchType(value: string | string[] | undefined): HoldingsEventFetchType {
-  return value === 'parallel' ? 'parallel' : 'seq'
-}
-
-function parseHoldingsEventPaginationMode(value: string | string[] | undefined): HoldingsEventPaginationMode {
-  return value === 'all' ? 'all' : 'paged'
 }
 
 export function parseUtcDateParam(value: string | string[] | undefined): number | null {
@@ -47,13 +37,6 @@ export function OPTIONS(): Response {
 }
 
 export async function GET(request: Request): Promise<Response> {
-  try {
-    await ensureHoldingsStorageInitialized()
-  } catch (error) {
-    console.error('Holdings breakdown storage initialization error:', error)
-    return json({ error: 'Failed to initialize holdings storage' }, { status: 500, headers: GET_CORS_HEADERS })
-  }
-
   const envioUrl = process.env.ENVIO_GRAPHQL_URL
   if (!envioUrl) {
     return json(
@@ -67,9 +50,6 @@ export async function GET(request: Request): Promise<Response> {
 
   const address = queryValue(request, 'address')
   const dateParam = queryValue(request, 'date')
-  const versionParam = queryValue(request, 'version')
-  const fetchTypeParam = queryValue(request, 'fetchType')
-  const paginationModeParam = queryValue(request, 'paginationMode')
 
   if (!address || typeof address !== 'string') {
     return json({ error: 'Missing required parameter: address' }, { status: 400, headers: GET_CORS_HEADERS })
@@ -84,19 +64,9 @@ export async function GET(request: Request): Promise<Response> {
     return json({ error: 'Invalid date format, expected YYYY-MM-DD' }, { status: 400, headers: GET_CORS_HEADERS })
   }
 
-  const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
-  const fetchType = parseHoldingsEventFetchType(fetchTypeParam)
-  const paginationMode = parseHoldingsEventPaginationMode(paginationModeParam)
-
   try {
     const { getHoldingsBreakdown } = await import('../lib/holdings')
-    const breakdown = await getHoldingsBreakdown(
-      address,
-      version,
-      fetchType,
-      paginationMode,
-      breakdownTimestamp ?? undefined
-    )
+    const breakdown = await getHoldingsBreakdown(address, breakdownTimestamp ?? undefined)
 
     return json(breakdown, {
       headers: {
@@ -123,5 +93,3 @@ export async function GET(request: Request): Promise<Response> {
     return json({ error: 'Failed to fetch holdings breakdown' }, { status: 502, headers: GET_CORS_HEADERS })
   }
 }
-
-export default GET

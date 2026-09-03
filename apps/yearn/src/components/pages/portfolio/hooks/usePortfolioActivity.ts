@@ -89,13 +89,10 @@ export function usePortfolioActivity(limit = 10, enabled = true, filters: TPortf
   })
 
   const facetsQuery = useQuery({
-    queryKey: ['portfolio-activity-facets', address, 'all'],
+    queryKey: ['portfolio-activity-facets', address],
     enabled: isEnabled && shouldFetchFacets,
     queryFn: () => {
-      const params = new URLSearchParams({
-        address: address ?? '',
-        version: 'all'
-      })
+      const params = new URLSearchParams({ address: address ?? '' })
 
       return fetchWithSchema(`/api/holdings/activity-facets?${params}`, portfolioActivityFacetsResponseSchema, {
         timeout: 30 * 1000

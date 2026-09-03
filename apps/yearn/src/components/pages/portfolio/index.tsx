@@ -3237,7 +3237,6 @@ function PortfolioPage(): ReactElement {
   }, [searchParams])
   const shouldLoadPositionsHistory = shouldLoadPortfolioHistory({
     isActive: model.isActive,
-    isHoldingsLoading: model.isHoldingsLoading,
     isPositionsTab: activeTab === 'positions'
   })
   const portfolioHistory = usePortfolioHistoryCoordinator(
