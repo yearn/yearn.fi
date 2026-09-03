@@ -262,7 +262,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   const { switchChainAsync } = useSwitchChain()
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>()
   const [submittedExecutionChainId, setSubmittedExecutionChainId] = useState<number | undefined>()
-  const { address: account, chain, connector, status: accountStatus } = useAccount()
+  const { address: account, chainId: accountChainId, connector, status: accountStatus } = useAccount()
   const isWalletSafe = runtime.safe.isSafe
   const isWalletConnectionReady =
     accountStatus === 'connected' && Boolean(account) && hasExecutableWalletConnector(connector)
@@ -273,7 +273,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     targetChainId
   )
   const connectedChainId = resolveOverlayConnectedChainId({
-    accountChainId: chain?.id,
+    accountChainId,
     currentChainId: connectedExecutionChainId,
     targetChainId: targetExecutionChainId,
     isWalletSafe

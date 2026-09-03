@@ -22,6 +22,17 @@ import {
 } from './transactionOverlay.helpers'
 
 describe('resolveOverlayConnectedChainId', () => {
+  it('preserves an unsupported network reported by the wallet connection', () => {
+    expect(
+      resolveOverlayConnectedChainId({
+        accountChainId: 8453,
+        currentChainId: 1,
+        targetChainId: 1,
+        isWalletSafe: false
+      })
+    ).toBe(8453)
+  })
+
   it('prefers the target chain for Safe sessions when account.chain is missing', () => {
     expect(
       resolveOverlayConnectedChainId({

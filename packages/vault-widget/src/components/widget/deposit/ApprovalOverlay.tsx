@@ -53,12 +53,12 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
   const [errorMessage, setErrorMessage] = useState('')
   const [isDoneRefreshing, setIsDoneRefreshing] = useState(false)
 
-  const { address: account, chain, connector } = useAccount()
+  const { address: account, chainId: accountChainId, connector } = useAccount()
   const runtime = useVaultWidgetRuntime()
   const currentChainId = useChainId()
   const isWalletSafe = runtime.safe.isSafe || connector?.id.toLowerCase().includes('safe') === true
   const connectedChainId = resolveApprovalOverlayConnectedChainId({
-    accountChainId: chain?.id,
+    accountChainId,
     currentChainId,
     targetChainId: chainId,
     isWalletSafe
