@@ -53,6 +53,13 @@ body {
   }
 }
 
+@keyframes ybold-wallet-popover-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.375rem) scale(0.985);
+  }
+}
+
 .ybold-wallet-backdrop {
   animation: ybold-wallet-backdrop-in 140ms ease-out both;
 }
@@ -61,14 +68,12 @@ body {
   animation: ybold-wallet-sheet-in 180ms cubic-bezier(0.22, 1, 0.36, 1) both;
 }
 
-@media (min-width: 640px) {
-  @keyframes ybold-wallet-popover-in {
-    from {
-      opacity: 0;
-      transform: translateY(-0.375rem) scale(0.985);
-    }
-  }
+.ybold-account-panel {
+  animation: ybold-wallet-popover-in 160ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  transform-origin: top right;
+}
 
+@media (min-width: 640px) {
   .ybold-wallet-panel {
     animation-name: ybold-wallet-popover-in;
     transform-origin: top right;
@@ -77,7 +82,8 @@ body {
 
 @media (prefers-reduced-motion: reduce) {
   .ybold-wallet-backdrop,
-  .ybold-wallet-panel {
+  .ybold-wallet-panel,
+  .ybold-account-panel {
     animation-duration: 1ms;
   }
 }

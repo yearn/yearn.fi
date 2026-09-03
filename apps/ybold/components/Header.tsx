@@ -1,15 +1,13 @@
 'use client'
 
-import { useAppKit } from '@reown/appkit/react'
+import { WalletAccountMenu } from '@ybold/components/WalletAccountMenu'
 import { useWalletDrawer } from '@ybold/components/WalletDrawer'
 import { YEARN_VAULT_URL } from '@ybold/lib/contracts'
-import { formatWalletAddress } from '@ybold/lib/walletDrawer'
 import Image from 'next/image'
 import { useAccount } from 'wagmi'
 
 export function Header() {
-  const { open: openAppKit } = useAppKit()
-  const { address, isConnected } = useAccount()
+  const { isConnected } = useAccount()
   const { isOpen: isWalletDrawerOpen, toggleWalletDrawer } = useWalletDrawer()
 
   return (
@@ -25,14 +23,7 @@ export function Header() {
           Open on Yearn.Fi
         </a>
         {isConnected ? (
-          <button
-            type="button"
-            aria-label={`Open wallet account ${address ?? ''}`.trim()}
-            onClick={() => void openAppKit({ namespace: 'eip155', view: 'Account' })}
-            className="min-h-10 rounded-full border border-navy px-4 py-2 font-mono text-sm font-medium text-navy transition duration-150 hover:bg-navy hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yearn"
-          >
-            {formatWalletAddress(address)}
-          </button>
+          <WalletAccountMenu />
         ) : (
           <button
             type="button"

@@ -459,10 +459,6 @@ export function WalletDrawerProvider({ children }: { children: ReactNode }) {
                   {errorMessage}
                 </p>
               )}
-
-              <p id={descriptionId} className="mt-3 px-1 text-xs leading-5 text-muted">
-                yBOLD never asks for a recovery phrase.
-              </p>
             </div>
           </section>
         </>

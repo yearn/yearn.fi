@@ -1,6 +1,7 @@
 'use client'
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { useWalletActivity, WalletActivityProvider } from '@ybold/components/WalletActivityProvider'
 import { useWalletDrawer, WalletDrawerProvider } from '@ybold/components/WalletDrawer'
 import { isSafeConnectorId, YBOLD_WAGMI_RECONNECT_ON_MOUNT } from '@ybold/lib/appkitConfig'
 import { wagmiConfig } from '@ybold/lib/wagmi'
@@ -20,6 +21,7 @@ const VAULT_WIDGET_EXECUTION = createWagmiVaultWidgetExecutionAdapter({
 })
 
 function WidgetHostProvider({ children }: { children: React.ReactNode }) {
+  const { notifications } = useWalletActivity()
   const { openWalletDrawer } = useWalletDrawer()
   const { address, chainId, connector, isConnecting, status } = useAccount()
   const [slippagePercent, setSlippagePercent] = useState(0.5)
@@ -44,6 +46,7 @@ function WidgetHostProvider({ children }: { children: React.ReactNode }) {
         resolveExecutionChainId
       },
       execution: VAULT_WIDGET_EXECUTION,
+      notifications,
       prices: {
         spotPriceEndpoint: '/api/prices/spot'
       },
@@ -67,7 +70,7 @@ function WidgetHostProvider({ children }: { children: React.ReactNode }) {
         open: openWalletDrawer
       }
     }),
-    [address, autoStake, chainId, connector?.id, isConnecting, openWalletDrawer, slippagePercent, status]
+    [address, autoStake, chainId, connector?.id, isConnecting, notifications, openWalletDrawer, slippagePercent, status]
   )
 
   return <VaultWidgetRuntimeProvider value={runtime}>{children}</VaultWidgetRuntimeProvider>
@@ -77,9 +80,11 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <WagmiProvider config={wagmiConfig} reconnectOnMount={YBOLD_WAGMI_RECONNECT_ON_MOUNT}>
       <QueryClientProvider client={queryClient}>
-        <WalletDrawerProvider>
-          <WidgetHostProvider>{children}</WidgetHostProvider>
-        </WalletDrawerProvider>
+        <WalletActivityProvider>
+          <WalletDrawerProvider>
+            <WidgetHostProvider>{children}</WidgetHostProvider>
+          </WalletDrawerProvider>
+        </WalletActivityProvider>
       </QueryClientProvider>
     </WagmiProvider>
   )
