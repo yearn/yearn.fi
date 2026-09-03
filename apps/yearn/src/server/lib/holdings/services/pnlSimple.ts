@@ -10,7 +10,14 @@ import {
   type ProtocolReturnHistoryCacheIdentity,
   saveCachedProtocolReturnHistory
 } from './cache'
-import { debugError, debugLog, reportHoldingsProgress } from './debug'
+import {
+  debugError,
+  debugLog,
+  getHoldingsProgressReporter,
+  reportHoldingsProgress,
+  type THoldingsProgressReporter,
+  withHoldingsProgressReporter
+} from './debug'
 import {
   fetchHistoricalPricesForTokenTimestamps,
   getChainPrefix,
@@ -310,7 +317,49 @@ const SECONDS_PER_YEAR = 365 * 24 * 60 * 60
 
 type TProtocolReturnVaultFilter = { chainId: number; vaultAddress: string }
 
-const inFlightProtocolReturnHistoryRequests = new Map<string, Promise<HoldingsProtocolReturnPortfolioResponse>>()
+type TProtocolReturnProgressSnapshot = Readonly<{
+  progress: number
+  message: string
+  detail?: string | null
+}>
+
+type TInFlightProtocolReturnHistoryRequest = Readonly<{
+  request: Promise<HoldingsProtocolReturnPortfolioResponse>
+  subscribe: (reporter: THoldingsProgressReporter | undefined) => boolean
+}>
+
+const inFlightProtocolReturnHistoryRequests = new Map<string, TInFlightProtocolReturnHistoryRequest>()
+
+function createProtocolReturnProgressBroadcaster(initialReporter: THoldingsProgressReporter | undefined): {
+  report: THoldingsProgressReporter
+  subscribe: TInFlightProtocolReturnHistoryRequest['subscribe']
+} {
+  const reporters = new Set(initialReporter ? [initialReporter] : [])
+  const state: { latest?: TProtocolReturnProgressSnapshot } = {}
+  const subscribe = (reporter: THoldingsProgressReporter | undefined): boolean => {
+    if (!reporter) {
+      return false
+    }
+
+    reporters.add(reporter)
+    if (state.latest) {
+      reporter(state.latest.progress, state.latest.message, state.latest.detail)
+    } else {
+      reporter(20, 'Reusing historical user data request', null)
+    }
+    return true
+  }
+
+  return {
+    report: (progress, message, detail): void => {
+      state.latest = { progress, message, detail }
+      reporters.forEach((reporter) => {
+        reporter(progress, message, detail)
+      })
+    },
+    subscribe
+  }
+}
 
 function emptyLedger(chainId: number, vaultAddress: string): TProtocolReturnLedger {
   return {
@@ -3102,15 +3151,18 @@ export async function getHoldingsProtocolReturnPortfolio(
   const cacheKey = getProtocolReturnHistoryCacheKey(cacheIdentity)
   const settledDate = getLatestProtocolReturnSettledDate()
   const inFlightKey = `${cacheKey}:${settledDate}`
-  const inFlightRequest = inFlightProtocolReturnHistoryRequests.get(inFlightKey)
+  const inFlightEntry = inFlightProtocolReturnHistoryRequests.get(inFlightKey)
 
-  if (inFlightRequest) {
+  if (inFlightEntry) {
     debugLog('protocol-return-history', 'reusing in-flight protocol return history request', { cacheKey })
-    reportHoldingsProgress(20, 'Reusing historical user data request', null)
-    return inFlightRequest
+    if (!inFlightEntry.subscribe(getHoldingsProgressReporter())) {
+      reportHoldingsProgress(20, 'Reusing historical user data request', null)
+    }
+    return inFlightEntry.request
   }
 
-  const request = (async () => {
+  const progressBroadcaster = createProtocolReturnProgressBroadcaster(getHoldingsProgressReporter())
+  const request = withHoldingsProgressReporter(progressBroadcaster.report, async () => {
     const cached = await getCachedProtocolReturnHistorySnapshot<HoldingsProtocolReturnPortfolioResponse>(
       cacheIdentity,
       settledDate
@@ -3185,11 +3237,14 @@ export async function getHoldingsProtocolReturnPortfolio(
     }
 
     return compactResponse
-  })().finally(() => {
+  }).finally(() => {
     inFlightProtocolReturnHistoryRequests.delete(inFlightKey)
   })
 
-  inFlightProtocolReturnHistoryRequests.set(inFlightKey, request)
+  inFlightProtocolReturnHistoryRequests.set(inFlightKey, {
+    request,
+    subscribe: progressBroadcaster.subscribe
+  })
   return request
 }
 

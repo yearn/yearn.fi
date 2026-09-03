@@ -64,17 +64,7 @@ const inFlightVaultPPSFetches = new Map<string, Promise<PPSTimeline>>()
 const ppsTimelineTimestampIndexes = new WeakMap<PPSTimeline, readonly number[]>()
 
 function getKongPpsRestBaseUrl(): string {
-  const configuredUrl = process.env.KONG_PPS_REST_URL?.trim()
-  const baseUrl = (configuredUrl || `${holdingsConfig.kongBaseUrl}/api/rest`).replace(/\/$/, '')
-  return baseUrl.endsWith('/api/rest') ? baseUrl : `${baseUrl}/api/rest`
-}
-
-function getKongRequestHeaders(contentType = false): HeadersInit {
-  const protectionBypass = process.env.VERCEL_AUTOMATION_BYPASS_SECRET?.trim()
-  return {
-    ...(contentType ? { 'content-type': 'application/json' } : {}),
-    ...(protectionBypass ? { 'x-vercel-protection-bypass': protectionBypass } : {})
-  }
+  return `${holdingsConfig.kongBaseUrl}/api/rest`
 }
 
 function shouldUseBatchPps(options?: TKongFetchOptions): options is TKongFetchOptions & { range: TPpsRange } {
@@ -202,7 +192,6 @@ export async function fetchVaultPPS(
 ): Promise<PPSTimeline> {
   const url = `${getKongPpsRestBaseUrl()}/timeseries/pps/${chainId}/${vaultAddress}`
   const response = await getFetchFn(options)(url, {
-    headers: getKongRequestHeaders(),
     signal: AbortSignal.timeout(getTimeoutMs(options))
   })
 
@@ -390,7 +379,7 @@ async function fetchPpsBatchWithRetry(
     const body = JSON.stringify({ start: range.start, finish: range.finish, addresses })
     const response = await getFetchFn(options)(`${getKongPpsRestBaseUrl()}/timeseries/pps/v2`, {
       method: 'POST',
-      headers: getKongRequestHeaders(true),
+      headers: { 'content-type': 'application/json' },
       body,
       signal: AbortSignal.timeout(getTimeoutMs(options))
     })

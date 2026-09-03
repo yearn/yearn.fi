@@ -602,7 +602,7 @@ No schema migration is required. Redis keys are created lazily:
 
 - Enable Redis storage in shared environments; otherwise a history request must rebuild events, PPS, and prices every time.
 - Keep `API_KEY_PORTFOLIO` or `YEARN_PRICES_API_KEY` configured if `HOLDINGS_PRICE_PROVIDER=auto` should prefer yearn-prices.
-- Set `HOLDINGS_KONG_BATCH_PPS=true` to use Kong's bounded PPS batch route. `KONG_PPS_REST_URL` can target a PPS-only preview without moving vault metadata traffic; the range starts at the wallet's earliest relevant event so protocol replay retains legacy semantics.
+- Set `HOLDINGS_KONG_BATCH_PPS=true` to use Kong's bounded PPS batch route. The range starts at the wallet's earliest relevant event so protocol replay retains legacy semantics.
 - Configure `RPC_URI_FOR_<chainId>` for chains where activity rows should include richer zap, reward-claim, and direct V2 vault enrichment.
 - Pass a stable `progressId` from the frontend for long portfolio, history, and protocol-return requests, then poll `/api/holdings/progress?id=...`; progress rows are Redis-backed and expire quickly.
 - Use `/api/admin/invalidate-cache` after indexer deployments add or repair vault coverage.

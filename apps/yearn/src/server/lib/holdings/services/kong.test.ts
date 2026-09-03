@@ -62,6 +62,31 @@ describe('getPPS', () => {
 describe('fetchMultipleVaultsPPS', () => {
   afterEach(() => {
     vi.restoreAllMocks()
+    delete process.env.KONG_PPS_REST_URL
+    delete process.env.VERCEL_AUTOMATION_BYPASS_SECRET
+  })
+
+  it('always uses public Kong PPS routes without a Vercel bypass secret', async () => {
+    process.env.KONG_PPS_REST_URL = 'https://protected-preview.example.com/api/rest'
+    process.env.VERCEL_AUTOMATION_BYPASS_SECRET = 'deployment-secret'
+    const vaultAddress = '0x0000000000000000000000000000000000000001'
+    const address = `1:${vaultAddress}`
+    const fetchFn = vi.fn(async (url: string | URL | Request) =>
+      String(url).endsWith('/v2') ? createBatchResponse([address]) : createResponse([{ time: 100, value: '1.25' }])
+    ) as typeof fetch
+
+    await fetchMultipleVaultsPPS([{ chainId: 1, vaultAddress }], { fetchFn, maxRetries: 0 })
+    await fetchMultipleVaultsPPS([{ chainId: 1, vaultAddress }], {
+      fetchFn,
+      batch: true,
+      range: { start: 0, finish: 86_400 },
+      maxRetries: 0
+    })
+
+    expect(fetchFn.mock.calls[0]?.[0]).toBe(`https://kong.yearn.fi/api/rest/timeseries/pps/1/${vaultAddress}`)
+    expect(fetchFn.mock.calls[0]?.[1]?.headers).toBeUndefined()
+    expect(fetchFn.mock.calls[1]?.[0]).toBe('https://kong.yearn.fi/api/rest/timeseries/pps/v2')
+    expect(fetchFn.mock.calls[1]?.[1]?.headers).toEqual({ 'content-type': 'application/json' })
   })
 
   it('deduplicates vault requests and retries transient socket resets', async () => {

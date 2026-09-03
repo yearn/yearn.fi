@@ -79,6 +79,24 @@ export function withHoldingsProgressReporter<T>(reporter: THoldingsProgressRepor
   return progressReporterStorage.run(reporter, fn)
 }
 
+export function getHoldingsProgressReporter(): THoldingsProgressReporter | undefined {
+  const reporter = progressReporterStorage.getStore()
+  if (reporter) {
+    return reporter
+  }
+
+  const context = getHoldingsDebugContext()
+  if (!context) {
+    return undefined
+  }
+
+  return (progress, message, detail): void => {
+    context.pendingProgressWrites.push(
+      updateHoldingsProgress(context.progressId, { progress, message, detail: detail ?? null })
+    )
+  }
+}
+
 export function debugLog(scope: string, message: string, payload?: Record<string, unknown>): void {
   const context = getHoldingsDebugContext()
 
@@ -93,20 +111,7 @@ export function debugLog(scope: string, message: string, payload?: Record<string
 }
 
 export function reportHoldingsProgress(progress: number, message: string, detail?: string | null): void {
-  const reporter = progressReporterStorage.getStore()
-  if (reporter) {
-    reporter(progress, message, detail)
-    return
-  }
-
-  const context = getHoldingsDebugContext()
-  if (!context) {
-    return
-  }
-
-  context.pendingProgressWrites.push(
-    updateHoldingsProgress(context.progressId, { progress, message, detail: detail ?? null })
-  )
+  getHoldingsProgressReporter()?.(progress, message, detail)
 }
 
 export function debugError(scope: string, message: string, error: unknown, payload?: Record<string, unknown>): void {
