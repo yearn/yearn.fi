@@ -113,10 +113,6 @@ import {
   PortfolioHistoryChartControls,
   resolvePortfolioGrowthDisplayMode
 } from './components/PortfolioHistoryChart'
-import type {
-  TPortfolioVaultGrowthChartMode,
-  TPortfolioVaultGrowthChartSortDirection
-} from './components/PortfolioVaultGrowthChart'
 import {
   getReceiptValidatedLocalActivityNotifications,
   useLocalActivityReceiptStatuses
@@ -3206,9 +3202,6 @@ function PortfolioPage(): ReactElement {
   const [historyGrowthDisplayModeOverride, setHistoryGrowthDisplayModeOverride] = useState<TGrowthDisplayMode | null>(
     null
   )
-  const [historyVaultGrowthMode, setHistoryVaultGrowthMode] = useState<TPortfolioVaultGrowthChartMode>('position')
-  const [historyVaultGrowthSortDirection, setHistoryVaultGrowthSortDirection] =
-    useState<TPortfolioVaultGrowthChartSortDirection>('desc')
   const searchParams = useSearchParams()
   const pathname = usePathname() || '/portfolio'
   const router = useRouter()
@@ -3281,10 +3274,6 @@ function PortfolioPage(): ReactElement {
       activeTab={historyChartTab}
       growthDisplayModeOverride={historyGrowthDisplayModeOverride}
       onGrowthDisplayModeOverrideChange={setHistoryGrowthDisplayModeOverride}
-      vaultGrowthMode={historyVaultGrowthMode}
-      onVaultGrowthModeChange={setHistoryVaultGrowthMode}
-      vaultGrowthSortDirection={historyVaultGrowthSortDirection}
-      onVaultGrowthSortDirectionChange={setHistoryVaultGrowthSortDirection}
       balanceIsLoading={model.isHoldingsLoading || historyLoading}
       balanceIsEmpty={historyEmpty}
       balanceError={historyError}
@@ -3400,8 +3389,6 @@ function PortfolioPage(): ReactElement {
                     onTimeframeChange={setHistoryTimeframe}
                     resolvedGrowthDisplayMode={resolvedGrowthDisplayMode}
                     onGrowthDisplayModeOverrideChange={setHistoryGrowthDisplayModeOverride}
-                    vaultGrowthMode={historyVaultGrowthMode}
-                    onVaultGrowthModeChange={setHistoryVaultGrowthMode}
                     isEthGrowthAvailable={isEthGrowthAvailable}
                     className="h-full rounded-t-lg bg-linear-to-b from-surface to-surface-secondary/20 min-[920px]:rounded-tr-none min-[920px]:rounded-bl-lg"
                   >
