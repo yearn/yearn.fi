@@ -38,14 +38,14 @@ export function toPortfolioGrowthContributionPoint(
     timestamp: number
     growthUsd: number | null
     growthUsdEstimated: boolean
+    growthWeightUsd: number | null
     growthWeightEth: number | null
   },
   mode: 'usd' | 'eth'
 ): TPortfolioGrowthContributionFamily['dataPoints'][number] {
   return {
     timestamp: point.timestamp,
-    value: mode === 'eth' ? point.growthWeightEth : point.growthUsd,
-    ...(mode === 'usd' ? { isEstimated: point.growthUsdEstimated } : {})
+    value: mode === 'eth' ? point.growthWeightEth : point.growthWeightUsd
   }
 }
 

@@ -184,7 +184,7 @@ Keys:
 
 - `holdings:wallet-events:*`: combined wallet event history.
 - `holdings:totals:v3:<walletHash>`: aggregate settled USD totals by date.
-- `holdings:protocol-return-history:v13:<walletHash>:<timeframe>:<vaultScope>`: compressed protocol-return and Growth snapshot.
+- `holdings:protocol-return-history:v14:<walletHash>:<timeframe>:<vaultScope>`: compressed protocol-return and Growth snapshot.
 - `holdings:vault-invalidated:<chainId>:<vaultAddress>`: lazy invalidation timestamp.
 - `holdings:progress:*`: short-lived route progress.
 

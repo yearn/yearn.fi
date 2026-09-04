@@ -27,7 +27,7 @@ function buildIsolatedSeries(args: { id: string; mode: TMode; window: TWindow; s
       timestamp: index,
       protocolReturnPct: 123,
       growthUsd: args.mode === 'position' ? (index === windowStartIndex ? 0 : args.score) : null,
-      growthWeightUsd: args.mode === 'position' ? args.score * 100 : null,
+      growthWeightUsd: args.mode === 'position' ? (index === windowStartIndex ? 0 : args.score * 100) : null,
       growthWeightEth: args.mode === 'eth' ? (index === windowStartIndex ? 0 : args.score) : null,
       growthIndex: args.mode === 'index' ? (index === windowStartIndex ? 100 : 100 + args.score) : null
     }))
@@ -105,7 +105,7 @@ describe('selectProtocolReturnFamilySeriesCandidates', () => {
     })
   })
 
-  it('ranks position candidates by latest-price growth instead of receipt-weighted growth', () => {
+  it('ranks USD position candidates by receipt-weighted growth', () => {
     const familySeries = Array.from({ length: 20 }, (_, index) => ({
       chainId: 1,
       vaultAddress: `latest-price-${index}`,
@@ -124,9 +124,10 @@ describe('selectProtocolReturnFamilySeriesCandidates', () => {
     }))
 
     const selected = selectProtocolReturnFamilySeriesCandidates(familySeries, '1y')
+    const selectedAddresses = selected.map((series) => series.vaultAddress)
 
-    expect(selected.map((series) => series.vaultAddress)).toContain('latest-price-19')
-    expect(selected.map((series) => series.vaultAddress)).not.toContain('latest-price-10')
+    expect(selectedAddresses).toContain('latest-price-10')
+    expect(selectedAddresses).not.toContain('latest-price-12')
   })
 
   it('keeps candidates that are relevant only to receipt-weighted ETH growth', () => {

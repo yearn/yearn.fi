@@ -40,20 +40,59 @@ describe('buildPortfolioGrowthContributionChart', () => {
   it('selects the matching per-vault value for USD and ETH modes', () => {
     const point = {
       timestamp: timestamp('2026-01-01'),
-      growthUsd: 25,
+      growthUsd: -75,
       growthUsdEstimated: true,
+      growthWeightUsd: 25,
       growthWeightEth: 0.01
     }
 
     expect(toPortfolioGrowthContributionPoint(point, 'usd')).toEqual({
       timestamp: point.timestamp,
-      value: 25,
-      isEstimated: true
+      value: 25
     })
     expect(toPortfolioGrowthContributionPoint(point, 'eth')).toEqual({
       timestamp: point.timestamp,
       value: 0.01
     })
+  })
+
+  it('keeps USD contributions continuous when an exit changes mark-to-market valuation', () => {
+    const rawPoints = [
+      {
+        timestamp: timestamp('2026-02-08'),
+        growthUsd: 34_172,
+        growthUsdEstimated: true,
+        growthWeightUsd: 29_557,
+        growthWeightEth: 8.59
+      },
+      {
+        timestamp: timestamp('2026-02-09'),
+        growthUsd: 24_280,
+        growthUsdEstimated: true,
+        growthWeightUsd: 29_562,
+        growthWeightEth: 8.6
+      }
+    ]
+    const chart = buildPortfolioGrowthContributionChart({
+      totalPoints: [
+        { date: '2026-02-08', value: 0 },
+        { date: '2026-02-09', value: 5 }
+      ],
+      familySeries: [
+        {
+          chainId: 1,
+          vaultAddress: '0x0000000000000000000000000000000000000001',
+          label: 'Volatile vault',
+          dataPoints: rawPoints.map((point) => toPortfolioGrowthContributionPoint(point, 'usd'))
+        }
+      ]
+    })
+
+    expect(chart.data.map((point) => [point.portfolioGrowth, point.vault_0, point.other])).toEqual([
+      [0, 0, 0],
+      [5, 5, 0]
+    ])
+    expectConservation(chart)
   })
 
   it('keeps the top four vaults and puts the remaining contribution in Other', () => {
