@@ -115,7 +115,6 @@ export type TVaultPortfolioGrowth = {
   usd: number
   assetGrowth: Array<{ amount: number; symbol: string | null }>
   isUsdEstimated: boolean
-  percent: number | null
   annualizedPercent: number | null
 }
 
@@ -528,7 +527,6 @@ function VaultsListRowPresentationComponent({
         .map(({ amount, symbol }) => formatSignedPortfolioGrowthAsset(amount, symbol ?? vaultToken.symbol))
         .filter((formatted): formatted is string => formatted !== null)
         .join(' · ') || null
-    const totalPercent = formatSignedPortfolioGrowthPercent(portfolioGrowth.percent)
     const annualizedPercent = formatSignedPortfolioGrowthPercent(portfolioGrowth.annualizedPercent)
 
     return (
@@ -552,10 +550,6 @@ function VaultsListRowPresentationComponent({
                 <span className={'text-text-secondary'}>{'Real APY'}</span>
                 <strong className={'font-semibold'}>{annualizedPercent ?? '—'}</strong>
               </div>
-              <div className={'flex items-center justify-between gap-2'}>
-                <span className={'text-text-secondary'}>{'Total return'}</span>
-                <strong className={'font-semibold'}>{totalPercent ?? '—'}</strong>
-              </div>
               {portfolioGrowth.isUsdEstimated ? (
                 <p className={'border-t border-border pt-2 text-text-secondary'}>{'* Growth may be approximate.'}</p>
               ) : null}
@@ -568,7 +562,7 @@ function VaultsListRowPresentationComponent({
           className={
             'font-number font-semibold text-text-primary underline decoration-neutral-600/30 decoration-dotted underline-offset-4 max-md:text-lg'
           }
-          aria-label={`Growth ${ariaValue}${portfolioGrowth.isUsdEstimated ? '; value may be approximate' : ''}; asset growth ${assetValue ?? 'unavailable'}; total return ${totalPercent ?? 'unavailable'}; Real APY ${annualizedPercent ?? 'unavailable'}`}
+          aria-label={`Growth ${ariaValue}${portfolioGrowth.isUsdEstimated ? '; value may be approximate' : ''}; asset growth ${assetValue ?? 'unavailable'}; Real APY ${annualizedPercent ?? 'unavailable'}`}
           onClick={(event): void => event.preventDefault()}
           onMouseEnter={() => handleInteractiveHoverChange(true)}
           onMouseLeave={() => handleInteractiveHoverChange(false)}

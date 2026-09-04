@@ -101,7 +101,6 @@ describe('portfolio growth helpers', () => {
       usd: 10,
       assetGrowth: [{ amount: 10, symbol: null }],
       isUsdEstimated: false,
-      percent: 10,
       annualizedPercent: 20
     })
   })

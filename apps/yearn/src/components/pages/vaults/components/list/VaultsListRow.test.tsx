@@ -170,13 +170,14 @@ describe('VaultsListRow', () => {
         usd: 1476,
         assetGrowth: [{ amount: 123.456, symbol: null }],
         isUsdEstimated: true,
-        percent: 2,
         annualizedPercent: 3
       }
     })
 
     expect(html).toContain('+$1.48K*')
     expect(html).toContain('Growth +$1.48K; value may be approximate; asset growth +123.46 TKN')
+    expect(html).toContain('Real APY')
+    expect(html).not.toContain('Total return')
   })
 
   it('renders the desktop TVL tooltip trigger for standard vault rows', () => {

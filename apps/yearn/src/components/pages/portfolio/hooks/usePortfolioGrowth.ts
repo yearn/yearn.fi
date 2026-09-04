@@ -10,7 +10,6 @@ export type TPortfolioGrowthDisplay = {
   usd: number
   assetGrowth: TPortfolioGrowthAssetDisplay[]
   isUsdEstimated: boolean
-  percent: number | null
   annualizedPercent: number | null
 }
 
@@ -182,7 +181,6 @@ export function toPortfolioGrowthDisplay(
     usd: vault.growthUsd,
     assetGrowth: vault.assetGrowth,
     isUsdEstimated: vault.issues.includes('missing_exit_price'),
-    percent: vault.growthPct !== null && Number.isFinite(vault.growthPct) ? vault.growthPct : null,
     annualizedPercent:
       vault.annualizedProtocolReturnPct !== null && Number.isFinite(vault.annualizedProtocolReturnPct)
         ? vault.annualizedProtocolReturnPct
