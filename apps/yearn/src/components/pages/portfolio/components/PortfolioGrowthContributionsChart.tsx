@@ -23,7 +23,7 @@ import {
 import { formatUSD } from '@shared/utils'
 import type { ReactElement } from 'react'
 import { useMemo } from 'react'
-import { Area, CartesianGrid, ComposedChart, Line, XAxis, YAxis } from 'recharts'
+import { Area, CartesianGrid, ComposedChart, Line, ReferenceLine, XAxis, YAxis } from 'recharts'
 import type { AxisDomain } from 'recharts/types/util/types'
 
 type TPortfolioGrowthContributionsChartProps = {
@@ -57,7 +57,7 @@ const CONTRIBUTION_COLORS = [
 ] as const
 const OTHER_COLOR = '#94a3b8'
 const TOTAL_COLOR = '#2578ff'
-const STACK_HEADROOM = 1.05
+const LINE_HEADROOM = 1.05
 const CHART_MARGIN = {
   ...CHART_WITH_AXES_MARGIN,
   bottom: 4
@@ -90,8 +90,11 @@ function formatSignedGrowth(value: number, mode: 'usd' | 'eth', isEstimated = fa
 function formatGrowthTick(value: number | string, mode: 'usd' | 'eth'): string {
   const numericValue = Number(value)
   const absoluteValue = Math.abs(numericValue)
-  if (!Number.isFinite(numericValue) || numericValue === 0) {
+  if (!Number.isFinite(numericValue)) {
     return ''
+  }
+  if (numericValue === 0) {
+    return mode === 'eth' ? '0' : '$0'
   }
   if (mode === 'eth') {
     if (absoluteValue >= 1_000) {
@@ -112,31 +115,22 @@ function formatGrowthTick(value: number | string, mode: 'usd' | 'eth'): string {
   return `${numericValue < 0 ? '−' : ''}$${absoluteValue.toFixed(0)}`
 }
 
-function getStackDomain(
+export function getPortfolioGrowthLineDomain(
   data: TPortfolioGrowthContributionChartPoint[],
-  series: TPresentedContributionSeries[]
+  series: Array<Pick<TPresentedContributionSeries, 'key'>>
 ): AxisDomain {
+  const dataKeys = ['portfolioGrowth', ...series.map((item) => item.key)]
   const bounds = data.reduce(
     (result, point) => {
-      const stacked = series.reduce(
-        (totals, item) => {
-          const value = Number(point[item.key] ?? 0)
-          if (!Number.isFinite(value)) {
-            return totals
-          }
-          if (value >= 0) {
-            totals.positive += value
-          } else {
-            totals.negative += value
-          }
-          return totals
-        },
-        { positive: 0, negative: 0 }
-      )
-
-      result.min = Math.min(result.min, stacked.negative)
-      result.max = Math.max(result.max, stacked.positive)
-      return result
+      return dataKeys.reduce((nextBounds, dataKey) => {
+        const value = point[dataKey]
+        if (typeof value !== 'number' || !Number.isFinite(value)) {
+          return nextBounds
+        }
+        nextBounds.min = Math.min(nextBounds.min, value)
+        nextBounds.max = Math.max(nextBounds.max, value)
+        return nextBounds
+      }, result)
     },
     { min: 0, max: 0 }
   )
@@ -145,7 +139,7 @@ function getStackDomain(
     return [0, 1]
   }
 
-  return [bounds.min < 0 ? bounds.min * STACK_HEADROOM : 0, bounds.max > 0 ? bounds.max * STACK_HEADROOM : 0]
+  return [bounds.min < 0 ? bounds.min * LINE_HEADROOM : 0, bounds.max > 0 ? bounds.max * LINE_HEADROOM : 0]
 }
 
 function PortfolioGrowthContributionsTooltip({
@@ -263,7 +257,11 @@ export function PortfolioGrowthContributionsChart({
       ]),
     [mode, series]
   )
-  const yAxisDomain = useMemo(() => getStackDomain(contributionChart.data, series), [contributionChart.data, series])
+  const plottedSeries = useMemo(() => series.filter((item) => !item.isOther), [series])
+  const yAxisDomain = useMemo(
+    () => getPortfolioGrowthLineDomain(contributionChart.data, plottedSeries),
+    [contributionChart.data, plottedSeries]
+  )
   const isShortRange = timeframe === '30d' || contributionChart.data.length <= 45
   const ticks = isShortRange
     ? getChartWeeklyTicks(contributionChart.data)
@@ -272,7 +270,7 @@ export function PortfolioGrowthContributionsChart({
 
   return (
     <ChartContainer config={chartConfig} style={{ height: '100%', aspectRatio: 'unset' }}>
-      <ComposedChart data={contributionChart.data} margin={CHART_MARGIN} stackOffset={'sign'}>
+      <ComposedChart data={contributionChart.data} margin={CHART_MARGIN}>
         <CartesianGrid vertical={false} />
         <XAxis
           dataKey={'date'}
@@ -299,17 +297,27 @@ export function PortfolioGrowthContributionsChart({
           wrapperStyle={{ zIndex: 20 }}
           content={(props) => <PortfolioGrowthContributionsTooltip {...props} series={series} mode={mode} />}
         />
-        {series.map((item) => (
-          <Area
+        <Area
+          type={'monotone'}
+          dataKey={'portfolioGrowth'}
+          baseValue={0}
+          fill={TOTAL_COLOR}
+          fillOpacity={0.1}
+          stroke={'none'}
+          tooltipType={'none'}
+          activeDot={false}
+          isAnimationActive={false}
+        />
+        <ReferenceLine y={0} stroke={'var(--chart-axis)'} strokeOpacity={0.6} />
+        {plottedSeries.map((item) => (
+          <Line
             key={item.key}
             type={'monotone'}
             dataKey={item.key}
             name={item.label}
-            stackId={'growth'}
-            fill={item.color}
-            fillOpacity={item.isOther ? 0.24 : 0.42}
             stroke={item.color}
-            strokeWidth={1.25}
+            strokeWidth={1.5}
+            dot={false}
             activeDot={{ r: 4, strokeWidth: 0, fill: item.color }}
             isAnimationActive={false}
           />
@@ -318,10 +326,9 @@ export function PortfolioGrowthContributionsChart({
           type={'monotone'}
           dataKey={'portfolioGrowth'}
           stroke={TOTAL_COLOR}
-          strokeWidth={2}
+          strokeWidth={3}
           dot={false}
           activeDot={{ r: 4, strokeWidth: 0, fill: TOTAL_COLOR }}
-          tooltipType={'none'}
           isAnimationActive={false}
         />
       </ComposedChart>
