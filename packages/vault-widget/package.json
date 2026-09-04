@@ -49,16 +49,16 @@
   },
   "devDependencies": {
     "@tanstack/react-query": "5.101.4",
-    "@testing-library/react": "16.3.2",
+    "@testing-library/react": "16.3.3",
     "@wagmi/core": "2.22.1",
     "@types/react": "19.2.18",
-    "@types/react-dom": "19.2.4",
+    "@types/react-dom": "19.2.5",
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "react-rewards": "2.1.0",
     "typescript": "5.9.3",
     "viem": "2.55.11",
-    "vitest": "4.1.10",
+    "vitest": "4.1.11",
     "wagmi": "2.18.2"
   }
 }
