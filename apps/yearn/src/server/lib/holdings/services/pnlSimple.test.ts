@@ -28,6 +28,14 @@ const YVUSD_LOCKED = '0xaaafea48472f77563961cdb53291dedfb46f9040'
 const YVUSD_UNLOCKED_KEY = toVaultKey(1, YVUSD_UNLOCKED)
 const YVUSD_LOCKED_KEY = toVaultKey(1, YVUSD_LOCKED)
 const YVUSD_ONE = 10n ** 6n
+const NESTED_OUTER_VAULT = '0x5555555555555555555555555555555555555555'
+const NESTED_MIDDLE_VAULT = '0x6666666666666666666666666666666666666666'
+const NESTED_INNER_VAULT = '0x7777777777777777777777777777777777777777'
+const NESTED_TERMINAL_ASSET = '0x8888888888888888888888888888888888888888'
+const NESTED_OUTER_KEY = toVaultKey(1, NESTED_OUTER_VAULT)
+const NESTED_MIDDLE_KEY = toVaultKey(1, NESTED_MIDDLE_VAULT)
+const NESTED_INNER_KEY = toVaultKey(1, NESTED_INNER_VAULT)
+const NESTED_TERMINAL_PRICE_KEY = `ethereum:${NESTED_TERMINAL_ASSET}`
 
 const metadata = new Map<string, VaultMetadata>([
   [
@@ -46,6 +54,83 @@ const metadata = new Map<string, VaultMetadata>([
     }
   ]
 ])
+
+const nestedMetadata = new Map<string, VaultMetadata>([
+  [
+    NESTED_OUTER_KEY,
+    {
+      address: NESTED_OUTER_VAULT,
+      chainId: 1,
+      version: 'v3',
+      category: 'stable',
+      token: {
+        address: NESTED_MIDDLE_VAULT,
+        symbol: 'nMID',
+        decimals: 18
+      },
+      decimals: 18
+    }
+  ],
+  [
+    NESTED_MIDDLE_KEY,
+    {
+      address: NESTED_MIDDLE_VAULT,
+      chainId: 1,
+      version: 'v3',
+      category: 'stable',
+      token: {
+        address: NESTED_INNER_VAULT,
+        symbol: 'nIN',
+        decimals: 18
+      },
+      decimals: 18
+    }
+  ],
+  [
+    NESTED_INNER_KEY,
+    {
+      address: NESTED_INNER_VAULT,
+      chainId: 1,
+      version: 'v3',
+      category: 'stable',
+      token: {
+        address: NESTED_TERMINAL_ASSET,
+        symbol: 'ROOT',
+        decimals: 18
+      },
+      decimals: 18
+    }
+  ]
+])
+
+function buildNestedPpsData(middlePpsAtExit = 4): Map<string, Map<number, number>> {
+  return new Map([
+    [
+      NESTED_OUTER_KEY,
+      new Map([
+        [100, 2],
+        [200, 2],
+        [300, 2.5]
+      ])
+    ],
+    [
+      NESTED_MIDDLE_KEY,
+      new Map([
+        [100, 3],
+        [200, middlePpsAtExit],
+        [300, 4]
+      ])
+    ],
+    [
+      NESTED_INNER_KEY,
+      new Map([
+        [100, 5],
+        [200, 6],
+        [300, 6]
+      ])
+    ]
+  ])
+}
 
 function baseEvent(overrides: Partial<TRawPnlEvent>): TRawPnlEvent {
   const id = overrides.id ?? 'event'
@@ -77,19 +162,21 @@ function materializeVault(args: {
   ppsData: Map<string, Map<number, number>>
   priceData: Map<string, Map<number, number>>
   currentTimestamp?: number
+  vaultMetadata?: Map<string, VaultMetadata>
 }): HoldingsPnLSimpleVault {
   const currentTimestamp = args.currentTimestamp ?? 300
+  const vaultMetadata = args.vaultMetadata ?? metadata
   const ledgers = buildProtocolReturnLedgers({
     events: args.events,
     userAddress: USER,
-    metadata,
+    metadata: vaultMetadata,
     ppsData: args.ppsData,
     priceData: args.priceData,
     currentTimestamp
   })
   return materializeProtocolReturnVaults({
     ledgers,
-    metadata,
+    metadata: vaultMetadata,
     ppsData: args.ppsData,
     currentTimestamp
   })[0]!
@@ -2152,6 +2239,183 @@ describe('pnl simple protocol return', () => {
     ])
   })
 
+  it('values three nested vault layers in terminal-asset units for deposits, withdrawals, and current positions', () => {
+    const vault = materializeVault({
+      events: [
+        baseEvent({
+          kind: 'deposit',
+          id: 'three-layer-deposit',
+          vaultAddress: NESTED_OUTER_VAULT,
+          familyVaultAddress: NESTED_OUTER_VAULT,
+          shares: 10n * ONE,
+          assets: 20n * ONE,
+          owner: USER,
+          sender: USER
+        }),
+        baseEvent({
+          kind: 'withdrawal',
+          id: 'three-layer-withdrawal',
+          vaultAddress: NESTED_OUTER_VAULT,
+          familyVaultAddress: NESTED_OUTER_VAULT,
+          blockTimestamp: 200,
+          blockNumber: 2,
+          shares: 4n * ONE,
+          assets: 8n * ONE,
+          owner: USER
+        })
+      ],
+      vaultMetadata: nestedMetadata,
+      ppsData: buildNestedPpsData(),
+      priceData: new Map([
+        [
+          NESTED_TERMINAL_PRICE_KEY,
+          new Map([
+            [100, 7],
+            [200, 11],
+            [300, 13]
+          ])
+        ]
+      ])
+    })
+
+    expect(vault.status).toBe('ok')
+    expect(vault.sharesFormatted).toBeCloseTo(6)
+    expect(vault.pricePerShare).toBeCloseTo(60)
+    expect(vault.currentUnderlying).toBeCloseTo(360)
+    expect(vault.baselineUnderlying).toBeCloseTo(300)
+    expect(vault.realizedBaselineUnderlying).toBeCloseTo(120)
+    expect(vault.unrealizedBaselineUnderlying).toBeCloseTo(180)
+    expect(vault.realizedGrowthUnderlying).toBeCloseTo(72)
+    expect(vault.unrealizedGrowthUnderlying).toBeCloseTo(180)
+    expect(vault.growthUnderlying).toBeCloseTo(252)
+    expect(vault.realizedGrowthUsdAtExit).toBeCloseTo(792)
+    expect(vault.baselineWeightUsd).toBeCloseTo(2100)
+    expect(vault.growthWeightUsd).toBeCloseTo(1764)
+    expect(vault.protocolReturnPct).toBeCloseTo(84)
+    expect(vault.deposits).toBe(1)
+    expect(vault.withdrawals).toBe(1)
+    expect(vault.metadata).toMatchObject({
+      symbol: 'ROOT',
+      assetDecimals: 18,
+      tokenAddress: NESTED_TERMINAL_ASSET
+    })
+  })
+
+  it('compounds every nested PPS for transfer receipts, exits, and current valuation', () => {
+    const vault = materializeVault({
+      events: [
+        baseEvent({
+          id: 'three-layer-transfer-in',
+          vaultAddress: NESTED_OUTER_VAULT,
+          familyVaultAddress: NESTED_OUTER_VAULT,
+          shares: 10n * ONE,
+          sender: OTHER,
+          receiver: USER
+        }),
+        baseEvent({
+          id: 'three-layer-transfer-out',
+          vaultAddress: NESTED_OUTER_VAULT,
+          familyVaultAddress: NESTED_OUTER_VAULT,
+          blockTimestamp: 200,
+          blockNumber: 2,
+          shares: 4n * ONE,
+          sender: USER,
+          receiver: OTHER
+        })
+      ],
+      vaultMetadata: nestedMetadata,
+      ppsData: buildNestedPpsData(),
+      priceData: new Map([
+        [
+          NESTED_TERMINAL_PRICE_KEY,
+          new Map([
+            [100, 7],
+            [200, 11],
+            [300, 13]
+          ])
+        ]
+      ])
+    })
+
+    expect(vault.status).toBe('ok')
+    expect(vault.sharesFormatted).toBeCloseTo(6)
+    expect(vault.pricePerShare).toBeCloseTo(60)
+    expect(vault.currentUnderlying).toBeCloseTo(360)
+    expect(vault.baselineUnderlying).toBeCloseTo(300)
+    expect(vault.realizedBaselineUnderlying).toBeCloseTo(120)
+    expect(vault.realizedGrowthUnderlying).toBeCloseTo(72)
+    expect(vault.growthUnderlying).toBeCloseTo(252)
+    expect(vault.realizedGrowthUsdAtExit).toBeCloseTo(792)
+    expect(vault.receiptCount).toBe(1)
+    expect(vault.exitCount).toBe(1)
+    expect(vault.deposits).toBe(0)
+    expect(vault.withdrawals).toBe(0)
+    expect(vault.transfersIn).toBe(1)
+    expect(vault.transfersOut).toBe(1)
+  })
+
+  it('preserves nested-vault lots when an intermediate PPS is missing', () => {
+    const vault = materializeVault({
+      events: [
+        baseEvent({
+          kind: 'deposit',
+          id: 'three-layer-deposit',
+          vaultAddress: NESTED_OUTER_VAULT,
+          familyVaultAddress: NESTED_OUTER_VAULT,
+          shares: 10n * ONE,
+          assets: 20n * ONE,
+          owner: USER,
+          sender: USER
+        }),
+        baseEvent({
+          kind: 'withdrawal',
+          id: 'three-layer-withdrawal-missing-middle-pps',
+          vaultAddress: NESTED_OUTER_VAULT,
+          familyVaultAddress: NESTED_OUTER_VAULT,
+          blockTimestamp: 200,
+          blockNumber: 2,
+          shares: 4n * ONE,
+          assets: 8n * ONE,
+          owner: USER
+        }),
+        baseEvent({
+          id: 'three-layer-transfer-out-missing-middle-pps',
+          vaultAddress: NESTED_OUTER_VAULT,
+          familyVaultAddress: NESTED_OUTER_VAULT,
+          blockTimestamp: 201,
+          blockNumber: 3,
+          shares: 6n * ONE,
+          sender: USER,
+          receiver: OTHER
+        })
+      ],
+      vaultMetadata: nestedMetadata,
+      ppsData: buildNestedPpsData(Number.NaN),
+      priceData: new Map([
+        [
+          NESTED_TERMINAL_PRICE_KEY,
+          new Map([
+            [100, 7],
+            [200, 11],
+            [300, 13]
+          ])
+        ]
+      ])
+    })
+
+    expect(vault.status).toBe('missing_pps')
+    expect(vault.issues).toContain('missing_pps')
+    expect(vault.sharesFormatted).toBeCloseTo(10)
+    expect(vault.pricePerShare).toBeCloseTo(60)
+    expect(vault.currentUnderlying).toBeCloseTo(600)
+    expect(vault.baselineUnderlying).toBeCloseTo(300)
+    expect(vault.realizedBaselineUnderlying).toBeCloseTo(0)
+    expect(vault.realizedGrowthUnderlying).toBeCloseTo(0)
+    expect(vault.growthUnderlying).toBeCloseTo(300)
+    expect(vault.exitCount).toBe(0)
+    expect(vault.unmatchedExitSharesFormatted).toBeCloseTo(0)
+  })
+
   it('accounts for open locked and unlocked yvUSD positions in USDC-root units', () => {
     const yvUsdMetadata = new Map<string, VaultMetadata>([
       [
@@ -2296,6 +2560,21 @@ describe('pnl simple protocol return', () => {
 
   it('does not mix direct yvUSD units into the locked root ledger when unlocked PPS is missing', () => {
     const yvUsdMetadata = new Map<string, VaultMetadata>([
+      [
+        YVUSD_UNLOCKED_KEY,
+        {
+          address: YVUSD_UNLOCKED,
+          chainId: 1,
+          version: 'v3',
+          category: 'stable',
+          token: {
+            address: YVUSD_UNDERLYING,
+            symbol: 'USDC',
+            decimals: 6
+          },
+          decimals: 6
+        }
+      ],
       [
         YVUSD_LOCKED_KEY,
         {

@@ -30,7 +30,10 @@ import {
   deriveNestedVaultAssetPriceData,
   expandNestedVaultAssetPriceRequests,
   getNestedVaultPpsIdentifiersFromPriceRequests,
-  mergeVaultIdentifiers
+  mergeVaultIdentifiers,
+  resolveNestedVaultTerminalAsset,
+  resolveNestedVaultValuation,
+  type TNestedVaultValuation
 } from './nestedVaultPrices'
 import { mergeAddressScopedRawPnlEventsWithTransactionActivity } from './pnlEvents'
 import { lowerCaseAddress, toVaultKey, ZERO } from './pnlShared'
@@ -66,11 +69,6 @@ const RECEIPT_PRICE_BUCKET_SECONDS = 24 * 60 * 60
 const ZERO_ADDRESS = '0x0000000000000000000000000000000000000000'
 const ETHEREUM_WETH_ADDRESS = '0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2'
 const ETHEREUM_WETH_PRICE_KEY = `${getChainPrefix(1)}:${ETHEREUM_WETH_ADDRESS.toLowerCase()}`
-const YVUSD_CHAIN_ID = 1
-const YVUSD_UNLOCKED_ADDRESS = '0x696d02db93291651ed510704c9b286841d506987'
-const YVUSD_LOCKED_ADDRESS = '0xaaafea48472f77563961cdb53291dedfb46f9040'
-const YVUSD_ROOT_ASSET_ADDRESS = '0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48'
-const YVUSD_UNLOCKED_KEY = toVaultKey(YVUSD_CHAIN_ID, YVUSD_UNLOCKED_ADDRESS)
 const ETH_FAMILY_SYMBOLS = new Set([
   'ETH',
   'WETH',
@@ -130,6 +128,7 @@ type TProtocolReturnLedger = {
   withdrawals: number
   transfersIn: number
   transfersOut: number
+  missingMetadata: boolean
   missingPps: boolean
   missingReceiptPrice: boolean
   missingExitPrice: boolean
@@ -379,6 +378,7 @@ function emptyLedger(chainId: number, vaultAddress: string): TProtocolReturnLedg
     withdrawals: 0,
     transfersIn: 0,
     transfersOut: 0,
+    missingMetadata: false,
     missingPps: false,
     missingReceiptPrice: false,
     missingExitPrice: false,
@@ -556,18 +556,6 @@ function filterVaultIdentifiersByRequestedVaults(
 }
 function tokenPriceMapKey(metadata: VaultMetadata): string {
   return `${getChainPrefix(metadata.chainId)}:${metadata.token.address.toLowerCase()}`
-}
-
-function isLockedYvUsdVault(chainId: number, vaultAddress: string): boolean {
-  return chainId === YVUSD_CHAIN_ID && lowerCaseAddress(vaultAddress) === YVUSD_LOCKED_ADDRESS
-}
-
-function getProtocolReturnAssetAddress(
-  chainId: number,
-  vaultAddress: string,
-  metadata: VaultMetadata | undefined
-): string | null {
-  return isLockedYvUsdVault(chainId, vaultAddress) ? YVUSD_ROOT_ASSET_ADDRESS : (metadata?.token.address ?? null)
 }
 
 function getReceiptPriceBucketTimestamps(timestamp: number, currentTimestamp: number): number[] {
@@ -767,12 +755,10 @@ async function fetchEthReceiptPrices(
 
 function getReceiptPriceUsd(
   chainId: number,
-  vaultAddress: string,
-  metadata: VaultMetadata | undefined,
+  assetAddress: string | null,
   priceData: Map<string, Map<number, number>>,
   timestamp: number
 ): number {
-  const assetAddress = getProtocolReturnAssetAddress(chainId, vaultAddress, metadata)
   if (!assetAddress) {
     return 0
   }
@@ -783,12 +769,10 @@ function getReceiptPriceUsd(
 
 function getExitPriceUsd(
   chainId: number,
-  vaultAddress: string,
-  metadata: VaultMetadata | undefined,
+  assetAddress: string | null,
   priceData: Map<string, Map<number, number>>,
   timestamp: number
 ): number | null {
-  const assetAddress = getProtocolReturnAssetAddress(chainId, vaultAddress, metadata)
   if (!assetAddress) {
     return null
   }
@@ -819,44 +803,31 @@ function isValidPps(pps: number | null): pps is number {
   return pps !== null && Number.isFinite(pps) && pps > 0
 }
 
-function getYvUsdUnlockedPps(ppsData: Map<string, Map<number, number>>, timestamp: number): number | null {
-  return getEventPps(ppsData.get(YVUSD_UNLOCKED_KEY), timestamp)
-}
-
-function getProtocolReturnPps(args: {
-  chainId: number
-  vaultAddress: string
-  directPps: number | null
-  ppsData: Map<string, Map<number, number>>
-  timestamp: number
-}): number | null {
-  if (!isValidPps(args.directPps)) {
-    return null
+function convertUnderlyingToTerminalAsset(args: { directUnderlying: number; valuation: TNestedVaultValuation }): {
+  underlying: number
+  missingPps: boolean
+} {
+  if (args.valuation.missingMetadata) {
+    return { underlying: 0, missingPps: false }
   }
 
-  if (!isLockedYvUsdVault(args.chainId, args.vaultAddress)) {
-    return args.directPps
-  }
-
-  const unlockedPps = getYvUsdUnlockedPps(args.ppsData, args.timestamp)
-  return isValidPps(unlockedPps) ? args.directPps * unlockedPps : null
-}
-
-function convertYvUsdLockedUnderlyingToRoot(args: {
-  chainId: number
-  vaultAddress: string
-  directUnderlying: number
-  ppsData: Map<string, Map<number, number>>
-  timestamp: number
-}): { underlying: number; missingPps: boolean } {
-  if (!isLockedYvUsdVault(args.chainId, args.vaultAddress)) {
-    return { underlying: args.directUnderlying, missingPps: false }
-  }
-
-  const unlockedPps = getYvUsdUnlockedPps(args.ppsData, args.timestamp)
-  return isValidPps(unlockedPps)
-    ? { underlying: args.directUnderlying * unlockedPps, missingPps: false }
+  return isValidPps(args.valuation.underlyingToTerminalRate)
+    ? {
+        underlying: args.directUnderlying * args.valuation.underlyingToTerminalRate,
+        missingPps: false
+      }
     : { underlying: 0, missingPps: true }
+}
+
+function markLedgerValuationIssues(
+  ledger: TProtocolReturnLedger,
+  args: { missingMetadata: boolean; missingPps: boolean }
+): TProtocolReturnLedger {
+  return {
+    ...ledger,
+    missingMetadata: ledger.missingMetadata || args.missingMetadata,
+    missingPps: ledger.missingPps || args.missingPps
+  }
 }
 
 function isKnownStakingWrapperEvent(event: TRawPnlEvent): boolean {
@@ -1137,6 +1108,13 @@ function processEvent(
   const assetDecimals = metadata?.token.decimals ?? 18
   const shareDecimals = metadata?.decimals ?? 18
   const ppsMap = args.ppsData.get(vaultKey)
+  const vaultValuation = resolveNestedVaultValuation({
+    chainId: event.chainId,
+    vaultAddress: event.familyVaultAddress,
+    vaultMetadata: args.metadata,
+    ppsData: args.ppsData,
+    timestamp: event.blockTimestamp
+  })
   const currentLedger = accrueLedgerExposure(
     ledgers.get(vaultKey) ?? emptyLedger(event.chainId, event.familyVaultAddress),
     event.blockTimestamp
@@ -1145,8 +1123,7 @@ function processEvent(
   if (event.kind === 'deposit') {
     const receiptPriceUsd = getReceiptPriceUsd(
       event.chainId,
-      event.familyVaultAddress,
-      metadata,
+      vaultValuation.terminalAsset?.address ?? null,
       args.priceData,
       event.blockTimestamp
     )
@@ -1156,25 +1133,28 @@ function processEvent(
       shareDecimals,
       ppsMap
     })
-    const valuation = convertYvUsdLockedUnderlyingToRoot({
-      chainId: event.chainId,
-      vaultAddress: event.familyVaultAddress,
+    const valuation = convertUnderlyingToTerminalAsset({
       directUnderlying: directValuation.underlying,
-      ppsData: args.ppsData,
-      timestamp: event.blockTimestamp
+      valuation: vaultValuation
     })
     const missingPps = directValuation.missingPps || valuation.missingPps
     ledgers.set(
       vaultKey,
-      addReceipt(missingPps ? { ...currentLedger, missingPps: true } : currentLedger, {
-        shares: event.shares,
-        baselineUnderlying: valuation.underlying,
-        receiptTimestamp: event.blockTimestamp,
-        receiptPriceUsd,
-        receiptPriceEth,
-        receiptKind: 'deposit',
-        transactionHash: event.transactionHash
-      })
+      addReceipt(
+        markLedgerValuationIssues(currentLedger, {
+          missingMetadata: vaultValuation.missingMetadata,
+          missingPps
+        }),
+        {
+          shares: event.shares,
+          baselineUnderlying: valuation.underlying,
+          receiptTimestamp: event.blockTimestamp,
+          receiptPriceUsd,
+          receiptPriceEth,
+          receiptKind: 'deposit',
+          transactionHash: event.transactionHash
+        }
+      )
     )
     return ledgers
   }
@@ -1185,16 +1165,19 @@ function processEvent(
       shareDecimals,
       ppsMap
     })
-    const valuation = convertYvUsdLockedUnderlyingToRoot({
-      chainId: event.chainId,
-      vaultAddress: event.familyVaultAddress,
+    const valuation = convertUnderlyingToTerminalAsset({
       directUnderlying: directValuation.underlying,
-      ppsData: args.ppsData,
-      timestamp: event.blockTimestamp
+      valuation: vaultValuation
     })
     const missingPps = directValuation.missingPps || valuation.missingPps
-    if (missingPps) {
-      ledgers.set(vaultKey, { ...currentLedger, missingPps: true })
+    if (vaultValuation.missingMetadata || missingPps) {
+      ledgers.set(
+        vaultKey,
+        markLedgerValuationIssues(currentLedger, {
+          missingMetadata: vaultValuation.missingMetadata,
+          missingPps
+        })
+      )
       return ledgers
     }
 
@@ -1205,8 +1188,7 @@ function processEvent(
         exitUnderlying: valuation.underlying,
         exitPriceUsd: getExitPriceUsd(
           event.chainId,
-          event.familyVaultAddress,
-          metadata,
+          vaultValuation.terminalAsset?.address ?? null,
           args.exitPriceData,
           event.blockTimestamp
         ),
@@ -1221,53 +1203,47 @@ function processEvent(
     return ledgers
   }
 
-  const pps = getEventPps(ppsMap, event.blockTimestamp)
-  if (!isValidPps(pps)) {
-    ledgers.set(vaultKey, { ...currentLedger, missingPps: true })
-    return ledgers
-  }
+  const currentPps = vaultValuation.pricePerShare
+  const missingPps = !vaultValuation.missingMetadata && !isValidPps(currentPps)
 
   if (event.receiver === args.userAddress) {
     const receiptPriceUsd = getReceiptPriceUsd(
       event.chainId,
-      event.familyVaultAddress,
-      metadata,
+      vaultValuation.terminalAsset?.address ?? null,
       args.priceData,
       event.blockTimestamp
     )
     const receiptPriceEth = getReceiptPriceEth(args.ethPriceData, receiptPriceUsd, event.blockTimestamp)
-    const valuation = convertYvUsdLockedUnderlyingToRoot({
-      chainId: event.chainId,
-      vaultAddress: event.familyVaultAddress,
-      directUnderlying: formatAmount(event.shares, shareDecimals) * pps,
-      ppsData: args.ppsData,
-      timestamp: event.blockTimestamp
-    })
     ledgers.set(
       vaultKey,
-      addReceipt(valuation.missingPps ? { ...currentLedger, missingPps: true } : currentLedger, {
-        shares: event.shares,
-        baselineUnderlying: valuation.underlying,
-        receiptTimestamp: event.blockTimestamp,
-        receiptPriceUsd,
-        receiptPriceEth,
-        receiptKind: 'transfer_in',
-        transactionHash: event.transactionHash
-      })
+      addReceipt(
+        markLedgerValuationIssues(currentLedger, {
+          missingMetadata: vaultValuation.missingMetadata,
+          missingPps
+        }),
+        {
+          shares: event.shares,
+          baselineUnderlying: isValidPps(currentPps) ? formatAmount(event.shares, shareDecimals) * currentPps : 0,
+          receiptTimestamp: event.blockTimestamp,
+          receiptPriceUsd,
+          receiptPriceEth,
+          receiptKind: 'transfer_in',
+          transactionHash: event.transactionHash
+        }
+      )
     )
     return ledgers
   }
 
   if (event.sender === args.userAddress) {
-    const valuation = convertYvUsdLockedUnderlyingToRoot({
-      chainId: event.chainId,
-      vaultAddress: event.familyVaultAddress,
-      directUnderlying: formatAmount(event.shares, shareDecimals) * pps,
-      ppsData: args.ppsData,
-      timestamp: event.blockTimestamp
-    })
-    if (valuation.missingPps) {
-      ledgers.set(vaultKey, { ...currentLedger, missingPps: true })
+    if (vaultValuation.missingMetadata || !isValidPps(currentPps)) {
+      ledgers.set(
+        vaultKey,
+        markLedgerValuationIssues(currentLedger, {
+          missingMetadata: vaultValuation.missingMetadata,
+          missingPps: !vaultValuation.missingMetadata
+        })
+      )
       return ledgers
     }
 
@@ -1275,11 +1251,10 @@ function processEvent(
       vaultKey,
       addExit(currentLedger, {
         shares: event.shares,
-        exitUnderlying: valuation.underlying,
+        exitUnderlying: formatAmount(event.shares, shareDecimals) * currentPps,
         exitPriceUsd: getExitPriceUsd(
           event.chainId,
-          event.familyVaultAddress,
-          metadata,
+          vaultValuation.terminalAsset?.address ?? null,
           args.exitPriceData,
           event.blockTimestamp
         ),
@@ -2200,11 +2175,14 @@ export function buildProtocolReturnLedgers(args: {
 function ledgerIssues(args: {
   ledger: TProtocolReturnLedger
   metadata: VaultMetadata | undefined
+  missingMetadata: boolean
   currentPps: number | null
 }): TProtocolReturnIssue[] {
   return [
-    ...(args.metadata ? [] : (['missing_metadata'] as const)),
-    ...(args.ledger.missingPps || args.currentPps === null ? (['missing_pps'] as const) : []),
+    ...(!args.metadata || args.ledger.missingMetadata || args.missingMetadata ? (['missing_metadata'] as const) : []),
+    ...(args.ledger.missingPps || (!args.missingMetadata && args.currentPps === null)
+      ? (['missing_pps'] as const)
+      : []),
     ...(args.ledger.missingReceiptPrice ? (['missing_receipt_price'] as const) : []),
     ...(args.ledger.missingExitPrice ? (['missing_exit_price'] as const) : []),
     ...(args.ledger.unmatchedExitShares > ZERO ? (['unmatched_exit'] as const) : [])
@@ -2229,7 +2207,7 @@ function vaultStatus(issues: TProtocolReturnIssue[]): THoldingsPnLSimpleStatus {
 
 function computeVaultGrowthWeightEth(args: {
   ledger: TProtocolReturnLedger
-  metadata: VaultMetadata | undefined
+  metadata: Map<string, VaultMetadata>
   ppsData: Map<string, Map<number, number>>
   currentTimestamp: number
 }): number | null {
@@ -2238,14 +2216,16 @@ function computeVaultGrowthWeightEth(args: {
   }
 
   const vaultKey = toVaultKey(args.ledger.chainId, args.ledger.vaultAddress)
-  const shareDecimals = args.metadata?.decimals ?? 18
-  const currentPps = getProtocolReturnPps({
+  const metadata = args.metadata.get(vaultKey)
+  const shareDecimals = metadata?.decimals ?? 18
+  const valuation = resolveNestedVaultValuation({
     chainId: args.ledger.chainId,
     vaultAddress: args.ledger.vaultAddress,
-    directPps: getEventPps(args.ppsData.get(vaultKey), args.currentTimestamp),
+    vaultMetadata: args.metadata,
     ppsData: args.ppsData,
     timestamp: args.currentTimestamp
   })
+  const currentPps = valuation.pricePerShare
   const currentShares = args.ledger.lots.reduce((total, lot) => total + lot.shares, ZERO)
   const sharesFormatted = formatAmount(currentShares, shareDecimals)
   const currentUnderlying = currentPps === null ? 0 : sharesFormatted * currentPps
@@ -2268,7 +2248,7 @@ function buildGrowthWeightEthSummary(args: {
   const perVaultGrowthWeightEth = Array.from(args.ledgers.values()).flatMap((ledger) => {
     const growthWeightEth = computeVaultGrowthWeightEth({
       ledger,
-      metadata: args.metadata.get(toVaultKey(ledger.chainId, ledger.vaultAddress)),
+      metadata: args.metadata,
       ppsData: args.ppsData,
       currentTimestamp: args.currentTimestamp
     })
@@ -2324,15 +2304,15 @@ export function materializeProtocolReturnVaults(args: {
     const vaultKey = toVaultKey(ledger.chainId, ledger.vaultAddress)
     const metadata = args.metadata.get(vaultKey)
     const shareDecimals = metadata?.decimals ?? 18
-    const ppsMap = args.ppsData.get(vaultKey)
-    const directCurrentPps = ppsMap ? getPPS(ppsMap, args.currentTimestamp) : null
-    const currentPps = getProtocolReturnPps({
+    const valuation = resolveNestedVaultValuation({
       chainId: ledger.chainId,
       vaultAddress: ledger.vaultAddress,
-      directPps: directCurrentPps,
+      vaultMetadata: args.metadata,
       ppsData: args.ppsData,
       timestamp: args.currentTimestamp
     })
+    const currentPps = valuation.pricePerShare
+    const terminalAsset = valuation.terminalAsset
     const currentShares = ledger.lots.reduce((total, lot) => total + lot.shares, ZERO)
     const sharesFormatted = formatAmount(currentShares, shareDecimals)
     const currentUnderlying = currentPps === null ? 0 : sharesFormatted * currentPps
@@ -2351,7 +2331,7 @@ export function materializeProtocolReturnVaults(args: {
     const baselineExposureWeightUsdYears = ledger.baselineExposureWeightUsdSeconds / SECONDS_PER_YEAR
     const baselineWeightUsd = ledger.realizedBaselineWeightUsd + unrealizedBaselineWeightUsd
     const growthWeightUsd = ledger.realizedGrowthWeightUsd + unrealizedGrowthWeightUsd
-    const issues = ledgerIssues({ ledger, metadata, currentPps })
+    const issues = ledgerIssues({ ledger, metadata, missingMetadata: valuation.missingMetadata, currentPps })
     const status = vaultStatus(issues)
 
     return {
@@ -2388,10 +2368,10 @@ export function materializeProtocolReturnVaults(args: {
       unmatchedExitShares: ledger.unmatchedExitShares.toString(),
       unmatchedExitSharesFormatted: formatAmount(ledger.unmatchedExitShares, shareDecimals),
       metadata: {
-        symbol: metadata?.token.symbol ?? null,
+        symbol: terminalAsset?.symbol ?? null,
         decimals: metadata?.decimals ?? 18,
-        assetDecimals: metadata?.token.decimals ?? 18,
-        tokenAddress: metadata?.token.address ?? null
+        assetDecimals: terminalAsset?.decimals ?? 18,
+        tokenAddress: terminalAsset?.address ?? null
       }
     }
   })
@@ -2425,10 +2405,7 @@ function getLatestFetchedAssetPriceUsd(
   vault: HoldingsPnLSimpleVault,
   priceData: Map<string, Map<number, number>>
 ): number | null {
-  const assetAddress = isLockedYvUsdVault(vault.chainId, vault.vaultAddress)
-    ? YVUSD_ROOT_ASSET_ADDRESS
-    : vault.metadata.tokenAddress
-  return getLatestFetchedTokenPriceUsd(vault.chainId, assetAddress, priceData)
+  return getLatestFetchedTokenPriceUsd(vault.chainId, vault.metadata.tokenAddress, priceData)
 }
 
 function buildLatestAssetPriceUsdByVaultKey(
@@ -2440,7 +2417,11 @@ function buildLatestAssetPriceUsdByVaultKey(
       vaultKey,
       getLatestFetchedTokenPriceUsd(
         vaultMetadata.chainId,
-        getProtocolReturnAssetAddress(vaultMetadata.chainId, vaultMetadata.address, vaultMetadata),
+        resolveNestedVaultTerminalAsset({
+          chainId: vaultMetadata.chainId,
+          vaultAddress: vaultMetadata.address,
+          vaultMetadata: metadata
+        })?.address ?? null,
         priceData
       )
     ])
@@ -2804,7 +2785,7 @@ export function buildProtocolReturnFamilyHistorySeries(args: {
             ? null
             : computeVaultGrowthWeightEth({
                 ledger: familyLedger,
-                metadata: args.metadata.get(vaultKey),
+                metadata: args.metadata,
                 ppsData: args.ppsData,
                 currentTimestamp: timestamp
               }),

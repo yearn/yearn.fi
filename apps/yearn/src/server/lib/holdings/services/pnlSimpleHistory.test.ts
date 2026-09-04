@@ -72,7 +72,8 @@ vi.mock('./kong', () => ({
   getPpsFetchFailedVaults: getPpsFetchFailedVaultsMock
 }))
 
-vi.mock('./nestedVaultPrices', () => ({
+vi.mock('./nestedVaultPrices', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('./nestedVaultPrices')>()),
   expandNestedVaultAssetPriceRequests: expandNestedVaultAssetPriceRequestsMock,
   deriveNestedVaultAssetPriceData: deriveNestedVaultAssetPriceDataMock,
   getNestedVaultPpsIdentifiersFromPriceRequests: getNestedVaultPpsIdentifiersFromPriceRequestsMock,
@@ -592,7 +593,7 @@ describe('getHoldingsProtocolReturnHistory', () => {
       issues: [],
       baselineUsd: 200
     })
-    expect(rowGrowthUsd).toBeCloseTo(290)
+    expect(rowGrowthUsd).toBeCloseTo(1430)
     expect(aggregateGrowthUsd).toBeCloseTo(rowGrowthUsd ?? Number.NaN)
     expect(familyGrowthUsd).toBeCloseTo(rowGrowthUsd ?? Number.NaN)
     expect(scenario.response.protocolReturn.dataPoints.at(-1)?.growthUsdEstimated).toBe(false)
@@ -614,7 +615,7 @@ describe('getHoldingsProtocolReturnHistory', () => {
       issues: ['missing_exit_price'],
       baselineUsd: 200
     })
-    expect(rowGrowthUsd).toBeCloseTo(40)
+    expect(rowGrowthUsd).toBeCloseTo(520)
     expect(aggregateGrowthUsd).toBeCloseTo(rowGrowthUsd ?? Number.NaN)
     expect(familyGrowthUsd).toBeCloseTo(rowGrowthUsd ?? Number.NaN)
     expect(scenario.response.protocolReturn.dataPoints.at(-1)?.growthUsdEstimated).toBe(true)

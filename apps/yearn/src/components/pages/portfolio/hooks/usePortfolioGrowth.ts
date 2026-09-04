@@ -55,8 +55,7 @@ function combineGrowthVariants(
   vaultsByKey: Map<string, TMappedPortfolioGrowthVault>,
   chainId: number,
   displayAddress: string,
-  variantAddresses: readonly string[],
-  assetMode: 'combined' | 'separate'
+  variantAddresses: readonly string[]
 ): TMappedPortfolioGrowthVault | null {
   const displayKey = getPortfolioGrowthVaultKey({ chainId, vaultAddress: displayAddress })
   const variants = variantAddresses
@@ -67,16 +66,22 @@ function combineGrowthVariants(
     return null
   }
 
+  const representative = vaultsByKey.get(displayKey) ?? variants[0]
+  const terminalAssetAddress = representative.metadata.tokenAddress?.toLowerCase()
+  const combineAssetGrowth =
+    variants.length === 1 ||
+    Boolean(
+      terminalAssetAddress &&
+        variants.every((vault) => vault.metadata.tokenAddress?.toLowerCase() === terminalAssetAddress)
+    )
   const baselineUsd = sumGrowthField(variants, 'baselineUsd')
   const baselineExposureUsdYears = sumGrowthField(variants, 'baselineExposureUsdYears')
-  const growthUnderlying =
-    assetMode === 'combined' || variants.length === 1
-      ? variants.reduce((total, vault) => total + (vault.growthUnderlying ?? 0), 0)
-      : null
+  const growthUnderlying = combineAssetGrowth
+    ? variants.reduce((total, vault) => total + (vault.growthUnderlying ?? 0), 0)
+    : null
   const growthUsd = sumGrowthField(variants, 'growthUsd')
   const issues = Array.from(new Set(variants.flatMap((vault) => vault.issues)))
   const isComplete = variants.every((vault) => vault.status === 'ok')
-  const representative = vaultsByKey.get(displayKey) ?? variants[0]
 
   return {
     ...representative,
@@ -86,10 +91,9 @@ function combineGrowthVariants(
     baselineUsd,
     baselineExposureUsdYears,
     growthUnderlying,
-    assetGrowth:
-      assetMode === 'combined'
-        ? [{ amount: growthUnderlying ?? 0, symbol: null }]
-        : variants.flatMap((vault) => vault.assetGrowth),
+    assetGrowth: combineAssetGrowth
+      ? [{ amount: growthUnderlying ?? 0, symbol: representative.metadata.symbol }]
+      : variants.flatMap((vault) => vault.assetGrowth),
     growthUsd,
     growthPct: combineGrowthRate(variants, 'growthPct', 'baselineUsd'),
     annualizedProtocolReturnPct: combineGrowthRate(variants, 'annualizedProtocolReturnPct', 'baselineExposureUsdYears')
@@ -97,23 +101,17 @@ function combineGrowthVariants(
 }
 
 function combineYvUsdGrowth(vaultsByKey: Map<string, TMappedPortfolioGrowthVault>): TMappedPortfolioGrowthVault | null {
-  return combineGrowthVariants(
-    vaultsByKey,
-    YVUSD_CHAIN_ID,
+  return combineGrowthVariants(vaultsByKey, YVUSD_CHAIN_ID, YVUSD_UNLOCKED_ADDRESS, [
     YVUSD_UNLOCKED_ADDRESS,
-    [YVUSD_UNLOCKED_ADDRESS, YVUSD_LOCKED_ADDRESS],
-    'combined'
-  )
+    YVUSD_LOCKED_ADDRESS
+  ])
 }
 
 function combineYBoldGrowth(vaultsByKey: Map<string, TMappedPortfolioGrowthVault>): TMappedPortfolioGrowthVault | null {
-  return combineGrowthVariants(
-    vaultsByKey,
-    YBOLD_CHAIN_ID,
+  return combineGrowthVariants(vaultsByKey, YBOLD_CHAIN_ID, YBOLD_VAULT_ADDRESS, [
     YBOLD_VAULT_ADDRESS,
-    [YBOLD_VAULT_ADDRESS, YBOLD_STAKING_ADDRESS],
-    'separate'
-  )
+    YBOLD_STAKING_ADDRESS
+  ])
 }
 
 export function mapPortfolioGrowthVaults(
