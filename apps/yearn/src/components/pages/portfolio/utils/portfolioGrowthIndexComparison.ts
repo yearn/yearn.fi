@@ -64,15 +64,19 @@ function buildNormalizedFamilyValues(
     }
     return values
   }, new Map())
-  const baseValue = dates.map((date) => valueByDate.get(date) ?? null).find(isFiniteNumber)
+  const values = dates.map((date) => valueByDate.get(date) ?? null)
+  const baseValue = values.find(isFiniteNumber)
 
   if (!baseValue) {
     return dates.map(() => null)
   }
 
-  return dates.map((date) => {
-    const value = valueByDate.get(date)
-    return isFiniteNumber(value) ? (value / baseValue) * 100 : null
+  const terminalIndex = values.findLastIndex(isFiniteNumber)
+  const terminalValue = values[terminalIndex]
+
+  return values.map((value, index) => {
+    const resolvedValue = !isFiniteNumber(value) && index > terminalIndex ? terminalValue : value
+    return isFiniteNumber(resolvedValue) ? (resolvedValue / baseValue) * 100 : null
   })
 }
 

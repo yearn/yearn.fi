@@ -139,4 +139,19 @@ describe('buildPortfolioGrowthIndexComparison', () => {
     expect(chart.series[0]?.values).toEqual([100, null, 125])
     expect(chart.data.map((point) => point.vault_0)).toEqual([100, null, 125])
   })
+
+  it('extends the last vault index through the remaining chart dates', () => {
+    const dates = ['2026-02-01', '2026-02-02', '2026-02-03', '2026-02-04']
+    const chart = buildPortfolioGrowthIndexComparison({
+      totalPoints: dates.map((date) => ({ date, value: 100 })),
+      familySeries: [
+        makeFamily({
+          label: 'Exited',
+          values: dates.map((date, index) => ({ date, value: [100, 125, null, null][index]! }))
+        })
+      ]
+    })
+
+    expect(chart.data.map((point) => point.vault_0)).toEqual([100, 125, 125, 125])
+  })
 })
