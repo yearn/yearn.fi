@@ -1280,7 +1280,8 @@ export function WidgetWithdraw({
         sourceTokenSymbol={withdrawalSource === 'staking' ? stakingToken?.symbol || vaultSymbol : vaultSymbol}
         vaultAssetSymbol={assetToken?.symbol || ''}
         outputTokenSymbol={outputToken?.symbol || ''}
-        withdrawAmount={effectiveRequiredShares > 0n ? formatWidgetValue(effectiveRequiredShares, sharesDecimals) : '0'}
+        sourceShareAmount={effectiveSourceShares}
+        sourceTokenDecimals={approvalState.tokenDecimals}
         expectedOutput={
           displayedExpectedOut > 0n ? formatWidgetValue(displayedExpectedOut, outputToken?.decimals ?? 18) : undefined
         }
