@@ -52,7 +52,7 @@ function isFiniteNumber(value: unknown): value is number {
 
 function buildPositionRankPoints(
   points: TProtocolReturnFamilyPoint[],
-  valueKey: 'growthUsd' | 'growthWeightEth'
+  valueKey: 'growthWeightUsd' | 'growthWeightEth'
 ): Array<{ value: number | null }> {
   const firstFiniteIndex = points.findIndex((point) => isFiniteNumber(point[valueKey]))
   if (firstFiniteIndex < 0 || points.length - firstFiniteIndex < 2) {
@@ -99,7 +99,7 @@ export function selectProtocolReturnFamilySeriesCandidates<TSeries extends TProt
         const points = limit >= series.sortedPoints.length ? series.sortedPoints : series.sortedPoints.slice(-limit)
         return {
           originalIndex: series.originalIndex,
-          positionPoints: buildPositionRankPoints(points, 'growthUsd'),
+          positionPoints: buildPositionRankPoints(points, 'growthWeightUsd'),
           ethPoints: buildPositionRankPoints(points, 'growthWeightEth'),
           indexPoints: buildIndexRankPoints(points)
         }
