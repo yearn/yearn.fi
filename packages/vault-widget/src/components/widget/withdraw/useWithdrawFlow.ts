@@ -1,15 +1,21 @@
+import {
+  getWithdrawPreviewCall,
+  normalizeStakingSource
+} from '@yearn/vault-widget/internal/hooks/actions/stakingAdapter'
 import { useDirectUnstake } from '@yearn/vault-widget/internal/hooks/actions/useDirectUnstake'
 import { useDirectWithdraw } from '@yearn/vault-widget/internal/hooks/actions/useDirectWithdraw'
 import { useEnsoWithdraw } from '@yearn/vault-widget/internal/hooks/actions/useEnsoWithdraw'
 import { useYBoldZapperWithdraw } from '@yearn/vault-widget/internal/hooks/actions/useYBoldZapperWithdraw'
 import { useYvUsdLockedZapWithdraw } from '@yearn/vault-widget/internal/hooks/actions/useYvUsdLockedZapWithdraw'
 import type { EnsoQuotePurpose } from '@yearn/vault-widget/internal/hooks/solvers/useSolverEnso'
+import { useReadContract } from '@yearn/vault-widget/internal/hooks/useAppWagmi'
 import { toAddress } from '@yearn/vault-widget/internal/utils'
 import { toBasisPoints } from '@yearn/vault-widget/internal/utils/slippage'
 import { YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@yearn/vault-widget/internal/utils/yvUsd'
 import type { UseWidgetWithdrawFlowReturn } from '@yearn/vault-widget/types'
 import { useMemo } from 'react'
 import type { Address } from 'viem'
+import { resolveEnsoWithdrawInputAmount } from './ensoWithdrawAmount'
 import type { WithdrawalSource, WithdrawRouteType } from './types'
 import { useWithdrawRoute } from './useWithdrawRoute'
 
@@ -105,6 +111,44 @@ export function useWithdrawFlow({
   const isDirectUnstakeWithdrawRoute = routeType === 'DIRECT_UNSTAKE_WITHDRAW'
   const isYBoldZapperWithdrawRoute = routeType === 'YBOLD_ZAPPER_WITHDRAW'
   const isEnsoRoute = routeType === 'ENSO'
+  const isStakingWithdrawal = withdrawalSource === 'staking'
+  const stakingSourceKind = normalizeStakingSource(stakingSource)
+  const stakingWithdrawPreviewCall = getWithdrawPreviewCall(stakingSource, requiredShares)
+  const shouldPreviewStakingShares =
+    isEnsoRoute && isStakingWithdrawal && !isMaxWithdraw && !!stakingAddress && requiredShares > 0n
+  const {
+    data: previewWithdrawSharesData,
+    isError: isStakingSharePreviewError,
+    isLoading: isLoadingStakingSharePreview,
+    isFetching: isFetchingStakingSharePreview
+  } = useReadContract({
+    address: stakingAddress,
+    abi: stakingWithdrawPreviewCall.abi as any,
+    functionName: stakingWithdrawPreviewCall.functionName as any,
+    args: stakingWithdrawPreviewCall.args as any,
+    chainId,
+    query: { enabled: shouldPreviewStakingShares }
+  })
+  const previewWithdrawShares = typeof previewWithdrawSharesData === 'bigint' ? previewWithdrawSharesData : undefined
+  const didStakingSharePreviewFail = shouldPreviewStakingShares && isStakingSharePreviewError
+  const allowOneToOneStakingFallback = stakingSourceKind === 'default'
+  const ensoInputAmount = resolveEnsoWithdrawInputAmount({
+    requiredVaultShares: requiredShares,
+    isStakingWithdrawal,
+    isMaxWithdraw,
+    stakingRedeemableShares: unstakeMaxRedeemShares,
+    previewWithdrawShares,
+    previewFailed: didStakingSharePreviewFail,
+    allowOneToOneFallback: allowOneToOneStakingFallback
+  })
+  const isPreparingEnsoInputAmount =
+    shouldPreviewStakingShares &&
+    !didStakingSharePreviewFail &&
+    (previewWithdrawShares === undefined || isLoadingStakingSharePreview || isFetchingStakingSharePreview)
+  const ensoInputAmountError =
+    didStakingSharePreviewFail && !allowOneToOneStakingFallback
+      ? 'Unable to determine the staked share amount. Please try again.'
+      : undefined
 
   const isYvUsdLockedZapFlow = useMemo(
     () =>
@@ -122,7 +166,14 @@ export function useWithdrawFlow({
     amount > 0n &&
     !isYvUsdLockedZapFlow
   const directUnstakeEnabled = (isDirectUnstakeRoute || isDirectUnstakeWithdrawRoute) && currentAmount > 0n
-  const ensoFlowEnabled = isEnsoRoute && !!withdrawToken && !isDebouncing && requiredShares > 0n && currentAmount > 0n
+  const ensoFlowEnabled =
+    isEnsoRoute &&
+    !!withdrawToken &&
+    !isDebouncing &&
+    ensoInputAmount > 0n &&
+    currentAmount > 0n &&
+    !isPreparingEnsoInputAmount &&
+    !ensoInputAmountError
   const yBoldZapperWithdrawEnabled =
     isYBoldZapperWithdrawRoute && !isDebouncing && requiredShares > 0n && currentAmount > 0n
 
@@ -174,7 +225,7 @@ export function useWithdrawFlow({
   const ensoFlow = useEnsoWithdraw({
     vaultAddress: sourceToken,
     withdrawToken,
-    amount: requiredShares,
+    amount: ensoInputAmount,
     account,
     receiver: account,
     chainId,
@@ -182,7 +233,9 @@ export function useWithdrawFlow({
     decimalsOut: outputDecimals,
     enabled: ensoFlowEnabled,
     slippage: toBasisPoints(slippage),
-    quotePurpose: ensoQuotePurpose
+    quotePurpose: ensoQuotePurpose,
+    isPreparingAmount: isPreparingEnsoInputAmount,
+    amountError: ensoInputAmountError
   })
 
   const activeFlow = useMemo((): UseWidgetWithdrawFlowReturn => {
