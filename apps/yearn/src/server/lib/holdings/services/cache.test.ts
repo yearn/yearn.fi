@@ -98,7 +98,7 @@ describe('protocol return history snapshot cache', () => {
     const savedValue = setMock.mock.calls[0]?.[1]
 
     expect(saved).toBe(true)
-    expect(key).toMatch(/^holdings:protocol-return-history:v15:[a-f0-9]{64}:1y:all$/)
+    expect(key).toMatch(/^holdings:protocol-return-history:v16:[a-f0-9]{64}:1y:all$/)
     expect(key).not.toContain(identity.userAddress)
     expect(savedValue).toEqual(expect.stringMatching(/^br1:/))
     expect(savedValue).not.toContain('2026-07-15')
@@ -202,7 +202,7 @@ describe('protocol return history snapshot cache', () => {
     const key = getProtocolReturnHistoryCacheKey(identity)
 
     expect(key).toBe(getProtocolReturnHistoryCacheKey(reversedIdentity))
-    expect(key).toMatch(/^holdings:protocol-return-history:v15:[a-f0-9]{64}:1y:[a-f0-9]{64}$/)
+    expect(key).toMatch(/^holdings:protocol-return-history:v16:[a-f0-9]{64}:1y:[a-f0-9]{64}$/)
     expect(key).not.toContain(identity.vaultScope[0].address)
   })
 

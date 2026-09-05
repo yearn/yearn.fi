@@ -221,7 +221,6 @@ export function PortfolioGrowthIndexChart({
           strokeWidth={2.5}
           dot={false}
           activeDot={{ r: 4, strokeWidth: 0, fill: INDEX_COLORS[0] }}
-          connectNulls
           isAnimationActive={false}
         />
         {series.map((item) => (
@@ -235,7 +234,6 @@ export function PortfolioGrowthIndexChart({
             strokeOpacity={0.9}
             dot={false}
             activeDot={{ r: 3.5, strokeWidth: 0, fill: item.color }}
-            connectNulls
             isAnimationActive={false}
           />
         ))}

@@ -183,6 +183,143 @@ function materializeVault(args: {
 }
 
 describe('pnl simple protocol return', () => {
+  it.each([
+    {
+      wallet: '0x0893 crvUSD',
+      seconds: 48,
+      shares: 428677661427844978567n,
+      pps: 1.1086317771071763,
+      withdrawn: 475093944931396687731n
+    },
+    {
+      wallet: '0x247c USDaf',
+      seconds: 60,
+      shares: 200000n * ONE,
+      pps: 1.029413735047802,
+      withdrawn: 205868372846986582346156n
+    },
+    { wallet: 'short profitable holding', seconds: 48, shares: 100n * ONE, pps: 1, withdrawn: 101n * ONE }
+  ])('links the actual $wallet return without extrapolating $seconds seconds to a day', (fixture) => {
+    const day = 86_400
+    const receiptTimestamp = day + 100
+    const exitTimestamp = receiptTimestamp + fixture.seconds
+    const events = [
+      baseEvent({ kind: 'transfer', id: 'prior-receipt', blockTimestamp: 100, shares: ONE }),
+      baseEvent({ kind: 'withdrawal', id: 'prior-exit', blockTimestamp: 200, shares: ONE, assets: ONE, owner: USER }),
+      baseEvent({ kind: 'transfer', id: 'receipt', blockTimestamp: receiptTimestamp, shares: fixture.shares }),
+      baseEvent({
+        kind: 'withdrawal',
+        id: 'exit',
+        blockTimestamp: exitTimestamp,
+        shares: fixture.shares,
+        assets: fixture.withdrawn,
+        owner: USER
+      })
+    ]
+    const inputs = {
+      events,
+      userAddress: USER,
+      metadata,
+      ppsData: new Map([
+        [
+          VAULT_KEY,
+          new Map([
+            [0, 1],
+            [day, fixture.pps]
+          ])
+        ]
+      ]),
+      priceData: new Map([[ASSET_PRICE_KEY, new Map([[0, 1]])]]),
+      ethPriceData: new Map([[0, 2]])
+    }
+    const history = buildProtocolReturnHistorySeries({ ...inputs, timestamps: [day - 1, 2 * day - 1, 3 * day - 1] })
+    const sampled = buildProtocolReturnHistorySeries({
+      ...inputs,
+      timestamps: [day - 1, receiptTimestamp, exitTimestamp, 2 * day - 1, 3 * day - 1]
+    })
+    const baseline = (Number(fixture.shares) / Number(ONE)) * fixture.pps
+    const growth = Number(fixture.withdrawn) / Number(ONE) - baseline
+    const expectedIndex = 100 * (1 + growth / baseline)
+
+    expect(history[0]?.growthIndex).toBe(100)
+    expect(history[1]?.growthIndex).toBeCloseTo(expectedIndex, 10)
+    expect(history[2]?.growthIndex).toBeCloseTo(expectedIndex, 10)
+    expect(history[1]?.growthWeightUsd).toBeCloseTo(growth)
+    expect(history[1]?.growthWeightEth).toBeCloseTo(growth / 2)
+    expect(sampled.at(-1)?.growthIndex).toBeCloseTo(expectedIndex, 10)
+    const tail = buildProtocolReturnHistorySeries({
+      ...inputs,
+      timestamps: [2 * day - 1, 3 * day - 1],
+      growthIndexSeed: { timestamp: 2 * day - 1, growthIndex: history[1]!.growthIndex }
+    })
+    expect(tail.at(-1)?.growthIndex).toBeCloseTo(expectedIndex, 10)
+  })
+
+  it('keeps an exit correction proportional before reinvesting in the same transaction', () => {
+    const history = buildProtocolReturnHistorySeries({
+      events: [
+        baseEvent({ kind: 'transfer', id: 'receipt', blockTimestamp: 100 }),
+        baseEvent({
+          kind: 'withdrawal',
+          id: 'exit',
+          blockTimestamp: 200,
+          transactionHash: '0xreinvest',
+          logIndex: 0,
+          shares: 100n * ONE,
+          assets: 99n * ONE,
+          owner: USER
+        }),
+        baseEvent({
+          kind: 'deposit',
+          id: 'reinvest',
+          blockTimestamp: 200,
+          transactionHash: '0xreinvest',
+          logIndex: 1,
+          shares: 99n * ONE,
+          assets: 99n * ONE,
+          owner: USER,
+          sender: USER
+        })
+      ],
+      userAddress: USER,
+      metadata,
+      ppsData: new Map([[VAULT_KEY, new Map([[0, 1]])]]),
+      priceData: new Map([[ASSET_PRICE_KEY, new Map([[0, 1]])]]),
+      timestamps: [100, 300]
+    })
+    expect(history[1]?.growthWeightUsd).toBeCloseTo(-1)
+    expect(history[1]?.growthIndex).toBeCloseTo(99)
+  })
+
+  it('does not turn unavailable PPS into an Index loss or silently restart at 100 after recovery', () => {
+    const inputs = {
+      events: [baseEvent({ kind: 'transfer', id: 'receipt', blockTimestamp: 100 })],
+      userAddress: USER,
+      metadata,
+      ppsData: new Map([
+        [
+          VAULT_KEY,
+          new Map([
+            [100, 1],
+            [200, Number.NaN],
+            [300, 1.1]
+          ])
+        ]
+      ]),
+      priceData: new Map([[ASSET_PRICE_KEY, new Map([[0, 1]])]])
+    }
+    const history = buildProtocolReturnHistorySeries({ ...inputs, timestamps: [100, 200, 300] })
+    expect(history[0]?.growthIndex).toBe(100)
+    expect(history[1]?.growthIndex).toBeNull()
+    expect(history[2]?.growthIndex).toBeNull()
+    const tail = buildProtocolReturnHistorySeries({
+      ...inputs,
+      timestamps: [300, 400],
+      growthIndexSeed: { timestamp: 300, growthIndex: null }
+    })
+    expect(tail.map((point) => point.growthIndex)).toEqual([null, null])
+  })
+
   it('ignores events after an explicit ledger cutoff', () => {
     const vault = materializeVault({
       events: [
@@ -1052,7 +1189,7 @@ describe('pnl simple protocol return', () => {
     expect(history[3]?.growthUsd).toBeCloseTo(73.6363636365)
     expect(history[3]?.growthWeightEth).toBeCloseTo(12.2727272727)
     expect(history[3]?.protocolReturnPct).toBeCloseTo(16.3636363636)
-    expect(history[3]?.growthIndex).toBeCloseTo(120.6666666667)
+    expect(history[3]?.growthIndex).toBeCloseTo(120)
   })
 
   it('includes current underlying and growth fields for single-vault history points', () => {
@@ -1181,7 +1318,7 @@ describe('pnl simple protocol return', () => {
     expect(history[1]?.growthUnderlying).toBeCloseTo(52)
   })
 
-  it('keeps ETH growth history available when another vault is missing receipt prices', () => {
+  it('does not publish a partial ETH total when another vault is missing receipt prices', () => {
     const MISSING_VAULT = '0x5555555555555555555555555555555555555555'
     const MISSING_ASSET = '0x6666666666666666666666666666666666666666'
     const MISSING_VAULT_KEY = toVaultKey(1, MISSING_VAULT)
@@ -1258,7 +1395,7 @@ describe('pnl simple protocol return', () => {
 
     expect(history[0]?.growthWeightEth).toBeCloseTo(0)
     expect(history[1]?.growthWeightUsd).toBeCloseTo(10)
-    expect(history[1]?.growthWeightEth).toBeCloseTo(5)
+    expect(history[1]?.growthWeightEth).toBeNull()
   })
 
   it('does not double count the ERC4626 mint transfer alongside a deposit event', () => {
@@ -3067,7 +3204,7 @@ describe('pnl simple protocol return', () => {
     expect(history[2]?.protocolReturnPct).toBeCloseTo(10)
     expect(history[0]?.growthIndex).toBeCloseTo(100)
     expect(history[1]?.growthIndex).toBeCloseTo(110)
-    expect(history[2]?.growthIndex).toBeCloseTo(115.5)
+    expect(history[2]?.growthIndex).toBeCloseTo(115.2380952381)
   })
 
   it('does not over-assign deposit basis when a same-tx mint is partially forwarded out', () => {

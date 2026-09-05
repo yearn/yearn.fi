@@ -140,7 +140,6 @@ type TPortfolioHistoryChartControlsProps = {
   onTimeframeChange: (timeframe: TPortfolioHistoryChartTimeframe) => void
   resolvedGrowthDisplayMode: TGrowthDisplayMode
   onGrowthDisplayModeOverrideChange: (mode: TGrowthDisplayMode | null) => void
-  isEthGrowthAvailable?: boolean
   children?: ReactElement
   className?: string
 }
@@ -316,22 +315,6 @@ function PortfolioChartDropdown<TValue extends string>({
   )
 }
 
-function resolveGrowthDisplayMode(
-  selectedMode: TGrowthDisplayMode,
-  protocolReturnData: TPortfolioProtocolReturnHistoryChartData | null
-): TGrowthDisplayMode {
-  const hasEthSeries = Boolean(protocolReturnData?.some((point) => point.growthWeightEth !== null))
-
-  return selectedMode === 'eth' && !hasEthSeries ? 'index' : selectedMode
-}
-
-export function resolvePortfolioGrowthDisplayMode(
-  selectedMode: TGrowthDisplayMode,
-  protocolReturnData: TPortfolioProtocolReturnHistoryChartData | null
-): TGrowthDisplayMode {
-  return resolveGrowthDisplayMode(selectedMode, protocolReturnData)
-}
-
 function PortfolioHistoryChartLoading({
   serverProgress
 }: {
@@ -377,18 +360,12 @@ export function PortfolioHistoryChartControls({
   onTimeframeChange,
   resolvedGrowthDisplayMode,
   onGrowthDisplayModeOverrideChange,
-  isEthGrowthAvailable = true,
   children,
   className
 }: TPortfolioHistoryChartControlsProps): ReactElement {
   const trackEvent = usePlausible()
   const unitOptions = GROWTH_DISPLAY_MODES.map((mode) => {
-    const isAvailable =
-      activeTab === 'balance'
-        ? mode.id !== 'index'
-        : activeTab === 'growth'
-          ? mode.id !== 'eth' || isEthGrowthAvailable
-          : false
+    const isAvailable = activeTab === 'balance' ? mode.id !== 'index' : activeTab === 'growth'
     const isActive =
       activeTab === 'balance'
         ? denomination === mode.id
@@ -597,14 +574,8 @@ export function PortfolioHistoryChart({
   const [selectedBreakdownDate, setSelectedBreakdownDate] = useState<string | null>(null)
   const [isBreakdownModalOpen, setIsBreakdownModalOpen] = useState(false)
   const gradientId = useId().replace(/:/g, '')
-  const recommendedGrowthDisplayMode = resolveGrowthDisplayMode(
-    protocolReturnSummary?.recommendedGrowthDisplay ?? 'index',
-    protocolReturnData
-  )
-  const resolvedGrowthDisplayMode = resolveGrowthDisplayMode(
-    growthDisplayModeOverride ?? recommendedGrowthDisplayMode,
-    protocolReturnData
-  )
+  const resolvedGrowthDisplayMode =
+    growthDisplayModeOverride ?? protocolReturnSummary?.recommendedGrowthDisplay ?? 'index'
 
   useEffect(() => {
     onGrowthDisplayModeOverrideChange(activeTab === 'growth' ? 'usd' : null)
@@ -750,6 +721,22 @@ export function PortfolioHistoryChart({
   const activeIsEmpty = activeTab === 'balance' ? balanceIsEmpty : protocolReturnIsEmpty
   const activeError = activeTab === 'balance' ? balanceError : protocolReturnError
   const activeHasRenderableValue = activeData.some((point) => point.value !== null)
+  const firstActiveDate = activeData[0]?.date
+  const hasMissingEthGrowth =
+    activeTab === 'growth' &&
+    resolvedGrowthDisplayMode === 'eth' &&
+    Boolean(
+      firstActiveDate &&
+        protocolReturnData?.some(
+          (point) => point.date >= firstActiveDate && point.growthWeightEth === null && point.growthIndex !== null
+        )
+    )
+  const historyWarning =
+    protocolReturnSummary?.isComplete === false
+      ? 'History is incomplete: some historical prices or vault data are missing.'
+      : hasMissingEthGrowth
+        ? 'Some ETH growth history is unavailable because historical prices are missing.'
+        : null
   const yAxisFloor = activeTab === 'growth' && resolvedGrowthDisplayMode === 'index' ? 100 : 0
   const yAxisTicks = useMemo(
     () =>
@@ -1026,7 +1013,11 @@ export function PortfolioHistoryChart({
     return (
       <section className={cl(sectionClassName, className)}>
         <div className={'flex min-h-[240px] items-center justify-center'}>
-          <p className={'text-base text-text-secondary'}>{getEmptyMessage(activeTab, resolvedGrowthDisplayMode)}</p>
+          <p className={'text-center text-base text-text-secondary'}>
+            {hasMissingEthGrowth
+              ? 'ETH growth unavailable: historical prices are missing for one or more vaults.'
+              : getEmptyMessage(activeTab, resolvedGrowthDisplayMode)}
+          </p>
         </div>
       </section>
     )
@@ -1035,6 +1026,7 @@ export function PortfolioHistoryChart({
   if (activeTab === 'growth' && resolvedGrowthDisplayMode === 'index') {
     return (
       <section className={cl(sectionClassName, className)}>
+        {historyWarning ? <p className={'mb-2 text-xs text-text-secondary'}>{historyWarning}</p> : null}
         <div className={'min-h-0 flex-1'}>
           <PortfolioGrowthIndexChart
             totalPoints={filteredGrowthIndexData}
@@ -1054,6 +1046,7 @@ export function PortfolioHistoryChart({
   if (activeTab === 'growth') {
     return (
       <section className={cl(sectionClassName, className)}>
+        {historyWarning ? <p className={'mb-2 text-xs text-text-secondary'}>{historyWarning}</p> : null}
         <div className={'min-h-0 flex-1'}>
           <PortfolioGrowthContributionsChart
             totalPoints={resolvedGrowthDisplayMode === 'eth' ? filteredGrowthEthData : filteredGrowthUsdData}

@@ -34,8 +34,8 @@ const HOLDINGS_TOTALS_TTL_SECONDS = 30 * 24 * 60 * 60
 // Old hashes expire naturally and cannot reintroduce previously cached incomplete days.
 const HOLDINGS_TOTALS_KEY_PREFIX = 'holdings:totals:v3'
 const PROTOCOL_RETURN_HISTORY_TTL_SECONDS = 30 * 24 * 60 * 60
-// v15 stores nested-vault returns consistently in terminal-asset units.
-const PROTOCOL_RETURN_HISTORY_KEY_PREFIX = 'holdings:protocol-return-history:v15'
+// v16 links Index returns at cash flows and does not cache partial ETH totals as complete values.
+const PROTOCOL_RETURN_HISTORY_KEY_PREFIX = 'holdings:protocol-return-history:v16'
 const PROTOCOL_RETURN_HISTORY_VALUE_PREFIX = 'br1:'
 const PROTOCOL_RETURN_HISTORY_MAX_ENCODED_BYTES = 4 * 1024 * 1024
 const PROTOCOL_RETURN_HISTORY_MAX_DECODED_BYTES = 64 * 1024 * 1024

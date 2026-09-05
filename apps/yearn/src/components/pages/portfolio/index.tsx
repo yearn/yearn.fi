@@ -12,6 +12,7 @@ import { mergeChainMerkleData } from '@pages/portfolio/claimRewards.helpers'
 import { EmptySectionCard } from '@pages/portfolio/components/EmptySectionCard'
 import { GovernancePositionRow } from '@pages/portfolio/components/GovernancePositionRow'
 import { GovernanceRewardRow } from '@pages/portfolio/components/GovernanceRewardRow'
+import { PortfolioHistoryChart, PortfolioHistoryChartControls } from '@pages/portfolio/components/PortfolioHistoryChart'
 import { ProtocolPositionRow } from '@pages/portfolio/components/ProtocolPositionRow'
 import { YcrvRewardRow } from '@pages/portfolio/components/YcrvRewardRow'
 import { GOVERNANCE_CHAIN_ID } from '@pages/portfolio/governance/constants'
@@ -107,11 +108,6 @@ import type {
   TGrowthDisplayMode,
   TPortfolioHistoryChartTab,
   TPortfolioHistoryChartTimeframe
-} from './components/PortfolioHistoryChart'
-import {
-  PortfolioHistoryChart,
-  PortfolioHistoryChartControls,
-  resolvePortfolioGrowthDisplayMode
 } from './components/PortfolioHistoryChart'
 import {
   getReceiptValidatedLocalActivityNotifications,
@@ -3257,11 +3253,8 @@ function PortfolioPage(): ReactElement {
   } = portfolioHistory.protocolReturn
   const annualizedProtocolReturnPct = protocolReturnHistoryData?.at(-1)?.annualizedProtocolReturnPct
   const hasProtocolReturnSnapshot = protocolReturnHistoryData !== null
-  const resolvedGrowthDisplayMode = resolvePortfolioGrowthDisplayMode(
-    historyGrowthDisplayModeOverride ?? protocolReturnHistorySummary?.recommendedGrowthDisplay ?? 'index',
-    protocolReturnHistoryData
-  )
-  const isEthGrowthAvailable = Boolean(protocolReturnHistoryData?.some((point) => point.growthWeightEth !== null))
+  const resolvedGrowthDisplayMode =
+    historyGrowthDisplayModeOverride ?? protocolReturnHistorySummary?.recommendedGrowthDisplay ?? 'index'
   const historyChartProgress = historyChartTab === 'balance' ? historyProgress : protocolReturnHistoryProgress
   const historyChartElement = (
     <PortfolioHistoryChart
@@ -3389,7 +3382,6 @@ function PortfolioPage(): ReactElement {
                     onTimeframeChange={setHistoryTimeframe}
                     resolvedGrowthDisplayMode={resolvedGrowthDisplayMode}
                     onGrowthDisplayModeOverrideChange={setHistoryGrowthDisplayModeOverride}
-                    isEthGrowthAvailable={isEthGrowthAvailable}
                     className="h-full rounded-t-lg bg-linear-to-b from-surface to-surface-secondary/20 min-[920px]:rounded-tr-none min-[920px]:rounded-bl-lg"
                   >
                     {historyChartElement}

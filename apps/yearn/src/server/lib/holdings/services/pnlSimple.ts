@@ -406,25 +406,14 @@ function annualizedProtocolReturnPct(growth: number, exposureYears: number): num
 function advanceGrowthIndex(args: {
   previousIndex: number | null
   deltaGrowthWeightUsd: number
-  deltaExposureWeightUsdYears: number
-  deltaSeconds: number
-  hasCapital: boolean
+  capitalWeightUsd: number
 }): number | null {
-  if (args.previousIndex === null) {
-    return args.hasCapital ? 100 : null
-  }
-
-  if (args.deltaExposureWeightUsdYears <= 0 || args.deltaSeconds <= 0) {
+  if (args.capitalWeightUsd <= 0) {
     return args.previousIndex
   }
 
-  const intervalYears = args.deltaSeconds / SECONDS_PER_YEAR
-  if (intervalYears <= 0) {
-    return args.previousIndex
-  }
-
-  const intervalReturn = (args.deltaGrowthWeightUsd * intervalYears) / args.deltaExposureWeightUsdYears
-  const nextIndex = args.previousIndex * (1 + intervalReturn)
+  // Link actual returns between cash flows; never extrapolate a short holding to a whole chart day.
+  const nextIndex = (args.previousIndex ?? 100) * (1 + args.deltaGrowthWeightUsd / args.capitalWeightUsd)
   return Number.isFinite(nextIndex) ? nextIndex : args.previousIndex
 }
 
@@ -2245,18 +2234,21 @@ function buildGrowthWeightEthSummary(args: {
   ppsData: Map<string, Map<number, number>>
   currentTimestamp: number
 }): number | null {
-  const perVaultGrowthWeightEth = Array.from(args.ledgers.values()).flatMap((ledger) => {
-    const growthWeightEth = computeVaultGrowthWeightEth({
+  const perVaultGrowthWeightEth = Array.from(args.ledgers.values()).map((ledger) =>
+    computeVaultGrowthWeightEth({
       ledger,
       metadata: args.metadata,
       ppsData: args.ppsData,
       currentTimestamp: args.currentTimestamp
     })
+  )
 
-    return growthWeightEth === null ? [] : [growthWeightEth]
-  })
-
-  return perVaultGrowthWeightEth.length > 0 ? perVaultGrowthWeightEth.reduce((total, value) => total + value, 0) : null
+  return perVaultGrowthWeightEth.length > 0
+    ? perVaultGrowthWeightEth.reduce<number | null>(
+        (total, value) => (total === null || value === null ? null : total + value),
+        0
+      )
+    : null
 }
 
 function buildOpenBaselineCompositionUsd(args: {
@@ -2564,101 +2556,141 @@ export function buildProtocolReturnHistorySeries(args: {
   const effectiveEvents = buildEffectiveSimpleEvents(args.events, userAddress)
   const groupedTransactions = groupEventsByTransaction(effectiveEvents)
   const latestAssetPriceUsdByVaultKey = buildLatestAssetPriceUsdByVaultKey(args.metadata, args.priceData)
-  let transactionIndex = 0
-  let ledgers = new Map<string, TProtocolReturnLedger>()
-  let previousTimestamp: number | null = null
-  let previousGrowthWeightUsd = 0
-  let previousExposureWeightUsdYears = 0
-  let growthIndex: number | null = null
-
-  return args.timestamps.map((timestamp) => {
-    while (
-      transactionIndex < groupedTransactions.length &&
-      groupedTransactions[transactionIndex]![0]!.blockTimestamp <= timestamp
-    ) {
-      groupTransactionEventsByFamily(groupedTransactions[transactionIndex]!).forEach((txFamilyEvents) => {
-        normalizeStakingWrapperEvents(txFamilyEvents, userAddress).forEach((event) => {
-          processEvent(ledgers, event, {
-            userAddress,
-            metadata: args.metadata,
-            ppsData: args.ppsData,
-            priceData: args.priceData,
-            exitPriceData: args.exitPriceData ?? args.priceData,
-            ethPriceData: args.ethPriceData ?? new Map()
-          })
-        })
-      })
-      transactionIndex += 1
-    }
-
-    ledgers = Array.from(ledgers.entries()).reduce<Map<string, TProtocolReturnLedger>>((nextLedgers, [key, ledger]) => {
-      nextLedgers.set(key, accrueLedgerExposure(ledger, timestamp))
-      return nextLedgers
-    }, new Map())
-
+  const ledgers = new Map<string, TProtocolReturnLedger>()
+  const state = {
+    initialized: false,
+    indexValuationComplete: true,
+    growthIndex: null as number | null,
+    growthWeightUsd: 0,
+    baselineWeightUsd: 0,
+    openCapitalWeightUsd: 0
+  }
+  const selectedVaultKeys = args.selectedVaultKeys ?? (args.selectedVaultKey ? [args.selectedVaultKey] : [])
+  const selectedVaultKeySet = new Set(selectedVaultKeys)
+  const eventContext = {
+    userAddress,
+    metadata: args.metadata,
+    ppsData: args.ppsData,
+    priceData: args.priceData,
+    exitPriceData: args.exitPriceData ?? args.priceData,
+    ethPriceData: args.ethPriceData ?? new Map<number, number>()
+  }
+  const markGrowthIndex = (timestamp: number, afterReceipt = false) => {
     const vaults = materializeProtocolReturnVaults({
       ledgers,
       metadata: args.metadata,
       ppsData: args.ppsData,
       currentTimestamp: timestamp
     })
-    const selectedVaultKeys = args.selectedVaultKeys ?? (args.selectedVaultKey ? [args.selectedVaultKey] : [])
-    const selectedVaultKeySet = new Set(selectedVaultKeys)
-    const selectedVaults = selectedVaultKeys.length
-      ? vaults.filter((vault) => selectedVaultKeySet.has(toVaultKey(vault.chainId, vault.vaultAddress)))
-      : []
-    const growthUsd = vaults.reduce(
-      (total, vault) =>
-        total +
-        getGrowthUsd(vault, latestAssetPriceUsdByVaultKey.get(toVaultKey(vault.chainId, vault.vaultAddress)) ?? null),
-      0
-    )
     const summary = buildSummary(vaults)
-    const growthWeightEth = buildGrowthWeightEthSummary({
-      ledgers,
-      metadata: args.metadata,
-      ppsData: args.ppsData,
-      currentTimestamp: timestamp
-    })
-    growthIndex = advanceGrowthIndex({
-      previousIndex: growthIndex,
-      deltaGrowthWeightUsd: summary.growthWeightUsd - previousGrowthWeightUsd,
-      deltaExposureWeightUsdYears: summary.baselineExposureWeightUsdYears - previousExposureWeightUsdYears,
-      deltaSeconds: previousTimestamp === null ? 0 : Math.max(0, timestamp - previousTimestamp),
-      hasCapital: summary.baselineWeightUsd > 0 || summary.growthWeightUsd !== 0
-    })
-    if (args.growthIndexSeed?.timestamp === timestamp) {
-      growthIndex = args.growthIndexSeed.growthIndex
-    }
-    previousTimestamp = timestamp
-    previousGrowthWeightUsd = summary.growthWeightUsd
-    previousExposureWeightUsdYears = summary.baselineExposureWeightUsdYears
+    const receivedCapital = afterReceipt ? Math.max(0, summary.baselineWeightUsd - state.baselineWeightUsd) : 0
+    const hasValuation =
+      state.indexValuationComplete &&
+      vaults.every((vault) => !vault.issues.includes('missing_metadata') && !vault.issues.includes('missing_pps'))
+    // An unknown return cannot be linked later by silently starting again at 100.
+    state.indexValuationComplete = hasValuation
+    state.growthIndex = !hasValuation
+      ? null
+      : state.initialized
+        ? advanceGrowthIndex({
+            previousIndex: state.growthIndex,
+            deltaGrowthWeightUsd: summary.growthWeightUsd - state.growthWeightUsd,
+            capitalWeightUsd: state.openCapitalWeightUsd + receivedCapital
+          })
+        : summary.baselineWeightUsd > 0 || summary.growthWeightUsd !== 0
+          ? 100
+          : null
+    state.growthWeightUsd = summary.growthWeightUsd
+    state.baselineWeightUsd = summary.baselineWeightUsd
+    // Previously withdrawn gains are not capital in the next holding period.
+    state.openCapitalWeightUsd =
+      Array.from(ledgers.values()).reduce((total, ledger) => total + getOutstandingBaselineWeightUsd(ledger.lots), 0) +
+      summary.unrealizedGrowthWeightUsd
+    return { vaults, summary }
+  }
+  const normalizedEvents = groupedTransactions.flatMap((txEvents) =>
+    sortEvents(
+      groupTransactionEventsByFamily(txEvents).flatMap((familyEvents) =>
+        normalizeStakingWrapperEvents(familyEvents, userAddress)
+      )
+    )
+  )
+  const timeline: Array<{ timestamp: number; event: TRawPnlEvent | null }> = [
+    ...normalizedEvents
+      .filter((event) => event.blockTimestamp <= (args.timestamps.at(-1) ?? 0))
+      .map((event) => ({ timestamp: event.blockTimestamp, event })),
+    ...args.timestamps.map((timestamp) => ({ timestamp, event: null }))
+  ]
 
-    return {
-      date: timestampToDateString(timestamp),
-      timestamp,
-      growthUsd,
-      growthUsdEstimated: vaults.some((vault) =>
-        isGrowthUsdEstimated(
-          vault,
-          latestAssetPriceUsdByVaultKey.get(toVaultKey(vault.chainId, vault.vaultAddress)) ?? null
-        )
-      ),
-      growthWeightUsd: summary.growthWeightUsd,
-      growthWeightEth,
-      protocolReturnPct: summary.protocolReturnPct,
-      annualizedProtocolReturnPct: summary.annualizedProtocolReturnPct,
-      growthIndex,
-      ...(selectedVaultKeys.length > 0
-        ? {
-            currentUnderlying: selectedVaults.reduce((sum, vault) => sum + vault.currentUnderlying, 0),
-            growthUnderlying: selectedVaults.reduce((sum, vault) => sum + vault.growthUnderlying, 0),
-            sharesFormatted: selectedVaults.reduce((sum, vault) => sum + vault.sharesFormatted, 0),
-            pricePerShare: selectedVaults.length === 1 ? selectedVaults[0]!.pricePerShare : 0
-          }
-        : {})
-    }
-  })
+  return timeline
+    .toSorted(
+      (left, right) => left.timestamp - right.timestamp || Number(left.event === null) - Number(right.event === null)
+    )
+    .reduce<HoldingsPnLSimpleHistoryPoint[]>((history, { timestamp, event }) => {
+      if (event) {
+        // Value existing capital before the flow and its exact receipt/exit adjustment afterwards.
+        if (state.initialized) {
+          markGrowthIndex(timestamp)
+        }
+        processEvent(ledgers, event, eventContext)
+        if (state.initialized) {
+          markGrowthIndex(timestamp, true)
+        }
+        return history
+      }
+
+      ledgers.forEach((ledger, key) => {
+        ledgers.set(key, accrueLedgerExposure(ledger, timestamp))
+      })
+      const { vaults, summary } = markGrowthIndex(timestamp)
+      state.initialized = true
+      if (state.indexValuationComplete && args.growthIndexSeed?.timestamp === timestamp) {
+        state.growthIndex = args.growthIndexSeed.growthIndex
+        if (state.growthIndex === null && (summary.baselineWeightUsd > 0 || summary.growthWeightUsd !== 0)) {
+          state.indexValuationComplete = false
+        }
+      }
+      const selectedVaults = selectedVaultKeys.length
+        ? vaults.filter((vault) => selectedVaultKeySet.has(toVaultKey(vault.chainId, vault.vaultAddress)))
+        : []
+      const growthUsd = vaults.reduce(
+        (total, vault) =>
+          total +
+          getGrowthUsd(vault, latestAssetPriceUsdByVaultKey.get(toVaultKey(vault.chainId, vault.vaultAddress)) ?? null),
+        0
+      )
+      const growthWeightEth = buildGrowthWeightEthSummary({
+        ledgers,
+        metadata: args.metadata,
+        ppsData: args.ppsData,
+        currentTimestamp: timestamp
+      })
+      history.push({
+        date: timestampToDateString(timestamp),
+        timestamp,
+        growthUsd,
+        growthUsdEstimated: vaults.some((vault) =>
+          isGrowthUsdEstimated(
+            vault,
+            latestAssetPriceUsdByVaultKey.get(toVaultKey(vault.chainId, vault.vaultAddress)) ?? null
+          )
+        ),
+        growthWeightUsd: summary.growthWeightUsd,
+        growthWeightEth,
+        protocolReturnPct: summary.protocolReturnPct,
+        annualizedProtocolReturnPct: summary.annualizedProtocolReturnPct,
+        growthIndex: state.growthIndex,
+        ...(selectedVaultKeys.length > 0
+          ? {
+              currentUnderlying: selectedVaults.reduce((sum, vault) => sum + vault.currentUnderlying, 0),
+              growthUnderlying: selectedVaults.reduce((sum, vault) => sum + vault.growthUnderlying, 0),
+              sharesFormatted: selectedVaults.reduce((sum, vault) => sum + vault.sharesFormatted, 0),
+              pricePerShare: selectedVaults.length === 1 ? selectedVaults[0]!.pricePerShare : 0
+            }
+          : {})
+      })
+      return history
+    }, [])
 }
 
 export function buildProtocolReturnFamilyHistorySeries(args: {
