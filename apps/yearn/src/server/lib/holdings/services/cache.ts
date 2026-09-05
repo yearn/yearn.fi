@@ -1,4 +1,5 @@
 import { createHash } from 'node:crypto'
+import { brotliCompressSync, brotliDecompressSync, constants as zlibConstants } from 'node:zlib'
 import { getHoldingsRedisClient, handleHoldingsRedisError, isHoldingsStorageEnabled } from '../storage/redis'
 import { debugError, debugLog } from './debug'
 
@@ -29,18 +30,25 @@ export interface VaultIdentifier {
 }
 
 const HOLDINGS_TOTALS_TTL_SECONDS = 30 * 24 * 60 * 60
-const HOLDINGS_TOTALS_KEY_PREFIX = 'holdings:totals'
-// Settled snapshots remain valid through the day; the settled-date guard rolls them over on the next day.
-const PROTOCOL_RETURN_HISTORY_TTL_SECONDS = 24 * 60 * 60
-const PROTOCOL_RETURN_HISTORY_KEY_PREFIX = 'holdings:protocol-return-history:v3'
+// v3 starts fresh after preventing incomplete PPS responses from persisting zero-valued history.
+// Old hashes expire naturally and cannot reintroduce previously cached incomplete days.
+const HOLDINGS_TOTALS_KEY_PREFIX = 'holdings:totals:v3'
+const PROTOCOL_RETURN_HISTORY_TTL_SECONDS = 30 * 24 * 60 * 60
+// v16 links Index returns at cash flows and does not cache partial ETH totals as complete values.
+const PROTOCOL_RETURN_HISTORY_KEY_PREFIX = 'holdings:protocol-return-history:v16'
+const PROTOCOL_RETURN_HISTORY_VALUE_PREFIX = 'br1:'
+const PROTOCOL_RETURN_HISTORY_MAX_ENCODED_BYTES = 4 * 1024 * 1024
+const PROTOCOL_RETURN_HISTORY_MAX_DECODED_BYTES = 64 * 1024 * 1024
 const VAULT_INVALIDATION_KEY_PREFIX = 'holdings:vault-invalidated'
-const REDIS_SCAN_COUNT = 500
-
 export interface ProtocolReturnHistoryCacheIdentity {
   userAddress: string
-  version: string
   timeframe: string
   vaultScope?: VaultIdentifier[]
+}
+
+export interface CachedProtocolReturnHistory<TResponse> {
+  settledDate: string
+  response: TResponse
 }
 
 interface CachedProtocolReturnHistoryPayload<TResponse> {
@@ -58,12 +66,8 @@ function getUserAddressCacheKey(userAddress: string): string {
   return createHash('sha256').update(normalizeUserAddress(userAddress)).digest('hex')
 }
 
-function getTotalsKey(userAddressHash: string, version: string): string {
-  return `${HOLDINGS_TOTALS_KEY_PREFIX}:${userAddressHash}:${version}`
-}
-
-function getTotalsKeyPattern(userAddressHash: string): string {
-  return `${HOLDINGS_TOTALS_KEY_PREFIX}:${userAddressHash}:*`
+function getTotalsKey(userAddressHash: string): string {
+  return `${HOLDINGS_TOTALS_KEY_PREFIX}:${userAddressHash}`
 }
 
 function getVaultScopeCacheKey(vaultScope?: VaultIdentifier[]): string {
@@ -82,7 +86,7 @@ function getVaultScopeCacheKey(vaultScope?: VaultIdentifier[]): string {
 export function getProtocolReturnHistoryCacheKey(identity: ProtocolReturnHistoryCacheIdentity): string {
   const userAddressHash = getUserAddressCacheKey(identity.userAddress)
   const vaultScopeKey = getVaultScopeCacheKey(identity.vaultScope)
-  return `${PROTOCOL_RETURN_HISTORY_KEY_PREFIX}:${userAddressHash}:${identity.version}:${identity.timeframe}:${vaultScopeKey}`
+  return `${PROTOCOL_RETURN_HISTORY_KEY_PREFIX}:${userAddressHash}:${identity.timeframe}:${vaultScopeKey}`
 }
 
 function getVaultInvalidationKey(vault: VaultIdentifier): string {
@@ -96,6 +100,52 @@ function parseJsonValue(value: unknown): unknown {
 
   try {
     return JSON.parse(value)
+  } catch {
+    return null
+  }
+}
+
+function encodeProtocolReturnHistoryPayload<TResponse>(payload: CachedProtocolReturnHistoryPayload<TResponse>): {
+  value: string
+  decodedBytes: number
+  encodedBytes: number
+} {
+  const json = JSON.stringify(payload)
+  const compressed = brotliCompressSync(Buffer.from(json), {
+    params: {
+      [zlibConstants.BROTLI_PARAM_QUALITY]: 4
+    }
+  })
+  const value = `${PROTOCOL_RETURN_HISTORY_VALUE_PREFIX}${compressed.toString('base64')}`
+
+  return {
+    value,
+    decodedBytes: Buffer.byteLength(json),
+    encodedBytes: Buffer.byteLength(value)
+  }
+}
+
+function decodeProtocolReturnHistoryPayload(value: unknown): unknown {
+  if (typeof value !== 'string' || !value.startsWith(PROTOCOL_RETURN_HISTORY_VALUE_PREFIX)) {
+    return null
+  }
+
+  if (Buffer.byteLength(value) > PROTOCOL_RETURN_HISTORY_MAX_ENCODED_BYTES) {
+    return null
+  }
+
+  try {
+    const encoded = value.slice(PROTOCOL_RETURN_HISTORY_VALUE_PREFIX.length)
+    const compressed = Buffer.from(encoded, 'base64')
+    if (compressed.length === 0 || compressed.toString('base64') !== encoded) {
+      return null
+    }
+
+    return JSON.parse(
+      brotliDecompressSync(compressed, {
+        maxOutputLength: PROTOCOL_RETURN_HISTORY_MAX_DECODED_BYTES
+      }).toString()
+    )
   } catch {
     return null
   }
@@ -132,7 +182,7 @@ function parseVaultIdentifier(value: unknown): VaultIdentifier | null {
 function parseCachedProtocolReturnHistoryPayload<TResponse>(
   value: unknown
 ): CachedProtocolReturnHistoryPayload<TResponse> | null {
-  const parsed = parseJsonValue(value)
+  const parsed = decodeProtocolReturnHistoryPayload(value)
   if (!parsed || typeof parsed !== 'object') {
     return null
   }
@@ -184,18 +234,7 @@ function parseCachedTotalsByDate(
     .sort((left, right) => left.date.localeCompare(right.date))
 }
 
-async function scanRedisKeys(pattern: string, cursor = '0', collectedKeys: string[] = []): Promise<string[]> {
-  const redis = getHoldingsRedisClient()
-  if (!redis) {
-    return collectedKeys
-  }
-
-  const [nextCursor, keys] = await redis.scan(cursor, { match: pattern, count: REDIS_SCAN_COUNT })
-  const nextKeys = [...collectedKeys, ...keys]
-  return nextCursor === '0' ? nextKeys : scanRedisKeys(pattern, nextCursor, nextKeys)
-}
-
-export async function saveCachedTotals(userAddress: string, version: string, totals: CachedTotal[]): Promise<boolean> {
+export async function saveCachedTotals(userAddress: string, totals: CachedTotal[]): Promise<boolean> {
   const userAddressHash = getUserAddressCacheKey(userAddress)
 
   if (!isHoldingsStorageEnabled() || totals.length === 0) {
@@ -213,7 +252,7 @@ export async function saveCachedTotals(userAddress: string, version: string, tot
 
   try {
     const updatedAt = Date.now()
-    const key = getTotalsKey(userAddressHash, version)
+    const key = getTotalsKey(userAddressHash)
     const valuesByDate = Object.fromEntries(
       totals.map((total) => [
         total.date,
@@ -226,7 +265,6 @@ export async function saveCachedTotals(userAddress: string, version: string, tot
 
     debugLog('cache', 'saving cached totals to Redis', {
       userAddressHash,
-      version,
       rows: totals.length
     })
 
@@ -241,10 +279,10 @@ export async function saveCachedTotals(userAddress: string, version: string, tot
   }
 }
 
-export async function getCachedProtocolReturnHistory<TResponse>(
+export async function getCachedProtocolReturnHistorySnapshot<TResponse>(
   identity: ProtocolReturnHistoryCacheIdentity,
-  settledDate: string
-): Promise<TResponse | null> {
+  maximumSettledDate: string
+): Promise<CachedProtocolReturnHistory<TResponse> | null> {
   if (!isHoldingsStorageEnabled()) {
     debugLog('cache', 'skipping protocol return history cache lookup because Redis storage is disabled')
     return null
@@ -265,11 +303,11 @@ export async function getCachedProtocolReturnHistory<TResponse>(
       return null
     }
 
-    if (payload.settledDate !== settledDate) {
-      debugLog('cache', 'protocol return history cache settled date mismatch', {
+    if (payload.settledDate > maximumSettledDate) {
+      debugLog('cache', 'protocol return history cache is from a future settled date', {
         key,
         cachedSettledDate: payload.settledDate,
-        requestedSettledDate: settledDate
+        requestedSettledDate: maximumSettledDate
       })
       return null
     }
@@ -280,8 +318,16 @@ export async function getCachedProtocolReturnHistory<TResponse>(
       return null
     }
 
-    debugLog('cache', 'protocol return history cache hit', { key, vaults: payload.vaults.length })
-    return payload.response
+    debugLog('cache', 'protocol return history cache hit', {
+      key,
+      vaults: payload.vaults.length,
+      cachedSettledDate: payload.settledDate,
+      requestedSettledDate: maximumSettledDate
+    })
+    return {
+      settledDate: payload.settledDate,
+      response: payload.response
+    }
   } catch (error) {
     handleHoldingsRedisError('protocol return history cache lookup failed', error)
     debugError('cache', 'protocol return history cache lookup failed', error, { key })
@@ -319,8 +365,31 @@ export async function saveCachedProtocolReturnHistory<TResponse>(
       })),
       response
     }
-    await redis.set(key, JSON.stringify(payload), { ex: PROTOCOL_RETURN_HISTORY_TTL_SECONDS })
-    debugLog('cache', 'saved protocol return history snapshot to Redis', { key, vaults: vaults.length })
+    const encoded = encodeProtocolReturnHistoryPayload(payload)
+    if (encoded.encodedBytes > PROTOCOL_RETURN_HISTORY_MAX_ENCODED_BYTES) {
+      debugLog('cache', 'skipping oversized compressed protocol return history cache save', {
+        key,
+        vaults: vaults.length,
+        decodedBytes: encoded.decodedBytes,
+        encodedBytes: encoded.encodedBytes,
+        maximumEncodedBytes: PROTOCOL_RETURN_HISTORY_MAX_ENCODED_BYTES
+      })
+      return false
+    }
+
+    debugLog('cache', 'saving compressed protocol return history snapshot to Redis', {
+      key,
+      vaults: vaults.length,
+      decodedBytes: encoded.decodedBytes,
+      encodedBytes: encoded.encodedBytes
+    })
+    await redis.set(key, encoded.value, { ex: PROTOCOL_RETURN_HISTORY_TTL_SECONDS })
+    debugLog('cache', 'saved protocol return history snapshot to Redis', {
+      key,
+      vaults: vaults.length,
+      decodedBytes: encoded.decodedBytes,
+      encodedBytes: encoded.encodedBytes
+    })
     return true
   } catch (error) {
     handleHoldingsRedisError('protocol return history cache save failed', error)
@@ -329,41 +398,27 @@ export async function saveCachedProtocolReturnHistory<TResponse>(
   }
 }
 
-export async function clearUserCache(userAddress: string, version?: string): Promise<number> {
+export async function clearUserCache(userAddress: string): Promise<number> {
   const userAddressHash = getUserAddressCacheKey(userAddress)
 
   if (!isHoldingsStorageEnabled()) {
-    debugLog('cache', 'skipping user cache clear because Redis storage is disabled', {
-      userAddressHash,
-      version: version ?? null
-    })
+    debugLog('cache', 'skipping user cache clear because Redis storage is disabled', { userAddressHash })
     return 0
   }
 
   const redis = getHoldingsRedisClient()
   if (!redis) {
-    debugLog('cache', 'skipping user cache clear because Redis client is unavailable', {
-      userAddressHash,
-      version: version ?? null
-    })
+    debugLog('cache', 'skipping user cache clear because Redis client is unavailable', { userAddressHash })
     return 0
   }
 
   try {
-    const keys = version
-      ? [getTotalsKey(userAddressHash, version)]
-      : await scanRedisKeys(getTotalsKeyPattern(userAddressHash))
-    const deletedCount = keys.length > 0 ? await redis.del(...keys) : 0
-    console.log(
-      `[Cache] Cleared ${deletedCount} Redis cached entries for user ${userAddress}${version ? ` (${version})` : ''}`
-    )
+    const deletedCount = await redis.del(getTotalsKey(userAddressHash))
+    console.log(`[Cache] Cleared ${deletedCount} Redis cached entries for user ${userAddress}`)
     return deletedCount
   } catch (error) {
     handleHoldingsRedisError('user cache clear failed', error)
-    debugError('cache', 'user cache clear failed', error, {
-      userAddressHash,
-      version: version ?? null
-    })
+    debugError('cache', 'user cache clear failed', error, { userAddressHash })
     return 0
   }
 }
@@ -456,7 +511,6 @@ export async function checkCacheStaleness(
 
 export async function getCachedTotalsWithTimestamp(
   userAddress: string,
-  version: string,
   startDate: string,
   endDate: string
 ): Promise<CachedTotalsResult> {
@@ -476,11 +530,10 @@ export async function getCachedTotalsWithTimestamp(
   try {
     debugLog('cache', 'loading cached totals with timestamps from Redis', {
       userAddressHash,
-      version,
       startDate,
       endDate
     })
-    const valuesByDate = await redis.hgetall<Record<string, unknown>>(getTotalsKey(userAddressHash, version))
+    const valuesByDate = await redis.hgetall<Record<string, unknown>>(getTotalsKey(userAddressHash))
     const parsedTotals = parseCachedTotalsByDate(valuesByDate, startDate, endDate)
     const totals = parsedTotals.map((total) => ({
       date: total.date,
@@ -503,7 +556,6 @@ export async function getCachedTotalsWithTimestamp(
     handleHoldingsRedisError('cached totals with timestamp lookup failed', error)
     debugError('cache', 'cached totals with timestamp lookup failed', error, {
       userAddressHash,
-      version,
       startDate,
       endDate
     })

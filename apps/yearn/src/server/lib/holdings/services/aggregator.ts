@@ -3,29 +3,20 @@ import type { VaultMetadata } from '../types'
 import type { CachedTotal } from './cache'
 import { checkCacheStaleness, clearUserCache, getCachedTotalsWithTimestamp, saveCachedTotals } from './cache'
 import { debugLog, reportHoldingsProgress } from './debug'
-import {
-  fetchHistoricalPrices,
-  fetchHistoricalPricesForTokenTimestamps,
-  getChainPrefix,
-  getHistoricalPriceFetchFailedBatches,
-  getPriceAtTimestamp
-} from './defillama'
-import {
-  fetchUserEvents,
-  type HoldingsEventFetchType,
-  type HoldingsEventPaginationMode,
-  type VaultVersion
-} from './graphql'
+import { fetchUserEvents } from './graphql'
 import {
   buildPositionTimeline,
+  buildPositionTimelineIndex,
   generateDailyTimestamps,
   generateDailyTimestampsFromRange,
+  getIndexedShareBalanceAtTimestamp,
   getShareBalanceAtTimestamp,
   getUniqueVaults,
+  type TPositionTimelineIndex,
   timestampToDateString,
   toSettledDayTimestamp
 } from './holdings'
-import { fetchMultipleVaultsPPS, getPPS } from './kong'
+import { fetchMultipleVaultsPPS, getPPS, getPpsFetchFailedVaults } from './kong'
 import {
   deriveNestedVaultAssetPriceData,
   expandNestedVaultAssetPriceRequests,
@@ -34,7 +25,21 @@ import {
   resolveNestedVaultAssetMetadata
 } from './nestedVaultPrices'
 import { toVaultKey } from './pnlShared'
-import { getSettledAddressScopedContext, getSettledVersionedPpsContext } from './settledHoldingsContext'
+import {
+  fetchHistoricalPrices,
+  fetchHistoricalPricesForTokenTimestamps,
+  getChainPrefix,
+  getHistoricalPriceFetchFailedBatches,
+  getPriceAtTimestamp,
+  type THistoricalPriceRequest
+} from './prices'
+import {
+  getSettledAddressScopedContext,
+  getSettledPpsContext,
+  resolveSettledAddressScopedContext,
+  type TSettledAddressScopedContext,
+  type TSettledAddressScopedContextSource
+} from './settledHoldingsContext'
 import { fetchMultipleVaultsMetadata } from './vaults'
 
 export interface HoldingsHistoryResponse {
@@ -78,7 +83,7 @@ export interface HoldingsBreakdownVaultResponse {
 
 export interface HoldingsBreakdownResponse {
   address: string
-  version: VaultVersion
+  version: 'all'
   date: string
   timestamp: number
   summary: {
@@ -98,28 +103,15 @@ export interface HoldingsBreakdownResponse {
   message?: string
 }
 
-export function getHoldingsTotalsCacheVersion(version: VaultVersion): string {
-  return version
-}
-
-function filterVaultsByAuthoritativeVersion<
+function filterVisibleVaults<
   TVault extends {
     chainId: number
     vaultAddress: string
   }
->(vaults: TVault[], vaultMetadata: Map<string, VaultMetadata>, version: VaultVersion): TVault[] {
+>(vaults: TVault[], vaultMetadata: Map<string, VaultMetadata>): TVault[] {
   return vaults.filter((vault) => {
     const metadata = vaultMetadata.get(toVaultKey(vault.chainId, vault.vaultAddress))
-
-    if (metadata?.isHidden) {
-      return false
-    }
-
-    if (version === 'all') {
-      return true
-    }
-
-    return metadata?.version === version
+    return !metadata?.isHidden
   })
 }
 
@@ -137,15 +129,100 @@ function filterVaultsByRequestedVault<TVault extends { chainId: number; vaultAdd
   return vaults.filter((vault) => requestedVaultKeys.has(toVaultKey(vault.chainId, vault.vaultAddress)))
 }
 
+function buildHeldAssetPriceRequests(args: {
+  readonly vaults: readonly { readonly chainId: number; readonly vaultAddress: string }[]
+  readonly vaultMetadata: ReadonlyMap<string, VaultMetadata>
+  readonly positionTimelineIndex: TPositionTimelineIndex
+  readonly timestamps: readonly number[]
+}): THistoricalPriceRequest[] {
+  const requests = args.vaults.reduce<Map<string, { chainId: number; address: string; timestamps: Set<number> }>>(
+    (requestsByAsset, vault) => {
+      const metadata = args.vaultMetadata.get(toVaultKey(vault.chainId, vault.vaultAddress))
+      if (!metadata) {
+        return requestsByAsset
+      }
+
+      const heldTimestamps = args.timestamps.filter(
+        (timestamp) =>
+          getIndexedShareBalanceAtTimestamp(
+            args.positionTimelineIndex,
+            vault.vaultAddress,
+            vault.chainId,
+            timestamp
+          ) !== BigInt(0)
+      )
+      if (heldTimestamps.length === 0) {
+        return requestsByAsset
+      }
+
+      const tokenKey = `${metadata.chainId}:${metadata.token.address.toLowerCase()}`
+      const existing = requestsByAsset.get(tokenKey)
+      if (existing) {
+        heldTimestamps.forEach((timestamp) => {
+          existing.timestamps.add(timestamp)
+        })
+        return requestsByAsset
+      }
+
+      requestsByAsset.set(tokenKey, {
+        chainId: metadata.chainId,
+        address: metadata.token.address,
+        timestamps: new Set(heldTimestamps)
+      })
+      return requestsByAsset
+    },
+    new Map()
+  )
+
+  return Array.from(requests.values()).map((request) => ({
+    chainId: request.chainId,
+    address: request.address,
+    timestamps: Array.from(request.timestamps).sort((left, right) => left - right)
+  }))
+}
+
+const MAX_HELD_PRICE_RANGE_FILLER_RATIO = 0.15
+const MAX_HELD_PRICE_RANGE_FILLER_POINTS = 10_000
+const MAX_HELD_PRICE_RANGE_DAYS = 366
+
+export function fillBoundedHeldAssetPriceRanges(requests: THistoricalPriceRequest[]): THistoricalPriceRequest[] {
+  const filledRequests = requests.map((request) => {
+    const firstTimestamp = request.timestamps[0]
+    const lastTimestamp = request.timestamps[request.timestamps.length - 1]
+    if (firstTimestamp === undefined || lastTimestamp === undefined) {
+      return request
+    }
+
+    const rangeDays = Math.floor((lastTimestamp - firstTimestamp) / 86_400) + 1
+    const isDailyRange = lastTimestamp >= firstTimestamp && firstTimestamp + (rangeDays - 1) * 86_400 === lastTimestamp
+    if (!isDailyRange || rangeDays > MAX_HELD_PRICE_RANGE_DAYS) {
+      return request
+    }
+
+    return {
+      ...request,
+      timestamps: Array.from({ length: rangeDays }, (_value, index) => firstTimestamp + index * 86_400)
+    }
+  })
+  const ownedPoints = requests.reduce((total, request) => total + request.timestamps.length, 0)
+  const filledPoints = filledRequests.reduce((total, request) => total + request.timestamps.length, 0)
+  const fillerPoints = filledPoints - ownedPoints
+  const fillerBudget = Math.min(
+    MAX_HELD_PRICE_RANGE_FILLER_POINTS,
+    Math.floor(ownedPoints * MAX_HELD_PRICE_RANGE_FILLER_RATIO)
+  )
+
+  return fillerPoints > 0 && fillerPoints <= fillerBudget ? filledRequests : requests
+}
+
 function buildEmptyBreakdownResponse(
   userAddress: string,
-  version: VaultVersion,
   timestamp: number,
   message: string
 ): HoldingsBreakdownResponse {
   return {
     address: userAddress,
-    version,
+    version: 'all',
     date: timestampToDateString(timestamp),
     timestamp,
     summary: {
@@ -168,30 +245,26 @@ function buildEmptyBreakdownResponse(
 
 export async function getHistoricalHoldings(
   userAddress: string,
-  version: VaultVersion = 'all',
-  fetchType: HoldingsEventFetchType = 'seq',
-  paginationMode: HoldingsEventPaginationMode = 'paged',
   timeframe: HoldingsHistoryTimeframe = '1y',
-  requestedVaults?: HoldingsVaultFilter[]
+  requestedVaults?: HoldingsVaultFilter[],
+  settledContext?: TSettledAddressScopedContextSource,
+  loadCacheValidationVaults?: () => Promise<HoldingsVaultFilter[]>
 ): Promise<HoldingsHistoryResponse> {
   const defaultDays = holdingsConfig.historyDays
-  const baseContext = await getSettledAddressScopedContext({
-    userAddress,
-    fetchType,
-    paginationMode
-  })
-  reportHoldingsProgress(18, 'Loaded wallet events', null)
+  const loadSettledContext = (): Promise<TSettledAddressScopedContext> =>
+    settledContext
+      ? resolveSettledAddressScopedContext(settledContext)
+      : getSettledAddressScopedContext({ userAddress })
+  const initialContext = typeof settledContext === 'function' ? null : await loadSettledContext()
   const dayTimestamps = generateDailyTimestamps(defaultDays, 1)
-  const latestSettledDayTimestamp = baseContext.latestSettledDayTimestamp
+  const latestSettledDayTimestamp =
+    initialContext?.latestSettledDayTimestamp ?? dayTimestamps[dayTimestamps.length - 1] ?? 0
   const timestamps =
     timeframe === 'all'
       ? generateDailyTimestampsFromRange(holdingsConfig.historyStartTimestamp, latestSettledDayTimestamp)
       : dayTimestamps
   const periodDays = timestamps.length
   debugLog('history', 'starting historical holdings aggregation', {
-    version,
-    fetchType,
-    paginationMode,
     timeframe,
     days: periodDays,
     timestamps: timestamps.length,
@@ -201,18 +274,16 @@ export async function getHistoricalHoldings(
   // Fetch cached totals with timestamp info for staleness check
   let cachedTotals: CachedTotal[] = []
   let oldestUpdatedAt: Date | null = null
-  const cacheVersion = getHoldingsTotalsCacheVersion(version)
   const shouldReadCache = timestamps.length > 0 && !requestedVaults?.length
   const shouldWriteCache = timestamps.length > 0 && !requestedVaults?.length
   if (shouldReadCache) {
     const startDate = timestampToDateString(timestamps[0])
     const endDate = timestampToDateString(timestamps[timestamps.length - 1])
-    const cachedResult = await getCachedTotalsWithTimestamp(userAddress, cacheVersion, startDate, endDate)
+    const cachedResult = await getCachedTotalsWithTimestamp(userAddress, startDate, endDate)
     cachedTotals = cachedResult.totals
     oldestUpdatedAt = cachedResult.oldestUpdatedAt
   }
   debugLog('history', 'loaded cached totals for request', {
-    version,
     timeframe,
     cachedTotals: cachedTotals.length,
     oldestUpdatedAt: oldestUpdatedAt?.toISOString() ?? null
@@ -221,11 +292,56 @@ export async function getHistoricalHoldings(
 
   let cachedByDate = new Map(cachedTotals.map((total) => [total.date, total.usdValue]))
 
+  const hasInitialFullCacheCoverage =
+    timestamps.length > 0 && timestamps.every((timestamp) => cachedByDate.has(timestampToDateString(timestamp)))
+
+  if (typeof settledContext === 'function' && hasInitialFullCacheCoverage && loadCacheValidationVaults) {
+    const validationVaults = await loadCacheValidationVaults()
+    const canValidateWithoutWalletContext = validationVaults.length > 0
+    const isStale = canValidateWithoutWalletContext
+      ? await checkCacheStaleness(
+          validationVaults.map((vault) => ({ address: vault.vaultAddress, chainId: vault.chainId })),
+          oldestUpdatedAt
+        )
+      : false
+
+    if (isStale) {
+      console.log(`[Aggregator] Cache stale for ${userAddress}, clearing and recalculating`)
+      await clearUserCache(userAddress)
+      cachedTotals = []
+      oldestUpdatedAt = null
+      cachedByDate = new Map()
+    } else if (canValidateWithoutWalletContext) {
+      const dataPoints = timestamps.map((timestamp) => ({
+        date: timestampToDateString(timestamp),
+        timestamp: toSettledDayTimestamp(timestamp),
+        totalUsdValue: cachedByDate.get(timestampToDateString(timestamp)) ?? 0
+      }))
+      debugLog('history', 'serving validated portfolio history cache before loading wallet context', {
+        dataPoints: dataPoints.length,
+        validationVaults: validationVaults.length,
+        oldestUpdatedAt: oldestUpdatedAt?.toISOString() ?? null
+      })
+      reportHoldingsProgress(94, 'Loaded cached historical chart data', `${dataPoints.length} chart points`)
+
+      return {
+        address: userAddress,
+        periodDays,
+        timeframe,
+        // Daily totals are only persisted after a non-empty wallet timeline is built.
+        hasActivity: cachedTotals.length > 0,
+        dataPoints
+      }
+    }
+  }
+
+  const baseContext = initialContext ?? (await loadSettledContext())
+  reportHoldingsProgress(18, 'Loaded wallet events', null)
+
   const timeline = baseContext.timeline
+  const positionTimelineIndex = buildPositionTimelineIndex(timeline)
   const hasActivity = baseContext.hasActivity
   debugLog('history', 'built position timeline', {
-    fetchType,
-    paginationMode,
     deposits: baseContext.events.deposits.length,
     withdrawals: baseContext.events.withdrawals.length,
     transfersIn: baseContext.events.transfersIn.length,
@@ -235,16 +351,9 @@ export async function getHistoricalHoldings(
   reportHoldingsProgress(36, 'Built historical position timeline', `${timeline.length} timeline entries`)
 
   const vaultMetadata = baseContext.vaultMetadata
-  const versionFilteredVaults = filterVaultsByAuthoritativeVersion(
-    baseContext.rawVaultIdentifiers,
-    vaultMetadata,
-    version
-  )
-  const vaults = filterVaultsByRequestedVault(versionFilteredVaults, requestedVaults)
-  debugLog('history', 'resolved authoritative vault versions for history', {
-    version,
-    fetchType,
-    paginationMode,
+  const visibleVaults = filterVisibleVaults(baseContext.rawVaultIdentifiers, vaultMetadata)
+  const vaults = filterVaultsByRequestedVault(visibleVaults, requestedVaults)
+  debugLog('history', 'resolved visible vaults for history', {
     rawVaults: baseContext.rawVaultIdentifiers.length,
     filteredVaults: vaults.length,
     metadataResolved: vaultMetadata.size
@@ -256,16 +365,13 @@ export async function getHistoricalHoldings(
     const vaultIdentifiers = vaults.map((v) => ({ address: v.vaultAddress, chainId: v.chainId }))
     const isStale = await checkCacheStaleness(vaultIdentifiers, oldestUpdatedAt)
     debugLog('history', 'completed cache staleness check', {
-      version,
-      fetchType,
-      paginationMode,
       vaults: vaultIdentifiers.length,
       isStale
     })
 
     if (isStale) {
       console.log(`[Aggregator] Cache stale for ${userAddress}, clearing and recalculating`)
-      await clearUserCache(userAddress, cacheVersion)
+      await clearUserCache(userAddress)
       cachedTotals = []
       oldestUpdatedAt = null
       cachedByDate = new Map()
@@ -282,7 +388,6 @@ export async function getHistoricalHoldings(
       totalUsdValue: cachedByDate.get(timestampToDateString(timestamp)) ?? 0
     }))
     debugLog('history', 'serving fully cached historical holdings', {
-      version,
       dataPoints: dataPoints.length,
       oldestUpdatedAt: oldestUpdatedAt?.toISOString() ?? null
     })
@@ -299,15 +404,16 @@ export async function getHistoricalHoldings(
 
   const missingTimestamps = timestamps.filter((ts) => !cachedByDate.has(timestampToDateString(ts)))
   debugLog('history', 'computed missing timestamps', {
-    fetchType,
-    paginationMode,
     cachedDates: cachedByDate.size,
     missingTimestamps: missingTimestamps.length
   })
   reportHoldingsProgress(52, 'Computed missing historical days', `${missingTimestamps.length} days need valuation`)
 
   const newTotals: CachedTotal[] = []
-  let failedPriceBatches = 0
+  const upstreamFailures = {
+    priceBatches: 0,
+    ppsVaults: 0
+  }
 
   if (missingTimestamps.length > 0) {
     // Events already fetched above
@@ -327,11 +433,7 @@ export async function getHistoricalHoldings(
         }))
       }
     } else if (vaults.length === 0) {
-      debugLog('history', 'no vaults matched the requested authoritative version, returning zero holdings history', {
-        version,
-        fetchType,
-        paginationMode
-      })
+      debugLog('history', 'no visible vaults matched the request, returning zero holdings history')
       return {
         address: userAddress,
         periodDays,
@@ -344,72 +446,44 @@ export async function getHistoricalHoldings(
         }))
       }
     } else {
-      const ppsContext = await getSettledVersionedPpsContext({
+      const ppsContext = await getSettledPpsContext({
         userAddress,
-        version,
-        fetchType,
-        paginationMode,
-        vaultIdentifiers: vaults,
+        ...(requestedVaults === undefined ? {} : { vaultIdentifiers: vaults }),
         context: baseContext
       })
+      upstreamFailures.ppsVaults = getPpsFetchFailedVaults(ppsContext.ppsData)
       reportHoldingsProgress(62, 'Loaded vault share price history', `${vaults.length} vaults`)
-      const underlyingTokens = Array.from(
-        vaults
-          .reduce<Map<string, { chainId: number; address: string }>>((tokens, vault) => {
-            const metadata = vaultMetadata.get(toVaultKey(vault.chainId, vault.vaultAddress))
-
-            if (!metadata) {
-              return tokens
-            }
-
-            const tokenKey = `${metadata.chainId}:${metadata.token.address.toLowerCase()}`
-            if (!tokens.has(tokenKey)) {
-              tokens.set(tokenKey, {
-                chainId: metadata.chainId,
-                address: metadata.token.address
-              })
-            }
-
-            return tokens
-          }, new Map())
-          .values()
-      )
       const valuationTimestamps = missingTimestamps.map((timestamp) => toSettledDayTimestamp(timestamp))
-      const basePriceRequests = underlyingTokens.map((token) => ({
-        ...token,
+      const basePriceRequests = buildHeldAssetPriceRequests({
+        vaults,
+        vaultMetadata,
+        positionTimelineIndex,
         timestamps: valuationTimestamps
-      }))
-      const priceRequests = expandNestedVaultAssetPriceRequests(basePriceRequests, vaultMetadata)
-      const ppsIdentifiers = mergeVaultIdentifiers([
-        ...vaults,
-        ...getNestedVaultPpsIdentifiersFromPriceRequests(basePriceRequests, vaultMetadata)
-      ])
-      const fetchedPriceData = await fetchHistoricalPricesForTokenTimestamps(priceRequests, { resolution: 'utc_day' })
-      failedPriceBatches = getHistoricalPriceFetchFailedBatches(fetchedPriceData)
+      })
+      const priceRequests = fillBoundedHeldAssetPriceRanges(
+        expandNestedVaultAssetPriceRequests(basePriceRequests, vaultMetadata)
+      )
+      const fetchedPriceData = await fetchHistoricalPricesForTokenTimestamps(priceRequests)
+      upstreamFailures.priceBatches = getHistoricalPriceFetchFailedBatches(fetchedPriceData)
       reportHoldingsProgress(76, 'Fetched historical token prices', `${priceRequests.length} price series`)
       const priceData = deriveNestedVaultAssetPriceData({
         priceData: fetchedPriceData,
         priceRequests,
         vaultMetadata,
-        ppsData: ppsContext.ppsData
+        ppsData: ppsContext.ppsData,
+        underlyingPriceLookup: 'exact'
       })
       debugLog('history', 'resolved metadata and PPS for history', {
-        version,
-        fetchType,
-        paginationMode,
-        vaults: ppsIdentifiers.length,
+        vaults: ppsContext.ppsIdentifiers.length,
         metadataResolved: vaultMetadata.size,
         ppsResolved: ppsContext.ppsData.size,
         emptyPpsTimelines: Array.from(ppsContext.ppsData.values()).filter((timeline) => timeline.size === 0).length
       })
       debugLog('history', 'resolved historical token prices', {
-        version,
-        fetchType,
-        paginationMode,
         tokens: priceRequests.length,
         priceKeys: priceData.size,
         missingTimestamps: missingTimestamps.length,
-        failedPriceBatches
+        failedPriceBatches: upstreamFailures.priceBatches
       })
 
       for (const timestamp of missingTimestamps) {
@@ -422,18 +496,23 @@ export async function getHistoricalHoldings(
 
           if (!metadata) continue
 
-          const shares = getShareBalanceAtTimestamp(timeline, vault.vaultAddress, vault.chainId, valuationTimestamp)
+          const shares = getIndexedShareBalanceAtTimestamp(
+            positionTimelineIndex,
+            vault.vaultAddress,
+            vault.chainId,
+            valuationTimestamp
+          )
 
           if (shares === BigInt(0)) continue
 
           const ppsMap = ppsContext.ppsData.get(vaultKey)
           const pps = ppsMap ? getPPS(ppsMap, valuationTimestamp) : null
 
-          if (pps === null) continue
+          if (pps === null || !Number.isFinite(pps) || pps <= 0) continue
 
           const priceKey = `${getChainPrefix(vault.chainId)}:${metadata.token.address.toLowerCase()}`
           const tokenPriceMap = priceData.get(priceKey)
-          const tokenPrice = tokenPriceMap ? getPriceAtTimestamp(tokenPriceMap, valuationTimestamp) : 0
+          const tokenPrice = tokenPriceMap?.get(valuationTimestamp) ?? 0
 
           const sharesFloat = Number(shares) / 10 ** metadata.decimals
           const usdValue = sharesFloat * pps * tokenPrice
@@ -445,24 +524,23 @@ export async function getHistoricalHoldings(
       }
 
       debugLog('history', 'calculated uncached daily totals', {
-        version,
-        fetchType,
-        paginationMode,
         newTotals: newTotals.length,
         nonZeroTotals: newTotals.filter((total) => total.usdValue > 0).length
       })
       reportHoldingsProgress(88, 'Calculated uncached chart history', `${newTotals.length} daily totals`)
     }
 
-    if (shouldWriteCache && newTotals.length > 0 && failedPriceBatches === 0) {
-      const savedTotals = await saveCachedTotals(userAddress, cacheVersion, newTotals)
+    if (
+      shouldWriteCache &&
+      newTotals.length > 0 &&
+      upstreamFailures.priceBatches === 0 &&
+      upstreamFailures.ppsVaults === 0
+    ) {
+      const savedTotals = await saveCachedTotals(userAddress, newTotals)
       debugLog(
         'history',
         savedTotals ? 'saved recalculated totals to cache' : 'did not save recalculated totals to cache',
         {
-          version,
-          fetchType,
-          paginationMode,
           newTotals: newTotals.length
         }
       )
@@ -471,15 +549,21 @@ export async function getHistoricalHoldings(
         savedTotals ? 'Saved historical chart cache' : 'Skipped historical chart cache save',
         `${newTotals.length} daily totals`
       )
-    } else if (shouldWriteCache && newTotals.length > 0 && failedPriceBatches > 0) {
-      debugLog('history', 'skipped historical totals cache save because price batches failed', {
-        version,
-        fetchType,
-        paginationMode,
+    } else if (
+      shouldWriteCache &&
+      newTotals.length > 0 &&
+      (upstreamFailures.priceBatches > 0 || upstreamFailures.ppsVaults > 0)
+    ) {
+      debugLog('history', 'skipped historical totals cache save because upstream valuation data failed', {
         newTotals: newTotals.length,
-        failedPriceBatches
+        failedPriceBatches: upstreamFailures.priceBatches,
+        failedPpsVaults: upstreamFailures.ppsVaults
       })
-      reportHoldingsProgress(92, 'Skipped historical chart cache save', `${failedPriceBatches} price batches failed`)
+      reportHoldingsProgress(
+        92,
+        'Skipped historical chart cache save',
+        `${upstreamFailures.priceBatches + upstreamFailures.ppsVaults} upstream fetches failed`
+      )
     }
   }
 
@@ -494,9 +578,6 @@ export async function getHistoricalHoldings(
     totalUsdValue: cachedByDate.get(timestampToDateString(ts)) ?? 0
   }))
   debugLog('history', 'completed historical holdings aggregation', {
-    version,
-    fetchType,
-    paginationMode,
     dataPoints: dataPoints.length,
     nonZeroPoints: dataPoints.filter((point) => point.totalUsdValue > 0).length
   })
@@ -513,20 +594,18 @@ export async function getHistoricalHoldings(
 
 export async function getHistoricalHoldingsChart(
   userAddress: string,
-  version: VaultVersion = 'all',
-  fetchType: HoldingsEventFetchType = 'seq',
-  paginationMode: HoldingsEventPaginationMode = 'paged',
   denomination: HoldingsHistoryDenomination = 'usd',
   timeframe: HoldingsHistoryTimeframe = '1y',
-  requestedVaults?: HoldingsVaultFilter[]
+  requestedVaults?: HoldingsVaultFilter[],
+  settledContext?: TSettledAddressScopedContextSource,
+  loadCacheValidationVaults?: () => Promise<HoldingsVaultFilter[]>
 ): Promise<HoldingsHistoryChartResponse> {
   const holdings = await getHistoricalHoldings(
     userAddress,
-    version,
-    fetchType,
-    paginationMode,
     timeframe,
-    requestedVaults
+    requestedVaults,
+    settledContext,
+    loadCacheValidationVaults
   )
 
   if (denomination === 'usd') {
@@ -567,9 +646,6 @@ export async function getHistoricalHoldingsChart(
 
 export async function getHoldingsBreakdown(
   userAddress: string,
-  version: VaultVersion = 'all',
-  fetchType: HoldingsEventFetchType = 'seq',
-  paginationMode: HoldingsEventPaginationMode = 'paged',
   targetTimestamp?: number
 ): Promise<HoldingsBreakdownResponse> {
   const timestamps = generateDailyTimestamps(holdingsConfig.historyDays, 1)
@@ -578,21 +654,15 @@ export async function getHoldingsBreakdown(
   const breakdownDate = timestampToDateString(breakdownTimestamp)
   const breakdownPriceTimestamp = breakdownTimestamp
   debugLog('breakdown', 'starting holdings breakdown', {
-    version,
-    fetchType,
-    paginationMode,
     timestamp: breakdownTimestamp,
     date: breakdownDate,
     priceTimestamp: breakdownPriceTimestamp
   })
 
   const maxTimestamp = breakdownDayTimestamp + 86400
-  const events = await fetchUserEvents(userAddress, 'all', maxTimestamp, fetchType, paginationMode)
+  const events = await fetchUserEvents(userAddress, maxTimestamp)
   const timeline = buildPositionTimeline(events.deposits, events.withdrawals, events.transfersIn, events.transfersOut)
   debugLog('breakdown', 'built position timeline for breakdown', {
-    version,
-    fetchType,
-    paginationMode,
     deposits: events.deposits.length,
     withdrawals: events.withdrawals.length,
     transfersIn: events.transfersIn.length,
@@ -601,34 +671,23 @@ export async function getHoldingsBreakdown(
   })
 
   if (timeline.length === 0) {
-    debugLog('breakdown', 'no events found for holdings breakdown', {
-      version,
-      fetchType,
-      paginationMode
-    })
-    return buildEmptyBreakdownResponse(userAddress, version, breakdownTimestamp, 'No events found')
+    debugLog('breakdown', 'no events found for holdings breakdown')
+    return buildEmptyBreakdownResponse(userAddress, breakdownTimestamp, 'No events found')
   }
 
   const rawVaults = getUniqueVaults(timeline)
   const baseVaultMetadata = rawVaults.length > 0 ? await fetchMultipleVaultsMetadata(rawVaults) : new Map()
   const vaultMetadata = await resolveNestedVaultAssetMetadata(baseVaultMetadata)
-  const vaults = filterVaultsByAuthoritativeVersion(rawVaults, vaultMetadata, version)
-  debugLog('breakdown', 'resolved authoritative vault versions for breakdown', {
-    version,
-    fetchType,
-    paginationMode,
+  const vaults = filterVisibleVaults(rawVaults, vaultMetadata)
+  debugLog('breakdown', 'resolved visible vaults for breakdown', {
     rawVaults: rawVaults.length,
     filteredVaults: vaults.length,
     metadataResolved: vaultMetadata.size
   })
 
   if (vaults.length === 0) {
-    debugLog('breakdown', 'no vaults matched the requested authoritative version for breakdown', {
-      version,
-      fetchType,
-      paginationMode
-    })
-    return buildEmptyBreakdownResponse(userAddress, version, breakdownTimestamp, 'No matching holdings found')
+    debugLog('breakdown', 'no visible vaults found for breakdown')
+    return buildEmptyBreakdownResponse(userAddress, breakdownTimestamp, 'No matching holdings found')
   }
 
   const activeVaults = vaults.reduce<
@@ -684,10 +743,8 @@ export async function getHoldingsBreakdown(
     ...getNestedVaultPpsIdentifiersFromPriceRequests(basePriceRequests, vaultMetadata)
   ])
   const [ppsData, fetchedPriceData] = await Promise.all([
-    ppsIdentifiers.length > 0 ? fetchMultipleVaultsPPS(ppsIdentifiers) : Promise.resolve(new Map()),
-    priceRequests.length > 0
-      ? fetchHistoricalPricesForTokenTimestamps(priceRequests, { resolution: 'utc_day' })
-      : Promise.resolve(new Map())
+    ppsIdentifiers.length === 0 ? Promise.resolve(new Map()) : fetchMultipleVaultsPPS(ppsIdentifiers),
+    priceRequests.length > 0 ? fetchHistoricalPricesForTokenTimestamps(priceRequests) : Promise.resolve(new Map())
   ])
   const priceData = deriveNestedVaultAssetPriceData({
     priceData: fetchedPriceData,
@@ -696,9 +753,6 @@ export async function getHoldingsBreakdown(
     ppsData
   })
   debugLog('breakdown', 'resolved metadata, PPS, and prices for breakdown', {
-    version,
-    fetchType,
-    paginationMode,
     vaults: ppsIdentifiers.length,
     metadataResolved: vaultMetadata.size,
     ppsResolved: ppsData.size,
@@ -764,9 +818,6 @@ export async function getHoldingsBreakdown(
   const totalUsdValue = withShares.reduce((sum, vault) => sum + (vault.usdValue ?? 0), 0)
 
   debugLog('breakdown', 'completed holdings breakdown', {
-    version,
-    fetchType,
-    paginationMode,
     timestamp: breakdownTimestamp,
     totalVaults: vaults.length,
     vaultsWithShares: withShares.length,
@@ -778,7 +829,7 @@ export async function getHoldingsBreakdown(
 
   return {
     address: userAddress,
-    version,
+    version: 'all',
     date: breakdownDate,
     timestamp: breakdownTimestamp,
     summary: {

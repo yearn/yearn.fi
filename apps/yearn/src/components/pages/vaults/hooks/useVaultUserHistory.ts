@@ -72,7 +72,7 @@ export function useVaultUserHistory({
       return null
     }
 
-    return `/api/holdings/protocol-return/history?address=${address}&${vaultFilter}&timeframe=${apiTimeframe}&fetchType=seq`
+    return `/api/holdings/protocol-return/history?address=${address}&${vaultFilter}&timeframe=${apiTimeframe}`
   }, [address, apiTimeframe, enabled, vaultFilter])
 
   const balanceEndpoint = useMemo(() => {
@@ -80,7 +80,7 @@ export function useVaultUserHistory({
       return null
     }
 
-    return `/api/holdings/history?address=${address}&${vaultFilter}&denomination=usd&timeframe=${apiTimeframe}&fetchType=seq`
+    return `/api/holdings/history?address=${address}&${vaultFilter}&denomination=usd&timeframe=${apiTimeframe}`
   }, [address, apiTimeframe, enabled, valueMode, vaultFilter])
 
   const {

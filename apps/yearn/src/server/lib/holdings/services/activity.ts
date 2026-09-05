@@ -13,7 +13,7 @@ import {
   type TZapperV2Zap,
   type TZapperV2ZapOut
 } from './activityReceiptEnrichment'
-import type { TransactionActivityEvents, VaultVersion } from './graphql'
+import type { TransactionActivityEvents } from './graphql'
 import { fetchActivityEventsByTransactionHashes, fetchRecentAddressScopedActivityEvents } from './graphql'
 import {
   formatAmount,
@@ -64,7 +64,7 @@ export interface HoldingsActivityEntry {
 
 export interface HoldingsActivityResponse {
   address: string
-  version: VaultVersion
+  version: 'all'
   limit: number
   offset: number
   pageInfo: {
@@ -764,7 +764,6 @@ function toResolvedTxKey(event: TResolvedActivityEvent): string {
 
 async function loadRecentActivityWindowAttempt(
   userAddress: string,
-  version: VaultVersion,
   targetTransactionCount: number,
   limitPerSource: number,
   attempt: number,
@@ -772,8 +771,8 @@ async function loadRecentActivityWindowAttempt(
 ): Promise<TRecentActivityWindow> {
   const recentEvents =
     maxTimestamp === undefined
-      ? await fetchRecentAddressScopedActivityEvents(userAddress, version, limitPerSource)
-      : await fetchRecentAddressScopedActivityEvents(userAddress, version, limitPerSource, maxTimestamp)
+      ? await fetchRecentAddressScopedActivityEvents(userAddress, limitPerSource)
+      : await fetchRecentAddressScopedActivityEvents(userAddress, limitPerSource, maxTimestamp)
   const candidateEvents = sortEventsDesc([
     ...recentEvents.deposits.map((event) => normalizeDepositEvent(event, 'address')),
     ...recentEvents.withdrawals.map((event) => normalizeWithdrawalEvent(event, 'address')),
@@ -796,7 +795,6 @@ async function loadRecentActivityWindowAttempt(
       }
     : loadRecentActivityWindowAttempt(
         userAddress,
-        version,
         targetTransactionCount,
         Math.min(limitPerSource * 2, MAX_RECENT_ACTIVITY_EVENTS_PER_SOURCE),
         attempt + 1,
@@ -806,13 +804,11 @@ async function loadRecentActivityWindowAttempt(
 
 async function loadRecentActivityWindow(
   userAddress: string,
-  version: VaultVersion,
   targetTransactionCount: number,
   maxTimestamp?: number
 ): Promise<TRecentActivityWindow> {
   return loadRecentActivityWindowAttempt(
     userAddress,
-    version,
     targetTransactionCount,
     Math.min(
       Math.max(
@@ -1208,7 +1204,6 @@ function matchesCoarseActivityFilters(event: TActivityEvent, filters: TNormalize
 
 async function classifyActivityForTransactionKeys(
   userAddress: string,
-  version: VaultVersion,
   candidateEvents: TActivityEvent[],
   transactionKeys: string[]
 ): Promise<TResolvedActivityEvent[]> {
@@ -1216,7 +1211,7 @@ async function classifyActivityForTransactionKeys(
   const selectedAddressEvents = candidateEvents.filter((event) => selectedTransactionKeySet.has(toTxKey(event)))
   const transactionEvents =
     transactionKeys.length > 0
-      ? await fetchActivityEventsByTransactionHashes(buildTransactionHashesByChain(transactionKeys), version)
+      ? await fetchActivityEventsByTransactionHashes(buildTransactionHashesByChain(transactionKeys))
       : emptyTransactionActivityEvents()
   const selectedEvents = mergeActivityEvents([
     ...selectedAddressEvents,
@@ -1322,24 +1317,14 @@ async function buildActivityEntries(
 
 async function getUnfilteredHoldingsActivity(
   userAddress: string,
-  version: VaultVersion,
   boundedLimit: number,
   boundedOffset: number
 ): Promise<Pick<HoldingsActivityResponse, 'entries' | 'pageInfo'>> {
   const targetTransactionCount = boundedOffset + boundedLimit + 1
-  const { candidateEvents, hasPotentialMore } = await loadRecentActivityWindow(
-    userAddress,
-    version,
-    targetTransactionCount
-  )
+  const { candidateEvents, hasPotentialMore } = await loadRecentActivityWindow(userAddress, targetTransactionCount)
   const selectedTransactionKeys = getSelectedTransactionKeys(candidateEvents, targetTransactionCount)
   const pageTransactionKeys = selectedTransactionKeys.slice(boundedOffset, boundedOffset + boundedLimit)
-  const classifiedEvents = await classifyActivityForTransactionKeys(
-    userAddress,
-    version,
-    candidateEvents,
-    pageTransactionKeys
-  )
+  const classifiedEvents = await classifyActivityForTransactionKeys(userAddress, candidateEvents, pageTransactionKeys)
   const { entries } = await buildActivityEntries(userAddress, classifiedEvents)
   const hasMore =
     selectedTransactionKeys.length > boundedOffset + boundedLimit ||
@@ -1358,7 +1343,6 @@ async function getUnfilteredHoldingsActivity(
 
 async function getFilteredHoldingsActivity(
   userAddress: string,
-  version: VaultVersion,
   boundedLimit: number,
   boundedOffset: number,
   filters: TNormalizedActivityFilters
@@ -1377,7 +1361,6 @@ async function getFilteredHoldingsActivity(
   while (attempt < MAX_FILTERED_ACTIVITY_ATTEMPTS) {
     const { candidateEvents, hasPotentialMore } = await loadRecentActivityWindow(
       userAddress,
-      version,
       targetTransactionCount,
       maxTimestamp
     )
@@ -1385,7 +1368,6 @@ async function getFilteredHoldingsActivity(
     const selectedTransactionKeys = getSelectedTransactionKeys(filteredCandidateEvents, targetTransactionCount)
     const classifiedEvents = await classifyActivityForTransactionKeys(
       userAddress,
-      version,
       candidateEvents,
       selectedTransactionKeys
     )
@@ -1425,7 +1407,6 @@ async function getFilteredHoldingsActivity(
 
 export async function getHoldingsActivity(
   userAddress: string,
-  version: VaultVersion = 'all',
   limit = 10,
   offset = 0,
   filters: HoldingsActivityFilters = DEFAULT_ACTIVITY_FILTERS
@@ -1434,12 +1415,12 @@ export async function getHoldingsActivity(
   const boundedOffset = Math.max(0, offset)
   const normalizedFilters = normalizeActivityFilters(filters)
   const activityPage = !hasActiveActivityFilters(normalizedFilters)
-    ? await getUnfilteredHoldingsActivity(userAddress, version, boundedLimit, boundedOffset)
-    : await getFilteredHoldingsActivity(userAddress, version, boundedLimit, boundedOffset, normalizedFilters)
+    ? await getUnfilteredHoldingsActivity(userAddress, boundedLimit, boundedOffset)
+    : await getFilteredHoldingsActivity(userAddress, boundedLimit, boundedOffset, normalizedFilters)
 
   return {
     address: lowerCaseAddress(userAddress),
-    version,
+    version: 'all',
     limit: boundedLimit,
     offset: boundedOffset,
     pageInfo: activityPage.pageInfo,
