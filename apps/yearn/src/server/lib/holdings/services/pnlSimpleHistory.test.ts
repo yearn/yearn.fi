@@ -642,6 +642,14 @@ describe('getHoldingsProtocolReturnHistory', () => {
     const growthVault = response.growth.vaults[0]
 
     expect(response.protocolReturn.summary.isComplete).toBe(false)
+    expect(response.protocolReturn.summary.incompleteVaults).toEqual([
+      expect.objectContaining({
+        chainId: 1,
+        vaultAddress: VAULT,
+        status: 'missing_receipt_price',
+        issues: ['missing_receipt_price']
+      })
+    ])
     expect(growthVault).toMatchObject({
       status: 'ok',
       issues: [],

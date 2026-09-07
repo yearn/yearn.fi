@@ -19,12 +19,22 @@ describe('portfolioResponseSchema', () => {
         timeframe: '1y',
         summary: {
           totalVaults: 1,
-          completeVaults: 1,
-          partialVaults: 0,
+          completeVaults: 0,
+          partialVaults: 1,
           recommendedGrowthDisplay: 'usd',
           recommendedGrowthDisplayReason: 'stable_dominant',
           openBaselineCompositionUsd: { stable: 100, ethFamily: 0, other: 0 },
-          isComplete: true
+          incompleteVaults: [
+            {
+              chainId: 1,
+              vaultAddress: '0x5555555555555555555555555555555555555555',
+              symbol: 'yvMISSING',
+              tokenAddress: '0x6666666666666666666666666666666666666666',
+              status: 'missing_pps',
+              issues: ['missing_pps']
+            }
+          ],
+          isComplete: false
         },
         dataPoints: [
           {
@@ -87,6 +97,11 @@ describe('portfolioResponseSchema', () => {
     })
 
     expect(parsed.growth.vaults[0]?.issues).toEqual(['missing_exit_price'])
+    expect(parsed.protocolReturn.summary.incompleteVaults?.[0]).toMatchObject({
+      vaultAddress: '0x5555555555555555555555555555555555555555',
+      status: 'missing_pps',
+      issues: ['missing_pps']
+    })
     expect(parsed.protocolReturn.dataPoints[0]?.growthUsdEstimated).toBe(false)
     expect(parsed.protocolReturn.familySeries[0]?.dataPoints[0]).toMatchObject({
       growthWeightEth: 0.001,

@@ -750,9 +750,7 @@ export function PortfolioHistoryChart({
     )
   const historyWarning = hasMissingEthGrowth
     ? 'ETH growth is partial: historical prices are missing for one or more vaults.'
-    : protocolReturnSummary?.isComplete === false
-      ? 'History is incomplete: some historical prices or vault data are missing.'
-      : null
+    : null
   const yAxisFloor = activeTab === 'growth' && resolvedGrowthDisplayMode === 'index' ? 100 : 0
   const yAxisTicks = useMemo(
     () =>

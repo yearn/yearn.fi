@@ -16,6 +16,17 @@ const portfolioProtocolReturnHistoryDataPointSchema = z.object({
   growthIndex: z.number().nullable()
 })
 
+const portfolioProtocolReturnIncompleteVaultSchema = z.object({
+  chainId: z.number(),
+  vaultAddress: z.string(),
+  symbol: z.string().nullable(),
+  tokenAddress: z.string().nullable(),
+  status: z.enum(['missing_metadata', 'missing_pps', 'missing_receipt_price', 'partial']),
+  issues: z.array(
+    z.enum(['missing_metadata', 'missing_pps', 'missing_receipt_price', 'missing_exit_price', 'unmatched_exit'])
+  )
+})
+
 const portfolioProtocolReturnHistorySummarySchema = z.object({
   totalVaults: z.number(),
   completeVaults: z.number(),
@@ -27,6 +38,7 @@ const portfolioProtocolReturnHistorySummarySchema = z.object({
     ethFamily: z.number(),
     other: z.number()
   }),
+  incompleteVaults: z.array(portfolioProtocolReturnIncompleteVaultSchema).optional(),
   isComplete: z.boolean()
 })
 

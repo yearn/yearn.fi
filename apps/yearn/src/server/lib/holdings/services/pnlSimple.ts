@@ -253,6 +253,14 @@ export interface HoldingsPnLSimpleHistoryResponse {
       ethFamily: number
       other: number
     }
+    incompleteVaults?: Array<{
+      chainId: number
+      vaultAddress: string
+      symbol: string | null
+      tokenAddress: string | null
+      status: Exclude<THoldingsPnLSimpleStatus, 'ok'>
+      issues: TProtocolReturnIssue[]
+    }>
     isComplete: boolean
   }
   dataPoints: HoldingsPnLSimpleHistoryPoint[]
@@ -3137,6 +3145,20 @@ async function calculateHoldingsProtocolReturnHistory(
         recommendedGrowthDisplay,
         recommendedGrowthDisplayReason,
         openBaselineCompositionUsd,
+        incompleteVaults: finalVaults.flatMap((vault) =>
+          vault.status === 'ok'
+            ? []
+            : [
+                {
+                  chainId: vault.chainId,
+                  vaultAddress: vault.vaultAddress,
+                  symbol: vault.metadata.symbol,
+                  tokenAddress: vault.metadata.tokenAddress,
+                  status: vault.status,
+                  issues: vault.issues
+                }
+              ]
+        ),
         isComplete: finalVaults.every((vault) => vault.status === 'ok')
       },
       dataPoints: history,

@@ -77,10 +77,10 @@ describe('portfolio growth pricing availability', () => {
     expect(html).toContain('<option value="eth" selected="">ETH</option>')
   })
 
-  it.each(['usd', 'index'] as const)('warns when the %s growth history is incomplete', (mode) => {
+  it.each(['usd', 'index'] as const)('keeps incomplete %s history diagnostics in the console only', (mode) => {
     const html = renderToStaticMarkup(<PortfolioHistoryChart {...props} growthDisplayModeOverride={mode} />)
 
-    expect(html).toContain('History is incomplete: some historical prices or vault data are missing.')
+    expect(html).not.toContain('History is incomplete')
     expect(html).toContain('Contribution chart')
   })
 

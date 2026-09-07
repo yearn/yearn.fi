@@ -17,7 +17,7 @@ import {
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useFetch } from '@shared/hooks/useFetch'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
-import { useMemo } from 'react'
+import { useEffect, useMemo } from 'react'
 import { env } from '@/env'
 
 const PORTFOLIO_HISTORY_CACHE_DURATION = 60 * 60 * 1000
@@ -85,6 +85,35 @@ export function resolvePortfolioHistoryBundleLoading(args: {
   }
 }
 
+export function getIncompletePortfolioHistoryDiagnostics(data: TPortfolioResponse | null) {
+  if (!data || data.protocolReturn.summary.isComplete) {
+    return null
+  }
+
+  return {
+    address: data.address,
+    timeframe: data.protocolReturn.timeframe,
+    generatedAt: data.growth.generatedAt,
+    summary: {
+      totalVaults: data.protocolReturn.summary.totalVaults,
+      completeVaults: data.protocolReturn.summary.completeVaults,
+      partialVaults: data.protocolReturn.summary.partialVaults
+    },
+    missingVaults:
+      data.protocolReturn.summary.incompleteVaults ??
+      data.growth.vaults
+        .filter((vault) => vault.status !== 'ok')
+        .map((vault) => ({
+          chainId: vault.chainId,
+          vaultAddress: vault.vaultAddress,
+          symbol: vault.metadata.symbol,
+          tokenAddress: vault.metadata.tokenAddress,
+          status: vault.status,
+          issues: vault.issues
+        }))
+  }
+}
+
 export function usePortfolioHistoryBundle(
   denomination: TPortfolioHistoryDenomination = 'usd',
   timeframe: TPortfolioHistoryTimeframe = '1y',
@@ -127,6 +156,15 @@ export function usePortfolioHistoryBundle(
     data,
     isPlaceholderData
   })
+  const incompleteHistoryDiagnostics = useMemo(
+    () => getIncompletePortfolioHistoryDiagnostics(retainedData),
+    [retainedData]
+  )
+  useEffect(() => {
+    if (incompleteHistoryDiagnostics) {
+      console.warn('[Portfolio history] Historical data is incomplete', incompleteHistoryDiagnostics)
+    }
+  }, [incompleteHistoryDiagnostics])
   const balanceData = useMemo<TPortfolioHistoryChartData | null>(() => {
     if (!currentData?.balance.dataPoints) {
       return null
