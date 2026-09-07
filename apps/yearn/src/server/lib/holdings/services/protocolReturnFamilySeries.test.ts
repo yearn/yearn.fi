@@ -29,7 +29,8 @@ function buildIsolatedSeries(args: { id: string; mode: TMode; window: TWindow; s
       growthUsd: args.mode === 'position' ? (index === windowStartIndex ? 0 : args.score) : null,
       growthWeightUsd: args.mode === 'position' ? (index === windowStartIndex ? 0 : args.score * 100) : null,
       growthWeightEth: args.mode === 'eth' ? (index === windowStartIndex ? 0 : args.score) : null,
-      growthIndex: args.mode === 'index' ? (index === windowStartIndex ? 100 : 100 + args.score) : null
+      growthIndex: args.mode === 'index' ? (index === windowStartIndex ? 100 : 100 + args.score) : null,
+      growthIndexContribution: args.mode === 'index' ? (index === windowStartIndex ? 0 : args.score) : null
     }))
   }
 }
@@ -101,7 +102,8 @@ describe('selectProtocolReturnFamilySeriesCandidates', () => {
       growthUsdEstimated: false,
       growthWeightUsd: 500,
       growthWeightEth: null,
-      growthIndex: null
+      growthIndex: null,
+      growthIndexContribution: null
     })
   })
 

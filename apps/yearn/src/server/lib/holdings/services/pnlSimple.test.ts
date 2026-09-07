@@ -1318,7 +1318,7 @@ describe('pnl simple protocol return', () => {
     expect(history[1]?.growthUnderlying).toBeCloseTo(52)
   })
 
-  it('does not publish a partial ETH total when another vault is missing receipt prices', () => {
+  it('publishes the available ETH total when another vault is missing receipt prices', () => {
     const MISSING_VAULT = '0x5555555555555555555555555555555555555555'
     const MISSING_ASSET = '0x6666666666666666666666666666666666666666'
     const MISSING_VAULT_KEY = toVaultKey(1, MISSING_VAULT)
@@ -1395,7 +1395,7 @@ describe('pnl simple protocol return', () => {
 
     expect(history[0]?.growthWeightEth).toBeCloseTo(0)
     expect(history[1]?.growthWeightUsd).toBeCloseTo(10)
-    expect(history[1]?.growthWeightEth).toBeNull()
+    expect(history[1]?.growthWeightEth).toBeCloseTo(5)
   })
 
   it('does not double count the ERC4626 mint transfer alongside a deposit event', () => {
@@ -2206,7 +2206,31 @@ describe('pnl simple protocol return', () => {
       priceData: new Map([[ASSET_PRICE_KEY, new Map([[100, 1]])]]),
       ethPriceData: new Map([[100, 2]]),
       timestamps: [100, 200],
-      selectedVaults: [selectedVault]
+      selectedVaults: [selectedVault],
+      portfolioPoints: [
+        {
+          date: '1970-01-01',
+          timestamp: 100,
+          growthUsd: 0,
+          growthUsdEstimated: false,
+          growthWeightUsd: 0,
+          growthWeightEth: 0,
+          protocolReturnPct: 0,
+          annualizedProtocolReturnPct: 0,
+          growthIndex: 100
+        },
+        {
+          date: '1970-01-01',
+          timestamp: 200,
+          growthUsd: 10,
+          growthUsdEstimated: false,
+          growthWeightUsd: 10,
+          growthWeightEth: 5,
+          protocolReturnPct: 10,
+          annualizedProtocolReturnPct: 10,
+          growthIndex: 110
+        }
+      ]
     })
 
     expect(familyHistory).toHaveLength(1)
@@ -2215,6 +2239,10 @@ describe('pnl simple protocol return', () => {
     expect(familyHistory[0]?.dataPoints[0]?.growthWeightEth).toBeCloseTo(0)
     expect(familyHistory[0]?.dataPoints[1]?.growthIndex).toBeCloseTo(110)
     expect(familyHistory[0]?.dataPoints[1]?.growthWeightEth).toBeCloseTo(5)
+    expect(familyHistory[0]?.dataPoints.map((point) => point.growthIndexContribution)).toEqual([
+      expect.closeTo(0),
+      expect.closeTo(10)
+    ])
   })
 
   it('chains family PPS returns without treating added deposits or partial withdrawals as performance', () => {

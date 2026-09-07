@@ -90,7 +90,8 @@ describe('portfolioResponseSchema', () => {
     expect(parsed.protocolReturn.dataPoints[0]?.growthUsdEstimated).toBe(false)
     expect(parsed.protocolReturn.familySeries[0]?.dataPoints[0]).toMatchObject({
       growthWeightEth: 0.001,
-      growthUsdEstimated: false
+      growthUsdEstimated: false,
+      growthIndexContribution: null
     })
   })
 })

@@ -11,14 +11,19 @@ type TProtocolReturnFamilyPoint = {
   growthWeightUsd: number | null
   growthWeightEth: number | null
   growthIndex: number | null
+  growthIndexContribution?: number | null
 }
 
 type TProtocolReturnFamilySeries = {
   dataPoints: TProtocolReturnFamilyPoint[]
 }
 
-type TCompactProtocolReturnFamilyPoint = Omit<TProtocolReturnFamilyPoint, 'growthUsdEstimated'> & {
+type TCompactProtocolReturnFamilyPoint = Omit<
+  TProtocolReturnFamilyPoint,
+  'growthUsdEstimated' | 'growthIndexContribution'
+> & {
   growthUsdEstimated: boolean
+  growthIndexContribution: number | null
 }
 
 type TCompactProtocolReturnFamilySeries<TSeries extends TProtocolReturnFamilySeries> = Omit<TSeries, 'dataPoints'> & {
@@ -52,7 +57,7 @@ function isFiniteNumber(value: unknown): value is number {
 
 function buildPositionRankPoints(
   points: TProtocolReturnFamilyPoint[],
-  valueKey: 'growthWeightUsd' | 'growthWeightEth'
+  valueKey: 'growthUsd' | 'growthWeightUsd' | 'growthWeightEth' | 'growthIndexContribution'
 ): Array<{ value: number | null }> {
   const firstFiniteIndex = points.findIndex((point) => isFiniteNumber(point[valueKey]))
   if (firstFiniteIndex < 0 || points.length - firstFiniteIndex < 2) {
@@ -69,8 +74,12 @@ function buildPositionRankPoints(
 }
 
 function buildIndexRankPoints(points: TProtocolReturnFamilyPoint[]): Array<{ value: number | null }> {
-  const baseValue = points.find((point) => isFiniteNumber(point.growthIndex))?.growthIndex
+  const contributionPoints = buildPositionRankPoints(points, 'growthIndexContribution')
+  if (contributionPoints.some((point) => Math.abs(point.value ?? 0) > Number.EPSILON)) {
+    return contributionPoints
+  }
 
+  const baseValue = points.find((point) => isFiniteNumber(point.growthIndex))?.growthIndex
   return points.map((point) => ({
     value: baseValue && isFiniteNumber(point.growthIndex) ? (point.growthIndex / baseValue) * 100 : null
   }))
@@ -97,9 +106,13 @@ export function selectProtocolReturnFamilySeriesCandidates<TSeries extends TProt
       const limit = FAMILY_SERIES_WINDOW_LIMITS[window]
       const rankableSeries = preparedSeries.map((series) => {
         const points = limit >= series.sortedPoints.length ? series.sortedPoints : series.sortedPoints.slice(-limit)
+        const weightedPositionPoints = buildPositionRankPoints(points, 'growthWeightUsd')
+        const positionPoints = weightedPositionPoints.some((point) => Math.abs(point.value ?? 0) > Number.EPSILON)
+          ? weightedPositionPoints
+          : buildPositionRankPoints(points, 'growthUsd')
         return {
           originalIndex: series.originalIndex,
-          positionPoints: buildPositionRankPoints(points, 'growthWeightUsd'),
+          positionPoints,
           ethPoints: buildPositionRankPoints(points, 'growthWeightEth'),
           indexPoints: buildIndexRankPoints(points)
         }
@@ -136,7 +149,8 @@ export function selectProtocolReturnFamilySeriesCandidates<TSeries extends TProt
           growthUsdEstimated: point.growthUsdEstimated ?? false,
           growthWeightUsd: point.growthWeightUsd,
           growthWeightEth: point.growthWeightEth,
-          growthIndex: point.growthIndex
+          growthIndex: point.growthIndex,
+          growthIndexContribution: point.growthIndexContribution ?? null
         }))
       }
     ]

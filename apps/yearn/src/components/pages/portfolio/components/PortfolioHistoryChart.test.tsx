@@ -79,7 +79,7 @@ describe('portfolio growth pricing availability', () => {
     const html = renderToStaticMarkup(<PortfolioHistoryChart {...props} growthDisplayModeOverride={mode} />)
 
     expect(html).toContain('History is incomplete: some historical prices or vault data are missing.')
-    expect(html).toContain(mode === 'usd' ? 'Contribution chart' : 'Index chart')
+    expect(html).toContain('Contribution chart')
   })
 
   it('does not show an incomplete-history warning for complete USD history', () => {
@@ -107,7 +107,39 @@ describe('portfolio growth pricing availability', () => {
       />
     )
 
-    expect(html).toContain('Some ETH growth history is unavailable because historical prices are missing.')
+    expect(html).toContain('ETH growth is partial: historical prices are missing for one or more vaults.')
     expect(html).toContain('Contribution chart')
+  })
+
+  it('renders available ETH growth while warning that the total is partial', () => {
+    const html = renderToStaticMarkup(
+      <PortfolioHistoryChart
+        {...props}
+        protocolReturnData={[{ ...props.protocolReturnData![0]!, growthWeightEth: 1 }]}
+        protocolReturnFamilySeries={[
+          {
+            chainId: 1,
+            vaultAddress: '0x456',
+            symbol: 'yvETH',
+            status: 'missing_receipt_price',
+            dataPoints: [
+              {
+                timestamp: Date.parse('2026-01-01T00:00:00.000Z') / 1000,
+                growthWeightUsd: 0,
+                growthWeightEth: null,
+                growthUsd: 0,
+                growthUsdEstimated: false,
+                growthIndex: 100,
+                growthIndexContribution: 0
+              }
+            ]
+          }
+        ]}
+      />
+    )
+
+    expect(html).toContain('ETH growth is partial: historical prices are missing for one or more vaults.')
+    expect(html).toContain('Contribution chart')
+    expect(html).not.toContain('ETH growth unavailable')
   })
 })

@@ -36,6 +36,10 @@ function expectConservation(chart: ReturnType<typeof buildPortfolioGrowthContrib
   })
 }
 
+function withoutStackBands(chart: ReturnType<typeof buildPortfolioGrowthContributionChart>) {
+  return chart.data.map(({ stackBands: _stackBands, ...point }) => point)
+}
+
 describe('buildPortfolioGrowthContributionChart', () => {
   it('selects the matching per-vault value for USD and ETH modes', () => {
     const point = {
@@ -134,7 +138,7 @@ describe('buildPortfolioGrowthContributionChart', () => {
       { key: 'vault_3', label: 'D', terminalValue: 3 },
       { key: 'other', label: 'Other', terminalValue: 2 }
     ])
-    expect(chart.data).toEqual([
+    expect(withoutStackBands(chart)).toEqual([
       { date: dates[0], portfolioGrowth: 0, vault_0: 0, vault_1: 0, vault_2: 0, vault_3: 0, other: 0 },
       { date: dates[1], portfolioGrowth: 31, vault_0: 20, vault_1: 5, vault_2: 4, vault_3: 1, other: 1 },
       { date: dates[2], portfolioGrowth: 56, vault_0: 30, vault_1: 15, vault_2: 6, vault_3: 3, other: 2 }
@@ -268,6 +272,55 @@ describe('buildPortfolioGrowthContributionChart', () => {
       ['Loss', -90]
     ])
     expect(chart.data.at(-1)).toMatchObject({ portfolioGrowth: 10, vault_0: 100, vault_1: -90, other: 0 })
+    expect(chart.data.at(-1)?.stackBands).toMatchObject({
+      vault_1: [-90, 0],
+      vault_0: [-90, 10],
+      other: [10, 10]
+    })
+    expect(chart.bounds).toContain(-90)
+    expect(chart.bounds).toContain(10)
+    expectConservation(chart)
+  })
+
+  it('adds a 100-point base and reconciles Index attribution to the portfolio line', () => {
+    const chart = buildPortfolioGrowthContributionChart({
+      totalPoints: [
+        { date: '2026-01-01', value: 100 },
+        { date: '2026-01-02', value: 108 }
+      ],
+      familySeries: [
+        makeFamily({
+          label: 'Gain',
+          values: [
+            { date: '2026-01-01', value: 5 },
+            { date: '2026-01-02', value: 15 }
+          ]
+        }),
+        makeFamily({
+          label: 'Loss',
+          values: [
+            { date: '2026-01-01', value: 2 },
+            { date: '2026-01-02', value: -3 }
+          ]
+        })
+      ],
+      baseContribution: { key: 'starting_index', label: 'Starting index', value: 100 }
+    })
+
+    expect(chart.series.map((series) => series.label)).toEqual(['Starting index', 'Gain', 'Loss', 'Other'])
+    expect(chart.data.at(-1)).toMatchObject({
+      portfolioGrowth: 108,
+      starting_index: 100,
+      vault_0: 10,
+      vault_1: -5,
+      other: 3
+    })
+    expect(chart.data.at(-1)?.stackBands).toMatchObject({
+      starting_index: [0, 100],
+      vault_1: [95, 100],
+      vault_0: [95, 105],
+      other: [105, 108]
+    })
     expectConservation(chart)
   })
 
@@ -322,7 +375,7 @@ describe('buildPortfolioGrowthContributionChart', () => {
       preserveNullValues: true
     })
 
-    expect(chart.data).toEqual([
+    expect(withoutStackBands(chart)).toEqual([
       { date: dates[0], portfolioGrowth: 0, vault_0: 0, other: 0 },
       { date: dates[1], portfolioGrowth: 1, vault_0: 1, other: 0 },
       { date: dates[2], portfolioGrowth: null, vault_0: null, other: null },
@@ -348,7 +401,7 @@ describe('buildPortfolioGrowthContributionChart', () => {
     })
 
     expect(chart.series.map((series) => series.label)).toEqual(['Other'])
-    expect(chart.data.at(-1)).toEqual({
+    expect(withoutStackBands(chart).at(-1)).toEqual({
       date: dates[2],
       portfolioGrowth: 1.5,
       other: 1.5
@@ -471,10 +524,11 @@ describe('buildPortfolioGrowthContributionChart', () => {
         chainId: null,
         vaultAddress: null,
         isOther: true,
+        isBase: false,
         terminalValue: 4
       }
     ])
-    expect(chart.data).toEqual([
+    expect(withoutStackBands(chart)).toEqual([
       { date: '2026-04-01', portfolioGrowth: 0, other: 0 },
       { date: '2026-04-02', portfolioGrowth: 4, other: 4 }
     ])
