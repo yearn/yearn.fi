@@ -48,7 +48,8 @@ export function toPortfolioGrowthContributionPoint(
 ): TPortfolioGrowthContributionFamily['dataPoints'][number] {
   return {
     timestamp: point.timestamp,
-    value: mode === 'eth' ? point.growthWeightEth : point.growthWeightUsd
+    value: mode === 'eth' ? point.growthWeightEth : point.growthWeightUsd,
+    ...(mode === 'usd' && point.growthUsdEstimated ? { isEstimated: true } : {})
   }
 }
 
@@ -232,7 +233,7 @@ export function buildPortfolioGrowthContributionChart(args: {
     if (baseSeries) {
       row[baseSeries.key] = baseValue
       row.stackBands[baseSeries.key] = [Math.min(0, baseValue), Math.max(0, baseValue)]
-      bounds.push(0, baseValue)
+      bounds.push(baseValue)
     }
 
     const contributionRows: Array<{ series: TPortfolioGrowthContributionSeries; value: number }> = [

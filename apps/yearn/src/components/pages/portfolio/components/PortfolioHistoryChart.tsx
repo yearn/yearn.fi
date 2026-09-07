@@ -610,7 +610,8 @@ export function PortfolioHistoryChart({
     return rebaseDeltaPoints(
       points.map((point) => ({
         date: point.date,
-        value: point.growthWeightUsd
+        value: point.growthWeightUsd,
+        isEstimated: point.growthUsdEstimated
       }))
     )
   }, [protocolReturnData, timeframe])

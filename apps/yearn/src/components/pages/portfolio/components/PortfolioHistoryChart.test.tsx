@@ -7,7 +7,9 @@ vi.mock('@hooks/usePlausible', () => ({ usePlausible: () => vi.fn() }))
 vi.mock('@shared/contexts/useWeb3', () => ({ useWeb3: () => ({ address: '0x123' }) }))
 vi.mock('@shared/contexts/useYearn', () => ({ useYearn: () => ({ allVaults: {} }) }))
 vi.mock('@pages/portfolio/components/PortfolioGrowthContributionsChart', () => ({
-  PortfolioGrowthContributionsChart: () => <div>{'Contribution chart'}</div>
+  PortfolioGrowthContributionsChart: ({ totalPoints }: { totalPoints: Array<{ isEstimated?: boolean }> }) => (
+    <div>{`Contribution chart:${totalPoints.some((point) => point.isEstimated) ? 'estimated' : 'exact'}`}</div>
+  )
 }))
 vi.mock('@pages/portfolio/components/PortfolioGrowthIndexChart', () => ({
   PortfolioGrowthIndexChart: () => <div>{'Index chart'}</div>
@@ -93,6 +95,18 @@ describe('portfolio growth pricing availability', () => {
 
     expect(html).not.toContain('History is incomplete')
     expect(html).toContain('Contribution chart')
+  })
+
+  it('preserves estimated USD pricing through total-series rebasing', () => {
+    const html = renderToStaticMarkup(
+      <PortfolioHistoryChart
+        {...props}
+        growthDisplayModeOverride={'usd'}
+        protocolReturnData={[{ ...props.protocolReturnData![0]!, growthUsdEstimated: true }]}
+      />
+    )
+
+    expect(html).toContain('Contribution chart:estimated')
   })
 
   it('warns about ETH gaps even when USD receipt pricing is complete', () => {

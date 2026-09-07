@@ -10,7 +10,11 @@ describe('getPortfolioGrowthStackDomain', () => {
   })
 
   it('uses 100 as the visible floor for Index attribution', () => {
-    expect(getPortfolioGrowthStackDomain([0, 100, 135], 100)).toEqual([100, 136.75])
+    expect(getPortfolioGrowthStackDomain([100, 135], 100)).toEqual([100, 136.75])
+  })
+
+  it('includes Index attribution losses below 100', () => {
+    expect(getPortfolioGrowthStackDomain([90, 100], 100)).toEqual([89.5, 101])
   })
 })
 

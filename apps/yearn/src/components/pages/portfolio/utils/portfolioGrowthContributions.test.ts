@@ -52,7 +52,8 @@ describe('buildPortfolioGrowthContributionChart', () => {
 
     expect(toPortfolioGrowthContributionPoint(point, 'usd')).toEqual({
       timestamp: point.timestamp,
-      value: 25
+      value: 25,
+      isEstimated: true
     })
     expect(toPortfolioGrowthContributionPoint(point, 'eth')).toEqual({
       timestamp: point.timestamp,
@@ -321,6 +322,8 @@ describe('buildPortfolioGrowthContributionChart', () => {
       vault_0: [95, 105],
       other: [105, 108]
     })
+    expect(chart.bounds).not.toContain(0)
+    expect(chart.bounds).toContain(95)
     expectConservation(chart)
   })
 

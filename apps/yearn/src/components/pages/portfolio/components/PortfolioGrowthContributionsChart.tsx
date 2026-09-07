@@ -141,8 +141,12 @@ function formatGrowthTick(value: number | string, mode: 'usd' | 'eth' | 'index')
 
 export function getPortfolioGrowthStackDomain(values: number[], floor?: number): AxisDomain {
   if (floor !== undefined) {
+    const minimum = Math.min(floor, ...values)
     const maximum = Math.max(floor, ...values)
-    return [floor, maximum > floor ? floor + (maximum - floor) * LINE_HEADROOM : floor + 1]
+    return [
+      minimum < floor ? floor - (floor - minimum) * LINE_HEADROOM : floor,
+      maximum > floor ? floor + (maximum - floor) * LINE_HEADROOM : floor + 1
+    ]
   }
 
   const bounds = values.reduce(
