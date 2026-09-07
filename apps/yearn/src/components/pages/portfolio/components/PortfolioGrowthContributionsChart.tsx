@@ -128,7 +128,12 @@ function formatGrowthTick(value: number | string, mode: 'usd' | 'eth' | 'index')
   return `${numericValue < 0 ? '−' : ''}$${absoluteValue.toFixed(0)}`
 }
 
-export function getPortfolioGrowthStackDomain(values: number[]): AxisDomain {
+export function getPortfolioGrowthStackDomain(values: number[], floor?: number): AxisDomain {
+  if (floor !== undefined) {
+    const maximum = Math.max(floor, ...values)
+    return [floor, maximum > floor ? floor + (maximum - floor) * LINE_HEADROOM : floor + 1]
+  }
+
   const bounds = values.reduce(
     (result, value) => ({ min: Math.min(result.min, value), max: Math.max(result.max, value) }),
     { min: 0, max: 0 }
@@ -280,7 +285,10 @@ export function PortfolioGrowthContributionsChart({
       ]),
     [mode, series]
   )
-  const yAxisDomain = useMemo(() => getPortfolioGrowthStackDomain(contributionChart.bounds), [contributionChart.bounds])
+  const yAxisDomain = useMemo(
+    () => getPortfolioGrowthStackDomain(contributionChart.bounds, mode === 'index' ? 100 : undefined),
+    [contributionChart.bounds, mode]
+  )
   const isShortRange = timeframe === '30d' || contributionChart.data.length <= 45
   const ticks = isShortRange
     ? getChartWeeklyTicks(contributionChart.data)
