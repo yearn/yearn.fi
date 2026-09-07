@@ -20,6 +20,7 @@ import {
   getChartMonthlyTicks,
   getChartWeeklyTicks
 } from '@pages/vaults/utils/charts'
+import { LIGHT_MODE_COLORS } from '@shared/components/AllocationChart'
 import { formatUSD } from '@shared/utils'
 import type { ReactElement } from 'react'
 import { useMemo } from 'react'
@@ -45,23 +46,33 @@ type TPresentedContributionSeries = TPortfolioGrowthContributionSeries & {
 }
 
 const MAX_VAULTS = 8
-const CONTRIBUTION_COLORS = [
-  '#46a2ff',
-  '#7bb3a8',
-  '#e1a23b',
-  '#b67ae5',
-  '#f472b6',
-  '#f97316',
-  '#14b8a6',
-  '#94adf2'
-] as const
-const OTHER_COLOR = '#94a3b8'
-const INDEX_BASE_COLOR = '#80b7f4'
-const TOTAL_COLOR = '#2578ff'
+const CONTRIBUTION_COLORS = LIGHT_MODE_COLORS
+const OTHER_COLOR = '#d7e6ff'
+const INDEX_BASE_COLOR = '#e8f1ff'
+const TOTAL_COLOR = '#0657f9'
 const LINE_HEADROOM = 1.05
 const CHART_MARGIN = {
   ...CHART_WITH_AXES_MARGIN,
   bottom: 4
+}
+
+function getPortfolioGrowthVaultKey(chainId: number, vaultAddress: string): string {
+  return `${chainId}:${vaultAddress.toLowerCase()}`
+}
+
+export function buildPortfolioGrowthVaultColorMap(
+  families: Array<Pick<TPortfolioGrowthContributionFamily, 'chainId' | 'vaultAddress'>>
+): Map<string, string> {
+  const vaultKeys = Array.from(
+    new Set(families.map((family) => getPortfolioGrowthVaultKey(family.chainId, family.vaultAddress)))
+  ).toSorted()
+
+  return new Map(
+    vaultKeys.map((vaultKey, index) => [
+      vaultKey,
+      CONTRIBUTION_COLORS[index % CONTRIBUTION_COLORS.length] ?? CONTRIBUTION_COLORS[0]
+    ])
+  )
 }
 
 function formatEthValue(value: number): string {
@@ -259,17 +270,21 @@ export function PortfolioGrowthContributionsChart({
       }),
     [familySeries, mode, totalPoints]
   )
+  const vaultColorMap = useMemo(() => buildPortfolioGrowthVaultColorMap(familySeries), [familySeries])
   const series = useMemo<TPresentedContributionSeries[]>(
     () =>
-      contributionChart.series.map((item, index) => ({
+      contributionChart.series.map((item) => ({
         ...item,
         color: item.isBase
           ? INDEX_BASE_COLOR
           : item.isOther
             ? OTHER_COLOR
-            : (CONTRIBUTION_COLORS[index - Number(mode === 'index')] ?? CONTRIBUTION_COLORS[0])
+            : item.chainId !== null && item.vaultAddress !== null
+              ? (vaultColorMap.get(getPortfolioGrowthVaultKey(item.chainId, item.vaultAddress)) ??
+                CONTRIBUTION_COLORS[0])
+              : CONTRIBUTION_COLORS[0]
       })),
-    [contributionChart.series, mode]
+    [contributionChart.series, vaultColorMap]
   )
   const chartConfig = useMemo<ChartConfig>(
     () =>
@@ -334,7 +349,7 @@ export function PortfolioGrowthContributionsChart({
             stroke={item.color}
             strokeWidth={0.75}
             fill={item.color}
-            fillOpacity={item.isBase ? 0.38 : item.isOther ? 0.4 : 0.68}
+            fillOpacity={item.isBase ? 0.28 : item.isOther ? 0.3 : 0.45}
             connectNulls={mode !== 'eth'}
             tooltipType={'none'}
             isAnimationActive={false}
