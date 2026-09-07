@@ -831,12 +831,13 @@ function valueDepositOrWithdrawalEvent(
     assetDecimals: number
     shareDecimals: number
     ppsMap: Map<number, number> | undefined
+    useDailyPps: boolean
   }
 ): {
   underlying: number
   missingPps: boolean
 } {
-  if (!isKnownStakingWrapperEvent(event)) {
+  if (!args.useDailyPps && !isKnownStakingWrapperEvent(event)) {
     return {
       underlying: formatAmount(event.assets, args.assetDecimals),
       missingPps: false
@@ -1091,6 +1092,7 @@ function processEvent(
     priceData: Map<string, Map<number, number>>
     exitPriceData: Map<string, Map<number, number>>
     ethPriceData: Map<number, number>
+    useDailyPpsForFlows?: boolean
   }
 ): Map<string, TProtocolReturnLedger> {
   const vaultKey = toVaultKey(event.chainId, event.familyVaultAddress)
@@ -1121,7 +1123,8 @@ function processEvent(
     const directValuation = valueDepositOrWithdrawalEvent(event, {
       assetDecimals,
       shareDecimals,
-      ppsMap
+      ppsMap,
+      useDailyPps: args.useDailyPpsForFlows ?? false
     })
     const valuation = convertUnderlyingToTerminalAsset({
       directUnderlying: directValuation.underlying,
@@ -1153,7 +1156,8 @@ function processEvent(
     const directValuation = valueDepositOrWithdrawalEvent(event, {
       assetDecimals,
       shareDecimals,
-      ppsMap
+      ppsMap,
+      useDailyPps: args.useDailyPpsForFlows ?? false
     })
     const valuation = convertUnderlyingToTerminalAsset({
       directUnderlying: directValuation.underlying,
@@ -2570,7 +2574,8 @@ export function buildProtocolReturnHistorySeries(args: {
     ppsData: args.ppsData,
     priceData: args.priceData,
     exitPriceData: args.exitPriceData ?? args.priceData,
-    ethPriceData: args.ethPriceData ?? new Map<number, number>()
+    ethPriceData: args.ethPriceData ?? new Map<number, number>(),
+    useDailyPpsForFlows: true
   }
   const markGrowthIndex = (timestamp: number, afterReceipt = false) => {
     const vaults = materializeProtocolReturnVaults({
@@ -2763,7 +2768,8 @@ export function buildProtocolReturnFamilyHistorySeries(args: {
             ppsData: args.ppsData,
             priceData: args.priceData,
             exitPriceData: args.exitPriceData ?? args.priceData,
-            ethPriceData: args.ethPriceData ?? new Map()
+            ethPriceData: args.ethPriceData ?? new Map(),
+            useDailyPpsForFlows: true
           })
         })
       })

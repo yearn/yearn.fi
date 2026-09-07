@@ -199,7 +199,7 @@ describe('pnl simple protocol return', () => {
       withdrawn: 205868372846986582346156n
     },
     { wallet: 'short profitable holding', seconds: 48, shares: 100n * ONE, pps: 1, withdrawn: 101n * ONE }
-  ])('links the actual $wallet return without extrapolating $seconds seconds to a day', (fixture) => {
+  ])('uses one daily PPS mark for a same-day $wallet receipt and exit', (fixture) => {
     const day = 86_400
     const receiptTimestamp = day + 100
     const exitTimestamp = receiptTimestamp + fixture.seconds
@@ -237,25 +237,31 @@ describe('pnl simple protocol return', () => {
       ...inputs,
       timestamps: [day - 1, receiptTimestamp, exitTimestamp, 2 * day - 1, 3 * day - 1]
     })
-    const baseline = (Number(fixture.shares) / Number(ONE)) * fixture.pps
-    const growth = Number(fixture.withdrawn) / Number(ONE) - baseline
-    const expectedIndex = 100 * (1 + growth / baseline)
-
     expect(history[0]?.growthIndex).toBe(100)
-    expect(history[1]?.growthIndex).toBeCloseTo(expectedIndex, 10)
-    expect(history[2]?.growthIndex).toBeCloseTo(expectedIndex, 10)
-    expect(history[1]?.growthWeightUsd).toBeCloseTo(growth)
-    expect(history[1]?.growthWeightEth).toBeCloseTo(growth / 2)
-    expect(sampled.at(-1)?.growthIndex).toBeCloseTo(expectedIndex, 10)
+    expect(history[1]?.growthIndex).toBe(100)
+    expect(history[2]?.growthIndex).toBe(100)
+    expect(history[1]?.growthWeightUsd).toBe(0)
+    expect(history[1]?.growthWeightEth).toBe(0)
+    expect(sampled.at(-1)?.growthIndex).toBe(100)
     const tail = buildProtocolReturnHistorySeries({
       ...inputs,
       timestamps: [2 * day - 1, 3 * day - 1],
       growthIndexSeed: { timestamp: 2 * day - 1, growthIndex: history[1]!.growthIndex }
     })
-    expect(tail.at(-1)?.growthIndex).toBeCloseTo(expectedIndex, 10)
+    expect(tail.at(-1)?.growthIndex).toBe(100)
+
+    const realizedVault = materializeVault({
+      events,
+      ppsData: inputs.ppsData,
+      priceData: inputs.priceData,
+      currentTimestamp: 3 * day - 1
+    })
+    const transactionGrowth =
+      Number(fixture.withdrawn) / Number(ONE) - (Number(fixture.shares) / Number(ONE)) * fixture.pps
+    expect(realizedVault.growthWeightUsd).toBeCloseTo(transactionGrowth)
   })
 
-  it('keeps an exit correction proportional before reinvesting in the same transaction', () => {
+  it('does not treat same-day exit slippage as daily PPS growth before reinvesting', () => {
     const history = buildProtocolReturnHistorySeries({
       events: [
         baseEvent({ kind: 'transfer', id: 'receipt', blockTimestamp: 100 }),
@@ -287,8 +293,8 @@ describe('pnl simple protocol return', () => {
       priceData: new Map([[ASSET_PRICE_KEY, new Map([[0, 1]])]]),
       timestamps: [100, 300]
     })
-    expect(history[1]?.growthWeightUsd).toBeCloseTo(-1)
-    expect(history[1]?.growthIndex).toBeCloseTo(99)
+    expect(history[1]?.growthWeightUsd).toBe(0)
+    expect(history[1]?.growthIndex).toBe(100)
   })
 
   it('does not turn unavailable PPS into an Index loss or silently restart at 100 after recovery', () => {
