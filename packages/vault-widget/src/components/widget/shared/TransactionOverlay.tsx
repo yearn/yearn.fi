@@ -7,6 +7,7 @@ import {
 } from '@yearn/vault-widget/headless'
 import { Button } from '@yearn/vault-widget/internal/components/shared/Button'
 import { LifecycleTransactionOverlay } from '@yearn/vault-widget/internal/components/widget/shared/LifecycleTransactionOverlay'
+import type { TOverlayRecipe } from '@yearn/vault-widget/internal/components/widget/shared/lifecyclePreparation'
 import {
   getPlannedTransactionErrorPresentation,
   type TPlannedTransactionFailureKind
@@ -211,15 +212,17 @@ function getTransactionErrorMessage(error: any): string {
 
 export type TransactionOverlayProps = {
   isOpen: boolean
+  reviewedOwner?: Address
   onClose: () => void
   plan?: VaultWidgetTransactionPlan
+  lifecycleRecipe?: TOverlayRecipe
   planSteps?: Readonly<Record<string, TransactionStep>>
   step?: TransactionStep
   isLastStep?: boolean
   onAllComplete?: () => void
   deferOnAllCompleteUntilClose?: boolean
   deferOnAllCompleteUntilConfettiEnd?: boolean
-  onStepSuccess?: (stepId: string) => void | Promise<void>
+  onStepSuccess?: (stepId: string, receipt?: TransactionReceipt) => void | Promise<void>
   /**
    * Called after the final transaction is confirmed, before the success screen
    * is shown. The overlay stays in a "refreshing" state while this resolves.
@@ -235,11 +238,41 @@ export type TransactionOverlayProps = {
 
 export const TransactionOverlay: FC<TransactionOverlayProps> = (props) => {
   const runtime = useVaultWidgetRuntime()
-  return props.plan && runtime.lifecycle ? (
-    <LifecycleTransactionOverlay {...props} />
-  ) : (
-    <LegacyTransactionOverlay {...props} />
+  const step = props.step
+  const chainId =
+    step?.batch?.chainId ??
+    step?.notification?.fromChainId ??
+    runtime.chains.resolveCanonicalChainId(getTransactionPreparationChainId(step?.prepare))
+  const request = getContractTransactionRequest(step?.prepare) as
+    | { address?: string; to?: string; data?: string; functionName?: string; args?: readonly unknown[]; value?: bigint }
+    | undefined
+  const identity = JSON.stringify(
+    [
+      step?.id,
+      chainId,
+      step?.batch?.calls ??
+        (isRawTransactionPreparation(step?.prepare)
+          ? step.prepare.transaction
+          : request
+            ? [request.address ?? request.to, request.data, request.functionName, request.args, request.value]
+            : undefined)
+    ],
+    (_key, value) => (typeof value === 'bigint' ? value.toString() : value)
   )
+  const recipe =
+    props.lifecycleRecipe ??
+    (step && chainId && (step.completesFlow ?? props.isLastStep ?? true) && !isCrossChainNotification(step.notification)
+      ? {
+          id: identity,
+          chainId,
+          steps: [{ id: step.id, label: step.label }]
+        }
+      : undefined)
+  if (runtime.lifecycle && (props.plan || recipe))
+    return props.isOpen ? (
+      <LifecycleTransactionOverlay {...props} lifecycleRecipe={props.plan ? undefined : recipe} />
+    ) : null
+  return <LegacyTransactionOverlay {...props} />
 }
 
 const LegacyTransactionOverlay: FC<TransactionOverlayProps> = ({

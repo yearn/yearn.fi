@@ -1,4 +1,5 @@
 import { Button } from '@yearn/vault-widget/internal/components/shared/Button'
+import { getPreparationBridge } from '@yearn/vault-widget/internal/components/widget/shared/lifecyclePreparation'
 import type { TransactionOverlayProps } from '@yearn/vault-widget/internal/components/widget/shared/TransactionOverlay'
 import {
   AnimatedCheckmark,
@@ -8,31 +9,69 @@ import {
 import { selectTransaction } from '@yearn/vault-widget/lifecycle'
 import { useVaultWidgetRuntime } from '@yearn/vault-widget/runtime'
 import { isRawTransactionPreparation } from '@yearn/vault-widget/types'
-import { useEffect, useId, useRef, useState, useSyncExternalStore } from 'react'
+import { useEffect, useId, useLayoutEffect, useRef, useState, useSyncExternalStore } from 'react'
 import { useReward } from 'react-rewards'
 
 export function LifecycleTransactionOverlay(props: TransactionOverlayProps) {
   const runtime = useVaultWidgetRuntime()
   const service = runtime.lifecycle!
+  const walletType = useRef(runtime.safe.isSafe)
+  walletType.current = runtime.safe.isSafe
   const [reviewed] = useState(() => ({
-    plan: structuredClone(props.plan!),
+    plan: props.plan
+      ? structuredClone(props.plan)
+      : {
+          id: props.lifecycleRecipe!.id,
+          walletType: runtime.safe.isSafe ? ('safe' as const) : ('eoa' as const),
+          intent: { id: props.lifecycleRecipe!.id, mode: 'deposit' as const, calls: [] },
+          steps: props.lifecycleRecipe!.steps.map((step) => ({
+            ...step,
+            kind: 'prepare' as const,
+            chainId: props.lifecycleRecipe!.chainId
+          }))
+        },
     step: props.step,
     steps: props.planSteps,
-    owner: runtime.wallet.address,
+    owner: props.reviewedOwner ?? runtime.wallet.address,
     commandId: crypto.randomUUID()
   }))
+  const [bridge] = useState(() =>
+    props.lifecycleRecipe && reviewed.owner
+      ? getPreparationBridge(service, reviewed.owner, props.lifecycleRecipe)
+      : undefined
+  )
+  // Synchronize route preparations at React commit boundaries. The service remains the only runner.
+  useLayoutEffect(() => {
+    if (!bridge || !props.lifecycleRecipe) return
+    bridge.attach({
+      canonicalChainId: runtime.chains.resolveCanonicalChainId,
+      id: reviewed.commandId,
+      props,
+      owner: runtime.wallet.address,
+      isSafe: runtime.safe.isSafe,
+      recipe: props.lifecycleRecipe
+    })
+  })
+  // Unmount detaches preparation only; accepted wallet submissions remain with the service.
+  useEffect(() => () => bridge?.detach(reviewed.commandId), [bridge, reviewed])
   const [flowId, setFlowId] = useState<string>(reviewed.commandId)
   const activeId = useRef<string>(reviewed.commandId)
   const state = useSyncExternalStore(service.subscribe, service.getSnapshot, service.getSnapshot)
   const flow = state.flows.find((item) => item.id === flowId)
   const record = state.records.find((item) => item.id === flow?.recordId)
   const view = record ? selectTransaction(record) : undefined
-  const step = reviewed.steps?.[flow?.stepId ?? reviewed.plan.steps[0]?.id] ?? reviewed.step
-  const finalStepId = reviewed.plan.intent.calls.at(-1)?.id ?? ''
-  const finalStep = reviewed.steps?.[finalStepId] ?? reviewed.step
+  const step =
+    bridge?.prepared.get(flow?.stepId ?? '') ??
+    reviewed.steps?.[flow?.stepId ?? reviewed.plan.steps[0]?.id] ??
+    props.step ??
+    reviewed.step
+  const finalStepId = props.lifecycleRecipe
+    ? (reviewed.plan.steps.at(-1)?.id ?? '')
+    : (reviewed.plan.intent.calls.at(-1)?.id ?? '')
+  const finalStep = bridge?.prepared.get(finalStepId) ?? reviewed.steps?.[finalStepId] ?? reviewed.step
   const isFinalRecord = !record?.sequence || record.sequence.index === record.sequence.count - 1
   const success = view?.outcome === 'success' && isFinalRecord
-  const isPaused = flow?.phase === 'paused' && view?.outcome === 'success'
+  const isPaused = flow?.phase === 'paused' && (!record || view?.outcome === 'success')
   const needsReview = Boolean(
     record?.source && view?.outcome === 'success' && !isFinalRecord && flow?.phase === 'pending'
   )
@@ -61,7 +100,7 @@ export function LifecycleTransactionOverlay(props: TransactionOverlayProps) {
     if (!props.isOpen || !reviewed.owner) return
     const preparation = reviewed.step?.prepare
     const raw = isRawTransactionPreparation(preparation) ? preparation : undefined
-    const call = reviewed.plan.intent.calls[0].request
+    const call = reviewed.plan.intent.calls[0]?.request
     const id = service.start({
       commandId: reviewed.commandId,
       owner: reviewed.owner,
@@ -70,24 +109,33 @@ export function LifecycleTransactionOverlay(props: TransactionOverlayProps) {
       displayByStep: reviewed.steps
         ? Object.fromEntries(Object.entries(reviewed.steps).map(([id, step]) => [id, step.notification]))
         : undefined,
-      validate: raw
-        ? async () => {
-            if (
-              !raw.validate ||
-              !raw.transaction ||
-              raw.transaction.from.toLowerCase() !== reviewed.owner!.toLowerCase()
-            )
-              throw new Error('Quote owner changed. Close and review the transaction again.')
-            await raw.validate({
-              ...raw.transaction,
-              chainId: call.chainId,
-              to: call.to,
-              data: call.data,
-              value: (call.value ?? 0n).toString()
-            })
-          }
-        : undefined,
-      refresh: props.onBeforeSuccess ? () => props.onBeforeSuccess!(finalStep?.id ?? '') : undefined
+      describeStep: bridge ? (id) => bridge.prepared.get(id)?.notification : undefined,
+      prepareStep: bridge?.prepareStep,
+      afterStep: bridge?.afterStep,
+      authorize: () => {
+        if (walletType.current !== (reviewed.plan.walletType === 'safe'))
+          throw new Error('Wallet type changed. Close and review again.')
+        bridge?.authorize()
+      },
+      validate:
+        raw && call && !bridge
+          ? async () => {
+              if (
+                !raw.validate ||
+                !raw.transaction ||
+                raw.transaction.from.toLowerCase() !== reviewed.owner!.toLowerCase()
+              )
+                throw new Error('Quote owner changed. Close and review the transaction again.')
+              await raw.validate({
+                ...raw.transaction,
+                chainId: call.chainId,
+                to: call.to,
+                data: call.data,
+                value: (call.value ?? 0n).toString()
+              })
+            }
+          : undefined,
+      refresh: props.onBeforeSuccess ? () => props.onBeforeSuccess!(finalStepId || reviewed.step?.id || '') : undefined
     })
     activeId.current = id
     setFlowId(id)
@@ -103,7 +151,8 @@ export function LifecycleTransactionOverlay(props: TransactionOverlayProps) {
       runtime.wallet.address?.toLowerCase() !== reviewed.owner?.toLowerCase()
     )
       return
-    if (service.claimEffect(flowId, 'step')) void callbacks.current.onStepSuccess?.(finalStep?.id ?? '')
+    if (service.claimEffect(flowId, 'step'))
+      void callbacks.current.onStepSuccess?.(finalStep?.id ?? '', record?.source?.receipt)
     if (finalStep?.showConfetti && service.claimEffect(flowId, 'confetti')) reward()
     if (!props.deferOnAllCompleteUntilClose && (!props.deferOnAllCompleteUntilConfettiEnd || !finalStep?.showConfetti))
       complete()
@@ -122,7 +171,8 @@ export function LifecycleTransactionOverlay(props: TransactionOverlayProps) {
 
   if (!props.isOpen) return null
   const chain = view ? runtime.chains.getChain(view.reference.executionChainId) : undefined
-  const explorer = chain?.blockExplorerUrl && view ? `${chain.blockExplorerUrl}/tx/${view.reference.hash}` : undefined
+  const explorer =
+    chain?.blockExplorerUrl && view?.reference.hash ? `${chain.blockExplorerUrl}/tx/${view.reference.hash}` : undefined
   const close = (): void => {
     if (success) complete()
     service.pause(flowId)
@@ -214,7 +264,12 @@ export function LifecycleTransactionOverlay(props: TransactionOverlayProps) {
             Recheck confirmation
           </Button>
         ) : null}
-        {(success && !refreshing) || failed || unresolved || isPaused || needsReview ? (
+        {(success && !refreshing) ||
+        failed ||
+        unresolved ||
+        isPaused ||
+        needsReview ||
+        (record?.safe && !record.source) ? (
           <Button className="w-full max-w-xs" classNameOverride="yearn--button--nextgen w-full" onClick={close}>
             {success ? 'Done' : 'Close'}
           </Button>

@@ -1,14 +1,17 @@
 import type { Config } from '@wagmi/core'
 import {
   getAccount,
+  getCallsStatus,
   getConnectorClient,
   getPublicClient,
   sendCalls,
   sendTransaction,
+  signTypedData,
   switchChain as wagmiSwitchChain,
   waitForCallsStatus
 } from '@wagmi/core/actions'
 import {
+  type TSafeExecution,
   type VaultWidgetExecutionAdapter,
   VaultWidgetPreparationError,
   type VaultWidgetTransactionReceiptResult,
@@ -20,10 +23,12 @@ import {
   type Client,
   type Hash,
   type Hex,
+  isAddress,
   isHash,
   isHex,
   MethodNotFoundRpcError,
   MethodNotSupportedRpcError,
+  parseAbi,
   type ReplacementReturnType,
   type Transaction,
   TransactionNotFoundError,
@@ -406,14 +411,66 @@ export function createWagmiVaultWidgetExecutionAdapter(
         if (completed.current) submittedTransactions.delete(transactionKey)
       }
     },
-    async proposeSafeBatch({ account, chainId, requests }) {
+    async signPermit({ account, chainId, data, beforeSubmit }) {
+      const message = data.message as Record<string, unknown>
+      const token = data.domain?.verifyingContract
+      try {
+        if (
+          data.primaryType !== 'Permit' ||
+          String(message.owner).toLowerCase() !== account.toLowerCase() ||
+          Number(data.domain?.chainId) !== chainId ||
+          !token ||
+          !isAddress(token) ||
+          !isAddress(String(message.spender)) ||
+          BigInt(String(message.value)) < 0n ||
+          BigInt(String(message.deadline ?? 0)) <= BigInt(Math.floor(Date.now() / 1000))
+        )
+          throw new Error('Permit owner, network, spender, amount, or deadline changed')
+        const client = getPublicClient(options.config, { chainId: requireExecutionChainId(chainId) })
+        if (!client) throw new Error('Permit execution client is unavailable')
+        const nonce = await client.readContract({
+          address: token,
+          abi: parseAbi(['function nonces(address) view returns (uint256)']),
+          functionName: 'nonces',
+          args: [account]
+        })
+        if (nonce !== BigInt(String(message.nonce))) throw new Error('Permit nonce changed. Close and review again.')
+      } catch (error) {
+        throw new VaultWidgetPreparationError(error)
+      }
+      beforeSubmit?.()
+      return signTypedData(options.config, {
+        ...data,
+        account,
+        chainId: requireExecutionChainId(chainId)
+      } as Parameters<typeof signTypedData>[1])
+    },
+    async observeSafeExecution({ executionChainId, proposalId }): Promise<TSafeExecution> {
+      const status = await getCallsStatus(options.config, { id: proposalId })
+      if (status.chainId !== undefined && status.chainId !== executionChainId)
+        throw new Error('Safe execution network changed')
+      if (status.status === 'failure') return { status: status.statusCode === 400 ? 'cancelled' : 'failed' }
+      if (status.status !== 'success') return { status: 'pending' }
+      const receipts = status.receipts ?? []
+      if (receipts.some((receipt) => receipt.status !== 'success')) return { status: 'failed' }
+      const hash = receipts[0]?.transactionHash
+      if (!isTransactionHash(hash) || receipts.some((receipt) => receipt.transactionHash !== hash))
+        throw new Error('Safe batch execution could not be established atomically')
+      return { status: 'success', hash }
+    },
+    async proposeSafeBatch({ account, chainId, requests, beforeSubmit }) {
       if (requests.length === 0) throw new Error('Safe batch cannot be empty')
       if (requests.some((request) => request.chainId !== chainId)) {
         throw new Error('Safe batch contains requests from different canonical chains')
       }
 
       const executionChainId = requireExecutionChainId(chainId)
-      await simulateSafeBatch({ account, executionChainId, requests })
+      try {
+        await simulateSafeBatch({ account, executionChainId, requests })
+      } catch (error) {
+        throw new VaultWidgetPreparationError(error)
+      }
+      beforeSubmit?.()
       const result = await sendCalls(options.config, {
         account,
         calls: requests.map(({ data, to, value }) => ({ data, to, value })),

@@ -246,7 +246,7 @@ describe('sequential lifecycle overlay', () => {
     await screen.findByText('Deposit successful')
     expect(refresh).toHaveBeenCalledTimes(1)
     expect(refresh).toHaveBeenCalledWith('deposit')
-    expect(onStepSuccess).toHaveBeenCalledExactlyOnceWith('deposit')
+    expect(onStepSuccess).toHaveBeenCalledExactlyOnceWith('deposit', receipt)
     expect(done).toHaveBeenCalledTimes(1)
   })
 })

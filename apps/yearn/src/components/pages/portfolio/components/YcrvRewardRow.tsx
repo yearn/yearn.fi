@@ -9,7 +9,6 @@ import { useChainId, useReadContract, useSimulateContract } from '@shared/hooks/
 import type { TransactionStep } from '@yearn/vault-widget/advanced'
 import type { ReactElement } from 'react'
 import { useCallback, useMemo } from 'react'
-import { useWriteContract } from 'wagmi'
 
 type TYcrvRewardRowProps = {
   reward: TYcrvReward
@@ -29,7 +28,6 @@ export function YcrvRewardRow({
   onSwitchChain
 }: TYcrvRewardRowProps): ReactElement {
   const currentChainId = useChainId()
-  const { isPending } = useWriteContract()
   const range = useReadContract({
     address: YCRV_REWARDS_DISTRIBUTOR_ADDRESS,
     abi: YCRV_REWARDS_DISTRIBUTOR_ABI,
@@ -61,9 +59,16 @@ export function YcrvRewardRow({
       confirmMessage: `Claim ${formattedAmount} ${reward.symbol}`,
       successTitle: 'Rewards Claimed',
       successMessage: `You claimed ${formattedAmount} ${reward.symbol}`,
+      notification: {
+        type: 'claim',
+        amount: formattedAmount,
+        fromChainId: YCRV_CHAIN_ID,
+        fromAddress: reward.tokenAddress,
+        fromSymbol: reward.symbol
+      },
       showConfetti: true
     }
-  }, [formattedAmount, prepare, reward.symbol])
+  }, [formattedAmount, prepare, reward.symbol, reward.tokenAddress, YCRV_CHAIN_ID])
   const handleClaim = useCallback(() => {
     if (step) {
       onStartClaim(step)
@@ -79,7 +84,6 @@ export function YcrvRewardRow({
       amount={reward.amountNormalized.toString()}
       usdValue={reward.usdValue}
       onClaim={handleClaim}
-      isClaimPending={isPending}
       isClaimReady={prepare.isSuccess}
       isFirst={isFirst}
       isAllChainsView={isAllChainsView}

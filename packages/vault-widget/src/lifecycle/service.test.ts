@@ -766,3 +766,141 @@ describe('sequential EOA lifecycle', () => {
     f.disconnect()
   })
 })
+
+describe('Safe proposals and dependent preparations', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+  })
+  afterEach(() => {
+    vi.clearAllTimers()
+    vi.useRealTimers()
+  })
+  const safePlan = () => buildTransactionPlan({ connectedChainId: 1, walletType: 'safe', intent: makePlan().intent })
+  it('saves a late proposal after closure, recovers it, and requires Safe success plus the confirmed receipt', async () => {
+    const saved: TTransactionRecord[] = []
+    const persistence: TTransactionPersistence = {
+      load: async () => saved,
+      apply: async (record, observation) => {
+        const next = observation
+          ? reduceTransaction(saved.find((item) => item.id === record.id) ?? record, observation)
+          : record
+        saved.splice(0, saved.length, next)
+        return next
+      }
+    }
+    const first = fixture(persistence)
+    const proposal = deferred<`0x${string}`>()
+    first.adapter.proposeSafeBatch = vi.fn().mockReturnValue(proposal.promise)
+    first.adapter.observeSafeExecution = vi.fn().mockResolvedValue({ status: 'pending' })
+    first.service.start({ commandId: 'safe', owner, plan: safePlan() })
+    await settle()
+    first.service.pause('safe')
+    proposal.resolve('0x1234')
+    await settle()
+    expect(saved[0].original.hash).toBeUndefined()
+    expect(saved[0].safe?.proposalId).toBe('0x1234')
+    expect(first.adapter.waitForReceipt).not.toHaveBeenCalled()
+    first.disconnect()
+    const recovered = fixture(persistence)
+    recovered.adapter.proposeSafeBatch = vi.fn()
+    recovered.adapter.observeSafeExecution = vi.fn().mockResolvedValue({ status: 'success', hash })
+    recovered.service.start({ commandId: 'reopen', owner, plan: safePlan() })
+    await settle()
+    expect(recovered.adapter.proposeSafeBatch).not.toHaveBeenCalled()
+    expect(selectTransaction(recovered.service.getSnapshot().records[0]).outcome).toBe('pending')
+    recovered.gate.resolve({ receipt })
+    await settle()
+    expect(selectTransaction(recovered.service.getSnapshot().records[0]).outcome).toBe('success')
+    recovered.disconnect()
+  })
+  it.each(['failed', 'cancelled'])('does not infer source success when Safe reports %s', async (status) => {
+    const f = fixture()
+    f.adapter.proposeSafeBatch = vi.fn().mockResolvedValue('0x1234')
+    f.adapter.observeSafeExecution = vi.fn().mockResolvedValue({ status })
+    f.service.start({ commandId: 'safe', owner, plan: safePlan() })
+    await settle()
+    expect(selectTransaction(f.service.getSnapshot().records[0]).outcome).toBe('error')
+    expect(f.adapter.waitForReceipt).not.toHaveBeenCalled()
+    expect(f.refresh).not.toHaveBeenCalled()
+    f.disconnect()
+  })
+  it('keeps conflicting Safe evidence unresolved across storage refreshes', async () => {
+    const f = fixture()
+    f.adapter.proposeSafeBatch = vi.fn().mockResolvedValue('0x1234')
+    f.adapter.observeSafeExecution = vi.fn().mockResolvedValue({ status: 'pending' })
+    f.service.start({ commandId: 'safe', owner, plan: safePlan() })
+    await settle()
+    const record = f.service.getSnapshot().records[0]
+    const succeeded = reduceTransaction(record, {
+      kind: 'safe-execution',
+      result: { status: 'success', hash },
+      observedAt: 1
+    })
+    const conflicted = reduceTransaction(succeeded, {
+      kind: 'safe-execution',
+      result: { status: 'failed' },
+      observedAt: 2
+    })
+    expect(selectTransaction(conflicted).outcome).toBe('unknown')
+    expect(reduceTransaction(succeeded, { kind: 'safe-execution', result: { status: 'pending' }, observedAt: 3 })).toBe(
+      succeeded
+    )
+    expect(() => reduceTransaction(record, { kind: 'receipt', result: { receipt }, observedAt: 1 })).toThrow()
+    f.disconnect()
+  })
+  it('pauses after a late permit signature and prepares the call only after explicit continuation', async () => {
+    const f = fixture()
+    const signature = deferred<`0x${string}`>()
+    f.adapter.signPermit = vi.fn().mockReturnValue(signature.promise)
+    const plan = {
+      ...makePlan(),
+      steps: [
+        { id: 'permit', label: 'Permit', kind: 'prepare' as const, chainId: 1 },
+        { id: 'deposit', label: 'Deposit', kind: 'prepare' as const, chainId: 1 }
+      ]
+    }
+    const prepareStep = vi.fn(async (step, outcome) =>
+      step.id === 'permit'
+        ? { ...step, kind: 'permit', data: {} }
+        : { ...step, kind: 'execute', request: { chainId: 1, to, data: outcome.signatures.permit } }
+    )
+    f.service.start({ commandId: 'permit', owner, plan, prepareStep })
+    await settle()
+    f.service.pause('permit')
+    signature.resolve('0x1234')
+    await settle()
+    expect(f.service.getSnapshot().flows[0].phase).toBe('paused')
+    expect(f.execute).not.toHaveBeenCalled()
+    expect(prepareStep).toHaveBeenCalledTimes(1)
+    f.service.continue('permit')
+    await settle()
+    expect(f.execute).toHaveBeenCalledExactlyOnceWith(
+      expect.objectContaining({ request: expect.objectContaining({ data: '0x1234' }) })
+    )
+    expect(f.service.getSnapshot().records).toHaveLength(1)
+    f.gate.resolve({ receipt })
+    await settle()
+    expect(f.service.getSnapshot().flows[0].phase).toBe('success')
+    f.disconnect()
+  })
+  it('rejects a deferred request that changes the reviewed chain before reaching the wallet', async () => {
+    const f = fixture()
+    const plan = { ...makePlan(), steps: [{ id: 'deposit', label: 'Deposit', kind: 'prepare' as const, chainId: 1 }] }
+    f.service.start({
+      commandId: 'wrong-chain',
+      owner,
+      plan,
+      prepareStep: async () => ({
+        id: 'deposit',
+        label: 'Deposit',
+        kind: 'execute',
+        chainId: 1,
+        request: { chainId: 10, to, data: '0x1234' }
+      })
+    })
+    await settle()
+    expect(f.execute).not.toHaveBeenCalled()
+    expect(f.service.getSnapshot().flows[0].phase).toBe('blocked')
+    f.disconnect()
+  })
+})

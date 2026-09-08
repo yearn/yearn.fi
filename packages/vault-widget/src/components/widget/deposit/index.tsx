@@ -1425,6 +1425,20 @@ export function WidgetDeposit({
         isOpen={showTransactionOverlay}
         onClose={handleCloseTransactionOverlay}
         plan={activeTransactionPlan}
+        lifecycleRecipe={
+          !isCrossChain
+            ? {
+                id: `deposit:${approvalFlowKey}:${zapSlippage}`,
+                chainId,
+                steps: safeDepositBatch
+                  ? [{ id: 'deposit-batch', label: currentStep.label }]
+                  : [
+                      ...(effectiveNeedsApproval ? [{ id: 'approve', label: 'Approve' }] : []),
+                      { id: 'deposit', label: actionLabel }
+                    ]
+              }
+            : undefined
+        }
         planSteps={activeTransactionPlan?.steps.some((step) => step.kind === 'approve') ? directPlanSteps : undefined}
         step={currentStep}
         isLastStep={!effectiveNeedsApproval}

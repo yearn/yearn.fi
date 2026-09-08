@@ -1,4 +1,9 @@
-import { reduceTransaction, type TTransactionPersistence, type TTransactionRecord } from '@yearn/vault-widget/lifecycle'
+import {
+  reduceTransaction,
+  type TTransactionPersistence,
+  type TTransactionRecord,
+  transactionIdentity
+} from '@yearn/vault-widget/lifecycle'
 
 const DATABASE = 'yearn-transaction-lifecycle'
 const STORE = 'records'
@@ -45,7 +50,7 @@ function compatibleRecord(value: unknown): value is TTransactionRecord {
     Number.isSafeInteger(record.original?.executionChainId) &&
     Number.isSafeInteger(record.effective?.executionChainId) &&
     record.settlement === 'same-chain' &&
-    Boolean(record.original?.hash && record.effective?.hash && record.request)
+    Boolean((record.original?.hash || record.safe?.proposalId) && record.request)
   )
 }
 
@@ -64,7 +69,11 @@ export function createTransactionLifecycleStorage(): TTransactionPersistence {
         transaction.oncomplete = () => {
           signal.removeEventListener('abort', abort)
           db.close()
-          resolve(request.result.filter(compatibleRecord))
+          if (request.result.some((record: unknown) => !compatibleRecord(record))) {
+            reject(new Error('Transaction history contains unsupported records'))
+            return
+          }
+          resolve(request.result)
         }
         transaction.onabort = transaction.onerror = () => {
           signal.removeEventListener('abort', abort)
@@ -89,10 +98,17 @@ export function createTransactionLifecycleStorage(): TTransactionPersistence {
               previous &&
               (!compatibleRecord(previous) ||
                 previous.owner !== seed.owner ||
-                previous.original.hash !== seed.original.hash)
+                transactionIdentity(previous) !== transactionIdentity(seed))
             )
               throw new Error('Stored transaction identity does not match')
-            const base = previous ?? seed
+            const stored = previous ?? seed
+            const base = seed.safe?.execution
+              ? reduceTransaction(stored, {
+                  kind: 'safe-execution',
+                  result: seed.safe.execution,
+                  observedAt: seed.safe.execution.observedAt
+                })
+              : stored
             // Failed writes are retried using the same record ID; merge its retained evidence atomically.
             const withSource =
               seed.source && !base.source

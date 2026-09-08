@@ -1,142 +1,81 @@
-import { describe, expect, it } from 'vitest'
-import {
-  resolveApprovalOverlayActionDisabledState,
-  resolveApprovalOverlayConnectedChainId,
-  resolveApprovalOverlayPendingSafeState
-} from './ApprovalOverlay.helpers'
+// @vitest-environment jsdom
+import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { ApprovalOverlay } from '@yearn/vault-widget/internal/components/widget/deposit/ApprovalOverlay'
+import { createTransactionLifecycle } from '@yearn/vault-widget/lifecycle'
+import { VaultWidgetRuntimeProvider } from '@yearn/vault-widget/runtime'
+import { decodeFunctionData, erc20Abi, maxUint256 } from 'viem'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
-describe('resolveApprovalOverlayConnectedChainId', () => {
-  it('falls back to the live wagmi chain id when useAccount().chain is missing for normal wallets', () => {
-    expect(
-      resolveApprovalOverlayConnectedChainId({
-        accountChainId: undefined,
-        currentChainId: 747474,
-        targetChainId: 1,
-        isWalletSafe: false
-      })
-    ).toBe(747474)
-  })
-
-  it('prefers the target chain for Safe sessions when useAccount().chain is missing', () => {
-    expect(
-      resolveApprovalOverlayConnectedChainId({
-        accountChainId: undefined,
-        currentChainId: 1,
-        targetChainId: 747474,
-        isWalletSafe: true
-      })
-    ).toBe(747474)
-  })
-
-  it('prefers the account chain id when it is available', () => {
-    expect(
-      resolveApprovalOverlayConnectedChainId({
-        accountChainId: 1,
-        currentChainId: 747474,
-        targetChainId: 747474,
-        isWalletSafe: true
-      })
-    ).toBe(1)
+vi.mock('react-rewards', () => ({ useReward: () => ({ reward: () => undefined }) }))
+const owner = '0x1111111111111111111111111111111111111111'
+const token = '0x2222222222222222222222222222222222222222'
+const spender = '0x3333333333333333333333333333333333333333'
+const stops: (() => void)[] = []
+afterEach(() => {
+  cleanup()
+  stops.splice(0).forEach((stop) => {
+    stop()
   })
 })
-
-describe('resolveApprovalOverlayPendingSafeState', () => {
-  it('turns a Safe approval overlay into a dismissible submitted state when the Safe tx is awaiting confirmations', () => {
-    expect(
-      resolveApprovalOverlayPendingSafeState({
-        txState: 'pending',
-        isWalletSafe: true,
-        hasExecutionReceipt: false,
-        safeTxStatus: 'AWAITING_CONFIRMATIONS',
-        callsStatus: undefined
-      })
-    ).toBe('submitted')
+function fixture(safe = false, warning?: string) {
+  const execute = vi.fn().mockResolvedValue(`0x${'a'.repeat(64)}`)
+  const proposeSafeBatch = vi.fn().mockResolvedValue('0x1234')
+  const service = createTransactionLifecycle({
+    execution: () => ({
+      execute,
+      proposeSafeBatch,
+      observeSafeExecution: async () => ({ status: 'pending' }),
+      waitForReceipt: () => new Promise(() => undefined),
+      switchChain: vi.fn()
+    }),
+    wallet: () => ({ address: owner, chainId: 1 }),
+    executionChainId: () => 1
   })
-
-  it('turns a Safe approval overlay into a dismissible submitted state when the Safe tx is queued', () => {
-    expect(
-      resolveApprovalOverlayPendingSafeState({
-        txState: 'pending',
-        isWalletSafe: true,
-        hasExecutionReceipt: false,
-        safeTxStatus: 'AWAITING_EXECUTION',
-        callsStatus: undefined
-      })
-    ).toBe('submitted')
+  stops.push(service.connect())
+  render(
+    <VaultWidgetRuntimeProvider
+      value={{ lifecycle: service, wallet: { address: owner, chainId: 1 }, safe: { isSafe: safe } }}
+    >
+      <ApprovalOverlay
+        isOpen
+        onClose={vi.fn()}
+        tokenSymbol="USDC"
+        tokenAddress={token}
+        tokenDecimals={6}
+        spenderAddress={spender}
+        spenderName="Yearn"
+        chainId={1}
+        currentAllowance="10"
+        approvalWarning={warning}
+      />
+    </VaultWidgetRuntimeProvider>
+  )
+  return { execute, proposeSafeBatch, service }
+}
+describe('approval management lifecycle', () => {
+  it.each([false, true])('registers the exact revoke with the shared service (Safe: %s)', async (safe) => {
+    const f = fixture(safe)
+    fireEvent.click(screen.getByRole('button', { name: 'Revoke' }))
+    await waitFor(() => expect(f.service.getSnapshot().records).toHaveLength(1))
+    const record = f.service.getSnapshot().records[0]
+    expect(record.request.to).toBe(token)
+    expect(decodeFunctionData({ abi: erc20Abi, data: record.request.data }).args).toEqual([spender, 0n])
+    expect(safe ? f.proposeSafeBatch : f.execute).toHaveBeenCalledTimes(1)
+    if (safe) await screen.findByText('Awaiting Safe execution')
   })
-
-  it('falls back to wallet_getCallsStatus when Safe details are not available yet', () => {
-    expect(
-      resolveApprovalOverlayPendingSafeState({
-        txState: 'pending',
-        isWalletSafe: true,
-        hasExecutionReceipt: false,
-        safeTxStatus: undefined,
-        callsStatus: 'pending'
-      })
-    ).toBe('submitted')
+  it('uses the reviewed spender and unlimited amount', async () => {
+    const f = fixture()
+    fireEvent.click(screen.getByRole('button', { name: 'Set unlimited' }))
+    await waitFor(() => expect(f.execute).toHaveBeenCalledTimes(1))
+    expect(decodeFunctionData({ abi: erc20Abi, data: f.execute.mock.calls[0][0].request.data }).args).toEqual([
+      spender,
+      maxUint256
+    ])
   })
-
-  it('keeps normal wallet approval overlays pending until a receipt arrives', () => {
-    expect(
-      resolveApprovalOverlayPendingSafeState({
-        txState: 'pending',
-        isWalletSafe: false,
-        hasExecutionReceipt: false,
-        safeTxStatus: 'AWAITING_EXECUTION',
-        callsStatus: 'pending'
-      })
-    ).toBe('pending')
-  })
-
-  it('surfaces failed Safe approval transactions as errors', () => {
-    expect(
-      resolveApprovalOverlayPendingSafeState({
-        txState: 'pending',
-        isWalletSafe: true,
-        hasExecutionReceipt: false,
-        safeTxStatus: 'FAILED',
-        callsStatus: undefined
-      })
-    ).toBe('error')
-  })
-
-  it('lets submitted Safe approval overlays surface failures too', () => {
-    expect(
-      resolveApprovalOverlayPendingSafeState({
-        txState: 'submitted',
-        isWalletSafe: true,
-        hasExecutionReceipt: false,
-        safeTxStatus: undefined,
-        callsStatus: 'failure'
-      })
-    ).toBe('error')
-  })
-})
-
-describe('resolveApprovalOverlayActionDisabledState', () => {
-  it('blocks approval actions when there is an approval warning', () => {
-    expect(
-      resolveApprovalOverlayActionDisabledState({
-        account: '0x0000000000000000000000000000000000000001',
-        currentAllowance: '1.00',
-        approvalWarning: 'This approval address is not a known Enso router address.'
-      })
-    ).toEqual({
-      isRevokeDisabled: true,
-      isUnlimitedDisabled: true
-    })
-  })
-
-  it('allows approval actions when there is no warning and the wallet is connected', () => {
-    expect(
-      resolveApprovalOverlayActionDisabledState({
-        account: '0x0000000000000000000000000000000000000001',
-        currentAllowance: '1.00'
-      })
-    ).toEqual({
-      isRevokeDisabled: false,
-      isUnlimitedDisabled: false
-    })
+  it('keeps approval warnings blocking both wallet actions', () => {
+    const f = fixture(false, 'Spender unavailable')
+    fireEvent.click(screen.getByRole('button', { name: 'Revoke' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Set unlimited' }))
+    expect(f.execute).not.toHaveBeenCalled()
   })
 })

@@ -17,9 +17,11 @@ export function projectLifecycleNotification(record: TTransactionRecord): TNotif
     toTokenName: record.display?.toSymbol,
     toAmount: record.display?.toAmount,
     txHash: record.effective.hash,
+    awaitingExecution: Boolean(record.safe && !record.safe.execution),
     createdAt: record.createdAt / 1000,
-    timeFinished:
-      ['success', 'error'].includes(view.outcome) && record.source ? record.source.observedAt / 1000 : undefined,
+    timeFinished: ['success', 'error'].includes(view.outcome)
+      ? (record.source?.observedAt ?? record.safe?.execution?.observedAt ?? record.createdAt) / 1000
+      : undefined,
     blockNumber: record.source?.receipt.blockNumber,
     status: view.outcome === 'unknown' ? 'submitted' : view.outcome
   }

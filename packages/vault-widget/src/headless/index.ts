@@ -12,6 +12,10 @@ export {
   VaultWidgetPlanExecutionError
 } from './executeTransactionPlan'
 export type {
+  TDeferredStep,
+  TPermitStep,
+  TPreparedStep,
+  TSafeExecution,
   VaultWidgetApprovalRequirement,
   VaultWidgetApprovalToken,
   VaultWidgetExecutionAdapter,

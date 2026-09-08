@@ -158,10 +158,8 @@ unverified.
 
 ## Stage 3A: direct approval sequences
 
-Stage 3 is in progress. This first slice migrates same-chain EOA approval → direct deposit and approval →
-direct stake sequences. Safe, permits, dynamic unstake/withdraw, Enso approval sequences, approval-management
-controls, and app-specific migration/reward/portfolio/yvUSD producers still use their existing implementations.
-These remaining producers must be migrated before declaring stage 3 complete.
+Commit `fc3a0b4e` migrates same-chain EOA approval → direct deposit and approval → direct stake sequences.
+The remainder of stage 3 is described below.
 
 - The existing headless runner exposes a step boundary with the confirmed outcome. The lifecycle service can
   now run ordered EOA approval/reset/action steps, with one canonical record per accepted submission and a
@@ -196,3 +194,60 @@ controlled real-wallet execution remains required before rollout.
 
 Workspace TypeScript, lint, both boundary checks, and Yearn/yBOLD production builds pass. The Yearn
 production preview also passes deposit/withdraw tab navigation and desktop/mobile overflow/error checks.
+
+
+## Stage 3: remaining sequential and Safe paths
+
+Implemented on top of `fc3a0b4e`. All supported same-chain overlays now use the provider-owned runner and
+tracker, including Enso approvals, permit migrations, dynamic unstake/withdraw, Safe proposals/batches,
+approval management, rewards, portfolio claims, and yvUSD cooldown/unlock/withdraw actions. Cross-chain
+flows keep their existing implementation until stage 4.
+
+- Deferred steps let existing route hooks supply the next preparation after the preceding receipt or signature.
+  A small preparation bridge attaches the current reviewed form to the headless runner; it does not request the
+  wallet, poll receipts, write history, or decide transaction success. Route callbacks update preparation inputs.
+  The shared runner owns ordering and advancement. Submission rechecks the reviewed owner, wallet type,
+  network, form identity, protected quote or Safe calls, and all prerequisite receipts.
+- Permit signatures stay in session memory and do not create transaction records. Migration reads a fresh nonce
+  and twenty-minute deadline for each signing attempt. The adapter checks owner, contract, spender, amount,
+  network, expiry, and the current on-chain nonce before requesting a signature. An unavailable nonce blocks
+  signing. Safe migrations use approval transactions instead of EOA permits. A paused signature flow requires
+  Continue; expired or invalid authorizations require another review rather than replaying a prerequisite.
+- Safe proposals retain an opaque proposal ID and all atomic calls in one canonical record. No transaction link
+  or success is inferred from that ID. The adapter observes Safe's calls-status execution result; the tracker then
+  requires the actual source receipt at the saved confirmation depth. Internal failure/cancellation is terminal
+  even if the outer transaction succeeded. Observation outages retry without reproposing. Persisted Safe conflicts
+  are monotonic and propagate to existing and freshly opened tabs.
+- Dynamic unstake continuations derive received shares from transfers by the reviewed staking contract to the
+  reviewed owner in that receipt. Unrelated wallet transfers are excluded. MAX uses the attributable shares;
+  fixed-share continuation requires sufficient received shares. The reviewed amount survives closing and the
+  form's automatic switch to vault shares. Manual source/amount changes require a distinct review.
+- The yvUSD unlock-and-withdraw path redeems the exact unlocked shares attributed to its receipt. This intentionally
+  replaces its earlier final `withdraw` call based on a pre-unlock asset preview, avoiding consumption of unrelated
+  unlocked shares or failure when the preview drifts. Displayed output remains an estimate until execution.
+- Approval management no longer owns wallet writes, receipt waits, or Safe polling. Its submissions use canonical
+  history and the shared overlay. Unused approval tracking helpers and disconnected reward-row writer hooks are
+  removed. Reward claims and yvUSD actions provide their own history descriptors.
+- Closing keeps accepted submissions tracking and pauses later wallet requests. Remounting does not automatically
+  continue. Reload restores submitted records, including Safe proposals, but does not reconstruct an executable
+  recipe or persisted permit. The user reviews the remaining action against current state. Malformed/unsupported
+  durable records leave history recovery unavailable rather than silently being treated as empty history.
+
+Validation includes 385 widget tests and 39 focused Yearn tests; workspace TypeScript, lint, both boundary checks,
+and Yearn/yBOLD production builds. New regression coverage checks permit nonce/expiry rejection, receipt-derived
+shares, deferred preparation through React StrictMode and remounts, approval management, Safe execution failure,
+late proposals, hydration, and absence of duplicate wallet requests. Chromium uses actual IndexedDB,
+BroadcastChannel, and Web Locks to check Safe reload recovery, receipt gating, conflict propagation, sequence
+continuation, and desktop/mobile rendering. Wallet and receipt inputs in these browser checks are simulated.
+
+Controlled real-wallet/Safe transaction QA remains required before rollout. yBOLD remains session-only; a host
+without Web Locks cannot guarantee single observation across tabs. Safe observation needs an available wallet
+calls-status provider and stays unresolved if that provider is unavailable. Technical approval-row grouping,
+legacy history decoding, and acknowledgement policy remain part of stage 5.
+
+## Next: stage 4
+
+Move cross-chain destination settlement into the same record/reducer: normalize Enso observations, schedule
+tracking fairly, retain supported recovery links and capabilities, and refresh assets at source/destination
+milestones. Then remove bridge outcome and notification writes from the legacy overlay. Stage 5 completes
+legacy persistence and presentation cutover.

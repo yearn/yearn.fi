@@ -1,6 +1,8 @@
 import { awaitTransactionRefresh } from '@yearn/vault-widget/internal/utils/transactionLifecycle'
 import { type Address, type Hash, isHash, type TransactionReceipt } from 'viem'
 import type {
+  TDeferredStep,
+  TPreparedStep,
   VaultWidgetExecutionAdapter,
   VaultWidgetExecutionStep,
   VaultWidgetPlanExecutionState,
@@ -19,6 +21,8 @@ export type ExecuteTransactionPlanParams = {
   refresh: () => Promise<void>
   /** Authorize each next step from the confirmed outcome before it starts. */
   beforeStep?: (step: VaultWidgetExecutionStep, outcome: VaultWidgetPlanOutcome) => Promise<void>
+  prepareStep?: (step: TDeferredStep, outcome: VaultWidgetPlanOutcome) => Promise<TPreparedStep>
+  afterStep?: (step: TPreparedStep, outcome: VaultWidgetPlanOutcome) => Promise<void>
   onState?: (state: VaultWidgetPlanExecutionState) => void
 }
 
@@ -49,7 +53,7 @@ function appendSubmission(
   outcome: VaultWidgetPlanOutcome,
   submission: VaultWidgetPlanSubmission
 ): VaultWidgetPlanOutcome {
-  return { submissions: [...outcome.submissions, submission] }
+  return { ...outcome, submissions: [...outcome.submissions, submission] }
 }
 
 function updateSubmission(
@@ -58,6 +62,7 @@ function updateSubmission(
   update: Partial<VaultWidgetPlanSubmission>
 ): VaultWidgetPlanOutcome {
   return {
+    ...outcome,
     submissions: outcome.submissions.map((submission, index) =>
       index === submissionIndex ? { ...submission, ...update } : submission
     )
@@ -192,6 +197,9 @@ async function executeRequestStep(
     receiptResult,
     true
   )
+  await runOperation(params, { ...initialContext, outcome: confirmedOutcome }, async () => {
+    await params.afterStep?.(step, confirmedOutcome)
+  })
   return executePlanStep(params, stepIndex + 1, confirmedOutcome)
 }
 
@@ -255,6 +263,9 @@ async function executeSafeProposalStep(
     receiptResult,
     false
   )
+  await runOperation(params, { ...initialContext, outcome: confirmedOutcome }, async () => {
+    await params.afterStep?.(step, confirmedOutcome)
+  })
   return executePlanStep(params, stepIndex + 1, confirmedOutcome)
 }
 
@@ -263,16 +274,26 @@ async function executePlanStep(
   stepIndex: number,
   outcome: VaultWidgetPlanOutcome
 ): Promise<VaultWidgetPlanOutcome> {
-  const step = params.plan.steps[stepIndex]
+  const plannedStep = params.plan.steps[stepIndex]
   const stepCount = params.plan.steps.length
-  if (!step) {
+  if (!plannedStep) {
     params.onState?.({ status: 'success', outcome, stepIndex, stepCount })
     return outcome
   }
 
-  await runOperation(params, { outcome, step, stepIndex, stepCount }, async () => {
-    await params.beforeStep?.(step, outcome)
+  await runOperation(params, { outcome, step: plannedStep, stepIndex, stepCount }, async () => {
+    await params.beforeStep?.(plannedStep, outcome)
   })
+  const step =
+    plannedStep.kind === 'prepare'
+      ? await runOperation(params, { outcome, step: plannedStep, stepIndex, stepCount }, async () => {
+          if (!params.prepareStep) throw new Error('Step preparation is not configured')
+          const prepared = await params.prepareStep(plannedStep, outcome)
+          if (prepared.id !== plannedStep.id || prepared.chainId !== plannedStep.chainId)
+            throw new Error('Prepared action changed the reviewed step or network')
+          return prepared
+        })
+      : plannedStep
 
   if (step.kind === 'refresh') {
     params.onState?.({ status: 'refreshing', outcome, step, stepIndex, stepCount })
@@ -286,6 +307,17 @@ async function executePlanStep(
       params.adapter.switchChain({ chainId: step.chainId })
     )
     return executePlanStep(params, stepIndex + 1, outcome)
+  }
+  if (step.kind === 'permit') {
+    const signature = await runOperation(params, { outcome, step, stepIndex, stepCount }, async () => {
+      if (!params.adapter.signPermit) throw new Error('Permit signing is not configured')
+      return params.adapter.signPermit({ account: params.account, chainId: step.chainId, data: step.data })
+    })
+    const signed = { ...outcome, signatures: { ...outcome.signatures, [step.id]: signature } }
+    await runOperation(params, { outcome: signed, step, stepIndex, stepCount }, async () => {
+      await params.afterStep?.(step, signed)
+    })
+    return executePlanStep(params, stepIndex + 1, signed)
   }
   if (step.kind === 'safe-proposal') {
     return executeSafeProposalStep(params, step, stepIndex, outcome)

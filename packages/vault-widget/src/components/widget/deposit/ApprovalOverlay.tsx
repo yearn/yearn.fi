@@ -1,25 +1,12 @@
+import { buildTransactionPlan, type VaultWidgetTransactionPlan } from '@yearn/vault-widget/headless'
 import { Button } from '@yearn/vault-widget/internal/components/shared/Button'
-import {
-  useChainId,
-  useSwitchChain,
-  useWaitForTransactionReceipt
-} from '@yearn/vault-widget/internal/hooks/useAppWagmi'
-import { useSafeTransactionDetails } from '@yearn/vault-widget/internal/hooks/useSafeTransactionDetails'
+import { InfoOverlay } from '@yearn/vault-widget/internal/components/widget/shared/InfoOverlay'
+import { LifecycleTransactionOverlay } from '@yearn/vault-widget/internal/components/widget/shared/LifecycleTransactionOverlay'
+import type { TransactionStep } from '@yearn/vault-widget/internal/components/widget/shared/TransactionOverlay'
 import { getApproveAbi } from '@yearn/vault-widget/internal/utils/approve'
 import { useVaultWidgetRuntime } from '@yearn/vault-widget/runtime'
-import { type FC, useCallback, useEffect, useState } from 'react'
-import { maxUint256 } from 'viem'
-import { useAccount, useCallsStatus, useWriteContract } from 'wagmi'
-import { InfoOverlay } from '../shared/InfoOverlay'
-import { AnimatedCheckmark, ErrorIcon, Spinner } from '../shared/TransactionStateIndicators'
-import { resolveExecutionTrackingHash, resolveTransactionReceiptOutcome } from '../shared/transactionOverlay.helpers'
-import {
-  resolveApprovalOverlayActionDisabledState,
-  resolveApprovalOverlayConnectedChainId,
-  resolveApprovalOverlayPendingSafeState
-} from './ApprovalOverlay.helpers'
-
-type TxState = 'idle' | 'confirming' | 'pending' | 'submitted' | 'success' | 'error'
+import { useState } from 'react'
+import { encodeFunctionData, maxUint256 } from 'viem'
 
 interface ApprovalOverlayProps {
   isOpen: boolean
@@ -35,360 +22,131 @@ interface ApprovalOverlayProps {
   currentAllowance: string
   approvalWarning?: string
 }
-
-export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
-  isOpen,
-  onClose,
-  onDone,
-  disableSetUnlimited = false,
-  tokenSymbol,
-  tokenAddress,
-  spenderAddress,
-  spenderName,
-  chainId,
-  currentAllowance,
-  approvalWarning
-}) => {
-  const [txState, setTxState] = useState<TxState>('idle')
-  const [errorMessage, setErrorMessage] = useState('')
-  const [isDoneRefreshing, setIsDoneRefreshing] = useState(false)
-
-  const { address: account, chain, connector } = useAccount()
+export function ApprovalOverlay(props: ApprovalOverlayProps) {
+  return props.isOpen ? <ManageApproval {...props} /> : null
+}
+function ManageApproval(props: ApprovalOverlayProps) {
   const runtime = useVaultWidgetRuntime()
-  const currentChainId = useChainId()
-  const isWalletSafe = runtime.safe.isSafe || connector?.id.toLowerCase().includes('safe') === true
-  const connectedChainId = resolveApprovalOverlayConnectedChainId({
-    accountChainId: chain?.id,
-    currentChainId,
-    targetChainId: chainId,
-    isWalletSafe
-  })
-  const { switchChainAsync } = useSwitchChain()
-  const { writeContractAsync, data: txHash, reset } = useWriteContract()
-  const safeTransactionDetails = useSafeTransactionDetails({
-    safeTxHash: isWalletSafe ? txHash : undefined,
-    enabled: Boolean(isWalletSafe && txHash && (txState === 'pending' || txState === 'submitted'))
-  })
-  const safeCallsStatus = useCallsStatus({
-    id: txHash || '0x',
-    query: {
-      enabled: Boolean(
-        isWalletSafe &&
-          txHash &&
-          (txState === 'pending' || txState === 'submitted') &&
-          !safeTransactionDetails.data?.executionTxHash
-      ),
-      refetchInterval: 1500
+  const [active, setActive] = useState<{
+    plan: VaultWidgetTransactionPlan
+    step: TransactionStep
+    owner: `0x${string}`
+  }>()
+  const [switching, setSwitching] = useState(false)
+  const [error, setError] = useState('')
+  const approve = async (amount: bigint) => {
+    const owner = runtime.wallet.address
+    if (!owner || props.approvalWarning || switching) return
+    const label = amount === 0n ? 'Revoke approval' : 'Set unlimited approval'
+    const request = {
+      chainId: props.chainId,
+      to: props.tokenAddress,
+      data: encodeFunctionData({
+        abi: getApproveAbi(props.tokenAddress),
+        functionName: 'approve',
+        args: [props.spenderAddress, amount]
+      })
     }
-  })
-  const executionTrackingHash = resolveExecutionTrackingHash({
-    isWalletSafe,
-    submittedTxHash: txHash,
-    safeExecutionTxHash: safeTransactionDetails.data?.executionTxHash,
-    callsReceiptTxHash: safeCallsStatus.data?.receipts?.[0]?.transactionHash
-  })
-  const receipt = useWaitForTransactionReceipt({ hash: executionTrackingHash, chainId })
-  const receiptOutcome = resolveTransactionReceiptOutcome({
-    isSuccess: receipt.isSuccess,
-    isError: receipt.isError,
-    status: receipt.data?.status
-  })
-
-  // Reset state when overlay closes
-  useEffect(() => {
-    if (!isOpen) {
-      setTxState('idle')
-      setErrorMessage('')
-      setIsDoneRefreshing(false)
-      reset()
-    }
-  }, [isOpen, reset])
-
-  // Handle transaction success
-  useEffect(() => {
-    if (receiptOutcome === 'success' && (txState === 'pending' || txState === 'submitted')) {
-      setTxState('success')
-      reset()
-    }
-  }, [receiptOutcome, txState, reset])
-
-  useEffect(() => {
-    const nextTxState = resolveApprovalOverlayPendingSafeState({
-      txState,
-      isWalletSafe,
-      hasExecutionReceipt: Boolean(receipt.data?.transactionHash),
-      safeTxStatus: safeTransactionDetails.data?.status,
-      callsStatus: safeCallsStatus.data?.status
+    const plan = buildTransactionPlan({
+      connectedChainId: props.chainId,
+      walletType: runtime.safe.isSafe ? 'safe' : 'eoa',
+      intent: {
+        id: ['approval', owner, props.chainId, props.tokenAddress, props.spenderAddress, amount.toString()].join(':'),
+        mode: 'deposit',
+        calls: [{ id: 'approval', label, request }]
+      }
     })
-
-    if (nextTxState === 'submitted') {
-      setTxState('submitted')
-      return
+    const step: TransactionStep = {
+      id: 'approval',
+      label,
+      confirmMessage: `${label} for ${props.spenderName}`,
+      successTitle: 'Approval updated',
+      successMessage: `Your ${props.tokenSymbol} allowance has been updated.`,
+      prepare: {
+        isSuccess: true,
+        isError: false,
+        isFetching: false,
+        isLoading: false,
+        status: 'success',
+        data: { request: {} }
+      },
+      notification: {
+        type: 'approve',
+        amount: amount === 0n ? '0' : 'Unlimited',
+        fromAddress: props.tokenAddress,
+        fromChainId: props.chainId,
+        fromSymbol: props.tokenSymbol
+      }
     }
-
-    if (nextTxState === 'error') {
-      setTxState('error')
-      setErrorMessage('Transaction failed in Safe. Please review your Safe queue and try again.')
-      reset()
-    }
-  }, [
-    txState,
-    isWalletSafe,
-    receipt.data?.transactionHash,
-    safeTransactionDetails.data?.status,
-    safeCallsStatus.data?.status,
-    reset
-  ])
-
-  // Handle transaction error
-  useEffect(() => {
-    if (receiptOutcome === 'error' && (txState === 'pending' || txState === 'submitted')) {
-      setTxState('error')
-      setErrorMessage('Transaction failed')
-      reset()
-    }
-  }, [receiptOutcome, txState, reset])
-
-  const handleDone = useCallback(async () => {
-    if (isDoneRefreshing) return
-
-    setIsDoneRefreshing(true)
+    setSwitching(true)
+    setError('')
     try {
-      await onDone?.()
-      onClose()
+      if (!runtime.chains.isConnectedToExecutionChain(runtime.wallet.chainId, props.chainId))
+        await runtime.execution.switchChain({ chainId: props.chainId })
+      setActive({ plan, step, owner })
     } catch (error) {
-      console.warn('[ApprovalOverlay] Failed to refresh after approval update', error)
-      onClose()
+      setError(error instanceof Error ? error.message : 'Could not switch network')
     } finally {
-      setIsDoneRefreshing(false)
+      setSwitching(false)
     }
-  }, [isDoneRefreshing, onClose, onDone])
-
-  const handleApprove = useCallback(
-    async (amount: bigint) => {
-      if (approvalWarning) {
-        return
-      }
-
-      const executionChainId = runtime.chains.resolveExecutionChainId(chainId)
-      if (executionChainId === undefined) {
-        setTxState('error')
-        setErrorMessage('This network is not enabled for transactions')
-        return
-      }
-
-      setTxState('confirming')
-      setErrorMessage('')
-
-      // Handle chain switch if needed
-      if (!runtime.chains.isConnectedToExecutionChain(connectedChainId, chainId)) {
-        try {
-          await switchChainAsync({ chainId })
-        } catch (error: any) {
-          const isUserRejection =
-            error?.message?.toLowerCase().includes('rejected') ||
-            error?.message?.toLowerCase().includes('denied') ||
-            error?.code === 4001
-
-          if (isUserRejection) {
-            setTxState('idle')
-          } else {
-            setTxState('error')
-            setErrorMessage(
-              'Unable to switch networks for this approval. Please confirm your Safe is opened on the correct chain.'
-            )
-          }
-          return
-        }
-      }
-
-      try {
-        await writeContractAsync({
-          address: tokenAddress,
-          abi: getApproveAbi(tokenAddress),
-          functionName: 'approve',
-          args: [spenderAddress, amount],
-          chainId: executionChainId
-        })
-        setTxState('pending')
-      } catch (error: any) {
-        const isUserRejection =
-          error?.message?.toLowerCase().includes('rejected') ||
-          error?.message?.toLowerCase().includes('denied') ||
-          error?.code === 4001
-
-        if (isUserRejection) {
-          setTxState('idle')
-        } else {
-          setTxState('error')
-          setErrorMessage('Failed to submit transaction')
-        }
-      }
-    },
-    [
-      approvalWarning,
-      connectedChainId,
-      chainId,
-      tokenAddress,
-      spenderAddress,
-      writeContractAsync,
-      switchChainAsync,
-      runtime.chains
-    ]
-  )
-
-  const handleRevoke = useCallback(() => handleApprove(0n), [handleApprove])
-  const handleSetUnlimited = useCallback(() => handleApprove(maxUint256), [handleApprove])
-
-  const { isRevokeDisabled, isUnlimitedDisabled: isBaseUnlimitedDisabled } = resolveApprovalOverlayActionDisabledState({
-    account,
-    currentAllowance,
-    approvalWarning
-  })
-  const isUnlimitedDisabled = disableSetUnlimited || isBaseUnlimitedDisabled
-  const isInTransaction = txState !== 'idle'
-
+  }
   return (
-    <InfoOverlay isOpen={isOpen} onClose={onClose} title="Manage approval" hideButton>
-      <div className="flex flex-col h-full">
-        {/* Idle state - show info and actions */}
-        {txState === 'idle' && (
-          <>
-            <div className="space-y-4 flex-1">
-              <div className="space-y-2">
-                <p className="font-medium text-sm text-text-primary">What is this?</p>
-                <p className="text-sm text-text-secondary">
-                  Token approval allows a smart contract to transfer your{' '}
-                  <span className="font-semibold text-text-primary">{tokenSymbol}</span> up to a set limit. This is
-                  required before depositing.
-                </p>
-                {disableSetUnlimited && (
-                  <p className="text-sm text-text-secondary">
-                    Unlike most tokens, {tokenSymbol} cannot change a non-zero approval directly. Revoke sets the{' '}
-                    {spenderName} allowance to zero; then you can approve again.
-                  </p>
-                )}
-              </div>
-              {approvalWarning ? <p className="text-sm text-red-500">{approvalWarning}</p> : null}
-            </div>
-
-            <div className="space-y-4 pt-4 mt-auto">
-              <div className="space-y-2">
-                <p className="text-sm text-text-secondary">
-                  Hit <span className="font-semibold text-text-primary">Revoke</span> to set {spenderName} allowance to
-                  zero.
-                </p>
-                {disableSetUnlimited ? (
-                  <p className="text-sm text-text-secondary">
-                    Set Unlimited is unavailable until the current approval is revoked.
-                  </p>
-                ) : (
-                  <p className="text-sm text-text-secondary">
-                    Hit <span className="font-semibold text-text-primary">Set Unlimited</span> if you don't want to
-                    approve this token again for future deposits.
-                  </p>
-                )}
-              </div>
-              <div className="flex gap-2">
-                <Button
-                  onClick={handleRevoke}
-                  variant="outlined"
-                  disabled={isRevokeDisabled}
-                  className="flex-1"
-                  classNameOverride={`yearn--button--nextgen flex-1 ${isRevokeDisabled ? 'opacity-40' : ''}`}
-                >
-                  Revoke
-                </Button>
-                <Button
-                  onClick={handleSetUnlimited}
-                  variant="filled"
-                  disabled={isUnlimitedDisabled}
-                  className="flex-1"
-                  classNameOverride={`yearn--button--nextgen flex-1 ${isUnlimitedDisabled ? 'opacity-40' : ''}`}
-                >
-                  Set Unlimited
-                </Button>
-              </div>
-            </div>
-          </>
-        )}
-
-        {/* Transaction states - centered layout */}
-        {isInTransaction && (
-          <div className="flex-1 flex flex-col items-center justify-center text-center">
-            {txState === 'confirming' && (
-              <>
-                <Spinner />
-                <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">Confirm in your wallet</h3>
-                <p className="text-sm text-text-secondary">Approve the transaction to continue</p>
-              </>
-            )}
-
-            {txState === 'pending' && (
-              <>
-                <Spinner />
-                <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">Transaction pending</h3>
-                <p className="text-sm text-text-secondary">Waiting for confirmation...</p>
-              </>
-            )}
-
-            {txState === 'success' && (
-              <>
-                <AnimatedCheckmark isVisible />
-                <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">Approval updated</h3>
-                <p className="text-sm text-text-secondary mb-6">Your token allowance has been changed</p>
-                <Button
-                  onClick={handleDone}
-                  variant={isDoneRefreshing ? 'busy' : 'filled'}
-                  isBusy={isDoneRefreshing}
-                  disabled={isDoneRefreshing}
-                  className="w-full max-w-xs"
-                  classNameOverride="yearn--button--nextgen w-full"
-                >
-                  Done
-                </Button>
-              </>
-            )}
-
-            {txState === 'submitted' && (
-              <>
-                <AnimatedCheckmark isVisible />
-                <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">Transaction submitted</h3>
-                <p className="text-sm text-text-secondary mb-6 whitespace-pre-line">
-                  {`Your approval transaction has been submitted to your Safe.
-Execution may happen separately after the required confirmations are collected.`}
-                </p>
-                <Button
-                  onClick={handleDone}
-                  variant={isDoneRefreshing ? 'busy' : 'filled'}
-                  isBusy={isDoneRefreshing}
-                  disabled={isDoneRefreshing}
-                  className="w-full max-w-xs"
-                  classNameOverride="yearn--button--nextgen w-full"
-                >
-                  Done
-                </Button>
-              </>
-            )}
-
-            {txState === 'error' && (
-              <>
-                <ErrorIcon />
-                <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">Transaction failed</h3>
-                <p className="text-sm text-text-secondary mb-6">{errorMessage}</p>
-                <Button
-                  onClick={() => setTxState('idle')}
-                  variant="filled"
-                  className="w-full max-w-xs"
-                  classNameOverride="yearn--button--nextgen w-full"
-                >
-                  Try Again
-                </Button>
-              </>
-            )}
-          </div>
-        )}
-      </div>
+    <InfoOverlay isOpen onClose={props.onClose} title="Manage approval" hideButton>
+      {active ? (
+        <div className="relative min-h-[390px]">
+          <LifecycleTransactionOverlay
+            isOpen
+            reviewedOwner={active.owner}
+            plan={active.plan}
+            step={active.step}
+            onClose={() => setActive(undefined)}
+            onBeforeSuccess={async () => {
+              await props.onDone?.()
+            }}
+            onAllComplete={props.onClose}
+            deferOnAllCompleteUntilClose
+          />
+        </div>
+      ) : (
+        <div className="flex flex-col gap-4">
+          <p className="font-medium text-sm text-text-primary">What is this?</p>
+          <p className="text-sm text-text-secondary">
+            Token approval allows {props.spenderName} to transfer your {props.tokenSymbol} up to a set limit.
+          </p>
+          {props.disableSetUnlimited ? (
+            <p className="text-sm text-text-secondary">Revoke the current allowance before setting a new approval.</p>
+          ) : null}
+          <p className="text-sm">
+            Current allowance: {props.currentAllowance} {props.tokenSymbol}
+          </p>
+          {props.approvalWarning || error ? (
+            <p className="text-sm text-red-500">{props.approvalWarning || error}</p>
+          ) : null}
+          <Button
+            onClick={() => void approve(0n)}
+            isDisabled={
+              !runtime.wallet.address ||
+              switching ||
+              Boolean(props.approvalWarning) ||
+              Number(props.currentAllowance.replaceAll(',', '')) <= 0
+            }
+          >
+            Revoke
+          </Button>
+          <Button
+            onClick={() => void approve(maxUint256)}
+            isDisabled={
+              !runtime.wallet.address ||
+              switching ||
+              props.disableSetUnlimited ||
+              props.currentAllowance === 'Unlimited' ||
+              Boolean(props.approvalWarning)
+            }
+          >
+            Set unlimited
+          </Button>
+        </div>
+      )}
     </InfoOverlay>
   )
 }

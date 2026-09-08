@@ -34,7 +34,8 @@
     "./wagmi": "./src/adapters/wagmiExecutionAdapter.ts",
     "./ybold": "./src/ybold.ts",
     "./lifecycle": "./src/lifecycle/index.ts",
-    "./lifecycle/*": "./src/lifecycle/*.ts"
+    "./lifecycle/*": "./src/lifecycle/*.ts",
+    "./internal/components/widget/deposit/ApprovalOverlay": "./src/components/widget/deposit/ApprovalOverlay.tsx"
   },
   "scripts": {
     "test": "vitest run",

@@ -9,7 +9,6 @@ import { useChainId, useSimulateContract } from '@shared/hooks/useAppWagmi'
 import type { TransactionStep } from '@yearn/vault-widget/advanced'
 import type { ReactElement } from 'react'
 import { useCallback, useMemo } from 'react'
-import { useWriteContract } from 'wagmi'
 
 type TGovernanceRewardRowProps = {
   reward: TGovernanceReward
@@ -29,7 +28,6 @@ export function GovernanceRewardRow({
   onSwitchChain
 }: TGovernanceRewardRowProps): ReactElement {
   const currentChainId = useChainId()
-  const { isPending } = useWriteContract()
   const prepare = useSimulateContract({
     address: GOVERNANCE_REWARD_CLAIMER_ADDRESS,
     abi: GOVERNANCE_REWARD_CLAIMER_ABI,
@@ -51,9 +49,16 @@ export function GovernanceRewardRow({
       confirmMessage: `Claim ${formattedAmount} ${reward.symbol}`,
       successTitle: 'Rewards Claimed',
       successMessage: `You claimed ${formattedAmount} ${reward.symbol}`,
+      notification: {
+        type: 'claim',
+        amount: formattedAmount,
+        fromChainId: GOVERNANCE_CHAIN_ID,
+        fromAddress: reward.tokenAddress,
+        fromSymbol: reward.symbol
+      },
       showConfetti: true
     }
-  }, [formattedAmount, prepare, reward.symbol])
+  }, [formattedAmount, prepare, reward.symbol, reward.tokenAddress, GOVERNANCE_CHAIN_ID])
   const handleClaim = useCallback(() => {
     if (step) {
       onStartClaim(step)
@@ -69,7 +74,6 @@ export function GovernanceRewardRow({
       amount={reward.amountNormalized.toString()}
       usdValue={reward.usdValue}
       onClaim={handleClaim}
-      isClaimPending={isPending}
       isClaimReady={prepare.isSuccess}
       isFirst={isFirst}
       isAllChainsView={isAllChainsView}

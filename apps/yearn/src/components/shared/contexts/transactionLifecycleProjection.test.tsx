@@ -58,3 +58,21 @@ describe('canonical notification compatibility', () => {
     expect(spies.bridge).toHaveBeenCalledWith([legacy])
   })
 })
+
+it('projects an unexecuted Safe without a transaction link and dates terminal Safe failure', () => {
+  const proposal: TTransactionRecord = {
+    ...record,
+    original: { ...reference, hash: undefined, proposalId: '0x1234' },
+    effective: { ...reference, hash: undefined, proposalId: '0x1234' },
+    safe: { proposalId: '0x1234', requests: [record.request] }
+  }
+  const pending = projectLifecycleNotification(proposal)
+  expect(pending.txHash).toBeUndefined()
+  expect(pending.awaitingExecution).toBe(true)
+  expect(getNotificationLifecyclePresentation(pending).label).toBe('Awaiting Safe execution')
+  const failed = projectLifecycleNotification({
+    ...proposal,
+    safe: { ...proposal.safe!, execution: { status: 'failed', observedAt: 200_000 } }
+  })
+  expect(failed).toMatchObject({ status: 'error', timeFinished: 200 })
+})

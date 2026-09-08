@@ -8,9 +8,11 @@ import { IconCross } from '@yearn/vault-widget/internal/icons/IconCross'
 import { IconSettings } from '@yearn/vault-widget/internal/icons/IconSettings'
 import { cl, formatTAmount, toAddress, toNormalizedBN } from '@yearn/vault-widget/internal/utils'
 import { toBasisPoints } from '@yearn/vault-widget/internal/utils/slippage'
+import { getUnstakedShares } from '@yearn/vault-widget/lifecycle/withdrawalEvidence'
 import { isVaultWidgetExecutionConfigured, useVaultWidgetRuntime } from '@yearn/vault-widget/runtime'
 import type { ReactElement, ReactNode } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import type { TransactionReceipt } from 'viem'
 import { formatUnits } from 'viem'
 import { ApprovalOverlay } from '../deposit/ApprovalOverlay'
 import { InputTokenAmount } from '../InputTokenAmount'
@@ -162,8 +164,7 @@ export function WidgetWithdraw({
   const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false)
   const [fallbackStep, setFallbackStep] = useState<'unstake' | 'withdraw'>('unstake')
   const [redeemSharesOverride, setRedeemSharesOverride] = useState<bigint>(0n)
-  const [awaitingPostUnstakeShares, setAwaitingPostUnstakeShares] = useState(false)
-  const [vaultSharesBeforeUnstake, setVaultSharesBeforeUnstake] = useState<bigint>(0n)
+  const reviewedUnstake = useRef<{ key: string; isMax: boolean; requiredShares: bigint } | undefined>(undefined)
   const [optimisticApprovedShares, setOptimisticApprovedShares] = useState<bigint | null>(null)
   const [ensoQuoteRequest, setEnsoQuoteRequest] = useState<ProtectedEnsoQuoteRequest>({
     purpose: 'calibration',
@@ -225,6 +226,17 @@ export function WidgetWithdraw({
   // Derived token values
   const withdrawToken = selectedToken || resolvedDisplayAssetAddress
   const destinationChainId = selectedChainId || chainId
+  const withdrawalDraftKey = [
+    'withdraw',
+    vaultAddress,
+    stakingAddress,
+    withdrawToken,
+    destinationChainId,
+    withdrawAmount.debouncedBn.toString(),
+    ensoQuoteSlippage
+  ].join(':')
+  const hasReviewedUnstake = reviewedUnstake.current?.key === withdrawalDraftKey && forcedWithdrawalSource !== 'vault'
+  const withdrawalIntentKey = `${withdrawalDraftKey}:${hasReviewedUnstake ? 'staking' : withdrawalSource}`
 
   const outputToken = useMemo(() => {
     if (destinationChainId === chainId && withdrawToken === resolvedDisplayAssetAddress) {
@@ -258,15 +270,6 @@ export function WidgetWithdraw({
   if (!collapseDetails && isDetailsPanelOpen) {
     setIsDetailsPanelOpen(false)
   }
-
-  useEffect(() => {
-    if (!showTransactionOverlay) {
-      setFallbackStep('unstake')
-      setRedeemSharesOverride(0n)
-      setAwaitingPostUnstakeShares(false)
-      setVaultSharesBeforeUnstake(0n)
-    }
-  }, [showTransactionOverlay])
 
   const sourceVaultSharesRaw = useMemo(() => {
     if (withdrawalSource === 'vault') return vault?.balance.raw ?? 0n
@@ -347,17 +350,6 @@ export function WidgetWithdraw({
   const flowDebouncedAmount = disableFlow ? 0n : withdrawAmount.debouncedBn
   const flowRequiredShares = disableFlow ? 0n : effectiveRequiredShares
   const flowIsMaxWithdraw = disableFlow ? false : isMaxWithdraw
-  useEffect(() => {
-    if (!awaitingPostUnstakeShares || fallbackStep !== 'withdraw') return
-
-    const currentVaultShares = vault?.balance.raw ?? 0n
-    if (currentVaultShares <= vaultSharesBeforeUnstake) return
-
-    setRedeemSharesOverride(currentVaultShares - vaultSharesBeforeUnstake)
-    setAwaitingPostUnstakeShares(false)
-  }, [awaitingPostUnstakeShares, fallbackStep, vault?.balance.raw, vaultSharesBeforeUnstake])
-
-  const blockDirectWithdrawStep = fallbackStep === 'withdraw' && awaitingPostUnstakeShares
 
   const { routeType, activeFlow, directWithdrawFlow, directUnstakeFlow } = useWithdrawFlow({
     withdrawToken,
@@ -370,10 +362,10 @@ export function WidgetWithdraw({
     currentAmount: flowCurrentAmount,
     requiredShares: flowRequiredShares,
     maxShares: sourceVaultSharesRaw,
-    redeemSharesOverride,
+    redeemSharesOverride: hasReviewedUnstake ? redeemSharesOverride : 0n,
     isMaxWithdraw: flowIsMaxWithdraw,
     unstakeMaxRedeemShares: withdrawalSource === 'staking' ? stakingRedeemableShares : 0n,
-    allowDirectWithdrawStep: !disableFlow && !blockDirectWithdrawStep,
+    allowDirectWithdrawStep: !disableFlow,
     optimisticApprovedShares,
     account,
     chainId,
@@ -390,9 +382,7 @@ export function WidgetWithdraw({
     isDebouncing: disableFlow ? false : withdrawAmount.isDebouncing,
     useErc4626: usesErc4626
   })
-  const effectiveDirectWithdrawPrepare = blockDirectWithdrawStep
-    ? undefined
-    : directWithdrawFlow.actions.prepareWithdraw
+  const effectiveDirectWithdrawPrepare = directWithdrawFlow.actions.prepareWithdraw
   const effectiveWithdrawAmountRaw = expectedOutOverride ?? withdrawAmount.bn
 
   // Render-time adjustment: clear optimistic approval when actual allowance catches up
@@ -916,12 +906,16 @@ export function WidgetWithdraw({
   )
 
   const handleTransactionStepSuccess = useCallback(
-    (stepId: string) => {
-      if (routeType === 'DIRECT_UNSTAKE_WITHDRAW' && stepId === 'unstake') {
+    (stepId: string, receipt?: TransactionReceipt) => {
+      if (hasReviewedUnstake && stepId === 'unstake') {
+        if (!receipt || !stakingAddress || !account) throw new Error('Confirmed unstake evidence is unavailable')
+        const receivedShares = getUnstakedShares(receipt, vaultAddress, stakingAddress, account)
+        const reviewed = reviewedUnstake.current!
+        if (!reviewed.isMax && receivedShares < reviewed.requiredShares)
+          throw new Error('Unstake returned fewer shares than required. Review the withdrawal amount.')
         setFallbackStep('withdraw')
         setWithdrawalSource('vault')
-        setAwaitingPostUnstakeShares(isMaxWithdraw)
-        setRedeemSharesOverride(isMaxWithdraw ? 0n : effectiveRequiredShares)
+        setRedeemSharesOverride(reviewed.isMax ? receivedShares : reviewed.requiredShares)
         const tokensToRefresh = [{ address: vaultAddress, chainId: chainId }]
         if (stakingAddress) {
           tokensToRefresh.push({ address: stakingAddress, chainId: chainId })
@@ -933,9 +927,8 @@ export function WidgetWithdraw({
       }
     },
     [
-      routeType,
-      isMaxWithdraw,
-      effectiveRequiredShares,
+      hasReviewedUnstake,
+      account,
       effectiveSourceShares,
       vaultAddress,
       chainId,
@@ -946,12 +939,24 @@ export function WidgetWithdraw({
   )
 
   const handleOpenTransactionOverlay = useCallback(() => {
-    if (routeType === 'DIRECT_UNSTAKE_WITHDRAW' && fallbackStep === 'unstake' && isMaxWithdraw) {
-      setVaultSharesBeforeUnstake(vault?.balance.raw ?? 0n)
+    if (!hasReviewedUnstake) {
+      reviewedUnstake.current =
+        routeType === 'DIRECT_UNSTAKE_WITHDRAW'
+          ? { key: withdrawalDraftKey, isMax: isMaxWithdraw, requiredShares: effectiveRequiredShares }
+          : undefined
+      setRedeemSharesOverride(0n)
+      setFallbackStep('unstake')
     }
-    setActiveTransactionPlan(eligibleTransactionPlan)
+    setActiveTransactionPlan(reviewedUnstake.current ? undefined : eligibleTransactionPlan)
     setShowTransactionOverlay(true)
-  }, [eligibleTransactionPlan, routeType, fallbackStep, isMaxWithdraw, vault?.balance.raw])
+  }, [
+    eligibleTransactionPlan,
+    routeType,
+    hasReviewedUnstake,
+    withdrawalDraftKey,
+    isMaxWithdraw,
+    effectiveRequiredShares
+  ])
 
   const handleCloseTransactionOverlay = useCallback(() => {
     setShowTransactionOverlay(false)
@@ -1174,7 +1179,15 @@ export function WidgetWithdraw({
         <div>
           {/* Withdraw From Selector */}
           {hasBothBalances && !forcedWithdrawalSource ? (
-            <SourceSelector value={withdrawalSource} onChange={setWithdrawalSource} />
+            <SourceSelector
+              value={withdrawalSource}
+              onChange={(source) => {
+                reviewedUnstake.current = undefined
+                setRedeemSharesOverride(0n)
+                setFallbackStep('unstake')
+                setWithdrawalSource(source)
+              }}
+            />
           ) : null}
 
           {/* Amount Section */}
@@ -1264,6 +1277,26 @@ export function WidgetWithdraw({
         isOpen={showTransactionOverlay}
         onClose={handleCloseTransactionOverlay}
         plan={activeTransactionPlan}
+        lifecycleRecipe={
+          !isCrossChain
+            ? {
+                id: withdrawalIntentKey,
+                chainId,
+                steps: safeWithdrawBatch
+                  ? [{ id: 'withdraw-batch', label: 'Approve & Withdraw' }]
+                  : [
+                      ...(approvalState.needsApproval ? [{ id: 'approve', label: 'Approve' }] : []),
+                      ...(routeType === 'DIRECT_UNSTAKE_WITHDRAW' && fallbackStep === 'unstake'
+                        ? [{ id: 'unstake', label: 'Unstake' }]
+                        : []),
+                      {
+                        id: routeType === 'DIRECT_UNSTAKE' ? 'unstake' : 'withdraw',
+                        label: routeType === 'DIRECT_UNSTAKE' ? 'Unstake' : 'Withdraw'
+                      }
+                    ]
+              }
+            : undefined
+        }
         step={currentStep}
         isLastStep={isLastStep}
         autoContinueToNextStep

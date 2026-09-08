@@ -20,6 +20,8 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const wagmiActions = vi.hoisted(() => ({
   getAccount: vi.fn(),
+  getCallsStatus: vi.fn(),
+  signTypedData: vi.fn(),
   getConnectorClient: vi.fn(),
   getPublicClient: vi.fn(),
   sendCalls: vi.fn(),
@@ -580,7 +582,7 @@ describe('Wagmi Safe proposal adapter', () => {
 
     await expect(
       adapter.proposeSafeBatch?.({ account, chainId: canonicalChainId, requests: [request, requestWithValue] })
-    ).rejects.toBe(simulationError)
+    ).rejects.toMatchObject({ cause: simulationError })
     expect(wagmiActions.sendCalls).not.toHaveBeenCalled()
   })
 
@@ -610,9 +612,9 @@ describe('Wagmi Safe proposal adapter', () => {
     })
     const adapter = createAdapter()
 
-    await expect(adapter.proposeSafeBatch?.({ account, chainId: canonicalChainId, requests: [request] })).rejects.toBe(
-      simulationError
-    )
+    await expect(
+      adapter.proposeSafeBatch?.({ account, chainId: canonicalChainId, requests: [request] })
+    ).rejects.toMatchObject({ cause: simulationError })
     expect(wagmiActions.sendCalls).not.toHaveBeenCalled()
   })
 
@@ -860,4 +862,99 @@ describe('provisional replacement validation', () => {
     })
     expect(wait).toHaveBeenNthCalledWith(2, expect.objectContaining({ hash: transactionHash, confirmations: 1 }))
   })
+})
+
+describe('lifecycle Safe evidence and permits', () => {
+  it.each([
+    { status: 'pending', statusCode: 100, expected: 'pending' },
+    { status: 'failure', statusCode: 400, expected: 'cancelled' },
+    { status: 'failure', statusCode: 500, expected: 'failed' }
+  ])('preserves the wallet Safe status $expected', async ({ expected, ...status }) => {
+    wagmiActions.getCallsStatus.mockResolvedValue(status)
+    expect(
+      await createAdapter().observeSafeExecution?.({
+        chainId: canonicalChainId,
+        executionChainId,
+        proposalId: '0x1234'
+      })
+    ).toEqual({ status: expected })
+  })
+  it('requires successful internal Safe execution and one atomic execution hash', async () => {
+    const observe = () =>
+      createAdapter().observeSafeExecution!({ chainId: canonicalChainId, executionChainId, proposalId: '0x1234' })
+    wagmiActions.getCallsStatus.mockResolvedValue({
+      status: 'success',
+      receipts: [successfulReceipt, successfulReceipt]
+    })
+    expect(await observe()).toEqual({ status: 'success', hash: transactionHash })
+    wagmiActions.getCallsStatus.mockResolvedValue({
+      status: 'success',
+      receipts: [{ ...successfulReceipt, status: 'reverted' }]
+    })
+    expect(await observe()).toEqual({ status: 'failed' })
+    wagmiActions.getCallsStatus.mockResolvedValue({
+      status: 'success',
+      receipts: [successfulReceipt, { ...successfulReceipt, transactionHash: otherTransactionHash }]
+    })
+    await expect(observe()).rejects.toThrow('atomically')
+    wagmiActions.getCallsStatus.mockResolvedValue({ status: 'success', receipts: [successfulReceipt], chainId: 10 })
+    await expect(observe()).rejects.toThrow('network')
+  })
+  const permit = () => ({
+    domain: { name: 'Vault', version: '1', chainId: canonicalChainId, verifyingContract: request.to },
+    primaryType: 'Permit',
+    types: {
+      Permit: [
+        { name: 'owner', type: 'address' },
+        { name: 'spender', type: 'address' },
+        { name: 'value', type: 'uint256' },
+        { name: 'nonce', type: 'uint256' },
+        { name: 'deadline', type: 'uint256' }
+      ]
+    },
+    message: {
+      owner: account,
+      spender: request.to,
+      value: 10n,
+      nonce: 4n,
+      deadline: BigInt(Math.floor(Date.now() / 1000) + 1200)
+    }
+  })
+  it('rechecks the permit nonce and wallet immediately before signing', async () => {
+    const readContract = vi.fn().mockResolvedValue(4n)
+    wagmiActions.getPublicClient.mockReturnValue({ readContract })
+    wagmiActions.signTypedData.mockResolvedValue('0x1234')
+    const beforeSubmit = vi.fn()
+    await createAdapter().signPermit!({ account, chainId: canonicalChainId, data: permit(), beforeSubmit })
+    expect(readContract).toHaveBeenCalledWith(expect.objectContaining({ functionName: 'nonces', args: [account] }))
+    expect(beforeSubmit).toHaveBeenCalledTimes(1)
+    expect(wagmiActions.signTypedData).toHaveBeenCalledWith(
+      config,
+      expect.objectContaining({ chainId: executionChainId, account, message: expect.objectContaining({ nonce: 4n }) })
+    )
+  })
+  it.each(['nonce', 'owner', 'deadline', 'read failure', 'wallet changed'])(
+    'does not sign a permit after %s',
+    async (failure) => {
+      const data = permit()
+      if (failure === 'owner') data.message.owner = request.to
+      if (failure === 'deadline') data.message.deadline = 1n
+      const readContract =
+        failure === 'read failure'
+          ? vi.fn().mockRejectedValue(new Error('offline'))
+          : vi.fn().mockResolvedValue(failure === 'nonce' ? 5n : 4n)
+      wagmiActions.getPublicClient.mockReturnValue({ readContract })
+      await expect(
+        createAdapter().signPermit!({
+          account,
+          chainId: canonicalChainId,
+          data,
+          beforeSubmit: () => {
+            if (failure === 'wallet changed') throw new Error('wallet changed')
+          }
+        })
+      ).rejects.toThrow()
+      expect(wagmiActions.signTypedData).not.toHaveBeenCalled()
+    }
+  )
 })
