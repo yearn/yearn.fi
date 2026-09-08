@@ -176,12 +176,13 @@ export function useVaultsQueryState(config: TVaultsQueryStateConfig): TVaultsQue
       return undefined
     }
 
-    const syncSnapshotFromLocation = (): void => {
+    const syncSnapshotFromLocation = (event?: PopStateEvent): void => {
       const urlSearchParams = getCurrentUrlSearchParams()
-      if (!hasVaultQueryParams(urlSearchParams)) {
+      if (!event && !hasVaultQueryParams(urlSearchParams)) {
         return
       }
-      if (isOwnUrlUpdateRef.current) {
+      // Browser navigation must always win, even after our own filter URL update.
+      if (!event && isOwnUrlUpdateRef.current) {
         isOwnUrlUpdateRef.current = false
         return
       }

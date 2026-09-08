@@ -1,8 +1,8 @@
 // @vitest-environment jsdom
 
-import { useWeb3, Web3ContextApp } from '@shared/contexts/useWeb3'
+import { useIsWalletConnecting, useWeb3, Web3ContextApp } from '@shared/contexts/useWeb3'
 import { WalletDrawerProvider } from '@yearn/wallet-ui/WalletDrawer'
-import { act } from 'react'
+import { act, memo } from 'react'
 import { createRoot, type Root } from 'react-dom/client'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -12,6 +12,7 @@ const walletState = vi.hoisted(() => ({
   isConnecting: false,
   modalOpen: false,
   runtime: 'app',
+  trackEvent: vi.fn(),
   openAppKit: vi.fn(),
   setThemeMode: vi.fn()
 }))
@@ -29,7 +30,7 @@ vi.mock('wagmi', () => ({
 }))
 
 vi.mock('@yearn/wallet-ui/ReownWalletModalOverrides', () => ({ ReownWalletModalOverrides: () => null }))
-vi.mock('@hooks/usePlausible', () => ({ usePlausible: () => vi.fn() }))
+vi.mock('@hooks/usePlausible', () => ({ usePlausible: () => walletState.trackEvent }))
 vi.mock('@shared/utils/tools.address', () => ({ toAddress: (address: string) => address }))
 vi.mock('@shared/utils', () => ({
   fetchClusterName: vi.fn(),
@@ -51,7 +52,8 @@ vi.mock('@/config/wagmi', () => ({
 const roots: Root[] = []
 
 function WalletStatus() {
-  const { isUserConnecting: isConnecting, openLoginModal: openWalletDrawer } = useWeb3()
+  const { openLoginModal: openWalletDrawer } = useWeb3()
+  const isConnecting = useIsWalletConnecting()
 
   return (
     <button type="button" data-wallet-drawer-trigger onClick={openWalletDrawer}>
@@ -65,7 +67,14 @@ async function renderWalletDrawer() {
   document.body.append(container)
   const root = createRoot(container)
   roots.push(root)
+  const accountRender = vi.fn()
+  const AccountConsumer = memo(function AccountConsumer() {
+    const { address } = useWeb3()
+    accountRender(address)
+    return null
+  })
   const appKit = {
+    setThemeMode: walletState.setThemeMode,
     connectWallet: vi.fn(() => {
       walletState.connectingWallet = { id: 'io.rabby' }
       return new Promise<void>(() => undefined)
@@ -81,7 +90,10 @@ async function renderWalletDrawer() {
       root.render(
         <WalletDrawerProvider appKit={appKit}>
           <Web3ContextApp>
-            <WalletStatus />
+            <div>
+              <WalletStatus />
+              <AccountConsumer />
+            </div>
           </Web3ContextApp>
           {walletState.modalOpen && (
             <button
@@ -106,7 +118,7 @@ async function renderWalletDrawer() {
 
   await render()
 
-  return { appKit, click, container, render }
+  return { accountRender, appKit, click, container, render }
 }
 
 beforeEach(() => {
@@ -137,6 +149,22 @@ afterEach(async () => {
 })
 
 describe('wallet drawer connection state', () => {
+  it('does not rerender account-data consumers when opening, waiting, or cancelling', async () => {
+    const view = await renderWalletDrawer()
+    const connection = Promise.withResolvers<void>()
+    view.appKit.connectWallet.mockReturnValueOnce(connection.promise)
+    view.accountRender.mockClear()
+
+    await view.click('Ready')
+    await view.click('Rabby')
+    expect(view.container.querySelector('[data-wallet-drawer-trigger]')?.textContent).toBe('Connecting…')
+    expect(view.accountRender).not.toHaveBeenCalled()
+
+    await act(async () => connection.reject(new Error('User rejected the request')))
+    expect(view.container.querySelector('[data-wallet-drawer-trigger]')?.textContent).toBe('Ready')
+    expect(view.accountRender).not.toHaveBeenCalled()
+  })
+
   it('can reopen the picker after closing WalletConnect while its transport remains connecting', async () => {
     walletState.openAppKit.mockImplementationOnce(async () => {
       walletState.isConnecting = true
@@ -183,9 +211,11 @@ describe('wallet drawer connection state', () => {
     await view.click('Ready')
     await view.click('Rabby')
 
+    view.accountRender.mockClear()
     walletState.isConnected = true
     await view.render()
 
+    expect(view.accountRender).toHaveBeenCalled()
     expect(view.container.querySelector('[role="dialog"]')).toBeNull()
     expect(view.container.querySelector('[data-wallet-drawer-trigger]')?.textContent).toBe('Ready')
     expect(view.appKit.resetConnectingWallet).toHaveBeenCalled()

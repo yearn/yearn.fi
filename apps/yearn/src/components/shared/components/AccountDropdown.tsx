@@ -1,9 +1,9 @@
 import { setThemePreference, useThemePreference } from '@hooks/useThemePreference'
 import { useAppSettings } from '@pages/vaults/contexts/useAppSettings'
+import { WalletAccountValue } from '@shared/components/WalletAccountValue'
 import { yToast } from '@shared/components/yToast'
 import { useNotifications } from '@shared/contexts/useNotifications'
 import { useWalletStatus } from '@shared/contexts/useWallet'
-import { useWalletVaultTotals } from '@shared/contexts/useWalletVaultTotals'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import { IconArrowLeft } from '@shared/icons/IconArrowLeft'
@@ -15,7 +15,7 @@ import { IconPower } from '@shared/icons/IconPower'
 import { IconSettings } from '@shared/icons/IconSettings'
 import { IconSun } from '@shared/icons/IconSun'
 import { LogoYearn } from '@shared/icons/LogoYearn'
-import { cl, formatUSD } from '@shared/utils'
+import { cl } from '@shared/utils'
 import { truncateHex } from '@shared/utils/tools.address'
 import { useRouter } from 'next/navigation'
 import type { ReactElement } from 'react'
@@ -32,7 +32,6 @@ type TView = 'account' | 'settings'
 function AccountView({ onSettingsClick, onClose }: { onSettingsClick: () => void; onClose: () => void }): ReactElement {
   const { address, ens, clusters, onDesactivate } = useWeb3()
   const { isLoading: isWalletLoading } = useWalletStatus()
-  const { totalValue } = useWalletVaultTotals()
   const { cachedEntries } = useNotifications()
   const router = useRouter()
   const themePreference = useThemePreference()
@@ -112,16 +111,7 @@ function AccountView({ onSettingsClick, onClose }: { onSettingsClick: () => void
               <span>{displayName}</span>
               {address && <IconCopy className={'size-3.5 opacity-50 group-hover:opacity-100 transition-opacity'} />}
             </button>
-            {isWalletLoading ? (
-              <div className={'mt-1 h-7 w-20 animate-pulse rounded bg-surface-tertiary'} />
-            ) : (
-              <p className={'text-2xl font-bold text-text-primary'}>
-                <span>{formatUSD(Math.floor(totalValue), 0, 0)}</span>
-                <span className={'text-text-secondary'}>
-                  {totalValue > 0 ? `.${(totalValue % 1).toFixed(2).substring(2)}` : ''}
-                </span>
-              </p>
-            )}
+            <WalletAccountValue />
           </div>
           <div className={'flex items-center gap-1'}>
             <button onClick={onSettingsClick} className={iconButtonClass}>

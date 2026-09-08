@@ -1,6 +1,6 @@
 'use client'
 
-import { useAppKit, useAppKitState, useAppKitTheme } from '@reown/appkit/react'
+import { type AppKit, useAppKit, useAppKitState } from '@reown/appkit/react'
 import {
   connectEvmWalletWithAppKit,
   getBrowserWalletLabel,
@@ -38,7 +38,7 @@ type TCloseWalletDrawerOptions = {
 
 export type TWalletDrawerProviderProps = {
   additionalConnectorIds?: readonly string[]
-  appKit: TEvmAppKitConnectionClient
+  appKit: TEvmAppKitConnectionClient & Pick<AppKit, 'setThemeMode'>
   appKitTheme?: 'dark' | 'light'
   children: ReactNode
   desktopRight?: string
@@ -166,7 +166,6 @@ export function WalletDrawerProvider({
 }: TWalletDrawerProviderProps) {
   const { open: openAppKit } = useAppKit()
   const { connectingWallet } = useAppKitState()
-  const { setThemeMode } = useAppKitTheme()
   const { isConnected } = useAccount()
   const { connectors } = useConnect()
   const [isOpen, setIsOpen] = useState(false)
@@ -209,8 +208,8 @@ export function WalletDrawerProvider({
 
   // AppKit's follow-on modal lives outside this tree, so synchronize its theme imperatively.
   useEffect(() => {
-    setThemeMode(appKitTheme)
-  }, [appKitTheme, setThemeMode])
+    appKit.setThemeMode(appKitTheme)
+  }, [appKit, appKitTheme])
 
   const closeWalletDrawer = useCallback((options?: TCloseWalletDrawerOptions) => {
     if (pendingActionRef.current && !options?.force) {

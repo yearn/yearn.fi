@@ -36,7 +36,7 @@ import {
 } from '@pages/vaults/utils/yvUsd'
 import { useWalletHoldings, useWalletStatus, useWalletTokens } from '@shared/contexts/useWallet'
 import { useWalletVaultTotals } from '@shared/contexts/useWalletVaultTotals'
-import { useWeb3 } from '@shared/contexts/useWeb3'
+import { useIsWalletConnecting, useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import { getVaultKey, isV3Vault, type TVaultFlags } from '@shared/hooks/useVaultFilterUtils'
 import { useYearnSpotPrices } from '@shared/hooks/useYearnSpotPrices'
@@ -200,7 +200,8 @@ export function usePortfolioModel(): TPortfolioModel {
   const { getVaultHoldingsUsd } = useWalletHoldings()
   const { isLoading: isWalletLoading, hasCompletedBalanceLoad } = useWalletStatus()
   const { totalValue: vaultTotalPortfolioValue } = useWalletVaultTotals()
-  const { isActive, openLoginModal, isUserConnecting, isIdentityLoading } = useWeb3()
+  const { isActive, openLoginModal, isIdentityLoading } = useWeb3()
+  const isUserConnecting = useIsWalletConnecting()
   const { vaults, allVaults, isLoadingVaultList } = useYearn()
   const { getPrice } = useYearnSpotPrices([{ address: ETH_TOKEN_ADDRESS, chainID: 1 }])
   const { listVault: yvUsdVault, unlockedVault: yvUsdUnlockedVault, lockedVault: yvUsdLockedVault } = useYvUsdVaults()

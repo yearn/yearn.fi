@@ -10,6 +10,7 @@ import { WithNotifications } from '@shared/contexts/useNotifications'
 import { WithNotificationsActions } from '@shared/contexts/useNotificationsActions'
 import { TenderlyPanelProvider } from '@shared/contexts/useTenderlyPanel'
 import { WalletContextApp } from '@shared/contexts/useWallet'
+import { WalletVaultTotalsProvider } from '@shared/contexts/useWalletVaultTotals'
 import { Web3ContextApp } from '@shared/contexts/useWeb3'
 import { YearnContextApp } from '@shared/contexts/useYearn'
 import { WithTokenList } from '@shared/contexts/WithTokenList'
@@ -106,17 +107,19 @@ export function AppProviders({ children }: { children: ReactNode }): ReactElemen
                       <ChartStyleContextApp>
                         <YearnContextApp>
                           <WalletContextApp>
-                            <IndexedDB>
-                              <WithNotifications>
-                                <WithNotificationsActions>
-                                  <TenderlyPanelProvider>
-                                    <AppClientEffects />
-                                    {children}
-                                    <TenderlyControlPanel />
-                                  </TenderlyPanelProvider>
-                                </WithNotificationsActions>
-                              </WithNotifications>
-                            </IndexedDB>
+                            <WalletVaultTotalsProvider>
+                              <IndexedDB>
+                                <WithNotifications>
+                                  <WithNotificationsActions>
+                                    <TenderlyPanelProvider>
+                                      <AppClientEffects />
+                                      {children}
+                                      <TenderlyControlPanel />
+                                    </TenderlyPanelProvider>
+                                  </WithNotificationsActions>
+                                </WithNotifications>
+                              </IndexedDB>
+                            </WalletVaultTotalsProvider>
                           </WalletContextApp>
                         </YearnContextApp>
                       </ChartStyleContextApp>

@@ -24,7 +24,6 @@ type TWeb3Context = {
   chainID: number
   isActive: boolean
   isWalletSafe: boolean
-  isUserConnecting: boolean
   isIdentityLoading: boolean
   openLoginModal: () => void
   onDesactivate: () => void
@@ -37,7 +36,6 @@ const defaultState: TWeb3Context = {
   chainID: 1,
   isActive: false,
   isWalletSafe: false,
-  isUserConnecting: false,
   isIdentityLoading: false,
   openLoginModal: (): void => undefined,
   onDesactivate: (): void => undefined
@@ -52,7 +50,7 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
     address: isConnected ? address : undefined,
     chainId: mainnet.id
   })
-  const { isConnecting: isWalletUiConnecting, openWalletDrawer } = useWalletDrawer()
+  const { openWalletDrawer } = useWalletDrawer()
   const trackEvent = usePlausible()
   const [clusters, setClusters] = useState<{ name: string; avatar: string } | undefined>(undefined)
   const [isFetchingClusters, setIsFetchingClusters] = useState(false)
@@ -212,8 +210,6 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
     }
   }, [address, ensName, isConnected])
 
-  const isUserConnecting = !isConnected && (yearnWalletRuntime === 'app' ? isWalletUiConnecting : isConnecting)
-
   const isIdentityLoading = Boolean((isEnsLoading && !!address) || isFetchingClusters)
   const isWalletSafe = isSafeConnectorId(connector?.id)
 
@@ -225,26 +221,21 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
       chainID,
       isActive: isConnected,
       isWalletSafe,
-      isUserConnecting,
       isIdentityLoading,
       openLoginModal,
       onDesactivate
     }),
-    [
-      address,
-      ensName,
-      clusters,
-      chainID,
-      isConnected,
-      isWalletSafe,
-      isUserConnecting,
-      isIdentityLoading,
-      openLoginModal,
-      onDesactivate
-    ]
+    [address, ensName, clusters, chainID, isConnected, isWalletSafe, isIdentityLoading, openLoginModal, onDesactivate]
   )
 
   return <Web3Context.Provider value={contextValue}>{props.children}</Web3Context.Provider>
 }
 
 export const useWeb3 = (): TWeb3Context => useContext(Web3Context)
+
+// Only connection controls need this transient state; balances and vault rows do not.
+export function useIsWalletConnecting(): boolean {
+  const { isConnecting: isWalletUiConnecting } = useWalletDrawer()
+  const { isConnected, isConnecting } = useAccount()
+  return !isConnected && (yearnWalletRuntime === 'app' ? isWalletUiConnecting : isConnecting)
+}

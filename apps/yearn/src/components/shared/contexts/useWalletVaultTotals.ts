@@ -10,19 +10,31 @@ import {
 import { getCanonicalHoldingsVaultAddress } from '@pages/vaults/domain/normalizeVault'
 import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import { getYvUsdSharePrice, YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
-import { useMemo } from 'react'
-import { isZeroAddress, toAddress } from '../utils'
-import { useWalletHoldings, useWalletTokens } from './useWallet'
-import { useYearn } from './useYearn'
+import { useWalletHoldings, useWalletStatus, useWalletTokens } from '@shared/contexts/useWallet'
+import { useYearn } from '@shared/contexts/useYearn'
+import { isZeroAddress, toAddress } from '@shared/utils'
+import { createContext, createElement, type ReactNode, useContext, useMemo } from 'react'
 
 type TWalletVaultTotals = {
   cumulatedValueInV2Vaults: number
   cumulatedValueInV3Vaults: number
   totalValue: number
+  isLoading: boolean
 }
 
-export function useWalletVaultTotals(): TWalletVaultTotals {
-  const { allVaults } = useYearn()
+const WalletVaultTotalsContext = createContext<TWalletVaultTotals>({
+  cumulatedValueInV2Vaults: 0,
+  cumulatedValueInV3Vaults: 0,
+  totalValue: 0,
+  isLoading: true
+})
+
+export const useWalletVaultTotals = (): TWalletVaultTotals => useContext(WalletVaultTotalsContext)
+
+export function WalletVaultTotalsProvider({ children }: { children: ReactNode }) {
+  const { allVaults, isLoadingVaultList } = useYearn()
+  const { isLoading: isWalletLoading } = useWalletStatus()
+  const isLoading = Boolean(isWalletLoading || isLoadingVaultList)
   const { balances } = useWalletTokens()
   const { getVaultHoldingsUsd } = useWalletHoldings()
   const { unlockedVault: yvUsdUnlockedVault, lockedVault: yvUsdLockedVault } = useYvUsdVaults()
@@ -107,12 +119,15 @@ export function useWalletVaultTotals(): TWalletVaultTotals {
     yvUsdUnlockedSharePrice
   ])
 
-  return useMemo(
+  const value = useMemo(
     () => ({
       cumulatedValueInV2Vaults,
       cumulatedValueInV3Vaults,
-      totalValue: cumulatedValueInV2Vaults + cumulatedValueInV3Vaults
+      totalValue: cumulatedValueInV2Vaults + cumulatedValueInV3Vaults,
+      isLoading
     }),
-    [cumulatedValueInV2Vaults, cumulatedValueInV3Vaults]
+    [cumulatedValueInV2Vaults, cumulatedValueInV3Vaults, isLoading]
   )
+
+  return createElement(WalletVaultTotalsContext.Provider, { value }, children)
 }
