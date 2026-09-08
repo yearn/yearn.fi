@@ -2,7 +2,7 @@ import {
   buildEligibleStyledWidgetPlan,
   type TBuildEligibleStyledWidgetPlanParams
 } from '@yearn/vault-widget/internal/components/widget/shared/plannedTransaction'
-import type { AppUseSimulateContractReturnType } from '@yearn/vault-widget/types'
+import type { AppUseSimulateContractReturnType, TRawTransactionPreparation } from '@yearn/vault-widget/types'
 import { decodeFunctionData, parseAbi } from 'viem'
 import { describe, expect, it } from 'vitest'
 
@@ -124,6 +124,43 @@ describe('buildEligibleStyledWidgetPlan', () => {
       buildEligibleStyledWidgetPlan(
         createParams({ prepare: { ...createReadyPrepare(), isSuccess: false, status: 'pending' } })
       )
+    ).toBeUndefined()
+  })
+})
+
+describe('same-chain Enso lifecycle eligibility', () => {
+  const raw: TRawTransactionPreparation = {
+    kind: 'raw',
+    chainId: 1,
+    transaction: { chainId: 1, from: account, to: vaultAddress, data: '0xabcdef', value: '1000000000000000001' },
+    validate: async () => undefined,
+    execute: async () => `0x${'a'.repeat(64)}`,
+    refetch: async () => undefined,
+    error: null,
+    isError: false,
+    isLoading: false,
+    isFetching: false,
+    isSuccess: true,
+    status: 'success'
+  }
+  it.each(['deposit', 'withdraw'] as const)('preserves the exact protected router call for %s', (mode) => {
+    const plan = buildEligibleStyledWidgetPlan(createParams({ routeType: 'ENSO', mode, prepare: raw }))
+    expect(plan?.intent.calls[0].request).toEqual({
+      chainId: 1,
+      to: vaultAddress,
+      data: '0xabcdef',
+      value: 1000000000000000001n
+    })
+  })
+  it('keeps uncertain, unprotected and cross-chain routes on their existing paths', () => {
+    expect(
+      buildEligibleStyledWidgetPlan(createParams({ routeType: 'ENSO', prepare: { ...raw, validate: undefined } }))
+    ).toBeUndefined()
+    expect(
+      buildEligibleStyledWidgetPlan(createParams({ routeType: 'ENSO', prepare: raw, isEnabled: false }))
+    ).toBeUndefined()
+    expect(
+      buildEligibleStyledWidgetPlan(createParams({ routeType: 'ENSO', prepare: raw, isCrossChain: true }))
     ).toBeUndefined()
   })
 })

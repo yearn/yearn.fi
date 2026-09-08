@@ -3,12 +3,16 @@ import {
   type VaultWidgetTransactionMode,
   type VaultWidgetTransactionPlan
 } from '@yearn/vault-widget/headless'
-import type { AppUseSimulateContractReturnType } from '@yearn/vault-widget/types'
+import {
+  type AppUseSimulateContractReturnType,
+  isRawTransactionPreparation,
+  type TTransactionPreparation
+} from '@yearn/vault-widget/types'
 import { type Abi, encodeFunctionData, type Hex, isAddress, isHex } from 'viem'
 
 const ELIGIBLE_ROUTES: Readonly<Record<VaultWidgetTransactionMode, readonly string[]>> = Object.freeze({
-  deposit: Object.freeze(['DIRECT_DEPOSIT', 'DIRECT_STAKE', 'YBOLD_ZAPPER']),
-  withdraw: Object.freeze(['DIRECT_WITHDRAW', 'DIRECT_UNSTAKE', 'YBOLD_ZAPPER_WITHDRAW'])
+  deposit: Object.freeze(['DIRECT_DEPOSIT', 'DIRECT_STAKE', 'YBOLD_ZAPPER', 'ENSO']),
+  withdraw: Object.freeze(['DIRECT_WITHDRAW', 'DIRECT_UNSTAKE', 'YBOLD_ZAPPER_WITHDRAW', 'ENSO'])
 })
 
 type TPreparedRequest = NonNullable<NonNullable<AppUseSimulateContractReturnType['data']>['request']>
@@ -26,7 +30,7 @@ export type TBuildEligibleStyledWidgetPlanParams = {
   label: string
   mode: VaultWidgetTransactionMode
   needsApproval: boolean
-  prepare?: AppUseSimulateContractReturnType
+  prepare?: TTransactionPreparation
   routeType: string
 }
 
@@ -86,6 +90,37 @@ export function buildEligibleStyledWidgetPlan({
   ) {
     return undefined
   }
+
+  if (isRawTransactionPreparation(prepare)) {
+    const raw = prepare.transaction
+    if (
+      routeType !== 'ENSO' ||
+      !prepare.validate ||
+      !raw ||
+      raw.chainId !== canonicalChainId ||
+      !isAddress(raw.to) ||
+      !isAddress(raw.from) ||
+      !isHex(raw.data) ||
+      !/^\d+$/.test(raw.value)
+    )
+      return undefined
+    return buildTransactionPlan({
+      connectedChainId: canonicalChainId,
+      walletType: 'eoa',
+      intent: {
+        id,
+        mode,
+        calls: [
+          {
+            id: mode,
+            label,
+            request: { chainId: canonicalChainId, to: raw.to, data: raw.data, value: BigInt(raw.value) }
+          }
+        ]
+      }
+    })
+  }
+  if (routeType === 'ENSO') return undefined
 
   const request = prepare.data?.request
   if (

@@ -104,8 +104,17 @@ export type VaultWidgetTransactionReceiptResult = {
 
 export type VaultWidgetExecutionAdapter = {
   switchChain: (params: { chainId: number }) => Promise<void>
-  execute: (params: { account: Address; request: VaultWidgetTransactionRequest }) => Promise<Hash>
-  waitForReceipt: (params: { chainId: number; hash: Hash }) => Promise<VaultWidgetTransactionReceiptResult>
+  execute: (params: {
+    account: Address
+    request: VaultWidgetTransactionRequest
+    beforeSubmit?: () => void
+  }) => Promise<Hash>
+  waitForReceipt: (params: {
+    chainId: number
+    hash: Hash
+    executionChainId?: number
+    confirmations?: number
+  }) => Promise<VaultWidgetTransactionReceiptResult>
   proposeSafeBatch?: (params: {
     account: Address
     chainId: number

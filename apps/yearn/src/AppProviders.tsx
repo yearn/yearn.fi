@@ -13,6 +13,7 @@ import { WalletContextApp } from '@shared/contexts/useWallet'
 import { Web3ContextApp } from '@shared/contexts/useWeb3'
 import { YearnContextApp } from '@shared/contexts/useYearn'
 import { WithTokenList } from '@shared/contexts/WithTokenList'
+import { YearnTransactionLifecycleProvider } from '@shared/contexts/YearnTransactionLifecycleProvider'
 import { IconAlertCritical } from '@shared/icons/IconAlertCritical'
 import { IconAlertError } from '@shared/icons/IconAlertError'
 import { IconCheckmark } from '@shared/icons/IconCheckmark'
@@ -68,17 +69,19 @@ export function AppProviders({ children }: { children: ReactNode }): ReactElemen
                       <ChartStyleContextApp>
                         <YearnContextApp>
                           <WalletContextApp>
-                            <IndexedDB>
-                              <WithNotifications>
-                                <WithNotificationsActions>
-                                  <TenderlyPanelProvider>
-                                    <AppClientEffects />
-                                    {children}
-                                    <TenderlyControlPanel />
-                                  </TenderlyPanelProvider>
-                                </WithNotificationsActions>
-                              </WithNotifications>
-                            </IndexedDB>
+                            <YearnTransactionLifecycleProvider>
+                              <IndexedDB>
+                                <WithNotifications>
+                                  <WithNotificationsActions>
+                                    <TenderlyPanelProvider>
+                                      <AppClientEffects />
+                                      {children}
+                                      <TenderlyControlPanel />
+                                    </TenderlyPanelProvider>
+                                  </WithNotificationsActions>
+                                </WithNotifications>
+                              </IndexedDB>
+                            </YearnTransactionLifecycleProvider>
                           </WalletContextApp>
                         </YearnContextApp>
                       </ChartStyleContextApp>

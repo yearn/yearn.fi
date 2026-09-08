@@ -434,8 +434,11 @@ This proposal selects these defaults: sequential recipes; explicit review after 
 with bounded diagnostics; technical approval history; local-only replacement identity; session-only yBOLD history;
 and tracking ownership hidden behind the host infrastructure. No state-machine library is required.
 
-Two infrastructure choices remain implementation gates: the durable host's atomic/cross-tab store mechanism and
-the server's shared Enso request-budget mechanism. The mechanisms may vary, but their behavior above is required.
+Stage 2 selects native IndexedDB atomic read/reduce/write, BroadcastChannel invalidation, and Web Locks for
+Yearn's durable host. See [implementation progress](./transaction-lifecycle-progress.md) for validation and
+browser/recovery limits. The server's shared Enso request-budget mechanism remains an implementation gate.
+The mechanisms may vary, but their behavior above is required.
+
 Stronger discovery of already-mined replacements after reload is a separate, testable capability; it must not be
 implied by the presence of stored identity alone.
 

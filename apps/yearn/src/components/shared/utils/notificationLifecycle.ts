@@ -1,4 +1,5 @@
 import type { TNotification, TNotificationStatus } from '@shared/types/notifications'
+import { selectTransaction } from '@yearn/vault-widget/lifecycle'
 import type { Hash } from 'viem'
 
 export type TNotificationLifecyclePresentation = {
@@ -10,6 +11,16 @@ export type TNotificationLifecyclePresentation = {
 }
 
 export function getNotificationLifecyclePresentation(notification: TNotification): TNotificationLifecyclePresentation {
+  if (notification.lifecycleRecord) {
+    const view = selectTransaction(notification.lifecycleRecord)
+    return {
+      label: view.outcome === 'success' ? 'Success' : view.label,
+      detail: view.detail,
+      styleStatus: view.outcome === 'unknown' ? 'submitted' : view.outcome,
+      transactionHash: view.reference.hash,
+      transactionChainId: view.reference.executionChainId
+    }
+  }
   const sourceTransaction = {
     transactionHash: notification.txHash,
     transactionChainId: notification.executionChainId ?? notification.chainId

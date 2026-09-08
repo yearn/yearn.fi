@@ -1,4 +1,6 @@
 import { applyNotificationUpdate } from '@shared/contexts/notificationTransitions'
+import { useYearnTransactionLifecycle } from '@shared/contexts/transactionLifecycleContext'
+import { projectLifecycleNotification } from '@shared/contexts/transactionLifecycleProjection'
 import {
   appendCachedNotification,
   filterNotificationsForAddress,
@@ -10,8 +12,21 @@ import { useAsyncTrigger } from '@shared/hooks/useAsyncTrigger'
 import type { TNotification, TNotificationsContext } from '@shared/types/notifications'
 import { NOTIFICATION_INDICATOR_WINDOW_SECONDS, selectNotificationStatus } from '@shared/utils/notificationLifecycle'
 import type React from 'react'
-import { createContext, startTransition, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import {
+  createContext,
+  startTransition,
+  useCallback,
+  useContext,
+  useEffect,
+  useMemo,
+  useState,
+  useSyncExternalStore
+} from 'react'
 import { useIndexedDBStore } from 'use-indexeddb'
+
+const EMPTY_LIFECYCLE_RECORDS = Object.freeze([])
+const noLifecycleSubscribe = () => () => undefined
+const emptyLifecycleRecords = () => EMPTY_LIFECYCLE_RECORDS
 
 const defaultProps: TNotificationsContext = {
   cachedEntries: [],
@@ -26,6 +41,12 @@ const defaultProps: TNotificationsContext = {
 const NotificationsContext = createContext<TNotificationsContext>(defaultProps)
 export const WithNotifications = ({ children }: { children: React.ReactElement }): React.ReactElement => {
   const { address } = useWeb3()
+  const lifecycle = useYearnTransactionLifecycle()
+  const lifecycleRecords = useSyncExternalStore(
+    lifecycle?.subscribe ?? noLifecycleSubscribe,
+    lifecycle ? () => lifecycle.getSnapshot().records : emptyLifecycleRecords,
+    emptyLifecycleRecords
+  )
   const [cachedEntries, setCachedEntries] = useState<TNotification[]>([])
   const [entryNonce, setEntryNonce] = useState<number>(0)
   const [isLoading, setIsLoading] = useState<boolean>(true)
@@ -34,7 +55,11 @@ export const WithNotifications = ({ children }: { children: React.ReactElement }
   const [clockSeconds, setNowSeconds] = useState(() => Date.now() / 1000)
   const nowSeconds = Math.max(clockSeconds, Date.now() / 1000)
   // Filter at render time as well as hydration, so changing wallets cannot expose the previous wallet's records.
-  const visibleEntries = useMemo(() => filterNotificationsForAddress(cachedEntries, address), [cachedEntries, address])
+  const visibleEntries = useMemo(
+    () =>
+      filterNotificationsForAddress([...cachedEntries, ...lifecycleRecords.map(projectLifecycleNotification)], address),
+    [cachedEntries, lifecycleRecords, address]
+  )
   const notificationStatus = selectNotificationStatus(visibleEntries, nowSeconds)
   const nextExpiry = visibleEntries.reduce((next, entry) => {
     const timestamp = entry.timeFinished ?? entry.createdAt

@@ -494,7 +494,10 @@ export const WalletPanel: FC<WalletPanelProps> = ({
                     ) : (
                       <div className="space-y-2">
                         {recentEntries.map((entry) => (
-                          <RecentTransactionRow key={entry.id ?? `${entry.type}-${entry.txHash}`} entry={entry} />
+                          <RecentTransactionRow
+                            key={entry.lifecycleRecord?.id ?? entry.id ?? `${entry.type}-${entry.txHash}`}
+                            entry={entry}
+                          />
                         ))}
                       </div>
                     )}

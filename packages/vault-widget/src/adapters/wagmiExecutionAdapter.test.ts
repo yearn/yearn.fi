@@ -190,7 +190,10 @@ describe('Wagmi EOA execution adapter', () => {
     wagmiActions.getPublicClient.mockReturnValue({ estimateGas: vi.fn().mockRejectedValue(simulationError) })
     const adapter = createAdapter()
 
-    await expect(adapter.execute({ account, request })).rejects.toBe(simulationError)
+    await expect(adapter.execute({ account, request })).rejects.toMatchObject({
+      name: 'VaultWidgetPreparationError',
+      cause: simulationError
+    })
     expect(wagmiActions.sendTransaction).not.toHaveBeenCalled()
   })
 

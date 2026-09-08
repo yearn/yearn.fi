@@ -18,7 +18,7 @@ vi.mock('use-indexeddb', () => ({ useIndexedDBStore: () => mocks }))
 const pending: TNotification = { id: 1, type: 'deposit', address: '0x111', chainId: 1, amount: '1', status: 'pending' }
 const wrapper = ({ children }: { children: ReactNode }) => (
   <WithNotifications>
-    <>{children}</>
+    <div>{children}</div>
   </WithNotifications>
 )
 

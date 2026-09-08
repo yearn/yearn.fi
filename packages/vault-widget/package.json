@@ -32,7 +32,9 @@
     "./styles.css": "./styles.css",
     "./types": "./src/types.ts",
     "./wagmi": "./src/adapters/wagmiExecutionAdapter.ts",
-    "./ybold": "./src/ybold.ts"
+    "./ybold": "./src/ybold.ts",
+    "./lifecycle": "./src/lifecycle/index.ts",
+    "./lifecycle/*": "./src/lifecycle/*.ts"
   },
   "scripts": {
     "test": "vitest run",

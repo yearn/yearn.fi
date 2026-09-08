@@ -43,3 +43,10 @@ export async function awaitTransactionRefresh(refresh: () => Promise<void>): Pro
     clearTimeout(timer.id)
   }
 }
+
+export class VaultWidgetPreparationError extends Error {
+  constructor(cause: unknown) {
+    super(cause instanceof Error ? cause.message : 'Transaction preparation failed', { cause })
+    this.name = 'VaultWidgetPreparationError'
+  }
+}

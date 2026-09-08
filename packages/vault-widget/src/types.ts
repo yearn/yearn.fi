@@ -195,6 +195,7 @@ export type TRawTransaction = {
 
 export type TRawTransactionPreparation = {
   kind: 'raw'
+  validate?: (expected: TRawTransaction) => Promise<void>
   transaction?: TRawTransaction
   chainId: number
   execute: () => Promise<Hash>

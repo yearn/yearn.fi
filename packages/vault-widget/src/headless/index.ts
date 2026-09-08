@@ -2,7 +2,8 @@ export {
   awaitTransactionRefresh,
   getConfirmedTransactionReceipt,
   getTransactionConfirmations,
-  TRANSACTION_REFRESH_TIMEOUT_MS
+  TRANSACTION_REFRESH_TIMEOUT_MS,
+  VaultWidgetPreparationError
 } from '@yearn/vault-widget/internal/utils/transactionLifecycle'
 export { type BuildTransactionPlanParams, buildTransactionPlan } from './buildTransactionPlan'
 export {

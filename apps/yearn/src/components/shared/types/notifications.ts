@@ -1,4 +1,5 @@
 import type { TEnsoBridgeProtocol, TEnsoBridgeStatus } from '@shared/types/ensoBridge'
+import type { TTransactionRecord } from '@yearn/vault-widget/lifecycle'
 import type { Hash, TransactionReceipt } from 'viem'
 import type { TAddress } from './address'
 
@@ -24,6 +25,7 @@ export type TNotificationType =
   | 'migrate'
 
 export type TNotification = {
+  lifecycleRecord?: TTransactionRecord
   id?: number
   type: TNotificationType
   address: TAddress

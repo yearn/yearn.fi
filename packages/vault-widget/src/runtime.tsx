@@ -1,6 +1,16 @@
 'use client'
 
-import { createContext, type ReactElement, type ReactNode, useContext, useMemo } from 'react'
+import { createTransactionLifecycle, type TTransactionLifecycle } from '@yearn/vault-widget/lifecycle'
+import {
+  createContext,
+  type ReactElement,
+  type ReactNode,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState
+} from 'react'
 import type { Address, Hash, TransactionReceipt } from 'viem'
 import type { VaultWidgetExecutionAdapter } from './headless/types'
 
@@ -178,6 +188,7 @@ export type VaultWidgetAssetsRuntime = {
 }
 
 export type VaultWidgetRuntime = {
+  lifecycle?: TTransactionLifecycle
   analytics: VaultWidgetAnalyticsRuntime
   assets: VaultWidgetAssetsRuntime
   catalog: VaultWidgetCatalogRuntime
@@ -197,6 +208,7 @@ export type VaultWidgetRuntime = {
  * disconnected defaults.
  */
 export type VaultWidgetRuntimeOverrides = {
+  lifecycle?: TTransactionLifecycle
   analytics?: Partial<VaultWidgetAnalyticsRuntime>
   assets?: Partial<VaultWidgetAssetsRuntime>
   catalog?: Partial<VaultWidgetCatalogRuntime>
@@ -326,6 +338,7 @@ export function createVaultWidgetRuntime(overrides: VaultWidgetRuntimeOverrides 
     overrides.chains?.resolveExecutionChainId ?? DEFAULT_VAULT_WIDGET_RUNTIME.chains.resolveExecutionChainId
 
   return {
+    lifecycle: overrides.lifecycle,
     analytics: {
       track: overrides.analytics?.track ?? DEFAULT_VAULT_WIDGET_RUNTIME.analytics.track
     },
@@ -419,6 +432,7 @@ export function VaultWidgetRuntimeProvider({ children, value = {} }: VaultWidget
       catalog: { ...parent.runtime.catalog, ...value.catalog },
       chains: { ...parent.runtime.chains, ...value.chains },
       execution: { ...parent.runtime.execution, ...value.execution },
+      lifecycle: value.lifecycle ?? parent.runtime.lifecycle,
       notifications: { ...parent.runtime.notifications, ...value.notifications },
       prices: { ...parent.runtime.prices, ...value.prices },
       routing: { ...parent.runtime.routing, ...value.routing },
@@ -427,7 +441,33 @@ export function VaultWidgetRuntimeProvider({ children, value = {} }: VaultWidget
       wallet: { ...parent.runtime.wallet, ...value.wallet }
     }
   }, [parent, value])
-  const runtime = useMemo(() => createVaultWidgetRuntime(effectiveOverrides), [effectiveOverrides])
+  const configuredRuntime = useMemo(() => createVaultWidgetRuntime(effectiveOverrides), [effectiveOverrides])
+  const current = useRef(configuredRuntime)
+  current.current = configuredRuntime
+  const [localLifecycle] = useState(() =>
+    createTransactionLifecycle({
+      execution: () => current.current.execution,
+      executionChainId: (chainId) => current.current.chains.resolveExecutionChainId(chainId),
+      wallet: () => current.current.wallet,
+      refresh: async (record) => {
+        await current.current.wallet.refresh([
+          ...(record.display
+            ? [{ address: record.display.fromAddress, chainId: record.original.canonicalChainId }]
+            : []),
+          ...(record.display?.toAddress
+            ? [{ address: record.display.toAddress, chainId: record.original.canonicalChainId }]
+            : [])
+        ])
+      }
+    })
+  )
+  const lifecycle = effectiveOverrides.lifecycle ?? localLifecycle
+  // Only the owning provider manages the observer lifetime; nested widget providers inherit the service.
+  useEffect(
+    () => (effectiveOverrides.lifecycle ? undefined : localLifecycle.connect()),
+    [effectiveOverrides.lifecycle, localLifecycle]
+  )
+  const runtime = useMemo(() => ({ ...configuredRuntime, lifecycle }), [configuredRuntime, lifecycle])
   const contextValue = useMemo(() => ({ overrides: effectiveOverrides, runtime }), [effectiveOverrides, runtime])
 
   return <VaultWidgetRuntimeContext.Provider value={contextValue}>{children}</VaultWidgetRuntimeContext.Provider>
