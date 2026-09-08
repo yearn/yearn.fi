@@ -253,7 +253,9 @@ export function buildPortfolioGrowthContributionChart(args: {
         } satisfies TPortfolioGrowthContributionSeries,
         value: isFiniteNumber(row.other) ? row.other : 0
       }
-    ].toSorted((left, right) => Number(left.value >= 0) - Number(right.value >= 0))
+    ]
+      .toReversed()
+      .toSorted((left, right) => Number(left.value >= 0) - Number(right.value >= 0))
     contributionRows.reduce((runningTotal, contribution) => {
       const nextTotal = runningTotal + contribution.value
       row.stackBands[contribution.series.key] = [Math.min(runningTotal, nextTotal), Math.max(runningTotal, nextTotal)]

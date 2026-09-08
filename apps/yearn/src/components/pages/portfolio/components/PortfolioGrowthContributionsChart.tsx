@@ -20,7 +20,6 @@ import {
   getChartMonthlyTicks,
   getChartWeeklyTicks
 } from '@pages/vaults/utils/charts'
-import { LIGHT_MODE_COLORS } from '@shared/components/AllocationChart'
 import { formatUSD } from '@shared/utils'
 import type { ReactElement } from 'react'
 import { useMemo } from 'react'
@@ -46,10 +45,19 @@ type TPresentedContributionSeries = TPortfolioGrowthContributionSeries & {
 }
 
 const MAX_VAULTS = 8
-const CONTRIBUTION_COLORS = LIGHT_MODE_COLORS
-const OTHER_COLOR = '#d7e6ff'
-const INDEX_BASE_COLOR = '#e8f1ff'
-const TOTAL_COLOR = '#0657f9'
+const CONTRIBUTION_COLORS = [
+  '#46a2ff',
+  '#7bb3a8',
+  '#e1a23b',
+  '#b67ae5',
+  '#f472b6',
+  '#f97316',
+  '#14b8a6',
+  '#94adf2'
+] as const
+const OTHER_COLOR = '#94a3b8'
+const INDEX_BASE_COLOR = '#80b7f4'
+const TOTAL_COLOR = '#2578ff'
 const LINE_HEADROOM = 1.05
 const CHART_MARGIN = {
   ...CHART_WITH_AXES_MARGIN,
@@ -353,7 +361,7 @@ export function PortfolioGrowthContributionsChart({
             stroke={item.color}
             strokeWidth={0.75}
             fill={item.color}
-            fillOpacity={item.isBase ? 0.28 : item.isOther ? 0.3 : 0.45}
+            fillOpacity={0.1}
             connectNulls={mode !== 'eth'}
             tooltipType={'none'}
             isAnimationActive={false}

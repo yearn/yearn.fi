@@ -144,6 +144,13 @@ describe('buildPortfolioGrowthContributionChart', () => {
       { date: dates[1], portfolioGrowth: 31, vault_0: 20, vault_1: 5, vault_2: 4, vault_3: 1, other: 1 },
       { date: dates[2], portfolioGrowth: 56, vault_0: 30, vault_1: 15, vault_2: 6, vault_3: 3, other: 2 }
     ])
+    expect(chart.data.at(-1)?.stackBands).toEqual({
+      other: [0, 2],
+      vault_3: [2, 5],
+      vault_2: [5, 11],
+      vault_1: [11, 26],
+      vault_0: [26, 56]
+    })
     expectConservation(chart)
   })
 
@@ -276,7 +283,7 @@ describe('buildPortfolioGrowthContributionChart', () => {
     expect(chart.data.at(-1)?.stackBands).toMatchObject({
       vault_1: [-90, 0],
       vault_0: [-90, 10],
-      other: [10, 10]
+      other: [-90, -90]
     })
     expect(chart.bounds).toContain(-90)
     expect(chart.bounds).toContain(10)
@@ -319,8 +326,8 @@ describe('buildPortfolioGrowthContributionChart', () => {
     expect(chart.data.at(-1)?.stackBands).toMatchObject({
       starting_index: [0, 100],
       vault_1: [95, 100],
-      vault_0: [95, 105],
-      other: [105, 108]
+      vault_0: [98, 108],
+      other: [95, 98]
     })
     expect(chart.bounds).not.toContain(0)
     expect(chart.bounds).toContain(95)
