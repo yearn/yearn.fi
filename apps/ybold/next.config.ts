@@ -1,5 +1,4 @@
-import { createRequire } from 'node:module'
-import { dirname, resolve } from 'node:path'
+import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { loadEnvConfig } from '@next/env'
 import type { NextConfig } from 'next'
@@ -9,9 +8,8 @@ loadEnvConfig(YBOLD_ENV_DIRECTORY, process.env.NODE_ENV !== 'production', consol
 
 const DISABLED_BASE_ACCOUNT_MODULE = resolve(import.meta.dirname, 'lib/disabledBaseAccount.ts')
 const DISABLED_BASE_ACCOUNT_TURBOPACK_ALIAS = './lib/disabledBaseAccount.ts'
-const requireFromYbold = createRequire(import.meta.url)
-const YBOLD_WAGMI_MODULE = dirname(requireFromYbold.resolve('wagmi/package.json'))
-const YBOLD_WAGMI_TURBOPACK_ALIAS = './node_modules/wagmi'
+const YBOLD_WAGMI_MODULE = resolve(YBOLD_ENV_DIRECTORY, 'node_modules/wagmi')
+const YBOLD_WAGMI_TURBOPACK_ALIAS = '../../node_modules/wagmi'
 
 const securityHeaders = [
   {
@@ -34,7 +32,7 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
-  transpilePackages: ['@yearn/vault-widget'],
+  transpilePackages: ['@yearn/vault-widget', '@yearn/wallet-ui'],
   turbopack: {
     resolveAlias: {
       '@base-org/account': DISABLED_BASE_ACCOUNT_TURBOPACK_ALIAS,

@@ -69,8 +69,8 @@ describe('wallet drawer connector selection', () => {
 })
 
 describe('wallet drawer error copy', () => {
-  it('distinguishes cancellation from a missing extension', () => {
-    expect(getWalletConnectionErrorMessage(new Error('User rejected the request'))).toContain('cancelled')
+  it('silences cancellation but still reports a missing extension', () => {
+    expect(getWalletConnectionErrorMessage(new Error('User rejected the request'))).toBeUndefined()
     expect(getWalletConnectionErrorMessage(new Error('Provider not found'))).toContain('No browser wallet')
   })
 

@@ -1,0 +1,15 @@
+diff --git a/dist/esm/src/client.js b/dist/esm/src/client.js
+index 9ab84a80f7295fb77ff36a46a4ecf5edbea57e27..dc5b6250ac4ab62ed6c501ddf72ff6d68805de90 100644
+--- a/dist/esm/src/client.js
++++ b/dist/esm/src/client.js
+@@ -362,6 +362,10 @@ export class WagmiAdapter extends AdapterBlueprint {
+         })
+             .map(connector => this.getWagmiConnector(connector.id))
+             .filter(Boolean);
++        // Wagmi treats an empty connector list as "all connectors", not "none".
++        if (wagmiConnectors.length === 0) {
++            return;
++        }
+         await reconnect(this.wagmiConfig, {
+             connectors: wagmiConnectors
+         });

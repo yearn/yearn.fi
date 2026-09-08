@@ -2,6 +2,7 @@
 
 import { useWalletActivity } from '@ybold/components/WalletActivityProvider'
 import { BOLD, ST_YBOLD, YBOLD } from '@ybold/lib/contracts'
+import { appKit } from '@ybold/lib/wagmi'
 import { selectRecentYboldWalletActivities, type TYboldWalletActivity } from '@ybold/lib/walletActivity'
 import { formatWalletAddress } from '@ybold/lib/walletDrawer'
 import { useVaultUserData } from '@yearn/vault-widget/internal/hooks/useVaultUserData'
@@ -10,7 +11,7 @@ import { useVaultWidgetRuntime } from '@yearn/vault-widget/runtime'
 import Image from 'next/image'
 import { type ReactNode, type RefObject, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { formatUnits } from 'viem'
-import { useAccount, useDisconnect } from 'wagmi'
+import { useAccount } from 'wagmi'
 
 const YEARN_PORTFOLIO_URL = 'https://yearn.fi/portfolio'
 const YBOLD_PRICE_TOKENS = [{ address: BOLD, chainId: 1 }] as const
@@ -318,7 +319,7 @@ function AccountPanel({ children, panelRef }: { children: ReactNode; panelRef: R
       role="dialog"
       tabIndex={-1}
       aria-label="Wallet account"
-      className="ybold-account-panel fixed inset-x-3 top-20 z-[10000] max-h-[calc(100svh-6rem)] overflow-y-auto rounded-2xl border border-line bg-surface p-4 shadow-[0_18px_55px_rgba(17,27,77,0.16)] focus:outline-none sm:absolute sm:inset-x-auto sm:top-full sm:right-0 sm:mt-2 sm:w-80"
+      className="wallet-ui-account-panel fixed inset-x-3 top-20 z-[10000] max-h-[calc(100svh-6rem)] overflow-y-auto rounded-2xl border border-line bg-surface p-4 shadow-[0_18px_55px_rgba(17,27,77,0.16)] focus:outline-none sm:absolute sm:inset-x-auto sm:top-full sm:right-0 sm:mt-2 sm:w-80"
     >
       {children}
     </section>
@@ -327,7 +328,6 @@ function AccountPanel({ children, panelRef }: { children: ReactNode; panelRef: R
 
 export function WalletAccountMenu() {
   const { address } = useAccount()
-  const { disconnectAsync } = useDisconnect()
   const { activities } = useWalletActivity()
   const [isOpen, setIsOpen] = useState(false)
   const [isDisconnecting, setIsDisconnecting] = useState(false)
@@ -403,14 +403,14 @@ export function WalletAccountMenu() {
     setIsDisconnecting(true)
 
     try {
-      await disconnectAsync()
+      await appKit.disconnect('eip155')
       closeMenu()
     } catch {
       // Keep the menu open when the connector cannot complete disconnection.
     } finally {
       setIsDisconnecting(false)
     }
-  }, [closeMenu, disconnectAsync])
+  }, [closeMenu])
 
   if (!address) {
     return null

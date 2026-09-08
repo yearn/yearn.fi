@@ -1,14 +1,14 @@
 'use client'
 
 import { WalletAccountMenu } from '@ybold/components/WalletAccountMenu'
-import { useWalletDrawer } from '@ybold/components/WalletDrawer'
 import { YEARN_VAULT_URL } from '@ybold/lib/contracts'
+import { useWalletDrawer } from '@yearn/wallet-ui/context'
 import Image from 'next/image'
 import { useAccount } from 'wagmi'
 
 export function Header() {
   const { isConnected } = useAccount()
-  const { isOpen: isWalletDrawerOpen, toggleWalletDrawer } = useWalletDrawer()
+  const { dialogId, isOpen: isWalletDrawerOpen, toggleWalletDrawer } = useWalletDrawer()
 
   return (
     <header className="mx-auto flex w-full max-w-6xl items-center justify-between px-5 py-6 sm:px-6">
@@ -28,7 +28,7 @@ export function Header() {
           <button
             type="button"
             data-wallet-drawer-trigger
-            aria-controls="ybold-wallet-picker"
+            aria-controls={dialogId}
             aria-expanded={isWalletDrawerOpen}
             aria-haspopup="dialog"
             onClick={toggleWalletDrawer}

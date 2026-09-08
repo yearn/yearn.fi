@@ -1,61 +1,18 @@
-import { useAsyncTrigger } from '@shared/hooks/useAsyncTrigger'
-import { isIframe } from '@shared/utils/helpers'
-import type { FC, PropsWithChildren } from 'react'
-import { useAccount, useConnect, useDisconnect } from 'wagmi'
+import { type FC, type PropsWithChildren, useEffect } from 'react'
+import { useAccount, useConnect } from 'wagmi'
+import { reconcileYearnIframeWallet, yearnWalletRuntime } from '@/config/wagmi'
 
 export const IframeAutoConnect: FC<PropsWithChildren> = ({ children }) => {
   const { connector } = useAccount()
-  const { connectors, connectAsync } = useConnect()
-  const { disconnectAsync } = useDisconnect()
+  const { connectors } = useConnect()
 
-  useAsyncTrigger(async () => {
-    if (typeof window === 'undefined' || !isIframe()) {
+  useEffect(() => {
+    if (yearnWalletRuntime === 'app') {
       return
     }
 
-    try {
-      const ancestorOrigin = window.location.ancestorOrigins?.[0]
-      const isSafeParent = ancestorOrigin?.toString().includes('safe')
-
-      if (connector && connector?.id !== 'safe' && !connector?.id?.toLowerCase().includes('ledger')) {
-        if (!isSafeParent) {
-          const ledgerConnector = connectors.find((c) => c.id.toLowerCase().includes('ledger'))
-          if (ledgerConnector) {
-            await disconnectAsync({ connector })
-            const isAuth = await ledgerConnector.isAuthorized()
-            if (!isAuth) {
-              await connectAsync({ connector: ledgerConnector })
-            }
-          }
-          return
-        }
-
-        const safeConnector = connectors.find((c) => c.id === 'safe')
-        if (safeConnector) {
-          await disconnectAsync({ connector })
-          const isAuth = await safeConnector.isAuthorized()
-          if (!isAuth) {
-            await connectAsync({ connector: safeConnector })
-          }
-        }
-      } else if (!connector) {
-        if (!isSafeParent) {
-          const ledgerConnector = connectors.find((c) => c.id.toLowerCase().includes('ledger'))
-          if (ledgerConnector) {
-            await connectAsync({ connector: ledgerConnector })
-          }
-          return
-        }
-
-        const safeConnector = connectors.find((c) => c.id === 'safe')
-        if (safeConnector) {
-          await connectAsync({ connector: safeConnector })
-        }
-      }
-    } catch (error) {
-      console.error(error)
-    }
-  }, [connectAsync, connectors, disconnectAsync, connector])
+    void reconcileYearnIframeWallet().catch((error) => console.error(error))
+  }, [connector, connectors])
 
   return <>{children}</>
 }

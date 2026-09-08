@@ -1,0 +1,35 @@
+{
+  "name": "@yearn/wallet-ui",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "exports": {
+    ".": "./src/index.ts",
+    "./appkit": "./src/appkit.ts",
+    "./connectors": "./src/connectors.ts",
+    "./context": "./src/context.tsx",
+    "./ReownWalletModalOverrides": "./src/ReownWalletModalOverrides.tsx",
+    "./WalletDrawer": "./src/WalletDrawer.tsx",
+    "./styles.css": "./styles.css"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit"
+  },
+  "peerDependencies": {
+    "@reown/appkit": "1.8.23",
+    "react": "19.2.8",
+    "wagmi": "2.19.5"
+  },
+  "devDependencies": {
+    "@reown/appkit": "1.8.23",
+    "@types/react": "19.2.18",
+    "react": "19.2.8",
+    "typescript": "5.9.3",
+    "vitest": "4.1.10",
+    "wagmi": "2.19.5"
+  }
+}

@@ -2,11 +2,12 @@
 
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useWalletActivity, WalletActivityProvider } from '@ybold/components/WalletActivityProvider'
-import { useWalletDrawer, WalletDrawerProvider } from '@ybold/components/WalletDrawer'
 import { isSafeConnectorId, YBOLD_WAGMI_RECONNECT_ON_MOUNT } from '@ybold/lib/appkitConfig'
-import { wagmiConfig } from '@ybold/lib/wagmi'
+import { appKit, wagmiConfig } from '@ybold/lib/wagmi'
 import { type VaultWidgetRuntimeOverrides, VaultWidgetRuntimeProvider } from '@yearn/vault-widget'
 import { createWagmiVaultWidgetExecutionAdapter } from '@yearn/vault-widget/wagmi'
+import { useWalletDrawer } from '@yearn/wallet-ui/context'
+import { WalletDrawerProvider } from '@yearn/wallet-ui/WalletDrawer'
 import { useMemo, useState } from 'react'
 import { useAccount, WagmiProvider } from 'wagmi'
 
@@ -22,8 +23,8 @@ const VAULT_WIDGET_EXECUTION = createWagmiVaultWidgetExecutionAdapter({
 
 function WidgetHostProvider({ children }: { children: React.ReactNode }) {
   const { notifications } = useWalletActivity()
-  const { openWalletDrawer } = useWalletDrawer()
-  const { address, chainId, connector, isConnecting, status } = useAccount()
+  const { openWalletDrawer, isConnecting } = useWalletDrawer()
+  const { address, chainId, connector, status } = useAccount()
   const [slippagePercent, setSlippagePercent] = useState(0.5)
   const [autoStake, setAutoStake] = useState(true)
   const runtime = useMemo<VaultWidgetRuntimeOverrides>(
@@ -81,7 +82,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
     <WagmiProvider config={wagmiConfig} reconnectOnMount={YBOLD_WAGMI_RECONNECT_ON_MOUNT}>
       <QueryClientProvider client={queryClient}>
         <WalletActivityProvider>
-          <WalletDrawerProvider>
+          <WalletDrawerProvider appKit={appKit}>
             <WidgetHostProvider>{children}</WidgetHostProvider>
           </WalletDrawerProvider>
         </WalletActivityProvider>

@@ -29,25 +29,25 @@
     "check:client-server-boundary": "bun scripts/check-client-server-boundary.ts",
     "check:vault-widget-boundary": "bun scripts/check-vault-widget-boundary.ts",
     "tslint": "bun run tslint:yearn",
+    "tslint:wallet-ui": "bun run --cwd packages/wallet-ui typecheck",
     "tslint:yearn": "bun run --cwd apps/yearn tslint",
     "tslint:ybold": "bun run --cwd apps/ybold tslint",
     "tslint:widget": "bun run --cwd packages/vault-widget typecheck",
-    "tslint:all": "bun run tslint:widget && bun run tslint:ybold && bun run tslint:yearn",
+    "tslint:all": "bun run tslint:wallet-ui && bun run tslint:widget && bun run tslint:ybold && bun run tslint:yearn",
     "test": "bun run test:yearn",
+    "test:wallet-ui": "bun run --cwd packages/wallet-ui test",
     "test:yearn": "bun run --cwd apps/yearn test",
     "test:ybold": "bun run --cwd apps/ybold test",
     "test:widget": "bun run --cwd packages/vault-widget test",
-    "test:all": "bun run test:widget && bun run test:ybold && bun run test:yearn",
+    "test:all": "bun run test:wallet-ui && bun run test:widget && bun run test:ybold && bun run test:yearn",
+    "check:wallet-ui": "bun run tslint:wallet-ui && bun run test:wallet-ui",
     "check:yearn": "bun run tslint:yearn && bun run test:yearn && bun run build:yearn",
     "check:ybold": "bun run tslint:ybold && bun run test:ybold && bun run build:ybold",
     "check:widget": "bun run check:vault-widget-boundary && bun run tslint:widget && bun run test:widget",
-    "check:workspaces": "bun run check:widget && bun run check:ybold && bun run check:yearn",
+    "check:workspaces": "bun run check:wallet-ui && bun run check:widget && bun run check:ybold && bun run check:yearn",
     "bump": "bump",
     "clean": "bash clean.sh",
     "prepare": "husky"
-  },
-  "overrides": {
-    "qr": "0.5.5"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.7",
@@ -58,6 +58,10 @@
     "next": "16.3.0",
     "typescript": "5.9.3",
     "vitest": "4.1.10",
-    "wagmi": "2.18.2"
+    "wagmi": "2.19.5"
+  },
+  "patchedDependencies": {
+    "@reown/appkit@1.8.23": "patches/@reown%2Fappkit@1.8.23.patch",
+    "@reown/appkit-adapter-wagmi@1.8.23": "patches/@reown%2Fappkit-adapter-wagmi@1.8.23.patch"
   }
 }

@@ -1,11 +1,9 @@
-import { createRequire } from 'node:module'
-import { dirname, resolve } from 'node:path'
+import { resolve } from 'node:path'
 import nextConfig, { YBOLD_ENV_DIRECTORY } from '@ybold/next.config'
 import { describe, expect, it } from 'vitest'
 
 const DISABLED_BASE_ACCOUNT_MODULE = resolve(import.meta.dirname, 'lib/disabledBaseAccount.ts')
-const requireFromYbold = createRequire(import.meta.url)
-const YBOLD_WAGMI_MODULE = dirname(requireFromYbold.resolve('wagmi/package.json'))
+const YBOLD_WAGMI_MODULE = resolve(import.meta.dirname, '../..', 'node_modules/wagmi')
 
 describe('yBOLD Next configuration', () => {
   it('loads the shared environment from the workspace root', () => {
@@ -39,13 +37,13 @@ describe('yBOLD Next configuration', () => {
       }
     ])
     expect(nextConfig.poweredByHeader).toBe(false)
-    expect(nextConfig.transpilePackages).toEqual(['@yearn/vault-widget'])
+    expect(nextConfig.transpilePackages).toEqual(['@yearn/vault-widget', '@yearn/wallet-ui'])
     expect(nextConfig.turbopack?.resolveAlias?.['@safe-global/safe-apps-sdk']).toBe(
       '../../node_modules/@safe-global/safe-apps-sdk/dist/esm'
     )
     expect(nextConfig.turbopack?.resolveAlias).toMatchObject({
       '@base-org/account': './lib/disabledBaseAccount.ts',
-      wagmi: './node_modules/wagmi'
+      wagmi: '../../node_modules/wagmi'
     })
   })
 

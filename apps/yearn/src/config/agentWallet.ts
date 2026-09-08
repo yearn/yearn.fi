@@ -1,6 +1,5 @@
-import type { Wallet, WalletDetailsParams } from '@rainbow-me/rainbowkit'
 import { type Address, getAddress } from 'viem'
-import { createConnector } from 'wagmi'
+import { type CreateConnectorFn, createConnector } from 'wagmi'
 import { mock } from 'wagmi/connectors'
 import { env } from '@/env'
 
@@ -84,27 +83,20 @@ export function shouldAutoConnectAgentWallet(): boolean {
   return readRuntimeFlag() === true
 }
 
-export function agentWallet(): Wallet {
+export function agentWallet(): CreateConnectorFn {
   const account = resolveAgentWalletAddress()
 
-  return {
+  return createConnector((config) => ({
+    ...mock({
+      accounts: [account],
+      features: {
+        // The runtime flag below owns dev-wallet auto-connect; AppKit reconnect must not treat it as pre-authorized.
+        defaultConnected: false,
+        reconnect: true
+      }
+    })(config),
+    icon: AGENT_WALLET_ICON,
     id: AGENT_WALLET_ID,
-    name: AGENT_WALLET_NAME,
-    iconUrl: AGENT_WALLET_ICON,
-    iconBackground: '#065CF9',
-    installed: true,
-    createConnector: (walletDetails: WalletDetailsParams) =>
-      createConnector((config) => ({
-        ...mock({
-          accounts: [account],
-          features: {
-            defaultConnected: true,
-            reconnect: true
-          }
-        })(config),
-        ...walletDetails,
-        id: AGENT_WALLET_ID,
-        name: AGENT_WALLET_NAME
-      }))
-  }
+    name: AGENT_WALLET_NAME
+  }))
 }

@@ -1,6 +1,6 @@
-# Reown AppKit canary
+# Reown AppKit integration
 
-This yBOLD integration is the first, deliberately narrow wallet-connection canary. Reown AppKit owns wallet
+This yBOLD integration was the first, deliberately narrow wallet-connection canary. Reown AppKit owns wallet
 discovery, connection UI, injected and WalletConnect connections, automatic reconnect, and ordinary Safe App
 connection. Wagmi and Viem remain the execution substrate. The existing `@yearn/vault-widget` runtime,
 transaction planning, and Wagmi execution adapter are unchanged consumers of the adapter-owned Wagmi config.
@@ -11,13 +11,10 @@ transaction planning, and Wagmi execution adapter are unchanged consumers of the
 - The adapter requires Wagmi `>=2.19.5`, `@wagmi/core >=2.21.2`, and Viem `>=2.45.0`. This workspace stays on
   Wagmi 2 and pins yBOLD's compatible matrix to Wagmi `2.19.5`, Core `2.22.1`, connectors `6.2.0`, and Viem
   `2.55.11`. Wagmi itself pins the matching connectors version.
-- The shared vault widget accepts the two workspace-tested Wagmi versions (`2.18.2` through `2.19.5`) while
-  retaining `2.18.2` for its package tests and `apps/yearn`. Because Wagmi's React context is module-local, the
-  yBOLD bundlers resolve linked widget imports to yBOLD's `2.19.5` singleton. No `apps/yearn` source or manifest
-  is changed by this canary, and that app continues to resolve its declared `2.18.2` copy.
-- The root `2.18.2` development pin is a workspace-hoisting anchor, not a runtime upgrade. It prevents yBOLD's
-  newer Wagmi from silently changing `apps/yearn` or the widget's existing connector graph; yBOLD's exact
-  `2.19.5` dependency remains isolated beneath the app.
+- Yearn, yBOLD, the shared wallet UI, and the shared vault widget all use the workspace's Wagmi `2.19.5`
+  version. Wagmi's React context is module-local, so yBOLD's bundlers explicitly resolve linked workspace
+  package imports to the app's Wagmi instance. This remains necessary because Bun can materialize an app-local
+  copy even when its version matches the root copy.
 - AppKit is substantially larger than the repository's normal SDK dependency threshold. Bundlephobia reports
   approximately 902 kB minified / 264 kB gzip for AppKit and 310 kB / 85 kB for its Wagmi adapter. The canary
   replaces RainbowKit rather than shipping both wallet UIs.
@@ -36,10 +33,11 @@ transaction planning, and Wagmi execution adapter are unchanged consumers of the
   when it detects a Safe iframe.
 - Wagmi connectors `6.2.0` pulls Base Account's optional payment SDK into its connector barrel even when Base
   Account is disabled, and that SDK expects optional x402 packages that this canary deliberately does not install.
-  Both yBOLD bundlers alias the disabled Base Account boundary to a fail-closed module. This keeps Safe support
+  Both application bundlers alias the disabled Base Account boundary to a fail-closed module. This keeps Safe support
   intact while ensuring Base Account and x402 cannot become an accidental wallet or payment surface.
 - AppKit reconnect is explicitly enabled. `WagmiProvider.reconnectOnMount` is disabled so AppKit is the single
-  reconnect owner while the rest of the app continues to consume Wagmi account state.
+  reconnect owner, and the shared local picker plus account disconnect use AppKit's public headless methods so
+  reconnect history stays aligned while the rest of the app consumes Wagmi account state.
 - Email and social login, swaps, on-ramp, send, receive, activity history, analytics, pay, smart sessions, and
   Reown authentication are disabled in local configuration. AppKit 1.8.23 gives successfully fetched Reown
   Dashboard feature settings precedence over these local flags, so the same features must also be disabled on

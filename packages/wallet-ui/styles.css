@@ -1,0 +1,47 @@
+@keyframes wallet-ui-backdrop-in {
+  from {
+    background-color: transparent;
+  }
+}
+
+@keyframes wallet-ui-sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(2rem);
+  }
+}
+
+@keyframes wallet-ui-popover-in {
+  from {
+    opacity: 0;
+    transform: translateY(-0.375rem) scale(0.985);
+  }
+}
+
+.wallet-ui-backdrop {
+  animation: wallet-ui-backdrop-in 140ms ease-out both;
+}
+
+.wallet-ui-panel {
+  animation: wallet-ui-sheet-in 180ms cubic-bezier(0.22, 1, 0.36, 1) both;
+}
+
+.wallet-ui-account-panel {
+  animation: wallet-ui-popover-in 160ms cubic-bezier(0.22, 1, 0.36, 1) both;
+  transform-origin: top right;
+}
+
+@media (min-width: 640px) {
+  .wallet-ui-panel {
+    animation-name: wallet-ui-popover-in;
+    transform-origin: top right;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .wallet-ui-backdrop,
+  .wallet-ui-panel,
+  .wallet-ui-account-panel {
+    animation-duration: 1ms;
+  }
+}

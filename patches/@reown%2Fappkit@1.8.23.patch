@@ -1,0 +1,120 @@
+diff --git a/dist/esm/src/client/appkit-base-client.js b/dist/esm/src/client/appkit-base-client.js
+index f4079363dfd1f2f0fde59b2258e59b77be16fc5a..48eb219a191b3b3c2d5a8ed0447915a39955f871 100644
+--- a/dist/esm/src/client/appkit-base-client.js
++++ b/dist/esm/src/client/appkit-base-client.js
+@@ -5,6 +5,20 @@ import { setColorTheme, setThemeVariables } from '@reown/appkit-ui';
+ import { CaipNetworksUtil, ErrorUtil, HelpersUtil, LoggerUtil, TokenUtil, ConstantsUtil as UtilConstantsUtil } from '@reown/appkit-utils';
+ import { UniversalAdapter } from '../universal-adapter/client.js';
+ import { ConfigUtil } from '../utils/ConfigUtil.js';
++// Temporary development diagnostics: stage names and timings only, never wallet/RPC payloads.
++async function traceWalletStartup(stage, operation) {
++    if (process.env.NODE_ENV !== 'development') {
++        return operation();
++    }
++    const startedAt = performance.now();
++    console.info('[wallet-connect]', { scope: 'startup', stage, event: 'started', atMs: Math.round(startedAt) });
++    try {
++        return await operation();
++    }
++    finally {
++        console.info('[wallet-connect]', { scope: 'startup', stage, event: 'settled', elapsedMs: Math.round(performance.now() - startedAt) });
++    }
++}
+ export class AppKitBaseClient {
+     constructor(options) {
+         this.chainNamespaces = [];
+@@ -196,6 +210,7 @@ export class AppKitBaseClient {
+         this.chainNamespaces = this.getChainNamespacesSet(options.adapters, this.caipNetworks);
+         this.defaultCaipNetwork = this.extendDefaultCaipNetwork(options);
+         this.chainAdapters = this.createAdapters(options.adapters);
++        this.walletsReadyPromise = this.initializeWallets(options);
+         this.readyPromise = this.initialize(options);
+     }
+     getChainNamespacesSet(adapters, caipNetworks) {
+@@ -208,10 +223,10 @@ export class AppKitBaseClient {
+         const networkNamespaces = caipNetworks?.map(network => network.chainNamespace);
+         return [...new Set(networkNamespaces)];
+     }
+-    async initialize(options) {
++    async initializeWallets(options) {
+         this.initializeProjectSettings(options);
+         this.initControllers(options);
+-        await this.initChainAdapters();
++        await traceWalletStartup('initialize adapters', () => this.initChainAdapters());
+         this.sendInitializeEvent(options);
+         if (options.features?.headless && !ConnectorUtil.hasInjectedConnectors()) {
+             ApiController.prefetch({
+@@ -222,12 +237,15 @@ export class AppKitBaseClient {
+             });
+         }
+         if (OptionsController.state.enableReconnect) {
+-            await this.syncExistingConnection();
+-            await this.syncAdapterConnections();
++            await traceWalletStartup('restore active session', () => this.syncExistingConnection());
++            await traceWalletStartup('restore previous connectors', () => this.syncAdapterConnections());
+         }
+         else {
+-            await this.unSyncExistingConnection();
++            await traceWalletStartup('clear previous sessions', () => this.unSyncExistingConnection());
+         }
++    }
++    async initialize(options) {
++        await this.walletsReadyPromise;
+         if (!options.basic && !options.manualWCControl) {
+             this.remoteFeatures = await ConfigUtil.fetchRemoteFeatures(options);
+         }
+@@ -995,8 +1013,8 @@ export class AppKitBaseClient {
+         if (!adapter) {
+             throw new Error('adapter not found');
+         }
+-        await adapter.syncConnectors();
+-        await this.createUniversalProviderForAdapter(namespace);
++        await traceWalletStartup(`discover connectors (${namespace})`, () => adapter.syncConnectors());
++        await traceWalletStartup(`initialize WalletConnect (${namespace})`, () => this.createUniversalProviderForAdapter(namespace));
+     }
+     async initChainAdapters() {
+         await Promise.all(this.chainNamespaces.map(async (namespace) => {
+@@ -1121,9 +1139,9 @@ export class AppKitBaseClient {
+         }
+     }
+     async createUniversalProviderForAdapter(chainNamespace) {
+-        await this.getUniversalProvider();
++        await traceWalletStartup('create WalletConnect provider', () => this.getUniversalProvider());
+         if (this.universalProvider) {
+-            await this.chainAdapters?.[chainNamespace]?.setUniversalProvider?.(this.universalProvider);
++            await traceWalletStartup('register WalletConnect provider', () => this.chainAdapters?.[chainNamespace]?.setUniversalProvider?.(this.universalProvider));
+         }
+     }
+     // -- Connection Sync ---------------------------------------------------
+@@ -1461,8 +1479,8 @@ export class AppKitBaseClient {
+         }
+         await this.updateNativeBalance(params.address, params.chainId, params.chainNamespace);
+     }
+-    async ready() {
+-        await this.readyPromise;
++    async ready({ walletsOnly = false } = {}) {
++        await (walletsOnly ? this.walletsReadyPromise : this.readyPromise);
+     }
+     async updateNativeBalance(address, chainId, namespace) {
+         const adapter = this.getAdapter(namespace);
+diff --git a/dist/types/src/client/appkit-base-client.d.ts b/dist/types/src/client/appkit-base-client.d.ts
+index 22a496a0bd589215abd53aab2f80e746791fd6fc..fb401a44e121fc1ff13705e175065384b1d78eba 100644
+--- a/dist/types/src/client/appkit-base-client.d.ts
++++ b/dist/types/src/client/appkit-base-client.d.ts
+@@ -36,6 +36,7 @@ export declare abstract class AppKitBaseClient {
+     version: SdkVersion | AppKitSdkVersion;
+     reportedAlertErrors: Record<string, boolean>;
+     private readyPromise?;
++    private walletsReadyPromise?;
+     constructor(options: AppKitOptionsWithSdk);
+     private getChainNamespacesSet;
+     protected initialize(options: AppKitOptionsWithSdk): Promise<void>;
+@@ -125,7 +126,7 @@ export declare abstract class AppKitBaseClient {
+         chainId: string | number | undefined;
+         chainNamespace: ChainNamespace;
+     }): Promise<void>;
+-    ready(): Promise<void>;
++    ready(options?: { walletsOnly?: boolean }): Promise<void>;
+     updateNativeBalance(address: string, chainId: string | number, namespace: ChainNamespace): Promise<AdapterBlueprint.GetBalanceResult | undefined>;
+     protected initializeUniversalAdapter(): Promise<void>;
+     protected listenWalletConnect(): void;

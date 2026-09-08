@@ -1,13 +1,13 @@
 /* biome-ignore format: preserve legacy style conventions */
-/* External Dependencies */
-/** biome-ignore-all lint/complexity/noImportantStyles: overriding some library styles */
-@import '@rainbow-me/rainbowkit/styles.css';
 /* Tailwind CSS */
 @import 'tailwindcss';
+/* Shared wallet surfaces */
+@import '@yearn/wallet-ui/styles.css';
 /* Theme System */
 @import './src/styles/themes.css';
 /* Workspace sources */
 @source '../../packages/vault-widget/src';
+@source '../../packages/wallet-ui/src';
 
 @theme {
   /* Font families */

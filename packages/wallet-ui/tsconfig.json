@@ -1,0 +1,16 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "baseUrl": ".",
+    "incremental": false,
+    "noEmit": true,
+    "paths": {
+      "@yearn/wallet-ui": ["src/index.ts"],
+      "@yearn/wallet-ui/*": ["src/*"]
+    },
+    "plugins": [],
+    "rootDir": "src"
+  },
+  "include": ["src/**/*.ts", "src/**/*.tsx"],
+  "exclude": ["node_modules"]
+}

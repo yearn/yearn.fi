@@ -14,7 +14,8 @@
     "@headlessui/react": "2.2.10",
     "@next/env": "16.3.0",
     "@plausible-analytics/tracker": "0.4.5",
-    "@rainbow-me/rainbowkit": "2.2.11",
+    "@reown/appkit": "1.8.23",
+    "@reown/appkit-adapter-wagmi": "1.8.23",
     "@react-hookz/web": "26.1.0",
     "@safe-global/safe-apps-sdk": "9.1.0",
     "@tanstack/query-core": "5.101.4",
@@ -23,6 +24,7 @@
     "@upstash/redis": "1.38.2",
     "@wagmi/core": "2.22.1",
     "@yearn/vault-widget": "workspace:*",
+    "@yearn/wallet-ui": "workspace:*",
     "dayjs": "1.11.13",
     "framer-motion": "12.42.2",
     "next": "16.3.0",
@@ -34,7 +36,7 @@
     "recharts": "2.15.4",
     "use-indexeddb": "2.0.2",
     "viem": "2.55.11",
-    "wagmi": "2.18.2",
+    "wagmi": "2.19.5",
     "zod": "4.4.3"
   },
   "devDependencies": {

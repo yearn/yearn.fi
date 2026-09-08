@@ -1,16 +1,21 @@
 import { usePlausible } from '@hooks/usePlausible'
-import { useAccountModal, useChainModal, useConnectModal } from '@rainbow-me/rainbowkit'
 import type { TAddress } from '@shared/types/address'
 import { fetchClusterName, getClusterImageUrl, isAddress, isSafeConnectorId } from '@shared/utils'
-import { isIframe } from '@shared/utils/helpers'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import { toAddress } from '@shared/utils/tools.address'
+import { useWalletDrawer } from '@yearn/wallet-ui/context'
 import type { ReactElement } from 'react'
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { mainnet } from 'viem/chains'
-import { useAccount, useConnect, useDisconnect, useEnsName } from 'wagmi'
+import { useAccount, useConnect, useEnsName } from 'wagmi'
 import { AGENT_WALLET_ID, shouldAutoConnectAgentWallet } from '@/config/agentWallet'
-import { resolveConnectedCanonicalChainId, resolveExecutionChainId } from '@/config/tenderly'
+import { resolveConnectedCanonicalChainId } from '@/config/tenderly'
+import {
+  connectYearnWallet,
+  disconnectYearnWallet,
+  requestYearnIframeWalletConnection,
+  yearnWalletRuntime
+} from '@/config/wagmi'
 
 type TWeb3Context = {
   address: TAddress | undefined
@@ -19,7 +24,6 @@ type TWeb3Context = {
   chainID: number
   isActive: boolean
   isWalletSafe: boolean
-  isWalletLedger: boolean
   isUserConnecting: boolean
   isIdentityLoading: boolean
   openLoginModal: () => void
@@ -33,7 +37,6 @@ const defaultState: TWeb3Context = {
   chainID: 1,
   isActive: false,
   isWalletSafe: false,
-  isWalletLedger: false,
   isUserConnecting: false,
   isIdentityLoading: false,
   openLoginModal: (): void => undefined,
@@ -44,15 +47,12 @@ const Web3Context = createContext<TWeb3Context>(defaultState)
 
 export const Web3ContextApp = (props: { children: ReactElement }): ReactElement => {
   const { address, isConnecting, isConnected, connector, chain } = useAccount()
-  const { connectors, connectAsync } = useConnect()
-  const { disconnect } = useDisconnect()
+  const { connectors } = useConnect()
   const { data: ensName, isLoading: isEnsLoading } = useEnsName({
     address: isConnected ? address : undefined,
     chainId: mainnet.id
   })
-  const { openAccountModal } = useAccountModal()
-  const { openConnectModal } = useConnectModal()
-  const { openChainModal } = useChainModal()
+  const { isConnecting: isWalletUiConnecting, openWalletDrawer } = useWalletDrawer()
   const trackEvent = usePlausible()
   const [clusters, setClusters] = useState<{ name: string; avatar: string } | undefined>(undefined)
   const [isFetchingClusters, setIsFetchingClusters] = useState(false)
@@ -98,63 +98,41 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
 
     hasAutoConnectedAgentWalletRef.current = true
     hasUserRequestedConnectionRef.current = true
-    void connectAsync({
-      connector: agentConnector,
-      chainId: resolveExecutionChainId(chainID) ?? chainID
-    }).catch((error) => {
+    void connectYearnWallet(agentConnector).catch((error) => {
       hasAutoConnectedAgentWalletRef.current = false
       hasUserRequestedConnectionRef.current = false
       console.error(error)
     })
-  }, [chainID, connectAsync, connectors, isConnected, isConnecting])
+  }, [connectors, isConnected, isConnecting])
 
   const onDesactivate = useCallback((): void => {
     trackEvent(PLAUSIBLE_EVENTS.DISCONNECT_WALLET, {
       props: { chainID: String(chainID) }
     })
-    disconnect()
-  }, [disconnect, trackEvent, chainID])
+    hasUserRequestedConnectionRef.current = false
+    void disconnectYearnWallet().catch((error) => console.error(error))
+  }, [chainID, trackEvent])
 
   const openLoginModal = useCallback(async (): Promise<void> => {
-    if (isConnected && connector && address) {
-      if (openAccountModal) {
-        openAccountModal()
-      } else if (openChainModal) {
-        openChainModal()
-      } else {
-        console.warn('Impossible to open account modal')
-      }
-    } else {
-      const ledgerConnector = connectors.find((c) => c.id.toLowerCase().includes('ledger'))
-      if (isIframe() && ledgerConnector) {
-        hasUserRequestedConnectionRef.current = true
-        await connectAsync({
-          connector: ledgerConnector,
-          chainId: resolveExecutionChainId(chainID) ?? chainID
-        })
-        return
-      }
-
-      if (openConnectModal) {
-        hasUserRequestedConnectionRef.current = true
-        openConnectModal()
-      } else if (openChainModal) {
-        openChainModal()
-      } else {
-        console.warn('Impossible to open login modal')
-      }
+    if (isConnected) {
+      return
     }
-  }, [
-    address,
-    connectAsync,
-    connector,
-    connectors,
-    chainID,
-    isConnected,
-    openAccountModal,
-    openChainModal,
-    openConnectModal
-  ])
+
+    hasUserRequestedConnectionRef.current = true
+    if (yearnWalletRuntime === 'app') {
+      openWalletDrawer()
+      return
+    }
+
+    try {
+      if (!(await requestYearnIframeWalletConnection())) {
+        hasUserRequestedConnectionRef.current = false
+      }
+    } catch (error) {
+      hasUserRequestedConnectionRef.current = false
+      console.error(error)
+    }
+  }, [isConnected, openWalletDrawer])
 
   useEffect(() => {
     if (!isConnected || !isAddress(address)) {
@@ -234,11 +212,10 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
     }
   }, [address, ensName, isConnected])
 
-  const isUserConnecting = isConnecting && hasUserRequestedConnectionRef.current
+  const isUserConnecting = !isConnected && (yearnWalletRuntime === 'app' ? isWalletUiConnecting : isConnecting)
 
   const isIdentityLoading = Boolean((isEnsLoading && !!address) || isFetchingClusters)
   const isWalletSafe = isSafeConnectorId(connector?.id)
-  const isWalletLedger = connector?.id.toLowerCase().includes('ledger') ?? false
 
   const contextValue = useMemo(
     () => ({
@@ -248,7 +225,6 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
       chainID,
       isActive: isConnected,
       isWalletSafe,
-      isWalletLedger,
       isUserConnecting,
       isIdentityLoading,
       openLoginModal,
@@ -261,7 +237,6 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
       chainID,
       isConnected,
       isWalletSafe,
-      isWalletLedger,
       isUserConnecting,
       isIdentityLoading,
       openLoginModal,
