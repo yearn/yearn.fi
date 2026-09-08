@@ -1,3 +1,4 @@
+import { awaitTransactionRefresh } from '@yearn/vault-widget/internal/utils/transactionLifecycle'
 import { type Address, type Hash, isHash, type TransactionReceipt } from 'viem'
 import type {
   VaultWidgetExecutionAdapter,
@@ -269,7 +270,7 @@ async function executePlanStep(
 
   if (step.kind === 'refresh') {
     params.onState?.({ status: 'refreshing', outcome, step, stepIndex, stepCount })
-    await runOperation(params, { outcome, step, stepIndex, stepCount }, params.refresh)
+    await runOperation(params, { outcome, step, stepIndex, stepCount }, () => awaitTransactionRefresh(params.refresh))
     return executePlanStep(params, stepIndex + 1, outcome)
   }
 

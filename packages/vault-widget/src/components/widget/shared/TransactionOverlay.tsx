@@ -1,6 +1,10 @@
 import { useQuery } from '@tanstack/react-query'
 import { getPublicClient } from '@wagmi/core'
-import type { VaultWidgetTransactionPlan } from '@yearn/vault-widget/headless'
+import {
+  awaitTransactionRefresh,
+  getTransactionConfirmations,
+  type VaultWidgetTransactionPlan
+} from '@yearn/vault-widget/headless'
 import { Button } from '@yearn/vault-widget/internal/components/shared/Button'
 import {
   executePlannedStyledWidgetTransaction,
@@ -296,7 +300,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     submittedExecutionChainId
   )
   // Fast chains like Base need extra confirmations.
-  const confirmations = submittedCanonicalChainId === 8453 ? 2 : 1
+  const confirmations = getTransactionConfirmations(submittedCanonicalChainId)
 
   // Track the step that was just executed (for showing success messages)
   const executedStepRef = useRef<TransactionStep | null>(null)
@@ -1410,7 +1414,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
 
           if (completedAllSteps && onBeforeSuccess) {
             try {
-              await onBeforeSuccess(capturedStep?.id ?? '')
+              await awaitTransactionRefresh(() => onBeforeSuccess(capturedStep?.id ?? ''))
             } catch (error) {
               console.warn('[TransactionOverlay] Failed to refresh source-chain balances after confirmation', error)
             }
@@ -1450,7 +1454,14 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
 
         if (completedAllSteps && onBeforeSuccess) {
           setOverlayState('refreshing')
-          await onBeforeSuccess(capturedStep?.id ?? '')
+          try {
+            await awaitTransactionRefresh(() => onBeforeSuccess(capturedStep?.id ?? ''))
+          } catch (error) {
+            setPlannedFailureKind('confirmed-refresh')
+            setErrorMessage(error instanceof Error ? error.message : 'Balance refresh failed')
+            setOverlayState('error')
+            return
+          }
           await new Promise((resolve) => setTimeout(resolve, 500))
           finalizeSuccessState(completedAllSteps, capturedStep)
           if (capturedStep?.showConfetti) {
@@ -1583,10 +1594,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     }
   }, [isOpen, overlayState, receipt.data?.transactionHash, step?.id, step?.prepare.refetch, isStepReady])
 
-  const transactionErrorPresentation = getPlannedTransactionErrorPresentation(
-    plan ? plannedFailureKind : 'pre-submission',
-    errorMessage
-  )
+  const transactionErrorPresentation = getPlannedTransactionErrorPresentation(plannedFailureKind, errorMessage)
   const displayedErrorPresentation = failedStepSuccessId
     ? {
         title: 'Next step unavailable',

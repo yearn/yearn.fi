@@ -34,10 +34,9 @@ export function isTrackableEnsoBridgeNotification(notification: TNotification): 
 
 export function selectNextEnsoBridgeNotification(notifications: TNotification[]): TNotification | undefined {
   return notifications.filter(isTrackableEnsoBridgeNotification).toSorted((left, right) => {
-    const recencyDifference =
-      (right.sourceConfirmedAt ?? right.createdAt ?? right.id ?? 0) -
-      (left.sourceConfirmedAt ?? left.createdAt ?? left.id ?? 0)
-    return recencyDifference || (left.lastBridgeCheckAt ?? 0) - (right.lastBridgeCheckAt ?? 0)
+    // Poll the least recently checked record, including historical unfinished transfers.
+    const checkedDifference = (left.lastBridgeCheckAt ?? 0) - (right.lastBridgeCheckAt ?? 0)
+    return checkedDifference || (left.id ?? 0) - (right.id ?? 0)
   })[0]
 }
 

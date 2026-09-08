@@ -79,13 +79,13 @@ describe('Enso bridge status tracking', () => {
     })
   })
 
-  it('keeps the newest active bridge in front of historical unfinished entries', () => {
+  it('checks the least recently polled bridge before newer transfers', () => {
     expect(
       selectNextEnsoBridgeNotification([
         bridgeNotification({ id: 1, sourceConfirmedAt: 10, lastBridgeCheckAt: 0 }),
         bridgeNotification({ id: 2, sourceConfirmedAt: 20, lastBridgeCheckAt: 30 })
       ])?.id
-    ).toBe(2)
+    ).toBe(1)
   })
 
   it('resumes an older bridge after the newest bridge settles', () => {
@@ -152,4 +152,17 @@ describe('Enso bridge status tracking', () => {
       bridgeCheckFailureStartedAt: undefined
     })
   })
+})
+
+it('rotates across unfinished bridges as each check is recorded', () => {
+  const records = [
+    bridgeNotification({ id: 1, lastBridgeCheckAt: 10 }),
+    bridgeNotification({ id: 2, lastBridgeCheckAt: 20 })
+  ]
+  expect(selectNextEnsoBridgeNotification(records)?.id).toBe(1)
+  expect(
+    selectNextEnsoBridgeNotification(
+      records.map((entry) => (entry.id === 1 ? { ...entry, lastBridgeCheckAt: 30 } : entry))
+    )?.id
+  ).toBe(2)
 })

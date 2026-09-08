@@ -1,5 +1,6 @@
 import {
   buildTransactionPlan,
+  TRANSACTION_REFRESH_TIMEOUT_MS,
   type VaultWidgetExecutionAdapter,
   type VaultWidgetTransactionIntent
 } from '@yearn/vault-widget/headless'
@@ -356,4 +357,28 @@ describe('executePlannedStyledWidgetTransaction', () => {
       title: 'Transaction failed'
     })
   })
+})
+
+it('ends a hung refresh with confirmed evidence and no resubmission action', async () => {
+  vi.useFakeTimers()
+  try {
+    const adapter = createAdapter()
+    const notifications = createNotifications()
+    const resultPromise = executePlannedStyledWidgetTransaction({
+      account,
+      adapter,
+      notification,
+      notifications,
+      plan: buildTransactionPlan({ intent, connectedChainId: 1 }),
+      refresh: () => new Promise<void>(() => undefined)
+    })
+    await vi.advanceTimersByTimeAsync(TRANSACTION_REFRESH_TIMEOUT_MS)
+    const result = await resultPromise
+    expect(result).toMatchObject({ failureKind: 'confirmed-refresh', hash, status: 'error' })
+    expect(notifications.update).toHaveBeenCalledWith(expect.objectContaining({ status: 'success', receipt }))
+    expect(adapter.execute).toHaveBeenCalledTimes(1)
+    expect(getPlannedTransactionErrorPresentation('confirmed-refresh').canRetry).toBe(false)
+  } finally {
+    vi.useRealTimers()
+  }
 })

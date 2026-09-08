@@ -61,7 +61,6 @@ export type TNotificationsContext = {
   notificationStatus: TNotificationStatus | null
   isLoading: boolean
   error: string | null
-  setNotificationStatus: (value: TNotificationStatus | null) => void
   deleteByID: (id: number) => Promise<void>
   updateEntry: (value: Partial<TNotification>, id: number) => Promise<void>
   addNotification: (value: TNotification) => Promise<number>

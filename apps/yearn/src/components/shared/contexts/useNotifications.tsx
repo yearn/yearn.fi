@@ -1,23 +1,23 @@
-import { useAsyncTrigger } from '@shared/hooks/useAsyncTrigger'
-import type { TNotification, TNotificationStatus, TNotificationsContext } from '@shared/types/notifications'
-import type React from 'react'
-import { createContext, startTransition, useCallback, useContext, useMemo, useState } from 'react'
-import { useIndexedDBStore } from 'use-indexeddb'
-import { applyNotificationUpdate } from './notificationTransitions'
+import { applyNotificationUpdate } from '@shared/contexts/notificationTransitions'
 import {
   appendCachedNotification,
   filterNotificationsForAddress,
   isNotificationForAddress,
   mergeCachedNotificationEntry
-} from './useNotifications.helpers'
-import { useWeb3 } from './useWeb3'
+} from '@shared/contexts/useNotifications.helpers'
+import { useWeb3 } from '@shared/contexts/useWeb3'
+import { useAsyncTrigger } from '@shared/hooks/useAsyncTrigger'
+import type { TNotification, TNotificationsContext } from '@shared/types/notifications'
+import { NOTIFICATION_INDICATOR_WINDOW_SECONDS, selectNotificationStatus } from '@shared/utils/notificationLifecycle'
+import type React from 'react'
+import { createContext, startTransition, useCallback, useContext, useEffect, useMemo, useState } from 'react'
+import { useIndexedDBStore } from 'use-indexeddb'
 
 const defaultProps: TNotificationsContext = {
   cachedEntries: [],
   notificationStatus: null,
   isLoading: true,
   error: null,
-  setNotificationStatus: (): void => undefined,
   deleteByID: async (): Promise<void> => undefined,
   updateEntry: async (): Promise<void> => undefined,
   addNotification: async (): Promise<number> => 0
@@ -31,10 +31,23 @@ export const WithNotifications = ({ children }: { children: React.ReactElement }
   const [isLoading, setIsLoading] = useState<boolean>(true)
   const [error, setError] = useState<string | null>(null)
 
-  /**************************************************************************
-   * State that is used to store latest added/updated notification status
-   *************************************************************************/
-  const [notificationStatus, setNotificationStatus] = useState<TNotificationStatus | null>(null)
+  const [clockSeconds, setNowSeconds] = useState(() => Date.now() / 1000)
+  const nowSeconds = Math.max(clockSeconds, Date.now() / 1000)
+  // Filter at render time as well as hydration, so changing wallets cannot expose the previous wallet's records.
+  const visibleEntries = useMemo(() => filterNotificationsForAddress(cachedEntries, address), [cachedEntries, address])
+  const notificationStatus = selectNotificationStatus(visibleEntries, nowSeconds)
+  const nextExpiry = visibleEntries.reduce((next, entry) => {
+    const timestamp = entry.timeFinished ?? entry.createdAt
+    if (timestamp === undefined || (entry.status !== 'success' && entry.status !== 'error')) return next
+    const expiry = timestamp + NOTIFICATION_INDICATOR_WINDOW_SECONDS
+    return expiry > nowSeconds ? Math.min(next, expiry) : next
+  }, Number.POSITIVE_INFINITY)
+  // Wall-clock expiration needs a timer even when IndexedDB and React receive no new events.
+  useEffect(() => {
+    if (!Number.isFinite(nextExpiry)) return
+    const timer = setTimeout(() => setNowSeconds(Date.now() / 1000), Math.max(0, nextExpiry * 1000 - Date.now()))
+    return () => clearTimeout(timer)
+  }, [nextExpiry])
 
   const { add, getAll, update, deleteByID, getByID } = useIndexedDBStore<TNotification>('notifications')
 
@@ -70,8 +83,7 @@ export const WithNotifications = ({ children }: { children: React.ReactElement }
    * 1. Retrieves the existing notification from the database using the provided ID.
    * 2. If the notification exists, it merges the new data with the existing notification.
    * 3. Updates the notification in the database.
-   * 4. Increments the entryNonce to trigger a refresh of the cached entries.
-   * 5. Updates the notificationStatus with the new status, if provided.
+   * 4. Merges the saved record into the cache; the indicator derives from that cache.
    *
    * This function is memoized using useCallback to optimize performance.
    ************************************************************************************************/
@@ -89,7 +101,6 @@ export const WithNotifications = ({ children }: { children: React.ReactElement }
                 ? mergeCachedNotificationEntry(currentEntries, id, updatedNotification)
                 : currentEntries.filter((currentEntry) => currentEntry.id !== id)
             )
-            setNotificationStatus(entry.status ? updatedNotification.status : null)
           })
         } else {
           throw new Error(`Notification with id ${id} not found`)
@@ -111,7 +122,6 @@ export const WithNotifications = ({ children }: { children: React.ReactElement }
           if (isNotificationForAddress(notification, address)) {
             setCachedEntries((currentEntries) => appendCachedNotification(currentEntries, { ...notification, id }))
           }
-          setNotificationStatus(notification.status)
         })
         return id
       } catch (error) {
@@ -149,16 +159,15 @@ export const WithNotifications = ({ children }: { children: React.ReactElement }
    *************************************************************************/
   const contextValue = useMemo(
     (): TNotificationsContext => ({
-      cachedEntries,
+      cachedEntries: visibleEntries,
       isLoading,
       error,
       deleteByID: deleteByIDWithErrorHandling,
       updateEntry,
       addNotification,
-      notificationStatus,
-      setNotificationStatus
+      notificationStatus
     }),
-    [cachedEntries, isLoading, error, deleteByIDWithErrorHandling, updateEntry, addNotification, notificationStatus]
+    [visibleEntries, isLoading, error, deleteByIDWithErrorHandling, updateEntry, addNotification, notificationStatus]
   )
 
   return <NotificationsContext.Provider value={contextValue}>{children}</NotificationsContext.Provider>
