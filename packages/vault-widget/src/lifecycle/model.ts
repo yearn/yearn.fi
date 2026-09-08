@@ -9,6 +9,7 @@ export type TTransactionRecord = {
   flowId: string
   attemptId: string
   stepId: string
+  sequence?: { index: number; count: number; label: string }
   intentKey: string
   owner: Address
   createdAt: number // Unix milliseconds throughout the lifecycle API.

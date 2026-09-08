@@ -17,6 +17,7 @@ export function LifecycleTransactionOverlay(props: TransactionOverlayProps) {
   const [reviewed] = useState(() => ({
     plan: structuredClone(props.plan!),
     step: props.step,
+    steps: props.planSteps,
     owner: runtime.wallet.address,
     commandId: crypto.randomUUID()
   }))
@@ -26,7 +27,15 @@ export function LifecycleTransactionOverlay(props: TransactionOverlayProps) {
   const flow = state.flows.find((item) => item.id === flowId)
   const record = state.records.find((item) => item.id === flow?.recordId)
   const view = record ? selectTransaction(record) : undefined
-  const success = view?.outcome === 'success'
+  const step = reviewed.steps?.[flow?.stepId ?? reviewed.plan.steps[0]?.id] ?? reviewed.step
+  const finalStepId = reviewed.plan.intent.calls.at(-1)?.id ?? ''
+  const finalStep = reviewed.steps?.[finalStepId] ?? reviewed.step
+  const isFinalRecord = !record?.sequence || record.sequence.index === record.sequence.count - 1
+  const success = view?.outcome === 'success' && isFinalRecord
+  const isPaused = flow?.phase === 'paused' && view?.outcome === 'success'
+  const needsReview = Boolean(
+    record?.source && view?.outcome === 'success' && !isFinalRecord && flow?.phase === 'pending'
+  )
   const refreshing = success && (record?.refresh === 'idle' || record?.refresh === 'pending')
   const callbacks = useRef(props)
   callbacks.current = props
@@ -57,7 +66,10 @@ export function LifecycleTransactionOverlay(props: TransactionOverlayProps) {
       commandId: reviewed.commandId,
       owner: reviewed.owner,
       plan: reviewed.plan,
-      display: reviewed.step?.notification,
+      display: finalStep?.notification,
+      displayByStep: reviewed.steps
+        ? Object.fromEntries(Object.entries(reviewed.steps).map(([id, step]) => [id, step.notification]))
+        : undefined,
       validate: raw
         ? async () => {
             if (
@@ -75,7 +87,7 @@ export function LifecycleTransactionOverlay(props: TransactionOverlayProps) {
             })
           }
         : undefined,
-      refresh: props.onBeforeSuccess ? () => props.onBeforeSuccess!(reviewed.step?.id ?? '') : undefined
+      refresh: props.onBeforeSuccess ? () => props.onBeforeSuccess!(finalStep?.id ?? '') : undefined
     })
     activeId.current = id
     setFlowId(id)
@@ -91,12 +103,9 @@ export function LifecycleTransactionOverlay(props: TransactionOverlayProps) {
       runtime.wallet.address?.toLowerCase() !== reviewed.owner?.toLowerCase()
     )
       return
-    if (service.claimEffect(flowId, 'step')) void callbacks.current.onStepSuccess?.(reviewed.step?.id ?? '')
-    if (reviewed.step?.showConfetti && service.claimEffect(flowId, 'confetti')) reward()
-    if (
-      !props.deferOnAllCompleteUntilClose &&
-      (!props.deferOnAllCompleteUntilConfettiEnd || !reviewed.step?.showConfetti)
-    )
+    if (service.claimEffect(flowId, 'step')) void callbacks.current.onStepSuccess?.(finalStep?.id ?? '')
+    if (finalStep?.showConfetti && service.claimEffect(flowId, 'confetti')) reward()
+    if (!props.deferOnAllCompleteUntilClose && (!props.deferOnAllCompleteUntilConfettiEnd || !finalStep?.showConfetti))
       complete()
   }, [
     success,
@@ -122,29 +131,36 @@ export function LifecycleTransactionOverlay(props: TransactionOverlayProps) {
   const unresolved = view?.outcome === 'unknown' || flow?.phase === 'unknown'
   const failed = view?.outcome === 'error' || flow?.phase === 'blocked' || flow?.phase === 'rejected'
   const recovering = !record && (!flow || flow.phase === 'confirming') && state.history !== 'ready'
-  const title = recovering
-    ? 'Checking transaction history'
-    : success
-      ? refreshing
-        ? 'Transaction confirmed'
-        : (reviewed.step?.successTitle ?? 'Transaction confirmed')
-      : (view?.label ??
-        (flow?.phase === 'rejected'
-          ? 'Transaction cancelled'
-          : flow?.phase === 'blocked'
-            ? 'Review transaction'
-            : unresolved
-              ? 'Check your wallet'
-              : 'Confirm in your wallet'))
-  const detail = recovering
-    ? state.history === 'unavailable'
-      ? 'Transaction history is unavailable. Retrying before requesting your wallet.'
-      : 'Checking for unfinished transactions before requesting your wallet.'
-    : success
-      ? refreshing
-        ? 'Updating balances...'
-        : reviewed.step?.successMessage
-      : (view?.detail ?? flow?.error ?? (view ? 'Waiting for confirmation...' : reviewed.step?.confirmMessage))
+  const title =
+    isPaused || needsReview
+      ? 'Ready for the next step'
+      : recovering
+        ? 'Checking transaction history'
+        : success
+          ? refreshing
+            ? 'Transaction confirmed'
+            : (finalStep?.successTitle ?? 'Transaction confirmed')
+          : ((flow?.phase === 'confirming' ? undefined : view?.label) ??
+            (flow?.phase === 'rejected'
+              ? 'Transaction cancelled'
+              : flow?.phase === 'blocked'
+                ? 'Review transaction'
+                : unresolved
+                  ? 'Check your wallet'
+                  : 'Confirm in your wallet'))
+  const detail = isPaused
+    ? flow?.error
+    : needsReview
+      ? 'This transaction confirmed. Close and review the remaining action to continue.'
+      : recovering
+        ? state.history === 'unavailable'
+          ? 'Transaction history is unavailable. Retrying before requesting your wallet.'
+          : 'Checking for unfinished transactions before requesting your wallet.'
+        : success
+          ? refreshing
+            ? 'Updating balances...'
+            : finalStep?.successMessage
+          : (view?.detail ?? flow?.error ?? (record ? 'Waiting for confirmation...' : step?.confirmMessage))
   return (
     <div
       className="absolute inset-0 z-50 flex flex-col rounded-lg bg-surface p-6 text-center"
@@ -164,6 +180,11 @@ export function LifecycleTransactionOverlay(props: TransactionOverlayProps) {
       >
         <span id={confettiId} />
         {success && !refreshing ? <AnimatedCheckmark isVisible /> : failed ? <ErrorIcon /> : <Spinner />}
+        {(flow?.stepCount ?? 1) > 1 ? (
+          <p className="mt-4 text-sm text-text-secondary">
+            Step {(flow?.stepIndex ?? 0) + 1} of {flow?.stepCount}: {flow?.stepLabel}
+          </p>
+        ) : null}
         <h3 className="mb-2 mt-6 text-lg font-semibold text-text-primary">{title}</h3>
         <p className="mb-4 whitespace-pre-line text-sm text-text-secondary">{detail}</p>
         {record?.storageError ? <p className="mb-4 text-sm text-text-secondary">{record.storageError}</p> : null}
@@ -178,6 +199,11 @@ export function LifecycleTransactionOverlay(props: TransactionOverlayProps) {
             View on block explorer
           </a>
         ) : null}
+        {isPaused ? (
+          <Button className="mb-3 w-full max-w-xs" onClick={() => service.continue(flowId)}>
+            Continue
+          </Button>
+        ) : null}
         {record?.refresh === 'error' ? (
           <Button className="mb-3 w-full max-w-xs" onClick={() => service.refresh(record.id)}>
             Refresh balances
@@ -188,7 +214,7 @@ export function LifecycleTransactionOverlay(props: TransactionOverlayProps) {
             Recheck confirmation
           </Button>
         ) : null}
-        {(success && !refreshing) || failed || unresolved ? (
+        {(success && !refreshing) || failed || unresolved || isPaused || needsReview ? (
           <Button className="w-full max-w-xs" classNameOverride="yearn--button--nextgen w-full" onClick={close}>
             {success ? 'Done' : 'Close'}
           </Button>

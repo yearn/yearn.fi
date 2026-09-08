@@ -146,7 +146,8 @@ export function createTransactionLifecycleStorage(): TTransactionPersistence {
   }
 }
 
-// Web Locks remain private to the host. Hold ownership through the bounded atomic evidence write.
+// Web Locks remain private to the host. Flow keys guard a reviewed sequence; record keys guard observation
+// through the bounded atomic evidence write. A busy key returns without starting another worker.
 export async function coordinateTransactionObservation(id: string, observe: () => Promise<void>): Promise<void> {
   if (!navigator.locks) return observe()
   await navigator.locks.request(`yearn-transaction:${id}`, { ifAvailable: true }, async (lock) => {

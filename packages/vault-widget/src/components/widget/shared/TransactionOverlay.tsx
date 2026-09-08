@@ -213,6 +213,7 @@ export type TransactionOverlayProps = {
   isOpen: boolean
   onClose: () => void
   plan?: VaultWidgetTransactionPlan
+  planSteps?: Readonly<Record<string, TransactionStep>>
   step?: TransactionStep
   isLastStep?: boolean
   onAllComplete?: () => void

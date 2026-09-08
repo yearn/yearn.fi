@@ -3,6 +3,7 @@ import {
   type VaultWidgetTransactionMode,
   type VaultWidgetTransactionPlan
 } from '@yearn/vault-widget/headless'
+import { buildSafeDepositBatch } from '@yearn/vault-widget/internal/components/widget/deposit/safeDepositBatch'
 import {
   type AppUseSimulateContractReturnType,
   isRawTransactionPreparation,
@@ -154,6 +155,50 @@ export function buildEligibleStyledWidgetPlan({
           }
         }
       ]
+    }
+  })
+}
+
+/** Freeze direct call inputs now; the adapter simulates each call only when its turn arrives. */
+export function buildDirectApprovalPlan(
+  params: Parameters<typeof buildSafeDepositBatch>[0] & {
+    id: string
+    label: string
+    tokenSymbol: string
+    connectedCanonicalChainId?: number
+    isExecutionConfigured: boolean
+    isWalletSafe: boolean
+    isEnabled: boolean
+    isCrossChain: boolean
+    needsApproval: boolean
+  }
+): VaultWidgetTransactionPlan | undefined {
+  if (
+    !params.isExecutionConfigured ||
+    params.isWalletSafe ||
+    !params.isEnabled ||
+    params.isCrossChain ||
+    !params.needsApproval ||
+    params.connectedCanonicalChainId !== params.chainId ||
+    !['DIRECT_DEPOSIT', 'DIRECT_STAKE'].includes(params.routeType)
+  )
+    return undefined
+  const batch = buildSafeDepositBatch({ ...params, currentAllowance: 0n })
+  const action = batch?.calls.at(-1)
+  if (!action || !params.approvalSpenderAddress) return undefined
+  return buildTransactionPlan({
+    connectedChainId: params.chainId,
+    intent: {
+      id: params.id,
+      mode: 'deposit',
+      approvals: [
+        {
+          token: { address: params.depositToken, chainId: params.chainId, symbol: params.tokenSymbol },
+          spender: params.approvalSpenderAddress,
+          amount: params.amount
+        }
+      ],
+      calls: [{ id: 'deposit', label: params.label, request: { ...action, chainId: params.chainId } }]
     }
   })
 }

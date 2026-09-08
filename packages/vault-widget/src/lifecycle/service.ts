@@ -4,6 +4,7 @@ import {
   getTransactionConfirmations,
   type VaultWidgetExecutionAdapter,
   VaultWidgetPreparationError,
+  type VaultWidgetRequestStep,
   type VaultWidgetTransactionPlan,
   type VaultWidgetTransactionReceiptResult
 } from '@yearn/vault-widget/headless'
@@ -21,8 +22,12 @@ export type TTransactionFlow = {
   id: string
   owner: Address
   intentKey: string
-  phase: 'confirming' | 'pending' | 'rejected' | 'blocked' | 'unknown'
+  phase: 'confirming' | 'pending' | 'paused' | 'success' | 'rejected' | 'blocked' | 'unknown'
   recordId?: string
+  stepId?: string
+  stepIndex?: number
+  stepCount?: number
+  stepLabel?: string
   error?: string
 }
 export type TLifecycleSnapshot = {
@@ -35,6 +40,7 @@ export type TStartTransaction = {
   owner: Address
   plan: VaultWidgetTransactionPlan
   display?: VaultWidgetNotificationInput
+  displayByStep?: Readonly<Record<string, VaultWidgetNotificationInput | undefined>>
   validate?: () => Promise<void>
   refresh?: () => Promise<void>
 }
@@ -80,6 +86,8 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
   const timers = new Map<string, ReturnType<typeof setTimeout>>()
   const refreshes = new Set<string>()
   const paused = new Set<string>()
+  const continuations = new Map<string, () => void>()
+  const runningFlows = new Set<string>()
   const effects = new Set<string>()
   const refreshCallbacks = new Map<string, () => Promise<void>>()
   const pendingWrites = new Map<string, Promise<void>>()
@@ -279,13 +287,19 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
       if (generation !== state.generation) return
       records.forEach((record) => {
         mergeSaved(record)
-        if (!state.snapshot.flows.some((flow) => flow.id === record.flowId))
+        const previousFlow = state.snapshot.flows.find((flow) => flow.id === record.flowId)
+        const previousRecord = previousFlow?.recordId ? getRecord(previousFlow.recordId) : undefined
+        if (!previousFlow || (previousRecord && (record.sequence?.index ?? 0) > (previousRecord.sequence?.index ?? 0)))
           putFlow({
             id: record.flowId,
             intentKey: record.intentKey,
             owner: record.owner,
             recordId: record.id,
-            phase: 'pending'
+            phase: 'pending',
+            stepId: record.stepId,
+            stepIndex: record.sequence?.index ?? 0,
+            stepCount: record.sequence?.count ?? 1,
+            stepLabel: record.sequence?.label
           })
         void track(record.id)
         if (record.source && record.refresh !== 'success') void refresh(record.id)
@@ -326,34 +340,48 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
         flow.id === input.commandId ||
         (flow.owner.toLowerCase() === input.owner.toLowerCase() &&
           flow.intentKey === input.plan.intent.id &&
-          (flow.recordId
-            ? ['pending', 'unknown'].includes(selectTransaction(getRecord(flow.recordId)!).outcome)
-            : ['confirming', 'unknown'].includes(flow.phase)))
+          (runningFlows.has(flow.id) ||
+            flow.phase === 'confirming' ||
+            (flow.recordId
+              ? ['pending', 'unknown'].includes(selectTransaction(getRecord(flow.recordId)!).outcome)
+              : flow.phase === 'unknown')))
     )
     if (existing) {
-      paused.delete(existing.id)
+      // React StrictMode reattaches the same initial command before it can request the wallet.
+      // Reopening a submitted sequence uses a new command and never resumes it implicitly.
+      if (existing.id === input.commandId && existing.phase === 'confirming' && existing.stepIndex === 0)
+        paused.delete(existing.id)
       return existing.id
     }
     const frozenPlan = structuredClone(input.plan)
-    const call = frozenPlan.intent.calls[0]
+    const steps = frozenPlan.steps.filter((step): step is VaultWidgetRequestStep =>
+      ['execute', 'approve', 'reset-approval'].includes(step.kind)
+    )
+    const call = steps[0]
     if (
       !call ||
-      input.plan.walletType !== 'eoa' ||
-      input.plan.intent.calls.length !== 1 ||
-      input.plan.steps.some((step) => !['execute', 'refresh'].includes(step.kind)) ||
-      input.display?.bridgeProtocol ||
-      (input.display?.toChainId && input.display.toChainId !== call.request.chainId)
+      frozenPlan.walletType !== 'eoa' ||
+      frozenPlan.steps.some((step) => !['execute', 'approve', 'reset-approval', 'refresh'].includes(step.kind)) ||
+      new Set(steps.map((step) => step.id)).size !== steps.length ||
+      steps.some((step) => step.chainId !== call.chainId || step.request.chainId !== call.chainId) ||
+      [input.display, ...Object.values(input.displayByStep ?? {})].some(
+        (display) => display?.bridgeProtocol || (display?.toChainId && display.toChainId !== call.chainId)
+      )
     )
-      throw new Error('This lifecycle currently accepts one same-chain EOA action')
+      throw new Error('This lifecycle currently accepts same-chain EOA steps')
     const frozen = structuredClone({ ...input, validate: undefined, refresh: undefined })
     const flow: TTransactionFlow = {
       id: input.commandId,
       owner: input.owner,
       intentKey: input.plan.intent.id,
-      phase: 'confirming'
+      phase: 'confirming',
+      stepId: call.id,
+      stepIndex: 0,
+      stepCount: steps.length,
+      stepLabel: call.label
     }
     putFlow(flow)
-    const recordId = id()
+    const active: { step: VaultWidgetRequestStep; recordId: string } = { step: call, recordId: id() }
     const executionChainId = options.executionChainId(call.request.chainId)
     if (!executionChainId) {
       putFlow({ ...flow, phase: 'blocked', error: 'Execution network unavailable' })
@@ -366,12 +394,26 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
       if (wallet.address?.toLowerCase() !== flow.owner.toLowerCase() || wallet.chainId !== executionChainId)
         throw new Error('Wallet or network changed. Close and review the transaction again.')
     }
+    const assertPriorReceipts = (): void => {
+      if (
+        state.snapshot.records.some(
+          (record) => record.flowId === flow.id && selectTransaction(record).outcome !== 'success'
+        )
+      )
+        throw new Error('An earlier transaction is unresolved. Check its confirmation before continuing.')
+    }
     // The existing sequential runner remains the only executor; receipt ownership is delegated to this service.
-    void (async () => {
+    runningFlows.add(flow.id)
+    const run = async (): Promise<void> => {
       // Hydration may reveal the same unfinished intent after reload. Adopt it before any wallet request.
       await Promise.resolve()
       // A timed-out read is not empty history. Only a successful hydration opens this gate.
       await waitForHistory()
+      // Re-read inside the flow lock: another tab may have submitted since initial hydration.
+      if (options.coordinate && options.persistence) {
+        await hydrate()
+        await waitForHistory()
+      }
       const recovered = state.snapshot.records.find(
         (record) =>
           record.owner.toLowerCase() === flow.owner.toLowerCase() &&
@@ -379,21 +421,69 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
           ['pending', 'unknown'].includes(selectTransaction(record).outcome)
       )
       if (recovered) {
-        putFlow({ ...flow, phase: 'pending', recordId: recovered.id })
+        putFlow({
+          ...flow,
+          phase: 'pending',
+          recordId: recovered.id,
+          stepId: recovered.stepId,
+          stepIndex: recovered.sequence?.index ?? 0,
+          stepCount: recovered.sequence?.count ?? 1,
+          stepLabel: recovered.sequence?.label
+        })
         return
       }
       await executeTransactionPlan({
         account: flow.owner,
         plan: frozen.plan,
+        beforeStep: async (step, outcome) => {
+          if (step.kind === 'refresh') return
+          if (!('request' in step)) throw new Error('Unsupported transaction step')
+          active.step = step
+          active.recordId = id()
+          const stepIndex = steps.findIndex((item) => item.id === step.id)
+          const progress = {
+            ...flow,
+            stepId: step.id,
+            stepIndex,
+            stepCount: steps.length,
+            stepLabel: step.label
+          }
+          if (outcome.submissions.length > 0) {
+            // A closed view or changed wallet suspends the sequence, while existing records keep tracking.
+            const wallet = options.wallet()
+            if (
+              paused.has(flow.id) ||
+              wallet.address?.toLowerCase() !== flow.owner.toLowerCase() ||
+              wallet.chainId !== executionChainId
+            ) {
+              paused.add(flow.id)
+              await new Promise<void>((resolve) => {
+                continuations.set(flow.id, resolve)
+                putFlow({
+                  ...progress,
+                  phase: 'paused',
+                  recordId: state.snapshot.flows.find((item) => item.id === flow.id)?.recordId,
+                  error: 'Review the remaining step and continue when your wallet is ready.'
+                })
+              })
+            }
+          }
+          putFlow({ ...progress, phase: 'confirming' })
+        },
         adapter: {
           ...adapter,
           execute: async (parameters) => {
             try {
               assertWallet()
+              assertPriorReceipts()
               await input.validate?.()
               assertWallet()
             } catch (error) {
-              putFlow({ ...flow, phase: 'blocked', error: errorMessage(error) })
+              putFlow({
+                ...state.snapshot.flows.find((item) => item.id === flow.id)!,
+                phase: 'blocked',
+                error: errorMessage(error)
+              })
               throw error
             }
             return adapter.execute({
@@ -401,58 +491,91 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
               beforeSubmit: () => {
                 try {
                   assertWallet()
+                  assertPriorReceipts()
                 } catch (error) {
-                  putFlow({ ...flow, phase: 'blocked', error: errorMessage(error) })
+                  putFlow({
+                    ...state.snapshot.flows.find((item) => item.id === flow.id)!,
+                    phase: 'blocked',
+                    error: errorMessage(error)
+                  })
                   throw error
                 }
               }
             })
           },
-          waitForReceipt: () => waitForRecord(recordId)
+          waitForReceipt: () => waitForRecord(active.recordId)
         },
         refresh: async () => undefined,
         onState: (progress) => {
           if (progress.status !== 'pending') return
           const hash = progress.outcome.submissions.at(-1)?.hash
           if (!hash) return
-          const reference = { canonicalChainId: call.request.chainId, executionChainId, hash }
+          const step = active.step
+          const recordId = active.recordId
+          const stepIndex = steps.findIndex((item) => item.id === step.id)
+          const reference = { canonicalChainId: step.chainId, executionChainId, hash }
           const record: TTransactionRecord = {
             version: 1,
             id: recordId,
             flowId: flow.id,
             attemptId: id(),
-            stepId: call.id,
+            stepId: step.id,
+            sequence: { index: stepIndex, count: steps.length, label: step.label },
             intentKey: flow.intentKey,
             owner: flow.owner,
             createdAt: now(),
             revision: 0,
-            request: {
-              ...frozen.plan.intent.calls[0].request,
-              value: (frozen.plan.intent.calls[0].request.value ?? 0n).toString()
-            },
-            display: frozen.display,
+            request: { ...step.request, value: (step.request.value ?? 0n).toString() },
+            display: frozen.displayByStep?.[step.id] ?? (stepIndex === steps.length - 1 ? frozen.display : undefined),
             original: reference,
             effective: reference,
             settlement: 'same-chain',
-            confirmations: getTransactionConfirmations(call.request.chainId),
+            confirmations: getTransactionConfirmations(step.chainId),
             refresh: 'idle'
           }
           putRecord(record)
-          putFlow({ ...flow, phase: 'pending', recordId })
-          if (input.refresh) refreshCallbacks.set(recordId, input.refresh)
+          putFlow({
+            ...flow,
+            phase: 'pending',
+            recordId,
+            stepId: step.id,
+            stepIndex,
+            stepCount: steps.length,
+            stepLabel: step.label
+          })
+          if (input.refresh && stepIndex === steps.length - 1) refreshCallbacks.set(recordId, input.refresh)
           void persist(record)
           void track(recordId)
         }
       })
-    })().catch((error: unknown) => {
       const latest = state.snapshot.flows.find((item) => item.id === flow.id)
-      if (latest?.recordId || latest?.phase === 'blocked') return
-      putFlow({
-        ...flow,
-        phase: isRejected(error) ? 'rejected' : isPreparationFailure(error) ? 'blocked' : 'unknown',
-        error: errorMessage(error)
+      if (latest) putFlow({ ...latest, phase: 'success' })
+    }
+    const coordinatedRun = async (): Promise<void> => {
+      if (!options.coordinate) return run()
+      const claim = { acquired: false }
+      await options.coordinate(`flow:${flow.owner.toLowerCase()}:${flow.intentKey}`, async () => {
+        claim.acquired = true
+        await run()
       })
-    })
+      if (!claim.acquired)
+        putFlow({
+          ...flow,
+          phase: 'blocked',
+          error: 'This transaction flow is active in another window. Continue there or review again after it closes.'
+        })
+    }
+    void coordinatedRun()
+      .catch((error: unknown) => {
+        const latest = state.snapshot.flows.find((item) => item.id === flow.id)
+        if (latest?.recordId || latest?.phase === 'blocked') return
+        putFlow({
+          ...(latest ?? flow),
+          phase: isRejected(error) ? 'rejected' : isPreparationFailure(error) ? 'blocked' : 'unknown',
+          error: errorMessage(error)
+        })
+      })
+      .finally(() => runningFlows.delete(flow.id))
     return flow.id
   }
   return {
@@ -464,6 +587,23 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
     },
     getSnapshot: () => state.snapshot,
     start,
+    continue: (flowId: string): void => {
+      const resume = continuations.get(flowId)
+      const flow = state.snapshot.flows.find((item) => item.id === flowId)
+      if (!resume || !flow) return
+      const wallet = options.wallet()
+      const previous = flow.recordId ? getRecord(flow.recordId) : undefined
+      if (
+        wallet.address?.toLowerCase() !== flow.owner.toLowerCase() ||
+        wallet.chainId !== previous?.original.executionChainId
+      ) {
+        putFlow({ ...flow, error: 'Reconnect the reviewed wallet and network before continuing.' })
+        return
+      }
+      continuations.delete(flowId)
+      paused.delete(flowId)
+      resume()
+    },
     pause: (flowId: string) => {
       paused.add(flowId)
     },
@@ -493,6 +633,9 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
       state.snapshot.records.forEach((record) => void track(record.id))
       return () => {
         state.running = false
+        runningFlows.forEach((flowId) => {
+          if ((state.snapshot.flows.find((flow) => flow.id === flowId)?.stepCount ?? 1) > 1) paused.add(flowId)
+        })
         state.generation += 1
         state.unsubscribe?.()
         timers.forEach(clearTimeout)

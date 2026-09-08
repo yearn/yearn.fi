@@ -155,3 +155,44 @@ public-only observations, fresh reverted receipts, and mismatched receipt reject
 Validation: all 339 widget tests, workspace TypeScript, lint, the widget package boundary check, and the
 Yearn production build passed. These checks use simulated RPC evidence; real-wallet replacement QA remains
 unverified.
+
+## Stage 3A: direct approval sequences
+
+Stage 3 is in progress. This first slice migrates same-chain EOA approval → direct deposit and approval →
+direct stake sequences. Safe, permits, dynamic unstake/withdraw, Enso approval sequences, approval-management
+controls, and app-specific migration/reward/portfolio/yvUSD producers still use their existing implementations.
+These remaining producers must be migrated before declaring stage 3 complete.
+
+- The existing headless runner exposes a step boundary with the confirmed outcome. The lifecycle service can
+  now run ordered EOA approval/reset/action steps, with one canonical record per accepted submission and a
+  separate step index/count/label. Initial history recovery still gates every new flow.
+- Direct deposit/stake plans reuse the existing call builders and freeze approval amount, spender, recipient,
+  and action calldata when reviewed. The wallet adapter estimates each call immediately before its own send;
+  deposit/stake preparation therefore happens after approval confirmation against current chain state.
+  Allowance-reset warnings keep their existing eligibility rules.
+- Approval success advances the runner, not a React completion effect. Intermediate confirmation never invokes
+  final completion or the final balance refresh. Each submitted record keeps its own notification snapshot.
+  Failed/cancelled/replaced or unresolved approvals stop the sequence. Refresh failure is independent of
+  advancing from a confirmed approval.
+- Closing tracks the accepted approval but pauses the next wallet request. Reopening only reattaches;
+  explicit Continue rechecks the reviewed wallet/network. Account/network changes between steps also pause.
+  A change during simulation blocks submission, and later conflicting approval evidence blocks continuation.
+- Host coordination holds a flow key through the reviewed sequence, including pauses, in addition to record
+  keys during observation. A second tab cannot request the same intent between approval confirmation and the
+  deposit hash when Web Locks are available. Initial history is re-read inside that flow lock. Another tab
+  asks the user to continue in the active window; observation and activity updates remain shared.
+- Reload restores submitted records and chooses the highest submitted step regardless of storage row order.
+  It does not reconstruct an executable recipe or resume signatures. A recovered intermediate success asks
+  the user to close and review the remaining action; current allowance determines the newly reviewed plan.
+- The overlay shows step progress and derives final success from the final record. The legacy overlay remains
+  the fallback for every unmigrated path. No dependencies were added.
+
+Validation: 369 widget tests pass, including sequential ordering, late approval hashes, duplicate starts at
+step boundaries, pause/Continue, changed wallets during simulation, refresh independence, failed approvals,
+receipt conflicts, reload recovery, and cross-service intent ownership. Chromium checks using actual IndexedDB,
+BroadcastChannel, and Web Locks pass for two-step execution, closing/reopening, a competing tab, latest-step
+reload recovery, and desktop/mobile rendering. Wallet requests and receipts in these checks are simulated;
+controlled real-wallet execution remains required before rollout.
+
+Workspace TypeScript, lint, both boundary checks, and Yearn/yBOLD production builds pass. The Yearn
+production preview also passes deposit/withdraw tab navigation and desktop/mobile overflow/error checks.

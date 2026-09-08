@@ -1,4 +1,8 @@
-import { buildTransactionPlan, type VaultWidgetExecutionAdapter } from '@yearn/vault-widget/headless'
+import {
+  buildTransactionPlan,
+  type VaultWidgetExecutionAdapter,
+  VaultWidgetPreparationError
+} from '@yearn/vault-widget/headless'
 import {
   createTransactionLifecycle,
   reduceTransaction,
@@ -467,6 +471,298 @@ describe('provider-owned transaction lifecycle', () => {
     expect(record.effective.hash).toBe(replacementHash)
     expect(selectTransaction(record).outcome).toBe(reason === 'repriced' ? 'success' : 'error')
     expect(f.refresh).toHaveBeenCalledTimes(reason === 'repriced' ? 1 : 0)
+    f.disconnect()
+  })
+})
+
+describe('sequential EOA lifecycle', () => {
+  beforeEach(() => {
+    vi.useFakeTimers()
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+  })
+  afterEach(() => {
+    vi.clearAllTimers()
+    vi.useRealTimers()
+    vi.restoreAllMocks()
+  })
+  const plan = () =>
+    buildTransactionPlan({
+      connectedChainId: 1,
+      intent: {
+        ...makePlan().intent,
+        approvals: [{ token: { address: to, chainId: 1, symbol: 'Token' }, spender: owner, amount: 10n }]
+      }
+    })
+  const setup = (persistence?: TTransactionPersistence) => {
+    const f = fixture(persistence)
+    f.execute.mockReset().mockResolvedValueOnce(hash).mockResolvedValue(replacementHash)
+    const final = deferred<{ receipt: TransactionReceipt }>()
+    vi.mocked(f.adapter.waitForReceipt)
+      .mockReset()
+      .mockImplementation(({ hash: submitted }) => (submitted === hash ? f.gate.promise : final.promise))
+    const start = (commandId = 'sequence') =>
+      f.service.start({
+        commandId,
+        owner,
+        plan: plan(),
+        display: { type: 'deposit', amount: '10', fromAddress: owner, fromChainId: 1, fromSymbol: 'Token' },
+        displayByStep: {
+          'approve-0': { type: 'approve', amount: '10', fromAddress: owner, fromChainId: 1, fromSymbol: 'Token' }
+        }
+      })
+    return { ...f, start, final }
+  }
+
+  it('requests each step once, only after the earlier source receipt, with separate frozen records', async () => {
+    const f = setup()
+    const finalRefresh = deferred<void>()
+    f.refresh.mockImplementation((record: TTransactionRecord) =>
+      record.stepId === 'approve-0' ? finalRefresh.promise : Promise.resolve()
+    )
+    f.start()
+    await settle()
+    expect(f.execute).toHaveBeenCalledTimes(1)
+    expect(f.service.getSnapshot().records[0]).toMatchObject({
+      stepId: 'approve-0',
+      display: { type: 'approve' },
+      sequence: { index: 0, count: 2 }
+    })
+    // A duplicate start in the receipt-publication/next-step boundary must reuse the active runner.
+    const duplicateIds: string[] = []
+    const unsubscribe = f.service.subscribe(() => {
+      if (f.service.getSnapshot().records[0]?.source) duplicateIds.push(f.start('duplicate'))
+    })
+    f.gate.resolve({ receipt })
+    await settle()
+    expect(new Set(duplicateIds)).toEqual(new Set(['sequence']))
+    expect(f.execute).toHaveBeenCalledTimes(2)
+    expect(f.service.getSnapshot().records.map((record) => [record.stepId, record.display?.type])).toEqual([
+      ['approve-0', 'approve'],
+      ['deposit', 'deposit']
+    ])
+    expect(f.service.getSnapshot().flows[0]).toMatchObject({ phase: 'pending', stepIndex: 1, stepCount: 2 })
+    unsubscribe()
+    f.final.resolve({ receipt: { ...receipt, transactionHash: replacementHash } })
+    await settle()
+    expect(f.service.getSnapshot().flows[0].phase).toBe('success')
+    finalRefresh.resolve()
+    f.disconnect()
+  })
+
+  it.each(['close', 'account', 'network'])(
+    'keeps observing but requires explicit continuation after %s before another wallet request',
+    async (change) => {
+      const f = setup()
+      f.start()
+      await settle()
+      if (change === 'close') f.service.pause('sequence')
+      if (change === 'account') f.wallet.address = to
+      if (change === 'network') f.wallet.chainId = 2
+      f.gate.resolve({ receipt })
+      await settle()
+      expect(f.execute).toHaveBeenCalledTimes(1)
+      expect(f.service.getSnapshot().flows[0]).toMatchObject({ phase: 'paused', stepId: 'deposit' })
+      expect(f.start('reopen')).toBe('sequence')
+      await settle()
+      expect(f.execute).toHaveBeenCalledTimes(1)
+      if (change !== 'close') {
+        f.service.continue('sequence')
+        await settle()
+        expect(f.execute).toHaveBeenCalledTimes(1)
+      }
+      f.wallet.address = owner
+      f.wallet.chainId = 1001
+      f.service.continue('sequence')
+      f.service.continue('sequence')
+      await settle()
+      expect(f.execute).toHaveBeenCalledTimes(2)
+      f.final.resolve({ receipt: { ...receipt, transactionHash: replacementHash } })
+      await settle()
+      f.disconnect()
+    }
+  )
+
+  it('retains a late approval hash after close and pauses the deposit', async () => {
+    const f = setup()
+    const wallet = deferred<typeof hash>()
+    f.execute.mockReturnValueOnce(wallet.promise)
+    f.start()
+    await settle()
+    f.service.pause('sequence')
+    wallet.resolve(hash)
+    await settle()
+    expect(f.service.getSnapshot().records[0].original.hash).toBe(hash)
+    f.gate.resolve({ receipt })
+    await settle()
+    expect(f.service.getSnapshot().flows[0].phase).toBe('paused')
+    expect(f.execute).toHaveBeenCalledTimes(1)
+    f.disconnect()
+  })
+
+  it.each(['revert', 'cancelled', 'replaced', 'outage'])(
+    'never advances an approval with %s evidence',
+    async (failure) => {
+      const f = setup()
+      f.start()
+      await settle()
+      if (failure === 'outage') f.gate.reject(new Error('RPC unavailable'))
+      else if (failure === 'revert') f.gate.resolve({ receipt: { ...receipt, status: 'reverted' } })
+      else
+        f.gate.resolve({
+          receipt: { ...receipt, transactionHash: replacementHash },
+          replacement: { reason: failure, replacedHash: hash }
+        } as { receipt: TransactionReceipt })
+      await settle()
+      expect(f.execute).toHaveBeenCalledTimes(1)
+      expect(f.service.getSnapshot().records).toHaveLength(1)
+      expect(f.service.getSnapshot().flows[0].phase).not.toBe('success')
+      f.disconnect()
+    }
+  )
+
+  it('does not repeat approval if deposit preparation fails', async () => {
+    const f = setup()
+    // The first send must succeed; model the adapter rejecting the second fresh simulation.
+    f.execute
+      .mockReset()
+      .mockResolvedValueOnce(hash)
+      .mockRejectedValue(new VaultWidgetPreparationError(new Error('Simulation failed')))
+    f.start()
+    await settle()
+    f.gate.resolve({ receipt })
+    await settle()
+    expect(f.service.getSnapshot().records).toHaveLength(1)
+    expect(selectTransaction(f.service.getSnapshot().records[0]).outcome).toBe('success')
+    expect(f.service.getSnapshot().flows[0]).toMatchObject({ phase: 'blocked', stepId: 'deposit' })
+    expect(f.execute).toHaveBeenCalledTimes(2)
+    f.disconnect()
+  })
+
+  it('recovers a saved pending approval without sending another approval or automatically depositing', async () => {
+    const saved: TTransactionRecord[] = []
+    const persistence: TTransactionPersistence = {
+      load: async () => saved,
+      apply: async (record, observation) => {
+        const next = observation
+          ? reduceTransaction(saved.find((item) => item.id === record.id) ?? record, observation)
+          : record
+        saved.splice(0, saved.length, ...saved.filter((item) => item.id !== next.id), next)
+        return next
+      }
+    }
+    const first = setup(persistence)
+    first.start()
+    await settle()
+    first.disconnect()
+    const recovered = setup(persistence)
+    recovered.start('review-again')
+    await settle()
+    expect(recovered.execute).not.toHaveBeenCalled()
+    recovered.gate.resolve({ receipt })
+    await settle()
+    expect(recovered.execute).not.toHaveBeenCalled()
+    expect(recovered.service.getSnapshot().records[0]).toMatchObject({ sequence: { index: 0, count: 2 } })
+    recovered.disconnect()
+  })
+
+  it('loads the latest step for a flow regardless of persistence row order', async () => {
+    const f = setup()
+    f.start()
+    await settle()
+    f.gate.resolve({ receipt })
+    await settle()
+    const saved = [...f.service.getSnapshot().records].reverse()
+    f.disconnect()
+    const recovered = setup({ load: async () => saved, apply: async (record) => record })
+    await settle()
+    expect(recovered.service.getSnapshot().flows[0]).toMatchObject({ stepId: 'deposit', recordId: saved[0].id })
+    expect(recovered.execute).not.toHaveBeenCalled()
+    recovered.disconnect()
+  })
+  it('holds one intent lease across approval and deposit, including a paused sequence', async () => {
+    const locks = new Set<string>()
+    const coordinate = async (key: string, task: () => Promise<void>) => {
+      if (locks.has(key)) return
+      locks.add(key)
+      try {
+        await task()
+      } finally {
+        locks.delete(key)
+      }
+    }
+    const f = setup()
+    const makeService = () =>
+      createTransactionLifecycle({
+        execution: () => f.adapter,
+        wallet: () => f.wallet,
+        executionChainId: () => 1001,
+        coordinate
+      })
+    const first = makeService()
+    const second = makeService()
+    const stopFirst = first.connect()
+    const stopSecond = second.connect()
+    first.start({ commandId: 'first', owner, plan: plan() })
+    await settle()
+    first.pause('first')
+    f.gate.resolve({ receipt })
+    await settle()
+    expect(first.getSnapshot().flows[0].phase).toBe('paused')
+    second.start({ commandId: 'second', owner, plan: plan() })
+    await settle()
+    expect(second.getSnapshot().flows[0]).toMatchObject({ phase: 'blocked' })
+    expect(f.execute).toHaveBeenCalledTimes(1)
+    first.continue('first')
+    await settle()
+    expect(f.execute).toHaveBeenCalledTimes(2)
+    f.final.resolve({ receipt: { ...receipt, transactionHash: replacementHash } })
+    await settle()
+    expect(locks.size).toBe(0)
+    stopFirst()
+    stopSecond()
+    f.disconnect()
+  })
+  it('blocks continuation if the confirmed approval later receives conflicting evidence', async () => {
+    const load = vi.fn().mockResolvedValue([])
+    const f = setup({ load, apply: async (record) => record })
+    f.start()
+    await settle()
+    f.service.pause('sequence')
+    f.gate.resolve({ receipt })
+    await settle()
+    load.mockResolvedValue([{ ...f.service.getSnapshot().records[0], conflict: 'Conflicting receipt evidence' }])
+    f.service.recheckHistory()
+    await settle()
+    f.service.continue('sequence')
+    await settle()
+    expect(f.execute).toHaveBeenCalledTimes(1)
+    expect(f.service.getSnapshot().flows[0].phase).toBe('blocked')
+    f.disconnect()
+  })
+
+  it('checks the wallet again after the second-step simulation before requesting a signature', async () => {
+    const f = setup()
+    const simulation = deferred<void>()
+    const send = vi.fn().mockResolvedValue(replacementHash)
+    f.execute
+      .mockReset()
+      .mockResolvedValueOnce(hash)
+      .mockImplementation(async (parameters) => {
+        await simulation.promise
+        parameters.beforeSubmit?.()
+        return send()
+      })
+    f.start()
+    await settle()
+    f.gate.resolve({ receipt })
+    await settle()
+    expect(f.execute).toHaveBeenCalledTimes(2)
+    f.wallet.address = to
+    simulation.resolve()
+    await settle()
+    expect(send).not.toHaveBeenCalled()
+    expect(f.service.getSnapshot().records).toHaveLength(1)
+    expect(f.service.getSnapshot().flows[0]).toMatchObject({ phase: 'blocked', stepId: 'deposit' })
     f.disconnect()
   })
 })

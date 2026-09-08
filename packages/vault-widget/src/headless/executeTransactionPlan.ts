@@ -17,6 +17,8 @@ export type ExecuteTransactionPlanParams = {
   adapter: VaultWidgetExecutionAdapter
   plan: VaultWidgetTransactionPlan
   refresh: () => Promise<void>
+  /** Authorize each next step from the confirmed outcome before it starts. */
+  beforeStep?: (step: VaultWidgetExecutionStep, outcome: VaultWidgetPlanOutcome) => Promise<void>
   onState?: (state: VaultWidgetPlanExecutionState) => void
 }
 
@@ -267,6 +269,10 @@ async function executePlanStep(
     params.onState?.({ status: 'success', outcome, stepIndex, stepCount })
     return outcome
   }
+
+  await runOperation(params, { outcome, step, stepIndex, stepCount }, async () => {
+    await params.beforeStep?.(step, outcome)
+  })
 
   if (step.kind === 'refresh') {
     params.onState?.({ status: 'refreshing', outcome, step, stepIndex, stepCount })
