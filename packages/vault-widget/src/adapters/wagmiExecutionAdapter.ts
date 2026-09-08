@@ -11,6 +11,7 @@ import {
 import {
   type VaultWidgetExecutionAdapter,
   VaultWidgetPreparationError,
+  type VaultWidgetTransactionReceiptResult,
   type VaultWidgetTransactionRequest
 } from '@yearn/vault-widget/headless'
 import {
@@ -25,7 +26,8 @@ import {
   MethodNotSupportedRpcError,
   type ReplacementReturnType,
   type Transaction,
-  TransactionNotFoundError
+  TransactionNotFoundError,
+  type TransactionReceipt
 } from 'viem'
 import {
   getTransaction,
@@ -54,8 +56,9 @@ type TSubmittedTransactionIdentity = Pick<
 >
 
 type TSubmittedTransactionContext = {
-  connectorClient: Client
+  connectorClient?: Client
   identity?: TSubmittedTransactionIdentity
+  provisionalReplacement?: VaultWidgetTransactionReceiptResult
 }
 
 const TRANSACTION_IDENTITY_TIMEOUT_MS = 3_000
@@ -75,6 +78,35 @@ function isTransactionHash(value: unknown): value is Hash {
 
 function getSubmittedTransactionKey(executionChainId: number, hash: Hash): string {
   return `${executionChainId}:${hash.toLowerCase()}`
+}
+
+function validateDetectedReceipt(
+  receipt: TransactionReceipt,
+  hash: Hash,
+  replacement: ReplacementReturnType | undefined,
+  usedSubmittedIdentity: boolean
+): VaultWidgetTransactionReceiptResult {
+  if (!isTransactionHash(receipt.transactionHash)) throw new Error('Wallet returned an invalid transaction receipt')
+  if (receipt.transactionHash.toLowerCase() === hash.toLowerCase()) {
+    if (replacement) throw new Error('Wallet returned invalid transaction replacement details')
+    return { receipt }
+  }
+  if (
+    !replacement ||
+    !['repriced', 'cancelled', 'replaced'].includes(replacement.reason) ||
+    !isTransactionHash(replacement.replacedTransaction.hash) ||
+    replacement.replacedTransaction.hash.toLowerCase() !== hash.toLowerCase() ||
+    !isTransactionHash(replacement.transaction.hash) ||
+    replacement.transaction.hash.toLowerCase() !== receipt.transactionHash.toLowerCase() ||
+    !isTransactionHash(replacement.transactionReceipt.transactionHash) ||
+    replacement.transactionReceipt.transactionHash.toLowerCase() !== receipt.transactionHash.toLowerCase()
+  ) {
+    throw new Error('Wallet returned a receipt for an unexpected transaction')
+  }
+  if (usedSubmittedIdentity && replacement.reason === 'replaced') {
+    throw new Error('Wallet returned an unverifiable transaction replacement')
+  }
+  return { receipt, replacement: { reason: replacement.reason, replacedHash: hash } }
 }
 
 function normalizeAddress(address: Address): Address {
@@ -285,6 +317,8 @@ export function createWagmiVaultWidgetExecutionAdapter(
       if (!publicClient) throw new Error(`No public client is configured for chain ${executionChainId}`)
       const transactionKey = getSubmittedTransactionKey(executionChainId, hash)
       const submittedTransaction = submittedTransactions.get(transactionKey)
+      const submittedConnector = submittedTransaction?.connectorClient
+      const cachedReplacement = submittedTransaction?.provisionalReplacement
       const observedReplacement: { current?: ReplacementReturnType } = {}
       const usedSubmittedIdentity = { current: false }
       const completed = { current: false }
@@ -300,7 +334,8 @@ export function createWagmiVaultWidgetExecutionAdapter(
 
       try {
         const detectedReceipt = await (async () => {
-          if (!submittedTransaction) return publicClient.waitForTransactionReceipt(waitParameters)
+          if (cachedReplacement) return cachedReplacement.receipt
+          if (!submittedConnector) return publicClient.waitForTransactionReceipt(waitParameters)
 
           const replacementAwareClient = {
             ...publicClient,
@@ -323,10 +358,10 @@ export function createWagmiVaultWidgetExecutionAdapter(
               }
 
               const connectorTransaction = await getKnownTransaction(() =>
-                getTransaction(submittedTransaction.connectorClient, { hash: requestedHash })
+                getTransaction(submittedConnector, { hash: requestedHash })
               )
               if (connectorTransaction) return normalizeTransactionIdentity(connectorTransaction)
-              if (submittedTransaction.identity) {
+              if (submittedTransaction?.identity) {
                 usedSubmittedIdentity.current = true
                 return submittedTransaction.identity as Transaction
               }
@@ -336,11 +371,19 @@ export function createWagmiVaultWidgetExecutionAdapter(
           return viemWaitForTransactionReceipt(replacementAwareClient, waitParameters)
         })()
 
-        if (!isTransactionHash(detectedReceipt.transactionHash)) {
-          throw new Error('Wallet returned an invalid transaction receipt')
+        const detected =
+          cachedReplacement ??
+          validateDetectedReceipt(detectedReceipt, hash, observedReplacement.current, usedSubmittedIdentity.current)
+        if (detected.replacement && !cachedReplacement) {
+          // Keep validated evidence through bounded receipt retries, including resumed observations.
+          // It remains provisional until a fresh receipt satisfies the full confirmation policy.
+          submittedTransactions.set(transactionKey, {
+            ...submittedTransaction,
+            provisionalReplacement: structuredClone(detected)
+          })
         }
         const receipt =
-          confirmations === 1
+          confirmations === 1 && !cachedReplacement
             ? detectedReceipt
             : await publicClient.waitForTransactionReceipt({
                 checkReplacement: false,
@@ -353,36 +396,12 @@ export function createWagmiVaultWidgetExecutionAdapter(
           throw new Error('Wallet returned an invalid transaction receipt')
         }
 
-        const replacement = observedReplacement.current
-        if (receipt.transactionHash.toLowerCase() === hash.toLowerCase()) {
-          if (replacement) throw new Error('Wallet returned invalid transaction replacement details')
-          completed.current = true
-          return { receipt }
-        }
-
-        if (
-          !replacement ||
-          !isTransactionHash(replacement.replacedTransaction.hash) ||
-          replacement.replacedTransaction.hash.toLowerCase() !== hash.toLowerCase() ||
-          !isTransactionHash(replacement.transaction.hash) ||
-          replacement.transaction.hash.toLowerCase() !== receipt.transactionHash.toLowerCase() ||
-          !isTransactionHash(replacement.transactionReceipt.transactionHash) ||
-          replacement.transactionReceipt.transactionHash.toLowerCase() !== receipt.transactionHash.toLowerCase()
-        ) {
+        if (receipt.transactionHash.toLowerCase() !== detectedReceipt.transactionHash.toLowerCase()) {
           throw new Error('Wallet returned a receipt for an unexpected transaction')
-        }
-        if (usedSubmittedIdentity.current && replacement.reason === 'replaced') {
-          throw new Error('Wallet returned an unverifiable transaction replacement')
         }
 
         completed.current = true
-        return {
-          receipt,
-          replacement: {
-            reason: replacement.reason,
-            replacedHash: hash
-          }
-        }
+        return detected.replacement ? { receipt, replacement: detected.replacement } : { receipt }
       } finally {
         if (completed.current) submittedTransactions.delete(transactionKey)
       }

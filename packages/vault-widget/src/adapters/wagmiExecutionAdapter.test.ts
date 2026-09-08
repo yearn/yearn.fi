@@ -13,7 +13,8 @@ import {
   MethodNotFoundRpcError,
   MethodNotSupportedRpcError,
   type ReplacementReturnType,
-  type TransactionReceipt
+  type TransactionReceipt,
+  WaitForTransactionReceiptTimeoutError
 } from 'viem'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
@@ -698,5 +699,165 @@ describe('Wagmi Safe execution tracking adapter', () => {
     await expect(adapter.waitForSafeExecution?.({ chainId: canonicalChainId, proposalId: '0x1234' })).rejects.toBe(
       timeoutError
     )
+  })
+})
+
+describe.each(['repriced', 'cancelled', 'replaced'] as const)('confirmed %s recovery', (reason) => {
+  it.each(['RPC rejection', 'timeout'])('retains detected replacement evidence after %s', async (failure) => {
+    const phase = { interrupted: false, height: 15n }
+    const blockHash = `0x${'44'.repeat(32)}` as Hash
+    const tx = {
+      blockHash: null,
+      blockNumber: null,
+      chainId: '0x1',
+      from: account,
+      gas: '0x5208',
+      hash: transactionHash,
+      input: request.data,
+      maxFeePerGas: '0x2',
+      maxPriorityFeePerGas: '0x1',
+      nonce: '0x120',
+      to: request.to,
+      transactionIndex: null,
+      type: '0x2',
+      value: '0x0'
+    }
+    const replacementTo = reason === 'cancelled' ? account : request.to
+    const replacementInput = reason === 'cancelled' ? '0x' : reason === 'replaced' ? '0xabcd' : request.data
+    const rpcReceipt = {
+      blockHash,
+      blockNumber: '0x10',
+      contractAddress: null,
+      cumulativeGasUsed: '0x5208',
+      effectiveGasPrice: '0x1',
+      from: account,
+      gasUsed: '0x5208',
+      logs: [],
+      logsBloom: `0x${'00'.repeat(256)}`,
+      status: '0x1',
+      to: replacementTo,
+      transactionHash: otherTransactionHash,
+      transactionIndex: '0x0',
+      type: '0x2'
+    }
+    const rpc = vi.fn(async ({ method, params }: { method: string; params?: readonly unknown[] }) => {
+      if (method === 'eth_estimateGas') return '0x186a0'
+      if (method === 'eth_getTransactionCount') return '0x120'
+      if (method === 'eth_blockNumber') {
+        phase.height += 1n
+        return `0x${phase.height.toString(16)}`
+      }
+      if (method === 'eth_getTransactionByHash') return params?.[0] === transactionHash ? tx : null
+      if (method === 'eth_getTransactionReceipt') return params?.[0] === otherTransactionHash ? rpcReceipt : null
+      if (method === 'eth_getBlockByNumber')
+        return {
+          hash: blockHash,
+          number: params?.[0],
+          timestamp: '0x1',
+          transactions: phase.interrupted
+            ? []
+            : [
+                {
+                  ...tx,
+                  to: replacementTo,
+                  input: replacementInput,
+                  hash: otherTransactionHash,
+                  blockHash,
+                  blockNumber: '0x10',
+                  transactionIndex: '0x0'
+                }
+              ]
+        }
+      throw Error(`Unexpected RPC ${method}`)
+    })
+    const publicClient = createPublicClient({
+      chain: executionChain,
+      pollingInterval: 1,
+      transport: custom({ request: rpc })
+    })
+    const confirmationWait = vi.fn(async (parameters: Parameters<typeof publicClient.waitForTransactionReceipt>[0]) => {
+      if (!phase.interrupted) {
+        phase.interrupted = true
+        phase.height = 32n
+        throw failure === 'timeout'
+          ? new WaitForTransactionReceiptTimeoutError({ hash: otherTransactionHash })
+          : Error('Temporary confirmation RPC outage')
+      }
+      return publicClient.waitForTransactionReceipt(parameters)
+    })
+    wagmiActions.getPublicClient.mockReturnValue({ ...publicClient, waitForTransactionReceipt: confirmationWait })
+    wagmiActions.getConnectorClient.mockResolvedValue(
+      createClient({ chain: executionChain, transport: custom({ request: rpc }) })
+    )
+    wagmiActions.sendTransaction.mockResolvedValue(transactionHash)
+    const adapter = createAdapter({ resolveConfirmations: () => 2, receiptTimeoutMs: 150 })
+    await adapter.execute({ account, request })
+    await expect(adapter.waitForReceipt({ chainId: 1, hash: transactionHash })).rejects.toThrow(
+      failure === 'timeout' ? 'Timed out while waiting' : 'Temporary confirmation RPC outage'
+    )
+    expect(confirmationWait).toHaveBeenCalledWith(
+      expect.objectContaining({ hash: otherTransactionHash, confirmations: 2 })
+    )
+    await expect(adapter.waitForReceipt({ chainId: 1, hash: transactionHash })).resolves.toMatchObject({
+      receipt: { transactionHash: otherTransactionHash, status: 'success' },
+      replacement: { reason, replacedHash: transactionHash }
+    })
+    expect(confirmationWait).toHaveBeenLastCalledWith(
+      expect.objectContaining({ hash: otherTransactionHash, confirmations: 2, checkReplacement: false })
+    )
+    expect(wagmiActions.sendTransaction).toHaveBeenCalledTimes(1)
+  })
+})
+
+describe('provisional replacement validation', () => {
+  it('resumes public-only observations, requires a fresh receipt, and rejects a mismatched confirmation hash', async () => {
+    const replacementReceipt = { ...successfulReceipt, transactionHash: otherTransactionHash } as TransactionReceipt
+    const wait = vi
+      .fn()
+      .mockImplementationOnce(async ({ onReplaced }) => {
+        onReplaced(createReplacement('repriced', replacementReceipt))
+        return replacementReceipt
+      })
+      .mockRejectedValueOnce(new Error('offline'))
+      .mockResolvedValueOnce(successfulReceipt)
+      .mockResolvedValueOnce({ ...replacementReceipt, status: 'reverted' })
+    wagmiActions.getPublicClient.mockReturnValue({ waitForTransactionReceipt: wait })
+    const adapter = createAdapter({ resolveConfirmations: () => 2 })
+    await expect(adapter.waitForReceipt({ chainId: canonicalChainId, hash: transactionHash })).rejects.toThrow(
+      'offline'
+    )
+    await expect(adapter.waitForReceipt({ chainId: canonicalChainId, hash: transactionHash })).rejects.toThrow(
+      'unexpected transaction'
+    )
+    await expect(adapter.waitForReceipt({ chainId: canonicalChainId, hash: transactionHash })).resolves.toMatchObject({
+      receipt: { transactionHash: otherTransactionHash, status: 'reverted' },
+      replacement: { reason: 'repriced', replacedHash: transactionHash }
+    })
+    expect(wait).toHaveBeenNthCalledWith(3, expect.objectContaining({ hash: otherTransactionHash, confirmations: 2 }))
+    expect(wait).toHaveBeenNthCalledWith(4, expect.objectContaining({ hash: otherTransactionHash, confirmations: 2 }))
+    expect(wagmiActions.sendTransaction).not.toHaveBeenCalled()
+  })
+
+  it('does not cache unvalidated replacement evidence', async () => {
+    const replacementReceipt = { ...successfulReceipt, transactionHash: otherTransactionHash } as TransactionReceipt
+    const wait = vi
+      .fn()
+      .mockImplementationOnce(async ({ onReplaced }) => {
+        onReplaced({
+          ...createReplacement('repriced', replacementReceipt),
+          replacedTransaction: { hash: otherTransactionHash }
+        })
+        return replacementReceipt
+      })
+      .mockResolvedValue(successfulReceipt)
+    wagmiActions.getPublicClient.mockReturnValue({ waitForTransactionReceipt: wait })
+    const adapter = createAdapter({ resolveConfirmations: () => 2 })
+    await expect(adapter.waitForReceipt({ chainId: canonicalChainId, hash: transactionHash })).rejects.toThrow(
+      'unexpected transaction'
+    )
+    await expect(adapter.waitForReceipt({ chainId: canonicalChainId, hash: transactionHash })).resolves.toEqual({
+      receipt: successfulReceipt
+    })
+    expect(wait).toHaveBeenNthCalledWith(2, expect.objectContaining({ hash: transactionHash, confirmations: 1 }))
   })
 })

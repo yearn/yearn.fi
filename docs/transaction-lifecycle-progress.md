@@ -136,3 +136,22 @@ resubmission, and existing tabs could omit a persisted receipt conflict.
 - Regression coverage includes failed/stalled reads followed by recovery, repeated failures, disconnected
   reads, account/network/close changes during recovery, conflict propagation, stale clean snapshots, and the
   overlay's history retry. In-memory execution and tracking after failed writes retain their existing tests.
+
+### Replacement confirmation retries
+
+A subsequent audit found that a detected replacement was lost when its confirmation-depth wait failed.
+The Wagmi adapter now retains validated provisional replacement evidence under the original submission's
+execution-chain/hash key. Retries query the replacement hash and fetch a fresh receipt at the required
+confirmation depth. Cancellation and unrelated replacement keep their distinct outcomes; malformed
+replacement evidence is rejected before it can enter the cache. The context is removed after settlement.
+This is session-local recovery, including transactions observed after reload; it does not add durable
+provisional evidence or historical replacement discovery across a further reload.
+
+Regression coverage uses the actual Viem waiter with a deterministic RPC transport: detect the replacement,
+fail the second-confirmation read, advance beyond the replacement block, and recover without another wallet
+request. The matrix covers repriced/cancelled/replaced transactions and RPC rejection/timeouts, alongside
+public-only observations, fresh reverted receipts, and mismatched receipt rejection.
+
+Validation: all 339 widget tests, workspace TypeScript, lint, the widget package boundary check, and the
+Yearn production build passed. These checks use simulated RPC evidence; real-wallet replacement QA remains
+unverified.
