@@ -632,22 +632,19 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       if (!notification || !account) return undefined
 
       try {
-        const id = await createSubmittedNotification({
+        return await createSubmittedNotification({
           ...notification,
           executionChainId: executionChainId ?? notification.executionChainId,
           ownerAddress: account,
           status,
           txHash
         })
-        if (id === undefined) return undefined
-        setActiveNotificationId(id)
-        return id
       } catch (error) {
         console.error('Failed to create notification:', error)
         return undefined
       }
     },
-    [account, createSubmittedNotification, setActiveNotificationId]
+    [account, createSubmittedNotification]
   )
 
   const ensureSubmittedNotification = useCallback(
@@ -667,11 +664,22 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
         return Promise.resolve(undefined)
       }
 
-      const registration = handleCreateSubmittedNotification(hash, currentStep.notification, executionChainId, status)
+      const registration = handleCreateSubmittedNotification(
+        hash,
+        currentStep.notification,
+        executionChainId,
+        status
+      ).then((id) => {
+        // A closed or failed attempt must not reclaim the active notification after a retry.
+        if (notificationRegistrationRef.current === registration) {
+          setActiveNotificationId(id)
+        }
+        return id
+      })
       notificationRegistrationRef.current = registration
       return registration
     },
-    [handleCreateSubmittedNotification]
+    [handleCreateSubmittedNotification, setActiveNotificationId]
   )
 
   // Update notification with new status/receipt
@@ -702,6 +710,19 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       }
     },
     [updateNotification]
+  )
+
+  const failSubmittedTransaction = useCallback(
+    (hash?: Hash) => {
+      const registration = hash
+        ? ensureSubmittedNotification(hash, executedStepRef.current, submittedExecutionChainId)
+        : (notificationRegistrationRef.current ?? Promise.resolve(notificationIdRef.current))
+
+      // Detach the failed attempt now; its pending write can finish without resetting a retry.
+      resetTxState(true)
+      void registration.then((id) => updateNotificationById(id, { status: 'error' }))
+    },
+    [ensureSubmittedNotification, resetTxState, submittedExecutionChainId, updateNotificationById]
   )
 
   const beginSubmittedTransaction = useCallback(
@@ -1317,9 +1338,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
           ? 'Transaction failed in Safe. Please review your Safe queue and try again.'
           : 'Transaction failed. Please try again.'
       )
-      resetTxState()
-      void updateNotificationById(notificationIdRef.current, { status: 'error' })
-      setActiveNotificationId(undefined)
+      failSubmittedTransaction(callsReceiptTxHash)
     }
   }, [
     overlayState,
@@ -1330,9 +1349,9 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     safeTransactionDetails.data?.safeTxHash,
     safeTransactionDetails.data?.status,
     callsStatus.data?.status,
-    updateNotificationById,
-    resetTxState,
-    setActiveNotificationId
+    callsReceiptTxHash,
+    failSubmittedTransaction,
+    updateNotificationById
   ])
 
   // Handle transaction success
@@ -1606,27 +1625,9 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     if (receiptOutcome === 'error' && (overlayState === 'pending' || overlayState === 'submitted')) {
       setOverlayState('error')
       setErrorMessage('Transaction failed. Please try again.')
-      const failedReceiptHash = receipt.data?.transactionHash
-      const failedStep = executedStepRef.current
-      void (async () => {
-        const submittedNotificationId = failedReceiptHash
-          ? await ensureSubmittedNotification(failedReceiptHash, failedStep, submittedExecutionChainId)
-          : notificationIdRef.current
-        await updateNotificationById(submittedNotificationId, { status: 'error' })
-        resetTxState()
-        setActiveNotificationId(undefined)
-      })()
+      failSubmittedTransaction(receipt.data?.transactionHash)
     }
-  }, [
-    ensureSubmittedNotification,
-    overlayState,
-    receipt.data?.transactionHash,
-    receiptOutcome,
-    resetTxState,
-    setActiveNotificationId,
-    submittedExecutionChainId,
-    updateNotificationById
-  ])
+  }, [failSubmittedTransaction, overlayState, receipt.data?.transactionHash, receiptOutcome])
 
   // When step 1 succeeds in a multi-step flow, the next step simulation may need a refetch
   // to pick up post-transaction state (e.g. unstake -> withdraw).
