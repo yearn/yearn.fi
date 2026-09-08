@@ -98,10 +98,13 @@ export function createTransactionLifecycleStorage(): TTransactionPersistence {
               seed.source && !base.source
                 ? reduceTransaction(base, { kind: 'receipt', result: seed.source, observedAt: seed.source.observedAt })
                 : base
+            const withConflict = seed.conflict
+              ? reduceTransaction(withSource, { kind: 'conflict', message: seed.conflict })
+              : withSource
             const recovered =
               seed.refresh !== 'idle'
-                ? reduceTransaction(withSource, { kind: 'refresh', status: seed.refresh, message: seed.refreshError })
-                : withSource
+                ? reduceTransaction(withConflict, { kind: 'refresh', status: seed.refresh, message: seed.refreshError })
+                : withConflict
             const next = observation ? reduceTransaction(recovered, observation) : recovered
             result.record = { ...next, storageError: undefined }
             store.put(result.record)

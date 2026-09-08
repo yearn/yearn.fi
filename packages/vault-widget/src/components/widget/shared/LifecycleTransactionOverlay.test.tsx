@@ -2,7 +2,11 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { buildTransactionPlan } from '@yearn/vault-widget/headless'
 import { LifecycleTransactionOverlay } from '@yearn/vault-widget/internal/components/widget/shared/LifecycleTransactionOverlay'
-import { createTransactionLifecycle, selectTransaction } from '@yearn/vault-widget/lifecycle'
+import {
+  createTransactionLifecycle,
+  selectTransaction,
+  type TTransactionPersistence
+} from '@yearn/vault-widget/lifecycle'
 import { VaultWidgetRuntimeProvider } from '@yearn/vault-widget/runtime'
 import { StrictMode } from 'react'
 import type { TransactionReceipt } from 'viem'
@@ -47,7 +51,7 @@ afterEach(() => {
     cleanup()
   })
 })
-function fixture(raw = false) {
+function fixture(raw = false, persistence?: TTransactionPersistence) {
   const validate = vi.fn().mockResolvedValue(undefined)
   const legacyExecute = vi.fn().mockRejectedValue(new Error('Legacy raw executor must not run'))
   const gate: { resolve?: (value: { receipt: TransactionReceipt }) => void } = {}
@@ -61,7 +65,8 @@ function fixture(raw = false) {
   const service = createTransactionLifecycle({
     execution: () => ({ execute, waitForReceipt: wait, switchChain: vi.fn() }),
     wallet: () => ({ address: owner, chainId: 1 }),
-    executionChainId: () => 1
+    executionChainId: () => 1,
+    persistence
   })
   cleanups.push(service.connect())
   const done = vi.fn()
@@ -124,6 +129,18 @@ describe('lifecycle overlay', () => {
     expect(f.validate).toHaveBeenCalledTimes(raw ? 1 : 0)
     expect(f.legacyExecute).not.toHaveBeenCalled()
     expect(screen.getByRole('link').getAttribute('href')).toBe(`https://etherscan.io/tx/${hash}`)
+  })
+
+  it('shows history recovery and retries loading before making a wallet request', async () => {
+    const load = vi.fn().mockRejectedValue(new Error('offline'))
+    const f = fixture(false, { load, apply: async (record) => record })
+    f.mount()
+    await screen.findByText('Transaction history is unavailable. Retrying before requesting your wallet.')
+    expect(screen.queryByText('Confirm in your wallet')).toBeNull()
+    expect(f.execute).not.toHaveBeenCalled()
+    load.mockResolvedValue([])
+    fireEvent.click(screen.getByRole('button', { name: 'Retry history' }))
+    await waitFor(() => expect(f.execute).toHaveBeenCalledTimes(1))
   })
 
   it('keeps success and offers only a refresh retry when balance refresh fails', async () => {

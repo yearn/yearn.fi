@@ -25,7 +25,11 @@ export type TTransactionFlow = {
   recordId?: string
   error?: string
 }
-export type TLifecycleSnapshot = { records: readonly TTransactionRecord[]; flows: readonly TTransactionFlow[] }
+export type TLifecycleSnapshot = {
+  records: readonly TTransactionRecord[]
+  flows: readonly TTransactionFlow[]
+  history: 'loading' | 'ready' | 'unavailable'
+}
 export type TStartTransaction = {
   commandId: string
   owner: Address
@@ -66,9 +70,8 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
     running: boolean
     generation: number
     unsubscribe?: () => void
-    hydration?: Promise<void>
   } = {
-    snapshot: { records: [], flows: [] },
+    snapshot: { records: [], flows: [], history: options.persistence ? 'loading' : 'ready' },
     running: false,
     generation: 0
   }
@@ -136,10 +139,13 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
         result: record.source,
         observedAt: record.source.observedAt
       })
+      const withConflict = record.conflict
+        ? reduceTransaction(withSource, { kind: 'conflict', message: record.conflict })
+        : withSource
       const next =
-        record.refresh === 'success' || withSource.refresh === 'idle'
-          ? reduceTransaction(withSource, { kind: 'refresh', status: record.refresh, message: record.refreshError })
-          : withSource
+        record.refresh === 'success' || withConflict.refresh === 'idle'
+          ? reduceTransaction(withConflict, { kind: 'refresh', status: record.refresh, message: record.refreshError })
+          : withConflict
       if (next !== local) putRecord(next)
     } else if (!local.source && record.revision > local.revision)
       putRecord({ ...record, storageError: local.storageError })
@@ -284,10 +290,24 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
         void track(record.id)
         if (record.source && record.refresh !== 'success') void refresh(record.id)
       })
+      publish({ ...state.snapshot, history: 'ready' })
     } catch {
+      if (generation !== state.generation) return
+      publish({ ...state.snapshot, history: 'unavailable' })
       schedule('hydrate', () => void hydrate())
     }
   }
+  const waitForHistory = (): Promise<void> =>
+    new Promise((resolve) => {
+      const check = (): void => {
+        if (state.snapshot.history === 'ready') {
+          listeners.delete(check)
+          resolve()
+        }
+      }
+      listeners.add(check)
+      check()
+    })
   const waitForRecord = (recordId: string): Promise<VaultWidgetTransactionReceiptResult> =>
     new Promise((resolve) => {
       const check = (): void => {
@@ -350,7 +370,8 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
     void (async () => {
       // Hydration may reveal the same unfinished intent after reload. Adopt it before any wallet request.
       await Promise.resolve()
-      await state.hydration
+      // A timed-out read is not empty history. Only a successful hydration opens this gate.
+      await waitForHistory()
       const recovered = state.snapshot.records.find(
         (record) =>
           record.owner.toLowerCase() === flow.owner.toLowerCase() &&
@@ -453,6 +474,9 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
       return true
     },
     recheck: (recordId: string) => void track(recordId),
+    recheckHistory: () => {
+      if (state.running) void hydrate()
+    },
     refresh: (recordId: string) => {
       const record = getRecord(recordId)
       if (record?.refresh === 'error') {
@@ -463,8 +487,9 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
     connect: () => {
       state.running = true
       state.generation += 1
+      if (options.persistence) publish({ ...state.snapshot, history: 'loading' })
       state.unsubscribe = options.persistence?.subscribe?.(() => void hydrate())
-      state.hydration = hydrate()
+      void hydrate()
       state.snapshot.records.forEach((record) => void track(record.id))
       return () => {
         state.running = false

@@ -121,23 +121,30 @@ export function LifecycleTransactionOverlay(props: TransactionOverlayProps) {
   }
   const unresolved = view?.outcome === 'unknown' || flow?.phase === 'unknown'
   const failed = view?.outcome === 'error' || flow?.phase === 'blocked' || flow?.phase === 'rejected'
-  const title = success
-    ? refreshing
-      ? 'Transaction confirmed'
-      : (reviewed.step?.successTitle ?? 'Transaction confirmed')
-    : (view?.label ??
-      (flow?.phase === 'rejected'
-        ? 'Transaction cancelled'
-        : flow?.phase === 'blocked'
-          ? 'Review transaction'
-          : unresolved
-            ? 'Check your wallet'
-            : 'Confirm in your wallet'))
-  const detail = success
-    ? refreshing
-      ? 'Updating balances...'
-      : reviewed.step?.successMessage
-    : (view?.detail ?? flow?.error ?? (view ? 'Waiting for confirmation...' : reviewed.step?.confirmMessage))
+  const recovering = !record && (!flow || flow.phase === 'confirming') && state.history !== 'ready'
+  const title = recovering
+    ? 'Checking transaction history'
+    : success
+      ? refreshing
+        ? 'Transaction confirmed'
+        : (reviewed.step?.successTitle ?? 'Transaction confirmed')
+      : (view?.label ??
+        (flow?.phase === 'rejected'
+          ? 'Transaction cancelled'
+          : flow?.phase === 'blocked'
+            ? 'Review transaction'
+            : unresolved
+              ? 'Check your wallet'
+              : 'Confirm in your wallet'))
+  const detail = recovering
+    ? state.history === 'unavailable'
+      ? 'Transaction history is unavailable. Retrying before requesting your wallet.'
+      : 'Checking for unfinished transactions before requesting your wallet.'
+    : success
+      ? refreshing
+        ? 'Updating balances...'
+        : reviewed.step?.successMessage
+      : (view?.detail ?? flow?.error ?? (view ? 'Waiting for confirmation...' : reviewed.step?.confirmMessage))
   return (
     <div
       className="absolute inset-0 z-50 flex flex-col rounded-lg bg-surface p-6 text-center"
@@ -161,6 +168,11 @@ export function LifecycleTransactionOverlay(props: TransactionOverlayProps) {
         <p className="mb-4 whitespace-pre-line text-sm text-text-secondary">{detail}</p>
         {record?.storageError ? <p className="mb-4 text-sm text-text-secondary">{record.storageError}</p> : null}
         {record?.refreshError ? <p className="mb-4 text-sm text-text-secondary">{record.refreshError}</p> : null}
+        {recovering && state.history === 'unavailable' ? (
+          <Button className="mb-3 w-full max-w-xs" onClick={() => service.recheckHistory()}>
+            Retry history
+          </Button>
+        ) : null}
         {explorer ? (
           <a className="mb-4 text-sm font-semibold underline" href={explorer} target="_blank" rel="noopener noreferrer">
             View on block explorer

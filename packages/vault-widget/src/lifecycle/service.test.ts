@@ -283,6 +283,121 @@ describe('provider-owned transaction lifecycle', () => {
     next.disconnect()
   })
 
+  it.each(['reject', 'stall'])(
+    'blocks submission after initial history %s and adopts the saved intent on recovery',
+    async (failure) => {
+      const previous = fixture()
+      previous.start()
+      await settle()
+      const saved = previous.service.getSnapshot().records[0]
+      previous.disconnect()
+      const load = vi
+        .fn()
+        .mockImplementationOnce(() =>
+          failure === 'reject' ? Promise.reject(new Error('offline')) : new Promise(() => undefined)
+        )
+        .mockResolvedValue([saved])
+      const f = fixture({ load, apply: async (record) => record })
+      f.start('after-reload')
+      await vi.advanceTimersByTimeAsync(5_001)
+      expect(f.service.getSnapshot().history).toBe('unavailable')
+      expect(f.execute).not.toHaveBeenCalled()
+      expect(f.start('duplicate-click')).toBe('after-reload')
+      await vi.advanceTimersByTimeAsync(10_001)
+      expect(f.service.getSnapshot().history).toBe('ready')
+      expect(f.service.getSnapshot().flows.find((flow) => flow.id === 'after-reload')?.recordId).toBe(saved.id)
+      expect(f.execute).not.toHaveBeenCalled()
+      expect(f.adapter.waitForReceipt).toHaveBeenCalledTimes(1)
+      f.disconnect()
+    }
+  )
+
+  it.each(['close', 'account', 'network'])(
+    'rechecks %s after failed history recovers with no saved intent',
+    async (change) => {
+      const load = vi.fn().mockRejectedValue(new Error('offline'))
+      const f = fixture({ load, apply: async (record) => record })
+      f.start()
+      await settle()
+      await vi.advanceTimersByTimeAsync(20_001)
+      expect(f.execute).not.toHaveBeenCalled()
+      if (change === 'close') f.service.pause('one')
+      if (change === 'account') f.wallet.address = to
+      if (change === 'network') f.wallet.chainId = 2
+      load.mockResolvedValue([])
+      f.service.recheckHistory()
+      await settle()
+      expect(f.service.getSnapshot().history).toBe('ready')
+      expect(f.service.getSnapshot().flows[0].phase).toBe('blocked')
+      expect(f.execute).not.toHaveBeenCalled()
+      f.disconnect()
+    }
+  )
+
+  it('ignores a disconnected hydration result until the current connection recovers', async () => {
+    const stale = deferred<readonly TTransactionRecord[]>()
+    const load = vi.fn().mockReturnValueOnce(stale.promise).mockRejectedValue(new Error('offline'))
+    const f = fixture({ load, apply: async (record) => record })
+    f.start()
+    f.disconnect()
+    const disconnect = f.service.connect()
+    await settle()
+    stale.resolve([])
+    await settle()
+    expect(f.service.getSnapshot().history).toBe('unavailable')
+    expect(f.execute).not.toHaveBeenCalled()
+    load.mockResolvedValue([])
+    f.service.recheckHistory()
+    await settle()
+    expect(f.execute).toHaveBeenCalledTimes(1)
+    disconnect()
+  })
+
+  it('merges persisted conflicts into existing and fresh tabs without letting stale clean snapshots erase them', async () => {
+    const previous = fixture()
+    previous.start()
+    await settle()
+    previous.gate.resolve({ receipt })
+    await settle()
+    const confirmed = previous.service.getSnapshot().records[0]
+    previous.disconnect()
+    const conflicted = reduceTransaction(confirmed, {
+      kind: 'receipt',
+      result: { receipt: { ...receipt, status: 'reverted' } },
+      observedAt: 200
+    })
+    const subscription: { notify?: () => void } = {}
+    const load = vi.fn().mockResolvedValue([{ ...confirmed, revision: 100 }])
+    const persistence: TTransactionPersistence = {
+      load,
+      apply: async (record) => record,
+      subscribe: (notify) => {
+        subscription.notify = notify
+        return () => undefined
+      }
+    }
+    const existing = fixture(persistence)
+    await settle()
+    expect(selectTransaction(existing.service.getSnapshot().records[0]).outcome).toBe('success')
+    load.mockResolvedValue([conflicted])
+    subscription.notify!()
+    await settle()
+    const fresh = fixture({ load, apply: async (record) => record })
+    await settle()
+    expect(selectTransaction(existing.service.getSnapshot().records[0]).outcome).toBe('unknown')
+    expect(selectTransaction(fresh.service.getSnapshot().records[0]).outcome).toBe('unknown')
+    load.mockResolvedValue([{ ...confirmed, revision: 200 }])
+    subscription.notify!()
+    fresh.service.recheckHistory()
+    await settle()
+    expect(selectTransaction(existing.service.getSnapshot().records[0]).outcome).toBe('unknown')
+    expect(selectTransaction(fresh.service.getSnapshot().records[0]).outcome).toBe('unknown')
+    expect(existing.service.getSnapshot().records[0].source).toEqual(confirmed.source)
+    expect(existing.execute).not.toHaveBeenCalled()
+    existing.disconnect()
+    fresh.disconnect()
+  })
+
   it('does not retry a failed refresh on cross-tab storage notifications; explicit retry keeps the route refresh', async () => {
     const subscription: { notify?: () => void } = {}
     const saved: { record?: TTransactionRecord } = {}

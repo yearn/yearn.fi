@@ -72,7 +72,7 @@ flowchart LR
 - Yearn owns one service above its notification and route providers. Its separate IndexedDB store performs
   atomic read/reduce/write operations; BroadcastChannel shares updates and Web Locks coordinate receipt
   observation across tabs. The widget runtime supplies an in-memory service for other hosts, including yBOLD.
-- Initial hydration is bounded and precedes wallet submission. An unfinished saved intent is adopted instead
+- Each initial history read is bounded; recovery stays unresolved until a read succeeds and precedes wallet submission. An unfinished saved intent is adopted instead
   of resubmitted. Reload resumes observation of submitted records; it never resumes wallet actions. Storage
   failures retain the submitted hash in memory, show a recovery warning, and retry under the same record ID.
 - Activity and the wallet indicator receive read-only projections of the canonical records. Both legacy pollers
@@ -121,3 +121,18 @@ not part of stage 2.
 - Biome formatting and the widget package boundary check passed.
 - Production build passed with a fresh Turbopack cache after a sandbox worker-port failure.
 - The private HTML implementation review passed Chromium desktop/mobile checks.
+
+## Stage 2 review corrections
+
+The review of `8ccbc4c9` identified two implementation defects: failed initial history reads could allow
+resubmission, and existing tabs could omit a persisted receipt conflict.
+
+- Durable hosts now expose loading/ready/unavailable history state. Rejected or stalled reads keep wallet
+  submission waiting, retry automatically, and offer a history retry in the overlay. A successful read adopts
+  a matching pending record before execution. Account/network/close checks still run after recovery.
+- Persisted conflicts merge monotonically through the reducer, including atomic write retries. Higher-revision
+  clean snapshots cannot erase a known conflict. Existing and freshly opened tabs derive the same unresolved
+  outcome. Original receipt identity checks and stale-evidence protections remain in place.
+- Regression coverage includes failed/stalled reads followed by recovery, repeated failures, disconnected
+  reads, account/network/close changes during recovery, conflict propagation, stale clean snapshots, and the
+  overlay's history retry. In-memory execution and tracking after failed writes retain their existing tests.

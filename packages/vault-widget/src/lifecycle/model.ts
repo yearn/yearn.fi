@@ -28,6 +28,7 @@ export type TTransactionRecord = {
 }
 export type TTransactionObservation =
   | { kind: 'receipt'; result: VaultWidgetTransactionReceiptResult; observedAt: number }
+  | { kind: 'conflict'; message: string }
   | { kind: 'tracking-error'; message: string }
   | { kind: 'refresh'; status: TTransactionRecord['refresh']; message?: string }
 
@@ -68,6 +69,10 @@ export function reduceTransaction(
   record: TTransactionRecord,
   observation: TTransactionObservation
 ): TTransactionRecord {
+  if (observation.kind === 'conflict') {
+    if (record.conflict) return record
+    return { ...record, revision: record.revision + 1, conflict: observation.message }
+  }
   if (observation.kind === 'tracking-error') {
     if (record.source || record.trackingError === observation.message) return record
     return { ...record, revision: record.revision + 1, trackingError: observation.message }
