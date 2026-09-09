@@ -60,12 +60,14 @@ describe('portfolio growth pricing availability', () => {
     const html = renderToStaticMarkup(
       <PortfolioHistoryChart {...props} protocolReturnSummary={summary} growthDisplayModeOverride={'index'} />
     )
-    expect(html).toContain('Partial Index: 1 vault excluded because valuation data is incomplete.')
+    expect(html).toContain('Some vaults could not be valued. Index data may be partial.')
+    expect(html).not.toContain('vault excluded')
     expect(html).toContain('Contribution chart')
     const usd = renderToStaticMarkup(
       <PortfolioHistoryChart {...props} protocolReturnSummary={summary} growthDisplayModeOverride={'usd'} />
     )
-    expect(usd).not.toContain('Partial Index')
+    expect(usd).not.toContain('Index data may be partial.')
+    expect(usd).toContain('Some vaults could not be valued. USD data may be partial.')
   })
   it('keeps ETH selected and explains missing prices instead of silently rendering Index', () => {
     const html = renderToStaticMarkup(<PortfolioHistoryChart {...props} />)
@@ -109,6 +111,7 @@ describe('portfolio growth pricing availability', () => {
     )
 
     expect(html).not.toContain('History is incomplete')
+    expect(html).not.toContain('USD data may be partial.')
     expect(html).toContain('Contribution chart')
   })
 
@@ -136,7 +139,7 @@ describe('portfolio growth pricing availability', () => {
       />
     )
 
-    expect(html).toContain('ETH growth is partial: historical prices are missing for one or more vaults.')
+    expect(html).toContain('Some vaults could not be valued. ETH data may be partial.')
     expect(html).toContain('Contribution chart')
   })
 
@@ -167,7 +170,7 @@ describe('portfolio growth pricing availability', () => {
       />
     )
 
-    expect(html).toContain('ETH growth is partial: historical prices are missing for one or more vaults.')
+    expect(html).toContain('Some vaults could not be valued. ETH data may be partial.')
     expect(html).toContain('Contribution chart')
     expect(html).not.toContain('ETH growth unavailable')
   })

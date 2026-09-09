@@ -751,10 +751,12 @@ export function PortfolioHistoryChart({
   const excludedIndexVaultCount = protocolReturnSummary?.indexExcludedVaults?.length ?? 0
   const historyWarning =
     resolvedGrowthDisplayMode === 'index' && excludedIndexVaultCount > 0
-      ? `Partial Index: ${excludedIndexVaultCount} ${excludedIndexVaultCount === 1 ? 'vault excluded' : 'vaults excluded'} because valuation data is incomplete.`
+      ? 'Some vaults could not be valued. Index data may be partial.'
       : hasMissingEthGrowth
-        ? 'ETH growth is partial: historical prices are missing for one or more vaults.'
-        : null
+        ? 'Some vaults could not be valued. ETH data may be partial.'
+        : activeTab === 'growth' && resolvedGrowthDisplayMode === 'usd' && protocolReturnSummary?.isComplete === false
+          ? 'Some vaults could not be valued. USD data may be partial.'
+          : null
   const yAxisFloor = activeTab === 'growth' && resolvedGrowthDisplayMode === 'index' ? 100 : 0
   const yAxisTicks = useMemo(
     () =>
