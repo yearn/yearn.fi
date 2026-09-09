@@ -1,5 +1,10 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { bridgeGateway, runBridgeGateway, type TBridgeGatewayStore } from '@/server/enso/bridgeGateway'
+import {
+  BRIDGE_GATEWAY_BACKOFF,
+  bridgeGateway,
+  runBridgeGateway,
+  type TBridgeGatewayStore
+} from '@/server/enso/bridgeGateway'
 
 const store = (claim: [string, string, string]) => ({
   eval: vi.fn().mockResolvedValue(claim),
@@ -43,13 +48,38 @@ describe('shared bridge gateway', () => {
   })
   it('shares the credential budget across distinct routes and retains provider backoff', async () => {
     const client = store(['claimed', '', '10'])
+    client.eval.mockResolvedValueOnce(['claimed', '', '10']).mockResolvedValueOnce(['60010', '60000'])
     await runBridgeGateway(client as unknown as TBridgeGatewayStore, 'credential', 'route-a', async () =>
       Response.json({ error: 'limited' }, { status: 429, headers: { 'Retry-After': '60' } })
     )
-    expect(client.set).toHaveBeenLastCalledWith('yearn:enso-bridge:{credential}:budget', 'backoff', { px: 60000 })
+    expect(client.eval).toHaveBeenNthCalledWith(
+      2,
+      BRIDGE_GATEWAY_BACKOFF,
+      ['yearn:enso-bridge:{credential}:budget'],
+      ['60000', '0']
+    )
     await runBridgeGateway(client as unknown as TBridgeGatewayStore, 'credential', 'route-b', async () =>
       Response.json({ status: 'pending' })
     )
-    expect(client.eval.mock.calls[0][1][2]).toBe(client.eval.mock.calls[1][1][2])
+    expect(client.eval.mock.calls[0][1][2]).toBe(client.eval.mock.calls[2][1][2])
   })
+})
+
+it.each([
+  ['600', ['600000', '0']],
+  ['Wed, 09 Sep 2026 01:00:00 GMT', ['0', String(Date.parse('Wed, 09 Sep 2026 01:00:00 GMT'))]],
+  ['invalid', ['30000', '0']],
+  ['0', ['0', '0']]
+])('interprets Retry-After %s without truncating valid provider backoff', async (header, expected) => {
+  const client = store(['claimed', '', '10'])
+  client.eval.mockResolvedValueOnce(['claimed', '', '10']).mockResolvedValueOnce(['600010', '600000'])
+  await runBridgeGateway(client as unknown as TBridgeGatewayStore, 'credential', 'route', async () =>
+    Response.json({ error: 'limited' }, { status: 429, headers: { 'Retry-After': header as string } })
+  )
+  expect(client.eval).toHaveBeenNthCalledWith(
+    2,
+    BRIDGE_GATEWAY_BACKOFF,
+    ['yearn:enso-bridge:{credential}:budget'],
+    expected
+  )
 })

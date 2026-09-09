@@ -113,86 +113,117 @@ export function OPTIONS(): Response {
   return noContent(GET_CORS_HEADERS)
 }
 
-export async function GET(request: Request): Promise<Response> {
-  const protocol = queryString(request, 'protocol')?.toLowerCase()
-  const chainId = Number(queryString(request, 'chainId'))
-  const txHash = queryString(request, 'txHash')
-  const requestId = queryString(request, 'requestId')
-  const persistedRelayRequestId = requestId && isHash(requestId) ? requestId : undefined
+type TBridgeStatusRequest = {
+  protocol: string
+  chainId: number
+  txHash?: `0x${string}`
+  requestId?: `0x${string}`
+}
 
-  if (!isEnsoBridgeProtocol(protocol)) {
-    return json({ error: 'Invalid bridge protocol' }, { status: 400, headers: RESPONSE_HEADERS })
-  }
-  if (!Number.isInteger(chainId) || chainId <= 0) {
-    return json({ error: 'Missing or invalid chainId' }, { status: 400, headers: RESPONSE_HEADERS })
-  }
-  const sourceTxHash = txHash && isHash(txHash) ? txHash : undefined
-  if (txHash && !sourceTxHash) {
-    return json({ error: 'Missing or invalid txHash' }, { status: 400, headers: RESPONSE_HEADERS })
-  }
-  if (requestId && !persistedRelayRequestId) {
-    return json({ error: 'Invalid requestId' }, { status: 400, headers: RESPONSE_HEADERS })
-  }
-  if (!sourceTxHash && !(protocol === 'relay' && persistedRelayRequestId)) {
-    return json({ error: 'Missing or invalid txHash' }, { status: 400, headers: RESPONSE_HEADERS })
-  }
+/** The same validation applies to HTTP input and work recovered from the shared queue. */
+function parseBridgeRequest(value: unknown): TBridgeStatusRequest {
+  const input = asRecord(value)
+  const protocol = typeof input?.protocol === 'string' ? input.protocol.toLowerCase() : undefined
+  const chainId = input?.chainId
+  const txHash = input?.txHash
+  const requestId = input?.requestId
+  if (!isEnsoBridgeProtocol(protocol)) throw new Error('Invalid bridge protocol')
+  if (typeof chainId !== 'number' || !Number.isSafeInteger(chainId) || chainId <= 0)
+    throw new Error('Missing or invalid chainId')
+  if (txHash !== undefined && (typeof txHash !== 'string' || !isHash(txHash)))
+    throw new Error('Missing or invalid txHash')
+  if (requestId !== undefined && (typeof requestId !== 'string' || !isHash(requestId)))
+    throw new Error('Invalid requestId')
+  if (!txHash && !(protocol === 'relay' && requestId)) throw new Error('Missing or invalid txHash')
+  return { protocol, chainId, txHash, requestId }
+}
 
-  const gateway =
-    process.env.NEXT_PUBLIC_TRANSACTION_LIFECYCLE_BRIDGES === 'true'
-      ? bridgeGateway
-      : async (_identity: string, operation: (signal: AbortSignal, identity: string) => Promise<Response>) =>
-          operation(AbortSignal.timeout(9_000), _identity)
-  const result = await gateway(`${protocol}:${chainId}:${sourceTxHash ?? persistedRelayRequestId}`, async (signal) => {
-    try {
-      const relayApiKey = process.env.RELAY_API_KEY?.trim()
-      const relayRequestId =
-        protocol === 'relay' && !persistedRelayRequestId && sourceTxHash && relayApiKey
-          ? await fetchRelayRequestIdBySourceTxHash(chainId, sourceTxHash, relayApiKey, signal).catch((error) => {
-              console.warn('Unable to resolve Relay request ID from the source transaction:', error)
-              return undefined
-            })
-          : persistedRelayRequestId
+/** Execute only the selected queue payload; never close over the current HTTP caller. */
+async function requestBridgeStatus(signal: AbortSignal, identity: string): Promise<Response> {
+  try {
+    const {
+      protocol,
+      chainId,
+      txHash: sourceTxHash,
+      requestId: persistedRelayRequestId
+    } = parseBridgeRequest(JSON.parse(identity))
+    const relayApiKey = process.env.RELAY_API_KEY?.trim()
+    const relayRequestId =
+      protocol === 'relay' && !persistedRelayRequestId && sourceTxHash && relayApiKey
+        ? await fetchRelayRequestIdBySourceTxHash(chainId, sourceTxHash, relayApiKey, signal).catch((error) => {
+            console.warn('Unable to resolve Relay request ID from the source transaction:', error)
+            return undefined
+          })
+        : persistedRelayRequestId
 
-      if (protocol === 'relay' && relayRequestId) {
-        try {
-          const relayStatus = await fetchRelayBridgeStatusByRequestId(chainId, relayRequestId, sourceTxHash, signal)
-          if (relayStatus && (relayStatus.status !== 'unknown' || !sourceTxHash)) {
-            return json(relayStatus, { headers: RESPONSE_HEADERS })
-          }
-        } catch (error) {
-          console.warn('Unable to resolve bridge status through a Relay request ID:', error)
+    if (protocol === 'relay' && relayRequestId) {
+      try {
+        const relayStatus = await fetchRelayBridgeStatusByRequestId(chainId, relayRequestId, sourceTxHash, signal)
+        if (relayStatus && (relayStatus.status !== 'unknown' || !sourceTxHash)) {
+          return json(relayStatus, { headers: RESPONSE_HEADERS })
         }
+      } catch (error) {
+        console.warn('Unable to resolve bridge status through a Relay request ID:', error)
       }
-      if (!sourceTxHash) {
-        return json({ error: 'Unable to resolve Relay bridge status' }, { status: 502, headers: RESPONSE_HEADERS })
-      }
-      const apiKey = process.env.ENSO_API_KEY
-      if (!apiKey) return json({ error: 'Enso API not configured' }, { status: 500, headers: RESPONSE_HEADERS })
-      const params = new URLSearchParams({ chainId: String(chainId), txHash: sourceTxHash })
-      const response = await fetch(`${ENSO_API_BASE}/api/v1/${protocol}/bridge/check?${params}`, {
-        headers: { Authorization: `Bearer ${apiKey}` },
-        cache: 'no-store',
-        signal
-      })
-      const data = (await response.json()) as Record<string, unknown>
-      if (!response.ok) return json(data, { status: response.status, headers: RESPONSE_HEADERS })
-      if (!isEnsoBridgeStatus(data.status)) {
-        return json({ error: 'Invalid Enso bridge status response' }, { status: 502, headers: RESPONSE_HEADERS })
-      }
-
-      if (protocol === 'relay') {
-        const ensoStatus = {
-          ...data,
-          ...(relayRequestId ? { bridgeRequestId: relayRequestId } : {})
-        }
-        return json(ensoStatus, { headers: RESPONSE_HEADERS })
-      }
-      return json(data, { headers: RESPONSE_HEADERS })
-    } catch (error) {
-      console.error('Error proxying Enso bridge status request:', error)
-      return json({ error: 'Unable to check bridge status' }, { status: 502, headers: RESPONSE_HEADERS })
     }
-  })
+    if (!sourceTxHash) {
+      return json({ error: 'Unable to resolve Relay bridge status' }, { status: 502, headers: RESPONSE_HEADERS })
+    }
+    const apiKey = process.env.ENSO_API_KEY
+    if (!apiKey) return json({ error: 'Enso API not configured' }, { status: 500, headers: RESPONSE_HEADERS })
+    const params = new URLSearchParams({ chainId: String(chainId), txHash: sourceTxHash })
+    const response = await fetch(`${ENSO_API_BASE}/api/v1/${protocol}/bridge/check?${params}`, {
+      headers: { Authorization: `Bearer ${apiKey}` },
+      cache: 'no-store',
+      signal
+    })
+    const data = (await response.json().catch(() => undefined)) as Record<string, unknown> | undefined
+    if (!response.ok)
+      return json(data ?? { error: 'Unable to check bridge status' }, {
+        status: response.status,
+        headers: {
+          ...RESPONSE_HEADERS,
+          ...(response.headers.get('Retry-After') ? { 'Retry-After': response.headers.get('Retry-After')! } : {})
+        }
+      })
+    if (!data || !isEnsoBridgeStatus(data.status)) {
+      return json({ error: 'Invalid Enso bridge status response' }, { status: 502, headers: RESPONSE_HEADERS })
+    }
+
+    if (protocol === 'relay') {
+      const ensoStatus = {
+        ...data,
+        ...(relayRequestId ? { bridgeRequestId: relayRequestId } : {})
+      }
+      return json(ensoStatus, { headers: RESPONSE_HEADERS })
+    }
+    return json(data, { headers: RESPONSE_HEADERS })
+  } catch (error) {
+    console.error('Error proxying Enso bridge status request:', error)
+    return json({ error: 'Unable to check bridge status' }, { status: 502, headers: RESPONSE_HEADERS })
+  }
+}
+
+export async function GET(request: Request): Promise<Response> {
+  const input = (() => {
+    try {
+      return parseBridgeRequest({
+        protocol: queryString(request, 'protocol'),
+        chainId: Number(queryString(request, 'chainId')),
+        txHash: queryString(request, 'txHash'),
+        requestId: queryString(request, 'requestId')
+      })
+    } catch (error) {
+      return json({ error: (error as Error).message }, { status: 400, headers: RESPONSE_HEADERS })
+    }
+  })()
+  if (input instanceof Response) return input
+  const identity = JSON.stringify(input)
+  const result =
+    process.env.NEXT_PUBLIC_TRANSACTION_LIFECYCLE_BRIDGES === 'true'
+      ? await bridgeGateway(identity, requestBridgeStatus)
+      : await requestBridgeStatus(AbortSignal.timeout(9_000), identity)
+
   return new Response(result.body, {
     status: result.status,
     headers: {

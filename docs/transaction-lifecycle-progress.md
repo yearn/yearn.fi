@@ -315,6 +315,21 @@ lint, both architecture boundary checks, and Yearn/yBOLD production builds. The 
 deposit/withdraw navigation and desktop/mobile overflow and browser-error checks. Eight native browser scenarios
 cover the new settlement path and legacy migration guard; the interactive sandbox also fits the mobile viewport.
 
+### Stage 4 review corrections
+
+The review of `f41f25d4` identified incorrect attribution when a caller serviced another queued route,
+and dropped provider backoff between the status proxy and gateway.
+
+- Queue payloads now contain the complete validated protocol, source chain, transaction hash and optional
+  Relay request ID. The worker validates and executes the selected payload independently of the current
+  HTTP caller. Relay fallback and the shared credential budget remain intact.
+- Provider `Retry-After` survives proxying, including non-JSON errors. Redis atomically extends backoff
+  without shortening an existing reservation; numeric delays and HTTP dates produce the shared retry
+  deadline returned to clients. Cached errors retain the evidence timestamp and remaining retry delay.
+- Validation passes 42 focused tests, including API/gateway integration, and five checks against isolated
+  Redis covering queued attribution, competing requests and concurrent backoff. TypeScript, lint, both
+  boundary checks and the Yearn production build pass. The bridge rollout flag remains disabled.
+
 ## Next: stage 5
 
 Decode legacy persistence without inventing missing evidence, complete activity/acknowledgement presentation,

@@ -29,6 +29,26 @@ redis.call('ZREM', KEYS[2], first)
 redis.call('HDEL', KEYS[5], first)
 return {'claimed', payload, tostring(now), first}
 `
+// Backoff can extend an existing reservation, including one installed by another worker, but never shorten it.
+export const BRIDGE_GATEWAY_BACKOFF = `
+local clock = redis.call('TIME')
+local now = tonumber(clock[1]) * 1000 + math.floor(tonumber(clock[2]) / 1000)
+local wait = math.max(10000, redis.call('PTTL', KEYS[1]), tonumber(ARGV[1]), tonumber(ARGV[2]) - now)
+redis.call('SET', KEYS[1], 'backoff', 'PX', wait)
+return {tostring(now + wait), tostring(wait)}
+`
+
+function retryAfter(response: Response): [string, string] {
+  const header = response.headers.get('Retry-After') ?? ''
+  const milliseconds = /^\d+$/.test(header) ? Number(header) * 1000 : undefined
+  if (milliseconds !== undefined && Number.isSafeInteger(milliseconds)) return [String(milliseconds), '0']
+  const deadline = milliseconds === undefined ? Date.parse(header) : NaN
+  return Number.isFinite(deadline) ? ['0', String(deadline)] : ['30000', '0']
+}
+
+const retryHeaders = (status: number, nextCheckAt: number, now: number) =>
+  status === 429 ? { 'Retry-After': String(Math.max(1, Math.ceil((nextCheckAt - now) / 1000))) } : undefined
+
 export type TBridgeGatewayStore = Pick<Redis, 'eval' | 'set'>
 export async function runBridgeGateway(
   store: TBridgeGatewayStore,
@@ -47,7 +67,10 @@ export async function runBridgeGateway(
   )
   if (claim[0] === 'cached') {
     const saved = JSON.parse(claim[1]) as { body: Record<string, unknown>; status: number }
-    return Response.json(saved.body, { status: saved.status })
+    return Response.json(saved.body, {
+      status: saved.status,
+      headers: retryHeaders(saved.status, Number(saved.body.nextCheckAt), Number(claim[2]))
+    })
   }
   if (claim[0] !== 'claimed')
     return Response.json(
@@ -58,19 +81,26 @@ export async function runBridgeGateway(
   signal.throwIfAborted()
   const workKey = claim[3] ?? key
   const response = await request(signal, claim[1] || identity)
-  const body = { ...(await response.json()), observedAt, nextCheckAt: observedAt + 30_000 }
+  const [nextCheckAt, wait] =
+    response.status === 429
+      ? (
+          await store.eval<[string, string], [string, string]>(
+            BRIDGE_GATEWAY_BACKOFF,
+            [`${prefix}:budget`],
+            retryAfter(response)
+          )
+        ).map(Number)
+      : [observedAt + 30_000, 30_000]
+  const headers = { 'Retry-After': String(Math.ceil(wait / 1000)) }
+  const body = { ...(await response.json()), observedAt, nextCheckAt }
   // Retain failed observations briefly as well: concurrent tabs must not amplify outages.
   await store.set(`${prefix}:cache:${workKey}`, JSON.stringify({ body, status: response.status }), { px: 10_000 })
-  if (response.status === 429)
-    await store.set(`${prefix}:budget`, 'backoff', {
-      px: Math.max(10_000, Math.min(300_000, Number(response.headers.get('Retry-After')) * 1000 || 30_000))
-    })
   if (workKey !== key)
     return Response.json(
-      { error: 'Bridge status check queued. Tracking will retry.', nextCheckAt: observedAt + 30_000 },
-      { status: 429, headers: { 'Retry-After': '30' } }
+      { error: 'Bridge status check queued. Tracking will retry.', nextCheckAt },
+      { status: 429, headers }
     )
-  return Response.json(body, { status: response.status })
+  return Response.json(body, { status: response.status, headers: response.status === 429 ? headers : undefined })
 }
 
 export async function bridgeGateway(
