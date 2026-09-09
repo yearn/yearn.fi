@@ -843,6 +843,38 @@ describe('getHoldingsProtocolReturnHistory', () => {
     )
   })
 
+  it.each(['disappears', 'recovers'])('rebuilds the whole Index when a price %s', async (change) => {
+    const firstDay = 1_800_000_000
+    const secondDay = firstDay + 86_400
+    const thirdDay = secondDay + 86_400
+    getPPSMock.mockReturnValue(change === 'recovers' ? 0 : 1)
+    generateDailyTimestampsMock.mockReturnValue([firstDay, secondDay])
+    const { getHoldingsProtocolReturnHistory } = await import('./pnlSimple')
+    await getHoldingsProtocolReturnHistory(USER, '1y')
+    const cachedResponse = saveCachedProtocolReturnHistoryMock.mock.calls[0]![3]
+    getCachedProtocolReturnHistoryMock.mockResolvedValue({
+      settledDate: `date-${secondDay + 1}`,
+      response: cachedResponse
+    })
+    generateDailyTimestampsMock.mockReturnValue([firstDay, secondDay, thirdDay])
+    getPPSMock.mockImplementation((_timeline: Map<number, number>, timestamp: number) =>
+      change === 'disappears' && timestamp >= thirdDay ? 0 : 1
+    )
+    debugLogMock.mockClear()
+    const result = await getHoldingsProtocolReturnHistory(USER, '1y')
+    expect(result.dataPoints.map((point) => point.growthIndex)).toEqual(
+      change === 'disappears' ? [null, null, null] : [100, 100, 100]
+    )
+    expect(result.summary.indexExcludedVaults).toEqual(
+      change === 'disappears' ? [{ chainId: 1, vaultAddress: VAULT, symbol: 'TST' }] : []
+    )
+    expect(debugLogMock).toHaveBeenCalledWith(
+      'protocol-return-history',
+      'rebuilt protocol return history',
+      expect.objectContaining({ overlapMatched: change === 'disappears' ? false : null })
+    )
+  })
+
   it('appends a missing settled date and matches a clean rebuild', async () => {
     const firstDay = 1_800_000_000
     const secondDay = firstDay + 86_400

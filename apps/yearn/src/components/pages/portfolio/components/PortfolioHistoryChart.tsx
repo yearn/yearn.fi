@@ -748,9 +748,13 @@ export function PortfolioHistoryChart({
             })
           ))
     )
-  const historyWarning = hasMissingEthGrowth
-    ? 'ETH growth is partial: historical prices are missing for one or more vaults.'
-    : null
+  const excludedIndexVaultCount = protocolReturnSummary?.indexExcludedVaults?.length ?? 0
+  const historyWarning =
+    resolvedGrowthDisplayMode === 'index' && excludedIndexVaultCount > 0
+      ? `Partial Index: ${excludedIndexVaultCount} ${excludedIndexVaultCount === 1 ? 'vault excluded' : 'vaults excluded'} because valuation data is incomplete.`
+      : hasMissingEthGrowth
+        ? 'ETH growth is partial: historical prices are missing for one or more vaults.'
+        : null
   const yAxisFloor = activeTab === 'growth' && resolvedGrowthDisplayMode === 'index' ? 100 : 0
   const yAxisTicks = useMemo(
     () =>

@@ -52,6 +52,21 @@ const props: ComponentProps<typeof PortfolioHistoryChart> = {
 }
 
 describe('portfolio growth pricing availability', () => {
+  it('labels an Index built from a subset without changing USD warnings', () => {
+    const summary = {
+      ...props.protocolReturnSummary!,
+      indexExcludedVaults: [{ chainId: 1, vaultAddress: '0x456', symbol: 'HBTC' }]
+    }
+    const html = renderToStaticMarkup(
+      <PortfolioHistoryChart {...props} protocolReturnSummary={summary} growthDisplayModeOverride={'index'} />
+    )
+    expect(html).toContain('Partial Index: 1 vault excluded because valuation data is incomplete.')
+    expect(html).toContain('Contribution chart')
+    const usd = renderToStaticMarkup(
+      <PortfolioHistoryChart {...props} protocolReturnSummary={summary} growthDisplayModeOverride={'usd'} />
+    )
+    expect(usd).not.toContain('Partial Index')
+  })
   it('keeps ETH selected and explains missing prices instead of silently rendering Index', () => {
     const html = renderToStaticMarkup(<PortfolioHistoryChart {...props} />)
 

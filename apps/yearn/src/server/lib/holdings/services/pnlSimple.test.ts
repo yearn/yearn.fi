@@ -315,9 +315,7 @@ describe('pnl simple protocol return', () => {
       priceData: new Map([[ASSET_PRICE_KEY, new Map([[0, 1]])]])
     }
     const history = buildProtocolReturnHistorySeries({ ...inputs, timestamps: [100, 200, 300] })
-    expect(history[0]?.growthIndex).toBe(100)
-    expect(history[1]?.growthIndex).toBeNull()
-    expect(history[2]?.growthIndex).toBeNull()
+    expect(history.map((point) => point.growthIndex)).toEqual([null, null, null])
     const tail = buildProtocolReturnHistorySeries({
       ...inputs,
       timestamps: [300, 400],
@@ -325,6 +323,94 @@ describe('pnl simple protocol return', () => {
     })
     expect(tail.map((point) => point.growthIndex)).toEqual([null, null])
   })
+
+  it.each(['zero PPS', 'missing metadata', 'missing receipt price', 'intermediate PPS gap'])(
+    'keeps a consistent partial Index when another vault has %s',
+    (issue) => {
+      const badVault = '0x9999999999999999999999999999999999999999'
+      const badAsset = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+      const badKey = toVaultKey(1, badVault)
+      const events = [
+        baseEvent({ kind: 'transfer', id: 'good', blockTimestamp: 100 }),
+        baseEvent({
+          kind: 'transfer',
+          id: 'bad',
+          blockTimestamp: 100,
+          vaultAddress: badVault,
+          familyVaultAddress: badVault,
+          shares: 1000n * ONE
+        })
+      ]
+      const inputs = {
+        events,
+        userAddress: USER,
+        metadata: new Map([
+          ...metadata,
+          ...(issue === 'missing metadata'
+            ? []
+            : [
+                [
+                  badKey,
+                  {
+                    ...metadata.get(VAULT_KEY)!,
+                    address: badVault,
+                    token: { address: badAsset, symbol: 'BAD', decimals: 18 }
+                  }
+                ] as const
+              ])
+        ]),
+        ppsData: new Map([
+          [
+            VAULT_KEY,
+            new Map([
+              [100, 1],
+              [200, 1.1],
+              [300, 1.2]
+            ])
+          ],
+          [
+            badKey,
+            new Map([
+              [100, issue === 'zero PPS' ? 0 : 1],
+              [200, issue === 'intermediate PPS gap' || issue === 'zero PPS' ? 0 : 1.1],
+              [300, 1.2]
+            ])
+          ]
+        ]),
+        priceData: new Map([
+          [ASSET_PRICE_KEY, new Map([[0, 1]])],
+          [`ethereum:${badAsset}`, new Map([[0, issue === 'missing receipt price' ? 0 : 1]])]
+        ]),
+        timestamps: [100, 200, 300]
+      }
+      const history = buildProtocolReturnHistorySeries(inputs)
+      const control = buildProtocolReturnHistorySeries({ ...inputs, events: events.slice(0, 1) })
+      history.forEach((point, index) => {
+        expect(point.growthIndex).toBeCloseTo(control[index]!.growthIndex!, 10)
+      })
+      expect(history.at(-1)?.growthIndex).toBeCloseTo(120)
+
+      const selectedVaults = materializeProtocolReturnVaults({
+        ...inputs,
+        ledgers: buildProtocolReturnLedgers({ ...inputs, currentTimestamp: 300 }),
+        currentTimestamp: 300
+      })
+      const familySeries = buildProtocolReturnFamilyHistorySeries({
+        ...inputs,
+        selectedVaults,
+        portfolioPoints: history,
+        excludedIndexVaultKeys: new Set([badKey])
+      })
+      expect(
+        familySeries
+          .find((series) => series.vaultAddress === badVault)
+          ?.dataPoints.map((point) => point.growthIndexContribution)
+      ).toEqual([null, null, null])
+      expect(
+        familySeries.find((series) => series.vaultAddress === VAULT)?.dataPoints.at(-1)?.growthIndexContribution
+      ).toBeCloseTo(20)
+    }
+  )
 
   it('ignores events after an explicit ledger cutoff', () => {
     const vault = materializeVault({

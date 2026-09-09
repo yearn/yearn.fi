@@ -39,6 +39,9 @@ const portfolioProtocolReturnHistorySummarySchema = z.object({
     other: z.number()
   }),
   incompleteVaults: z.array(portfolioProtocolReturnIncompleteVaultSchema).optional(),
+  indexExcludedVaults: z
+    .array(z.object({ chainId: z.number(), vaultAddress: z.string(), symbol: z.string().nullable() }))
+    .optional(),
   isComplete: z.boolean()
 })
 

@@ -24,6 +24,9 @@ describe('portfolioResponseSchema', () => {
           recommendedGrowthDisplay: 'usd',
           recommendedGrowthDisplayReason: 'stable_dominant',
           openBaselineCompositionUsd: { stable: 100, ethFamily: 0, other: 0 },
+          indexExcludedVaults: [
+            { chainId: 1, vaultAddress: '0x5555555555555555555555555555555555555555', symbol: 'yvMISSING' }
+          ],
           incompleteVaults: [
             {
               chainId: 1,
@@ -97,6 +100,9 @@ describe('portfolioResponseSchema', () => {
     })
 
     expect(parsed.growth.vaults[0]?.issues).toEqual(['missing_exit_price'])
+    expect(parsed.protocolReturn.summary.indexExcludedVaults).toEqual([
+      { chainId: 1, vaultAddress: '0x5555555555555555555555555555555555555555', symbol: 'yvMISSING' }
+    ])
     expect(parsed.protocolReturn.summary.incompleteVaults?.[0]).toMatchObject({
       vaultAddress: '0x5555555555555555555555555555555555555555',
       status: 'missing_pps',
