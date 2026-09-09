@@ -1,4 +1,4 @@
-import { decodeFunctionData, isAddressEqual, toFunctionSignature } from 'viem'
+import { decodeFunctionData, isAddressEqual, toFunctionSelector, toFunctionSignature } from 'viem'
 import { strategyManagementAbi } from './abi'
 import type { TPendingTimelockStrategy, TTimelockControllerConfig, TTimelockStrategyStatus } from './types'
 
@@ -62,7 +62,10 @@ type TDecodedUpdateMaxDebtCall = Extract<TDecodedManagementCall, { name: 'update
 function decodeManagementCall(call: TTimelockScheduledCall): TDecodedManagementCall | null {
   try {
     const decoded = decodeFunctionData({ abi: strategyManagementAbi, data: call.data })
-    const abiItem = strategyManagementAbi.find((item) => item.type === 'function' && item.name === decoded.functionName)
+    const selector = call.data.slice(0, 10)
+    const abiItem = strategyManagementAbi.find(
+      (item) => item.type === 'function' && toFunctionSelector(item) === selector
+    )
     const signature = abiItem ? toFunctionSignature(abiItem) : decoded.functionName
 
     if (decoded.functionName === 'add_strategy') {
