@@ -76,6 +76,13 @@ export type TTransactionPresentation = {
   refund?: TTransactionReference
 }
 
+export function hasSuccessfulSourceReceipt(record: TTransactionRecord): boolean {
+  const source = record.source
+  return Boolean(
+    source && source.receipt.status === 'success' && (!source.replacement || source.replacement.reason === 'repriced')
+  )
+}
+
 export function selectTransaction(record: TTransactionRecord): TTransactionPresentation {
   const common = { reference: record.effective, canResubmit: false as const }
   if (record.conflict)
@@ -191,12 +198,7 @@ export function reduceTransaction(
     }
   }
   if (observation.kind === 'settlement') {
-    if (
-      record.settlement === 'same-chain' ||
-      !record.source ||
-      record.source.receipt.status !== 'success' ||
-      (record.source.replacement && record.source.replacement.reason !== 'repriced')
-    )
+    if (record.settlement === 'same-chain' || !hasSuccessfulSourceReceipt(record))
       throw new Error('Destination evidence requires successful source confirmation')
     const next = observation.evidence
     const previous = record.destination

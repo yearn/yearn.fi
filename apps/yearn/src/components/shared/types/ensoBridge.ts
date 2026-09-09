@@ -1,6 +1,5 @@
 import type { Hash } from 'viem'
 
-export const ENSO_BRIDGE_PROTOCOLS = ['stargate', 'ccip', 'relay'] as const
 export type TEnsoBridgeProtocol = string
 export const ENSO_BRIDGE_STATUSES = [
   'pending',

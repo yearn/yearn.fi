@@ -1,7 +1,8 @@
 import {
   buildTransactionPlan,
   type VaultWidgetTransactionMode,
-  type VaultWidgetTransactionPlan
+  type VaultWidgetTransactionPlan,
+  type VaultWidgetTransactionRequest
 } from '@yearn/vault-widget/headless'
 import { buildSafeDepositBatch } from '@yearn/vault-widget/internal/components/widget/deposit/safeDepositBatch'
 import {
@@ -56,8 +57,8 @@ function isEligibleRoute(mode: VaultWidgetTransactionMode, routeType: string): b
 
 /**
  * Converts the final, already-simulated styled-widget request into the public
- * headless plan shape. Returning undefined is intentional: callers must keep
- * using the battle-tested legacy overlay whenever eligibility is uncertain.
+ * headless plan shape. Returning undefined leaves deferred preparation or
+ * legacy fallback to the overlay, according to host capabilities.
  */
 export function buildEligibleStyledWidgetPlan({
   canonicalChainId,
@@ -92,6 +93,13 @@ export function buildEligibleStyledWidgetPlan({
     return undefined
   }
 
+  const planForRequest = (request: VaultWidgetTransactionRequest) =>
+    buildTransactionPlan({
+      connectedChainId: canonicalChainId,
+      walletType: 'eoa',
+      intent: { id, mode, calls: [{ id: mode, label, request }] }
+    })
+
   if (isRawTransactionPreparation(prepare)) {
     const raw = prepare.transaction
     if (
@@ -105,21 +113,7 @@ export function buildEligibleStyledWidgetPlan({
       !/^\d+$/.test(raw.value)
     )
       return undefined
-    return buildTransactionPlan({
-      connectedChainId: canonicalChainId,
-      walletType: 'eoa',
-      intent: {
-        id,
-        mode,
-        calls: [
-          {
-            id: mode,
-            label,
-            request: { chainId: canonicalChainId, to: raw.to, data: raw.data, value: BigInt(raw.value) }
-          }
-        ]
-      }
-    })
+    return planForRequest({ chainId: canonicalChainId, to: raw.to, data: raw.data, value: BigInt(raw.value) })
   }
   if (routeType === 'ENSO') return undefined
 
@@ -137,25 +131,11 @@ export function buildEligibleStyledWidgetPlan({
   const data = resolvePreparedCallData(request)
   if (!data) return undefined
 
-  return buildTransactionPlan({
-    connectedChainId: connectedCanonicalChainId,
-    walletType: 'eoa',
-    intent: {
-      id,
-      mode,
-      calls: [
-        {
-          id: mode,
-          label,
-          request: {
-            chainId: canonicalChainId,
-            to: request.address,
-            data,
-            value: request.value as bigint | undefined
-          }
-        }
-      ]
-    }
+  return planForRequest({
+    chainId: canonicalChainId,
+    to: request.address,
+    data,
+    value: request.value as bigint | undefined
   })
 }
 

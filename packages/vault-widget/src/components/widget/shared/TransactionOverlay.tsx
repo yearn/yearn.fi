@@ -2,6 +2,7 @@ import { useQuery } from '@tanstack/react-query'
 import { getPublicClient } from '@wagmi/core'
 import {
   awaitTransactionRefresh,
+  getConfirmedTransactionReceipt,
   getTransactionConfirmations,
   type VaultWidgetTransactionPlan
 } from '@yearn/vault-widget/headless'
@@ -9,9 +10,29 @@ import { Button } from '@yearn/vault-widget/internal/components/shared/Button'
 import { LifecycleTransactionOverlay } from '@yearn/vault-widget/internal/components/widget/shared/LifecycleTransactionOverlay'
 import type { TOverlayRecipe } from '@yearn/vault-widget/internal/components/widget/shared/lifecyclePreparation'
 import {
-  getPlannedTransactionErrorPresentation,
-  type TPlannedTransactionFailureKind
-} from '@yearn/vault-widget/internal/components/widget/shared/plannedTransactionController'
+  AUTO_CONTINUE_SUCCESS_DELAY_MS,
+  type CompletionDeferral,
+  getAutoContinueConfirmDelayMs,
+  getBridgeTrackerLink,
+  getInitialOverlayState,
+  getLegacyTransactionErrorPresentation,
+  getPendingTransactionTitle,
+  getSubmittedTransactionCopy,
+  hasExecutableWalletConnector,
+  isConfirmedSafeTransactionFailure,
+  type OverlayState,
+  resolveCompletionDeferral,
+  resolveCrossChainSourceCompletion,
+  resolveExecutionTrackingHash,
+  resolveOverlayConnectedChainId,
+  resolvePendingSafeOverlayTransition,
+  resolveTransactionReceiptOutcome,
+  shouldAutoContinueFromSuccessState,
+  shouldAutoContinuePermitSuccess,
+  shouldRefetchNextStepAfterReceipt,
+  shouldRunDeferredCompletion,
+  shouldStartStepOnOpen
+} from '@yearn/vault-widget/internal/components/widget/shared/transactionOverlay.helpers'
 import { cl } from '@yearn/vault-widget/internal/utils/index'
 import type { TSettlementRequirement } from '@yearn/vault-widget/lifecycle/settlement'
 import {
@@ -40,31 +61,7 @@ import {
   useSwitchChain,
   useWriteContract
 } from 'wagmi'
-import { getConfirmedTransactionReceipt } from './submittedTransactionReceipt'
 import { AnimatedCheckmark, ErrorIcon, Spinner } from './TransactionStateIndicators'
-import {
-  AUTO_CONTINUE_SUCCESS_DELAY_MS,
-  type CompletionDeferral,
-  getAutoContinueConfirmDelayMs,
-  getBridgeTrackerLink,
-  getInitialOverlayState,
-  getPendingTransactionTitle,
-  getSubmittedTransactionCopy,
-  hasExecutableWalletConnector,
-  isConfirmedSafeTransactionFailure,
-  type OverlayState,
-  resolveCompletionDeferral,
-  resolveCrossChainSourceCompletion,
-  resolveExecutionTrackingHash,
-  resolveOverlayConnectedChainId,
-  resolvePendingSafeOverlayTransition,
-  resolveTransactionReceiptOutcome,
-  shouldAutoContinueFromSuccessState,
-  shouldAutoContinuePermitSuccess,
-  shouldRefetchNextStepAfterReceipt,
-  shouldRunDeferredCompletion,
-  shouldStartStepOnOpen
-} from './transactionOverlay.helpers'
 
 export type PermitDataDirect = {
   domain: TypedDataDomain
@@ -299,7 +296,7 @@ const LegacyTransactionOverlay: FC<TransactionOverlayProps> = ({
   const [errorMessage, setErrorMessage] = useState<string>('')
   const [hasCompletedFlow, setHasCompletedFlow] = useState(false)
   const [completedStepSnapshot, setCompletedStepSnapshot] = useState<TransactionStep | null>(null)
-  const [plannedFailureKind, setPlannedFailureKind] = useState<TPlannedTransactionFailureKind>('pre-submission')
+  const [hasRefreshFailed, setHasRefreshFailed] = useState(false)
 
   const runtime = useVaultWidgetRuntime()
   const wagmiConfig = useConfig()
@@ -639,7 +636,7 @@ const LegacyTransactionOverlay: FC<TransactionOverlayProps> = ({
       setErrorMessage('')
       setHasCompletedFlow(false)
       setCompletedStepSnapshot(null)
-      setPlannedFailureKind('pre-submission')
+      setHasRefreshFailed(false)
       resetTxState(true)
       hasStartedRef.current = false
       hasAutoContinuedFromStepRef.current = null
@@ -1398,7 +1395,7 @@ const LegacyTransactionOverlay: FC<TransactionOverlayProps> = ({
           try {
             await awaitTransactionRefresh(() => onBeforeSuccess(capturedStep?.id ?? ''))
           } catch (error) {
-            setPlannedFailureKind('confirmed-refresh')
+            setHasRefreshFailed(true)
             setErrorMessage(error instanceof Error ? error.message : 'Balance refresh failed')
             setOverlayState('error')
             return
@@ -1535,7 +1532,7 @@ const LegacyTransactionOverlay: FC<TransactionOverlayProps> = ({
     }
   }, [isOpen, overlayState, receipt.data?.transactionHash, step?.id, step?.prepare.refetch, isStepReady])
 
-  const transactionErrorPresentation = getPlannedTransactionErrorPresentation(plannedFailureKind, errorMessage)
+  const transactionErrorPresentation = getLegacyTransactionErrorPresentation(hasRefreshFailed, errorMessage)
   const displayedErrorPresentation = failedStepSuccessId
     ? {
         title: 'Next step unavailable',

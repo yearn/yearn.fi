@@ -201,40 +201,41 @@ export function LifecycleTransactionOverlay(props: TransactionOverlayProps) {
   const unresolved = view?.outcome === 'unknown' || flow?.phase === 'unknown'
   const failed = view?.outcome === 'error' || flow?.phase === 'blocked' || flow?.phase === 'rejected'
   const recovering = !record && (!flow || flow.phase === 'confirming') && state.history !== 'ready'
-  const title =
-    isPaused || needsReview
-      ? 'Ready for the next step'
-      : recovering
-        ? 'Checking transaction history'
-        : success
-          ? refreshing
-            ? 'Transaction confirmed'
-            : record?.settlement !== 'same-chain'
-              ? 'Cross-chain transaction complete'
-              : (finalStep?.successTitle ?? 'Transaction confirmed')
-          : ((flow?.phase === 'confirming' ? undefined : view?.label) ??
-            (flow?.phase === 'rejected'
-              ? 'Transaction cancelled'
-              : flow?.phase === 'blocked'
-                ? 'Review transaction'
-                : unresolved
-                  ? 'Check your wallet'
-                  : 'Confirm in your wallet'))
-  const detail = isPaused
-    ? flow?.error
-    : needsReview
-      ? 'This transaction confirmed. Close and review the remaining action to continue.'
-      : recovering
-        ? state.history === 'unavailable'
-          ? 'Transaction history is unavailable. Retrying before requesting your wallet.'
-          : 'Checking for unfinished transactions before requesting your wallet.'
-        : success
-          ? refreshing
-            ? 'Updating balances...'
-            : record?.settlement !== 'same-chain'
-              ? 'Your funds and destination action have been delivered.'
-              : finalStep?.successMessage
-          : (view?.detail ?? flow?.error ?? (record ? 'Waiting for confirmation...' : step?.confirmMessage))
+  const { title, detail } = (() => {
+    if (isPaused || needsReview)
+      return {
+        title: 'Ready for the next step',
+        detail: isPaused
+          ? flow?.error
+          : 'This transaction confirmed. Close and review the remaining action to continue.'
+      }
+    if (recovering)
+      return {
+        title: 'Checking transaction history',
+        detail:
+          state.history === 'unavailable'
+            ? 'Transaction history is unavailable. Retrying before requesting your wallet.'
+            : 'Checking for unfinished transactions before requesting your wallet.'
+      }
+    if (success) {
+      if (refreshing) return { title: 'Transaction confirmed', detail: 'Updating balances...' }
+      if (record?.settlement !== 'same-chain')
+        return {
+          title: 'Cross-chain transaction complete',
+          detail: 'Your funds and destination action have been delivered.'
+        }
+      return { title: finalStep?.successTitle ?? 'Transaction confirmed', detail: finalStep?.successMessage }
+    }
+    const fallbackTitle = () => {
+      if (flow?.phase === 'rejected') return 'Transaction cancelled'
+      if (flow?.phase === 'blocked') return 'Review transaction'
+      return unresolved ? 'Check your wallet' : 'Confirm in your wallet'
+    }
+    return {
+      title: (flow?.phase === 'confirming' ? undefined : view?.label) ?? fallbackTitle(),
+      detail: view?.detail ?? flow?.error ?? (record ? 'Waiting for confirmation...' : step?.confirmMessage)
+    }
+  })()
   return (
     <div
       className="absolute inset-0 z-50 flex flex-col rounded-lg bg-surface p-6 text-center"

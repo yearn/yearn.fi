@@ -10,6 +10,7 @@ import {
   type VaultWidgetTransactionReceiptResult
 } from '@yearn/vault-widget/headless'
 import {
+  hasSuccessfulSourceReceipt,
   reduceTransaction,
   selectTransaction,
   type TTransactionObservation,
@@ -288,11 +289,10 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
     const record = getRecord(recordId)
     const key = `${recordId}:${milestone}`
     if (
-      !record?.source ||
+      !record ||
       record.settlement === 'same-chain' ||
-      record.source.receipt.status !== 'success' ||
+      !hasSuccessfulSourceReceipt(record) ||
       record.conflict ||
-      (record.source.replacement && record.source.replacement.reason !== 'repriced') ||
       (milestone === 'refund' && record.destination?.funds !== 'refunded') ||
       ['success', 'error'].includes(record.milestoneRefresh?.[milestone]?.status ?? '') ||
       refreshes.has(key)
@@ -324,10 +324,8 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
         .filter((record) => {
           if (
             record.settlement === 'same-chain' ||
-            !record.source ||
+            !hasSuccessfulSourceReceipt(record) ||
             record.conflict ||
-            record.source.receipt.status !== 'success' ||
-            (record.source.replacement && record.source.replacement.reason !== 'repriced') ||
             record.settlementTracking?.paused ||
             (record.settlementTracking?.nextCheckAt ?? 0) > now()
           )
@@ -349,13 +347,12 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
       const checkedAt = now()
       const attempt = (candidate.settlementTracking?.attempt ?? 0) + 1
       const expiresAt = candidate.settlementTracking?.expiresAt ?? checkedAt + 24 * 60 * 60 * 1000
+      const tracking = { attempt, checkedAt, expiresAt }
       if (checkedAt >= expiresAt) {
         await observe(candidate.id, {
           kind: 'settlement-check',
           tracking: {
-            attempt,
-            checkedAt,
-            expiresAt,
+            ...tracking,
             paused: true,
             error: 'Automatic bridge tracking paused. Recheck the transaction or use its bridge tracker.'
           }
@@ -364,7 +361,7 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
       }
       await observe(candidate.id, {
         kind: 'settlement-check',
-        tracking: { attempt, checkedAt, expiresAt, nextCheckAt: checkedAt + interval }
+        tracking: { ...tracking, nextCheckAt: checkedAt + interval }
       })
       try {
         if (!options.observeSettlement)
@@ -380,9 +377,7 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
         await observe(candidate.id, {
           kind: 'settlement-check',
           tracking: {
-            attempt,
-            checkedAt,
-            expiresAt,
+            ...tracking,
             nextCheckAt: Math.max(checkedAt + interval, evidence.nextCheckAt ?? 0)
           }
         })
@@ -393,9 +388,7 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
         await observe(candidate.id, {
           kind: 'settlement-check',
           tracking: {
-            attempt,
-            checkedAt,
-            expiresAt,
+            ...tracking,
             nextCheckAt: Math.max(
               checkedAt + interval,
               error &&
@@ -606,22 +599,15 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
           (display) => display?.bridgeProtocol || (display?.toChainId && display.toChainId !== call.chainId)
         )) ||
       (input.settlement &&
-        (!isSettlementRequirement(input.settlement) ||
-          !Number.isSafeInteger(input.settlement.destinationChainId) ||
-          input.settlement.destinationChainId <= 0 ||
-          input.settlement.destinationChainId === call.chainId))
+        (!isSettlementRequirement(input.settlement) || input.settlement.destinationChainId === call.chainId))
     )
       throw new Error('This lifecycle accepts one reviewed source-chain sequence')
-    const frozen = structuredClone({
-      ...input,
-      validate: undefined,
-      refresh: undefined,
-      prepareStep: undefined,
-      afterStep: undefined,
-      describeStep: undefined,
-      authorize: undefined,
-      describeSettlement: undefined
-    })
+    const frozen = {
+      plan: frozenPlan,
+      display: structuredClone(input.display),
+      displayByStep: structuredClone(input.displayByStep),
+      settlement: structuredClone(input.settlement)
+    }
     const flow: TTransactionFlow = {
       id: input.commandId,
       owner: input.owner,

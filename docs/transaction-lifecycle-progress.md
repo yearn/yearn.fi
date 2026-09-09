@@ -334,3 +334,22 @@ and dropped provider backoff between the status proxy and gateway.
 
 Decode legacy persistence without inventing missing evidence, complete activity/acknowledgement presentation,
 and remove superseded execution/notification ownership after the rollout gates are satisfied.
+
+## Simplification pass 1
+
+Removed the retired planned-controller error module and receipt forwarding module. The legacy overlay now
+represents only the refresh/submission error distinction it uses. Shared source-confirmation checks, one frozen
+reviewed plan, common ready-plan construction and explicit overlay copy branches remove duplication without
+changing rollout eligibility. Existing receipt, sequence, quote and recovery regression coverage is retained.
+
+The next deletion targets have concrete prerequisites:
+
+| Old owner | Replacement | Required before removal |
+| --- | --- | --- |
+| Legacy transaction overlay | Lifecycle overlay and service | Migrate every remaining caller/host fallback; validate bridge rollout and transaction UX. |
+| Legacy notification pollers and partial status writers | Service observers and record reducer | Decode existing history and move remaining consumers to canonical records. |
+| Notification projection and conservative legacy bridge guard | Canonical activity and legacy record decoding | Complete persistence/presentation cutover while preserving old unresolved transfers. |
+| React preparation bridge | Reviewed executable recipes | Replace hook-driven continuation with reviewed executable recipes; preserve quote validation and explicit Continue. |
+
+The service's flow/record state and its separate storage/live merge paths need a deeper design pass. Their
+policies currently differ; this conservative pass does not merge them or claim those responsibilities are removed.
