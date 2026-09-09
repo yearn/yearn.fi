@@ -68,6 +68,16 @@ export const strategyManagementAbi = [
   },
   {
     type: 'function',
+    name: 'add_strategy',
+    inputs: [
+      { name: 'new_strategy', type: 'address' },
+      { name: 'add_to_queue', type: 'bool' }
+    ],
+    outputs: [],
+    stateMutability: 'nonpayable'
+  },
+  {
+    type: 'function',
     name: 'update_max_debt_for_strategy',
     inputs: [
       { name: 'strategy', type: 'address' },
@@ -82,6 +92,17 @@ export const strategyManagementAbi = [
     inputs: [
       { name: 'strategy', type: 'address' },
       { name: 'target_debt', type: 'uint256' }
+    ],
+    outputs: [{ type: 'uint256' }],
+    stateMutability: 'nonpayable'
+  },
+  {
+    type: 'function',
+    name: 'update_debt',
+    inputs: [
+      { name: 'strategy', type: 'address' },
+      { name: 'target_debt', type: 'uint256' },
+      { name: 'max_loss', type: 'uint256' }
     ],
     outputs: [{ type: 'uint256' }],
     stateMutability: 'nonpayable'
