@@ -59,7 +59,7 @@ export type VaultWidgetSafeTransactionDetails = {
 }
 
 export type VaultWidgetNotificationId = number | string
-export type VaultWidgetBridgeProtocol = 'stargate' | 'ccip' | 'relay'
+export type VaultWidgetBridgeProtocol = string
 export type VaultWidgetBridgeStatus =
   | 'pending'
   | 'inflight'

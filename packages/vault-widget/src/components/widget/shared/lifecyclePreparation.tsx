@@ -8,7 +8,7 @@ import type {
   TransactionOverlayProps,
   TransactionStep
 } from '@yearn/vault-widget/internal/components/widget/shared/TransactionOverlay'
-import type { TTransactionLifecycle } from '@yearn/vault-widget/lifecycle'
+import type { TSettlementRequirement, TTransactionLifecycle } from '@yearn/vault-widget/lifecycle'
 import {
   getContractTransactionRequest,
   getTransactionPreparationChainId,
@@ -17,7 +17,13 @@ import {
 } from '@yearn/vault-widget/types'
 import { type Abi, type Address, encodeFunctionData, isAddress, isHex, type TypedDataDefinition } from 'viem'
 
-export type TOverlayRecipe = { id: string; chainId: number; steps: readonly { id: string; label: string }[] }
+export type TOverlayRecipe = {
+  settlement?: TSettlementRequirement
+  previousIntentIds?: readonly string[]
+  id: string
+  chainId: number
+  steps: readonly { id: string; label: string }[]
+}
 type TAttachment = {
   canonicalChainId: (chainId?: number) => number | undefined
   id: string
@@ -198,11 +204,21 @@ function createPreparationBridge(owner: Address, recipe: TOverlayRecipe) {
     }
   }
 }
-export function getPreparationBridge(service: TTransactionLifecycle, owner: Address, recipe: TOverlayRecipe) {
+/** Attach to the accepted flow; completed flows must not lend their recipe to a new command. */
+export function getPreparationBridge(
+  service: TTransactionLifecycle,
+  owner: Address,
+  recipe: TOverlayRecipe,
+  commandId: string,
+  create: boolean
+) {
   const registry = bridges.get(service) ?? new Map()
   bridges.set(service, registry)
-  const key = `${owner.toLowerCase()}:${recipe.id}`
-  const bridge = registry.get(key) ?? createPreparationBridge(owner, recipe)
+  const flow = service.findActiveFlow(owner, recipe.id, recipe.previousIntentIds)
+  const key = flow?.id ?? commandId
+  const existing = registry.get(key)
+  if (existing || !create) return existing
+  const bridge = createPreparationBridge(owner, recipe)
   registry.set(key, bridge)
   return bridge
 }

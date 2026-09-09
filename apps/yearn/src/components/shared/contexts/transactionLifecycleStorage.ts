@@ -1,4 +1,5 @@
 import {
+  isSettlementRequirement,
   reduceTransaction,
   type TTransactionPersistence,
   type TTransactionRecord,
@@ -49,7 +50,7 @@ function compatibleRecord(value: unknown): value is TTransactionRecord {
     /^\d+$/.test(record.request.value) &&
     Number.isSafeInteger(record.original?.executionChainId) &&
     Number.isSafeInteger(record.effective?.executionChainId) &&
-    record.settlement === 'same-chain' &&
+    (record.settlement === 'same-chain' || isSettlementRequirement(record.settlement)) &&
     Boolean((record.original?.hash || record.safe?.proposalId) && record.request)
   )
 }
@@ -98,7 +99,8 @@ export function createTransactionLifecycleStorage(): TTransactionPersistence {
               previous &&
               (!compatibleRecord(previous) ||
                 previous.owner !== seed.owner ||
-                transactionIdentity(previous) !== transactionIdentity(seed))
+                transactionIdentity(previous) !== transactionIdentity(seed) ||
+                JSON.stringify(previous.settlement) !== JSON.stringify(seed.settlement))
             )
               throw new Error('Stored transaction identity does not match')
             const stored = previous ?? seed
@@ -114,13 +116,35 @@ export function createTransactionLifecycleStorage(): TTransactionPersistence {
               seed.source && !base.source
                 ? reduceTransaction(base, { kind: 'receipt', result: seed.source, observedAt: seed.source.observedAt })
                 : base
-            const withConflict = seed.conflict
-              ? reduceTransaction(withSource, { kind: 'conflict', message: seed.conflict })
+            const withDestination = seed.destination
+              ? reduceTransaction(withSource, { kind: 'settlement', evidence: seed.destination })
               : withSource
+            const withConflict = seed.conflict
+              ? reduceTransaction(withDestination, { kind: 'conflict', message: seed.conflict })
+              : withDestination
+            const withTracking = seed.settlementTracking
+              ? reduceTransaction(withConflict, { kind: 'settlement-check', tracking: seed.settlementTracking })
+              : withConflict
+            const withMilestones = Object.entries(seed.milestoneRefresh ?? {}).reduce(
+              (record, [milestone, value]) =>
+                value
+                  ? reduceTransaction(record, {
+                      kind: 'milestone-refresh',
+                      milestone: milestone as 'source' | 'refund',
+                      status: value.status,
+                      message: value.error
+                    })
+                  : record,
+              withTracking
+            )
             const recovered =
               seed.refresh !== 'idle'
-                ? reduceTransaction(withConflict, { kind: 'refresh', status: seed.refresh, message: seed.refreshError })
-                : withConflict
+                ? reduceTransaction(withMilestones, {
+                    kind: 'refresh',
+                    status: seed.refresh,
+                    message: seed.refreshError
+                  })
+                : withMilestones
             const next = observation ? reduceTransaction(recovered, observation) : recovered
             result.record = { ...next, storageError: undefined }
             store.put(result.record)

@@ -30,20 +30,29 @@ export function LifecycleTransactionOverlay(props: TransactionOverlayProps) {
             chainId: props.lifecycleRecipe!.chainId
           }))
         },
+    settlement: props.lifecycleRecipe?.settlement,
     step: props.step,
     steps: props.planSteps,
     owner: props.reviewedOwner ?? runtime.wallet.address,
     commandId: crypto.randomUUID()
   }))
-  const [bridge] = useState(() =>
+  const usesDeferredPreparation = reviewed.plan.steps.some((step) => step.kind === 'prepare')
+  const [preparationBridge] = useState(() =>
     props.lifecycleRecipe && reviewed.owner
-      ? getPreparationBridge(service, reviewed.owner, props.lifecycleRecipe)
+      ? getPreparationBridge(
+          service,
+          reviewed.owner,
+          props.lifecycleRecipe,
+          reviewed.commandId,
+          usesDeferredPreparation
+        )
       : undefined
   )
+  const bridge = usesDeferredPreparation ? preparationBridge : undefined
   // Synchronize route preparations at React commit boundaries. The service remains the only runner.
   useLayoutEffect(() => {
-    if (!bridge || !props.lifecycleRecipe) return
-    bridge.attach({
+    if (!preparationBridge || !props.lifecycleRecipe) return
+    preparationBridge.attach({
       canonicalChainId: runtime.chains.resolveCanonicalChainId,
       id: reviewed.commandId,
       props,
@@ -53,7 +62,7 @@ export function LifecycleTransactionOverlay(props: TransactionOverlayProps) {
     })
   })
   // Unmount detaches preparation only; accepted wallet submissions remain with the service.
-  useEffect(() => () => bridge?.detach(reviewed.commandId), [bridge, reviewed])
+  useEffect(() => () => preparationBridge?.detach(reviewed.commandId), [preparationBridge, reviewed])
   const [flowId, setFlowId] = useState<string>(reviewed.commandId)
   const activeId = useRef<string>(reviewed.commandId)
   const state = useSyncExternalStore(service.subscribe, service.getSnapshot, service.getSnapshot)
@@ -65,7 +74,7 @@ export function LifecycleTransactionOverlay(props: TransactionOverlayProps) {
     reviewed.steps?.[flow?.stepId ?? reviewed.plan.steps[0]?.id] ??
     props.step ??
     reviewed.step
-  const finalStepId = props.lifecycleRecipe
+  const finalStepId = usesDeferredPreparation
     ? (reviewed.plan.steps.at(-1)?.id ?? '')
     : (reviewed.plan.intent.calls.at(-1)?.id ?? '')
   const finalStep = bridge?.prepared.get(finalStepId) ?? reviewed.steps?.[finalStepId] ?? reviewed.step
@@ -76,6 +85,9 @@ export function LifecycleTransactionOverlay(props: TransactionOverlayProps) {
     record?.source && view?.outcome === 'success' && !isFinalRecord && flow?.phase === 'pending'
   )
   const refreshing = success && (record?.refresh === 'idle' || record?.refresh === 'pending')
+  const milestoneErrors = Object.values(record?.milestoneRefresh ?? {}).flatMap((value) =>
+    value?.error ? [value.error] : []
+  )
   const callbacks = useRef(props)
   callbacks.current = props
   const confettiId = `lifecycle-${useId().replace(/:/g, '')}`
@@ -105,6 +117,9 @@ export function LifecycleTransactionOverlay(props: TransactionOverlayProps) {
       commandId: reviewed.commandId,
       owner: reviewed.owner,
       plan: reviewed.plan,
+      previousIntentIds: props.lifecycleRecipe?.previousIntentIds,
+      settlement: reviewed.settlement,
+      describeSettlement: bridge ? (id) => bridge.prepared.get(id)?.settlement : undefined,
       display: finalStep?.notification,
       displayByStep: reviewed.steps
         ? Object.fromEntries(Object.entries(reviewed.steps).map(([id, step]) => [id, step.notification]))
@@ -173,6 +188,11 @@ export function LifecycleTransactionOverlay(props: TransactionOverlayProps) {
   const chain = view ? runtime.chains.getChain(view.reference.executionChainId) : undefined
   const explorer =
     chain?.blockExplorerUrl && view?.reference.hash ? `${chain.blockExplorerUrl}/tx/${view.reference.hash}` : undefined
+  const refundChain = view?.refund ? runtime.chains.getChain(view.refund.executionChainId) : undefined
+  const refundUrl =
+    refundChain?.blockExplorerUrl && view?.refund?.hash
+      ? `${refundChain.blockExplorerUrl}/tx/${view.refund.hash}`
+      : undefined
   const close = (): void => {
     if (success) complete()
     service.pause(flowId)
@@ -189,7 +209,9 @@ export function LifecycleTransactionOverlay(props: TransactionOverlayProps) {
         : success
           ? refreshing
             ? 'Transaction confirmed'
-            : (finalStep?.successTitle ?? 'Transaction confirmed')
+            : record?.settlement !== 'same-chain'
+              ? 'Cross-chain transaction complete'
+              : (finalStep?.successTitle ?? 'Transaction confirmed')
           : ((flow?.phase === 'confirming' ? undefined : view?.label) ??
             (flow?.phase === 'rejected'
               ? 'Transaction cancelled'
@@ -209,7 +231,9 @@ export function LifecycleTransactionOverlay(props: TransactionOverlayProps) {
         : success
           ? refreshing
             ? 'Updating balances...'
-            : finalStep?.successMessage
+            : record?.settlement !== 'same-chain'
+              ? 'Your funds and destination action have been delivered.'
+              : finalStep?.successMessage
           : (view?.detail ?? flow?.error ?? (record ? 'Waiting for confirmation...' : step?.confirmMessage))
   return (
     <div
@@ -238,6 +262,11 @@ export function LifecycleTransactionOverlay(props: TransactionOverlayProps) {
         <h3 className="mb-2 mt-6 text-lg font-semibold text-text-primary">{title}</h3>
         <p className="mb-4 whitespace-pre-line text-sm text-text-secondary">{detail}</p>
         {record?.storageError ? <p className="mb-4 text-sm text-text-secondary">{record.storageError}</p> : null}
+        {milestoneErrors.map((error) => (
+          <p key={error} className="mb-4 text-sm text-text-secondary">
+            {error}
+          </p>
+        ))}
         {record?.refreshError ? <p className="mb-4 text-sm text-text-secondary">{record.refreshError}</p> : null}
         {recovering && state.history === 'unavailable' ? (
           <Button className="mb-3 w-full max-w-xs" onClick={() => service.recheckHistory()}>
@@ -249,12 +278,37 @@ export function LifecycleTransactionOverlay(props: TransactionOverlayProps) {
             View on block explorer
           </a>
         ) : null}
+        {refundUrl ? (
+          <a
+            className="mb-4 text-sm font-semibold underline"
+            href={refundUrl}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            View refund transaction
+          </a>
+        ) : null}
+        {view?.recovery ? (
+          <a
+            className="mb-4 text-sm font-semibold underline"
+            href={view.recovery.url}
+            target="_blank"
+            rel="noopener noreferrer"
+          >
+            {view.recovery.label}
+          </a>
+        ) : null}
+        {record?.settlement !== 'same-chain' && record?.source && !success ? (
+          <Button className="mb-3 w-full max-w-xs" onClick={() => service.recheck(record.id)}>
+            Recheck bridge
+          </Button>
+        ) : null}
         {isPaused ? (
           <Button className="mb-3 w-full max-w-xs" onClick={() => service.continue(flowId)}>
             Continue
           </Button>
         ) : null}
-        {record?.refresh === 'error' ? (
+        {record && (record.refresh === 'error' || milestoneErrors.length > 0) ? (
           <Button className="mb-3 w-full max-w-xs" onClick={() => service.refresh(record.id)}>
             Refresh balances
           </Button>

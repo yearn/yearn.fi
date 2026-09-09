@@ -10,6 +10,10 @@ export function projectLifecycleNotification(record: TTransactionRecord): TNotif
     address: record.owner,
     chainId: record.effective.canonicalChainId,
     executionChainId: record.effective.executionChainId,
+    toChainId: record.settlement !== 'same-chain' ? record.settlement.destinationChainId : record.display?.toChainId,
+    destinationTxHash: record.destination?.destination?.hash,
+    sourceConfirmedAt: record.source ? record.source.observedAt / 1000 : undefined,
+    bridgeProtocol: record.settlement !== 'same-chain' ? record.settlement.protocols[0] : undefined,
     amount: record.display?.amount ?? '',
     fromAddress: record.display?.fromAddress,
     fromTokenName: record.display?.fromSymbol,
@@ -20,7 +24,10 @@ export function projectLifecycleNotification(record: TTransactionRecord): TNotif
     awaitingExecution: Boolean(record.safe && !record.safe.execution),
     createdAt: record.createdAt / 1000,
     timeFinished: ['success', 'error'].includes(view.outcome)
-      ? (record.source?.observedAt ?? record.safe?.execution?.observedAt ?? record.createdAt) / 1000
+      ? (record.destination?.observedAt ??
+          record.source?.observedAt ??
+          record.safe?.execution?.observedAt ??
+          record.createdAt) / 1000
       : undefined,
     blockNumber: record.source?.receipt.blockNumber,
     status: view.outcome === 'unknown' ? 'submitted' : view.outcome

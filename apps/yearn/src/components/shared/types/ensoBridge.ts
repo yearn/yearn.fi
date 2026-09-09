@@ -1,7 +1,7 @@
 import type { Hash } from 'viem'
 
 export const ENSO_BRIDGE_PROTOCOLS = ['stargate', 'ccip', 'relay'] as const
-export type TEnsoBridgeProtocol = (typeof ENSO_BRIDGE_PROTOCOLS)[number]
+export type TEnsoBridgeProtocol = string
 export const ENSO_BRIDGE_STATUSES = [
   'pending',
   'inflight',
@@ -23,7 +23,7 @@ export type TEnsoBridgeStatusResponse = {
 }
 
 export function isEnsoBridgeProtocol(value: unknown): value is TEnsoBridgeProtocol {
-  return typeof value === 'string' && ENSO_BRIDGE_PROTOCOLS.some((protocol) => protocol === value)
+  return typeof value === 'string' && /^[a-z][a-z0-9_-]{0,63}$/.test(value)
 }
 
 export function isEnsoBridgeStatus(value: unknown): value is TEnsoBridgeStatus {

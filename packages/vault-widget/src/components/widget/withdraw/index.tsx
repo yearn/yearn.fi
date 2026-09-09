@@ -859,14 +859,7 @@ export function WidgetWithdraw({
         canonicalChainId: chainId,
         connectedCanonicalChainId: runtime.chains.resolveCanonicalChainId(runtime.wallet.chainId),
         hasBatch: Boolean(currentStep?.batch),
-        id: [
-          'withdraw',
-          routeType,
-          sourceToken,
-          withdrawToken,
-          destinationChainId,
-          withdrawAmount.debouncedBn.toString()
-        ].join(':'),
+        id: withdrawalIntentKey,
         isCrossChain,
         isEnabled: currentStep?.isEnabled,
         isExecutionConfigured: isVaultWidgetExecutionConfigured(runtime),
@@ -882,16 +875,13 @@ export function WidgetWithdraw({
       approvalState.needsApproval,
       chainId,
       currentStep,
-      destinationChainId,
       isCrossChain,
       isWalletSafe,
       routeType,
       runtime.chains,
       runtime.execution,
       runtime.wallet.chainId,
-      sourceToken,
-      withdrawAmount.debouncedBn,
-      withdrawToken
+      withdrawalIntentKey
     ]
   )
 
@@ -1277,27 +1267,46 @@ export function WidgetWithdraw({
         isOpen={showTransactionOverlay}
         onClose={handleCloseTransactionOverlay}
         plan={activeTransactionPlan}
-        lifecycleRecipe={
-          !isCrossChain
-            ? {
-                id: withdrawalIntentKey,
-                chainId,
-                steps: safeWithdrawBatch
-                  ? [{ id: 'withdraw-batch', label: 'Approve & Withdraw' }]
-                  : [
-                      ...(approvalState.needsApproval ? [{ id: 'approve', label: 'Approve' }] : []),
-                      ...(routeType === 'DIRECT_UNSTAKE_WITHDRAW' && fallbackStep === 'unstake'
-                        ? [{ id: 'unstake', label: 'Unstake' }]
-                        : []),
-                      {
-                        id: routeType === 'DIRECT_UNSTAKE' ? 'unstake' : 'withdraw',
-                        label: routeType === 'DIRECT_UNSTAKE' ? 'Unstake' : 'Withdraw'
-                      }
-                    ]
-              }
-            : undefined
+        lifecycleRecipe={{
+          id: withdrawalIntentKey,
+          previousIntentIds: [
+            [
+              'withdraw',
+              routeType,
+              sourceToken,
+              withdrawToken,
+              destinationChainId,
+              withdrawAmount.debouncedBn.toString()
+            ].join(':')
+          ],
+          chainId,
+          settlement: isCrossChain
+            ? (activeFlow.periphery.bridgeSettlement ?? {
+                provider: 'enso',
+                destinationChainId,
+                protocols: [],
+                coverage: 'incomplete',
+                legs: []
+              })
+            : undefined,
+          steps: safeWithdrawBatch
+            ? [{ id: 'withdraw-batch', label: 'Approve & Withdraw' }]
+            : [
+                ...(approvalState.needsApproval ? [{ id: 'approve', label: 'Approve' }] : []),
+                ...(routeType === 'DIRECT_UNSTAKE_WITHDRAW' && fallbackStep === 'unstake'
+                  ? [{ id: 'unstake', label: 'Unstake' }]
+                  : []),
+                {
+                  id: routeType === 'DIRECT_UNSTAKE' ? 'unstake' : 'withdraw',
+                  label: routeType === 'DIRECT_UNSTAKE' ? 'Unstake' : 'Withdraw'
+                }
+              ]
+        }}
+        step={
+          currentStep && currentStep.id !== 'approve'
+            ? { ...currentStep, settlement: activeFlow.periphery.bridgeSettlement }
+            : currentStep
         }
-        step={currentStep}
         isLastStep={isLastStep}
         autoContinueToNextStep
         autoContinueStepIds={['approve', 'permit', 'unstake']}

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { getEnsoBridgeProtocol, normalizeEnsoRouteResponse } from './ensoRoute'
+import { getEnsoBridgeProtocol, getEnsoSettlement, normalizeEnsoRouteResponse } from './ensoRoute'
 
 const routePayload = {
   tx: {
@@ -30,13 +30,13 @@ describe('getEnsoBridgeProtocol', () => {
     expect(getEnsoBridgeProtocol(normalized.route)).toBe('relay')
   })
 
-  it('does not persist unsupported bridge protocols', () => {
+  it('preserves unknown path-safe bridge protocols', () => {
     expect(
       getEnsoBridgeProtocol({
         ...routePayload,
         route: [{ action: 'bridge', protocol: 'unsupported' }]
       })
-    ).toBeUndefined()
+    ).toBe('unsupported')
   })
 })
 
@@ -88,5 +88,52 @@ describe('normalizeEnsoRouteResponse', () => {
 
     expect(normalized.route).toBeUndefined()
     expect(normalized.error?.error).toBe('UnsupportedEnsoDelegateRoute')
+  })
+})
+
+describe('route-time settlement requirement', () => {
+  it('retains unknown protocols and available estimates without inventing stable leg IDs', () => {
+    const requirement = getEnsoSettlement(
+      {
+        ...routePayload,
+        route: [{ action: 'bridge', protocol: 'Future-Bridge' }],
+        bridgingEstimates: [{ protocol: 'Future-Bridge', estimatedSeconds: 90 }]
+      },
+      10
+    )
+    expect(requirement).toMatchObject({
+      provider: 'enso',
+      protocols: ['future-bridge'],
+      destinationChainId: 10,
+      estimatedSeconds: 90,
+      coverage: 'incomplete',
+      legs: [],
+      bridgeCount: 1
+    })
+  })
+  it('retains distinct route legs while ambiguous IDs remain incomplete', () => {
+    const requirement = getEnsoSettlement(
+      {
+        ...routePayload,
+        route: [
+          { id: 'same', action: 'bridge', protocol: 'one' },
+          { id: 'same', action: 'bridge', protocol: 'two' }
+        ]
+      },
+      10
+    )
+    expect(requirement.coverage).toBe('incomplete')
+    expect(requirement.legs).toHaveLength(1)
+    expect(requirement.bridgeCount).toBe(2)
+  })
+  it('preserves the destination requirement when metadata is missing or unsafe', () => {
+    expect(getEnsoSettlement(undefined, 10)).toMatchObject({
+      destinationChainId: 10,
+      protocols: [],
+      coverage: 'incomplete'
+    })
+    expect(
+      getEnsoSettlement({ ...routePayload, route: [{ action: 'bridge', protocol: '../unsafe' }] }, 10).protocols
+    ).toEqual([])
   })
 })

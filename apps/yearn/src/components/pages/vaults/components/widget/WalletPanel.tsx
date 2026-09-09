@@ -13,6 +13,7 @@ import {
   YVUSD_LOCKED_ADDRESS,
   YVUSD_UNLOCKED_ADDRESS
 } from '@pages/vaults/utils/yvUsd'
+import { TransactionLifecycleContext } from '@shared/contexts/transactionLifecycleContext'
 import { useNotifications } from '@shared/contexts/useNotifications'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { yvUsdLockedVaultAbi } from '@shared/contracts/abi/yvUsdLockedVault.abi'
@@ -35,8 +36,9 @@ import {
 } from '@shared/utils'
 import { getNotificationLifecyclePresentation } from '@shared/utils/notificationLifecycle'
 import { getNetwork } from '@shared/utils/wagmi/utils'
+import { selectTransaction } from '@yearn/vault-widget/lifecycle'
 import { useRouter } from 'next/navigation'
-import { type FC, type ReactElement, useCallback, useMemo, useState } from 'react'
+import { type FC, type ReactElement, useCallback, useContext, useMemo, useState } from 'react'
 import { getAwaitingExecutionEntries } from './WalletPanel.helpers'
 import { formatDuration, parseCooldownStatus, resolveCooldownWindowState } from './yvUSD/cooldownUtils'
 
@@ -513,6 +515,9 @@ export const WalletPanel: FC<WalletPanelProps> = ({
 }
 
 function RecentTransactionRow({ entry }: { entry: TNotification }): ReactElement {
+  const service = useContext(TransactionLifecycleContext)
+  const record = entry.lifecycleRecord
+  const view = record ? selectTransaction(record) : undefined
   const lifecycle = getNotificationLifecyclePresentation(entry)
   const explorerBaseURI = getNetwork(lifecycle.transactionChainId).defaultBlockExplorer
   const statusMeta = STATUS_STYLES[lifecycle.styleStatus]
@@ -527,6 +532,18 @@ function RecentTransactionRow({ entry }: { entry: TNotification }): ReactElement
       <div className="min-w-0">
         <div className="text-xs font-semibold text-text-primary capitalize">{entry.type}</div>
         <div className="text-xs text-text-secondary truncate">{amountLabel}</div>
+        {record?.settlement !== 'same-chain' && record?.source && view?.outcome !== 'success' ? (
+          <div className="flex flex-wrap gap-3 text-[10px]">
+            <button type="button" className="underline" onClick={() => service?.recheck(record.id)}>
+              Recheck bridge
+            </button>
+            {view?.recovery ? (
+              <a href={view.recovery.url} target="_blank" rel="noopener noreferrer" className="underline">
+                {view.recovery.label}
+              </a>
+            ) : null}
+          </div>
+        ) : null}
         {lifecycle.detail ? <div className="text-[10px] text-text-secondary">{lifecycle.detail}</div> : null}
         {lifecycle.transactionHash && explorerBaseURI ? (
           <a

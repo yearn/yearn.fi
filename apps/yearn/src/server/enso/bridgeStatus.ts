@@ -1,5 +1,6 @@
 import { isEnsoBridgeProtocol, isEnsoBridgeStatus, type TEnsoBridgeStatus } from '@shared/types/ensoBridge'
 import { isHash } from 'viem'
+import { bridgeGateway } from '@/server/enso/bridgeGateway'
 import { GET_CORS_HEADERS, json, noContent, queryString, WALLET_SCOPED_CACHE_CONTROL } from '@/server/http'
 
 const ENSO_API_BASE = 'https://api.enso.finance'
@@ -76,11 +77,13 @@ export function normalizeRelayBridgeStatusResponse(
 async function fetchRelayBridgeStatusByRequestId(
   sourceChainId: number,
   bridgeRequestId: `0x${string}`,
-  sourceTxHash?: `0x${string}`
+  sourceTxHash?: `0x${string}`,
+  signal?: AbortSignal
 ): Promise<BridgeStatusResponse | undefined> {
   const statusParams = new URLSearchParams({ requestId: bridgeRequestId })
   const response = await fetch(`${RELAY_API_BASE}/intents/status/v3?${statusParams}`, {
-    cache: 'no-store'
+    cache: 'no-store',
+    signal
   })
   if (!response.ok) return undefined
   return normalizeRelayBridgeStatusResponse(await response.json(), sourceChainId, sourceTxHash, bridgeRequestId)
@@ -89,7 +92,8 @@ async function fetchRelayBridgeStatusByRequestId(
 async function fetchRelayRequestIdBySourceTxHash(
   sourceChainId: number,
   sourceTxHash: `0x${string}`,
-  apiKey: string
+  apiKey: string,
+  signal?: AbortSignal
 ): Promise<`0x${string}` | undefined> {
   const requestParams = new URLSearchParams({
     depositTxHash: sourceTxHash,
@@ -98,7 +102,8 @@ async function fetchRelayRequestIdBySourceTxHash(
   })
   const response = await fetch(`${RELAY_API_BASE}/requests/v3?${requestParams}`, {
     headers: { 'x-api-key': apiKey },
-    cache: 'no-store'
+    cache: 'no-store',
+    signal
   })
   if (!response.ok) return undefined
   return getRelayRequestId(await response.json())
@@ -116,7 +121,7 @@ export async function GET(request: Request): Promise<Response> {
   const persistedRelayRequestId = requestId && isHash(requestId) ? requestId : undefined
 
   if (!isEnsoBridgeProtocol(protocol)) {
-    return json({ error: 'Unsupported bridge protocol' }, { status: 400, headers: RESPONSE_HEADERS })
+    return json({ error: 'Invalid bridge protocol' }, { status: 400, headers: RESPONSE_HEADERS })
   }
   if (!Number.isInteger(chainId) || chainId <= 0) {
     return json({ error: 'Missing or invalid chainId' }, { status: 400, headers: RESPONSE_HEADERS })
@@ -132,55 +137,70 @@ export async function GET(request: Request): Promise<Response> {
     return json({ error: 'Missing or invalid txHash' }, { status: 400, headers: RESPONSE_HEADERS })
   }
 
-  try {
-    const relayApiKey = process.env.RELAY_API_KEY?.trim()
-    const relayRequestId =
-      protocol === 'relay' && !persistedRelayRequestId && sourceTxHash && relayApiKey
-        ? await fetchRelayRequestIdBySourceTxHash(chainId, sourceTxHash, relayApiKey).catch((error) => {
-            console.warn('Unable to resolve Relay request ID from the source transaction:', error)
-            return undefined
-          })
-        : persistedRelayRequestId
+  const gateway =
+    process.env.NEXT_PUBLIC_TRANSACTION_LIFECYCLE_BRIDGES === 'true'
+      ? bridgeGateway
+      : async (_identity: string, operation: (signal: AbortSignal, identity: string) => Promise<Response>) =>
+          operation(AbortSignal.timeout(9_000), _identity)
+  const result = await gateway(`${protocol}:${chainId}:${sourceTxHash ?? persistedRelayRequestId}`, async (signal) => {
+    try {
+      const relayApiKey = process.env.RELAY_API_KEY?.trim()
+      const relayRequestId =
+        protocol === 'relay' && !persistedRelayRequestId && sourceTxHash && relayApiKey
+          ? await fetchRelayRequestIdBySourceTxHash(chainId, sourceTxHash, relayApiKey, signal).catch((error) => {
+              console.warn('Unable to resolve Relay request ID from the source transaction:', error)
+              return undefined
+            })
+          : persistedRelayRequestId
 
-    if (protocol === 'relay' && relayRequestId) {
-      try {
-        const relayStatus = await fetchRelayBridgeStatusByRequestId(chainId, relayRequestId, sourceTxHash)
-        if (relayStatus && (relayStatus.status !== 'unknown' || !sourceTxHash)) {
-          return json(relayStatus, { headers: RESPONSE_HEADERS })
+      if (protocol === 'relay' && relayRequestId) {
+        try {
+          const relayStatus = await fetchRelayBridgeStatusByRequestId(chainId, relayRequestId, sourceTxHash, signal)
+          if (relayStatus && (relayStatus.status !== 'unknown' || !sourceTxHash)) {
+            return json(relayStatus, { headers: RESPONSE_HEADERS })
+          }
+        } catch (error) {
+          console.warn('Unable to resolve bridge status through a Relay request ID:', error)
         }
-      } catch (error) {
-        console.warn('Unable to resolve bridge status through a Relay request ID:', error)
       }
-    }
-    if (!sourceTxHash) {
-      return json({ error: 'Unable to resolve Relay bridge status' }, { status: 502, headers: RESPONSE_HEADERS })
-    }
-    const apiKey = process.env.ENSO_API_KEY
-    if (!apiKey) return json({ error: 'Enso API not configured' }, { status: 500, headers: RESPONSE_HEADERS })
-    const params = new URLSearchParams({ chainId: String(chainId), txHash: sourceTxHash })
-    const response = await fetch(`${ENSO_API_BASE}/api/v1/${protocol}/bridge/check?${params}`, {
-      headers: { Authorization: `Bearer ${apiKey}` },
-      cache: 'force-cache',
-      next: { revalidate: 10 }
-    })
-    const data = (await response.json()) as Record<string, unknown>
-    if (!response.ok) return json(data, { status: response.status, headers: RESPONSE_HEADERS })
-    if (!isEnsoBridgeStatus(data.status)) {
-      return json({ error: 'Invalid Enso bridge status response' }, { status: 502, headers: RESPONSE_HEADERS })
-    }
+      if (!sourceTxHash) {
+        return json({ error: 'Unable to resolve Relay bridge status' }, { status: 502, headers: RESPONSE_HEADERS })
+      }
+      const apiKey = process.env.ENSO_API_KEY
+      if (!apiKey) return json({ error: 'Enso API not configured' }, { status: 500, headers: RESPONSE_HEADERS })
+      const params = new URLSearchParams({ chainId: String(chainId), txHash: sourceTxHash })
+      const response = await fetch(`${ENSO_API_BASE}/api/v1/${protocol}/bridge/check?${params}`, {
+        headers: { Authorization: `Bearer ${apiKey}` },
+        cache: 'no-store',
+        signal
+      })
+      const data = (await response.json()) as Record<string, unknown>
+      if (!response.ok) return json(data, { status: response.status, headers: RESPONSE_HEADERS })
+      if (!isEnsoBridgeStatus(data.status)) {
+        return json({ error: 'Invalid Enso bridge status response' }, { status: 502, headers: RESPONSE_HEADERS })
+      }
 
-    if (protocol === 'relay') {
-      const ensoStatus = {
-        ...data,
-        ...(relayRequestId ? { bridgeRequestId: relayRequestId } : {})
+      if (protocol === 'relay') {
+        const ensoStatus = {
+          ...data,
+          ...(relayRequestId ? { bridgeRequestId: relayRequestId } : {})
+        }
+        return json(ensoStatus, { headers: RESPONSE_HEADERS })
       }
-      return json(ensoStatus, { headers: RESPONSE_HEADERS })
+      return json(data, { headers: RESPONSE_HEADERS })
+    } catch (error) {
+      console.error('Error proxying Enso bridge status request:', error)
+      return json({ error: 'Unable to check bridge status' }, { status: 502, headers: RESPONSE_HEADERS })
     }
-    return json(data, { headers: RESPONSE_HEADERS })
-  } catch (error) {
-    console.error('Error proxying Enso bridge status request:', error)
-    return json({ error: 'Unable to check bridge status' }, { status: 502, headers: RESPONSE_HEADERS })
-  }
+  })
+  return new Response(result.body, {
+    status: result.status,
+    headers: {
+      ...RESPONSE_HEADERS,
+      'Content-Type': 'application/json',
+      ...(result.headers.get('Retry-After') ? { 'Retry-After': result.headers.get('Retry-After')! } : {})
+    }
+  })
 }
 
 export default GET

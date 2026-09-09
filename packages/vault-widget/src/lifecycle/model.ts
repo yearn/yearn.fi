@@ -3,6 +3,13 @@ import type {
   VaultWidgetTransactionReceiptResult,
   VaultWidgetTransactionRequest
 } from '@yearn/vault-widget/headless'
+import {
+  isCompleteReference,
+  settlementOutcome,
+  type TSettlementEvidence,
+  type TSettlementRequirement,
+  type TSettlementTracking
+} from '@yearn/vault-widget/lifecycle/settlement'
 import type { VaultWidgetNotificationInput } from '@yearn/vault-widget/runtime'
 import { type Address, type Hash, type Hex, isHash } from 'viem'
 
@@ -32,7 +39,10 @@ export type TTransactionRecord = {
     requests: readonly (Omit<VaultWidgetTransactionRequest, 'value'> & { value: string })[]
     execution?: TSafeExecution & { observedAt: number }
   }
-  settlement: 'same-chain'
+  settlement: 'same-chain' | TSettlementRequirement
+  destination?: TSettlementEvidence
+  settlementTracking?: TSettlementTracking
+  milestoneRefresh?: Partial<Record<'source' | 'refund', { status: TTransactionRecord['refresh']; error?: string }>>
   confirmations: number
   source?: VaultWidgetTransactionReceiptResult & { observedAt: number }
   trackingError?: string
@@ -42,6 +52,14 @@ export type TTransactionRecord = {
   refreshError?: string
 }
 export type TTransactionObservation =
+  | { kind: 'settlement'; evidence: TSettlementEvidence }
+  | { kind: 'settlement-check'; tracking: TSettlementTracking }
+  | {
+      kind: 'milestone-refresh'
+      milestone: 'source' | 'refund'
+      status: TTransactionRecord['refresh']
+      message?: string
+    }
   | { kind: 'receipt'; result: VaultWidgetTransactionReceiptResult; observedAt: number }
   | { kind: 'safe-execution'; result: TSafeExecution; observedAt: number }
   | { kind: 'conflict'; message: string }
@@ -54,6 +72,8 @@ export type TTransactionPresentation = {
   detail?: string
   reference: TTransactionReference
   canResubmit: false
+  recovery?: TSettlementEvidence['recovery']
+  refund?: TTransactionReference
 }
 
 export function selectTransaction(record: TTransactionRecord): TTransactionPresentation {
@@ -87,6 +107,51 @@ export function selectTransaction(record: TTransactionRecord): TTransactionPrese
               : 'Transaction failed'
       }
     }
+    if (record.settlement !== 'same-chain') {
+      const evidence = record.destination
+      const outcome = settlementOutcome(record.settlement, evidence)
+      const references = {
+        ...common,
+        reference:
+          outcome === 'delivered' && isCompleteReference(evidence?.destination)
+            ? evidence.destination
+            : common.reference,
+        refund: isCompleteReference(evidence?.refund) ? evidence.refund : undefined,
+        recovery: evidence?.recovery
+      }
+      if (outcome === 'delivered')
+        return {
+          ...references,
+          outcome: 'success',
+          label: 'Cross-chain transaction complete',
+          detail: record.refreshError
+        }
+      if (outcome === 'failed')
+        return {
+          ...references,
+          outcome: 'error',
+          label:
+            evidence?.funds === 'refunded' ? 'Cross-chain action failed; funds refunded' : 'Cross-chain action failed',
+          detail: evidence?.detail
+        }
+      if (outcome === 'manual')
+        return {
+          ...references,
+          outcome: 'unknown',
+          label: 'Bridge action required',
+          detail: evidence?.detail ?? 'The destination action needs manual completion.'
+        }
+      return {
+        ...references,
+        outcome:
+          outcome === 'unknown' || record.settlementTracking?.error || record.settlementTracking?.paused
+            ? 'unknown'
+            : 'pending',
+        label: 'Settling destination',
+        detail:
+          record.settlementTracking?.error ?? evidence?.detail ?? 'Source confirmed. Waiting for destination delivery.'
+      }
+    }
     return { ...common, outcome: 'success', label: 'Transaction confirmed', detail: record.refreshError }
   }
   if (record.trackingError)
@@ -98,6 +163,109 @@ export function reduceTransaction(
   record: TTransactionRecord,
   observation: TTransactionObservation
 ): TTransactionRecord {
+  if (observation.kind === 'settlement-check') {
+    if (
+      record.settlement === 'same-chain' ||
+      JSON.stringify(record.settlementTracking) === JSON.stringify(observation.tracking) ||
+      (record.settlementTracking?.checkedAt ?? 0) > (observation.tracking.checkedAt ?? 0)
+    )
+      return record
+    return { ...record, revision: record.revision + 1, settlementTracking: { ...observation.tracking } }
+  }
+  if (observation.kind === 'milestone-refresh') {
+    if (!record.source || (observation.milestone === 'refund' && record.destination?.funds !== 'refunded'))
+      return record
+    const previous = record.milestoneRefresh?.[observation.milestone]
+    if (
+      previous?.status === 'success' ||
+      (previous?.status === observation.status && previous?.error === observation.message)
+    )
+      return record
+    return {
+      ...record,
+      revision: record.revision + 1,
+      milestoneRefresh: {
+        ...record.milestoneRefresh,
+        [observation.milestone]: { status: observation.status, error: observation.message }
+      }
+    }
+  }
+  if (observation.kind === 'settlement') {
+    if (
+      record.settlement === 'same-chain' ||
+      !record.source ||
+      record.source.receipt.status !== 'success' ||
+      (record.source.replacement && record.source.replacement.reason !== 'repriced')
+    )
+      throw new Error('Destination evidence requires successful source confirmation')
+    const next = observation.evidence
+    const previous = record.destination
+    if (
+      next.destination &&
+      (!isCompleteReference(next.destination) ||
+        next.destination.canonicalChainId !== record.settlement.destinationChainId)
+    )
+      throw new Error('Destination reference does not match the reviewed network')
+    if (next.refund && !isCompleteReference(next.refund)) throw new Error('Incomplete refund reference')
+    const priorOutcome = settlementOutcome(record.settlement, previous)
+    const nextOutcome = settlementOutcome(record.settlement, next)
+    const terminal = ['delivered', 'failed'].includes(priorOutcome)
+    if (terminal && ['delivered', 'failed'].includes(nextOutcome) && priorOutcome !== nextOutcome)
+      return reduceTransaction(record, {
+        kind: 'conflict',
+        message: 'Conflicting destination evidence. Review the bridge transaction.'
+      })
+    if (next.outcome === 'delivered' && next.legs?.some((leg) => leg.outcome === 'failed' || leg.callback === 'failed'))
+      return reduceTransaction(record, {
+        kind: 'conflict',
+        message: 'Delivery conflicts with incomplete or failed destination execution.'
+      })
+    if (previous && next.observedAt < previous.observedAt) return record
+    if (
+      next.legs?.some((leg) =>
+        previous?.legs?.some(
+          (old) =>
+            old.id === leg.id &&
+            ((old.outcome !== 'pending' && leg.outcome !== 'pending' && old.outcome !== leg.outcome) ||
+              (old.callback &&
+                old.callback !== 'pending' &&
+                leg.callback &&
+                leg.callback !== 'pending' &&
+                old.callback !== leg.callback))
+        )
+      )
+    )
+      return reduceTransaction(record, { kind: 'conflict', message: 'Conflicting bridge leg or callback evidence.' })
+    const legs = [...(previous?.legs ?? []), ...(next.legs ?? [])].reduce<NonNullable<TSettlementEvidence['legs']>>(
+      (all, leg) => {
+        const old = all.find((item) => item.id === leg.id)
+        const retained = old && old.outcome !== 'pending' && leg.outcome === 'pending' ? old : leg
+        return [
+          ...all.filter((item) => item.id !== leg.id),
+          {
+            ...retained,
+            callback:
+              old?.callback && old.callback !== 'pending' && (!leg.callback || leg.callback === 'pending')
+                ? old.callback
+                : retained.callback
+          }
+        ]
+      },
+      []
+    )
+    const destination: TSettlementEvidence = {
+      ...previous,
+      ...Object.fromEntries(Object.entries(next).filter(([, value]) => value !== undefined)),
+      ...(terminal && !['delivered', 'failed'].includes(nextOutcome)
+        ? { outcome: previous!.outcome, authority: previous!.authority }
+        : {}),
+      ...(previous?.funds === 'refunded' ? { funds: 'refunded' as const } : {}),
+      legs
+    } as TSettlementEvidence
+    if (JSON.stringify(destination) === JSON.stringify(previous)) return record
+    return { ...record, revision: record.revision + 1, destination }
+  }
+
   if (observation.kind === 'conflict') {
     if (record.conflict) return record
     return { ...record, revision: record.revision + 1, conflict: observation.message }

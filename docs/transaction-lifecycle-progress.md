@@ -245,9 +245,77 @@ without Web Locks cannot guarantee single observation across tabs. Safe observat
 calls-status provider and stays unresolved if that provider is unavailable. Technical approval-row grouping,
 legacy history decoding, and acknowledgement policy remain part of stage 5.
 
-## Next: stage 4
+## Stage 3 correction: stable identity when reopening Enso
 
-Move cross-chain destination settlement into the same record/reducer: normalize Enso observations, schedule
-tracking fairly, retain supported recovery links and capabilities, and refresh assets at source/destination
-milestones. Then remove bridge outcome and notification writes from the legacy overlay. Stage 5 completes
-legacy persistence and presentation cutover.
+Deposit and withdrawal now use the same reviewed intent ID for their deferred recipe and ready execution plan.
+Approval completion can change which path is eligible without creating a new intent. Reopening adopts the
+accepted flow, including a final wallet request whose hash has not returned yet. Ready plans retain their explicit
+recipe attachment so a paused deferred runner receives the current preparation when the user chooses Continue.
+Preparation bridges belong to an accepted flow; a completed flow cannot lend stale steps to a new transaction.
+
+Previous plan IDs remain read/lock aliases for existing records and older tabs; new records use the canonical ID.
+An opening tab can adopt saved pending history while another tab holds the execution lock. Failed history recovery
+still prevents submission. Wallet, network, protected-quote checks and explicit Continue remain required.
+
+Validation: all 1,253 repository tests pass (408 widget, 840 Yearn, 5 yBOLD), including 23 new regressions for path
+changes, late hashes, persisted recovery, old IDs/locks, paused continuation, guards, and fresh recipe ownership.
+Workspace TypeScript, lint, both boundary checks, and Yearn/yBOLD production builds pass. Eight Chromium scenarios
+cover both Enso modes through the actual shared overlay, plan builder, service, native IndexedDB, BroadcastChannel,
+and Web Locks. These harnesses mirror the widget's path selection; wallet calls and receipts are simulated.
+
+## Stage 4: destination settlement (implemented behind rollout flag)
+
+The shared lifecycle now accepts a source-chain sequence with a fixed Enso destination requirement. Approval
+records remain same-chain; the final source submission captures the executable quote's available protocols,
+stable leg IDs, coverage and delivery estimate. Missing metadata and unknown protocol names do not weaken the
+destination requirement. The deposit recipe uses the source network, including when the vault is on another chain.
+
+The reducer admits destination evidence only after the source receipt succeeds. Overall delivery can complete
+without a destination hash; partial evidence requires all known legs and callbacks. Conflicting terminal evidence
+stays unresolved. Observations retain references and previously admitted leg, callback and refund evidence.
+A refund remains a failed requested action. Explorer links use complete hash/network pairs. Supported external
+trackers and explicit bridge rechecks are available in the overlay and recent transaction activity.
+
+The provider owns a fair settlement queue, selecting never-checked and then least-recently checked records under
+one host lock. Successful checks, outages and gateway deferrals all advance attempt time. Reload restores the
+record and tracking; no wallet request is reconstructed. Source, destination and observed-refund balance refreshes
+are separate bounded effects. A 24-hour observation budget pauses unresolved work visibly; Recheck bridge renews
+observation without submitting. Failed actions with unresolved supported recovery remain eligible for observation.
+
+The Enso adapter validates source/destination references, preserves cached observation times, rotates protocol
+checks for multi-protocol routes, and normalizes manual action and refund evidence. It does not invent recovery
+transactions or trust arbitrary provider URLs. Routes whose status endpoint cannot establish sufficient leg or
+callback coverage remain unresolved with a source/tracker link. No in-app CCTP claim adapter is introduced.
+
+The server gateway uses the existing Upstash Redis dependency for an atomic credential-scoped queue, request cache,
+and pacing across instances. Any request can service the oldest queued route, including one whose original tab
+closed. Redis time owns a conservative 30-second reservation covering the bounded upstream operation and provider
+cooldown; HTTP 429 extends backoff. Cached responses retain their original observation time and next eligible time.
+The queue is bounded to 1,024 entries and expires abandoned entries. Coordination failure returns an observation
+limitation and makes no upstream request. All consumers of the shared Enso status credential must use this gateway
+and the same Redis database for the budget guarantee to hold.
+
+Activation requires `NEXT_PUBLIC_TRANSACTION_LIFECYCLE_BRIDGES=true`, plus `UPSTASH_REDIS_REST_URL` and
+`UPSTASH_REDIS_REST_TOKEN` on every server instance. This checkout has no shared Redis configuration, so the flag
+remains off and the existing cross-chain path stays functional. Same-chain lifecycle execution stays enabled.
+When the new path is enabled, unfinished legacy cross-chain notifications for the reviewed wallet block a new
+cross-chain submission until the earlier outcome is reconciled; unreadable legacy history also blocks submission.
+Stage 5 will replace that conservative migration guard with legacy record decoding and presentation cutover.
+
+Validation covers reducer evidence/coverage rules, source-receipt gating, refresh isolation, fair retry selection,
+reload adoption, observation-budget renewal, unknown protocol metadata, gateway deferrals/cache/backoff, and the
+legacy migration guard. Chromium uses native IndexedDB, BroadcastChannel and Web Locks for both deposit and
+withdrawal: close/reopen, competing tabs, reload, manual action, refund, outage recovery and legacy pending-history
+blocking. Real Redis checks exercise concurrent claims, queue advancement, cached evidence and servicing an absent
+tab's queued route. Wallet calls, source receipts and provider outcomes in these checks are simulated; controlled
+real-wallet/bridge QA and shared Redis deployment configuration are required before enabling the rollout flag.
+
+Final checks pass: 1,289 tests across the three workspaces (428 widget, 856 Yearn, 5 yBOLD), workspace TypeScript,
+lint, both architecture boundary checks, and Yearn/yBOLD production builds. The rebuilt Yearn preview passes
+deposit/withdraw navigation and desktop/mobile overflow and browser-error checks. Eight native browser scenarios
+cover the new settlement path and legacy migration guard; the interactive sandbox also fits the mobile viewport.
+
+## Next: stage 5
+
+Decode legacy persistence without inventing missing evidence, complete activity/acknowledgement presentation,
+and remove superseded execution/notification ownership after the rollout gates are satisfied.

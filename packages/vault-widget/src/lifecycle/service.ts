@@ -17,6 +17,12 @@ import {
   type TTransactionRecord,
   transactionIdentity
 } from '@yearn/vault-widget/lifecycle/model'
+import {
+  isSettlementRequirement,
+  settlementOutcome,
+  type TSettlementEvidence,
+  type TSettlementRequirement
+} from '@yearn/vault-widget/lifecycle/settlement'
 import type { VaultWidgetNotificationInput } from '@yearn/vault-widget/runtime'
 import type { Address } from 'viem'
 
@@ -42,6 +48,8 @@ export type TStartTransaction = {
   commandId: string
   owner: Address
   plan: VaultWidgetTransactionPlan
+  /** Read/lock compatibility only; new records always use plan.intent.id. */
+  previousIntentIds?: readonly string[]
   display?: VaultWidgetNotificationInput
   describeStep?: (stepId: string) => VaultWidgetNotificationInput | undefined
   displayByStep?: Readonly<Record<string, VaultWidgetNotificationInput | undefined>>
@@ -50,12 +58,17 @@ export type TStartTransaction = {
   validate?: () => Promise<void>
   authorize?: () => void
   refresh?: () => Promise<void>
+  settlement?: TSettlementRequirement
+  describeSettlement?: (stepId: string) => TSettlementRequirement | undefined
 }
 export type TLifecycleOptions = {
   execution: () => VaultWidgetExecutionAdapter
   executionChainId: (chainId: number) => number | undefined
   wallet: () => { address?: Address; chainId?: number }
-  refresh?: (record: TTransactionRecord) => Promise<void>
+  refresh?: (record: TTransactionRecord, milestone?: 'source' | 'destination' | 'refund') => Promise<void>
+  beforeStart?: (input: TStartTransaction, signal: AbortSignal) => Promise<void>
+  observeSettlement?: (record: TTransactionRecord, signal: AbortSignal) => Promise<TSettlementEvidence>
+  settlementIntervalMs?: number
   persistence?: TTransactionPersistence
   coordinate?: (id: string, observe: () => Promise<void>) => Promise<void>
   now?: () => number
@@ -89,6 +102,7 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
     generation: 0
   }
   const listeners = new Set<() => void>()
+  const settlementWorker = { busy: false }
   const observers = new Set<string>()
   const timers = new Map<string, ReturnType<typeof setTimeout>>()
   const refreshes = new Set<string>()
@@ -120,9 +134,9 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
   const putFlow = (flow: TTransactionFlow): void => {
     publish({ ...state.snapshot, flows: [...state.snapshot.flows.filter((item) => item.id !== flow.id), flow] })
   }
-  const boundedStorage = async <T>(operation: (signal: AbortSignal) => Promise<T>): Promise<T> => {
+  const boundedStorage = async <T>(operation: (signal: AbortSignal) => Promise<T>, timeoutMs = 5_000): Promise<T> => {
     const controller = new AbortController()
-    const timeout = setTimeout(() => controller.abort(), 5_000)
+    const timeout = setTimeout(() => controller.abort(), timeoutMs)
     try {
       return await Promise.race([
         operation(controller.signal),
@@ -144,7 +158,11 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
       putRecord(record)
       return
     }
-    if (local.owner !== record.owner || transactionIdentity(local) !== transactionIdentity(record))
+    if (
+      local.owner !== record.owner ||
+      transactionIdentity(local) !== transactionIdentity(record) ||
+      JSON.stringify(local.settlement) !== JSON.stringify(record.settlement)
+    )
       throw new Error('Hydrated transaction identity changed')
     // Provider errors can increase a local revision while another tab confirms. Merge evidence,
     // rather than letting a larger local counter hide a durable receipt.
@@ -162,9 +180,12 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
         result: record.source,
         observedAt: record.source.observedAt
       })
-      const withConflict = record.conflict
-        ? reduceTransaction(withSource, { kind: 'conflict', message: record.conflict })
+      const withDestination = record.destination
+        ? reduceTransaction(withSource, { kind: 'settlement', evidence: record.destination })
         : withSource
+      const withConflict = record.conflict
+        ? reduceTransaction(withDestination, { kind: 'conflict', message: record.conflict })
+        : withDestination
       const next =
         record.refresh === 'success' || withConflict.refresh === 'idle'
           ? reduceTransaction(withConflict, { kind: 'refresh', status: record.refresh, message: record.refreshError })
@@ -172,6 +193,21 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
       if (next !== local) putRecord(next)
     } else if (!local.source && record.revision > local.revision && !local.safe?.execution)
       putRecord({ ...record, conflict: local.conflict ?? record.conflict, storageError: local.storageError })
+    if (record.settlementTracking)
+      putRecord(
+        reduceTransaction(getRecord(record.id)!, { kind: 'settlement-check', tracking: record.settlementTracking })
+      )
+    Object.entries(record.milestoneRefresh ?? {}).forEach(([milestone, value]) => {
+      if (value)
+        putRecord(
+          reduceTransaction(getRecord(record.id)!, {
+            kind: 'milestone-refresh',
+            milestone: milestone as 'source' | 'refund',
+            status: value.status,
+            message: value.error
+          })
+        )
+    })
     if (record.conflict)
       putRecord(reduceTransaction(getRecord(record.id)!, { kind: 'conflict', message: record.conflict }))
   }
@@ -210,14 +246,14 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
     if (next !== current) putRecord(next)
     return persist(next, observation)
   }
-  function schedule(key: string, operation: () => void): void {
+  function schedule(key: string, operation: () => void, delay = retryMs): void {
     if (!state.running || timers.has(key)) return
     timers.set(
       key,
       setTimeout(() => {
         timers.delete(key)
         if (state.running) operation()
-      }, retryMs)
+      }, delay)
     )
   }
   async function refresh(recordId: string): Promise<void> {
@@ -246,6 +282,143 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
     } finally {
       refreshes.delete(recordId)
       if (getRecord(recordId)?.refresh === 'success') refreshCallbacks.delete(recordId)
+    }
+  }
+  async function refreshMilestone(recordId: string, milestone: 'source' | 'refund'): Promise<void> {
+    const record = getRecord(recordId)
+    const key = `${recordId}:${milestone}`
+    if (
+      !record?.source ||
+      record.settlement === 'same-chain' ||
+      record.source.receipt.status !== 'success' ||
+      record.conflict ||
+      (record.source.replacement && record.source.replacement.reason !== 'repriced') ||
+      (milestone === 'refund' && record.destination?.funds !== 'refunded') ||
+      ['success', 'error'].includes(record.milestoneRefresh?.[milestone]?.status ?? '') ||
+      refreshes.has(key)
+    )
+      return
+    refreshes.add(key)
+    void observe(recordId, { kind: 'milestone-refresh', milestone, status: 'pending' })
+    try {
+      await awaitTransactionRefresh(() => options.refresh?.(record, milestone) ?? Promise.resolve())
+      void observe(recordId, { kind: 'milestone-refresh', milestone, status: 'success' })
+    } catch (error) {
+      void observe(recordId, { kind: 'milestone-refresh', milestone, status: 'error', message: errorMessage(error) })
+    } finally {
+      refreshes.delete(key)
+    }
+  }
+  async function settleNext(): Promise<void> {
+    if (!state.running || settlementWorker.busy) return
+    settlementWorker.busy = true
+    const generation = state.generation
+    const interval = options.settlementIntervalMs ?? 10_000
+    const task = async () => {
+      if (options.coordinate && options.persistence) {
+        await hydrate()
+        if (state.snapshot.history !== 'ready') return
+      }
+      if (generation !== state.generation) return
+      const candidate = state.snapshot.records
+        .filter((record) => {
+          if (
+            record.settlement === 'same-chain' ||
+            !record.source ||
+            record.conflict ||
+            record.source.receipt.status !== 'success' ||
+            (record.source.replacement && record.source.replacement.reason !== 'repriced') ||
+            record.settlementTracking?.paused ||
+            (record.settlementTracking?.nextCheckAt ?? 0) > now()
+          )
+            return false
+          const outcome = settlementOutcome(record.settlement, record.destination)
+          return (
+            outcome !== 'delivered' &&
+            (outcome !== 'failed' ||
+              (record.destination?.funds !== 'refunded' &&
+                (['refundable', 'refund-pending', 'recoverable'].includes(record.destination?.funds ?? '') ||
+                  Boolean(record.destination?.recovery))))
+          )
+        })
+        .toSorted(
+          (a, b) =>
+            (a.settlementTracking?.checkedAt ?? 0) - (b.settlementTracking?.checkedAt ?? 0) || a.id.localeCompare(b.id)
+        )[0]
+      if (!candidate) return
+      const checkedAt = now()
+      const attempt = (candidate.settlementTracking?.attempt ?? 0) + 1
+      const expiresAt = candidate.settlementTracking?.expiresAt ?? checkedAt + 24 * 60 * 60 * 1000
+      if (checkedAt >= expiresAt) {
+        await observe(candidate.id, {
+          kind: 'settlement-check',
+          tracking: {
+            attempt,
+            checkedAt,
+            expiresAt,
+            paused: true,
+            error: 'Automatic bridge tracking paused. Recheck the transaction or use its bridge tracker.'
+          }
+        })
+        return
+      }
+      await observe(candidate.id, {
+        kind: 'settlement-check',
+        tracking: { attempt, checkedAt, expiresAt, nextCheckAt: checkedAt + interval }
+      })
+      try {
+        if (!options.observeSettlement)
+          throw new Error(
+            'Automatic bridge tracking is unavailable for this host. Use the source transaction or bridge tracker.'
+          )
+        const evidence = await boundedStorage(
+          (signal) => options.observeSettlement!(getRecord(candidate.id)!, signal),
+          9_000
+        )
+        if (generation !== state.generation) return
+        await observe(candidate.id, { kind: 'settlement', evidence })
+        await observe(candidate.id, {
+          kind: 'settlement-check',
+          tracking: {
+            attempt,
+            checkedAt,
+            expiresAt,
+            nextCheckAt: Math.max(checkedAt + interval, evidence.nextCheckAt ?? 0)
+          }
+        })
+        void refresh(candidate.id)
+        void refreshMilestone(candidate.id, 'refund')
+      } catch (error) {
+        if (generation !== state.generation) return
+        await observe(candidate.id, {
+          kind: 'settlement-check',
+          tracking: {
+            attempt,
+            checkedAt,
+            expiresAt,
+            nextCheckAt: Math.max(
+              checkedAt + interval,
+              error &&
+                typeof error === 'object' &&
+                'nextCheckAt' in error &&
+                typeof error.nextCheckAt === 'number' &&
+                Number.isFinite(error.nextCheckAt)
+                ? error.nextCheckAt
+                : 0
+            ),
+            error: errorMessage(error)
+          }
+        })
+      }
+    }
+    try {
+      if (options.coordinate) await options.coordinate('settlement', task)
+      else await task()
+    } catch (error) {
+      console.warn('[Transaction lifecycle] Settlement coordination unavailable', errorMessage(error))
+    } finally {
+      settlementWorker.busy = false
+      schedule('settlement', () => void settleNext(), interval)
     }
   }
   async function track(recordId: string): Promise<void> {
@@ -303,6 +476,8 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
           if (generation !== state.generation) return
           const saved = observe(recordId, { kind: 'receipt', result, observedAt: now() })
           void refresh(recordId)
+          void refreshMilestone(recordId, 'source')
+          schedule('settlement', () => void settleNext(), 0)
           await saved
         } catch {
           if (generation === state.generation)
@@ -350,6 +525,8 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
           })
         void track(record.id)
         if (record.source && record.refresh !== 'success') void refresh(record.id)
+        void refreshMilestone(record.id, 'source')
+        void refreshMilestone(record.id, 'refund')
       })
       publish({ ...state.snapshot, history: 'ready' })
     } catch {
@@ -386,18 +563,25 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
       listeners.add(check)
       check()
     })
-  const start = (input: TStartTransaction): string => {
-    const existing = state.snapshot.flows.find(
+  const findActiveFlow = (
+    owner: Address,
+    intentKey: string,
+    previousIntentIds: readonly string[] = []
+  ): TTransactionFlow | undefined =>
+    state.snapshot.flows.find(
       (flow) =>
-        flow.id === input.commandId ||
-        (flow.owner.toLowerCase() === input.owner.toLowerCase() &&
-          flow.intentKey === input.plan.intent.id &&
-          (runningFlows.has(flow.id) ||
-            flow.phase === 'confirming' ||
-            (flow.recordId
-              ? ['pending', 'unknown'].includes(selectTransaction(getRecord(flow.recordId)!).outcome)
-              : flow.phase === 'unknown')))
+        flow.owner.toLowerCase() === owner.toLowerCase() &&
+        [intentKey, ...previousIntentIds].includes(flow.intentKey) &&
+        (runningFlows.has(flow.id) ||
+          flow.phase === 'confirming' ||
+          (flow.recordId
+            ? ['pending', 'unknown'].includes(selectTransaction(getRecord(flow.recordId)!).outcome)
+            : flow.phase === 'unknown'))
     )
+  const start = (input: TStartTransaction): string => {
+    const existing =
+      state.snapshot.flows.find((flow) => flow.id === input.commandId) ??
+      findActiveFlow(input.owner, input.plan.intent.id, input.previousIntentIds)
     if (existing) {
       // React StrictMode reattaches the same initial command before it can request the wallet.
       // Reopening a submitted sequence uses a new command and never resumes it implicitly.
@@ -405,6 +589,7 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
         paused.delete(existing.id)
       return existing.id
     }
+    const intentKeys = [...new Set([input.plan.intent.id, ...(input.previousIntentIds ?? [])])].sort()
     const frozenPlan = structuredClone(input.plan)
     const steps = frozenPlan.steps.filter((step) => step.kind !== 'refresh' && step.kind !== 'switch-chain')
     const call = steps[0]
@@ -416,11 +601,17 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
       ) ||
       new Set(steps.map((step) => step.id)).size !== steps.length ||
       steps.some((step) => step.chainId !== call.chainId) ||
-      [input.display, ...Object.values(input.displayByStep ?? {})].some(
-        (display) => display?.bridgeProtocol || (display?.toChainId && display.toChainId !== call.chainId)
-      )
+      (!input.settlement &&
+        [input.display, ...Object.values(input.displayByStep ?? {})].some(
+          (display) => display?.bridgeProtocol || (display?.toChainId && display.toChainId !== call.chainId)
+        )) ||
+      (input.settlement &&
+        (!isSettlementRequirement(input.settlement) ||
+          !Number.isSafeInteger(input.settlement.destinationChainId) ||
+          input.settlement.destinationChainId <= 0 ||
+          input.settlement.destinationChainId === call.chainId))
     )
-      throw new Error('This lifecycle accepts one reviewed same-chain sequence')
+      throw new Error('This lifecycle accepts one reviewed source-chain sequence')
     const frozen = structuredClone({
       ...input,
       validate: undefined,
@@ -428,7 +619,8 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
       prepareStep: undefined,
       afterStep: undefined,
       describeStep: undefined,
-      authorize: undefined
+      authorize: undefined,
+      describeSettlement: undefined
     })
     const flow: TTransactionFlow = {
       id: input.commandId,
@@ -443,6 +635,7 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
     putFlow(flow)
     const active = { recordId: id() }
     const executionChainId = options.executionChainId(call.chainId)
+    const preparedSettlements = new Map<string, TSettlementRequirement>()
     const prepared = new Map<string, TPreparedStep>()
     if (!executionChainId) {
       putFlow({ ...flow, phase: 'blocked', error: 'Execution network unavailable' })
@@ -464,22 +657,11 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
       )
         throw new Error('An earlier transaction is unresolved. Check its confirmation before continuing.')
     }
-    // The existing sequential runner remains the only executor; receipt ownership is delegated to this service.
-    runningFlows.add(flow.id)
-    const run = async (): Promise<void> => {
-      // Hydration may reveal the same unfinished intent after reload. Adopt it before any wallet request.
-      await Promise.resolve()
-      // A timed-out read is not empty history. Only a successful hydration opens this gate.
-      await waitForHistory()
-      // Re-read inside the flow lock: another tab may have submitted since initial hydration.
-      if (options.coordinate && options.persistence) {
-        await hydrate()
-        await waitForHistory()
-      }
+    const adoptRecovered = (): boolean => {
       const recovered = state.snapshot.records.find(
         (record) =>
           record.owner.toLowerCase() === flow.owner.toLowerCase() &&
-          record.intentKey === flow.intentKey &&
+          intentKeys.includes(record.intentKey) &&
           ['pending', 'unknown'].includes(selectTransaction(record).outcome)
       )
       if (recovered) {
@@ -492,8 +674,27 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
           stepCount: recovered.sequence?.count ?? 1,
           stepLabel: recovered.sequence?.label
         })
-        return
+        return true
       }
+      return false
+    }
+    // The existing sequential runner remains the only executor; receipt ownership is delegated to this service.
+    runningFlows.add(flow.id)
+    const run = async (): Promise<void> => {
+      // Hydration may reveal the same unfinished intent after reload. Adopt it before any wallet request.
+      await Promise.resolve()
+      // A timed-out read is not empty history. Only a successful hydration opens this gate.
+      await waitForHistory()
+      // Re-read inside the flow lock: another tab may have submitted since initial hydration.
+      if (options.coordinate && options.persistence) {
+        await hydrate()
+        await waitForHistory()
+      }
+      if (adoptRecovered()) return
+      if (options.beforeStart)
+        await boundedStorage((signal) => options.beforeStart!(input, signal)).catch((error) => {
+          throw new VaultWidgetPreparationError(error)
+        })
       await executeTransactionPlan({
         account: flow.owner,
         plan: frozen.plan,
@@ -607,6 +808,15 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
               (step.kind !== 'safe-proposal' && frozen.plan.walletType === 'safe')
             )
               throw new VaultWidgetPreparationError(new Error('Prepared action changed the reviewed wallet or network'))
+            if (frozen.settlement && step.id === steps.at(-1)?.id) {
+              const requirement = input.describeSettlement?.(step.id) ?? frozen.settlement
+              if (
+                !isSettlementRequirement(requirement) ||
+                requirement.destinationChainId !== frozen.settlement.destinationChainId
+              )
+                throw new VaultWidgetPreparationError(new Error('Reviewed destination changed'))
+              preparedSettlements.set(step.id, structuredClone(requirement))
+            }
             prepared.set(progress.step.id, structuredClone(progress.step as TPreparedStep))
             return
           }
@@ -653,7 +863,7 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
             ),
             original: reference,
             effective: reference,
-            settlement: 'same-chain',
+            settlement: preparedSettlements.get(step.id) ?? 'same-chain',
             confirmations: getTransactionConfirmations(step.chainId),
             refresh: 'idle'
           }
@@ -667,27 +877,48 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
             stepCount: steps.length,
             stepLabel: step.label
           })
-          if (input.refresh && stepIndex === steps.length - 1) refreshCallbacks.set(recordId, input.refresh)
+          if (input.refresh && stepIndex === steps.length - 1 && record.settlement === 'same-chain')
+            refreshCallbacks.set(recordId, input.refresh)
           void persist(record)
           void track(recordId)
         }
       })
       const latest = state.snapshot.flows.find((item) => item.id === flow.id)
-      if (latest) putFlow({ ...latest, phase: 'success' })
+      if (latest)
+        putFlow({
+          ...latest,
+          phase:
+            latest.recordId && selectTransaction(getRecord(latest.recordId)!).outcome !== 'success'
+              ? 'pending'
+              : 'success'
+        })
     }
     const coordinatedRun = async (): Promise<void> => {
       if (!options.coordinate) return run()
       const claim = { acquired: false }
-      await options.coordinate(`flow:${flow.owner.toLowerCase()}:${flow.intentKey}`, async () => {
-        claim.acquired = true
-        await run()
-      })
-      if (!claim.acquired)
+      // Claim every supported identity in a stable order, including IDs used by older tabs.
+      const claimIdentity = async (index: number): Promise<void> => {
+        const key = intentKeys[index]
+        if (key === undefined) {
+          claim.acquired = true
+          return run()
+        }
+        await options.coordinate!(`flow:${flow.owner.toLowerCase()}:${key}`, () => claimIdentity(index + 1))
+      }
+      await claimIdentity(0)
+      if (!claim.acquired) {
+        // A different tab can own execution while this view adopts its saved submission.
+        if (options.persistence) {
+          await hydrate()
+          await waitForHistory()
+        }
+        if (adoptRecovered()) return
         putFlow({
           ...flow,
           phase: 'blocked',
           error: 'This transaction flow is active in another window. Continue there or review again after it closes.'
         })
+      }
     }
     void coordinatedRun()
       .catch((error: unknown) => {
@@ -709,7 +940,9 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
         listeners.delete(listener)
       }
     },
+    supportsDestinationSettlement: Boolean(options.observeSettlement),
     getSnapshot: () => state.snapshot,
+    findActiveFlow,
     start,
     continue: (flowId: string): void => {
       const resume = continuations.get(flowId)
@@ -737,12 +970,31 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
       effects.add(key)
       return true
     },
-    recheck: (recordId: string) => void track(recordId),
+    recheck: (recordId: string) => {
+      const record = getRecord(recordId)
+      if (record?.settlement !== 'same-chain' && record?.source) {
+        void observe(recordId, {
+          kind: 'settlement-check',
+          tracking: {
+            checkedAt: now(),
+            nextCheckAt: record.settlementTracking?.nextCheckAt,
+            expiresAt: now() + 24 * 60 * 60 * 1000
+          }
+        }).then(() => settleNext())
+      } else void track(recordId)
+    },
     recheckHistory: () => {
       if (state.running) void hydrate()
     },
     refresh: (recordId: string) => {
       const record = getRecord(recordId)
+      ;(['source', 'refund'] as const).forEach((milestone) => {
+        if (record?.milestoneRefresh?.[milestone]?.status === 'error') {
+          void observe(recordId, { kind: 'milestone-refresh', milestone, status: 'idle' }).then(() =>
+            refreshMilestone(recordId, milestone)
+          )
+        }
+      })
       if (record?.refresh === 'error') {
         putRecord({ ...record, refresh: 'idle' })
         void refresh(recordId)
@@ -755,6 +1007,7 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
       state.unsubscribe = options.persistence?.subscribe?.(() => void hydrate())
       void hydrate()
       state.snapshot.records.forEach((record) => void track(record.id))
+      schedule('settlement', () => void settleNext(), 0)
       return () => {
         state.running = false
         runningFlows.forEach((flowId) => {

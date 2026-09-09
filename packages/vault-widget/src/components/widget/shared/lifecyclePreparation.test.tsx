@@ -37,7 +37,7 @@ const deferred = <T,>() => {
   }
 }
 
-function fixture(permit = false) {
+function fixture(permit = false, finalOnly = false) {
   const confirmation = deferred<{ receipt: TransactionReceipt }>()
   const signed = deferred<`0x${string}`>()
   const execute = vi.fn().mockResolvedValue(hash)
@@ -50,9 +50,11 @@ function fixture(permit = false) {
   cleanups.push(service.connect())
   const completed = vi.fn()
   const preparation = vi.fn()
+  const controls: { requireUnstake?: () => void } = {}
   function App() {
     const [open, setOpen] = useState(true)
-    const [advance, setAdvance] = useState(false)
+    const [advance, setAdvance] = useState(finalOnly)
+    controls.requireUnstake = () => setAdvance(false)
     const [signature, setSignature] = useState<`0x${string}`>()
     const firstId = permit ? 'permit' : 'unstake'
     const step: TransactionStep = advance
@@ -112,7 +114,7 @@ function fixture(permit = false) {
       <App />
     </StrictMode>
   )
-  return { service, execute, signPermit, confirmation, signed, completed, preparation }
+  return { service, execute, signPermit, confirmation, signed, completed, preparation, controls }
 }
 
 describe('deferred route preparation bridge', () => {
@@ -146,4 +148,17 @@ describe('deferred route preparation bridge', () => {
       expect(f.preparation).toHaveBeenCalledTimes(1)
     }
   )
+})
+
+it('starts a fresh recipe when a completed intent needs a new prerequisite', async () => {
+  const f = fixture(false, true)
+  await waitFor(() => expect(f.execute).toHaveBeenCalledTimes(1))
+  await act(async () => f.confirmation.resolve({ receipt }))
+  await screen.findByText('Withdraw complete')
+  fireEvent.click(screen.getByRole('button', { name: 'Close transaction progress' }))
+  await act(async () => f.controls.requireUnstake!())
+  fireEvent.click(screen.getByRole('button', { name: 'Open' }))
+  await waitFor(() => expect(f.execute).toHaveBeenCalledTimes(3))
+  expect(f.execute.mock.calls.map(([input]) => input.request.data)).toEqual(['0x5678', '0x1234', '0x5678'])
+  expect(f.preparation).toHaveBeenCalledExactlyOnceWith('unstake', receipt)
 })

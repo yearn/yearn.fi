@@ -1,11 +1,13 @@
 'use client'
 
+import { guardLegacyBridgeRecovery } from '@shared/contexts/legacyBridgeRecovery'
 import { TransactionLifecycleContext } from '@shared/contexts/transactionLifecycleContext'
 import { projectLifecycleNotification } from '@shared/contexts/transactionLifecycleProjection'
 import {
   coordinateTransactionObservation,
   createTransactionLifecycleStorage
 } from '@shared/contexts/transactionLifecycleStorage'
+import { observeEnsoSettlement } from '@shared/hooks/ensoSettlement'
 import { useNotificationAssetRefresh } from '@shared/hooks/useNotificationAssetRefresh'
 import { getTransactionConfirmations } from '@yearn/vault-widget/headless'
 import { createTransactionLifecycle } from '@yearn/vault-widget/lifecycle'
@@ -37,7 +39,20 @@ export function YearnTransactionLifecycleProvider({ children }: { children: Reac
       wallet: () => current.current,
       persistence: createTransactionLifecycleStorage(),
       coordinate: coordinateTransactionObservation,
-      refresh: (record) => current.current.refresh(projectLifecycleNotification(record))
+      beforeStart: guardLegacyBridgeRecovery,
+      observeSettlement:
+        process.env.NEXT_PUBLIC_TRANSACTION_LIFECYCLE_BRIDGES === 'true' ? observeEnsoSettlement : undefined,
+      refresh: (record, milestone) => {
+        const notification = projectLifecycleNotification(record)
+        const sourceOnly = milestone === 'source' || milestone === 'refund'
+        return current.current.refresh(
+          sourceOnly
+            ? { ...notification, toAddress: undefined }
+            : record.settlement !== 'same-chain'
+              ? { ...notification, fromAddress: undefined }
+              : notification
+        )
+      }
     })
   )
   // The provider owns external observation and persistence subscriptions, independently of overlays/routes.

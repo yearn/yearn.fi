@@ -13,6 +13,7 @@ import {
   type TPlannedTransactionFailureKind
 } from '@yearn/vault-widget/internal/components/widget/shared/plannedTransactionController'
 import { cl } from '@yearn/vault-widget/internal/utils/index'
+import type { TSettlementRequirement } from '@yearn/vault-widget/lifecycle/settlement'
 import {
   useVaultWidgetRuntime,
   type VaultWidgetBridgeStatus,
@@ -85,6 +86,7 @@ export type TransactionBatchCall = {
 }
 
 export type TransactionStep = {
+  settlement?: TSettlementRequirement
   id: string
   prepare: TTransactionPreparation
   label: string
@@ -268,9 +270,13 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = (props) => {
           steps: [{ id: step.id, label: step.label }]
         }
       : undefined)
-  if (runtime.lifecycle && (props.plan || recipe))
+  if (
+    runtime.lifecycle &&
+    (props.plan || recipe) &&
+    (!recipe?.settlement || runtime.lifecycle.supportsDestinationSettlement)
+  )
     return props.isOpen ? (
-      <LifecycleTransactionOverlay {...props} lifecycleRecipe={props.plan ? undefined : recipe} />
+      <LifecycleTransactionOverlay {...props} lifecycleRecipe={props.plan ? props.lifecycleRecipe : recipe} />
     ) : null
   return <LegacyTransactionOverlay {...props} />
 }

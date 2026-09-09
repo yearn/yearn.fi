@@ -728,6 +728,7 @@ export function WidgetDeposit({
       ),
     [chainId, depositAmount.debouncedBn, depositToken, destinationToken, routeType, sourceChainId]
   )
+  const depositIntentKey = `deposit:${approvalFlowKey}:${zapSlippage}`
   const [completedApprovalFlowKey, setCompletedApprovalFlowKey] = useState<string | null>(null)
   const hasCompletedApprovalInActiveFlow = completedApprovalFlowKey === approvalFlowKey
   const effectiveNeedsApproval = needsApproval && !hasCompletedApprovalInActiveFlow
@@ -791,7 +792,8 @@ export function WidgetDeposit({
     }),
     completesFlow: true,
     showConfetti: true,
-    notification: depositNotificationParams
+    notification: depositNotificationParams,
+    settlement: activeFlow.periphery.bridgeSettlement
   }
 
   const currentStep = useMemo((): TransactionStep => {
@@ -812,7 +814,8 @@ export function WidgetDeposit({
           safeDepositBatch.calls.length > 0,
         completesFlow: true,
         showConfetti: true,
-        notification: depositNotificationParams
+        notification: depositNotificationParams,
+        settlement: activeFlow.periphery.bridgeSettlement
       }
     }
 
@@ -851,7 +854,7 @@ export function WidgetDeposit({
 
   const eligibleTransactionPlan =
     buildDirectApprovalPlan({
-      id: `deposit:${approvalFlowKey}`,
+      id: depositIntentKey,
       label: getDepositActionCopy(routeType).actionLabel,
       tokenSymbol: inputToken?.symbol ?? 'Token',
       account,
@@ -877,7 +880,7 @@ export function WidgetDeposit({
       canonicalChainId: chainId,
       connectedCanonicalChainId: runtime.chains.resolveCanonicalChainId(runtime.wallet.chainId),
       hasBatch: Boolean(currentStep?.batch),
-      id: `deposit:${approvalFlowKey}`,
+      id: depositIntentKey,
       isCrossChain,
       isEnabled: currentStep?.isEnabled,
       isExecutionConfigured: isVaultWidgetExecutionConfigured(runtime),
@@ -1425,20 +1428,26 @@ export function WidgetDeposit({
         isOpen={showTransactionOverlay}
         onClose={handleCloseTransactionOverlay}
         plan={activeTransactionPlan}
-        lifecycleRecipe={
-          !isCrossChain
-            ? {
-                id: `deposit:${approvalFlowKey}:${zapSlippage}`,
-                chainId,
-                steps: safeDepositBatch
-                  ? [{ id: 'deposit-batch', label: currentStep.label }]
-                  : [
-                      ...(effectiveNeedsApproval ? [{ id: 'approve', label: 'Approve' }] : []),
-                      { id: 'deposit', label: actionLabel }
-                    ]
-              }
-            : undefined
-        }
+        lifecycleRecipe={{
+          id: depositIntentKey,
+          previousIntentIds: [`deposit:${approvalFlowKey}`],
+          chainId: sourceChainId,
+          settlement: isCrossChain
+            ? (activeFlow.periphery.bridgeSettlement ?? {
+                provider: 'enso',
+                destinationChainId: chainId,
+                protocols: [],
+                coverage: 'incomplete',
+                legs: []
+              })
+            : undefined,
+          steps: safeDepositBatch
+            ? [{ id: 'deposit-batch', label: currentStep.label }]
+            : [
+                ...(effectiveNeedsApproval ? [{ id: 'approve', label: 'Approve' }] : []),
+                { id: 'deposit', label: actionLabel }
+              ]
+        }}
         planSteps={activeTransactionPlan?.steps.some((step) => step.kind === 'approve') ? directPlanSteps : undefined}
         step={currentStep}
         isLastStep={!effectiveNeedsApproval}

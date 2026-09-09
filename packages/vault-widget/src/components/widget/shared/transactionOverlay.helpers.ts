@@ -125,7 +125,7 @@ Execution may happen separately after the required confirmations are collected.`
 }
 
 export function getBridgeTrackerLink(params: {
-  bridgeProtocol?: 'stargate' | 'ccip' | 'relay'
+  bridgeProtocol?: string
   bridgeRequestId?: string
   sourceTxHash?: string
 }): { label: string; url: string } | undefined {
