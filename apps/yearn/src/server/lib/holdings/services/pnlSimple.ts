@@ -2541,11 +2541,67 @@ export function buildProtocolReturnHistorySeries(args: {
 
 type TGrowthExclusions = { usd: Set<string>; eth: Set<string> }
 
-function calculateProtocolReturnHistorySeries(
-  args: Parameters<typeof buildProtocolReturnHistorySeries>[0],
-  excludedVaultKeys: TGrowthExclusions = { usd: new Set(), eth: new Set() }
-): { dataPoints: HoldingsPnLSimpleHistoryPoint[]; excludedVaultKeys: TGrowthExclusions } {
-  const initialExclusionCount = excludedVaultKeys.usd.size + excludedVaultKeys.eth.size
+function getProtocolReturnHistoryExclusions(
+  timeline: Array<{ timestamp: number; event: TRawPnlEvent | null }>,
+  eventContext: Parameters<typeof processEvent>[2]
+): TGrowthExclusions {
+  const excluded: TGrowthExclusions = { usd: new Set(), eth: new Set() }
+  const ledgers = new Map<string, TProtocolReturnLedger>()
+  const state = { initialized: false }
+  const validate = (ledger: TProtocolReturnLedger, timestamp: number): void => {
+    const key = toVaultKey(ledger.chainId, ledger.vaultAddress)
+    if (excluded.usd.has(key)) {
+      return
+    }
+
+    const valuation = ledger.lots.some((lot) => lot.shares > ZERO)
+      ? resolveNestedVaultValuation({
+          chainId: ledger.chainId,
+          vaultAddress: ledger.vaultAddress,
+          vaultMetadata: eventContext.metadata,
+          ppsData: eventContext.ppsData,
+          timestamp
+        })
+      : null
+    const issues = ledgerIssues({
+      ledger,
+      metadata: eventContext.metadata.get(key),
+      missingMetadata: valuation?.missingMetadata ?? false,
+      currentPps: valuation?.pricePerShare ?? null
+    })
+    // Receipt-weighted growth does not need exit USD prices or PPS after a full exit.
+    if (issues.some((issue) => issue !== 'missing_exit_price')) {
+      excluded.usd.add(key)
+      excluded.eth.add(key)
+    } else if (ledger.missingReceiptEthPrice) {
+      excluded.eth.add(key)
+    }
+  }
+
+  // Check coverage before calculating returns, including gaps at other vaults' flow timestamps.
+  timeline.forEach(({ timestamp, event }) => {
+    if (state.initialized || event === null) {
+      ledgers.forEach((ledger) => {
+        validate(ledger, timestamp)
+      })
+    }
+    if (event) {
+      processEvent(ledgers, event, eventContext)
+      const ledger = ledgers.get(toVaultKey(event.chainId, event.familyVaultAddress))
+      if (state.initialized && ledger) {
+        validate(ledger, timestamp)
+      }
+    } else {
+      state.initialized = true
+    }
+  })
+  return excluded
+}
+
+function calculateProtocolReturnHistorySeries(args: Parameters<typeof buildProtocolReturnHistorySeries>[0]): {
+  dataPoints: HoldingsPnLSimpleHistoryPoint[]
+  excludedVaultKeys: TGrowthExclusions
+} {
   const userAddress = lowerCaseAddress(args.userAddress)
   const effectiveEvents = buildEffectiveSimpleEvents(args.events, userAddress)
   const groupedTransactions = groupEventsByTransaction(effectiveEvents)
@@ -2570,6 +2626,23 @@ function calculateProtocolReturnHistorySeries(
     ethPriceData: args.ethPriceData ?? new Map<number, number>(),
     useDailyPpsForFlows: true
   }
+  const normalizedEvents = groupedTransactions.flatMap((txEvents) =>
+    sortEvents(
+      groupTransactionEventsByFamily(txEvents).flatMap((familyEvents) =>
+        normalizeStakingWrapperEvents(familyEvents, userAddress)
+      )
+    )
+  )
+  const timeline: Array<{ timestamp: number; event: TRawPnlEvent | null }> = [
+    ...normalizedEvents
+      .filter((event) => event.blockTimestamp <= (args.timestamps.at(-1) ?? 0))
+      .map((event) => ({ timestamp: event.blockTimestamp, event })),
+    ...args.timestamps.map((timestamp) => ({ timestamp, event: null }))
+  ].toSorted(
+    (left, right) => left.timestamp - right.timestamp || Number(left.event === null) - Number(right.event === null)
+  )
+  const excludedVaultKeys = getProtocolReturnHistoryExclusions(timeline, eventContext)
+  const growthIndexSeed = excludedVaultKeys.eth.size === 0 ? args.growthIndexSeed : undefined
   const markGrowthIndex = (timestamp: number, afterReceipt = false) => {
     const vaults = materializeProtocolReturnVaults({
       ledgers,
@@ -2578,15 +2651,6 @@ function calculateProtocolReturnHistorySeries(
       currentTimestamp: timestamp
     })
     const summary = buildSummary(vaults)
-    vaults.forEach((vault) => {
-      const key = toVaultKey(vault.chainId, vault.vaultAddress)
-      if (vault.growthWeightUsd === null) {
-        excludedVaultKeys.usd.add(key)
-      }
-      if (vault.growthWeightEth === null || excludedVaultKeys.usd.has(key)) {
-        excludedVaultKeys.eth.add(key)
-      }
-    })
     const indexVaults = vaults.filter(
       (vault) => !excludedVaultKeys.usd.has(toVaultKey(vault.chainId, vault.vaultAddress))
     )
@@ -2615,25 +2679,10 @@ function calculateProtocolReturnHistorySeries(
       ) + indexSummary.unrealizedGrowthWeightUsd
     return { vaults, summary, indexVaults }
   }
-  const normalizedEvents = groupedTransactions.flatMap((txEvents) =>
-    sortEvents(
-      groupTransactionEventsByFamily(txEvents).flatMap((familyEvents) =>
-        normalizeStakingWrapperEvents(familyEvents, userAddress)
-      )
-    )
-  )
-  const timeline: Array<{ timestamp: number; event: TRawPnlEvent | null }> = [
-    ...normalizedEvents
-      .filter((event) => event.blockTimestamp <= (args.timestamps.at(-1) ?? 0))
-      .map((event) => ({ timestamp: event.blockTimestamp, event })),
-    ...args.timestamps.map((timestamp) => ({ timestamp, event: null }))
-  ]
 
-  const dataPoints = timeline
-    .toSorted(
-      (left, right) => left.timestamp - right.timestamp || Number(left.event === null) - Number(right.event === null)
-    )
-    .reduce<HoldingsPnLSimpleHistoryPoint[]>((history, { timestamp, event }) => {
+  return {
+    excludedVaultKeys,
+    dataPoints: timeline.reduce<HoldingsPnLSimpleHistoryPoint[]>((history, { timestamp, event }) => {
       if (event) {
         // Value existing capital before the flow and its exact receipt/exit adjustment afterwards.
         if (state.initialized) {
@@ -2651,8 +2700,8 @@ function calculateProtocolReturnHistorySeries(
       })
       const { vaults, summary, indexVaults } = markGrowthIndex(timestamp)
       state.initialized = true
-      if (state.indexValuationComplete && args.growthIndexSeed?.timestamp === timestamp) {
-        state.growthIndex = args.growthIndexSeed.growthIndex
+      if (state.indexValuationComplete && growthIndexSeed?.timestamp === timestamp) {
+        state.growthIndex = growthIndexSeed.growthIndex
         if (state.growthIndex === null && (summary.baselineWeightUsd > 0 || summary.growthWeightUsd !== 0)) {
           state.indexValuationComplete = false
         }
@@ -2697,11 +2746,7 @@ function calculateProtocolReturnHistorySeries(
       })
       return history
     }, [])
-  // Replay with a fixed membership: losing a price must not look like a portfolio loss or a deposit.
-  // ponytail: exclude whole vaults for this window; lot-level recovery can be added if needed.
-  return excludedVaultKeys.usd.size + excludedVaultKeys.eth.size > initialExclusionCount
-    ? calculateProtocolReturnHistorySeries({ ...args, growthIndexSeed: undefined }, excludedVaultKeys)
-    : { dataPoints, excludedVaultKeys }
+  }
 }
 
 export function buildProtocolReturnFamilyHistorySeries(args: {
