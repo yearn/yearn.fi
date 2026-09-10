@@ -20,7 +20,6 @@ import {
   getChartMonthlyTicks,
   getChartWeeklyTicks
 } from '@pages/vaults/utils/charts'
-import { LIGHT_MODE_COLORS } from '@shared/components/AllocationChart'
 import { formatUSD } from '@shared/utils'
 import type { ReactElement } from 'react'
 import { useMemo } from 'react'
@@ -28,7 +27,7 @@ import { Area, CartesianGrid, ComposedChart, Line, ReferenceLine, XAxis, YAxis }
 import type { AxisDomain } from 'recharts/types/util/types'
 
 type TPortfolioGrowthContributionsChartProps = {
-  totalPoints: Array<{ date: string; value: number | null; isEstimated?: boolean }>
+  totalPoints: Array<{ date: string; value: number | null }>
   familySeries: TPortfolioGrowthContributionFamily[]
   timeframe: TPortfolioHistoryChartTimeframe
   mode: 'usd' | 'eth' | 'index'
@@ -46,10 +45,19 @@ type TPresentedContributionSeries = TPortfolioGrowthContributionSeries & {
 }
 
 const MAX_VAULTS = 8
-const CONTRIBUTION_COLORS = LIGHT_MODE_COLORS
-const OTHER_COLOR = '#d7e6ff'
-const INDEX_BASE_COLOR = '#e8f1ff'
-const TOTAL_COLOR = '#0657f9'
+const CONTRIBUTION_COLORS = [
+  '#46a2ff',
+  '#7bb3a8',
+  '#e1a23b',
+  '#b67ae5',
+  '#f472b6',
+  '#f97316',
+  '#14b8a6',
+  '#94adf2'
+] as const
+const OTHER_COLOR = '#94a3b8'
+const INDEX_BASE_COLOR = '#80b7f4'
+const TOTAL_COLOR = '#2578ff'
 const LINE_HEADROOM = 1.05
 const CHART_MARGIN = {
   ...CHART_WITH_AXES_MARGIN,
@@ -91,21 +99,20 @@ function formatIndexValue(value: number): string {
   return value.toLocaleString(undefined, { maximumFractionDigits: 2, minimumFractionDigits: 2 })
 }
 
-function formatSignedGrowth(value: number, mode: 'usd' | 'eth' | 'index', isEstimated = false): string {
+function formatSignedGrowth(value: number, mode: 'usd' | 'eth' | 'index'): string {
   const formatted =
     mode === 'eth'
       ? formatEthValue(value)
       : mode === 'index'
         ? formatIndexValue(Math.abs(value))
         : formatUSD(Math.abs(value), 2, 2)
-  const estimateSuffix = isEstimated ? '*' : ''
   if (value > 0) {
-    return `+${formatted}${estimateSuffix}`
+    return `+${formatted}`
   }
   if (value < 0) {
-    return `−${formatted}${estimateSuffix}`
+    return `−${formatted}`
   }
-  return `${formatted}${estimateSuffix}`
+  return formatted
 }
 
 function formatGrowthTick(value: number | string, mode: 'usd' | 'eth' | 'index'): string {
@@ -183,15 +190,13 @@ function PortfolioGrowthContributionsTooltip({
     .filter((item) => item.isBase)
     .flatMap((item) => {
       const value = point[item.key]
-      return typeof value === 'number' && Number.isFinite(value) ? [{ ...item, value, isEstimated: false }] : []
+      return typeof value === 'number' && Number.isFinite(value) ? [{ ...item, value }] : []
     })
   const namedRows = series
     .filter((item) => !item.isOther && !item.isBase)
     .flatMap((item) => {
       const value = point[item.key]
-      return typeof value === 'number' && Number.isFinite(value)
-        ? [{ ...item, value, isEstimated: Boolean(point[`${item.key}Estimated`]) }]
-        : []
+      return typeof value === 'number' && Number.isFinite(value) ? [{ ...item, value }] : []
     })
     .toSorted((left, right) => Math.abs(right.value) - Math.abs(left.value))
   const otherSeries = series.find((item) => item.isOther)
@@ -203,12 +208,10 @@ function PortfolioGrowthContributionsTooltip({
           ...namedRows,
           {
             ...otherSeries,
-            value: otherValue,
-            isEstimated: Boolean(point[`${otherSeries.key}Estimated`])
+            value: otherValue
           }
         ]
       : [...baseRows, ...namedRows]
-  const hasEstimatedValue = Boolean(point.portfolioGrowthEstimated) || rows.some((row) => row.isEstimated)
 
   return (
     <div
@@ -224,9 +227,7 @@ function PortfolioGrowthContributionsTooltip({
           {mode === 'index' ? 'Portfolio index' : 'Portfolio growth'}
         </span>
         <strong className={'font-number text-sm font-semibold text-text-primary'}>
-          {mode === 'index'
-            ? formatIndexValue(point.portfolioGrowth)
-            : formatSignedGrowth(point.portfolioGrowth, mode, Boolean(point.portfolioGrowthEstimated))}
+          {mode === 'index' ? formatIndexValue(point.portfolioGrowth) : formatSignedGrowth(point.portfolioGrowth, mode)}
         </strong>
       </div>
       <div className={'my-1.5 border-t border-border'} />
@@ -241,16 +242,11 @@ function PortfolioGrowthContributionsTooltip({
               <span className={'truncate'}>{row.label}</span>
             </span>
             <span className={'font-number shrink-0 text-xs font-medium text-text-primary'}>
-              {formatSignedGrowth(row.value, mode, row.isEstimated)}
+              {formatSignedGrowth(row.value, mode)}
             </span>
           </div>
         ))}
       </div>
-      {hasEstimatedValue ? (
-        <p className={'mt-1.5 border-t border-border pt-1 text-[11px] text-text-tertiary'}>
-          {'* Growth may be approximate.'}
-        </p>
-      ) : null}
     </div>
   )
 }
@@ -267,7 +263,6 @@ export function PortfolioGrowthContributionsChart({
         totalPoints,
         familySeries,
         maxVaults: MAX_VAULTS,
-        preserveNullValues: mode === 'eth',
         ...(mode === 'index'
           ? { baseContribution: { key: 'starting_index', label: 'Starting index', value: 100 } }
           : {})
@@ -353,8 +348,7 @@ export function PortfolioGrowthContributionsChart({
             stroke={item.color}
             strokeWidth={0.75}
             fill={item.color}
-            fillOpacity={item.isBase ? 0.28 : item.isOther ? 0.3 : 0.45}
-            connectNulls={mode !== 'eth'}
+            fillOpacity={0.1}
             tooltipType={'none'}
             isAnimationActive={false}
           />
@@ -366,7 +360,6 @@ export function PortfolioGrowthContributionsChart({
           strokeWidth={3}
           dot={false}
           activeDot={{ r: 4, strokeWidth: 0, fill: TOTAL_COLOR }}
-          connectNulls={mode !== 'eth'}
           isAnimationActive={false}
         />
       </ComposedChart>

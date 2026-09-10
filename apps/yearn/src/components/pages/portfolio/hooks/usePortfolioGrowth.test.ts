@@ -96,6 +96,15 @@ describe('portfolio growth helpers', () => {
     expect(toPortfolioGrowthDisplay(combined)).toBeNull()
   })
 
+  it('preserves unavailable values when combining vault variants', () => {
+    const unlocked = makeGrowthVault(YVUSD_UNLOCKED_ADDRESS)
+    const locked = makeGrowthVault(YVUSD_LOCKED_ADDRESS, { growthUnderlying: null, growthUsd: null })
+    const combined = mapPortfolioGrowthVaults([unlocked, locked]).get(getPortfolioGrowthVaultKey(unlocked))
+
+    expect(combined).toMatchObject({ growthUnderlying: null, growthUsd: null, assetGrowth: [] })
+    expect(toPortfolioGrowthDisplay(combined)).toBeNull()
+  })
+
   it('shows yvUSD growth when only one complete variant was returned', () => {
     const unlocked = makeGrowthVault(YVUSD_UNLOCKED_ADDRESS, {
       baselineExposureUsdYears: 50,

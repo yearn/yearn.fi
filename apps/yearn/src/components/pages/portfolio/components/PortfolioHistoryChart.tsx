@@ -74,7 +74,6 @@ type TChartPoint = {
   date: string
   value: number | null
   isLive?: boolean
-  isEstimated?: boolean
 }
 
 type TPortfolioHistoryTooltipProps = {
@@ -264,9 +263,7 @@ function rebaseDeltaPoints(points: TChartPoint[]): TChartPoint[] {
 
   return points.map((point) => ({
     ...point,
-    value:
-      typeof point.value === 'number' && Number.isFinite(point.value) ? point.value - basePoint.value : point.value,
-    ...(point.isEstimated || basePoint.isEstimated ? { isEstimated: true } : {})
+    value: typeof point.value === 'number' && Number.isFinite(point.value) ? point.value - basePoint.value : point.value
   }))
 }
 
@@ -596,7 +593,7 @@ export function PortfolioHistoryChart({
     return points.map((point) => ({ date: point.date, value: point.value, isLive: point.isLive }))
   }, [balanceData, timeframe])
 
-  const filteredGrowthUsdData = useMemo<TChartPoint[]>(() => {
+  const filteredGrowthAmountData = useMemo<TChartPoint[]>(() => {
     if (!protocolReturnData) {
       return []
     }
@@ -610,30 +607,10 @@ export function PortfolioHistoryChart({
     return rebaseDeltaPoints(
       points.map((point) => ({
         date: point.date,
-        value: point.growthWeightUsd,
-        isEstimated: point.growthUsdEstimated
+        value: resolvedGrowthDisplayMode === 'eth' ? point.growthWeightEth : point.growthWeightUsd
       }))
     )
-  }, [protocolReturnData, timeframe])
-
-  const filteredGrowthEthData = useMemo<TChartPoint[]>(() => {
-    if (!protocolReturnData) {
-      return []
-    }
-
-    const limit = getTimeframeLimit(timeframe)
-    const points =
-      !Number.isFinite(limit) || limit >= protocolReturnData.length
-        ? protocolReturnData
-        : protocolReturnData.slice(-limit)
-
-    return rebaseDeltaPoints(
-      points.map((point) => ({
-        date: point.date,
-        value: point.growthWeightEth
-      }))
-    )
-  }, [protocolReturnData, timeframe])
+  }, [protocolReturnData, resolvedGrowthDisplayMode, timeframe])
 
   const filteredRawGrowthIndexData = useMemo<TChartPoint[]>(() => {
     if (!protocolReturnData) {
@@ -718,39 +695,16 @@ export function PortfolioHistoryChart({
     activeTab === 'balance'
       ? filteredBalanceData
       : activeTab === 'growth'
-        ? resolvedGrowthDisplayMode === 'eth'
-          ? filteredGrowthEthData
-          : resolvedGrowthDisplayMode === 'usd'
-            ? filteredGrowthUsdData
-            : filteredGrowthIndexData
+        ? resolvedGrowthDisplayMode === 'index'
+          ? filteredGrowthIndexData
+          : filteredGrowthAmountData
         : filteredAnnualizedReturnData
   const activeIsLoading = activeTab === 'balance' ? balanceIsLoading : protocolReturnIsLoading
   const activeIsEmpty = activeTab === 'balance' ? balanceIsEmpty : protocolReturnIsEmpty
   const activeError = activeTab === 'balance' ? balanceError : protocolReturnError
   const activeHasRenderableValue = activeData.some((point) => point.value !== null)
-  const firstActiveDate = activeData[0]?.date
-  const hasMissingEthGrowth =
-    activeTab === 'growth' &&
-    resolvedGrowthDisplayMode === 'eth' &&
-    Boolean(
-      firstActiveDate &&
-        (protocolReturnData?.some(
-          (point) => point.date >= firstActiveDate && point.growthWeightEth === null && point.growthIndex !== null
-        ) ||
-          visibleProtocolReturnFamilySeries.some((series) =>
-            series.dataPoints.some((point) => {
-              const timestamp = point.timestamp > 1_000_000_000_000 ? point.timestamp : point.timestamp * 1000
-              return (
-                new Date(timestamp).toISOString().slice(0, 10) >= firstActiveDate &&
-                point.growthWeightEth === null &&
-                point.growthIndex !== null
-              )
-            })
-          ))
-    )
-  const historyWarning = hasMissingEthGrowth
-    ? 'ETH growth is partial: historical prices are missing for one or more vaults.'
-    : null
+  const growthIsPartial = activeTab === 'growth' && protocolReturnSummary?.growthIsPartial?.[resolvedGrowthDisplayMode]
+  const growthLabel = resolvedGrowthDisplayMode === 'index' ? 'Index' : resolvedGrowthDisplayMode.toUpperCase()
   const yAxisFloor = activeTab === 'growth' && resolvedGrowthDisplayMode === 'index' ? 100 : 0
   const yAxisTicks = useMemo(
     () =>
@@ -1028,8 +982,8 @@ export function PortfolioHistoryChart({
       <section className={cl(sectionClassName, className)}>
         <div className={'flex min-h-[240px] items-center justify-center'}>
           <p className={'text-center text-base text-text-secondary'}>
-            {hasMissingEthGrowth
-              ? 'ETH growth unavailable: historical prices are missing for one or more vaults.'
+            {growthIsPartial
+              ? `${growthLabel} growth unavailable: vault valuation data is incomplete.`
               : getEmptyMessage(activeTab, resolvedGrowthDisplayMode)}
           </p>
         </div>
@@ -1040,16 +994,14 @@ export function PortfolioHistoryChart({
   if (activeTab === 'growth') {
     return (
       <section className={cl(sectionClassName, className)}>
-        {historyWarning ? <p className={'mb-2 text-xs text-text-secondary'}>{historyWarning}</p> : null}
+        {growthIsPartial ? (
+          <p className={'mb-2 text-xs text-text-secondary'}>
+            {`Some vaults could not be valued. ${growthLabel} data may be partial.`}
+          </p>
+        ) : null}
         <div className={'min-h-0 flex-1'}>
           <PortfolioGrowthContributionsChart
-            totalPoints={
-              resolvedGrowthDisplayMode === 'eth'
-                ? filteredGrowthEthData
-                : resolvedGrowthDisplayMode === 'index'
-                  ? filteredGrowthIndexData
-                  : filteredGrowthUsdData
-            }
+            totalPoints={activeData}
             familySeries={growthContributionFamilySeries}
             timeframe={timeframe}
             mode={resolvedGrowthDisplayMode}

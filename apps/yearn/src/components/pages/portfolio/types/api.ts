@@ -7,8 +7,8 @@ const portfolioHistorySimpleDataPointSchema = z.object({
 
 const portfolioProtocolReturnHistoryDataPointSchema = z.object({
   date: z.string(),
-  growthWeightUsd: z.number(),
-  growthUsd: z.number(),
+  growthWeightUsd: z.number().nullable(),
+  growthUsd: z.number().nullable(),
   growthUsdEstimated: z.boolean().optional().default(false),
   growthWeightEth: z.number().nullable(),
   protocolReturnPct: z.number().nullable(),
@@ -39,6 +39,7 @@ const portfolioProtocolReturnHistorySummarySchema = z.object({
     other: z.number()
   }),
   incompleteVaults: z.array(portfolioProtocolReturnIncompleteVaultSchema).optional(),
+  growthIsPartial: z.object({ usd: z.boolean(), eth: z.boolean(), index: z.boolean() }).optional(),
   isComplete: z.boolean()
 })
 
@@ -69,8 +70,8 @@ const portfolioGrowthVaultSchema = z.object({
   ),
   baselineUsd: z.number(),
   baselineExposureUsdYears: z.number(),
-  growthUnderlying: z.number(),
-  growthUsd: z.number(),
+  growthUnderlying: z.number().nullable(),
+  growthUsd: z.number().nullable(),
   growthPct: z.number().nullable(),
   annualizedProtocolReturnPct: z.number().nullable(),
   metadata: z.object({
@@ -256,8 +257,8 @@ export type TPortfolioLiveBalanceSnapshot = {
 }
 export type TPortfolioProtocolReturnHistoryChartData = Array<{
   date: string
-  growthWeightUsd: number
-  growthUsd: number
+  growthWeightUsd: number | null
+  growthUsd: number | null
   growthUsdEstimated: boolean
   growthWeightEth: number | null
   protocolReturnPct: number | null

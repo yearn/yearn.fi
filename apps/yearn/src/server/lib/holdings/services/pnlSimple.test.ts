@@ -1,4 +1,5 @@
-import { describe, expect, it } from 'vitest'
+import * as viem from 'viem'
+import { describe, expect, it, vi } from 'vitest'
 import type { VaultMetadata } from '../types'
 import type { TransactionActivityEvents } from './graphql'
 import { mergeAddressScopedRawPnlEventsWithTransactionActivity } from './pnlEvents'
@@ -13,6 +14,11 @@ import {
   materializeProtocolReturnVaults
 } from './pnlSimple'
 import type { TRawPnlEvent } from './pnlTypes'
+
+vi.mock('viem', async (importOriginal) => {
+  const original = await importOriginal<typeof import('viem')>()
+  return { ...original, formatUnits: vi.fn(original.formatUnits) }
+})
 
 const USER = '0x1111111111111111111111111111111111111111'
 const OTHER = '0x2222222222222222222222222222222222222222'
@@ -297,7 +303,7 @@ describe('pnl simple protocol return', () => {
     expect(history[1]?.growthIndex).toBe(100)
   })
 
-  it('does not turn unavailable PPS into an Index loss or silently restart at 100 after recovery', () => {
+  it('excludes a PPS gap from every growth metric instead of recording a loss and recovery', () => {
     const inputs = {
       events: [baseEvent({ kind: 'transfer', id: 'receipt', blockTimestamp: 100 })],
       userAddress: USER,
@@ -312,18 +318,368 @@ describe('pnl simple protocol return', () => {
           ])
         ]
       ]),
-      priceData: new Map([[ASSET_PRICE_KEY, new Map([[0, 1]])]])
+      priceData: new Map([[ASSET_PRICE_KEY, new Map([[0, 1]])]]),
+      ethPriceData: new Map([[0, 2]])
     }
     const history = buildProtocolReturnHistorySeries({ ...inputs, timestamps: [100, 200, 300] })
-    expect(history[0]?.growthIndex).toBe(100)
-    expect(history[1]?.growthIndex).toBeNull()
-    expect(history[2]?.growthIndex).toBeNull()
+    expect(history.map((point) => point.growthIndex)).toEqual([null, null, null])
+    expect(history.map((point) => point.growthWeightUsd)).toEqual([null, null, null])
+    expect(history.map((point) => point.growthWeightEth)).toEqual([null, null, null])
+    expect(history[1]?.protocolReturnPct).toBeNull()
+    expect(history[1]?.annualizedProtocolReturnPct).toBeNull()
+    const unavailableVault = materializeProtocolReturnVaults({
+      ...inputs,
+      ledgers: buildProtocolReturnLedgers({ ...inputs, currentTimestamp: 200 }),
+      currentTimestamp: 200
+    })[0]!
+    expect(unavailableVault).toMatchObject({
+      currentUnderlying: null,
+      growthUnderlying: null,
+      growthWeightUsd: null,
+      growthWeightEth: null
+    })
     const tail = buildProtocolReturnHistorySeries({
       ...inputs,
       timestamps: [300, 400],
       growthIndexSeed: { timestamp: 300, growthIndex: null }
     })
     expect(tail.map((point) => point.growthIndex)).toEqual([null, null])
+    expect(tail.map((point) => point.growthWeightUsd)).toEqual([expect.closeTo(10), expect.closeTo(10)])
+    expect(tail.map((point) => point.growthWeightEth)).toEqual([expect.closeTo(5), expect.closeTo(5)])
+  })
+
+  it('does not repeat history valuations after discovering a PPS gap', () => {
+    const formatUnits = vi.mocked(viem.formatUnits)
+    formatUnits.mockClear()
+    const buildHistory = (middlePps: number) =>
+      buildProtocolReturnHistorySeries({
+        events: [baseEvent({ id: 'receipt', blockTimestamp: 100 })],
+        userAddress: USER,
+        metadata,
+        ppsData: new Map([
+          [
+            VAULT_KEY,
+            new Map([
+              [100, 1],
+              [200, middlePps],
+              [300, 1.1]
+            ])
+          ]
+        ]),
+        priceData: new Map([[ASSET_PRICE_KEY, new Map([[0, 1]])]]),
+        ethPriceData: new Map([[0, 2]]),
+        timestamps: [100, 200, 300]
+      })
+    try {
+      buildHistory(1.05)
+      const completeValuations = formatUnits.mock.calls.length
+      formatUnits.mockClear()
+      const incompleteHistory = buildHistory(Number.NaN)
+      expect(incompleteHistory.map((point) => point.growthWeightUsd)).toEqual([null, null, null])
+      expect(formatUnits.mock.calls.length).toBe(completeValuations)
+    } finally {
+      formatUnits.mockRestore()
+    }
+  })
+
+  it.each([
+    { layer: 'outer', gapKey: NESTED_OUTER_KEY },
+    { layer: 'intermediate', gapKey: NESTED_MIDDLE_KEY }
+  ])("excludes an $layer PPS gap at another vault's flow between chart dates", ({ gapKey }) => {
+    const day = 86_400
+    const inputs = {
+      events: [
+        baseEvent({ id: 'good-receipt', blockTimestamp: 100 }),
+        baseEvent({
+          id: 'nested-receipt',
+          blockTimestamp: 100,
+          vaultAddress: NESTED_OUTER_VAULT,
+          familyVaultAddress: NESTED_OUTER_VAULT
+        }),
+        baseEvent({ id: 'good-addition', blockTimestamp: day + 100, blockNumber: 2, shares: 10n * ONE })
+      ],
+      userAddress: USER,
+      metadata: new Map([...metadata, ...nestedMetadata]),
+      ppsData: new Map([
+        [
+          VAULT_KEY,
+          new Map([
+            [0, 1],
+            [day, 1.1],
+            [2 * day, 1.2]
+          ])
+        ],
+        ...(
+          [
+            [NESTED_OUTER_KEY, 2],
+            [NESTED_MIDDLE_KEY, 3],
+            [NESTED_INNER_KEY, 5]
+          ] as const
+        ).map(
+          ([key, pps]) =>
+            [
+              key,
+              new Map([
+                [0, pps],
+                [day, key === gapKey ? Number.NaN : pps],
+                [2 * day, pps]
+              ])
+            ] as const
+        )
+      ]),
+      priceData: new Map([
+        [ASSET_PRICE_KEY, new Map([[0, 1]])],
+        [NESTED_TERMINAL_PRICE_KEY, new Map([[0, 1]])]
+      ]),
+      ethPriceData: new Map([[0, 2]]),
+      timestamps: [day - 1, 3 * day - 1]
+    }
+    const history = buildProtocolReturnHistorySeries(inputs)
+    const control = buildProtocolReturnHistorySeries({
+      ...inputs,
+      events: inputs.events.filter((event) => event.vaultAddress === VAULT)
+    })
+
+    history.forEach((point, index) => {
+      expect(point.growthIndex).toBeCloseTo(control[index]!.growthIndex!, 10)
+      expect(point.growthWeightUsd).toBeCloseTo(control[index]!.growthWeightUsd!, 10)
+      expect(point.growthWeightEth).toBeCloseTo(control[index]!.growthWeightEth!, 10)
+    })
+    expect(history.at(-1)?.growthWeightUsd).toBeCloseTo(21)
+    expect(history.at(-1)?.growthIndex).toBeCloseTo(120)
+  })
+
+  it('ignores PPS gaps before receipt and while fully exited, including after re-entry', () => {
+    const day = 86_400
+    const history = buildProtocolReturnHistorySeries({
+      events: [
+        baseEvent({ id: 'receipt', blockTimestamp: day + 100 }),
+        baseEvent({
+          kind: 'withdrawal',
+          id: 'full-exit',
+          blockTimestamp: 2 * day + 100,
+          blockNumber: 2,
+          owner: USER,
+          assets: 110n * ONE
+        }),
+        baseEvent({ id: 're-entry', blockTimestamp: 4 * day + 100, blockNumber: 3 })
+      ],
+      userAddress: USER,
+      metadata,
+      ppsData: new Map([
+        [
+          VAULT_KEY,
+          new Map([
+            [0, Number.NaN],
+            [day, 1],
+            [2 * day, 1.1],
+            [3 * day, Number.NaN],
+            [4 * day, 2],
+            [5 * day, 2.2]
+          ])
+        ]
+      ]),
+      priceData: new Map([[ASSET_PRICE_KEY, new Map([[0, 1]])]]),
+      ethPriceData: new Map([[0, 2]]),
+      timestamps: [day - 1, 2 * day - 1, 3 * day - 1, 4 * day - 1, 5 * day - 1, 6 * day - 1]
+    })
+    expect(history.map((point) => point.growthWeightUsd)).toEqual([
+      null,
+      expect.closeTo(0),
+      expect.closeTo(10),
+      expect.closeTo(10),
+      expect.closeTo(10),
+      expect.closeTo(30)
+    ])
+    expect(history.map((point) => point.growthWeightEth)).toEqual([
+      null,
+      expect.closeTo(0),
+      expect.closeTo(5),
+      expect.closeTo(5),
+      expect.closeTo(5),
+      expect.closeTo(15)
+    ])
+    expect(history.at(-1)?.growthIndex).toBeCloseTo(121)
+  })
+
+  it.each(['zero PPS', 'missing metadata', 'missing receipt price', 'intermediate PPS gap'])(
+    'keeps consistent partial USD, ETH, and Index histories when another vault has %s',
+    (issue) => {
+      const badVault = '0x9999999999999999999999999999999999999999'
+      const badAsset = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
+      const badKey = toVaultKey(1, badVault)
+      const events = [
+        baseEvent({ kind: 'transfer', id: 'good', blockTimestamp: 100 }),
+        baseEvent({
+          kind: 'transfer',
+          id: 'bad',
+          blockTimestamp: 100,
+          vaultAddress: badVault,
+          familyVaultAddress: badVault,
+          shares: 1000n * ONE
+        })
+      ]
+      const inputs = {
+        events,
+        userAddress: USER,
+        metadata: new Map([
+          ...metadata,
+          ...(issue === 'missing metadata'
+            ? []
+            : [
+                [
+                  badKey,
+                  {
+                    ...metadata.get(VAULT_KEY)!,
+                    address: badVault,
+                    token: { address: badAsset, symbol: 'BAD', decimals: 18 }
+                  }
+                ] as const
+              ])
+        ]),
+        ppsData: new Map([
+          [
+            VAULT_KEY,
+            new Map([
+              [100, 1],
+              [200, 1.1],
+              [300, 1.2]
+            ])
+          ],
+          [
+            badKey,
+            new Map([
+              [100, issue === 'zero PPS' ? 0 : 1],
+              [200, issue === 'intermediate PPS gap' || issue === 'zero PPS' ? 0 : 1.1],
+              [300, 1.2]
+            ])
+          ]
+        ]),
+        priceData: new Map([
+          [ASSET_PRICE_KEY, new Map([[0, 1]])],
+          [`ethereum:${badAsset}`, new Map([[0, issue === 'missing receipt price' ? 0 : 1]])]
+        ]),
+        ethPriceData: new Map([[0, 2]]),
+        timestamps: [100, 200, 300]
+      }
+      const history = buildProtocolReturnHistorySeries(inputs)
+      const control = buildProtocolReturnHistorySeries({ ...inputs, events: events.slice(0, 1) })
+      history.forEach((point, index) => {
+        expect(point.growthIndex).toBeCloseTo(control[index]!.growthIndex!, 10)
+        expect(point.growthWeightUsd).toBeCloseTo(control[index]!.growthWeightUsd!, 10)
+        expect(point.growthWeightEth).toBeCloseTo(control[index]!.growthWeightEth!, 10)
+      })
+      expect(history.at(-1)?.growthIndex).toBeCloseTo(120)
+
+      const selectedVaults = materializeProtocolReturnVaults({
+        ...inputs,
+        ledgers: buildProtocolReturnLedgers({ ...inputs, currentTimestamp: 300 }),
+        currentTimestamp: 300
+      })
+      const familySeries = buildProtocolReturnFamilyHistorySeries({
+        ...inputs,
+        selectedVaults,
+        portfolioPoints: history,
+        excludedVaultKeys: { usd: new Set([badKey]), eth: new Set([badKey]) }
+      })
+      expect(
+        familySeries
+          .find((series) => series.vaultAddress === badVault)
+          ?.dataPoints.map((point) => point.growthIndexContribution)
+      ).toEqual([null, null, null])
+      const excludedFamily = familySeries.find((series) => series.vaultAddress === badVault)!
+      expect(excludedFamily.dataPoints.map((point) => point.growthWeightUsd)).toEqual([null, null, null])
+      expect(excludedFamily.dataPoints.map((point) => point.growthWeightEth)).toEqual([null, null, null])
+      expect(
+        familySeries.find((series) => series.vaultAddress === VAULT)?.dataPoints.at(-1)?.growthIndexContribution
+      ).toBeCloseTo(20)
+    }
+  )
+
+  it.each(['withdrawal', 'transfer'] as const)(
+    'keeps realized growth after a full %s without requiring current PPS or exit USD prices',
+    (kind) => {
+      const day = 86_400
+      const inputs = {
+        events: [
+          baseEvent({ id: 'receipt', blockTimestamp: 100 }),
+          baseEvent({
+            kind,
+            id: 'exit',
+            blockTimestamp: day + 100,
+            blockNumber: 2,
+            owner: USER,
+            sender: USER,
+            receiver: OTHER,
+            assets: 110n * ONE
+          })
+        ],
+        userAddress: USER,
+        metadata,
+        ppsData: new Map([
+          [
+            VAULT_KEY,
+            new Map([
+              [0, 1],
+              [day, 1.1],
+              [2 * day, 0]
+            ])
+          ]
+        ]),
+        priceData: new Map([[ASSET_PRICE_KEY, new Map([[0, 1]])]]),
+        exitPriceData: new Map<string, Map<number, number>>(),
+        ethPriceData: new Map([[0, 2]]),
+        timestamps: [day - 1, 2 * day - 1, 3 * day - 1]
+      }
+      const history = buildProtocolReturnHistorySeries(inputs)
+      expect(history.map((point) => point.growthWeightUsd)).toEqual([
+        expect.closeTo(0),
+        expect.closeTo(10),
+        expect.closeTo(10)
+      ])
+      expect(history.map((point) => point.growthWeightEth)).toEqual([
+        expect.closeTo(0),
+        expect.closeTo(5),
+        expect.closeTo(5)
+      ])
+      expect(history.map((point) => point.growthIndex)).toEqual([
+        expect.closeTo(100),
+        expect.closeTo(110),
+        expect.closeTo(110)
+      ])
+      const vault = materializeProtocolReturnVaults({
+        ...inputs,
+        ledgers: buildProtocolReturnLedgers({ ...inputs, currentTimestamp: 3 * day - 1 }),
+        currentTimestamp: 3 * day - 1
+      })[0]!
+      expect(vault.issues).toEqual(['missing_exit_price'])
+      expect(vault.currentUnderlying).toBe(0)
+      expect(vault.growthWeightUsd).toBeCloseTo(10)
+      expect(vault.growthWeightEth).toBeCloseTo(5)
+    }
+  )
+
+  it('keeps USD and Index available when only the receipt ETH conversion price is missing', () => {
+    const history = buildProtocolReturnHistorySeries({
+      events: [baseEvent({ id: 'receipt', blockTimestamp: 100 })],
+      userAddress: USER,
+      metadata,
+      ppsData: new Map([
+        [
+          VAULT_KEY,
+          new Map([
+            [100, 1],
+            [200, 1.1]
+          ])
+        ]
+      ]),
+      priceData: new Map([[ASSET_PRICE_KEY, new Map([[0, 1]])]]),
+      ethPriceData: new Map([[200, 2]]),
+      timestamps: [100, 200]
+    })
+    expect(history.map((point) => point.growthWeightUsd)).toEqual([expect.closeTo(0), expect.closeTo(10)])
+    expect(history.map((point) => point.growthIndex)).toEqual([expect.closeTo(100), expect.closeTo(110)])
+    expect(history.map((point) => point.growthWeightEth)).toEqual([null, null])
   })
 
   it('ignores events after an explicit ledger cutoff', () => {
@@ -2582,7 +2938,7 @@ describe('pnl simple protocol return', () => {
     expect(vault.baselineUnderlying).toBeCloseTo(300)
     expect(vault.realizedBaselineUnderlying).toBeCloseTo(0)
     expect(vault.realizedGrowthUnderlying).toBeCloseTo(0)
-    expect(vault.growthUnderlying).toBeCloseTo(300)
+    expect(vault.growthUnderlying).toBeNull()
     expect(vault.exitCount).toBe(0)
     expect(vault.unmatchedExitSharesFormatted).toBeCloseTo(0)
   })
@@ -2792,8 +3148,8 @@ describe('pnl simple protocol return', () => {
 
     expect(vault.status).toBe('missing_pps')
     expect(vault.baselineUnderlying).toBe(0)
-    expect(vault.currentUnderlying).toBe(0)
-    expect(vault.growthUnderlying).toBe(0)
+    expect(vault.currentUnderlying).toBeNull()
+    expect(vault.growthUnderlying).toBeNull()
   })
 
   it('preserves a locked yvUSD lot when its withdrawal and transfer-out lack unlocked PPS', () => {
@@ -2905,7 +3261,7 @@ describe('pnl simple protocol return', () => {
     expect(vault.currentUnderlying).toBeCloseTo(107.1)
     expect(vault.realizedBaselineUnderlying).toBeCloseTo(0)
     expect(vault.realizedGrowthUnderlying).toBeCloseTo(0)
-    expect(vault.growthUnderlying).toBeCloseTo(7.1)
+    expect(vault.growthUnderlying).toBeNull()
     expect(vault.exitCount).toBe(0)
     expect(vault.unmatchedExitSharesFormatted).toBeCloseTo(0)
   })
