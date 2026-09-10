@@ -622,7 +622,7 @@ describe('getHoldingsProtocolReturnHistory', () => {
     expect(scenario.response.protocolReturn.familySeries[0]?.dataPoints.at(-1)?.growthUsdEstimated).toBe(true)
   })
 
-  it('values growth history at the latest price and keeps recoverable missing-price families eligible', async () => {
+  it('keeps latest-price row growth but excludes a vault with missing receipt prices from weighted charts', async () => {
     const firstTimestamp = event.blockTimestamp + 1
     const secondTimestamp = firstTimestamp + 100
     generateDailyTimestampsMock.mockReturnValue([event.blockTimestamp, event.blockTimestamp + 100])
@@ -642,6 +642,14 @@ describe('getHoldingsProtocolReturnHistory', () => {
     const growthVault = response.growth.vaults[0]
 
     expect(response.protocolReturn.summary.isComplete).toBe(false)
+    expect(response.protocolReturn.summary.incompleteVaults).toEqual([
+      expect.objectContaining({
+        chainId: 1,
+        vaultAddress: VAULT,
+        status: 'missing_receipt_price',
+        issues: ['missing_receipt_price']
+      })
+    ])
     expect(growthVault).toMatchObject({
       status: 'ok',
       issues: [],
@@ -653,17 +661,25 @@ describe('getHoldingsProtocolReturnHistory', () => {
     expect(growthVault?.growthPct).toBeCloseTo(10)
     expect(response.protocolReturn.dataPoints[0]?.growthUsd).toBe(0)
     expect(response.protocolReturn.dataPoints[1]?.growthUsd).toBeCloseTo(30)
-    expect(response.protocolReturn.dataPoints.map((point) => point.growthWeightUsd)).toEqual([0, 0])
-    expect(response.protocolReturn.familySeries).toHaveLength(1)
-    expect(response.protocolReturn.familySeries[0]).toMatchObject({
-      chainId: 1,
-      vaultAddress: VAULT,
-      dataPoints: [
-        { timestamp: firstTimestamp, growthUsd: 0, growthWeightUsd: 0, growthWeightEth: null },
-        { timestamp: secondTimestamp, growthWeightUsd: 0, growthWeightEth: null }
-      ]
-    })
-    expect(response.protocolReturn.familySeries[0]?.dataPoints[1]?.growthUsd).toBeCloseTo(30)
+    expect(response.protocolReturn.dataPoints.map((point) => point.growthWeightUsd)).toEqual([null, null])
+    expect(response.protocolReturn.summary.growthIsPartial).toEqual({ usd: true, eth: true, index: true })
+    expect(response.protocolReturn.familySeries).toEqual([])
+  })
+
+  it('reports ETH-only incomplete coverage without excluding USD or Index', async () => {
+    const assetPrices = new Map([[EVENT_RECEIPT_DAY_TIMESTAMP, 1]])
+    const ethPrices = new Map([[EVENT_RECEIPT_DAY_TIMESTAMP, 2]])
+    fetchHistoricalPricesForTokenTimestampsMock.mockResolvedValue(
+      new Map([
+        [ASSET_PRICE_KEY, assetPrices],
+        [WETH_PRICE_KEY, ethPrices]
+      ])
+    )
+    getPriceAtTimestampMock.mockImplementation((prices: Map<number, number>) => (prices === ethPrices ? 0 : 1))
+    const { getHoldingsProtocolReturnHistory } = await import('./pnlSimple')
+    const response = await getHoldingsProtocolReturnHistory(USER, '1y')
+    expect(response.summary.growthIsPartial).toEqual({ usd: false, eth: true, index: false })
+    expect(response.dataPoints[0]).toMatchObject({ growthWeightUsd: 0, growthWeightEth: null, growthIndex: 100 })
   })
 
   it('normalizes string decimals in cached portfolio growth metadata', async () => {
@@ -832,6 +848,46 @@ describe('getHoldingsProtocolReturnHistory', () => {
       ],
       expect.objectContaining({ protocolReturn: response }),
       expect.any(Number)
+    )
+  })
+
+  it.each(['disappears', 'recovers'])('rebuilds every growth chart when PPS %s', async (change) => {
+    const firstDay = 1_800_000_000
+    const secondDay = firstDay + 86_400
+    const thirdDay = secondDay + 86_400
+    getPPSMock.mockReturnValue(change === 'recovers' ? 0 : 1)
+    generateDailyTimestampsMock.mockReturnValue([firstDay, secondDay])
+    const { getHoldingsProtocolReturnHistory } = await import('./pnlSimple')
+    await getHoldingsProtocolReturnHistory(USER, '1y')
+    const cachedResponse = saveCachedProtocolReturnHistoryMock.mock.calls[0]![3]
+    getCachedProtocolReturnHistoryMock.mockResolvedValue({
+      settledDate: `date-${secondDay + 1}`,
+      response: cachedResponse
+    })
+    generateDailyTimestampsMock.mockReturnValue([firstDay, secondDay, thirdDay])
+    getPPSMock.mockImplementation((_timeline: Map<number, number>, timestamp: number) =>
+      change === 'disappears' && timestamp >= thirdDay ? 0 : 1
+    )
+    debugLogMock.mockClear()
+    const result = await getHoldingsProtocolReturnHistory(USER, '1y')
+    expect(result.dataPoints.map((point) => point.growthIndex)).toEqual(
+      change === 'disappears' ? [null, null, null] : [100, 100, 100]
+    )
+    expect(result.dataPoints.map((point) => point.growthWeightUsd)).toEqual(
+      change === 'disappears' ? [null, null, null] : [0, 0, 0]
+    )
+    expect(result.dataPoints.map((point) => point.growthWeightEth)).toEqual(
+      change === 'disappears' ? [null, null, null] : [0, 0, 0]
+    )
+    expect(result.summary.growthIsPartial).toEqual({
+      usd: change === 'disappears',
+      eth: change === 'disappears',
+      index: change === 'disappears'
+    })
+    expect(debugLogMock).toHaveBeenCalledWith(
+      'protocol-return-history',
+      'rebuilt protocol return history',
+      expect.objectContaining({ overlapMatched: change === 'disappears' ? false : null })
     )
   })
 

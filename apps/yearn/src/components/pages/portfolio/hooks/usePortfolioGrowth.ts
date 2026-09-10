@@ -18,8 +18,7 @@ export type TPortfolioGrowthAssetDisplay = {
   symbol: string | null
 }
 
-export type TMappedPortfolioGrowthVault = Omit<TPortfolioGrowthVault, 'growthUnderlying'> & {
-  growthUnderlying: number | null
+export type TMappedPortfolioGrowthVault = TPortfolioGrowthVault & {
   assetGrowth: TPortfolioGrowthAssetDisplay[]
 }
 
@@ -29,7 +28,7 @@ export function getPortfolioGrowthVaultKey(vault: Pick<TPortfolioGrowthVault, 'c
 
 function sumGrowthField(
   vaults: readonly TMappedPortfolioGrowthVault[],
-  field: 'baselineUsd' | 'baselineExposureUsdYears' | 'growthUsd'
+  field: 'baselineUsd' | 'baselineExposureUsdYears'
 ): number {
   return vaults.reduce((total, vault) => total + vault[field], 0)
 }
@@ -76,10 +75,13 @@ function combineGrowthVariants(
     )
   const baselineUsd = sumGrowthField(variants, 'baselineUsd')
   const baselineExposureUsdYears = sumGrowthField(variants, 'baselineExposureUsdYears')
-  const growthUnderlying = combineAssetGrowth
-    ? variants.reduce((total, vault) => total + (vault.growthUnderlying ?? 0), 0)
+  const growthUnderlying =
+    combineAssetGrowth && variants.every((vault) => vault.growthUnderlying !== null)
+      ? variants.reduce((total, vault) => total + vault.growthUnderlying!, 0)
+      : null
+  const growthUsd = variants.every((vault) => vault.growthUsd !== null)
+    ? variants.reduce((total, vault) => total + vault.growthUsd!, 0)
     : null
-  const growthUsd = sumGrowthField(variants, 'growthUsd')
   const issues = Array.from(new Set(variants.flatMap((vault) => vault.issues)))
   const isComplete = variants.every((vault) => vault.status === 'ok')
 
@@ -91,9 +93,12 @@ function combineGrowthVariants(
     baselineUsd,
     baselineExposureUsdYears,
     growthUnderlying,
-    assetGrowth: combineAssetGrowth
-      ? [{ amount: growthUnderlying ?? 0, symbol: representative.metadata.symbol }]
-      : variants.flatMap((vault) => vault.assetGrowth),
+    assetGrowth:
+      growthUnderlying !== null
+        ? [{ amount: growthUnderlying, symbol: representative.metadata.symbol }]
+        : combineAssetGrowth
+          ? []
+          : variants.flatMap((vault) => vault.assetGrowth),
     growthUsd,
     growthPct: combineGrowthRate(variants, 'growthPct', 'baselineUsd'),
     annualizedProtocolReturnPct: combineGrowthRate(variants, 'annualizedProtocolReturnPct', 'baselineExposureUsdYears')
@@ -124,7 +129,8 @@ export function mapPortfolioGrowthVaults(
           getPortfolioGrowthVaultKey(vault),
           {
             ...vault,
-            assetGrowth: [{ amount: vault.growthUnderlying, symbol: vault.metadata.symbol }]
+            assetGrowth:
+              vault.growthUnderlying === null ? [] : [{ amount: vault.growthUnderlying, symbol: vault.metadata.symbol }]
           }
         ] as const
     )
@@ -171,7 +177,7 @@ export function comparePortfolioGrowthVaults(
 export function toPortfolioGrowthDisplay(
   vault: TMappedPortfolioGrowthVault | undefined
 ): TPortfolioGrowthDisplay | null {
-  if (vault?.status !== 'ok' || !Number.isFinite(vault.growthUsd)) {
+  if (vault?.status !== 'ok' || vault.growthUsd === null || !Number.isFinite(vault.growthUsd)) {
     return null
   }
 

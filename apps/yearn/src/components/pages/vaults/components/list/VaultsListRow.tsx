@@ -537,18 +537,18 @@ function VaultsListRowPresentationComponent({
         tooltip={
           <div
             className={
-              'w-48 max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-surface-secondary p-3 text-xs text-text-primary'
+              'w-max min-w-48 max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-surface-secondary p-3 text-xs text-text-primary'
             }
           >
             <p className={'mb-2 font-semibold'}>{'Your vault growth'}</p>
             <div className={'flex flex-col gap-2'}>
               <div className={'flex items-center justify-between gap-2'}>
-                <span className={'text-text-secondary'}>{'Asset growth'}</span>
-                <strong className={'font-semibold'}>{assetValue ?? '—'}</strong>
+                <span className={'shrink-0 whitespace-nowrap text-text-secondary'}>{'Asset growth'}</span>
+                <strong className={'shrink-0 whitespace-nowrap font-semibold'}>{assetValue ?? '—'}</strong>
               </div>
               <div className={'flex items-center justify-between gap-2'}>
-                <span className={'text-text-secondary'}>{'Real APY'}</span>
-                <strong className={'font-semibold'}>{annualizedPercent ?? '—'}</strong>
+                <span className={'shrink-0 whitespace-nowrap text-text-secondary'}>{'Real APY'}</span>
+                <strong className={'shrink-0 whitespace-nowrap font-semibold'}>{annualizedPercent ?? '—'}</strong>
               </div>
               {portfolioGrowth.isUsdEstimated ? (
                 <p className={'border-t border-border pt-2 text-text-secondary'}>{'* Growth may be approximate.'}</p>

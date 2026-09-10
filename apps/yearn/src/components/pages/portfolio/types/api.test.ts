@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { portfolioActivityFacetsResponseSchema, portfolioActivityResponseSchema, portfolioResponseSchema } from './api'
 
 describe('portfolioResponseSchema', () => {
-  it('accepts the non-fatal missing exit-price warning and defaults legacy estimate flags', () => {
+  it.each([2, null])('accepts available or unavailable growth (%s) and metric completeness', (growth) => {
     const parsed = portfolioResponseSchema.parse({
       address: '0x2222222222222222222222222222222222222222',
       version: 'all',
@@ -19,18 +19,29 @@ describe('portfolioResponseSchema', () => {
         timeframe: '1y',
         summary: {
           totalVaults: 1,
-          completeVaults: 1,
-          partialVaults: 0,
+          completeVaults: 0,
+          partialVaults: 1,
           recommendedGrowthDisplay: 'usd',
           recommendedGrowthDisplayReason: 'stable_dominant',
           openBaselineCompositionUsd: { stable: 100, ethFamily: 0, other: 0 },
-          isComplete: true
+          growthIsPartial: { usd: true, eth: true, index: true },
+          incompleteVaults: [
+            {
+              chainId: 1,
+              vaultAddress: '0x5555555555555555555555555555555555555555',
+              symbol: 'yvMISSING',
+              tokenAddress: '0x6666666666666666666666666666666666666666',
+              status: 'missing_pps',
+              issues: ['missing_pps']
+            }
+          ],
+          isComplete: false
         },
         dataPoints: [
           {
             date: '2026-08-23',
-            growthWeightUsd: 2,
-            growthUsd: 2,
+            growthWeightUsd: growth,
+            growthUsd: growth,
             growthWeightEth: null,
             protocolReturnPct: 2,
             annualizedProtocolReturnPct: 2,
@@ -71,8 +82,8 @@ describe('portfolioResponseSchema', () => {
             issues: ['missing_exit_price'],
             baselineUsd: 100,
             baselineExposureUsdYears: 1,
-            growthUnderlying: 2,
-            growthUsd: 2,
+            growthUnderlying: growth,
+            growthUsd: growth,
             growthPct: 2,
             annualizedProtocolReturnPct: 2,
             metadata: {
@@ -87,10 +98,19 @@ describe('portfolioResponseSchema', () => {
     })
 
     expect(parsed.growth.vaults[0]?.issues).toEqual(['missing_exit_price'])
+    expect(parsed.protocolReturn.summary.growthIsPartial).toEqual({ usd: true, eth: true, index: true })
+    expect(parsed.protocolReturn.dataPoints[0]?.growthWeightUsd).toBe(growth)
+    expect(parsed.growth.vaults[0]?.growthUnderlying).toBe(growth)
+    expect(parsed.protocolReturn.summary.incompleteVaults?.[0]).toMatchObject({
+      vaultAddress: '0x5555555555555555555555555555555555555555',
+      status: 'missing_pps',
+      issues: ['missing_pps']
+    })
     expect(parsed.protocolReturn.dataPoints[0]?.growthUsdEstimated).toBe(false)
     expect(parsed.protocolReturn.familySeries[0]?.dataPoints[0]).toMatchObject({
       growthWeightEth: 0.001,
-      growthUsdEstimated: false
+      growthUsdEstimated: false,
+      growthIndexContribution: null
     })
   })
 })

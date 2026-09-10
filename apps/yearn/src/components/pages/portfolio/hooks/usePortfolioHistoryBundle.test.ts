@@ -1,4 +1,5 @@
 import {
+  getIncompletePortfolioHistoryDiagnostics,
   resolvePortfolioHistoryBundleData,
   resolvePortfolioHistoryBundleLoading
 } from '@pages/portfolio/hooks/usePortfolioHistoryBundle'
@@ -155,6 +156,53 @@ describe('resolvePortfolioHistoryBundleLoading', () => {
         isPlaceholderData: false
       })
     ).toEqual({ historyIsLoading: true, growthIsLoading: true })
+  })
+})
+
+describe('getIncompletePortfolioHistoryDiagnostics', () => {
+  it('returns the vaults and issue codes responsible for incomplete history', () => {
+    const response = createPortfolioResponse()
+    response.protocolReturn.summary = {
+      ...response.protocolReturn.summary,
+      completeVaults: 0,
+      partialVaults: 1,
+      incompleteVaults: [
+        {
+          chainId: 1,
+          vaultAddress: VAULT_ADDRESS,
+          symbol: 'yvUSDC',
+          tokenAddress: '0x3333333333333333333333333333333333333333',
+          status: 'missing_pps',
+          issues: ['missing_pps', 'missing_exit_price']
+        }
+      ],
+      isComplete: false
+    }
+
+    expect(getIncompletePortfolioHistoryDiagnostics(response)).toEqual({
+      address: USER_ADDRESS,
+      timeframe: '1y',
+      generatedAt: '2026-09-02T00:00:00.000Z',
+      summary: {
+        totalVaults: 1,
+        completeVaults: 0,
+        partialVaults: 1
+      },
+      missingVaults: [
+        {
+          chainId: 1,
+          vaultAddress: VAULT_ADDRESS,
+          symbol: 'yvUSDC',
+          tokenAddress: '0x3333333333333333333333333333333333333333',
+          status: 'missing_pps',
+          issues: ['missing_pps', 'missing_exit_price']
+        }
+      ]
+    })
+  })
+
+  it('returns no diagnostics for complete history', () => {
+    expect(getIncompletePortfolioHistoryDiagnostics(createPortfolioResponse())).toBeNull()
   })
 })
 

@@ -11,14 +11,19 @@ type TProtocolReturnFamilyPoint = {
   growthWeightUsd: number | null
   growthWeightEth: number | null
   growthIndex: number | null
+  growthIndexContribution?: number | null
 }
 
 type TProtocolReturnFamilySeries = {
   dataPoints: TProtocolReturnFamilyPoint[]
 }
 
-type TCompactProtocolReturnFamilyPoint = Omit<TProtocolReturnFamilyPoint, 'growthUsdEstimated'> & {
+type TCompactProtocolReturnFamilyPoint = Omit<
+  TProtocolReturnFamilyPoint,
+  'growthUsdEstimated' | 'growthIndexContribution'
+> & {
   growthUsdEstimated: boolean
+  growthIndexContribution: number | null
 }
 
 type TCompactProtocolReturnFamilySeries<TSeries extends TProtocolReturnFamilySeries> = Omit<TSeries, 'dataPoints'> & {
@@ -52,7 +57,7 @@ function isFiniteNumber(value: unknown): value is number {
 
 function buildPositionRankPoints(
   points: TProtocolReturnFamilyPoint[],
-  valueKey: 'growthWeightUsd' | 'growthWeightEth'
+  valueKey: 'growthWeightUsd' | 'growthWeightEth' | 'growthIndexContribution'
 ): Array<{ value: number | null }> {
   const firstFiniteIndex = points.findIndex((point) => isFiniteNumber(point[valueKey]))
   if (firstFiniteIndex < 0 || points.length - firstFiniteIndex < 2) {
@@ -66,14 +71,6 @@ function buildPositionRankPoints(
   }
 
   return [{ value: 0 }, { value: lastValue - firstValue }]
-}
-
-function buildIndexRankPoints(points: TProtocolReturnFamilyPoint[]): Array<{ value: number | null }> {
-  const baseValue = points.find((point) => isFiniteNumber(point.growthIndex))?.growthIndex
-
-  return points.map((point) => ({
-    value: baseValue && isFiniteNumber(point.growthIndex) ? (point.growthIndex / baseValue) * 100 : null
-  }))
 }
 
 /**
@@ -101,7 +98,7 @@ export function selectProtocolReturnFamilySeriesCandidates<TSeries extends TProt
           originalIndex: series.originalIndex,
           positionPoints: buildPositionRankPoints(points, 'growthWeightUsd'),
           ethPoints: buildPositionRankPoints(points, 'growthWeightEth'),
-          indexPoints: buildIndexRankPoints(points)
+          indexPoints: buildPositionRankPoints(points, 'growthIndexContribution')
         }
       })
 
@@ -136,7 +133,8 @@ export function selectProtocolReturnFamilySeriesCandidates<TSeries extends TProt
           growthUsdEstimated: point.growthUsdEstimated ?? false,
           growthWeightUsd: point.growthWeightUsd,
           growthWeightEth: point.growthWeightEth,
-          growthIndex: point.growthIndex
+          growthIndex: point.growthIndex,
+          growthIndexContribution: point.growthIndexContribution ?? null
         }))
       }
     ]

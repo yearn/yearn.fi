@@ -38,7 +38,6 @@ import type {
   TPortfolioProtocolReturnHistorySummary
 } from '../types/api'
 import { PortfolioGrowthContributionsChart } from './PortfolioGrowthContributionsChart'
-import { PortfolioGrowthIndexChart } from './PortfolioGrowthIndexChart'
 import { PortfolioHistoryBreakdownModal } from './PortfolioHistoryBreakdownModal'
 
 export type TPortfolioHistoryChartTimeframe = '30d' | '90d' | '1y' | 'all'
@@ -75,7 +74,6 @@ type TChartPoint = {
   date: string
   value: number | null
   isLive?: boolean
-  isEstimated?: boolean
 }
 
 type TPortfolioHistoryTooltipProps = {
@@ -265,9 +263,7 @@ function rebaseDeltaPoints(points: TChartPoint[]): TChartPoint[] {
 
   return points.map((point) => ({
     ...point,
-    value:
-      typeof point.value === 'number' && Number.isFinite(point.value) ? point.value - basePoint.value : point.value,
-    ...(point.isEstimated || basePoint.isEstimated ? { isEstimated: true } : {})
+    value: typeof point.value === 'number' && Number.isFinite(point.value) ? point.value - basePoint.value : point.value
   }))
 }
 
@@ -597,7 +593,7 @@ export function PortfolioHistoryChart({
     return points.map((point) => ({ date: point.date, value: point.value, isLive: point.isLive }))
   }, [balanceData, timeframe])
 
-  const filteredGrowthUsdData = useMemo<TChartPoint[]>(() => {
+  const filteredGrowthAmountData = useMemo<TChartPoint[]>(() => {
     if (!protocolReturnData) {
       return []
     }
@@ -611,12 +607,12 @@ export function PortfolioHistoryChart({
     return rebaseDeltaPoints(
       points.map((point) => ({
         date: point.date,
-        value: point.growthWeightUsd
+        value: resolvedGrowthDisplayMode === 'eth' ? point.growthWeightEth : point.growthWeightUsd
       }))
     )
-  }, [protocolReturnData, timeframe])
+  }, [protocolReturnData, resolvedGrowthDisplayMode, timeframe])
 
-  const filteredGrowthEthData = useMemo<TChartPoint[]>(() => {
+  const filteredRawGrowthIndexData = useMemo<TChartPoint[]>(() => {
     if (!protocolReturnData) {
       return []
     }
@@ -627,32 +623,23 @@ export function PortfolioHistoryChart({
         ? protocolReturnData
         : protocolReturnData.slice(-limit)
 
-    return rebaseDeltaPoints(
-      points.map((point) => ({
-        date: point.date,
-        value: point.growthWeightEth
-      }))
-    )
+    return points.map((point) => ({
+      date: point.date,
+      value: point.growthIndex
+    }))
   }, [protocolReturnData, timeframe])
+  const filteredGrowthIndexData = useMemo(
+    () => rebaseIndexPoints(filteredRawGrowthIndexData),
+    [filteredRawGrowthIndexData]
+  )
+  const growthIndexContributionScale = useMemo(() => {
+    const baseValue = filteredRawGrowthIndexData.find(
+      (point): point is { date: string; value: number } =>
+        typeof point.value === 'number' && Number.isFinite(point.value) && point.value !== 0
+    )?.value
 
-  const filteredGrowthIndexData = useMemo<TChartPoint[]>(() => {
-    if (!protocolReturnData) {
-      return []
-    }
-
-    const limit = getTimeframeLimit(timeframe)
-    const points =
-      !Number.isFinite(limit) || limit >= protocolReturnData.length
-        ? protocolReturnData
-        : protocolReturnData.slice(-limit)
-
-    return rebaseIndexPoints(
-      points.map((point) => ({
-        date: point.date,
-        value: point.growthIndex
-      }))
-    )
-  }, [protocolReturnData, timeframe])
+    return baseValue ? 100 / baseValue : 1
+  }, [filteredRawGrowthIndexData])
 
   const filteredAnnualizedReturnData = useMemo<TChartPoint[]>(() => {
     if (!protocolReturnData) {
@@ -687,56 +674,37 @@ export function PortfolioHistoryChart({
         chainId: series.chainId,
         vaultAddress: series.vaultAddress,
         label: getPortfolioVaultSeriesLabel(series, familyLabelByVaultKey),
-        dataPoints: series.dataPoints.map((point) =>
-          toPortfolioGrowthContributionPoint(point, resolvedGrowthDisplayMode === 'eth' ? 'eth' : 'usd')
-        )
+        dataPoints: series.dataPoints.map((point) => {
+          if (resolvedGrowthDisplayMode === 'index') {
+            return {
+              timestamp: point.timestamp,
+              value:
+                point.growthIndexContribution === null
+                  ? null
+                  : point.growthIndexContribution * growthIndexContributionScale
+            }
+          }
+
+          return toPortfolioGrowthContributionPoint(point, resolvedGrowthDisplayMode)
+        })
       })),
-    [familyLabelByVaultKey, resolvedGrowthDisplayMode, visibleProtocolReturnFamilySeries]
-  )
-  const growthIndexFamilySeries = useMemo(
-    () =>
-      visibleProtocolReturnFamilySeries.map((series) => ({
-        chainId: series.chainId,
-        vaultAddress: series.vaultAddress,
-        label: getPortfolioVaultSeriesLabel(series, familyLabelByVaultKey),
-        dataPoints: series.dataPoints.map((point) => ({
-          timestamp: point.timestamp,
-          value: point.growthIndex
-        }))
-      })),
-    [familyLabelByVaultKey, visibleProtocolReturnFamilySeries]
+    [familyLabelByVaultKey, growthIndexContributionScale, resolvedGrowthDisplayMode, visibleProtocolReturnFamilySeries]
   )
 
   const activeData =
     activeTab === 'balance'
       ? filteredBalanceData
       : activeTab === 'growth'
-        ? resolvedGrowthDisplayMode === 'eth'
-          ? filteredGrowthEthData
-          : resolvedGrowthDisplayMode === 'usd'
-            ? filteredGrowthUsdData
-            : filteredGrowthIndexData
+        ? resolvedGrowthDisplayMode === 'index'
+          ? filteredGrowthIndexData
+          : filteredGrowthAmountData
         : filteredAnnualizedReturnData
   const activeIsLoading = activeTab === 'balance' ? balanceIsLoading : protocolReturnIsLoading
   const activeIsEmpty = activeTab === 'balance' ? balanceIsEmpty : protocolReturnIsEmpty
   const activeError = activeTab === 'balance' ? balanceError : protocolReturnError
   const activeHasRenderableValue = activeData.some((point) => point.value !== null)
-  const firstActiveDate = activeData[0]?.date
-  const hasMissingEthGrowth =
-    activeTab === 'growth' &&
-    resolvedGrowthDisplayMode === 'eth' &&
-    Boolean(
-      firstActiveDate &&
-        protocolReturnData?.some(
-          (point) => point.date >= firstActiveDate && point.growthWeightEth === null && point.growthIndex !== null
-        )
-    )
-  const historyWarning =
-    protocolReturnSummary?.isComplete === false
-      ? 'History is incomplete: some historical prices or vault data are missing.'
-      : hasMissingEthGrowth
-        ? 'Some ETH growth history is unavailable because historical prices are missing.'
-        : null
+  const growthIsPartial = activeTab === 'growth' && protocolReturnSummary?.growthIsPartial?.[resolvedGrowthDisplayMode]
+  const growthLabel = resolvedGrowthDisplayMode === 'index' ? 'Index' : resolvedGrowthDisplayMode.toUpperCase()
   const yAxisFloor = activeTab === 'growth' && resolvedGrowthDisplayMode === 'index' ? 100 : 0
   const yAxisTicks = useMemo(
     () =>
@@ -1014,8 +982,8 @@ export function PortfolioHistoryChart({
       <section className={cl(sectionClassName, className)}>
         <div className={'flex min-h-[240px] items-center justify-center'}>
           <p className={'text-center text-base text-text-secondary'}>
-            {hasMissingEthGrowth
-              ? 'ETH growth unavailable: historical prices are missing for one or more vaults.'
+            {growthIsPartial
+              ? `${growthLabel} growth unavailable: vault valuation data is incomplete.`
               : getEmptyMessage(activeTab, resolvedGrowthDisplayMode)}
           </p>
         </div>
@@ -1023,36 +991,20 @@ export function PortfolioHistoryChart({
     )
   }
 
-  if (activeTab === 'growth' && resolvedGrowthDisplayMode === 'index') {
-    return (
-      <section className={cl(sectionClassName, className)}>
-        {historyWarning ? <p className={'mb-2 text-xs text-text-secondary'}>{historyWarning}</p> : null}
-        <div className={'min-h-0 flex-1'}>
-          <PortfolioGrowthIndexChart
-            totalPoints={filteredGrowthIndexData}
-            familySeries={growthIndexFamilySeries}
-            timeframe={timeframe}
-          />
-        </div>
-        <PortfolioHistoryBreakdownModal
-          date={selectedBreakdownDate}
-          isOpen={isBreakdownModalOpen}
-          onClose={() => setIsBreakdownModalOpen(false)}
-        />
-      </section>
-    )
-  }
-
   if (activeTab === 'growth') {
     return (
       <section className={cl(sectionClassName, className)}>
-        {historyWarning ? <p className={'mb-2 text-xs text-text-secondary'}>{historyWarning}</p> : null}
+        {growthIsPartial ? (
+          <p className={'mb-2 text-xs text-text-secondary'}>
+            {`Some vaults could not be valued. ${growthLabel} data may be partial.`}
+          </p>
+        ) : null}
         <div className={'min-h-0 flex-1'}>
           <PortfolioGrowthContributionsChart
-            totalPoints={resolvedGrowthDisplayMode === 'eth' ? filteredGrowthEthData : filteredGrowthUsdData}
+            totalPoints={activeData}
             familySeries={growthContributionFamilySeries}
             timeframe={timeframe}
-            mode={resolvedGrowthDisplayMode === 'eth' ? 'eth' : 'usd'}
+            mode={resolvedGrowthDisplayMode}
           />
         </div>
         <PortfolioHistoryBreakdownModal

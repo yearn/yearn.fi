@@ -29,7 +29,8 @@ function buildIsolatedSeries(args: { id: string; mode: TMode; window: TWindow; s
       growthUsd: args.mode === 'position' ? (index === windowStartIndex ? 0 : args.score) : null,
       growthWeightUsd: args.mode === 'position' ? (index === windowStartIndex ? 0 : args.score * 100) : null,
       growthWeightEth: args.mode === 'eth' ? (index === windowStartIndex ? 0 : args.score) : null,
-      growthIndex: args.mode === 'index' ? (index === windowStartIndex ? 100 : 100 + args.score) : null
+      growthIndex: args.mode === 'index' ? (index === windowStartIndex ? 100 : 100 + args.score) : null,
+      growthIndexContribution: args.mode === 'index' ? (index === windowStartIndex ? 0 : args.score) : null
     }))
   }
 }
@@ -101,7 +102,8 @@ describe('selectProtocolReturnFamilySeriesCandidates', () => {
       growthUsdEstimated: false,
       growthWeightUsd: 500,
       growthWeightEth: null,
-      growthIndex: null
+      growthIndex: null,
+      growthIndexContribution: null
     })
   })
 
@@ -147,5 +149,30 @@ describe('selectProtocolReturnFamilySeriesCandidates', () => {
     expect(selected.map((series) => series.vaultAddress)).toContain('eth-growth-19')
     expect(selected.map((series) => series.vaultAddress)).not.toContain('eth-growth-10')
     expect(selected.find((series) => series.vaultAddress === 'eth-growth-19')?.dataPoints[1]?.growthWeightEth).toBe(19)
+  })
+
+  it.each(['position', 'index'] as const)('does not let excluded vaults displace eligible %s contributors', (mode) => {
+    const excluded = Array.from({ length: 16 }, (_, index) => {
+      const series = buildIsolatedSeries({
+        id: `excluded-${index}`,
+        mode,
+        window: '1y',
+        score: index < 8 ? 100 + index : -100 - index,
+        pointCount: 2
+      })
+      return {
+        ...series,
+        dataPoints: series.dataPoints.map((point) => ({
+          ...point,
+          growthWeightUsd: null,
+          growthIndexContribution: null
+        }))
+      }
+    })
+    const healthy = buildIsolatedSeries({ id: 'healthy', mode, window: '1y', score: 5, pointCount: 2 })
+
+    expect(
+      selectProtocolReturnFamilySeriesCandidates([...excluded, healthy], '1y').map((series) => series.vaultAddress)
+    ).toEqual(['healthy'])
   })
 })

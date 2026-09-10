@@ -11,7 +11,7 @@ function timestamp(date: string): number {
 
 function makeFamily(args: {
   label: string
-  values: Array<{ date: string; value: number | null; milliseconds?: boolean; estimated?: boolean }>
+  values: Array<{ date: string; value: number | null; milliseconds?: boolean }>
   chainId?: number
   vaultAddress?: string
 }): TPortfolioGrowthContributionFamily {
@@ -21,8 +21,7 @@ function makeFamily(args: {
     label: args.label,
     dataPoints: args.values.map((point) => ({
       timestamp: timestamp(point.date) * (point.milliseconds ? 1000 : 1),
-      value: point.value,
-      isEstimated: point.estimated
+      value: point.value
     }))
   }
 }
@@ -34,6 +33,10 @@ function expectConservation(chart: ReturnType<typeof buildPortfolioGrowthContrib
       expect(contributionTotal).toBeCloseTo(point.portfolioGrowth, precision)
     }
   })
+}
+
+function withoutStackBands(chart: ReturnType<typeof buildPortfolioGrowthContributionChart>) {
+  return chart.data.map(({ stackBands: _stackBands, ...point }) => point)
 }
 
 describe('buildPortfolioGrowthContributionChart', () => {
@@ -134,11 +137,18 @@ describe('buildPortfolioGrowthContributionChart', () => {
       { key: 'vault_3', label: 'D', terminalValue: 3 },
       { key: 'other', label: 'Other', terminalValue: 2 }
     ])
-    expect(chart.data).toEqual([
+    expect(withoutStackBands(chart)).toEqual([
       { date: dates[0], portfolioGrowth: 0, vault_0: 0, vault_1: 0, vault_2: 0, vault_3: 0, other: 0 },
       { date: dates[1], portfolioGrowth: 31, vault_0: 20, vault_1: 5, vault_2: 4, vault_3: 1, other: 1 },
       { date: dates[2], portfolioGrowth: 56, vault_0: 30, vault_1: 15, vault_2: 6, vault_3: 3, other: 2 }
     ])
+    expect(chart.data.at(-1)?.stackBands).toEqual({
+      other: [0, 2],
+      vault_3: [2, 5],
+      vault_2: [5, 11],
+      vault_1: [11, 26],
+      vault_0: [26, 56]
+    })
     expectConservation(chart)
   })
 
@@ -217,7 +227,7 @@ describe('buildPortfolioGrowthContributionChart', () => {
     expectConservation(chart)
   })
 
-  it('carries sparse and null family values forward and normalizes millisecond timestamps', () => {
+  it('carries sparse values forward but preserves explicit nulls and normalizes millisecond timestamps', () => {
     const chart = buildPortfolioGrowthContributionChart({
       totalPoints: [
         { date: '2026-01-01', value: 0 },
@@ -237,7 +247,7 @@ describe('buildPortfolioGrowthContributionChart', () => {
       ]
     })
 
-    expect(chart.data.map((point) => point.vault_0)).toEqual([0, 0, 7, 7])
+    expect(chart.data.map((point) => point.vault_0)).toEqual([0, null, 7, 7])
     expect(chart.data.map((point) => point.other)).toEqual([0, 5, 0, 3])
     expect(chart.series[0]?.terminalValue).toBe(7)
     expectConservation(chart)
@@ -268,6 +278,57 @@ describe('buildPortfolioGrowthContributionChart', () => {
       ['Loss', -90]
     ])
     expect(chart.data.at(-1)).toMatchObject({ portfolioGrowth: 10, vault_0: 100, vault_1: -90, other: 0 })
+    expect(chart.data.at(-1)?.stackBands).toMatchObject({
+      vault_1: [-90, 0],
+      vault_0: [-90, 10],
+      other: [-90, -90]
+    })
+    expect(chart.bounds).toContain(-90)
+    expect(chart.bounds).toContain(10)
+    expectConservation(chart)
+  })
+
+  it('adds a 100-point base and reconciles Index attribution to the portfolio line', () => {
+    const chart = buildPortfolioGrowthContributionChart({
+      totalPoints: [
+        { date: '2026-01-01', value: 100 },
+        { date: '2026-01-02', value: 108 }
+      ],
+      familySeries: [
+        makeFamily({
+          label: 'Gain',
+          values: [
+            { date: '2026-01-01', value: 5 },
+            { date: '2026-01-02', value: 15 }
+          ]
+        }),
+        makeFamily({
+          label: 'Loss',
+          values: [
+            { date: '2026-01-01', value: 2 },
+            { date: '2026-01-02', value: -3 }
+          ]
+        })
+      ],
+      baseContribution: { key: 'starting_index', label: 'Starting index', value: 100 }
+    })
+
+    expect(chart.series.map((series) => series.label)).toEqual(['Starting index', 'Gain', 'Loss', 'Other'])
+    expect(chart.data.at(-1)).toMatchObject({
+      portfolioGrowth: 108,
+      starting_index: 100,
+      vault_0: 10,
+      vault_1: -5,
+      other: 3
+    })
+    expect(chart.data.at(-1)?.stackBands).toMatchObject({
+      starting_index: [0, 100],
+      vault_1: [95, 100],
+      vault_0: [98, 108],
+      other: [95, 98]
+    })
+    expect(chart.bounds).not.toContain(0)
+    expect(chart.bounds).toContain(95)
     expectConservation(chart)
   })
 
@@ -304,7 +365,7 @@ describe('buildPortfolioGrowthContributionChart', () => {
     expectConservation(chart)
   })
 
-  it('preserves unavailable ETH totals and family values as gaps', () => {
+  it('preserves unavailable totals and family values as gaps', () => {
     const dates = ['2026-02-01', '2026-02-02', '2026-02-03', '2026-02-04']
     const chart = buildPortfolioGrowthContributionChart({
       totalPoints: [
@@ -318,11 +379,10 @@ describe('buildPortfolioGrowthContributionChart', () => {
           label: 'Unavailable ETH growth',
           values: dates.map((date, index) => ({ date, value: [0, 1, null, 2][index]! }))
         })
-      ],
-      preserveNullValues: true
+      ]
     })
 
-    expect(chart.data).toEqual([
+    expect(withoutStackBands(chart)).toEqual([
       { date: dates[0], portfolioGrowth: 0, vault_0: 0, other: 0 },
       { date: dates[1], portfolioGrowth: 1, vault_0: 1, other: 0 },
       { date: dates[2], portfolioGrowth: null, vault_0: null, other: null },
@@ -343,46 +403,16 @@ describe('buildPortfolioGrowthContributionChart', () => {
           label: 'Unavailable ETH growth',
           values: dates.map((date, index) => ({ date, value: [0, 1, null][index]! }))
         })
-      ],
-      preserveNullValues: true
+      ]
     })
 
     expect(chart.series.map((series) => series.label)).toEqual(['Other'])
-    expect(chart.data.at(-1)).toEqual({
+    expect(withoutStackBands(chart).at(-1)).toEqual({
       date: dates[2],
       portfolioGrowth: 1.5,
       other: 1.5
     })
     expectConservation(chart)
-  })
-
-  it('propagates estimated pricing through rebased total, vault, and Other values', () => {
-    const chart = buildPortfolioGrowthContributionChart({
-      totalPoints: [
-        { date: '2026-02-01', value: 0, isEstimated: true },
-        { date: '2026-02-02', value: 5, isEstimated: true }
-      ],
-      familySeries: [
-        makeFamily({
-          label: 'Estimated vault',
-          values: [
-            { date: '2026-02-01', value: 10, estimated: true },
-            { date: '2026-02-02', value: 15 }
-          ]
-        })
-      ]
-    })
-
-    expect(chart.data[0]).toMatchObject({
-      portfolioGrowthEstimated: true,
-      vault_0Estimated: true,
-      otherEstimated: true
-    })
-    expect(chart.data[1]).toMatchObject({
-      portfolioGrowthEstimated: true,
-      vault_0Estimated: true,
-      otherEstimated: true
-    })
   })
 
   it('uses stable input-order ties while keeping same-address vaults on different chains distinct', () => {
@@ -471,10 +501,11 @@ describe('buildPortfolioGrowthContributionChart', () => {
         chainId: null,
         vaultAddress: null,
         isOther: true,
+        isBase: false,
         terminalValue: 4
       }
     ])
-    expect(chart.data).toEqual([
+    expect(withoutStackBands(chart)).toEqual([
       { date: '2026-04-01', portfolioGrowth: 0, other: 0 },
       { date: '2026-04-02', portfolioGrowth: 4, other: 4 }
     ])
