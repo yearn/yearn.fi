@@ -150,4 +150,29 @@ describe('selectProtocolReturnFamilySeriesCandidates', () => {
     expect(selected.map((series) => series.vaultAddress)).not.toContain('eth-growth-10')
     expect(selected.find((series) => series.vaultAddress === 'eth-growth-19')?.dataPoints[1]?.growthWeightEth).toBe(19)
   })
+
+  it.each(['position', 'index'] as const)('does not let excluded vaults displace eligible %s contributors', (mode) => {
+    const excluded = Array.from({ length: 16 }, (_, index) => {
+      const series = buildIsolatedSeries({
+        id: `excluded-${index}`,
+        mode,
+        window: '1y',
+        score: index < 8 ? 100 + index : -100 - index,
+        pointCount: 2
+      })
+      return {
+        ...series,
+        dataPoints: series.dataPoints.map((point) => ({
+          ...point,
+          growthWeightUsd: null,
+          growthIndexContribution: null
+        }))
+      }
+    })
+    const healthy = buildIsolatedSeries({ id: 'healthy', mode, window: '1y', score: 5, pointCount: 2 })
+
+    expect(
+      selectProtocolReturnFamilySeriesCandidates([...excluded, healthy], '1y').map((series) => series.vaultAddress)
+    ).toEqual(['healthy'])
+  })
 })

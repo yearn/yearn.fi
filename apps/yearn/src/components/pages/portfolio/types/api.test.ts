@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { portfolioActivityFacetsResponseSchema, portfolioActivityResponseSchema, portfolioResponseSchema } from './api'
 
 describe('portfolioResponseSchema', () => {
-  it('accepts the non-fatal missing exit-price warning and defaults legacy estimate flags', () => {
+  it.each([2, null])('accepts available or unavailable growth (%s) and metric completeness', (growth) => {
     const parsed = portfolioResponseSchema.parse({
       address: '0x2222222222222222222222222222222222222222',
       version: 'all',
@@ -24,9 +24,7 @@ describe('portfolioResponseSchema', () => {
           recommendedGrowthDisplay: 'usd',
           recommendedGrowthDisplayReason: 'stable_dominant',
           openBaselineCompositionUsd: { stable: 100, ethFamily: 0, other: 0 },
-          indexExcludedVaults: [
-            { chainId: 1, vaultAddress: '0x5555555555555555555555555555555555555555', symbol: 'yvMISSING' }
-          ],
+          growthIsPartial: { usd: true, eth: true, index: true },
           incompleteVaults: [
             {
               chainId: 1,
@@ -42,8 +40,8 @@ describe('portfolioResponseSchema', () => {
         dataPoints: [
           {
             date: '2026-08-23',
-            growthWeightUsd: 2,
-            growthUsd: 2,
+            growthWeightUsd: growth,
+            growthUsd: growth,
             growthWeightEth: null,
             protocolReturnPct: 2,
             annualizedProtocolReturnPct: 2,
@@ -84,8 +82,8 @@ describe('portfolioResponseSchema', () => {
             issues: ['missing_exit_price'],
             baselineUsd: 100,
             baselineExposureUsdYears: 1,
-            growthUnderlying: 2,
-            growthUsd: 2,
+            growthUnderlying: growth,
+            growthUsd: growth,
             growthPct: 2,
             annualizedProtocolReturnPct: 2,
             metadata: {
@@ -100,9 +98,9 @@ describe('portfolioResponseSchema', () => {
     })
 
     expect(parsed.growth.vaults[0]?.issues).toEqual(['missing_exit_price'])
-    expect(parsed.protocolReturn.summary.indexExcludedVaults).toEqual([
-      { chainId: 1, vaultAddress: '0x5555555555555555555555555555555555555555', symbol: 'yvMISSING' }
-    ])
+    expect(parsed.protocolReturn.summary.growthIsPartial).toEqual({ usd: true, eth: true, index: true })
+    expect(parsed.protocolReturn.dataPoints[0]?.growthWeightUsd).toBe(growth)
+    expect(parsed.growth.vaults[0]?.growthUnderlying).toBe(growth)
     expect(parsed.protocolReturn.summary.incompleteVaults?.[0]).toMatchObject({
       vaultAddress: '0x5555555555555555555555555555555555555555',
       status: 'missing_pps',

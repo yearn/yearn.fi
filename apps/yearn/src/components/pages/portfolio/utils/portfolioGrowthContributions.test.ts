@@ -11,7 +11,7 @@ function timestamp(date: string): number {
 
 function makeFamily(args: {
   label: string
-  values: Array<{ date: string; value: number | null; milliseconds?: boolean; estimated?: boolean }>
+  values: Array<{ date: string; value: number | null; milliseconds?: boolean }>
   chainId?: number
   vaultAddress?: string
 }): TPortfolioGrowthContributionFamily {
@@ -21,8 +21,7 @@ function makeFamily(args: {
     label: args.label,
     dataPoints: args.values.map((point) => ({
       timestamp: timestamp(point.date) * (point.milliseconds ? 1000 : 1),
-      value: point.value,
-      isEstimated: point.estimated
+      value: point.value
     }))
   }
 }
@@ -52,8 +51,7 @@ describe('buildPortfolioGrowthContributionChart', () => {
 
     expect(toPortfolioGrowthContributionPoint(point, 'usd')).toEqual({
       timestamp: point.timestamp,
-      value: 25,
-      isEstimated: true
+      value: 25
     })
     expect(toPortfolioGrowthContributionPoint(point, 'eth')).toEqual({
       timestamp: point.timestamp,
@@ -229,7 +227,7 @@ describe('buildPortfolioGrowthContributionChart', () => {
     expectConservation(chart)
   })
 
-  it('carries sparse and null family values forward and normalizes millisecond timestamps', () => {
+  it('carries sparse values forward but preserves explicit nulls and normalizes millisecond timestamps', () => {
     const chart = buildPortfolioGrowthContributionChart({
       totalPoints: [
         { date: '2026-01-01', value: 0 },
@@ -249,7 +247,7 @@ describe('buildPortfolioGrowthContributionChart', () => {
       ]
     })
 
-    expect(chart.data.map((point) => point.vault_0)).toEqual([0, 0, 7, 7])
+    expect(chart.data.map((point) => point.vault_0)).toEqual([0, null, 7, 7])
     expect(chart.data.map((point) => point.other)).toEqual([0, 5, 0, 3])
     expect(chart.series[0]?.terminalValue).toBe(7)
     expectConservation(chart)
@@ -367,7 +365,7 @@ describe('buildPortfolioGrowthContributionChart', () => {
     expectConservation(chart)
   })
 
-  it('preserves unavailable ETH totals and family values as gaps', () => {
+  it('preserves unavailable totals and family values as gaps', () => {
     const dates = ['2026-02-01', '2026-02-02', '2026-02-03', '2026-02-04']
     const chart = buildPortfolioGrowthContributionChart({
       totalPoints: [
@@ -381,8 +379,7 @@ describe('buildPortfolioGrowthContributionChart', () => {
           label: 'Unavailable ETH growth',
           values: dates.map((date, index) => ({ date, value: [0, 1, null, 2][index]! }))
         })
-      ],
-      preserveNullValues: true
+      ]
     })
 
     expect(withoutStackBands(chart)).toEqual([
@@ -406,8 +403,7 @@ describe('buildPortfolioGrowthContributionChart', () => {
           label: 'Unavailable ETH growth',
           values: dates.map((date, index) => ({ date, value: [0, 1, null][index]! }))
         })
-      ],
-      preserveNullValues: true
+      ]
     })
 
     expect(chart.series.map((series) => series.label)).toEqual(['Other'])
@@ -417,35 +413,6 @@ describe('buildPortfolioGrowthContributionChart', () => {
       other: 1.5
     })
     expectConservation(chart)
-  })
-
-  it('propagates estimated pricing through rebased total, vault, and Other values', () => {
-    const chart = buildPortfolioGrowthContributionChart({
-      totalPoints: [
-        { date: '2026-02-01', value: 0, isEstimated: true },
-        { date: '2026-02-02', value: 5, isEstimated: true }
-      ],
-      familySeries: [
-        makeFamily({
-          label: 'Estimated vault',
-          values: [
-            { date: '2026-02-01', value: 10, estimated: true },
-            { date: '2026-02-02', value: 15 }
-          ]
-        })
-      ]
-    })
-
-    expect(chart.data[0]).toMatchObject({
-      portfolioGrowthEstimated: true,
-      vault_0Estimated: true,
-      otherEstimated: true
-    })
-    expect(chart.data[1]).toMatchObject({
-      portfolioGrowthEstimated: true,
-      vault_0Estimated: true,
-      otherEstimated: true
-    })
   })
 
   it('uses stable input-order ties while keeping same-address vaults on different chains distinct', () => {

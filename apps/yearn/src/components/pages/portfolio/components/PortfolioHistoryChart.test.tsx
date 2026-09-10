@@ -26,7 +26,7 @@ const props: ComponentProps<typeof PortfolioHistoryChart> = {
       growthWeightUsd: 100,
       growthUsd: 100,
       growthUsdEstimated: false,
-      growthWeightEth: null,
+      growthWeightEth: 1,
       protocolReturnPct: 1,
       annualizedProtocolReturnPct: 10,
       growthIndex: 101
@@ -52,30 +52,52 @@ const props: ComponentProps<typeof PortfolioHistoryChart> = {
 }
 
 describe('portfolio growth pricing availability', () => {
-  it('labels an Index built from a subset without changing USD warnings', () => {
-    const summary = {
-      ...props.protocolReturnSummary!,
-      indexExcludedVaults: [{ chainId: 1, vaultAddress: '0x456', symbol: 'HBTC' }]
-    }
-    const html = renderToStaticMarkup(
-      <PortfolioHistoryChart {...props} protocolReturnSummary={summary} growthDisplayModeOverride={'index'} />
-    )
-    expect(html).toContain('Some vaults could not be valued. Index data may be partial.')
-    expect(html).not.toContain('vault excluded')
-    expect(html).toContain('Contribution chart')
-    const usd = renderToStaticMarkup(
-      <PortfolioHistoryChart {...props} protocolReturnSummary={summary} growthDisplayModeOverride={'usd'} />
-    )
-    expect(usd).not.toContain('Index data may be partial.')
-    expect(usd).toContain('Some vaults could not be valued. USD data may be partial.')
-  })
-  it('keeps ETH selected and explains missing prices instead of silently rendering Index', () => {
-    const html = renderToStaticMarkup(<PortfolioHistoryChart {...props} />)
+  it.each(['usd', 'eth', 'index'] as const)(
+    'uses the server coverage flag for %s even without named series',
+    (mode) => {
+      const label = mode === 'index' ? 'Index' : mode.toUpperCase()
+      const summary = {
+        ...props.protocolReturnSummary!,
+        isComplete: true,
+        growthIsPartial: { usd: false, eth: false, index: false, [mode]: true }
+      }
+      const html = renderToStaticMarkup(
+        <PortfolioHistoryChart {...props} protocolReturnSummary={summary} growthDisplayModeOverride={mode} />
+      )
 
-    expect(html).toContain('ETH growth unavailable: historical prices are missing for one or more vaults.')
-    expect(html).not.toContain('Index chart')
-    expect(html).not.toContain('Contribution chart')
-  })
+      expect(html).toContain(`Some vaults could not be valued. ${label} data may be partial.`)
+      expect(html).not.toContain('vault excluded')
+      expect(html).toContain('Contribution chart')
+    }
+  )
+
+  it.each(['usd', 'eth', 'index'] as const)(
+    'explains fully unavailable %s valuation without switching charts',
+    (mode) => {
+      const label = mode === 'index' ? 'Index' : mode.toUpperCase()
+      const html = renderToStaticMarkup(
+        <PortfolioHistoryChart
+          {...props}
+          growthDisplayModeOverride={mode}
+          protocolReturnSummary={{
+            ...props.protocolReturnSummary!,
+            growthIsPartial: { usd: true, eth: true, index: true }
+          }}
+          protocolReturnData={[
+            {
+              ...props.protocolReturnData![0]!,
+              growthWeightUsd: null,
+              growthWeightEth: null,
+              growthIndex: null
+            }
+          ]}
+        />
+      )
+
+      expect(html).toContain(`${label} growth unavailable: vault valuation data is incomplete.`)
+      expect(html).not.toContain('Contribution chart')
+    }
+  )
 
   it('keeps ETH available in the growth selector', () => {
     const html = renderToStaticMarkup(
@@ -94,28 +116,36 @@ describe('portfolio growth pricing availability', () => {
     expect(html).toContain('<option value="eth" selected="">ETH</option>')
   })
 
-  it.each(['usd', 'index'] as const)('keeps incomplete %s history diagnostics in the console only', (mode) => {
-    const html = renderToStaticMarkup(<PortfolioHistoryChart {...props} growthDisplayModeOverride={mode} />)
+  it.each(['usd', 'eth', 'index'] as const)(
+    'does not infer %s coverage from the row summary or missing points',
+    (mode) => {
+      const html = renderToStaticMarkup(
+        <PortfolioHistoryChart
+          {...props}
+          growthDisplayModeOverride={mode}
+          protocolReturnSummary={{
+            ...props.protocolReturnSummary!,
+            growthIsPartial: { usd: false, eth: false, index: false }
+          }}
+          protocolReturnData={[
+            ...props.protocolReturnData!,
+            {
+              ...props.protocolReturnData![0]!,
+              date: '2026-01-02',
+              growthWeightUsd: null,
+              growthWeightEth: null,
+              growthIndex: null
+            }
+          ]}
+        />
+      )
 
-    expect(html).not.toContain('History is incomplete')
-    expect(html).toContain('Contribution chart')
-  })
+      expect(html).not.toContain('data may be partial.')
+      expect(html).toContain('Contribution chart')
+    }
+  )
 
-  it('does not show an incomplete-history warning for complete USD history', () => {
-    const html = renderToStaticMarkup(
-      <PortfolioHistoryChart
-        {...props}
-        growthDisplayModeOverride={'usd'}
-        protocolReturnSummary={{ ...props.protocolReturnSummary!, isComplete: true }}
-      />
-    )
-
-    expect(html).not.toContain('History is incomplete')
-    expect(html).not.toContain('USD data may be partial.')
-    expect(html).toContain('Contribution chart')
-  })
-
-  it('preserves estimated USD pricing through total-series rebasing', () => {
+  it('does not label receipt-weighted growth estimated because mark-to-market growth was estimated', () => {
     const html = renderToStaticMarkup(
       <PortfolioHistoryChart
         {...props}
@@ -124,54 +154,23 @@ describe('portfolio growth pricing availability', () => {
       />
     )
 
-    expect(html).toContain('Contribution chart:estimated')
+    expect(html).toContain('Contribution chart:exact')
   })
 
-  it('warns about ETH gaps even when USD receipt pricing is complete', () => {
+  it.each(['balance', 'annualized'] as const)('does not show growth coverage warnings on %s', (activeTab) => {
     const html = renderToStaticMarkup(
       <PortfolioHistoryChart
         {...props}
-        protocolReturnSummary={{ ...props.protocolReturnSummary!, isComplete: true }}
-        protocolReturnData={[
-          { ...props.protocolReturnData![0]!, growthWeightEth: 1 },
-          { ...props.protocolReturnData![0]!, date: '2026-01-02' }
-        ]}
+        activeTab={activeTab}
+        growthDisplayModeOverride={'index'}
+        protocolReturnSummary={{
+          ...props.protocolReturnSummary!,
+          growthIsPartial: { usd: true, eth: true, index: true }
+        }}
       />
     )
 
-    expect(html).toContain('Some vaults could not be valued. ETH data may be partial.')
-    expect(html).toContain('Contribution chart')
-  })
-
-  it('renders available ETH growth while warning that the total is partial', () => {
-    const html = renderToStaticMarkup(
-      <PortfolioHistoryChart
-        {...props}
-        protocolReturnData={[{ ...props.protocolReturnData![0]!, growthWeightEth: 1 }]}
-        protocolReturnFamilySeries={[
-          {
-            chainId: 1,
-            vaultAddress: '0x456',
-            symbol: 'yvETH',
-            status: 'missing_receipt_price',
-            dataPoints: [
-              {
-                timestamp: Date.parse('2026-01-01T00:00:00.000Z') / 1000,
-                growthWeightUsd: 0,
-                growthWeightEth: null,
-                growthUsd: 0,
-                growthUsdEstimated: false,
-                growthIndex: 100,
-                growthIndexContribution: 0
-              }
-            ]
-          }
-        ]}
-      />
-    )
-
-    expect(html).toContain('Some vaults could not be valued. ETH data may be partial.')
-    expect(html).toContain('Contribution chart')
-    expect(html).not.toContain('ETH growth unavailable')
+    expect(html).not.toContain('data may be partial.')
+    expect(html).not.toContain('growth unavailable')
   })
 })

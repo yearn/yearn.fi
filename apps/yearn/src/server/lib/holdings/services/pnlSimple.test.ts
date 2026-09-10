@@ -297,7 +297,7 @@ describe('pnl simple protocol return', () => {
     expect(history[1]?.growthIndex).toBe(100)
   })
 
-  it('does not turn unavailable PPS into an Index loss or silently restart at 100 after recovery', () => {
+  it('excludes a PPS gap from every growth metric instead of recording a loss and recovery', () => {
     const inputs = {
       events: [baseEvent({ kind: 'transfer', id: 'receipt', blockTimestamp: 100 })],
       userAddress: USER,
@@ -312,10 +312,26 @@ describe('pnl simple protocol return', () => {
           ])
         ]
       ]),
-      priceData: new Map([[ASSET_PRICE_KEY, new Map([[0, 1]])]])
+      priceData: new Map([[ASSET_PRICE_KEY, new Map([[0, 1]])]]),
+      ethPriceData: new Map([[0, 2]])
     }
     const history = buildProtocolReturnHistorySeries({ ...inputs, timestamps: [100, 200, 300] })
     expect(history.map((point) => point.growthIndex)).toEqual([null, null, null])
+    expect(history.map((point) => point.growthWeightUsd)).toEqual([null, null, null])
+    expect(history.map((point) => point.growthWeightEth)).toEqual([null, null, null])
+    expect(history[1]?.protocolReturnPct).toBeNull()
+    expect(history[1]?.annualizedProtocolReturnPct).toBeNull()
+    const unavailableVault = materializeProtocolReturnVaults({
+      ...inputs,
+      ledgers: buildProtocolReturnLedgers({ ...inputs, currentTimestamp: 200 }),
+      currentTimestamp: 200
+    })[0]!
+    expect(unavailableVault).toMatchObject({
+      currentUnderlying: null,
+      growthUnderlying: null,
+      growthWeightUsd: null,
+      growthWeightEth: null
+    })
     const tail = buildProtocolReturnHistorySeries({
       ...inputs,
       timestamps: [300, 400],
@@ -325,7 +341,7 @@ describe('pnl simple protocol return', () => {
   })
 
   it.each(['zero PPS', 'missing metadata', 'missing receipt price', 'intermediate PPS gap'])(
-    'keeps a consistent partial Index when another vault has %s',
+    'keeps consistent partial USD, ETH, and Index histories when another vault has %s',
     (issue) => {
       const badVault = '0x9999999999999999999999999999999999999999'
       const badAsset = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
@@ -381,12 +397,15 @@ describe('pnl simple protocol return', () => {
           [ASSET_PRICE_KEY, new Map([[0, 1]])],
           [`ethereum:${badAsset}`, new Map([[0, issue === 'missing receipt price' ? 0 : 1]])]
         ]),
+        ethPriceData: new Map([[0, 2]]),
         timestamps: [100, 200, 300]
       }
       const history = buildProtocolReturnHistorySeries(inputs)
       const control = buildProtocolReturnHistorySeries({ ...inputs, events: events.slice(0, 1) })
       history.forEach((point, index) => {
         expect(point.growthIndex).toBeCloseTo(control[index]!.growthIndex!, 10)
+        expect(point.growthWeightUsd).toBeCloseTo(control[index]!.growthWeightUsd!, 10)
+        expect(point.growthWeightEth).toBeCloseTo(control[index]!.growthWeightEth!, 10)
       })
       expect(history.at(-1)?.growthIndex).toBeCloseTo(120)
 
@@ -399,18 +418,107 @@ describe('pnl simple protocol return', () => {
         ...inputs,
         selectedVaults,
         portfolioPoints: history,
-        excludedIndexVaultKeys: new Set([badKey])
+        excludedVaultKeys: { usd: new Set([badKey]), eth: new Set([badKey]) }
       })
       expect(
         familySeries
           .find((series) => series.vaultAddress === badVault)
           ?.dataPoints.map((point) => point.growthIndexContribution)
       ).toEqual([null, null, null])
+      const excludedFamily = familySeries.find((series) => series.vaultAddress === badVault)!
+      expect(excludedFamily.dataPoints.map((point) => point.growthWeightUsd)).toEqual([null, null, null])
+      expect(excludedFamily.dataPoints.map((point) => point.growthWeightEth)).toEqual([null, null, null])
       expect(
         familySeries.find((series) => series.vaultAddress === VAULT)?.dataPoints.at(-1)?.growthIndexContribution
       ).toBeCloseTo(20)
     }
   )
+
+  it.each(['withdrawal', 'transfer'] as const)(
+    'keeps realized growth after a full %s without requiring current PPS or exit USD prices',
+    (kind) => {
+      const day = 86_400
+      const inputs = {
+        events: [
+          baseEvent({ id: 'receipt', blockTimestamp: 100 }),
+          baseEvent({
+            kind,
+            id: 'exit',
+            blockTimestamp: day + 100,
+            blockNumber: 2,
+            owner: USER,
+            sender: USER,
+            receiver: OTHER,
+            assets: 110n * ONE
+          })
+        ],
+        userAddress: USER,
+        metadata,
+        ppsData: new Map([
+          [
+            VAULT_KEY,
+            new Map([
+              [0, 1],
+              [day, 1.1],
+              [2 * day, 0]
+            ])
+          ]
+        ]),
+        priceData: new Map([[ASSET_PRICE_KEY, new Map([[0, 1]])]]),
+        exitPriceData: new Map<string, Map<number, number>>(),
+        ethPriceData: new Map([[0, 2]]),
+        timestamps: [day - 1, 2 * day - 1, 3 * day - 1]
+      }
+      const history = buildProtocolReturnHistorySeries(inputs)
+      expect(history.map((point) => point.growthWeightUsd)).toEqual([
+        expect.closeTo(0),
+        expect.closeTo(10),
+        expect.closeTo(10)
+      ])
+      expect(history.map((point) => point.growthWeightEth)).toEqual([
+        expect.closeTo(0),
+        expect.closeTo(5),
+        expect.closeTo(5)
+      ])
+      expect(history.map((point) => point.growthIndex)).toEqual([
+        expect.closeTo(100),
+        expect.closeTo(110),
+        expect.closeTo(110)
+      ])
+      const vault = materializeProtocolReturnVaults({
+        ...inputs,
+        ledgers: buildProtocolReturnLedgers({ ...inputs, currentTimestamp: 3 * day - 1 }),
+        currentTimestamp: 3 * day - 1
+      })[0]!
+      expect(vault.issues).toEqual(['missing_exit_price'])
+      expect(vault.currentUnderlying).toBe(0)
+      expect(vault.growthWeightUsd).toBeCloseTo(10)
+      expect(vault.growthWeightEth).toBeCloseTo(5)
+    }
+  )
+
+  it('keeps USD and Index available when only the receipt ETH conversion price is missing', () => {
+    const history = buildProtocolReturnHistorySeries({
+      events: [baseEvent({ id: 'receipt', blockTimestamp: 100 })],
+      userAddress: USER,
+      metadata,
+      ppsData: new Map([
+        [
+          VAULT_KEY,
+          new Map([
+            [100, 1],
+            [200, 1.1]
+          ])
+        ]
+      ]),
+      priceData: new Map([[ASSET_PRICE_KEY, new Map([[0, 1]])]]),
+      ethPriceData: new Map([[200, 2]]),
+      timestamps: [100, 200]
+    })
+    expect(history.map((point) => point.growthWeightUsd)).toEqual([expect.closeTo(0), expect.closeTo(10)])
+    expect(history.map((point) => point.growthIndex)).toEqual([expect.closeTo(100), expect.closeTo(110)])
+    expect(history.map((point) => point.growthWeightEth)).toEqual([null, null])
+  })
 
   it('ignores events after an explicit ledger cutoff', () => {
     const vault = materializeVault({
@@ -2668,7 +2776,7 @@ describe('pnl simple protocol return', () => {
     expect(vault.baselineUnderlying).toBeCloseTo(300)
     expect(vault.realizedBaselineUnderlying).toBeCloseTo(0)
     expect(vault.realizedGrowthUnderlying).toBeCloseTo(0)
-    expect(vault.growthUnderlying).toBeCloseTo(300)
+    expect(vault.growthUnderlying).toBeNull()
     expect(vault.exitCount).toBe(0)
     expect(vault.unmatchedExitSharesFormatted).toBeCloseTo(0)
   })
@@ -2878,8 +2986,8 @@ describe('pnl simple protocol return', () => {
 
     expect(vault.status).toBe('missing_pps')
     expect(vault.baselineUnderlying).toBe(0)
-    expect(vault.currentUnderlying).toBe(0)
-    expect(vault.growthUnderlying).toBe(0)
+    expect(vault.currentUnderlying).toBeNull()
+    expect(vault.growthUnderlying).toBeNull()
   })
 
   it('preserves a locked yvUSD lot when its withdrawal and transfer-out lack unlocked PPS', () => {
@@ -2991,7 +3099,7 @@ describe('pnl simple protocol return', () => {
     expect(vault.currentUnderlying).toBeCloseTo(107.1)
     expect(vault.realizedBaselineUnderlying).toBeCloseTo(0)
     expect(vault.realizedGrowthUnderlying).toBeCloseTo(0)
-    expect(vault.growthUnderlying).toBeCloseTo(7.1)
+    expect(vault.growthUnderlying).toBeNull()
     expect(vault.exitCount).toBe(0)
     expect(vault.unmatchedExitSharesFormatted).toBeCloseTo(0)
   })

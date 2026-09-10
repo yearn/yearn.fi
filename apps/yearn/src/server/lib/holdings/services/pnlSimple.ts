@@ -150,21 +150,22 @@ export interface HoldingsPnLSimpleVault {
   shares: string
   sharesFormatted: number
   pricePerShare: number
-  currentUnderlying: number
+  currentUnderlying: number | null
   baselineUnderlying: number
   baselineExposureUnderlyingYears: number
   baselineExposureWeightUsdYears: number
   realizedBaselineUnderlying: number
   unrealizedBaselineUnderlying: number
   realizedGrowthUnderlying: number
-  unrealizedGrowthUnderlying: number
+  unrealizedGrowthUnderlying: number | null
   realizedGrowthUsdAtExit: number
   unpricedRealizedGrowthUnderlying: number
-  growthUnderlying: number
+  growthUnderlying: number | null
   baselineWeightUsd: number
-  growthWeightUsd: number
+  growthWeightUsd: number | null
+  growthWeightEth: number | null
   realizedGrowthWeightUsd: number
-  unrealizedGrowthWeightUsd: number
+  unrealizedGrowthWeightUsd: number | null
   protocolReturnPct: number | null
   annualizedProtocolReturnPct: number | null
   receiptCount: number
@@ -206,15 +207,15 @@ export interface HoldingsPnLSimpleResponse {
 export interface HoldingsPnLSimpleHistoryPoint {
   date: string
   timestamp: number
-  growthUsd: number
+  growthUsd: number | null
   growthUsdEstimated: boolean
-  growthWeightUsd: number
+  growthWeightUsd: number | null
   growthWeightEth: number | null
   protocolReturnPct: number | null
   annualizedProtocolReturnPct: number | null
   growthIndex: number | null
-  currentUnderlying?: number
-  growthUnderlying?: number
+  currentUnderlying?: number | null
+  growthUnderlying?: number | null
   sharesFormatted?: number
   pricePerShare?: number
 }
@@ -261,7 +262,7 @@ export interface HoldingsPnLSimpleHistoryResponse {
       status: Exclude<THoldingsPnLSimpleStatus, 'ok'>
       issues: TProtocolReturnIssue[]
     }>
-    indexExcludedVaults?: Array<{ chainId: number; vaultAddress: string; symbol: string | null }>
+    growthIsPartial?: Record<TGrowthDisplay, boolean>
     isComplete: boolean
   }
   dataPoints: HoldingsPnLSimpleHistoryPoint[]
@@ -275,8 +276,8 @@ export interface HoldingsPortfolioGrowthVault {
   issues: TProtocolReturnIssue[]
   baselineUsd: number
   baselineExposureUsdYears: number
-  growthUnderlying: number
-  growthUsd: number
+  growthUnderlying: number | null
+  growthUsd: number | null
   growthPct: number | null
   annualizedProtocolReturnPct: number | null
   metadata: {
@@ -405,12 +406,12 @@ function scaleNumber(value: number, numerator: bigint, denominator: bigint): num
   return denominator === ZERO ? 0 : value * (Number(numerator) / Number(denominator))
 }
 
-function protocolReturnPct(growth: number, baseline: number): number | null {
-  return baseline > 0 ? (growth / baseline) * 100 : null
+function protocolReturnPct(growth: number | null, baseline: number): number | null {
+  return growth !== null && baseline > 0 ? (growth / baseline) * 100 : null
 }
 
-function annualizedProtocolReturnPct(growth: number, exposureYears: number): number | null {
-  return exposureYears > 0 ? (growth / exposureYears) * 100 : null
+function annualizedProtocolReturnPct(growth: number | null, exposureYears: number): number | null {
+  return growth !== null && exposureYears > 0 ? (growth / exposureYears) * 100 : null
 }
 
 function advanceGrowthIndex(args: {
@@ -914,10 +915,6 @@ function getOutstandingBaselineUnderlying(lots: TProtocolReturnLot[]): number {
 
 function getOutstandingBaselineWeightUsd(lots: TProtocolReturnLot[]): number {
   return lots.reduce((total, lot) => total + lot.baselineUnderlying * lot.receiptPriceUsd, 0)
-}
-
-function getOutstandingBaselineWeightEth(lots: TProtocolReturnLot[]): number {
-  return lots.reduce((total, lot) => total + lot.baselineUnderlying * lot.receiptPriceEth, 0)
 }
 
 function accrueLedgerExposure(ledger: TProtocolReturnLedger, nextTimestamp: number): TProtocolReturnLedger {
@@ -2027,7 +2024,7 @@ function getProtocolReturnHistoryTailPlan(args: {
   if (
     !args.cached ||
     !protocolReturn ||
-    (protocolReturn.summary.indexExcludedVaults?.length ?? 0) > 0 ||
+    Object.values(protocolReturn.summary.growthIsPartial ?? {}).some(Boolean) ||
     protocolReturn.address !== lowerCaseAddress(args.userAddress) ||
     protocolReturn.timeframe !== args.timeframe
   ) {
@@ -2182,9 +2179,12 @@ function ledgerIssues(args: {
   missingMetadata: boolean
   currentPps: number | null
 }): TProtocolReturnIssue[] {
+  const hasOpenPosition = args.ledger.lots.some((lot) => lot.shares > ZERO)
   return [
-    ...(!args.metadata || args.ledger.missingMetadata || args.missingMetadata ? (['missing_metadata'] as const) : []),
-    ...(args.ledger.missingPps || (!args.missingMetadata && args.currentPps === null)
+    ...(args.ledger.missingMetadata || (hasOpenPosition && (!args.metadata || args.missingMetadata))
+      ? (['missing_metadata'] as const)
+      : []),
+    ...(args.ledger.missingPps || (hasOpenPosition && !args.missingMetadata && args.currentPps === null)
       ? (['missing_pps'] as const)
       : []),
     ...(args.ledger.missingReceiptPrice ? (['missing_receipt_price'] as const) : []),
@@ -2209,56 +2209,8 @@ function vaultStatus(issues: TProtocolReturnIssue[]): THoldingsPnLSimpleStatus {
   return issues.includes('unmatched_exit') ? 'partial' : 'ok'
 }
 
-function computeVaultGrowthWeightEth(args: {
-  ledger: TProtocolReturnLedger
-  metadata: Map<string, VaultMetadata>
-  ppsData: Map<string, Map<number, number>>
-  currentTimestamp: number
-}): number | null {
-  if (args.ledger.missingReceiptEthPrice) {
-    return null
-  }
-
-  const vaultKey = toVaultKey(args.ledger.chainId, args.ledger.vaultAddress)
-  const metadata = args.metadata.get(vaultKey)
-  const shareDecimals = metadata?.decimals ?? 18
-  const valuation = resolveNestedVaultValuation({
-    chainId: args.ledger.chainId,
-    vaultAddress: args.ledger.vaultAddress,
-    vaultMetadata: args.metadata,
-    ppsData: args.ppsData,
-    timestamp: args.currentTimestamp
-  })
-  const currentPps = valuation.pricePerShare
-  const currentShares = args.ledger.lots.reduce((total, lot) => total + lot.shares, ZERO)
-  const sharesFormatted = formatAmount(currentShares, shareDecimals)
-  const currentUnderlying = currentPps === null ? 0 : sharesFormatted * currentPps
-  const unrealizedBaselineWeightEth = getOutstandingBaselineWeightEth(args.ledger.lots)
-  const currentWeightEth = args.ledger.lots.reduce(
-    (total, lot) => total + scaleNumber(currentUnderlying, lot.shares, currentShares) * lot.receiptPriceEth,
-    0
-  )
-  const unrealizedGrowthWeightEth = currentWeightEth - unrealizedBaselineWeightEth
-
-  return args.ledger.realizedGrowthWeightEth + unrealizedGrowthWeightEth
-}
-
-function buildGrowthWeightEthSummary(args: {
-  ledgers: Map<string, TProtocolReturnLedger>
-  metadata: Map<string, VaultMetadata>
-  ppsData: Map<string, Map<number, number>>
-  currentTimestamp: number
-}): number | null {
-  const perVaultGrowthWeightEth = Array.from(args.ledgers.values()).map((ledger) =>
-    computeVaultGrowthWeightEth({
-      ledger,
-      metadata: args.metadata,
-      ppsData: args.ppsData,
-      currentTimestamp: args.currentTimestamp
-    })
-  )
-
-  const availableValues = perVaultGrowthWeightEth.filter((value): value is number => value !== null)
+function sumAvailable(values: Array<number | null>): number | null {
+  const availableValues = values.filter((value): value is number => value !== null)
   return availableValues.length > 0 ? availableValues.reduce((total, value) => total + value, 0) : null
 }
 
@@ -2318,23 +2270,34 @@ export function materializeProtocolReturnVaults(args: {
     const terminalAsset = valuation.terminalAsset
     const currentShares = ledger.lots.reduce((total, lot) => total + lot.shares, ZERO)
     const sharesFormatted = formatAmount(currentShares, shareDecimals)
-    const currentUnderlying = currentPps === null ? 0 : sharesFormatted * currentPps
+    const currentUnderlying = currentShares === ZERO ? 0 : currentPps === null ? null : sharesFormatted * currentPps
+    const issues = ledgerIssues({ ledger, metadata, missingMetadata: valuation.missingMetadata, currentPps })
+    const underlyingComplete = !issues.some((issue) =>
+      ['missing_metadata', 'missing_pps', 'unmatched_exit'].includes(issue)
+    )
     const unrealizedBaselineUnderlying = ledger.lots.reduce((total, lot) => total + lot.baselineUnderlying, 0)
     const unrealizedBaselineWeightUsd = ledger.lots.reduce(
       (total, lot) => total + lot.baselineUnderlying * lot.receiptPriceUsd,
       0
     )
-    const currentWeightUsd = ledger.lots.reduce(
-      (total, lot) => total + scaleNumber(currentUnderlying, lot.shares, currentShares) * lot.receiptPriceUsd,
-      0
-    )
-    const unrealizedGrowthUnderlying = currentUnderlying - unrealizedBaselineUnderlying
-    const unrealizedGrowthWeightUsd = currentWeightUsd - unrealizedBaselineWeightUsd
+    const unrealizedGrowthUnderlying =
+      underlyingComplete && currentUnderlying !== null ? currentUnderlying - unrealizedBaselineUnderlying : null
+    const unrealizedGrowthWeight = (priceKey: 'receiptPriceUsd' | 'receiptPriceEth'): number | null =>
+      unrealizedGrowthUnderlying === null || currentUnderlying === null
+        ? null
+        : ledger.lots.reduce(
+            (total, lot) =>
+              total +
+              (scaleNumber(currentUnderlying, lot.shares, currentShares) - lot.baselineUnderlying) * lot[priceKey],
+            0
+          )
+    const unrealizedGrowthWeightUsd = ledger.missingReceiptPrice ? null : unrealizedGrowthWeight('receiptPriceUsd')
+    const unrealizedGrowthWeightEth = ledger.missingReceiptEthPrice ? null : unrealizedGrowthWeight('receiptPriceEth')
     const baselineExposureUnderlyingYears = ledger.baselineExposureUnderlyingSeconds / SECONDS_PER_YEAR
     const baselineExposureWeightUsdYears = ledger.baselineExposureWeightUsdSeconds / SECONDS_PER_YEAR
     const baselineWeightUsd = ledger.realizedBaselineWeightUsd + unrealizedBaselineWeightUsd
-    const growthWeightUsd = ledger.realizedGrowthWeightUsd + unrealizedGrowthWeightUsd
-    const issues = ledgerIssues({ ledger, metadata, missingMetadata: valuation.missingMetadata, currentPps })
+    const growthWeightUsd =
+      unrealizedGrowthWeightUsd === null ? null : ledger.realizedGrowthWeightUsd + unrealizedGrowthWeightUsd
     const status = vaultStatus(issues)
 
     return {
@@ -2355,9 +2318,12 @@ export function materializeProtocolReturnVaults(args: {
       unrealizedGrowthUnderlying,
       realizedGrowthUsdAtExit: ledger.realizedGrowthUsdAtExit,
       unpricedRealizedGrowthUnderlying: ledger.unpricedRealizedGrowthUnderlying,
-      growthUnderlying: ledger.realizedGrowthUnderlying + unrealizedGrowthUnderlying,
+      growthUnderlying:
+        unrealizedGrowthUnderlying === null ? null : ledger.realizedGrowthUnderlying + unrealizedGrowthUnderlying,
       baselineWeightUsd,
       growthWeightUsd,
+      growthWeightEth:
+        unrealizedGrowthWeightEth === null ? null : ledger.realizedGrowthWeightEth + unrealizedGrowthWeightEth,
       realizedGrowthWeightUsd: ledger.realizedGrowthWeightUsd,
       unrealizedGrowthWeightUsd,
       protocolReturnPct: protocolReturnPct(growthWeightUsd, baselineWeightUsd),
@@ -2431,7 +2397,10 @@ function buildLatestAssetPriceUsdByVaultKey(
   )
 }
 
-function getGrowthUsd(vault: HoldingsPnLSimpleVault, latestAssetPriceUsd: number | null): number {
+function getGrowthUsd(vault: HoldingsPnLSimpleVault, latestAssetPriceUsd: number | null): number | null {
+  if (vault.unrealizedGrowthUnderlying === null) {
+    return null
+  }
   const growthValuedAtLatestPrice =
     latestAssetPriceUsd === null
       ? 0
@@ -2513,14 +2482,15 @@ function normalizeProtocolReturnPortfolioResponse(
 }
 
 function buildSummary(vaults: HoldingsPnLSimpleVault[]): HoldingsPnLSimpleResponse['summary'] {
+  const growthComplete = vaults.every((vault) => vault.growthWeightUsd !== null)
   const baselineWeightUsd = vaults.reduce((total, vault) => total + vault.baselineWeightUsd, 0)
-  const growthWeightUsd = vaults.reduce((total, vault) => total + vault.growthWeightUsd, 0)
+  const growthWeightUsd = vaults.reduce((total, vault) => total + (vault.growthWeightUsd ?? 0), 0)
   const baselineExposureWeightUsdYears = vaults.reduce(
     (total, vault) => total + vault.baselineExposureWeightUsdYears,
     0
   )
   const realizedGrowthWeightUsd = vaults.reduce((total, vault) => total + vault.realizedGrowthWeightUsd, 0)
-  const unrealizedGrowthWeightUsd = vaults.reduce((total, vault) => total + vault.unrealizedGrowthWeightUsd, 0)
+  const unrealizedGrowthWeightUsd = vaults.reduce((total, vault) => total + (vault.unrealizedGrowthWeightUsd ?? 0), 0)
   const completeVaults = vaults.filter((vault) => vault.status === 'ok').length
   const partialVaults = vaults.length - completeVaults
 
@@ -2533,8 +2503,11 @@ function buildSummary(vaults: HoldingsPnLSimpleVault[]): HoldingsPnLSimpleRespon
     baselineExposureWeightUsdYears,
     realizedGrowthWeightUsd,
     unrealizedGrowthWeightUsd,
-    protocolReturnPct: protocolReturnPct(growthWeightUsd, baselineWeightUsd),
-    annualizedProtocolReturnPct: annualizedProtocolReturnPct(growthWeightUsd, baselineExposureWeightUsdYears),
+    protocolReturnPct: protocolReturnPct(growthComplete ? growthWeightUsd : null, baselineWeightUsd),
+    annualizedProtocolReturnPct: annualizedProtocolReturnPct(
+      growthComplete ? growthWeightUsd : null,
+      baselineExposureWeightUsdYears
+    ),
     isComplete: partialVaults === 0
   }
 }
@@ -2566,11 +2539,13 @@ export function buildProtocolReturnHistorySeries(args: {
   return calculateProtocolReturnHistorySeries(args).dataPoints
 }
 
+type TGrowthExclusions = { usd: Set<string>; eth: Set<string> }
+
 function calculateProtocolReturnHistorySeries(
   args: Parameters<typeof buildProtocolReturnHistorySeries>[0],
-  excludedIndexVaultKeys = new Set<string>()
-): { dataPoints: HoldingsPnLSimpleHistoryPoint[]; excludedIndexVaultKeys: Set<string> } {
-  const initialExclusionCount = excludedIndexVaultKeys.size
+  excludedVaultKeys: TGrowthExclusions = { usd: new Set(), eth: new Set() }
+): { dataPoints: HoldingsPnLSimpleHistoryPoint[]; excludedVaultKeys: TGrowthExclusions } {
+  const initialExclusionCount = excludedVaultKeys.usd.size + excludedVaultKeys.eth.size
   const userAddress = lowerCaseAddress(args.userAddress)
   const effectiveEvents = buildEffectiveSimpleEvents(args.events, userAddress)
   const groupedTransactions = groupEventsByTransaction(effectiveEvents)
@@ -2604,12 +2579,16 @@ function calculateProtocolReturnHistorySeries(
     })
     const summary = buildSummary(vaults)
     vaults.forEach((vault) => {
-      if (vault.issues.some((issue) => issue !== 'missing_exit_price')) {
-        excludedIndexVaultKeys.add(toVaultKey(vault.chainId, vault.vaultAddress))
+      const key = toVaultKey(vault.chainId, vault.vaultAddress)
+      if (vault.growthWeightUsd === null) {
+        excludedVaultKeys.usd.add(key)
+      }
+      if (vault.growthWeightEth === null || excludedVaultKeys.usd.has(key)) {
+        excludedVaultKeys.eth.add(key)
       }
     })
     const indexVaults = vaults.filter(
-      (vault) => !excludedIndexVaultKeys.has(toVaultKey(vault.chainId, vault.vaultAddress))
+      (vault) => !excludedVaultKeys.usd.has(toVaultKey(vault.chainId, vault.vaultAddress))
     )
     const indexSummary = buildSummary(indexVaults)
     const receivedCapital = afterReceipt ? Math.max(0, indexSummary.baselineWeightUsd - state.baselineWeightUsd) : 0
@@ -2631,10 +2610,10 @@ function calculateProtocolReturnHistorySeries(
     state.openCapitalWeightUsd =
       Array.from(ledgers.entries()).reduce(
         (total, [key, ledger]) =>
-          total + (excludedIndexVaultKeys.has(key) ? 0 : getOutstandingBaselineWeightUsd(ledger.lots)),
+          total + (excludedVaultKeys.usd.has(key) ? 0 : getOutstandingBaselineWeightUsd(ledger.lots)),
         0
       ) + indexSummary.unrealizedGrowthWeightUsd
-    return { vaults, summary }
+    return { vaults, summary, indexVaults }
   }
   const normalizedEvents = groupedTransactions.flatMap((txEvents) =>
     sortEvents(
@@ -2670,7 +2649,7 @@ function calculateProtocolReturnHistorySeries(
       ledgers.forEach((ledger, key) => {
         ledgers.set(key, accrueLedgerExposure(ledger, timestamp))
       })
-      const { vaults, summary } = markGrowthIndex(timestamp)
+      const { vaults, summary, indexVaults } = markGrowthIndex(timestamp)
       state.initialized = true
       if (state.indexValuationComplete && args.growthIndexSeed?.timestamp === timestamp) {
         state.growthIndex = args.growthIndexSeed.growthIndex
@@ -2681,37 +2660,36 @@ function calculateProtocolReturnHistorySeries(
       const selectedVaults = selectedVaultKeys.length
         ? vaults.filter((vault) => selectedVaultKeySet.has(toVaultKey(vault.chainId, vault.vaultAddress)))
         : []
-      const growthUsd = vaults.reduce(
-        (total, vault) =>
-          total +
-          getGrowthUsd(vault, latestAssetPriceUsdByVaultKey.get(toVaultKey(vault.chainId, vault.vaultAddress)) ?? null),
-        0
-      )
-      const growthWeightEth = buildGrowthWeightEthSummary({
-        ledgers,
-        metadata: args.metadata,
-        ppsData: args.ppsData,
-        currentTimestamp: timestamp
-      })
       history.push({
         date: timestampToDateString(timestamp),
         timestamp,
-        growthUsd,
+        growthUsd: sumAvailable(
+          vaults.map((vault) =>
+            getGrowthUsd(
+              vault,
+              latestAssetPriceUsdByVaultKey.get(toVaultKey(vault.chainId, vault.vaultAddress)) ?? null
+            )
+          )
+        ),
         growthUsdEstimated: vaults.some((vault) =>
           isGrowthUsdEstimated(
             vault,
             latestAssetPriceUsdByVaultKey.get(toVaultKey(vault.chainId, vault.vaultAddress)) ?? null
           )
         ),
-        growthWeightUsd: summary.growthWeightUsd,
-        growthWeightEth,
+        growthWeightUsd: sumAvailable(indexVaults.map((vault) => vault.growthWeightUsd)),
+        growthWeightEth: sumAvailable(
+          vaults
+            .filter((vault) => !excludedVaultKeys.eth.has(toVaultKey(vault.chainId, vault.vaultAddress)))
+            .map((vault) => vault.growthWeightEth)
+        ),
         protocolReturnPct: summary.protocolReturnPct,
         annualizedProtocolReturnPct: summary.annualizedProtocolReturnPct,
         growthIndex: state.growthIndex,
         ...(selectedVaultKeys.length > 0
           ? {
-              currentUnderlying: selectedVaults.reduce((sum, vault) => sum + vault.currentUnderlying, 0),
-              growthUnderlying: selectedVaults.reduce((sum, vault) => sum + vault.growthUnderlying, 0),
+              currentUnderlying: sumAvailable(selectedVaults.map((vault) => vault.currentUnderlying)),
+              growthUnderlying: sumAvailable(selectedVaults.map((vault) => vault.growthUnderlying)),
               sharesFormatted: selectedVaults.reduce((sum, vault) => sum + vault.sharesFormatted, 0),
               pricePerShare: selectedVaults.length === 1 ? selectedVaults[0]!.pricePerShare : 0
             }
@@ -2720,9 +2698,10 @@ function calculateProtocolReturnHistorySeries(
       return history
     }, [])
   // Replay with a fixed membership: losing a price must not look like a portfolio loss or a deposit.
-  return excludedIndexVaultKeys.size > initialExclusionCount
-    ? calculateProtocolReturnHistorySeries({ ...args, growthIndexSeed: undefined }, excludedIndexVaultKeys)
-    : { dataPoints, excludedIndexVaultKeys }
+  // ponytail: exclude whole vaults for this window; lot-level recovery can be added if needed.
+  return excludedVaultKeys.usd.size + excludedVaultKeys.eth.size > initialExclusionCount
+    ? calculateProtocolReturnHistorySeries({ ...args, growthIndexSeed: undefined }, excludedVaultKeys)
+    : { dataPoints, excludedVaultKeys }
 }
 
 export function buildProtocolReturnFamilyHistorySeries(args: {
@@ -2736,7 +2715,7 @@ export function buildProtocolReturnFamilyHistorySeries(args: {
   timestamps: number[]
   selectedVaults: HoldingsPnLSimpleVault[]
   portfolioPoints?: HoldingsPnLSimpleHistoryPoint[]
-  excludedIndexVaultKeys?: ReadonlySet<string>
+  excludedVaultKeys?: TGrowthExclusions
 }): HoldingsPnLSimpleHistoryFamilySeries[] {
   if (args.selectedVaults.length === 0) {
     return []
@@ -2826,9 +2805,9 @@ export function buildProtocolReturnFamilyHistorySeries(args: {
     const canAttributeIndex = typeof previousPortfolioIndex === 'number' && typeof portfolioIndex === 'number'
     const growthWeightDelta = Array.from(vaultsByKey.entries()).reduce(
       (total, [key, vault]) =>
-        args.excludedIndexVaultKeys?.has(key)
+        args.excludedVaultKeys?.usd.has(key)
           ? total
-          : total + vault.growthWeightUsd - (previousFamilyGrowthWeightUsd.get(key) ?? 0),
+          : total + (vault.growthWeightUsd ?? 0) - (previousFamilyGrowthWeightUsd.get(key) ?? 0),
       0
     )
     const indexPointsPerGrowthUsd =
@@ -2838,7 +2817,7 @@ export function buildProtocolReturnFamilyHistorySeries(args: {
 
     if (canAttributeIndex) {
       selectedVaultKeys.forEach((vaultKey) => {
-        if (args.excludedIndexVaultKeys?.has(vaultKey)) {
+        if (args.excludedVaultKeys?.usd.has(vaultKey)) {
           return
         }
         const currentGrowthWeightUsd = vaultsByKey.get(vaultKey)?.growthWeightUsd ?? 0
@@ -2853,7 +2832,6 @@ export function buildProtocolReturnFamilyHistorySeries(args: {
 
     selectedVaultKeys.forEach((vaultKey) => {
       const familyVault = vaultsByKey.get(vaultKey)
-      const familyLedger = ledgers.get(vaultKey)
       const state = familyIndexState.get(vaultKey)
 
       if (!state) {
@@ -2884,25 +2862,25 @@ export function buildProtocolReturnFamilyHistorySeries(args: {
           familyVault === undefined
             ? false
             : isGrowthUsdEstimated(familyVault, latestAssetPriceUsdByVaultKey.get(vaultKey) ?? null),
-        growthWeightUsd: familyVault?.growthWeightUsd ?? null,
-        growthWeightEth:
-          familyLedger === undefined
-            ? null
-            : computeVaultGrowthWeightEth({
-                ledger: familyLedger,
-                metadata: args.metadata,
-                ppsData: args.ppsData,
-                currentTimestamp: timestamp
-              }),
+        growthWeightUsd: args.excludedVaultKeys?.usd.has(vaultKey)
+          ? null
+          : familyVault
+            ? familyVault.growthWeightUsd
+            : 0,
+        growthWeightEth: args.excludedVaultKeys?.eth.has(vaultKey)
+          ? null
+          : familyVault
+            ? familyVault.growthWeightEth
+            : 0,
         growthIndex: hasOpenPosition || closesPosition ? state.growthIndex : null,
         growthIndexContribution:
-          familyLedger && !args.excludedIndexVaultKeys?.has(vaultKey) && typeof portfolioPoint?.growthIndex === 'number'
+          !args.excludedVaultKeys?.usd.has(vaultKey) && typeof portfolioPoint?.growthIndex === 'number'
             ? (familyIndexContribution.get(vaultKey) ?? 0)
             : null
       })
     })
     vaultsByKey.forEach((vault, vaultKey) => {
-      previousFamilyGrowthWeightUsd.set(vaultKey, vault.growthWeightUsd)
+      previousFamilyGrowthWeightUsd.set(vaultKey, vault.growthWeightUsd ?? 0)
     })
     previousPortfolioPoint = portfolioPoint
   })
@@ -3106,14 +3084,14 @@ async function calculateHoldingsProtocolReturnHistory(
   const canAppend = Boolean(
     tailPlan &&
       cached &&
-      tailResult.excludedIndexVaultKeys.size === 0 &&
+      tailResult.excludedVaultKeys.eth.size === 0 &&
       tailHistory[0] &&
       isProtocolReturnHistoryOverlapEqual(tailPlan.cachedPoints[tailPlan.cachedPoints.length - 1]!, tailHistory[0]) &&
       haveSameProtocolReturnVaults(cached.response, finalVaults)
   )
   const historyResult = tailPlan && !canAppend ? buildHistory(timestamps) : tailResult
   const history = tailPlan && canAppend ? [...tailPlan.cachedPoints, ...tailHistory.slice(1)] : historyResult.dataPoints
-  const excludedIndexVaultKeys = historyResult.excludedIndexVaultKeys
+  const excludedVaultKeys = historyResult.excludedVaultKeys
   debugLog(
     'protocol-return-history',
     tailPlan && canAppend ? 'appended missing protocol return dates' : 'rebuilt protocol return history',
@@ -3136,7 +3114,7 @@ async function calculateHoldingsProtocolReturnHistory(
     timestamps,
     selectedVaults: requestedVaults ? [] : eligibleHistoryFamilies,
     portfolioPoints: history,
-    excludedIndexVaultKeys
+    excludedVaultKeys
   })
   reportHoldingsProgress(92, 'Built historical chart series', `${history.length} chart points`)
   const openBaselineCompositionUsd = buildOpenBaselineCompositionUsd({
@@ -3188,13 +3166,11 @@ async function calculateHoldingsProtocolReturnHistory(
                 }
               ]
         ),
-        indexExcludedVaults: finalVaults
-          .filter((vault) => excludedIndexVaultKeys.has(toVaultKey(vault.chainId, vault.vaultAddress)))
-          .map((vault) => ({
-            chainId: vault.chainId,
-            vaultAddress: vault.vaultAddress,
-            symbol: vault.metadata.symbol
-          })),
+        growthIsPartial: {
+          usd: excludedVaultKeys.usd.size > 0,
+          eth: excludedVaultKeys.eth.size > 0,
+          index: excludedVaultKeys.usd.size > 0
+        },
         isComplete: finalVaults.every((vault) => vault.status === 'ok')
       },
       dataPoints: history,
