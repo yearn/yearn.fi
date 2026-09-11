@@ -27,7 +27,8 @@ export function createPortfolioHistoryProgressId(parts: string[]): string {
 
 export function usePortfolioHistoryProgress(
   progressId: string | null,
-  enabled: boolean
+  enabled: boolean,
+  showDetail = true
 ): TPortfolioHistoryProgress | null {
   const endpoint = useMemo(
     () => (progressId ? `/api/holdings/progress?id=${encodeURIComponent(progressId)}` : null),
@@ -63,7 +64,7 @@ export function usePortfolioHistoryProgress(
         status: query.data.status,
         progress: query.data.progress,
         message: query.data.message,
-        detail: query.data.detail ?? getLatestLogDetail(query.data)
+        detail: showDetail ? (query.data.detail ?? getLatestLogDetail(query.data)) : null
       }
     : null
 }

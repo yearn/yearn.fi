@@ -1,5 +1,4 @@
 import { holdingsConfig } from '../config'
-import type { KongPPSDataPoint } from '../types'
 import { debugError, debugLog } from './debug'
 
 export type PPSTimeline = Map<number, number>
@@ -19,7 +18,6 @@ type TFetchLike = typeof fetch
 type TKongFetchOptions = {
   fetchFn?: TFetchLike
   timeoutMs?: number
-  concurrency?: number
   maxRetries?: number
   retryDelayMs?: number
 }
@@ -30,7 +28,7 @@ type TKongFetchError = Error & {
 }
 
 const DEFAULT_TIMEOUT_MS = 4_000
-const DEFAULT_CONCURRENCY = 3
+const DEFAULT_CONCURRENCY = 12
 const DEFAULT_MAX_RETRIES = 2
 const DEFAULT_RETRY_DELAY_MS = 200
 const RETRYABLE_ERROR_CODES = new Set([
@@ -45,9 +43,18 @@ const RETRYABLE_ERROR_CODES = new Set([
   'UND_ERR_ABORTED'
 ])
 const RETRYABLE_STATUS_CODES = new Set([408, 425, 429, 500, 502, 503, 504])
-const inFlightVaultPPSFetches = new Map<string, Promise<PPSTimeline>>()
+const ppsTimelineTimestampIndexes = new WeakMap<PPSTimeline, readonly number[]>()
+const inFlightVaultPpsRequests = new Map<string, Promise<PPSTimeline>>()
+const ppsRequestLimit = {
+  active: 0,
+  waiters: [] as Array<() => void>
+}
 
-export function buildPPSTimeline(response: KongPPSDataPoint[]): PPSTimeline {
+function getKongPpsRestBaseUrl(): string {
+  return `${holdingsConfig.kongBaseUrl}/api/rest`
+}
+
+function buildPPSTimeline(response: TPpsPoint[]): PPSTimeline {
   return new Map(response.map((p) => [p.time, parseFloat(p.value)]))
 }
 
@@ -71,12 +78,6 @@ function isRetryableError(error: unknown): boolean {
   )
 }
 
-function chunkVaults<T>(items: T[], chunkSize: number): T[][] {
-  return Array.from({ length: Math.ceil(items.length / chunkSize) }, (_value, index) =>
-    items.slice(index * chunkSize, index * chunkSize + chunkSize)
-  )
-}
-
 function getFetchFn(options?: TKongFetchOptions): TFetchLike {
   return options?.fetchFn ?? fetch
 }
@@ -85,16 +86,60 @@ function getTimeoutMs(options?: TKongFetchOptions): number {
   return options?.timeoutMs ?? DEFAULT_TIMEOUT_MS
 }
 
-function getConcurrency(options?: TKongFetchOptions): number {
-  return options?.concurrency ?? DEFAULT_CONCURRENCY
-}
-
 function getMaxRetries(options?: TKongFetchOptions): number {
   return options?.maxRetries ?? DEFAULT_MAX_RETRIES
 }
 
 function getRetryDelayMs(options?: TKongFetchOptions): number {
   return options?.retryDelayMs ?? DEFAULT_RETRY_DELAY_MS
+}
+
+function acquirePpsRequestSlot(): Promise<void> {
+  if (ppsRequestLimit.active < DEFAULT_CONCURRENCY) {
+    ppsRequestLimit.active += 1
+    return Promise.resolve()
+  }
+
+  return new Promise((resolve) => {
+    ppsRequestLimit.waiters.push(resolve)
+  })
+}
+
+function releasePpsRequestSlot(): void {
+  const next = ppsRequestLimit.waiters.shift()
+  if (next) {
+    next()
+    return
+  }
+
+  ppsRequestLimit.active -= 1
+}
+
+async function withPpsRequestSlot<T>(request: () => Promise<T>): Promise<T> {
+  await acquirePpsRequestSlot()
+  try {
+    return await request()
+  } finally {
+    releasePpsRequestSlot()
+  }
+}
+
+function findClosestPpsTimestamp(
+  timestamps: readonly number[],
+  targetTimestamp: number,
+  low = 0,
+  high = timestamps.length - 1,
+  closest = timestamps[0]!
+): number {
+  if (low > high) {
+    return closest
+  }
+
+  const middle = Math.floor((low + high) / 2)
+  const candidate = timestamps[middle] ?? closest
+  return candidate <= targetTimestamp
+    ? findClosestPpsTimestamp(timestamps, targetTimestamp, middle + 1, high, candidate)
+    : findClosestPpsTimestamp(timestamps, targetTimestamp, low, middle - 1, closest)
 }
 
 export function getPPS(timeline: PPSTimeline, timestamp: number): number | null {
@@ -108,7 +153,14 @@ export function getPPS(timeline: PPSTimeline, timestamp: number): number | null 
     return null
   }
 
-  const timestamps = Array.from(timeline.keys()).sort((a, b) => a - b)
+  const cachedTimestamps = ppsTimelineTimestampIndexes.get(timeline)
+  const timestamps =
+    cachedTimestamps?.length === timeline.size
+      ? cachedTimestamps
+      : Array.from(timeline.keys()).toSorted((left, right) => left - right)
+  if (timestamps !== cachedTimestamps) {
+    ppsTimelineTimestampIndexes.set(timeline, timestamps)
+  }
 
   // If target is before all data, use earliest
   if (timestamp < timestamps[0]) {
@@ -116,74 +168,115 @@ export function getPPS(timeline: PPSTimeline, timestamp: number): number | null 
   }
 
   // Find the latest timestamp that's <= target (most recent PPS before/at this time)
-  const closest = timestamps.reduce(
-    (latest, currentTimestamp) => (currentTimestamp <= timestamp ? currentTimestamp : latest),
-    timestamps[0]
-  )
+  const closest = findClosestPpsTimestamp(timestamps, timestamp)
 
   return timeline.get(closest) ?? null
 }
 
-export async function fetchVaultPPS(
-  chainId: number,
-  vaultAddress: string,
-  options?: TKongFetchOptions
-): Promise<PPSTimeline> {
-  const url = `${holdingsConfig.kongBaseUrl}/api/rest/timeseries/pps/${chainId}/${vaultAddress}`
-  const response = await getFetchFn(options)(url, { signal: AbortSignal.timeout(getTimeoutMs(options)) })
-
-  if (!response.ok) {
-    const error = new Error(`Kong API request failed: ${response.status} for ${vaultAddress}`) as TKongFetchError
-    error.status = response.status
-    throw error
-  }
-
-  const data = (await response.json()) as KongPPSDataPoint[]
-  return buildPPSTimeline(data)
+type TPpsPoint = {
+  time: number
+  value: string
 }
 
-async function fetchVaultPPSWithRetry(
+function parsePpsPoint(value: unknown): TPpsPoint {
+  if (!value || typeof value !== 'object') {
+    throw new Error('Invalid Kong PPS point')
+  }
+
+  const point = value as Partial<TPpsPoint>
+  if (!Number.isSafeInteger(point.time) || typeof point.value !== 'string' || !Number.isFinite(Number(point.value))) {
+    throw new Error('Invalid Kong PPS point')
+  }
+
+  return { time: Number(point.time), value: point.value }
+}
+
+async function fetchVaultPpsWithRetry(
   chainId: number,
   vaultAddress: string,
   options?: TKongFetchOptions,
   attempt = 0
 ): Promise<PPSTimeline> {
   try {
-    return await fetchVaultPPS(chainId, vaultAddress, options)
+    const url = `${getKongPpsRestBaseUrl()}/timeseries/pps/${chainId}/${vaultAddress}`
+    const response = await withPpsRequestSlot(() =>
+      getFetchFn(options)(url, {
+        signal: AbortSignal.timeout(getTimeoutMs(options))
+      })
+    )
+
+    if (!response.ok) {
+      const error = new Error(`Kong PPS request failed: ${response.status} for ${vaultAddress}`) as TKongFetchError
+      error.status = response.status
+      throw error
+    }
+
+    const responseText = await response.text()
+    const responseValue = JSON.parse(responseText)
+    if (!Array.isArray(responseValue)) {
+      throw new Error(`Invalid Kong PPS response for ${vaultAddress}`)
+    }
+
+    const timeline = buildPPSTimeline(responseValue.map(parsePpsPoint))
+    debugLog('kong-pps', 'resolved Kong PPS request', {
+      chainId,
+      vaultAddress: vaultAddress.toLowerCase(),
+      points: timeline.size,
+      responseBytes: new TextEncoder().encode(responseText).byteLength
+    })
+    return timeline
   } catch (error) {
     if (attempt >= getMaxRetries(options) || !isRetryableError(error)) {
       throw error
     }
 
-    debugError('kong-pps', 'retrying vault PPS fetch', error, {
+    debugError('kong-pps', 'retrying Kong PPS fetch', error, {
       chainId,
-      vaultAddress,
+      vaultAddress: vaultAddress.toLowerCase(),
       nextAttempt: attempt + 2
     })
     await wait(getRetryDelayMs(options) * 2 ** attempt)
-    return fetchVaultPPSWithRetry(chainId, vaultAddress, options, attempt + 1)
+    return fetchVaultPpsWithRetry(chainId, vaultAddress, options, attempt + 1)
   }
 }
 
-function fetchVaultPPSDeduped(
+function fetchVaultPpsDeduped(
   chainId: number,
   vaultAddress: string,
   options?: TKongFetchOptions
 ): Promise<PPSTimeline> {
   const key = `${chainId}:${vaultAddress.toLowerCase()}`
-  const existing = inFlightVaultPPSFetches.get(key)
-
+  const existing = inFlightVaultPpsRequests.get(key)
   if (existing) {
-    debugLog('kong-pps', 'reusing in-flight vault PPS fetch', { key })
     return existing
   }
 
-  const request = fetchVaultPPSWithRetry(chainId, vaultAddress, options).finally(() => {
-    inFlightVaultPPSFetches.delete(key)
+  const request = fetchVaultPpsWithRetry(chainId, vaultAddress, options).finally(() => {
+    inFlightVaultPpsRequests.delete(key)
   })
-
-  inFlightVaultPPSFetches.set(key, request)
+  inFlightVaultPpsRequests.set(key, request)
   return request
+}
+
+async function fetchVaultPpsOutcome(
+  vault: { chainId: number; vaultAddress: string },
+  options?: TKongFetchOptions
+): Promise<{ key: string; timeline: PPSTimeline; failed: boolean }> {
+  const key = `${vault.chainId}:${vault.vaultAddress.toLowerCase()}`
+  try {
+    return {
+      key,
+      timeline: await fetchVaultPpsDeduped(vault.chainId, vault.vaultAddress, options),
+      failed: false
+    }
+  } catch (error) {
+    debugError('kong-pps', 'Kong PPS fetch failed', error, { key })
+    return {
+      key,
+      timeline: new Map(),
+      failed: true
+    }
+  }
 }
 
 export async function fetchMultipleVaultsPPS(
@@ -193,45 +286,18 @@ export async function fetchMultipleVaultsPPS(
   const uniqueVaults = Array.from(
     new Map(vaults.map((vault) => [`${vault.chainId}:${vault.vaultAddress.toLowerCase()}`, vault])).values()
   )
-  debugLog('kong-pps', 'fetching PPS timelines', {
-    requested: vaults.length,
-    unique: uniqueVaults.length,
-    concurrency: getConcurrency(options),
-    maxRetries: getMaxRetries(options)
-  })
-  const results = await chunkVaults(uniqueVaults, getConcurrency(options)).reduce<
-    Promise<Array<{ key: string; timeline: PPSTimeline; failed: boolean }>>
-  >(async (allResultsPromise, batch) => {
-    const allResults = await allResultsPromise
-    const batchResults = await Promise.all(
-      batch.map(async ({ chainId, vaultAddress }) => {
-        const key = `${chainId}:${vaultAddress.toLowerCase()}`
-        try {
-          const timeline = await fetchVaultPPSDeduped(chainId, vaultAddress, options)
-          return { key, timeline, failed: false }
-        } catch (error) {
-          console.error(`[Kong] Failed to fetch PPS for ${key}:`, error)
-          debugError('kong-pps', 'vault PPS fetch failed', error, { key })
-          return { key, timeline: new Map() as PPSTimeline, failed: true }
-        }
-      })
-    )
-
-    return [...allResults, ...batchResults]
-  }, Promise.resolve([]))
-
-  const map = new Map<string, PPSTimeline>()
-  results.forEach(({ key, timeline }) => {
-    map.set(key, timeline)
-  })
-  Object.defineProperty(map, PPS_FETCH_FAILED_VAULTS, {
-    value: results.filter((result) => result.failed).length,
+  const outcomes = await Promise.all(uniqueVaults.map((vault) => fetchVaultPpsOutcome(vault, options)))
+  const timelines = new Map(outcomes.map((outcome) => [outcome.key, outcome.timeline]))
+  const failedVaults = outcomes.filter((outcome) => outcome.failed).length
+  Object.defineProperty(timelines, PPS_FETCH_FAILED_VAULTS, {
+    value: failedVaults,
     enumerable: false
   })
-  debugLog('kong-pps', 'resolved PPS timelines', {
-    resolved: map.size,
-    emptyTimelines: Array.from(map.values()).filter((timeline) => timeline.size === 0).length
+  debugLog('kong-pps', 'resolved PPS timelines with Kong', {
+    requested: vaults.length,
+    unique: uniqueVaults.length,
+    failedVaults
   })
 
-  return map
+  return timelines
 }

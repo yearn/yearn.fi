@@ -1,5 +1,119 @@
 import { describe, expect, it } from 'vitest'
-import { portfolioActivityFacetsResponseSchema, portfolioActivityResponseSchema } from './api'
+import { portfolioActivityFacetsResponseSchema, portfolioActivityResponseSchema, portfolioResponseSchema } from './api'
+
+describe('portfolioResponseSchema', () => {
+  it.each([2, null])('accepts available or unavailable growth (%s) and metric completeness', (growth) => {
+    const parsed = portfolioResponseSchema.parse({
+      address: '0x2222222222222222222222222222222222222222',
+      version: 'all',
+      denomination: 'usd',
+      timeframe: '1y',
+      balance: {
+        address: '0x2222222222222222222222222222222222222222',
+        denomination: 'usd',
+        timeframe: '1y',
+        dataPoints: []
+      },
+      protocolReturn: {
+        address: '0x2222222222222222222222222222222222222222',
+        timeframe: '1y',
+        summary: {
+          totalVaults: 1,
+          completeVaults: 0,
+          partialVaults: 1,
+          recommendedGrowthDisplay: 'usd',
+          recommendedGrowthDisplayReason: 'stable_dominant',
+          openBaselineCompositionUsd: { stable: 100, ethFamily: 0, other: 0 },
+          growthIsPartial: { usd: true, eth: true, index: true },
+          incompleteVaults: [
+            {
+              chainId: 1,
+              vaultAddress: '0x5555555555555555555555555555555555555555',
+              symbol: 'yvMISSING',
+              tokenAddress: '0x6666666666666666666666666666666666666666',
+              status: 'missing_pps',
+              issues: ['missing_pps']
+            }
+          ],
+          isComplete: false
+        },
+        dataPoints: [
+          {
+            date: '2026-08-23',
+            growthWeightUsd: growth,
+            growthUsd: growth,
+            growthWeightEth: null,
+            protocolReturnPct: 2,
+            annualizedProtocolReturnPct: 2,
+            growthIndex: 102
+          }
+        ],
+        familySeries: [
+          {
+            chainId: 1,
+            vaultAddress: '0x3333333333333333333333333333333333333333',
+            symbol: 'yvTEST',
+            status: 'ok',
+            dataPoints: [
+              {
+                timestamp: 1776902400,
+                growthWeightUsd: 2,
+                growthWeightEth: 0.001,
+                growthUsd: 2,
+                growthIndex: 102
+              }
+            ]
+          }
+        ]
+      },
+      growth: {
+        generatedAt: '2026-08-24T00:00:00.000Z',
+        summary: {
+          totalVaults: 1,
+          completeVaults: 1,
+          partialVaults: 0,
+          isComplete: true
+        },
+        vaults: [
+          {
+            chainId: 1,
+            vaultAddress: '0x3333333333333333333333333333333333333333',
+            status: 'ok',
+            issues: ['missing_exit_price'],
+            baselineUsd: 100,
+            baselineExposureUsdYears: 1,
+            growthUnderlying: growth,
+            growthUsd: growth,
+            growthPct: 2,
+            annualizedProtocolReturnPct: 2,
+            metadata: {
+              symbol: 'yvTEST',
+              decimals: 18,
+              assetDecimals: 18,
+              tokenAddress: '0x4444444444444444444444444444444444444444'
+            }
+          }
+        ]
+      }
+    })
+
+    expect(parsed.growth.vaults[0]?.issues).toEqual(['missing_exit_price'])
+    expect(parsed.protocolReturn.summary.growthIsPartial).toEqual({ usd: true, eth: true, index: true })
+    expect(parsed.protocolReturn.dataPoints[0]?.growthWeightUsd).toBe(growth)
+    expect(parsed.growth.vaults[0]?.growthUnderlying).toBe(growth)
+    expect(parsed.protocolReturn.summary.incompleteVaults?.[0]).toMatchObject({
+      vaultAddress: '0x5555555555555555555555555555555555555555',
+      status: 'missing_pps',
+      issues: ['missing_pps']
+    })
+    expect(parsed.protocolReturn.dataPoints[0]?.growthUsdEstimated).toBe(false)
+    expect(parsed.protocolReturn.familySeries[0]?.dataPoints[0]).toMatchObject({
+      growthWeightEth: 0.001,
+      growthUsdEstimated: false,
+      growthIndexContribution: null
+    })
+  })
+})
 
 describe('portfolioActivityResponseSchema', () => {
   it('accepts transfer activity entries with a direction', () => {

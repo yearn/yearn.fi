@@ -1,11 +1,5 @@
 import { GET_CORS_HEADERS, json, noContent, queryValue, WALLET_SCOPED_CACHE_CONTROL } from '../../http'
-import type {
-  HoldingsEventFetchType,
-  HoldingsEventPaginationMode,
-  HoldingsHistoryTimeframe,
-  VaultVersion
-} from '../../lib/holdings'
-import { ensureHoldingsStorageInitialized } from '../../lib/holdings'
+import type { HoldingsHistoryTimeframe } from '../../lib/holdings'
 import {
   createHoldingsDebugContext,
   debugError,
@@ -79,14 +73,6 @@ function parseVaultFilters({
   return [{ chainId: Number(chainId), vaultAddress: vault }]
 }
 
-function parseHoldingsEventFetchType(value: string | string[] | undefined): HoldingsEventFetchType {
-  return value === 'parallel' ? 'parallel' : 'seq'
-}
-
-function parseHoldingsEventPaginationMode(value: string | string[] | undefined): HoldingsEventPaginationMode {
-  return value === 'all' ? 'all' : 'paged'
-}
-
 function parseHoldingsHistoryTimeframe(value: string | string[] | undefined): HoldingsHistoryTimeframe {
   return value === 'all' ? 'all' : '1y'
 }
@@ -96,13 +82,6 @@ export function OPTIONS(): Response {
 }
 
 export async function GET(request: Request): Promise<Response> {
-  try {
-    await ensureHoldingsStorageInitialized()
-  } catch (error) {
-    console.error('Holdings protocol return history storage initialization error:', error)
-    return json({ error: 'Failed to initialize holdings storage' }, { status: 500, headers: GET_CORS_HEADERS })
-  }
-
   const envioUrl = process.env.ENVIO_GRAPHQL_URL
   if (!envioUrl) {
     return json(
@@ -118,9 +97,6 @@ export async function GET(request: Request): Promise<Response> {
   const chainIdParam = queryValue(request, 'chainId')
   const vaultParam = queryValue(request, 'vault')
   const vaultsParam = queryValue(request, 'vaults')
-  const versionParam = queryValue(request, 'version')
-  const fetchTypeParam = queryValue(request, 'fetchType')
-  const paginationModeParam = queryValue(request, 'paginationMode')
   const timeframeParam = queryValue(request, 'timeframe')
   const debugParam = queryValue(request, 'debug')
   const progressIdParam = queryValue(request, 'progressId')
@@ -143,9 +119,6 @@ export async function GET(request: Request): Promise<Response> {
     return json({ error: 'Invalid vault filter' }, { status: 400, headers: GET_CORS_HEADERS })
   }
 
-  const version: VaultVersion = versionParam === 'v2' || versionParam === 'v3' ? versionParam : 'all'
-  const fetchType = parseHoldingsEventFetchType(fetchTypeParam)
-  const paginationMode = parseHoldingsEventPaginationMode(paginationModeParam)
   const timeframe = parseHoldingsHistoryTimeframe(timeframeParam)
   const progressId = typeof progressIdParam === 'string' ? progressIdParam : null
   const debugEnabled = isHoldingsDebugRequested(typeof debugParam === 'string' ? debugParam : null)
@@ -153,14 +126,9 @@ export async function GET(request: Request): Promise<Response> {
   try {
     const activeProgressId = await startHoldingsProgress({
       id: progressId,
-      route: 'pnl-simple-history',
+      route: 'protocol-return-history',
       address,
       message: 'Fetching historical user data'
-    })
-    await updateHoldingsProgress(activeProgressId, {
-      progress: 8,
-      message: 'Fetching historical user data',
-      detail: null
     })
     const { getHoldingsProtocolReturnHistory } = await import('../../lib/holdings')
     const history = await withHoldingsDebugContext(
@@ -169,36 +137,20 @@ export async function GET(request: Request): Promise<Response> {
       }),
       async () => {
         debugLog('route', 'started holdings protocol return history request', {
-          version,
-          timeframe,
-          fetchType,
-          paginationMode
+          timeframe
         })
 
         try {
-          const response = await getHoldingsProtocolReturnHistory(
-            address,
-            version,
-            fetchType,
-            paginationMode,
-            timeframe,
-            vaultFilters
-          )
+          const response = await getHoldingsProtocolReturnHistory(address, timeframe, vaultFilters)
           debugLog('route', 'completed holdings protocol return history request', {
-            version,
             timeframe,
-            fetchType,
-            paginationMode,
             totalVaults: response.summary.totalVaults,
             points: response.dataPoints.length
           })
           return response
         } catch (error) {
           debugError('route', 'holdings protocol return history request failed', error, {
-            version,
-            timeframe,
-            fetchType,
-            paginationMode
+            timeframe
           })
           throw error
         }
@@ -255,5 +207,3 @@ export async function GET(request: Request): Promise<Response> {
     )
   }
 }
-
-export default GET

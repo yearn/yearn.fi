@@ -1,7 +1,7 @@
 import type { VaultMetadata } from '../types'
-import { getChainPrefix, type THistoricalPriceRequest } from './defillama'
 import { getPPS, type PPSTimeline } from './kong'
 import { toVaultKey } from './pnlShared'
+import { getChainPrefix, getPriceAtTimestamp, type THistoricalPriceRequest } from './prices'
 
 type TPriceRequestDraft = {
   chainId: number
@@ -20,22 +20,167 @@ type TFetchVaultMetadata = (
 ) => Promise<Map<string, VaultMetadata>>
 
 const DEFAULT_MAX_NESTED_VAULT_DEPTH = 4
+const UNRESOLVED_NESTED_VAULT_METADATA_KEYS = Symbol('unresolvedNestedVaultMetadataKeys')
+
+type TNestedVaultMetadataResult = Map<string, VaultMetadata> & {
+  [UNRESOLVED_NESTED_VAULT_METADATA_KEYS]?: ReadonlySet<string>
+}
+
+type TNestedVaultAssetPath = {
+  terminalAsset: VaultMetadata['token'] | null
+  vaults: VaultMetadata[]
+  missingMetadata: boolean
+}
+
+export type TNestedVaultValuation = {
+  terminalAsset: VaultMetadata['token'] | null
+  pricePerShare: number | null
+  underlyingToTerminalRate: number | null
+  missingMetadata: boolean
+}
+
+function getUnresolvedNestedVaultMetadataKeys(vaultMetadata: Map<string, VaultMetadata>): ReadonlySet<string> {
+  return (vaultMetadata as TNestedVaultMetadataResult)[UNRESOLVED_NESTED_VAULT_METADATA_KEYS] ?? new Set()
+}
+
+function markUnresolvedNestedVaultMetadata(
+  vaultMetadata: Map<string, VaultMetadata>,
+  unresolvedVaultKeys: ReadonlySet<string>
+): Map<string, VaultMetadata> {
+  Object.defineProperty(vaultMetadata, UNRESOLVED_NESTED_VAULT_METADATA_KEYS, {
+    value: unresolvedVaultKeys,
+    enumerable: false,
+    configurable: true
+  })
+  return vaultMetadata
+}
+
+function resolveNestedVaultAssetPath(args: {
+  chainId: number
+  vaultAddress: string
+  vaultMetadata: Map<string, VaultMetadata>
+  maxDepth: number
+  depth: number
+  visitedVaultKeys: Set<string>
+}): TNestedVaultAssetPath {
+  const vaultKey = toVaultKey(args.chainId, args.vaultAddress)
+  if (args.visitedVaultKeys.has(vaultKey)) {
+    return { terminalAsset: null, vaults: [], missingMetadata: true }
+  }
+
+  const vault = args.vaultMetadata.get(vaultKey)
+  if (!vault) {
+    return { terminalAsset: null, vaults: [], missingMetadata: true }
+  }
+
+  const nestedVaultKey = toVaultKey(vault.chainId, vault.token.address)
+  const nestedVault = args.vaultMetadata.get(nestedVaultKey)
+  if (!nestedVault) {
+    const missingMetadata = getUnresolvedNestedVaultMetadataKeys(args.vaultMetadata).has(nestedVaultKey)
+    return {
+      terminalAsset: missingMetadata ? null : vault.token,
+      vaults: [vault],
+      missingMetadata
+    }
+  }
+
+  if (args.depth >= args.maxDepth) {
+    return { terminalAsset: null, vaults: [vault], missingMetadata: true }
+  }
+
+  const nestedPath = resolveNestedVaultAssetPath({
+    chainId: nestedVault.chainId,
+    vaultAddress: nestedVault.address,
+    vaultMetadata: args.vaultMetadata,
+    maxDepth: args.maxDepth,
+    depth: args.depth + 1,
+    visitedVaultKeys: new Set([...args.visitedVaultKeys, vaultKey])
+  })
+
+  return {
+    terminalAsset: nestedPath.terminalAsset,
+    vaults: [vault, ...nestedPath.vaults],
+    missingMetadata: nestedPath.missingMetadata
+  }
+}
+
+function getCompoundedPps(
+  vaults: VaultMetadata[],
+  ppsData: Map<string, PPSTimeline>,
+  timestamp: number
+): number | null {
+  const pricesPerShare = vaults.map((vault) => {
+    const ppsTimeline = ppsData.get(toVaultKey(vault.chainId, vault.address))
+    return ppsTimeline ? getPPS(ppsTimeline, timestamp) : null
+  })
+
+  return pricesPerShare.every(
+    (pricePerShare): pricePerShare is number =>
+      pricePerShare !== null && Number.isFinite(pricePerShare) && pricePerShare > 0
+  )
+    ? pricesPerShare.reduce((product, pricePerShare) => product * pricePerShare, 1)
+    : null
+}
+
+function getNestedVaultAssetPath(args: {
+  chainId: number
+  vaultAddress: string
+  vaultMetadata: Map<string, VaultMetadata>
+  maxDepth?: number
+}): TNestedVaultAssetPath {
+  return resolveNestedVaultAssetPath({
+    chainId: args.chainId,
+    vaultAddress: args.vaultAddress,
+    vaultMetadata: args.vaultMetadata,
+    maxDepth: args.maxDepth ?? DEFAULT_MAX_NESTED_VAULT_DEPTH,
+    depth: 0,
+    visitedVaultKeys: new Set()
+  })
+}
+
+export function resolveNestedVaultTerminalAsset(args: {
+  chainId: number
+  vaultAddress: string
+  vaultMetadata: Map<string, VaultMetadata>
+  maxDepth?: number
+}): VaultMetadata['token'] | null {
+  return getNestedVaultAssetPath(args).terminalAsset
+}
+
+export function resolveNestedVaultValuation(args: {
+  chainId: number
+  vaultAddress: string
+  vaultMetadata: Map<string, VaultMetadata>
+  ppsData: Map<string, PPSTimeline>
+  timestamp: number
+  maxDepth?: number
+}): TNestedVaultValuation {
+  const path = getNestedVaultAssetPath({
+    chainId: args.chainId,
+    vaultAddress: args.vaultAddress,
+    vaultMetadata: args.vaultMetadata,
+    maxDepth: args.maxDepth
+  })
+
+  if (path.missingMetadata) {
+    return {
+      terminalAsset: null,
+      pricePerShare: null,
+      underlyingToTerminalRate: null,
+      missingMetadata: true
+    }
+  }
+
+  return {
+    terminalAsset: path.terminalAsset,
+    pricePerShare: getCompoundedPps(path.vaults, args.ppsData, args.timestamp),
+    underlyingToTerminalRate: getCompoundedPps(path.vaults.slice(1), args.ppsData, args.timestamp),
+    missingMetadata: false
+  }
+}
 
 function priceMapKey(chainId: number, tokenAddress: string): string {
   return `${getChainPrefix(chainId)}:${tokenAddress.toLowerCase()}`
-}
-
-function getPriceAtTimestamp(priceMap: Map<number, number>, targetTimestamp: number): number {
-  if (priceMap.has(targetTimestamp)) {
-    return priceMap.get(targetTimestamp)!
-  }
-
-  const closestPriorTimestamp = Array.from(priceMap.keys())
-    .sort((left, right) => left - right)
-    .filter((timestamp) => timestamp <= targetTimestamp)
-    .pop()
-
-  return closestPriorTimestamp === undefined ? 0 : priceMap.get(closestPriorTimestamp) || 0
 }
 
 function priceRequestKey(chainId: number, tokenAddress: string): string {
@@ -92,7 +237,7 @@ export async function resolveNestedVaultAssetMetadata(
   maxDepth = DEFAULT_MAX_NESTED_VAULT_DEPTH,
   fetchVaultMetadata?: TFetchVaultMetadata
 ): Promise<Map<string, VaultMetadata>> {
-  if (maxDepth <= 0) {
+  if (maxDepth < 0) {
     return vaultMetadata
   }
 
@@ -112,16 +257,29 @@ export async function resolveNestedVaultAssetMetadata(
   const assetVaultMetadata = await (fetchVaultMetadata ?? defaultFetchVaultMetadata)(missingAssetVaultIdentifiers, {
     skipSnapshotFallback: true
   })
-  const failedVaults =
-    getVaultMetadataFetchFailedVaults(vaultMetadata) + getVaultMetadataFetchFailedVaults(assetVaultMetadata)
+  const assetMetadataFailedVaults = getVaultMetadataFetchFailedVaults(assetVaultMetadata)
+  const failedVaults = getVaultMetadataFetchFailedVaults(vaultMetadata) + assetMetadataFailedVaults
   const newEntries = Array.from(assetVaultMetadata.entries()).filter(([key]) => !vaultMetadata.has(key))
+  const requestedVaultKeys = new Set(
+    missingAssetVaultIdentifiers.map((identifier) => toVaultKey(identifier.chainId, identifier.vaultAddress))
+  )
+  const unresolvedVaultKeys = new Set([
+    ...Array.from(getUnresolvedNestedVaultMetadataKeys(vaultMetadata)).filter((key) => !requestedVaultKeys.has(key)),
+    ...(assetMetadataFailedVaults > 0
+      ? Array.from(requestedVaultKeys).filter((key) => !assetVaultMetadata.has(key))
+      : [])
+  ])
+  const resolvedMetadata = markUnresolvedNestedVaultMetadata(
+    markVaultMetadataFetchFailures(new Map([...vaultMetadata, ...newEntries]), failedVaults),
+    unresolvedVaultKeys
+  )
 
-  if (newEntries.length === 0) {
-    return markVaultMetadataFetchFailures(vaultMetadata, failedVaults)
+  if (newEntries.length === 0 || maxDepth === 0) {
+    return resolvedMetadata
   }
 
   return resolveNestedVaultAssetMetadata(
-    markVaultMetadataFetchFailures(new Map([...vaultMetadata, ...newEntries]), failedVaults),
+    resolvedMetadata,
     maxDepth - 1,
     fetchVaultMetadata ?? defaultFetchVaultMetadata
   )
@@ -211,6 +369,7 @@ function deriveNestedVaultAssetPriceDataOnce(args: {
   priceRequests: THistoricalPriceRequest[]
   vaultMetadata: Map<string, VaultMetadata>
   ppsData: Map<string, PPSTimeline>
+  underlyingPriceLookup: 'prior' | 'exact'
 }): Map<string, Map<number, number>> {
   const result = new Map(Array.from(args.priceData.entries()).map(([key, priceMap]) => [key, new Map(priceMap)]))
 
@@ -235,7 +394,10 @@ function deriveNestedVaultAssetPriceDataOnce(args: {
       }
 
       const pricePerShare = getPPS(ppsMap, timestamp)
-      const underlyingTokenPrice = getPriceAtTimestamp(underlyingPriceMap, timestamp)
+      const underlyingTokenPrice =
+        args.underlyingPriceLookup === 'exact'
+          ? (underlyingPriceMap.get(timestamp) ?? 0)
+          : getPriceAtTimestamp(underlyingPriceMap, timestamp)
       if (pricePerShare === null || pricePerShare <= 0 || underlyingTokenPrice <= 0) {
         return
       }
@@ -255,6 +417,7 @@ export function deriveNestedVaultAssetPriceData(args: {
   vaultMetadata: Map<string, VaultMetadata>
   ppsData: Map<string, PPSTimeline>
   maxDepth?: number
+  underlyingPriceLookup?: 'prior' | 'exact'
 }): Map<string, Map<number, number>> {
   const maxDepth = args.maxDepth ?? DEFAULT_MAX_NESTED_VAULT_DEPTH
 
@@ -264,7 +427,8 @@ export function deriveNestedVaultAssetPriceData(args: {
         priceData,
         priceRequests: args.priceRequests,
         vaultMetadata: args.vaultMetadata,
-        ppsData: args.ppsData
+        ppsData: args.ppsData,
+        underlyingPriceLookup: args.underlyingPriceLookup ?? 'prior'
       }),
     args.priceData
   )

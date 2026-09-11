@@ -5,7 +5,8 @@ import {
   expandNestedVaultAssetPriceRequests,
   getNestedVaultPpsIdentifiersFromPriceRequests,
   mergeVaultIdentifiers,
-  resolveNestedVaultAssetMetadata
+  resolveNestedVaultAssetMetadata,
+  resolveNestedVaultValuation
 } from './nestedVaultPrices'
 import { toVaultKey } from './pnlShared'
 import { getVaultMetadataFetchFailedVaults, markVaultMetadataFetchFailures } from './vaults'
@@ -114,6 +115,82 @@ describe('nested vault asset prices', () => {
     expect(getVaultMetadataFetchFailedVaults(resolvedMetadata)).toBe(1)
   })
 
+  it('reports nested valuation as incomplete when required asset metadata could not be fetched', async () => {
+    const unresolvedMetadata = await resolveNestedVaultAssetMetadata(
+      new Map([[toVaultKey(1, SUPER_VAULT), metadata.get(toVaultKey(1, SUPER_VAULT))!]]),
+      4,
+      async () => markVaultMetadataFetchFailures(new Map<string, VaultMetadata>(), 1)
+    )
+
+    expect(
+      resolveNestedVaultValuation({
+        chainId: 1,
+        vaultAddress: SUPER_VAULT,
+        vaultMetadata: unresolvedMetadata,
+        ppsData: new Map([[toVaultKey(1, SUPER_VAULT), new Map([[100, 1.06]])]]),
+        timestamp: 100
+      })
+    ).toEqual({
+      terminalAsset: null,
+      pricePerShare: null,
+      underlyingToTerminalRate: null,
+      missingMetadata: true
+    })
+  })
+
+  it('does not apply an unrelated base metadata failure to a resolved terminal asset', async () => {
+    const resolvedMetadata = await resolveNestedVaultAssetMetadata(
+      markVaultMetadataFetchFailures(
+        new Map([[toVaultKey(1, INNER_VAULT), metadata.get(toVaultKey(1, INNER_VAULT))!]]),
+        1
+      ),
+      4,
+      async () => new Map<string, VaultMetadata>()
+    )
+
+    expect(
+      resolveNestedVaultValuation({
+        chainId: 1,
+        vaultAddress: INNER_VAULT,
+        vaultMetadata: resolvedMetadata,
+        ppsData: new Map([[toVaultKey(1, INNER_VAULT), new Map([[100, 1.02]])]]),
+        timestamp: 100
+      })
+    ).toMatchObject({
+      terminalAsset: metadata.get(toVaultKey(1, INNER_VAULT))!.token,
+      pricePerShare: 1.02,
+      underlyingToTerminalRate: 1,
+      missingMetadata: false
+    })
+  })
+
+  it('probes the depth boundary and reports a deeper vault path as incomplete', async () => {
+    const resolvedMetadata = await resolveNestedVaultAssetMetadata(
+      new Map([[toVaultKey(1, SUPER_VAULT), metadata.get(toVaultKey(1, SUPER_VAULT))!]]),
+      1,
+      async (identifiers) =>
+        new Map(
+          identifiers.flatMap((identifier) => {
+            const key = toVaultKey(identifier.chainId, identifier.vaultAddress)
+            const vault = metadata.get(key)
+            return vault ? [[key, vault] as const] : []
+          })
+        )
+    )
+
+    expect(resolvedMetadata.has(toVaultKey(1, INNER_VAULT))).toBe(true)
+    expect(
+      resolveNestedVaultValuation({
+        chainId: 1,
+        vaultAddress: SUPER_VAULT,
+        vaultMetadata: resolvedMetadata,
+        ppsData: new Map(),
+        timestamp: 100,
+        maxDepth: 1
+      }).missingMetadata
+    ).toBe(true)
+  })
+
   it('recursively expands multi-level vault-share asset price requests', () => {
     const requests = expandNestedVaultAssetPriceRequests(
       [
@@ -201,6 +278,41 @@ describe('nested vault asset prices', () => {
     const derivedInnerPrices = priceData.get(`ethereum:${INNER_VAULT}`)
     expect(derivedInnerPrices?.get(100)).toBe(1.005)
     expect(derivedInnerPrices?.get(200)).toBeCloseTo(1.02102)
+  })
+
+  it('uses the latest prior underlying token price by default', () => {
+    const priceData = deriveNestedVaultAssetPriceData({
+      priceData: new Map([[`ethereum:${UNDERLYING}`, new Map([[100, 0.99]])]]),
+      priceRequests: [
+        {
+          chainId: 1,
+          address: INNER_VAULT,
+          timestamps: [200]
+        }
+      ],
+      vaultMetadata: metadata,
+      ppsData: new Map([[toVaultKey(1, INNER_VAULT), new Map([[200, 1.02]])]])
+    })
+
+    expect(priceData.get(`ethereum:${INNER_VAULT}`)?.get(200)).toBeCloseTo(1.0098)
+  })
+
+  it('does not derive a daily nested vault price without an exact underlying timestamp', () => {
+    const priceData = deriveNestedVaultAssetPriceData({
+      priceData: new Map([[`ethereum:${UNDERLYING}`, new Map([[100, 0.99]])]]),
+      priceRequests: [
+        {
+          chainId: 1,
+          address: INNER_VAULT,
+          timestamps: [200]
+        }
+      ],
+      vaultMetadata: metadata,
+      ppsData: new Map([[toVaultKey(1, INNER_VAULT), new Map([[200, 1.02]])]]),
+      underlyingPriceLookup: 'exact'
+    })
+
+    expect(priceData.get(`ethereum:${INNER_VAULT}`)?.has(200)).toBe(false)
   })
 
   it('recursively derives multi-level vault-share token prices', () => {
