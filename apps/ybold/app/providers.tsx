@@ -1,20 +1,15 @@
 'use client'
 
-import '@rainbow-me/rainbowkit/styles.css'
-import { lightTheme, RainbowKitProvider, useConnectModal } from '@rainbow-me/rainbowkit'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { wagmiConfig } from '@ybold/lib/wagmi'
+import { useWalletActivity, WalletActivityProvider } from '@ybold/components/WalletActivityProvider'
+import { isSafeConnectorId, YBOLD_WAGMI_RECONNECT_ON_MOUNT } from '@ybold/lib/appkitConfig'
+import { appKit, wagmiConfig } from '@ybold/lib/wagmi'
 import { type VaultWidgetRuntimeOverrides, VaultWidgetRuntimeProvider } from '@yearn/vault-widget'
 import { createWagmiVaultWidgetExecutionAdapter } from '@yearn/vault-widget/wagmi'
+import { useWalletDrawer } from '@yearn/wallet-ui/context'
+import { WalletDrawerProvider } from '@yearn/wallet-ui/WalletDrawer'
 import { useMemo, useState } from 'react'
 import { useAccount, WagmiProvider } from 'wagmi'
-
-const theme = lightTheme({
-  accentColor: '#0657f9',
-  borderRadius: 'medium'
-})
-
-theme.radii.connectButton = '9999px'
 
 const queryClient = new QueryClient()
 const YEARN_ASSETS_BASE_URI =
@@ -27,8 +22,9 @@ const VAULT_WIDGET_EXECUTION = createWagmiVaultWidgetExecutionAdapter({
 })
 
 function WidgetHostProvider({ children }: { children: React.ReactNode }) {
-  const { openConnectModal } = useConnectModal()
-  const { address, chainId, connector, isConnecting, status } = useAccount()
+  const { notifications } = useWalletActivity()
+  const { openWalletDrawer, isConnecting } = useWalletDrawer()
+  const { address, chainId, connector, status } = useAccount()
   const [slippagePercent, setSlippagePercent] = useState(0.5)
   const [autoStake, setAutoStake] = useState(true)
   const runtime = useMemo<VaultWidgetRuntimeOverrides>(
@@ -51,6 +47,7 @@ function WidgetHostProvider({ children }: { children: React.ReactNode }) {
         resolveExecutionChainId
       },
       execution: VAULT_WIDGET_EXECUTION,
+      notifications,
       prices: {
         spotPriceEndpoint: '/api/prices/spot'
       },
@@ -58,7 +55,7 @@ function WidgetHostProvider({ children }: { children: React.ReactNode }) {
         isEnsoEnabled: () => false
       },
       safe: {
-        isSafe: connector?.id.toLowerCase().includes('safe') === true
+        isSafe: isSafeConnectorId(connector?.id)
       },
       settings: {
         autoStake,
@@ -71,10 +68,10 @@ function WidgetHostProvider({ children }: { children: React.ReactNode }) {
         chainId,
         connected: status === 'connected',
         connecting: isConnecting,
-        open: () => openConnectModal?.()
+        open: openWalletDrawer
       }
     }),
-    [address, autoStake, chainId, connector?.id, isConnecting, openConnectModal, slippagePercent, status]
+    [address, autoStake, chainId, connector?.id, isConnecting, notifications, openWalletDrawer, slippagePercent, status]
   )
 
   return <VaultWidgetRuntimeProvider value={runtime}>{children}</VaultWidgetRuntimeProvider>
@@ -82,11 +79,13 @@ function WidgetHostProvider({ children }: { children: React.ReactNode }) {
 
 export function Providers({ children }: { children: React.ReactNode }) {
   return (
-    <WagmiProvider config={wagmiConfig}>
+    <WagmiProvider config={wagmiConfig} reconnectOnMount={YBOLD_WAGMI_RECONNECT_ON_MOUNT}>
       <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider theme={theme}>
-          <WidgetHostProvider>{children}</WidgetHostProvider>
-        </RainbowKitProvider>
+        <WalletActivityProvider>
+          <WalletDrawerProvider appKit={appKit}>
+            <WidgetHostProvider>{children}</WidgetHostProvider>
+          </WalletDrawerProvider>
+        </WalletActivityProvider>
       </QueryClientProvider>
     </WagmiProvider>
   )

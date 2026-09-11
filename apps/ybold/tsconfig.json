@@ -20,7 +20,9 @@
     ],
     "baseUrl": ".",
     "paths": {
-      "@ybold/*": ["./*"]
+      "@ybold/*": ["./*"],
+      "@yearn/wallet-ui": ["../../packages/wallet-ui/src/index.ts"],
+      "@yearn/wallet-ui/*": ["../../packages/wallet-ui/src/*"]
     }
   },
   "include": ["next-env.d.ts", "**/*.ts", "**/*.tsx", ".next/types/**/*.ts", ".next/dev/types/**/*.ts", "**/*.mts"],

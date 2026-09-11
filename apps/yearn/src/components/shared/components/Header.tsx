@@ -15,6 +15,7 @@ import { TypeMarkYearn } from '@shared/icons/TypeMarkYearn'
 import { cl } from '@shared/utils'
 import { normalizePathname } from '@shared/utils/routes'
 import { truncateHex } from '@shared/utils/tools.address'
+import { useWalletDrawer } from '@yearn/wallet-ui/context'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import type { KeyboardEvent, MouseEvent, ReactElement } from 'react'
@@ -38,18 +39,19 @@ type TWalletSelectorProps = {
 }
 
 function WalletSelector({ onAccountClick, notificationStatus }: TWalletSelectorProps): ReactElement {
-  const { isActive, isUserConnecting, isIdentityLoading, address, ens, clusters, openLoginModal } = useWeb3()
+  const { isActive, isIdentityLoading, address, ens, clusters, openLoginModal } = useWeb3()
   const { isLoading: isWalletLoading } = useWalletStatus()
+  const { dialogId: walletDrawerId, isOpen: isWalletDrawerOpen } = useWalletDrawer()
+  const isDisconnected = !(isActive || address || ens || clusters)
 
   const walletIdentity = useMemo((): string | undefined => {
-    if (isUserConnecting) return 'Connecting...'
     if (ens) return ens
     if (clusters) return clusters.name
     if (address) return truncateHex(address, 4)
     return undefined
-  }, [ens, clusters, address, isUserConnecting])
+  }, [ens, clusters, address])
 
-  const shouldShowSpinner = address && walletIdentity && !isUserConnecting && (isIdentityLoading || isWalletLoading)
+  const shouldShowSpinner = address && walletIdentity && (isIdentityLoading || isWalletLoading)
 
   const notificationDotColor = useMemo((): string => {
     switch (notificationStatus) {
@@ -66,7 +68,6 @@ function WalletSelector({ onAccountClick, notificationStatus }: TWalletSelectorP
   }, [notificationStatus])
 
   function handleClick(): void {
-    if (shouldShowSpinner || isUserConnecting) return
     if (isActive || address || ens || clusters) {
       onAccountClick()
       return
@@ -75,17 +76,23 @@ function WalletSelector({ onAccountClick, notificationStatus }: TWalletSelectorP
   }
 
   return (
-    <div
+    <button
+      type={'button'}
+      data-wallet-drawer-trigger={isDisconnected ? true : undefined}
+      aria-controls={isDisconnected ? walletDrawerId : undefined}
+      aria-expanded={isDisconnected ? isWalletDrawerOpen : undefined}
+      aria-haspopup={isDisconnected ? 'dialog' : undefined}
+      aria-label={walletIdentity ? `Open wallet account ${walletIdentity}` : 'Connect wallet'}
       onMouseDown={(e) => e.stopPropagation()}
       onClick={handleClick}
-      className={cl('relative', shouldShowSpinner ? 'cursor-wait' : 'cursor-pointer')}
+      className={'relative cursor-pointer text-left'}
     >
       {walletIdentity && notificationStatus && (
-        <div className={cl('absolute -right-0.5 -top-0.5 size-2 rounded-full', notificationDotColor)} />
+        <span className={cl('absolute -right-0.5 -top-0.5 size-2 rounded-full', notificationDotColor)} />
       )}
-      <p
+      <span
         suppressHydrationWarning
-        className={'text-xs font-normal text-text-secondary transition-colors hover:text-text-primary md:text-sm'}
+        className={'block text-xs font-normal text-text-secondary transition-colors hover:text-text-primary md:text-sm'}
       >
         {walletIdentity ? (
           <span className={'inline-flex items-center gap-2 rounded-lg bg-surface-secondary px-3 py-1.5'}>
@@ -106,8 +113,8 @@ function WalletSelector({ onAccountClick, notificationStatus }: TWalletSelectorP
             </span>
           </span>
         )}
-      </p>
-    </div>
+      </span>
+    </button>
   )
 }
 

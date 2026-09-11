@@ -35,10 +35,19 @@ export {
 } from './services/graphql'
 export {
   getHoldingsProtocolReturnHistory,
+  getHoldingsProtocolReturnPortfolio,
   type HoldingsPnLSimpleHistoryPoint,
   type HoldingsPnLSimpleHistoryResponse,
+  type HoldingsPortfolioGrowthResponse,
+  type HoldingsPortfolioGrowthVault,
+  type HoldingsProtocolReturnPortfolioResponse,
   type THoldingsPnLSimpleStatus
 } from './services/pnlSimple'
+export {
+  getHoldingsPortfolio,
+  type HoldingsPortfolioBalanceResponse,
+  type HoldingsPortfolioResponse
+} from './services/portfolio'
 export {
   ensureHoldingsStorageInitialized,
   initializeHoldingsStorage,

@@ -1,7 +1,9 @@
 @import "tailwindcss";
 @import "@yearn/vault-widget/styles.css";
+@import "../../../packages/wallet-ui/styles.css";
 
 @source "../../../packages/vault-widget/src";
+@source "../../../packages/wallet-ui/src";
 
 /* Design tokens — see DESIGNSYSTEM.md. Flat, geometric; no gradients or shadows. */
 :root {
@@ -30,6 +32,14 @@
   --color-line: var(--border);
   --color-good: var(--good-text);
   --color-bad: var(--bad-text);
+  --color-app: var(--background);
+  --color-surface-secondary: var(--background);
+  --color-text-primary: var(--navy);
+  --color-text-secondary: var(--muted-text);
+  --color-border: var(--border);
+  --color-primary: var(--yearn-blue);
+  --color-error: var(--bad-text);
+  --color-modal-overlay: rgb(17 27 77 / 40%);
   --font-sans: var(--font-geist-sans);
   --font-mono: var(--font-geist-mono);
 }

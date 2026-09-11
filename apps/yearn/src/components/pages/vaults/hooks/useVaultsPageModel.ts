@@ -269,7 +269,6 @@ export function useVaultsPageModel(
     sortDirection
   } = useVaultsQueryState({
     defaultTypes: DEFAULT_VAULT_TYPES,
-    defaultCategories: [],
     defaultPathname: '/vaults',
     defaultSortBy: DEFAULT_SORT_BY,
     resetTypes: DEFAULT_VAULT_TYPES,

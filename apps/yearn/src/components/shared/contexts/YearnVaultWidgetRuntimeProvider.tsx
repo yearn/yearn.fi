@@ -15,7 +15,7 @@ import {
 import { useNotifications } from '@shared/contexts/useNotifications'
 import { useNotificationsActions } from '@shared/contexts/useNotificationsActions'
 import { useWalletActions, useWalletStatus, useWalletTokens } from '@shared/contexts/useWallet'
-import { useWeb3 } from '@shared/contexts/useWeb3'
+import { useIsWalletConnecting, useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import { useTokenList, useTokenListActions } from '@shared/contexts/WithTokenList'
 import {
@@ -171,7 +171,8 @@ export function YearnVaultWidgetRuntimeProvider({ children }: { children: ReactN
   const { onRefresh } = useWalletActions()
   const { hasCompletedBalanceLoad, isLoading: isWalletLoading } = useWalletStatus()
   const { balances, getToken } = useWalletTokens()
-  const { address, isActive, isUserConnecting, isWalletSafe, openLoginModal } = useWeb3()
+  const { address, isActive, isWalletSafe, openLoginModal } = useWeb3()
+  const isUserConnecting = useIsWalletConnecting()
   const {
     allVaults,
     enableVaultListFetch,

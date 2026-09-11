@@ -4,7 +4,7 @@ import { appendHoldingsProgressLog, updateHoldingsProgress } from './progress'
 export interface HoldingsDebugContext {
   enabled: boolean
   requestId: string
-  route: 'history' | 'breakdown' | 'protocol-return-history'
+  route: 'history' | 'breakdown' | 'protocol-return-history' | 'portfolio'
   address: string
   startedAt: number
   lotsEnabled: boolean
@@ -34,7 +34,7 @@ export function isHoldingsDebugRequested(debugValue?: string | null): boolean {
 }
 
 export function createHoldingsDebugContext(
-  route: 'history' | 'breakdown' | 'protocol-return-history',
+  route: 'history' | 'breakdown' | 'protocol-return-history' | 'portfolio',
   address: string,
   enabled: boolean,
   options?: {

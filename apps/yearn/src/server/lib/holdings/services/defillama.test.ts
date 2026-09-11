@@ -16,6 +16,20 @@ function createBatchResponse(response: DefiLlamaBatchResponse): Response {
   })
 }
 
+type TDeferred<T> = Readonly<{
+  promise: Promise<T>
+  resolve: (value: T) => void
+}>
+
+function createDeferred<T>(): TDeferred<T> {
+  const controls: { resolve: (value: T) => void } = { resolve: () => undefined }
+  const promise = new Promise<T>((resolve) => {
+    controls.resolve = resolve
+  })
+
+  return { promise, resolve: (value) => controls.resolve(value) }
+}
+
 afterEach(() => {
   vi.restoreAllMocks()
   vi.unstubAllGlobals()
@@ -244,6 +258,53 @@ describe('parseDefiLlamaResponse', () => {
     expect(prices.get(secondTokenKey)?.get(secondTimestamp)).toBe(2.002)
   })
 
+  it('keeps normal DefiLlama batching for contiguous daily timestamp history', async () => {
+    vi.stubEnv('HOLDINGS_PRICE_PROVIDER', 'defillama')
+    vi.stubEnv('DEFILLAMA_API_KEY', '')
+
+    const requests = Array.from({ length: 20 }, (_value, tokenIndex) => ({
+      chainId: 1,
+      address: `0x${(tokenIndex + 1).toString(16).padStart(40, '0')}`,
+      timestamps: Array.from({ length: 60 }, (_timestamp, dayIndex) => 1704153599 + dayIndex * 86_400)
+    }))
+    const fetchStub = vi.fn(async (input: string | URL | Request) => {
+      const requestUrl = new URL(input.toString())
+      const coinsParam = JSON.parse(decodeURIComponent(requestUrl.searchParams.get('coins') ?? 'null')) as Record<
+        string,
+        number[]
+      >
+
+      return createBatchResponse({
+        coins: Object.fromEntries(
+          Object.entries(coinsParam).map(([coinKey, timestamps]) => [
+            coinKey,
+            {
+              symbol: 'TKN',
+              prices: timestamps.map((timestamp) => ({ timestamp, price: 1, confidence: 0.99 }))
+            }
+          ])
+        )
+      })
+    })
+    vi.stubGlobal('fetch', fetchStub)
+
+    await fetchHistoricalPricesForTokenTimestamps(requests)
+
+    expect(fetchStub.mock.calls.length).toBeGreaterThan(1)
+    fetchStub.mock.calls.forEach(([input]) => {
+      const requestUrl = new URL(String(input))
+      const coinsParam = JSON.parse(decodeURIComponent(requestUrl.searchParams.get('coins') ?? 'null')) as Record<
+        string,
+        number[]
+      >
+
+      expect(requestUrl.pathname).toBe('/batchHistorical')
+      expect(Object.values(coinsParam).reduce((total, timestamps) => total + timestamps.length, 0)).toBeLessThanOrEqual(
+        500
+      )
+    })
+  })
+
   it('keeps yearn-prices batchHistorical requests below the conservative pair cap', async () => {
     vi.stubEnv('API_KEY_PORTFOLIO', 'portfolio-test-key')
 
@@ -305,6 +366,143 @@ describe('parseDefiLlamaResponse', () => {
     expect(prices.size).toBe(tokens.length)
   })
 
+  it('keeps twelve yearn-prices workers busy when an earlier batch is slower', async () => {
+    vi.stubEnv('API_KEY_PORTFOLIO', 'portfolio-test-key')
+
+    const tokens = Array.from({ length: 37 }, (_value, index) => ({
+      chainId: 1,
+      address: `0x${(index + 1).toString(16).padStart(40, '0')}`
+    }))
+    const timestamps = Array.from({ length: 45 }, (_value, index) => 1704153599 + index * 2 * 86_400)
+    const responses = Array.from({ length: 13 }, () => createDeferred<Response>())
+    const fetchCursor = { next: 0 }
+    const activity = { active: 0, peak: 0 }
+    const fetchStub = vi.fn(() => {
+      const response = responses[fetchCursor.next]!
+      fetchCursor.next += 1
+      activity.active += 1
+      activity.peak = Math.max(activity.peak, activity.active)
+      return response.promise.finally(() => {
+        activity.active -= 1
+      })
+    })
+    vi.stubGlobal('fetch', fetchStub)
+
+    const pricesPromise = fetchHistoricalPricesForTokenTimestamps(tokens.map((token) => ({ ...token, timestamps })))
+    await vi.waitFor(() => expect(fetchStub).toHaveBeenCalledTimes(12))
+
+    responses[0]!.resolve(createBatchResponse({ coins: {} }))
+    await vi.waitFor(() => expect(fetchStub).toHaveBeenCalledTimes(13))
+
+    responses.slice(1).forEach((response) => {
+      response.resolve(createBatchResponse({ coins: {} }))
+    })
+    const prices = await pricesPromise
+
+    expect(activity.peak).toBe(12)
+    expect(fetchStub).toHaveBeenCalledTimes(13)
+    expect(prices.size).toBe(tokens.length)
+  })
+
+  it('caps actual yearn-prices requests across concurrent callers', async () => {
+    vi.stubEnv('API_KEY_PORTFOLIO', 'portfolio-test-key')
+
+    const buildRequests = (addressOffset: number) => {
+      const timestamps = Array.from({ length: 45 }, (_value, index) => 1704153599 + index * 2 * 86_400)
+      return Array.from({ length: 37 }, (_value, index) => ({
+        chainId: 1,
+        address: `0x${(addressOffset + index + 1).toString(16).padStart(40, '0')}`,
+        timestamps
+      }))
+    }
+    const responses = Array.from({ length: 26 }, () => createDeferred<Response>())
+    const fetchCursor = { next: 0 }
+    const activity = { active: 0, peak: 0 }
+    const fetchStub = vi.fn(() => {
+      const response = responses[fetchCursor.next]!
+      fetchCursor.next += 1
+      activity.active += 1
+      activity.peak = Math.max(activity.peak, activity.active)
+      return response.promise.finally(() => {
+        activity.active -= 1
+      })
+    })
+    vi.stubGlobal('fetch', fetchStub)
+
+    const priceRequests = Promise.all([
+      fetchHistoricalPricesForTokenTimestamps(buildRequests(0)),
+      fetchHistoricalPricesForTokenTimestamps(buildRequests(100))
+    ])
+    await vi.waitFor(() => expect(fetchStub).toHaveBeenCalledTimes(12))
+
+    expect(activity.active).toBe(12)
+    responses.forEach((response) => {
+      response.resolve(createBatchResponse({ coins: {} }))
+    })
+
+    const prices = await priceRequests
+    expect(activity.peak).toBe(12)
+    expect(fetchStub).toHaveBeenCalledTimes(26)
+    expect(prices.map((priceMap) => priceMap.size)).toEqual([37, 37])
+  })
+
+  it('releases yearn-prices slots before recursively splitting concurrent batches', async () => {
+    vi.stubEnv('API_KEY_PORTFOLIO', 'portfolio-test-key')
+
+    const timestamp = 1704153599
+    const fetchStub = vi.fn(async (input: string | URL | Request) => {
+      const requestUrl = new URL(input.toString())
+      const coinsParam = JSON.parse(decodeURIComponent(requestUrl.searchParams.get('coins') ?? 'null')) as Record<
+        string,
+        number[]
+      >
+
+      if (Object.keys(coinsParam).length > 1) {
+        const error = new Error('The operation timed out.')
+        error.name = 'TimeoutError'
+        throw error
+      }
+
+      return createBatchResponse({
+        coins: Object.fromEntries(
+          Object.entries(coinsParam).map(([coinKey, requestedTimestamps]) => [
+            coinKey,
+            {
+              symbol: 'TKN',
+              prices: requestedTimestamps.map((requestedTimestamp) => ({
+                timestamp: requestedTimestamp,
+                price: 1,
+                confidence: 0.99
+              }))
+            }
+          ])
+        )
+      })
+    })
+    vi.stubGlobal('fetch', fetchStub)
+
+    const prices = await Promise.all(
+      Array.from({ length: 12 }, (_value, requestIndex) => {
+        const addressOffset = requestIndex * 2
+        return fetchHistoricalPricesForTokenTimestamps([
+          {
+            chainId: 1,
+            address: `0x${(addressOffset + 1).toString(16).padStart(40, '0')}`,
+            timestamps: [timestamp]
+          },
+          {
+            chainId: 1,
+            address: `0x${(addressOffset + 2).toString(16).padStart(40, '0')}`,
+            timestamps: [timestamp]
+          }
+        ])
+      })
+    )
+
+    expect(fetchStub).toHaveBeenCalledTimes(36)
+    expect(prices.every((priceMap) => priceMap.size === 2)).toBe(true)
+  })
+
   it('splits yearn-prices batches after timeout errors', async () => {
     vi.stubEnv('API_KEY_PORTFOLIO', 'portfolio-test-key')
 
@@ -362,6 +560,26 @@ describe('parseDefiLlamaResponse', () => {
     expect(getPriceAtTimestamp(priceMap, 1700000101)).toBe(0)
     expect(getPriceAtTimestamp(priceMap, 1700000102)).toBe(0.999211)
     expect(getPriceAtTimestamp(priceMap, 1773260546)).toBe(0.9966185770862551)
+  })
+
+  it('indexes an unsorted price map once and invalidates the index when it grows', () => {
+    const priceMap = new Map([
+      [300, 1.3],
+      [100, 1.1],
+      [200, 1.2]
+    ])
+    const keysSpy = vi.spyOn(priceMap, 'keys')
+
+    expect(getPriceAtTimestamp(priceMap, 200)).toBe(1.2)
+    expect(getPriceAtTimestamp(priceMap, 50)).toBe(0)
+    expect(getPriceAtTimestamp(priceMap, 250)).toBe(1.2)
+    expect(getPriceAtTimestamp(priceMap, 275)).toBe(1.2)
+    expect(getPriceAtTimestamp(priceMap, 350)).toBe(1.3)
+    expect(keysSpy).toHaveBeenCalledTimes(1)
+
+    priceMap.set(225, 1.225)
+    expect(getPriceAtTimestamp(priceMap, 250)).toBe(1.225)
+    expect(keysSpy).toHaveBeenCalledTimes(2)
   })
 
   it('retries bun connection refused errors and returns fetched prices', async () => {

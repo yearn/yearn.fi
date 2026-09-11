@@ -1,6 +1,7 @@
 import type { VaultWidgetTransactionPlan } from '@yearn/vault-widget/headless'
 import { Button } from '@yearn/vault-widget/internal/components/shared/Button'
 import { buildEligibleStyledWidgetPlan } from '@yearn/vault-widget/internal/components/widget/shared/plannedTransaction'
+import { useAtomicBatchSupport } from '@yearn/vault-widget/internal/hooks/useAtomicBatchSupport'
 import { useDebouncedInput } from '@yearn/vault-widget/internal/hooks/useDebouncedInput'
 import { useVaultWidgetSpotPrices } from '@yearn/vault-widget/internal/hooks/useVaultWidgetSpotPrices'
 import { IconChevron } from '@yearn/vault-widget/internal/icons/IconChevron'
@@ -32,7 +33,7 @@ import { WidgetHeader } from '../shared/WidgetHeader'
 import { WidgetLoadingSkeleton } from '../shared/WidgetLoadingSkeleton'
 import { getPriorityTokens } from './constants'
 import { SourceSelector } from './SourceSelector'
-import { buildSafeWithdrawBatch } from './safeWithdrawBatch'
+import { buildWithdrawBatch } from './safeWithdrawBatch'
 import type { WithdrawalSource, WithdrawWidgetProps } from './types'
 import { useWithdrawError } from './useWithdrawError'
 import { useWithdrawFlow } from './useWithdrawFlow'
@@ -149,6 +150,7 @@ export function WidgetWithdraw({
     isWalletSafe
   } = useWidgetContext({ chainId, vaultAddress })
   const runtime = useVaultWidgetRuntime()
+  const supportsAtomicBatch = useAtomicBatchSupport({ account, chainId, enabled: !isWalletSafe })
   const enableTokenListFetch = runtime.catalog.enableTokenList
 
   const resolvedDisplayAssetAddress = displayAssetAddress ?? assetAddress
@@ -766,12 +768,12 @@ export function WidgetWithdraw({
   })
   const formattedRequiredShares = formatTAmount({ value: effectiveRequiredShares, decimals: sharesDecimals })
   const formattedApprovalAmount = formatTAmount({ value: effectiveSourceShares, decimals: sharesDecimals })
-  const safeWithdrawBatch = useMemo(() => {
-    if (!isWalletSafe || !approvalState.needsApproval) {
+  const withdrawBatch = useMemo(() => {
+    if ((!isWalletSafe && !supportsAtomicBatch) || !approvalState.needsApproval) {
       return undefined
     }
 
-    return buildSafeWithdrawBatch({
+    return buildWithdrawBatch({
       routeType,
       account,
       sourceToken: toAddress(sourceToken),
@@ -801,6 +803,7 @@ export function WidgetWithdraw({
     isWalletSafe,
     routeType,
     sourceToken,
+    supportsAtomicBatch,
     zapSlippage
   ])
 
@@ -825,7 +828,7 @@ export function WidgetWithdraw({
         approveNotificationParams,
         unstakeNotificationParams,
         withdrawNotificationParams,
-        safeWithdrawBatch,
+        withdrawBatch,
         prepareApproveEnabled: !isWaitingForProtectedEnsoQuote && Boolean(activeFlow.periphery.prepareApproveEnabled),
         prepareWithdrawEnabled: isProtectedEnsoTransactionStepEnabled({
           canExecute: canExecuteProtectedEnsoQuote,
@@ -855,7 +858,7 @@ export function WidgetWithdraw({
       approveNotificationParams,
       unstakeNotificationParams,
       withdrawNotificationParams,
-      safeWithdrawBatch,
+      withdrawBatch,
       activeFlow.periphery.prepareApproveEnabled,
       activeFlow.periphery.prepareWithdrawEnabled,
       isWaitingForProtectedEnsoQuote,

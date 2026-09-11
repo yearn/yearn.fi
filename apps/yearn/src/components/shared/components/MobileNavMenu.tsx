@@ -2,8 +2,7 @@ import { Dialog, Transition, TransitionChild } from '@headlessui/react'
 import { setThemePreference, useThemePreference } from '@hooks/useThemePreference'
 import { BottomDrawer } from '@pages/vaults/components/detail/BottomDrawer'
 import { useAppSettings } from '@pages/vaults/contexts/useAppSettings'
-import { useWalletStatus } from '@shared/contexts/useWallet'
-import { useWalletVaultTotals } from '@shared/contexts/useWalletVaultTotals'
+import { WalletAccountValue } from '@shared/components/WalletAccountValue'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconClose } from '@shared/icons/IconClose'
@@ -20,7 +19,7 @@ import { LogoGithub } from '@shared/icons/LogoGithub'
 import { LogoYearn } from '@shared/icons/LogoYearn'
 import { LogoYearnMark } from '@shared/icons/LogoYearnMark'
 import { TypeMarkYearn } from '@shared/icons/TypeMarkYearn'
-import { cl, formatUSD } from '@shared/utils'
+import { cl } from '@shared/utils'
 import { truncateHex } from '@shared/utils/tools.address'
 import Link from 'next/link'
 import { useRouter } from 'next/navigation'
@@ -131,26 +130,12 @@ function MobileWalletDrawerContent({
   onViewPortfolio,
   onViewRecentActivity
 }: TMobileWalletDrawerContentProps): ReactElement {
-  const { isLoading: isWalletLoading } = useWalletStatus()
-  const { totalValue } = useWalletVaultTotals()
-
   return (
     <div className={'px-4 py-4'}>
       <div className={'mb-4 flex items-start justify-between'}>
         <div className={'flex flex-col'}>
           <p className={'text-sm font-medium text-text-primary'}>{displayName}</p>
-          {!isActive ? (
-            <p className={'text-sm text-text-secondary'}>{'Not connected'}</p>
-          ) : isWalletLoading ? (
-            <div className={'mt-1 h-7 w-20 animate-pulse rounded bg-surface-tertiary'} />
-          ) : (
-            <p className={'text-2xl font-bold text-text-primary'}>
-              <span>{formatUSD(Math.floor(totalValue), 0, 0)}</span>
-              <span className={'text-text-secondary'}>
-                {totalValue > 0 ? `.${(totalValue % 1).toFixed(2).substring(2)}` : ''}
-              </span>
-            </p>
-          )}
+          {!isActive ? <p className={'text-sm text-text-secondary'}>{'Not connected'}</p> : <WalletAccountValue />}
         </div>
         {isActive && (
           <button

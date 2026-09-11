@@ -19,6 +19,7 @@
     "./internal/components/widget/TokenSelector": "./src/components/widget/TokenSelector.tsx",
     "./internal/components/widget/deposit/safeDepositBatch": "./src/components/widget/deposit/safeDepositBatch.ts",
     "./internal/components/widget/deposit/types": "./src/components/widget/deposit/types.ts",
+    "./internal/components/widget/withdraw/safeWithdrawBatch": "./src/components/widget/withdraw/safeWithdrawBatch.ts",
     "./internal/components/widget/shared/valueDisplay": "./src/components/widget/shared/valueDisplay.ts",
     "./internal/components/widget/shared/*": "./src/components/widget/shared/*.tsx",
     "./internal/components/widget/tokenLogo.utils": "./src/components/widget/tokenLogo.utils.ts",
@@ -45,7 +46,7 @@
     "react-dom": "19.2.8",
     "react-rewards": "2.1.0",
     "viem": "2.55.11",
-    "wagmi": "2.18.2"
+    "wagmi": ">=2.18.2 <=2.19.5"
   },
   "devDependencies": {
     "@tanstack/react-query": "5.101.4",
@@ -59,6 +60,6 @@
     "typescript": "5.9.3",
     "viem": "2.55.11",
     "vitest": "4.1.10",
-    "wagmi": "2.18.2"
+    "wagmi": "2.19.5"
   }
 }

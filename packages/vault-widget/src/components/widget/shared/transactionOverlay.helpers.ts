@@ -50,13 +50,18 @@ export function formatPendingTransactionFunctionName(params: {
 
 export function getPendingTransactionTitle(params: {
   isPreparingNextStep: boolean
+  isBatch?: boolean
   functionName?: unknown
   fallbackLabel?: string
 }): string {
-  const { isPreparingNextStep, functionName, fallbackLabel } = params
+  const { isPreparingNextStep, isBatch, functionName, fallbackLabel } = params
 
   if (isPreparingNextStep) {
     return 'Transaction confirmed'
+  }
+
+  if (isBatch && fallbackLabel) {
+    return `${fallbackLabel} transaction pending`
   }
 
   const pendingFunctionName = formatPendingTransactionFunctionName({
@@ -163,27 +168,31 @@ export function resolveOverlayConnectedChainId(params: {
   return params.currentChainId
 }
 
-export function resolvePendingSafeOverlayTransition(params: {
+export function resolvePendingBatchOverlayTransition(params: {
   overlayState: OverlayState
   isWalletSafe: boolean
+  isCallBundle: boolean
   hasExecutionReceipt: boolean
   safeTxStatus?: SafeTransactionStatus
   callsStatus?: 'pending' | 'success' | 'failure'
 }): Extract<OverlayState, 'submitted' | 'error'> | undefined {
-  const { overlayState, isWalletSafe, hasExecutionReceipt, safeTxStatus, callsStatus } = params
+  const { overlayState, isWalletSafe, isCallBundle, hasExecutionReceipt, safeTxStatus, callsStatus } = params
   const normalizedSafeTxStatus = safeTxStatus?.replaceAll('-', '_').toUpperCase()
 
   if (overlayState !== 'pending' && overlayState !== 'submitted') return undefined
-  if (!isWalletSafe) return undefined
+  if (!isWalletSafe && !isCallBundle) return undefined
   if (hasExecutionReceipt) return undefined
 
-  if (normalizedSafeTxStatus === 'FAILED' || normalizedSafeTxStatus === 'CANCELLED') return 'error'
-  if (normalizedSafeTxStatus === 'AWAITING_CONFIRMATIONS' || normalizedSafeTxStatus === 'AWAITING_EXECUTION') {
+  if (isWalletSafe && (normalizedSafeTxStatus === 'FAILED' || normalizedSafeTxStatus === 'CANCELLED')) return 'error'
+  if (
+    isWalletSafe &&
+    (normalizedSafeTxStatus === 'AWAITING_CONFIRMATIONS' || normalizedSafeTxStatus === 'AWAITING_EXECUTION')
+  ) {
     return overlayState === 'pending' ? 'submitted' : undefined
   }
 
-  if (callsStatus === 'failure') return 'error'
-  if (callsStatus === 'pending') return overlayState === 'pending' ? 'submitted' : undefined
+  if ((isCallBundle || isWalletSafe) && callsStatus === 'failure') return 'error'
+  if (isWalletSafe && callsStatus === 'pending') return overlayState === 'pending' ? 'submitted' : undefined
 
   return undefined
 }
@@ -203,15 +212,16 @@ export function isConfirmedSafeTransactionFailure(params: {
 
 export function resolveExecutionTrackingHash(params: {
   isWalletSafe: boolean
+  isCallBundle: boolean
   submittedTxHash?: `0x${string}`
   safeExecutionTxHash?: `0x${string}`
   callsReceiptTxHash?: `0x${string}`
 }): `0x${string}` | undefined {
-  if (!params.isWalletSafe) {
-    return params.submittedTxHash
+  if (params.isWalletSafe) {
+    return params.safeExecutionTxHash ?? params.callsReceiptTxHash
   }
 
-  return params.safeExecutionTxHash ?? params.callsReceiptTxHash
+  return params.isCallBundle ? params.callsReceiptTxHash : params.submittedTxHash
 }
 
 export function hasExecutableWalletConnector(connector: unknown): boolean {

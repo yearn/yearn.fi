@@ -1,8 +1,10 @@
+import { resolve } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { loadEnvConfig } from '@next/env'
 import type { NextConfig } from 'next'
 
 const WORKSPACE_ROOT = fileURLToPath(new URL('../..', import.meta.url))
+const DISABLED_BASE_ACCOUNT_MODULE = resolve(import.meta.dirname, 'src/config/disabledBaseAccount.ts')
 loadEnvConfig(WORKSPACE_ROOT, process.env.NODE_ENV !== 'production', console, true)
 
 const CSP_REPORT_URI =
@@ -50,10 +52,23 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   reactStrictMode: true,
   poweredByHeader: false,
-  transpilePackages: ['@yearn/vault-widget'],
+  transpilePackages: ['@yearn/vault-widget', '@yearn/wallet-ui'],
   turbopack: {
     resolveAlias: {
+      '@base-org/account': './src/config/disabledBaseAccount.ts',
       '@safe-global/safe-apps-sdk': '../../node_modules/@safe-global/safe-apps-sdk/dist/esm'
+    }
+  },
+  webpack(config) {
+    return {
+      ...config,
+      resolve: {
+        ...config.resolve,
+        alias: {
+          ...config.resolve.alias,
+          '@base-org/account': DISABLED_BASE_ACCOUNT_MODULE
+        }
+      }
     }
   },
   images: {

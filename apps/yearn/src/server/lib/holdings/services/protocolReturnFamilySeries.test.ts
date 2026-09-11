@@ -26,7 +26,8 @@ function buildIsolatedSeries(args: { id: string; mode: TMode; window: TWindow; s
       date: `unused-${index}`,
       timestamp: index,
       protocolReturnPct: 123,
-      growthWeightUsd: args.mode === 'position' ? (index === windowStartIndex ? 0 : args.score) : null,
+      growthUsd: args.mode === 'position' ? (index === windowStartIndex ? 0 : args.score) : null,
+      growthWeightUsd: args.mode === 'position' ? args.score * 100 : null,
       growthIndex: args.mode === 'index' ? (index === windowStartIndex ? 100 : 100 + args.score) : null
     }))
   }
@@ -86,8 +87,28 @@ describe('selectProtocolReturnFamilySeriesCandidates', () => {
     expect(selected.map((series) => series.vaultAddress)).toEqual(['tie-0', 'tie-1', 'tie-2', 'tie-3', 'tie-4'])
     expect(selected[0]?.dataPoints[0]).toEqual({
       timestamp: 0,
-      growthWeightUsd: 5,
+      growthUsd: 5,
+      growthUsdEstimated: false,
+      growthWeightUsd: 500,
       growthIndex: null
     })
+  })
+
+  it('ranks position candidates by latest-price growth instead of receipt-weighted growth', () => {
+    const familySeries = Array.from({ length: 12 }, (_, index) => ({
+      chainId: 1,
+      vaultAddress: `latest-price-${index}`,
+      symbol: `latest-price-${index}`,
+      status: 'ok' as const,
+      dataPoints: [
+        { timestamp: 0, growthUsd: 0, growthWeightUsd: 0, growthIndex: null },
+        { timestamp: 1, growthUsd: index, growthWeightUsd: index === 6 ? 1_000 : index, growthIndex: null }
+      ]
+    }))
+
+    const selected = selectProtocolReturnFamilySeriesCandidates(familySeries, '1y')
+
+    expect(selected.map((series) => series.vaultAddress)).toContain('latest-price-11')
+    expect(selected.map((series) => series.vaultAddress)).not.toContain('latest-price-6')
   })
 })

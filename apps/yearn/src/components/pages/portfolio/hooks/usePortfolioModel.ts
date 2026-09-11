@@ -36,7 +36,7 @@ import {
 } from '@pages/vaults/utils/yvUsd'
 import { useWalletHoldings, useWalletStatus, useWalletTokens } from '@shared/contexts/useWallet'
 import { useWalletVaultTotals } from '@shared/contexts/useWalletVaultTotals'
-import { useWeb3 } from '@shared/contexts/useWeb3'
+import { useIsWalletConnecting, useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import { getVaultKey, isV3Vault, type TVaultFlags } from '@shared/hooks/useVaultFilterUtils'
 import { useYearnSpotPrices } from '@shared/hooks/useYearnSpotPrices'
@@ -88,6 +88,8 @@ export type TPortfolioBlendedMetrics = {
   estimatedAnnualReturn: number | null
 }
 
+export type TPortfolioSortBy = TPossibleSortBy | 'growth'
+
 export type TPortfolioModel = {
   blendedMetrics: TPortfolioBlendedMetrics
   hasClaimableRewards: boolean
@@ -98,13 +100,13 @@ export type TPortfolioModel = {
   isSearchingBalances: boolean
   hasKatanaHoldings: boolean
   openLoginModal: () => void
-  sortBy: TPossibleSortBy
+  sortBy: TPortfolioSortBy
   sortDirection: TSortDirection
   suggestedRows: TSuggestedItem[]
   liveBalanceSnapshot: TPortfolioLiveBalanceSnapshot | null
   totalPortfolioValue: number
   vaultFlags: Record<string, TVaultFlags>
-  setSortBy: TSortStateSetter<TPossibleSortBy>
+  setSortBy: TSortStateSetter<TPortfolioSortBy>
   setSortDirection: TSortStateSetter<TSortDirection>
 }
 
@@ -198,14 +200,15 @@ export function usePortfolioModel(): TPortfolioModel {
   const { getVaultHoldingsUsd } = useWalletHoldings()
   const { isLoading: isWalletLoading, hasCompletedBalanceLoad } = useWalletStatus()
   const { totalValue: vaultTotalPortfolioValue } = useWalletVaultTotals()
-  const { isActive, openLoginModal, isUserConnecting, isIdentityLoading } = useWeb3()
+  const { isActive, openLoginModal, isIdentityLoading } = useWeb3()
+  const isUserConnecting = useIsWalletConnecting()
   const { vaults, allVaults, isLoadingVaultList } = useYearn()
   const { getPrice } = useYearnSpotPrices([{ address: ETH_TOKEN_ADDRESS, chainID: 1 }])
   const { listVault: yvUsdVault, unlockedVault: yvUsdUnlockedVault, lockedVault: yvUsdLockedVault } = useYvUsdVaults()
   const { apyData: yvUsdHistoricalApyData } = useYvUsdCharts()
   const { shouldHideDust } = useAppSettings()
   const showHiddenVaults = usePersistedShowHiddenVaults()
-  const [sortBy, setSortBy] = useState<TPossibleSortBy>('deposited')
+  const [sortBy, setSortBy] = useState<TPortfolioSortBy>('deposited')
   const [sortDirection, setSortDirection] = useState<TSortDirection>('desc')
   const governancePositions = useGovernancePositions(isActive)
   const ycrvPosition = useYcrvPosition(isActive)
@@ -394,7 +397,7 @@ export function usePortfolioModel(): TPortfolioModel {
     [vaults]
   )
 
-  const sortedHoldings = useSortVaults(visibleHoldingsVaults, sortBy, sortDirection, {
+  const sortedHoldings = useSortVaults(visibleHoldingsVaults, sortBy === 'growth' ? 'none' : sortBy, sortDirection, {
     yvUsdApyOverride: yvUsdPosition.currentApyBreakdown.blendedApy
   })
   const sortedCandidates = useSortVaults(suggestedVaultCandidates, 'tvl', 'desc')

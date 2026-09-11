@@ -21,10 +21,13 @@ export default defineConfig({
   test: {
     globals: true,
     environment: 'node',
+    env: {
+      NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID: 'test-project-id'
+    },
     exclude: [...configDefaults.exclude],
     server: {
       deps: {
-        inline: ['@shared']
+        inline: ['@shared', /@reown\//, /@walletconnect\//]
       }
     }
   }

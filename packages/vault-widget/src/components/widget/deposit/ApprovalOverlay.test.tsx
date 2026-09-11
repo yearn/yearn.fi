@@ -6,6 +6,17 @@ import {
 } from './ApprovalOverlay.helpers'
 
 describe('resolveApprovalOverlayConnectedChainId', () => {
+  it('preserves an unsupported network reported by the wallet connection', () => {
+    expect(
+      resolveApprovalOverlayConnectedChainId({
+        accountChainId: 8453,
+        currentChainId: 1,
+        targetChainId: 1,
+        isWalletSafe: false
+      })
+    ).toBe(8453)
+  })
+
   it('falls back to the live wagmi chain id when useAccount().chain is missing for normal wallets', () => {
     expect(
       resolveApprovalOverlayConnectedChainId({

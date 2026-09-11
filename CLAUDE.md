@@ -62,7 +62,7 @@ When writing a new `useEffect`, add a brief comment explaining why an alternativ
 
 ## Architecture
 
-**Tech stack:** Next.js 16 App Router, React 19, Tailwind CSS 4, TanStack Query, Wagmi/Viem/RainbowKit
+**Tech stack:** Next.js 16 App Router, React 19, Tailwind CSS 4, TanStack Query, Wagmi/Viem/Reown AppKit
 
 The repository is a Bun workspace. The production application lives in
 `apps/yearn`; reusable packages live in `packages`.

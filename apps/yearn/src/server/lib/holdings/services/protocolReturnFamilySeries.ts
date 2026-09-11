@@ -6,6 +6,8 @@ import {
 
 type TProtocolReturnFamilyPoint = {
   timestamp: number
+  growthUsd: number | null
+  growthUsdEstimated?: boolean
   growthWeightUsd: number | null
   growthIndex: number | null
 }
@@ -14,8 +16,12 @@ type TProtocolReturnFamilySeries = {
   dataPoints: TProtocolReturnFamilyPoint[]
 }
 
+type TCompactProtocolReturnFamilyPoint = Omit<TProtocolReturnFamilyPoint, 'growthUsdEstimated'> & {
+  growthUsdEstimated: boolean
+}
+
 type TCompactProtocolReturnFamilySeries<TSeries extends TProtocolReturnFamilySeries> = Omit<TSeries, 'dataPoints'> & {
-  dataPoints: TProtocolReturnFamilyPoint[]
+  dataPoints: TCompactProtocolReturnFamilyPoint[]
 }
 
 type TProtocolReturnFamilyWindow = '30d' | '90d' | '1y' | 'all'
@@ -43,13 +49,13 @@ function isFiniteNumber(value: unknown): value is number {
 }
 
 function buildPositionRankPoints(points: TProtocolReturnFamilyPoint[]): Array<{ value: number | null }> {
-  const firstFiniteIndex = points.findIndex((point) => isFiniteNumber(point.growthWeightUsd))
+  const firstFiniteIndex = points.findIndex((point) => isFiniteNumber(point.growthUsd))
   if (firstFiniteIndex < 0 || points.length - firstFiniteIndex < 2) {
     return []
   }
 
-  const firstValue = points[firstFiniteIndex]?.growthWeightUsd
-  const lastValue = points.findLast((point) => isFiniteNumber(point.growthWeightUsd))?.growthWeightUsd
+  const firstValue = points[firstFiniteIndex]?.growthUsd
+  const lastValue = points.findLast((point) => isFiniteNumber(point.growthUsd))?.growthUsd
   if (!isFiniteNumber(firstValue) || !isFiniteNumber(lastValue)) {
     return []
   }
@@ -116,6 +122,8 @@ export function selectProtocolReturnFamilySeriesCandidates<TSeries extends TProt
         ...series,
         dataPoints: series.dataPoints.map((point) => ({
           timestamp: point.timestamp,
+          growthUsd: point.growthUsd,
+          growthUsdEstimated: point.growthUsdEstimated ?? false,
           growthWeightUsd: point.growthWeightUsd,
           growthIndex: point.growthIndex
         }))

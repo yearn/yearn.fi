@@ -23,7 +23,7 @@ import {
 } from '@yearn/vault-widget/types'
 import { type FC, useCallback, useEffect, useId, useRef, useState } from 'react'
 import { useReward } from 'react-rewards'
-import type { Address, TransactionReceipt, TypedData, TypedDataDomain } from 'viem'
+import type { Address, Hash, TransactionReceipt, TypedData, TypedDataDomain } from 'viem'
 import {
   useAccount,
   useCallsStatus,
@@ -51,7 +51,7 @@ import {
   resolveCrossChainSourceCompletion,
   resolveExecutionTrackingHash,
   resolveOverlayConnectedChainId,
-  resolvePendingSafeOverlayTransition,
+  resolvePendingBatchOverlayTransition,
   resolveTransactionReceiptOutcome,
   shouldAutoContinueFromSuccessState,
   shouldAutoContinuePermitSuccess,
@@ -261,8 +261,9 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     connectedExecutionChainId
   const { switchChainAsync } = useSwitchChain()
   const [txHash, setTxHash] = useState<`0x${string}` | undefined>()
+  const [submittedCallsId, setSubmittedCallsId] = useState<string | undefined>()
   const [submittedExecutionChainId, setSubmittedExecutionChainId] = useState<number | undefined>()
-  const { address: account, chain, connector, status: accountStatus } = useAccount()
+  const { address: account, chainId: accountChainId, connector, status: accountStatus } = useAccount()
   const isWalletSafe = runtime.safe.isSafe
   const isWalletConnectionReady =
     accountStatus === 'connected' && Boolean(account) && hasExecutableWalletConnector(connector)
@@ -273,7 +274,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     targetChainId
   )
   const connectedChainId = resolveOverlayConnectedChainId({
-    accountChainId: chain?.id,
+    accountChainId,
     currentChainId: connectedExecutionChainId,
     targetChainId: targetExecutionChainId,
     isWalletSafe
@@ -307,35 +308,40 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     getTransactionPreparationChainId(executedStepRef.current?.prepare) ??
     undefined
   const canonicalExplorerChainId = resolveCanonicalChainId(runtime.chains.resolveCanonicalChainId, explorerChainId)
+  const isCallBundle = Boolean(submittedCallsId)
+  const safeTrackingId = isWalletSafe ? (submittedCallsId ?? txHash) : undefined
+  const callsStatusId = submittedCallsId ?? safeTrackingId
   const safeTransactionDetails = useQuery({
-    queryKey: ['vault-widget', 'safe-transaction-details', txHash],
+    queryKey: ['vault-widget', 'safe-transaction-details', safeTrackingId],
     enabled:
-      Boolean(isWalletSafe && txHash && (overlayState === 'pending' || overlayState === 'submitted')) &&
+      Boolean(isWalletSafe && safeTrackingId && (overlayState === 'pending' || overlayState === 'submitted')) &&
       typeof window !== 'undefined',
-    queryFn: async () => (txHash ? await runtime.safe.getTransactionDetails(txHash) : undefined),
+    queryFn: async () =>
+      safeTrackingId ? await runtime.safe.getTransactionDetails(safeTrackingId as Hash) : undefined,
     refetchInterval: (query) => {
       const status = query.state.data?.status
       return status === 'success' || status === 'failed' || status === 'cancelled' ? false : 1500
     },
     retry: false
   })
-  const safeCallsStatus = useCallsStatus({
-    id: txHash || '0x',
+  const callsStatus = useCallsStatus({
+    id: callsStatusId || '0x',
     query: {
       enabled: Boolean(
-        isWalletSafe &&
-          txHash &&
+        callsStatusId &&
           (overlayState === 'pending' || overlayState === 'submitted') &&
-          !safeTransactionDetails.data?.executionTxHash
+          (!isWalletSafe || !safeTransactionDetails.data?.executionTxHash)
       ),
       refetchInterval: 1500
     }
   })
+  const callsReceiptTxHash = callsStatus.data?.receipts?.[0]?.transactionHash
   const executionTrackingHash = resolveExecutionTrackingHash({
     isWalletSafe,
+    isCallBundle,
     submittedTxHash: txHash,
     safeExecutionTxHash: safeTransactionDetails.data?.executionTxHash,
-    callsReceiptTxHash: safeCallsStatus.data?.receipts?.[0]?.transactionHash
+    callsReceiptTxHash
   })
   const receipt = useQuery({
     queryKey: ['vault-widget', 'submitted-transaction-receipt', submittedExecutionChainId, executionTrackingHash],
@@ -390,6 +396,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   const autoContinueNonceRef = useRef(0)
   const writeContractResetRef = useRef(writeContract.reset)
   const sendCallsResetRef = useRef(sendCalls.reset)
+  const notificationRegistrationRef = useRef<Promise<VaultWidgetNotificationId | undefined> | null>(null)
   const pendingCompletionRef = useRef<CompletionDeferral>('none')
   const completionFlowRef = useRef({ hasBridgeFailed: false })
   const hasRunAllCompleteRef = useRef(false)
@@ -573,7 +580,9 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       writeContractResetRef.current()
       sendCallsResetRef.current()
       setTxHash(undefined)
+      setSubmittedCallsId(undefined)
       setSubmittedExecutionChainId(undefined)
+      notificationRegistrationRef.current = null
       if (clearNotification) {
         setActiveNotificationId(undefined)
       }
@@ -623,22 +632,54 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       if (!notification || !account) return undefined
 
       try {
-        const id = await createSubmittedNotification({
+        return await createSubmittedNotification({
           ...notification,
           executionChainId: executionChainId ?? notification.executionChainId,
           ownerAddress: account,
           status,
           txHash
         })
-        if (id === undefined) return undefined
-        setActiveNotificationId(id)
-        return id
       } catch (error) {
         console.error('Failed to create notification:', error)
         return undefined
       }
     },
-    [account, createSubmittedNotification, setActiveNotificationId]
+    [account, createSubmittedNotification]
+  )
+
+  const ensureSubmittedNotification = useCallback(
+    (
+      hash: Hash,
+      currentStep: TransactionStep | null,
+      executionChainId: number | undefined,
+      status: 'pending' | 'submitted' = 'pending'
+    ): Promise<VaultWidgetNotificationId | undefined> => {
+      if (notificationIdRef.current !== undefined) {
+        return Promise.resolve(notificationIdRef.current)
+      }
+      if (notificationRegistrationRef.current) {
+        return notificationRegistrationRef.current
+      }
+      if (!currentStep) {
+        return Promise.resolve(undefined)
+      }
+
+      const registration = handleCreateSubmittedNotification(
+        hash,
+        currentStep.notification,
+        executionChainId,
+        status
+      ).then((id) => {
+        // A closed or failed attempt must not reclaim the active notification after a retry.
+        if (notificationRegistrationRef.current === registration) {
+          setActiveNotificationId(id)
+        }
+        return id
+      })
+      notificationRegistrationRef.current = registration
+      return registration
+    },
+    [handleCreateSubmittedNotification, setActiveNotificationId]
   )
 
   // Update notification with new status/receipt
@@ -671,13 +712,22 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     [updateNotification]
   )
 
+  const failSubmittedTransaction = useCallback(
+    (hash?: Hash) => {
+      const registration = hash
+        ? ensureSubmittedNotification(hash, executedStepRef.current, submittedExecutionChainId)
+        : (notificationRegistrationRef.current ?? Promise.resolve(notificationIdRef.current))
+
+      // Detach the failed attempt now; its pending write can finish without resetting a retry.
+      resetTxState(true)
+      void registration.then((id) => updateNotificationById(id, { status: 'error' }))
+    },
+    [ensureSubmittedNotification, resetTxState, submittedExecutionChainId, updateNotificationById]
+  )
+
   const beginSubmittedTransaction = useCallback(
     async (hash: `0x${string}`, currentStep: TransactionStep, executionChainId: number | undefined): Promise<void> => {
-      const submittedNotificationId = await handleCreateSubmittedNotification(
-        hash,
-        currentStep.notification,
-        executionChainId
-      )
+      const submittedNotificationId = await ensureSubmittedNotification(hash, currentStep, executionChainId)
       if (isCrossChainNotification(currentStep.notification)) {
         if (!currentStep.notification?.bridgeProtocol) {
           setLocalBridgeTracking({
@@ -696,8 +746,27 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       setTxHash(hash)
       setOverlayState('pending')
     },
-    [handleCreateSubmittedNotification]
+    [ensureSubmittedNotification]
   )
+
+  const beginSubmittedCallBundle = useCallback(
+    async (id: string, currentStep: TransactionStep, executionChainId: number | undefined): Promise<void> => {
+      if (isWalletSafe) {
+        await ensureSubmittedNotification(id as Hash, currentStep, executionChainId)
+      }
+
+      setSubmittedExecutionChainId(executionChainId)
+      setSubmittedCallsId(id)
+      setOverlayState('pending')
+    },
+    [ensureSubmittedNotification, isWalletSafe]
+  )
+
+  useEffect(() => {
+    // A call bundle has no transaction hash until the wallet reports its receipt.
+    if (!submittedCallsId || isWalletSafe || !callsReceiptTxHash || !executedStepRef.current) return
+    void ensureSubmittedNotification(callsReceiptTxHash, executedStepRef.current, submittedExecutionChainId)
+  }, [callsReceiptTxHash, ensureSubmittedNotification, isWalletSafe, submittedCallsId, submittedExecutionChainId])
 
   const executePlannedStep = useCallback(async () => {
     if (!plan || !step || !account) {
@@ -848,11 +917,6 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   const executeContractStep = useCallback(
     async (currentStep: TransactionStep) => {
       if (currentStep.batch) {
-        if (!isWalletSafe) {
-          setOverlayState('error')
-          setErrorMessage('Batch transactions are only available in Safe.')
-          return
-        }
         if (!account || currentStep.batch.calls.length === 0) {
           setOverlayState('error')
           setErrorMessage('Transaction not ready. Please try again.')
@@ -879,14 +943,14 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
               onClose()
               return
             }
-            console.warn('[TransactionOverlay] Safe batch chain switch failed', {
+            console.warn('[TransactionOverlay] Batch chain switch failed', {
               to: txChainId,
               step: currentStep.label,
               error: error?.message || error
             })
             setOverlayState('error')
             setErrorMessage(
-              'Unable to switch networks for this transaction. Please confirm your Safe is opened on the correct chain.'
+              'Unable to switch networks for this transaction. Please confirm your wallet is on the correct chain.'
             )
             return
           }
@@ -899,14 +963,13 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
             forceAtomic: true,
             calls: currentStep.batch.calls
           })
-          const hash = result.id as `0x${string}`
-          await beginSubmittedTransaction(hash, currentStep, executionTxChainId)
+          await beginSubmittedCallBundle(result.id, currentStep, executionTxChainId)
         } catch (error: any) {
           if (isUserRejectionError(error)) {
             onClose()
             return
           }
-          console.error('Safe batch transaction failed:', error)
+          console.error('Batch transaction failed:', error)
           setOverlayState('error')
           setErrorMessage(getTransactionErrorMessage(error))
         }
@@ -952,7 +1015,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
           })
           setOverlayState('error')
           setErrorMessage(
-            'Unable to switch networks for this transaction. Please confirm your Safe is opened on the correct chain.'
+            'Unable to switch networks for this transaction. Please confirm your wallet is on the correct chain.'
           )
           return
         }
@@ -1004,10 +1067,10 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     [
       connectedChainId,
       runtime.chains,
+      beginSubmittedCallBundle,
       beginSubmittedTransaction,
       account,
       isLastStep,
-      isWalletSafe,
       onClose,
       sendCalls,
       setStepExecutionContext,
@@ -1247,24 +1310,25 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   }, [executeStep, isOpen, isStepReady, isWaitingForNextStep, step])
 
   useEffect(() => {
-    const pendingSafeTransition = resolvePendingSafeOverlayTransition({
+    const pendingBatchTransition = resolvePendingBatchOverlayTransition({
       overlayState,
       isWalletSafe,
+      isCallBundle,
       hasExecutionReceipt: Boolean(receipt.data?.transactionHash),
       safeTxStatus: safeTransactionDetails.data?.status,
-      callsStatus: safeCallsStatus.data?.status
+      callsStatus: callsStatus.data?.status
     })
 
-    if (pendingSafeTransition === 'submitted') {
+    if (pendingBatchTransition === 'submitted') {
       setOverlayState('submitted')
       void updateNotificationById(notificationIdRef.current, { status: 'submitted', awaitingExecution: true })
       return
     }
 
-    if (pendingSafeTransition === 'error') {
+    if (pendingBatchTransition === 'error') {
       const isConfirmedSafeFailure = isConfirmedSafeTransactionFailure({
         isWalletSafe,
-        submittedTxHash: txHash,
+        submittedTxHash: safeTrackingId,
         safeTxHash: safeTransactionDetails.data?.safeTxHash,
         safeTxStatus: safeTransactionDetails.data?.status
       })
@@ -1274,21 +1338,20 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
           ? 'Transaction failed in Safe. Please review your Safe queue and try again.'
           : 'Transaction failed. Please try again.'
       )
-      resetTxState()
-      void updateNotificationById(notificationIdRef.current, { status: 'error' })
-      setActiveNotificationId(undefined)
+      failSubmittedTransaction(callsReceiptTxHash)
     }
   }, [
     overlayState,
     isWalletSafe,
-    txHash,
+    isCallBundle,
+    safeTrackingId,
     receipt.data?.transactionHash,
     safeTransactionDetails.data?.safeTxHash,
     safeTransactionDetails.data?.status,
-    safeCallsStatus.data?.status,
-    updateNotificationById,
-    resetTxState,
-    setActiveNotificationId
+    callsStatus.data?.status,
+    callsReceiptTxHash,
+    failSubmittedTransaction,
+    updateNotificationById
   ])
 
   // Handle transaction success
@@ -1339,7 +1402,12 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
         }
 
         const persistAndAdvance = async () => {
-          await updateNotificationById(notificationIdRef.current, {
+          const submittedNotificationId = await ensureSubmittedNotification(
+            receiptHash,
+            executedStepRef.current,
+            submittedExecutionChainId
+          )
+          await updateNotificationById(submittedNotificationId, {
             receipt: receipt.data ?? undefined,
             status: 'success'
           })
@@ -1391,7 +1459,12 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       if (isCrossChain) {
         const completionFlow = completionFlowRef.current
         void (async () => {
-          const didPersistSourceConfirmation = await updateNotificationById(notificationIdRef.current, {
+          const submittedNotificationId = await ensureSubmittedNotification(
+            receiptHash,
+            capturedStep,
+            submittedExecutionChainId
+          )
+          const didPersistSourceConfirmation = await updateNotificationById(submittedNotificationId, {
             receipt: capturedReceipt,
             status: 'submitted',
             bridgeStatus: 'pending'
@@ -1441,9 +1514,14 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
         return
       }
 
-      resetTxState()
       void (async () => {
-        await updateNotificationById(notificationIdRef.current, { receipt: capturedReceipt, status: 'success' })
+        const submittedNotificationId = await ensureSubmittedNotification(
+          receiptHash,
+          capturedStep,
+          submittedExecutionChainId
+        )
+        await updateNotificationById(submittedNotificationId, { receipt: capturedReceipt, status: 'success' })
+        resetTxState()
         setActiveNotificationId(undefined)
         handledSuccessReceiptRef.current = receiptHash
         processingSuccessReceiptRef.current = null
@@ -1469,6 +1547,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     receipt.data?.transactionHash,
     overlayState,
     requestConfetti,
+    ensureSubmittedNotification,
     updateNotificationById,
     reportStepSuccess,
     onBeforeSuccess,
@@ -1483,6 +1562,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     finalizeSuccessState,
     runAllComplete,
     isWalletSafe,
+    submittedExecutionChainId,
     waitForAutoContinueBlock,
     setActiveNotificationId
   ])
@@ -1545,13 +1625,9 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     if (receiptOutcome === 'error' && (overlayState === 'pending' || overlayState === 'submitted')) {
       setOverlayState('error')
       setErrorMessage('Transaction failed. Please try again.')
-      resetTxState()
-
-      // Update notification to error
-      void updateNotificationById(notificationIdRef.current, { status: 'error' })
-      setActiveNotificationId(undefined)
+      failSubmittedTransaction(receipt.data?.transactionHash)
     }
-  }, [receiptOutcome, overlayState, resetTxState, setActiveNotificationId, updateNotificationById])
+  }, [failSubmittedTransaction, overlayState, receipt.data?.transactionHash, receiptOutcome])
 
   // When step 1 succeeds in a multi-step flow, the next step simulation may need a refetch
   // to pick up post-transaction state (e.g. unstake -> withdraw).
@@ -1653,6 +1729,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
               <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">
                 {getPendingTransactionTitle({
                   isPreparingNextStep,
+                  isBatch: Boolean(executedStepRef.current?.batch),
                   functionName: executedStepFunctionName,
                   fallbackLabel: executedStepLabel
                 })}

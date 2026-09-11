@@ -36,8 +36,13 @@ export function useStakingAssetConversions({
   userAddress?: Address
 }): Record<string, bigint> {
   const config = useConfig()
+  const canResolveStaking = Boolean(userAddress && !isZeroAddress(userAddress))
 
   const stakingVaults = useMemo((): TStakingVault[] => {
+    if (!canResolveStaking) {
+      return []
+    }
+
     const vaults: TStakingVault[] = []
     const seen = new Set<string>()
 
@@ -63,7 +68,7 @@ export function useStakingAssetConversions({
     })
 
     return vaults
-  }, [allVaults])
+  }, [allVaults, canResolveStaking])
 
   const stakingPositions = useMemo((): TStakingPosition[] => {
     if (!userAddress || isZeroAddress(userAddress)) {

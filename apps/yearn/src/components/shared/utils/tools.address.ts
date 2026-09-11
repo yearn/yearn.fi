@@ -1,6 +1,5 @@
+import type { TAddress, TAddressLike } from '@shared/types'
 import { getAddress, zeroAddress } from 'viem'
-import type { TAddress, TAddressLike, TAddressSmol } from '../types'
-import { isTAddress, isZeroAddress } from './tools.is'
 
 /******************************************************************************
  ** toAddress - Wagmi only requires a 0xString as a valid address. To use our
@@ -12,26 +11,11 @@ export function toAddress(address?: TAddressLike | null): TAddress {
     return zeroAddress
   }
   const trimmedAddress = address.trim()
-  return getAddress(toChecksumAddress(trimmedAddress)?.valueOf())
-}
-
-/******************************************************************************
- ** checksumAddress - Used to convert something looking like an address to
- ** a valid address. It will return the zero address if the address is not
- ** valid.
- *****************************************************************************/
-function toChecksumAddress(address?: string | null | undefined): TAddressSmol {
   try {
-    if (address && address !== 'GENESIS') {
-      const checksummedAddress = getAddress(address)
-      if (isTAddress(checksummedAddress)) {
-        return checksummedAddress as TAddressSmol
-      }
-    }
+    return getAddress(trimmedAddress)
   } catch {
-    // console.error(error);
+    return zeroAddress
   }
-  return zeroAddress as TAddressSmol
 }
 
 /******************************************************************************
@@ -40,7 +24,7 @@ function toChecksumAddress(address?: string | null | undefined): TAddressSmol {
  ** will be truncated to 0x1234...5678
  *****************************************************************************/
 export function truncateHex(address: string | undefined, size: number): string {
-  if (isZeroAddress(address)) {
+  if (toAddress(address) === zeroAddress) {
     if (size === 0) {
       return zeroAddress
     }
