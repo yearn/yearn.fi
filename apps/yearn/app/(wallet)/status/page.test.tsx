@@ -21,6 +21,11 @@ const health: TSiteHealth = {
       latencyMs: 42,
       representationUpdatedAt: '2026-09-01T11:59:00.000Z'
     },
+    prices: { state: 'operational', latencyMs: 35 },
+    portfolio: { state: 'operational', latencyMs: 51 },
+    transactions: { state: 'unavailable', latencyMs: 63 },
+    cms: { state: 'operational', latencyMs: 71 },
+    tokenAssets: { state: 'operational', latencyMs: 82 },
     rpc: {
       state: 'degraded',
       operational: 1,
@@ -43,16 +48,30 @@ describe('system status page', () => {
 
     expect(html).toContain('<h1')
     expect(html).toContain('System status')
-    expect(html).toContain('Kong vault data')
+    expect(html).toContain('Vault data')
+    expect(html).toContain('Prices')
+    expect(html).toContain('Portfolio activity')
+    expect(html).toContain('Transactions')
+    expect(html).toContain('Yearn Prices')
+    expect(html).toContain('Envio indexer')
+    expect(html).toContain('Enso routing')
+    expect(html).toContain('Yearn CMS')
+    expect(html).toContain('Token assets')
+    expect(html).toContain('Network connections')
     expect(html).toContain('Ethereum')
     expect(html).toContain('Optimism')
-    expect(html).toContain('Health checked')
-    expect(html).toContain('Status snapshot generated')
-    expect(html).toContain('Most recent direct checks, cached for 30 seconds.')
-    expect(html).toContain('Kong representation modified')
+    expect(html).toContain('Last checked')
+    expect(html).toContain('Status generated')
+    expect(html).toContain('Checks are cached for 30 seconds.')
+    expect(html).toContain('Vault data modified')
     expect(html).toContain('Site build created')
+    expect(html).toContain('<summary')
+    expect(html).toContain('Technical details')
+    expect(html).not.toContain('Yearn infrastructure')
     expect(html).toContain('href="/api/status"')
     expect(html).toContain('href="/api/vaults/markdown"')
+    expect(html).toContain('href="https://cms.yearn.fi"')
+    expect(html).toContain('href="https://token-assets.yearn.fi"')
   })
 
   it('advertises a canonical HTML URL and JSON alternate', () => {

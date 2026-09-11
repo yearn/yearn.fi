@@ -16,7 +16,7 @@ export const dynamic = 'force-dynamic'
 
 export const metadata: Metadata = {
   title: 'System Status',
-  description: 'Live reachability status for Yearn vault data and supported network RPCs.',
+  description: 'Live availability for Yearn services and supported networks.',
   alternates: {
     canonical: '/status',
     types: {
@@ -25,7 +25,7 @@ export const metadata: Metadata = {
   },
   openGraph: {
     title: 'Yearn System Status',
-    description: 'Live reachability status for Yearn vault data and supported network RPCs.',
+    description: 'Live availability for Yearn services and supported networks.',
     url: '/status',
     type: 'website'
   }
@@ -38,9 +38,9 @@ type TStatusLabelProps = {
 
 function StatusLabel({ state, label }: TStatusLabelProps): ReactElement {
   return (
-    <span className={'inline-flex items-center gap-2 font-aeonik-mono text-xs uppercase tracking-[0.08em]'}>
+    <span className={'inline-flex items-center gap-2 text-sm'}>
       <span className={cl('size-2 rounded-full', getSiteHealthStateClassName(state))} aria-hidden={'true'} />
-      <span>{label ?? getSiteHealthStateLabel(state)}</span>
+      <span className={'font-medium'}>{label ?? getSiteHealthStateLabel(state)}</span>
     </span>
   )
 }
@@ -63,131 +63,127 @@ export default async function Page(): Promise<ReactElement> {
 
   return (
     <div className={'min-h-[calc(100vh-var(--header-height))] bg-app text-text-primary'}>
-      <div className={'mx-auto w-full max-w-[1232px] px-4 pb-20 pt-4 md:pt-8'}>
+      <div className={'mx-auto w-full max-w-[960px] px-4 pb-16 pt-4 md:pt-8'}>
         <Breadcrumbs
-          className={'mb-10'}
+          className={'mb-6'}
           items={[
             { label: 'Home', href: '/' },
             { label: 'System status', href: '/status', isCurrent: true }
           ]}
         />
 
-        <header className={'grid gap-8 pb-12 md:grid-cols-[minmax(0,1fr)_auto] md:items-end'}>
-          <div className={'max-w-2xl'}>
-            <p className={'mb-3 font-aeonik-mono text-xs uppercase tracking-[0.12em] text-text-secondary'}>
-              {'Yearn infrastructure'}
-            </p>
-            <h1 className={'text-4xl font-bold tracking-[-0.03em] md:text-6xl'}>{'System status'}</h1>
-            <p className={'mt-4 max-w-xl text-base leading-7 text-text-secondary md:text-lg'}>
-              {'Live reachability checks for the Kong vault-data service and every network RPC supported by yearn.fi.'}
+        <header
+          className={'flex flex-col gap-5 border-b border-border pb-6 sm:flex-row sm:items-center sm:justify-between'}
+        >
+          <div>
+            <h1 className={'text-3xl font-semibold tracking-[-0.02em]'}>{'System status'}</h1>
+            <p className={'mt-2 text-sm text-text-secondary'}>
+              {'Current availability for Yearn services and supported networks.'}
             </p>
           </div>
-          <div className={'flex items-center gap-4 md:pb-1'}>
-            <span
-              className={cl(
-                'size-4 rounded-full shadow-[0_0_0_8px_var(--color-surface)]',
-                getSiteHealthStateClassName(overallState)
-              )}
-              aria-hidden={'true'}
-            />
-            <div>
-              <p className={'text-2xl font-medium'}>{overallLabel}</p>
-              <p className={'font-aeonik-mono text-xs uppercase tracking-[0.08em] text-text-secondary'}>
-                {'Overall state'}
-              </p>
-            </div>
-          </div>
+          <StatusLabel state={overallState} label={overallLabel} />
         </header>
 
-        <section aria-labelledby={'services-heading'} className={'border-t border-border py-10'}>
-          <div className={'mb-8 flex flex-col gap-2 md:flex-row md:items-end md:justify-between'}>
-            <div>
-              <h2 id={'services-heading'} className={'text-2xl font-semibold tracking-[-0.02em]'}>
-                {'Services'}
-              </h2>
-              <p className={'mt-1 text-sm text-text-secondary'}>
-                {'Most recent direct checks, cached for 30 seconds.'}
-              </p>
-            </div>
-            <Link
-              href={'/api/status'}
-              prefetch={false}
-              className={
-                'text-sm text-text-secondary underline decoration-border underline-offset-4 hover:text-text-primary'
-              }
-            >
-              {'View status JSON'}
-            </Link>
+        <section aria-labelledby={'services-heading'} className={'py-8'}>
+          <div className={'flex flex-wrap items-baseline justify-between gap-2'}>
+            <h2 id={'services-heading'} className={'text-xl font-semibold'}>
+              {'Services'}
+            </h2>
+            <time className={'text-xs text-text-secondary'} dateTime={health.checkedAt}>
+              {`Checked ${formatSiteStatusDate(health.checkedAt)}`}
+            </time>
           </div>
 
-          <div className={'grid border-y border-border md:grid-cols-2 md:divide-x md:divide-border'}>
-            <div className={'py-7 md:pr-10'}>
-              <div className={'flex items-center justify-between gap-4'}>
-                <h3 className={'text-lg font-medium'}>{'Kong vault data'}</h3>
+          <dl className={'mt-4 divide-y divide-border'}>
+            <div className={'flex items-center justify-between gap-6 py-5'}>
+              <div>
+                <dt className={'font-medium'}>{'Vault data'}</dt>
+                <dd className={'mt-1 text-sm text-text-secondary'}>{'Kong API'}</dd>
+              </div>
+              <dd className={'text-right'}>
                 <StatusLabel state={health.services.kong.state} />
-              </div>
-              <p className={'mt-3 max-w-md text-sm leading-6 text-text-secondary'}>
-                {'Canonical vault metadata, APY, TVL, strategy composition, and availability.'}
-              </p>
-              <p className={'mt-5 font-aeonik-mono text-xs text-text-secondary'}>
-                {`${health.services.kong.latencyMs} ms response`}
-              </p>
+                <p className={'mt-1 font-aeonik-mono text-xs text-text-secondary'}>
+                  {`${health.services.kong.latencyMs} ms response`}
+                </p>
+              </dd>
             </div>
-            <div className={'border-t border-border py-7 md:border-t-0 md:pl-10'}>
-              <div className={'flex items-center justify-between gap-4'}>
-                <h3 className={'text-lg font-medium'}>{'Network RPCs'}</h3>
-                <StatusLabel
-                  state={health.services.rpc.state}
-                  label={`${health.services.rpc.operational}/${health.services.rpc.total} operational`}
-                />
+            {[
+              { label: 'Prices', provider: 'Yearn Prices', service: health.services.prices },
+              { label: 'Portfolio activity', provider: 'Envio indexer', service: health.services.portfolio },
+              { label: 'Transactions', provider: 'Enso routing', service: health.services.transactions },
+              { label: 'Yearn CMS', provider: 'cms.yearn.fi', service: health.services.cms },
+              { label: 'Token assets', provider: 'token-assets.yearn.fi', service: health.services.tokenAssets }
+            ].map(({ label, provider, service }) => (
+              <div key={label} className={'flex items-center justify-between gap-6 py-5'}>
+                <div>
+                  <dt className={'font-medium'}>{label}</dt>
+                  <dd className={'mt-1 text-sm text-text-secondary'}>{provider}</dd>
+                </div>
+                <dd className={'text-right'}>
+                  <StatusLabel state={service.state} />
+                  <p className={'mt-1 font-aeonik-mono text-xs text-text-secondary'}>
+                    {`${service.latencyMs} ms response`}
+                  </p>
+                </dd>
               </div>
-              <p className={'mt-3 max-w-md text-sm leading-6 text-text-secondary'}>
-                {'Read-only chain access used to retrieve balances, positions, and contract state.'}
-              </p>
-              <p className={'mt-5 font-aeonik-mono text-xs text-text-secondary'}>
-                {getSiteHealthStateLabel(health.services.rpc.state)}
-              </p>
+            ))}
+            <div className={'flex items-center justify-between gap-6 py-5'}>
+              <div>
+                <dt className={'font-medium'}>{'Network connections'}</dt>
+                <dd className={'mt-1 text-sm text-text-secondary'}>
+                  {`${health.services.rpc.operational} of ${health.services.rpc.total} responding`}
+                </dd>
+              </div>
+              <dd>
+                <StatusLabel state={health.services.rpc.state} />
+              </dd>
             </div>
-          </div>
+          </dl>
         </section>
 
-        <section aria-labelledby={'networks-heading'} className={'border-t border-border py-10'}>
-          <h2 id={'networks-heading'} className={'text-2xl font-semibold tracking-[-0.02em]'}>
-            {'Supported networks'}
+        <section aria-labelledby={'networks-heading'} className={'border-t border-border py-8'}>
+          <h2 id={'networks-heading'} className={'text-xl font-semibold'}>
+            {'Networks'}
           </h2>
-          <div className={'mt-7 overflow-x-auto'}>
-            <table className={'w-full min-w-[34rem] border-collapse text-left'}>
+          <div className={'mt-4 overflow-x-auto'}>
+            <table className={'w-full border-collapse text-left'}>
               <thead
                 className={
-                  'border-y border-border font-aeonik-mono text-[10px] uppercase tracking-[0.1em] text-text-secondary'
+                  'border-b border-border font-aeonik-mono text-[10px] uppercase tracking-[0.1em] text-text-secondary'
                 }
               >
                 <tr>
                   <th scope={'col'} className={'py-3 pr-4 font-normal'}>
                     {'Network'}
                   </th>
-                  <th scope={'col'} className={'px-4 py-3 font-normal'}>
+                  <th scope={'col'} className={'hidden px-4 py-3 font-normal sm:table-cell'}>
                     {'Chain ID'}
                   </th>
                   <th scope={'col'} className={'px-4 py-3 font-normal'}>
                     {'State'}
                   </th>
-                  <th scope={'col'} className={'py-3 pl-4 text-right font-normal'}>
+                  <th scope={'col'} className={'hidden py-3 pl-4 text-right font-normal sm:table-cell'}>
                     {'Response'}
                   </th>
                 </tr>
               </thead>
               <tbody>
                 {health.services.rpc.chains.map((chain) => (
-                  <tr key={chain.chainId} className={'border-b border-border'}>
+                  <tr key={chain.chainId} className={'border-b border-border last:border-b-0'}>
                     <th scope={'row'} className={'py-4 pr-4 font-medium'}>
                       {chain.name}
                     </th>
-                    <td className={'px-4 py-4 font-aeonik-mono text-xs text-text-secondary'}>{chain.chainId}</td>
+                    <td className={'hidden px-4 py-4 font-aeonik-mono text-xs text-text-secondary sm:table-cell'}>
+                      {chain.chainId}
+                    </td>
                     <td className={'px-4 py-4'}>
                       <StatusLabel state={chain.state} />
                     </td>
-                    <td className={'py-4 pl-4 text-right font-aeonik-mono text-xs text-text-secondary'}>
+                    <td
+                      className={
+                        'hidden py-4 pl-4 text-right font-aeonik-mono text-xs text-text-secondary sm:table-cell'
+                      }
+                    >
                       {`${chain.latencyMs} ms`}
                     </td>
                   </tr>
@@ -197,58 +193,55 @@ export default async function Page(): Promise<ReactElement> {
           </div>
         </section>
 
-        <section aria-labelledby={'freshness-heading'} className={'border-t border-border py-10'}>
-          <div className={'grid gap-10 md:grid-cols-[minmax(0,0.7fr)_minmax(0,1.3fr)]'}>
+        <details className={'border-t border-border py-5'}>
+          <summary className={'cursor-pointer text-sm font-medium'}>{'Technical details'}</summary>
+          <div className={'mt-5 grid gap-8 md:grid-cols-2'}>
             <div>
-              <h2 id={'freshness-heading'} className={'text-2xl font-semibold tracking-[-0.02em]'}>
-                {'Freshness'}
-              </h2>
-              <p className={'mt-3 max-w-sm text-sm leading-6 text-text-secondary'}>
-                {
-                  'These timestamps describe different events. A health check does not imply that financial data changed.'
-                }
-              </p>
+              <h2 className={'text-sm font-medium'}>{'Times'}</h2>
+              <dl className={'mt-3'}>
+                <Timestamp label={'Last checked'} value={health.checkedAt} />
+                <Timestamp label={'Status generated'} value={health.generatedAt} />
+                <Timestamp
+                  label={'Vault data modified'}
+                  value={health.services.kong.representationUpdatedAt}
+                  fallback={'Not reported by Kong'}
+                />
+                <Timestamp label={'Site build created'} value={health.builtAt} fallback={'Not available'} />
+              </dl>
+              <p className={'mt-3 text-xs text-text-secondary'}>{'Checks are cached for 30 seconds.'}</p>
             </div>
-            <dl>
-              <Timestamp label={'Health checked'} value={health.checkedAt} />
-              <Timestamp label={'Status snapshot generated'} value={health.generatedAt} />
-              <Timestamp
-                label={'Kong representation modified'}
-                value={health.services.kong.representationUpdatedAt}
-                fallback={'No Last-Modified timestamp reported by Kong'}
-              />
-              <Timestamp
-                label={'Site build created'}
-                value={health.builtAt}
-                fallback={'Build timestamp not available in this environment'}
-              />
-            </dl>
+            <nav aria-label={'Technical links'}>
+              <h2 className={'text-sm font-medium'}>{'Links'}</h2>
+              <ul className={'mt-4 space-y-3 text-sm'}>
+                <li>
+                  <Link href={'/api/status'} prefetch={false} className={'underline underline-offset-4'}>
+                    {'Status JSON'}
+                  </Link>
+                </li>
+                <li>
+                  <a href={'https://kong.yearn.fi/api/rest/list/vaults'} className={'underline underline-offset-4'}>
+                    {'Vault data JSON'}
+                  </a>
+                </li>
+                <li>
+                  <Link href={'/api/vaults/markdown'} prefetch={false} className={'underline underline-offset-4'}>
+                    {'Vault catalog Markdown'}
+                  </Link>
+                </li>
+                <li>
+                  <a href={'https://cms.yearn.fi'} className={'underline underline-offset-4'}>
+                    {'Yearn CMS'}
+                  </a>
+                </li>
+                <li>
+                  <a href={'https://token-assets.yearn.fi'} className={'underline underline-offset-4'}>
+                    {'Token assets'}
+                  </a>
+                </li>
+              </ul>
+            </nav>
           </div>
-        </section>
-
-        <nav aria-label={'Machine-readable resources'} className={'border-y border-border py-8'}>
-          <p className={'mb-4 font-aeonik-mono text-[10px] uppercase tracking-[0.1em] text-text-secondary'}>
-            {'Machine-readable resources'}
-          </p>
-          <div className={'flex flex-wrap gap-x-8 gap-y-3 text-sm'}>
-            <Link href={'/api/status'} prefetch={false} className={'underline decoration-border underline-offset-4'}>
-              {'Status JSON'}
-            </Link>
-            <a
-              href={'https://kong.yearn.fi/api/rest/list/vaults'}
-              className={'underline decoration-border underline-offset-4'}
-            >
-              {'Canonical vault JSON'}
-            </a>
-            <Link
-              href={'/api/vaults/markdown'}
-              prefetch={false}
-              className={'underline decoration-border underline-offset-4'}
-            >
-              {'Vault catalog Markdown'}
-            </Link>
-          </div>
-        </nav>
+        </details>
       </div>
     </div>
   )

@@ -17,6 +17,7 @@ import { toggleInArray } from '@pages/vaults/utils/constants'
 import type { TVaultsInitialPayload } from '@pages/vaults/utils/vaultsInitialPayload'
 import type { TVaultsQuerySnapshot } from '@pages/vaults/utils/vaultsQueryState'
 import { isYvUsdAddress } from '@pages/vaults/utils/yvUsd'
+import { Breadcrumbs } from '@shared/components/Breadcrumbs'
 import { Button } from '@shared/components/Button'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
 import { IconGitCompare } from '@shared/icons/IconGitCompare'
@@ -535,6 +536,13 @@ export default function Index({ initialQueryState, initialVaults }: TVaultsPageP
               className={'sticky z-40 w-full bg-app pb-2 shrink-0'}
               style={{ top: 'var(--header-height)' }}
             >
+              <Breadcrumbs
+                className={'mb-3 px-1'}
+                items={[
+                  { label: 'Home', href: '/' },
+                  { label: 'Vaults', href: '/vaults', isCurrent: true }
+                ]}
+              />
               {/* turn back on when ready for primetime */}
               {/* <TrendingVaults suggestedVaults={suggestedVaults} /> */}
               <VaultsFiltersBar

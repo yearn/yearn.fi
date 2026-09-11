@@ -11,7 +11,7 @@ Yearn vaults accept ERC-20 token deposits and automatically route funds to the h
 - [Home](https://yearn.fi/): Landing page and product overview
 - [Vaults](https://yearn.fi/vaults): Browse all available yield vaults across supported chains
 - [Portfolio](https://yearn.fi/portfolio): View deposited assets and accumulated earnings
-- [System Status](https://yearn.fi/status): Server-rendered Kong and supported-network RPC reachability with explicit freshness timestamps
+- [System Status](https://yearn.fi/status): Server-rendered availability for Yearn data, prices, portfolio indexing, transaction routing, CMS, token assets, and supported networks
 
 ## Primary Machine-Readable Vault Data
 
@@ -19,7 +19,7 @@ Yearn vaults accept ERC-20 token deposits and automatically route funds to the h
 - `https://kong.yearn.fi/api/rest/snapshot/{chainId}/{address}`: Canonical vault detail snapshot; replace `chainId` with the numeric chain ID and `address` with the vault contract address
 - `https://yearn.fi/vaults/{chainId}/{address}`: Public vault page URL; maps to the Kong snapshot endpoint above for live vault detail data
 - [Sitemap](https://yearn.fi/sitemap.xml): XML sitemap listing canonical public vault page URLs
-- [System Status (JSON)](https://yearn.fi/api/status): Live health checks with checked, generated, representation-modified, and build timestamps kept distinct
+- [System Status (JSON)](https://yearn.fi/api/status): Live service and network health checks with response latency and freshness timestamps
 
 ## Derived Convenience Markdown
 

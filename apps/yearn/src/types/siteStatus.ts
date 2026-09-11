@@ -7,6 +7,11 @@ export type TSiteHealthChain = {
   latencyMs: number
 }
 
+export type TSiteHealthService = {
+  state: Exclude<TSiteHealthState, 'degraded'>
+  latencyMs: number
+}
+
 export type TSiteHealth = {
   checkedAt: string
   generatedAt: string
@@ -17,6 +22,11 @@ export type TSiteHealth = {
       latencyMs: number
       representationUpdatedAt?: string
     }
+    prices: TSiteHealthService
+    portfolio: TSiteHealthService
+    transactions: TSiteHealthService
+    cms: TSiteHealthService
+    tokenAssets: TSiteHealthService
     rpc: {
       state: TSiteHealthState
       operational: number

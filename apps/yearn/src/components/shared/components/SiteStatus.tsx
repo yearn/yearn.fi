@@ -3,8 +3,8 @@
 import { cl } from '@shared/utils/cl'
 import {
   formatSiteStatusDate,
-  formatSiteStatusTime,
   getOverallSiteHealthState,
+  getOverallSiteHealthSummary,
   getSiteHealthStateClassName
 } from '@shared/utils/siteStatus'
 import { useQuery } from '@tanstack/react-query'
@@ -16,7 +16,7 @@ import type { TSiteHealth, TSiteHealthState } from '@/types/siteStatus'
 type TServiceLabelProps = {
   label: string
   state?: TSiteHealthState
-  status: string
+  status?: string
   title: string
 }
 
@@ -43,7 +43,7 @@ function ServiceLabel({ label, state, status, title }: TServiceLabelProps): Reac
     <span className={'inline-flex items-center gap-1.5 whitespace-nowrap'} title={title}>
       <span className={cl('size-1.5 rounded-full', getSiteHealthStateClassName(state))} aria-hidden={'true'} />
       <span>{label}</span>
-      <span className={'text-text-primary'}>{status}</span>
+      {status ? <span className={'text-text-primary'}>{status}</span> : null}
     </span>
   )
 }
@@ -54,19 +54,7 @@ export function HeaderSiteStatus(): ReactElement {
   const health = statusQuery.isError ? undefined : statusQuery.data
   const overallState = getOverallSiteHealthState(health)
   const overallStatus = statusQuery.isError ? 'unknown' : overallState || 'checking'
-  const kongStatus =
-    health?.services.kong.state === 'operational' ? 'online' : health?.services.kong.state || 'checking'
-  const rpcStatus = health
-    ? `${health.services.rpc.operational}/${health.services.rpc.total} online`
-    : statusQuery.isError
-      ? 'unknown'
-      : 'checking'
-  const kongTitle = health
-    ? `Kong ${health.services.kong.state}, ${health.services.kong.latencyMs}ms response`
-    : 'Checking Kong status'
-  const rpcTitle = health
-    ? health.services.rpc.chains.map((chain) => `${chain.name}: ${chain.state}`).join(', ')
-    : 'Checking supported chain RPCs'
+  const summary = statusQuery.isError ? 'Status unavailable' : getOverallSiteHealthSummary(overallState)
 
   return (
     <div
@@ -102,26 +90,10 @@ export function HeaderSiteStatus(): ReactElement {
       >
         <div
           className={
-            'flex h-8 translate-x-full items-center justify-end gap-2 whitespace-nowrap bg-app/95 pr-5 pl-3 font-aeonik-mono text-[9px] uppercase tracking-[0.08em] text-text-secondary opacity-0 backdrop-blur-md transition-[translate,opacity] duration-300 ease-out group-hover/site-status:translate-x-0 group-hover/site-status:opacity-100 group-focus-within/site-status:translate-x-0 group-focus-within/site-status:opacity-100 motion-reduce:transition-none lg:gap-3 lg:text-[10px]'
+            'flex h-8 translate-x-full items-center justify-end gap-2 whitespace-nowrap bg-app/95 pr-5 pl-3 text-sm text-text-secondary opacity-0 backdrop-blur-md transition-[translate,opacity] duration-300 ease-out group-hover/site-status:translate-x-0 group-hover/site-status:opacity-100 group-focus-within/site-status:translate-x-0 group-focus-within/site-status:opacity-100 motion-reduce:transition-none'
           }
         >
-          <time className={'whitespace-nowrap'} dateTime={health?.checkedAt} title={health?.checkedAt}>
-            {health ? `Checked ${formatSiteStatusTime(health.checkedAt)}` : 'Checking status'}
-          </time>
-          <span aria-hidden={'true'}>{'·'}</span>
-          <ServiceLabel
-            label={'Kong'}
-            state={health?.services.kong.state}
-            status={statusQuery.isError ? 'unknown' : kongStatus}
-            title={statusQuery.isError ? 'Kong status unavailable' : kongTitle}
-          />
-          <span aria-hidden={'true'}>{'·'}</span>
-          <ServiceLabel
-            label={'RPCs'}
-            state={health?.services.rpc.state}
-            status={rpcStatus}
-            title={statusQuery.isError ? 'RPC status unavailable' : rpcTitle}
-          />
+          <span className={'font-medium text-text-primary'}>{summary}</span>
         </div>
       </aside>
     </div>
@@ -131,13 +103,8 @@ export function HeaderSiteStatus(): ReactElement {
 export function MobileSiteStatus(): ReactElement {
   const statusQuery = useSiteHealth()
   const health = statusQuery.isError ? undefined : statusQuery.data
-  const kongStatus =
-    health?.services.kong.state === 'operational' ? 'online' : health?.services.kong.state || 'checking'
-  const rpcStatus = health
-    ? `${health.services.rpc.operational}/${health.services.rpc.total}`
-    : statusQuery.isError
-      ? 'unknown'
-      : 'checking'
+  const overallState = getOverallSiteHealthState(health)
+  const summary = statusQuery.isError ? 'Status unavailable' : getOverallSiteHealthSummary(overallState)
 
   return (
     <aside
@@ -149,21 +116,7 @@ export function MobileSiteStatus(): ReactElement {
         <time className={'whitespace-nowrap'} dateTime={health?.checkedAt} title={health?.checkedAt}>
           {health ? `Checked ${formatSiteStatusDate(health.checkedAt)}` : 'Checking status'}
         </time>
-        <span className={'flex items-center justify-center gap-3'}>
-          <ServiceLabel
-            label={'Kong'}
-            state={health?.services.kong.state}
-            status={statusQuery.isError ? 'unknown' : kongStatus}
-            title={'Kong status'}
-          />
-          <span aria-hidden={'true'}>{'·'}</span>
-          <ServiceLabel
-            label={'RPCs'}
-            state={health?.services.rpc.state}
-            status={rpcStatus}
-            title={'Supported chain RPC status'}
-          />
-        </span>
+        <ServiceLabel label={summary} state={overallState} title={summary} />
         <Link href={'/status'} prefetch={false} className={'text-text-primary underline underline-offset-2'}>
           {'Full system status'}
         </Link>

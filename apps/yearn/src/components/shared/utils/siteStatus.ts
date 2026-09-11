@@ -50,13 +50,37 @@ export function getOverallSiteHealthState(health?: TSiteHealth): TSiteHealthStat
   if (!health) {
     return undefined
   }
-  if (health.services.kong.state === 'operational' && health.services.rpc.state === 'operational') {
+  const auxiliaryStates = [
+    health.services.prices.state,
+    health.services.portfolio.state,
+    health.services.transactions.state,
+    health.services.cms.state,
+    health.services.tokenAssets.state
+  ]
+  if (
+    health.services.kong.state === 'operational' &&
+    health.services.rpc.state === 'operational' &&
+    auxiliaryStates.every((state) => state === 'operational')
+  ) {
     return 'operational'
   }
   if (health.services.kong.state === 'unavailable' && health.services.rpc.state === 'unavailable') {
     return 'unavailable'
   }
   return 'degraded'
+}
+
+export function getOverallSiteHealthSummary(state?: TSiteHealthState): string {
+  if (state === 'operational') {
+    return 'All services operational'
+  }
+  if (state === 'degraded') {
+    return 'Some services degraded'
+  }
+  if (state === 'unavailable') {
+    return 'Services unavailable'
+  }
+  return 'Checking services'
 }
 
 export function getSiteHealthStateLabel(state?: TSiteHealthState): string {

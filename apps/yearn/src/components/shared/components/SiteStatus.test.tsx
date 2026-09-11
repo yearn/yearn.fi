@@ -19,6 +19,11 @@ const operationalHealth: TSiteHealth = {
       state: 'operational',
       latencyMs: 42
     },
+    prices: { state: 'operational', latencyMs: 35 },
+    portfolio: { state: 'operational', latencyMs: 51 },
+    transactions: { state: 'operational', latencyMs: 63 },
+    cms: { state: 'operational', latencyMs: 71 },
+    tokenAssets: { state: 'operational', latencyMs: 82 },
     rpc: {
       state: 'operational',
       operational: 8,
@@ -58,11 +63,7 @@ describe('HeaderSiteStatus', () => {
     expect(html).toContain('href="/status"')
     expect(html).toContain('bg-success')
     expect(html).toContain('data-header-site-status-panel="true"')
-    expect(html).toContain('Kong')
-    expect(html).toContain('online')
-    expect(html).toContain('RPCs')
-    expect(html).toContain('8/8 online')
-    expect(html).toContain('Checked 12:00 UTC')
+    expect(html).toContain('All services operational')
     expect(html).toContain('translate-x-full')
     expect(html).toContain('group-focus-within/site-status:translate-x-0')
   })
@@ -78,7 +79,7 @@ describe('HeaderSiteStatus', () => {
 
     expect(html).toContain('aria-label="Site status: unknown"')
     expect(html).toContain('bg-text-tertiary')
-    expect(html).toContain('unknown')
+    expect(html).toContain('Status unavailable')
     expect(html).toContain('aria-busy="false"')
   })
 
@@ -93,7 +94,7 @@ describe('HeaderSiteStatus', () => {
 
     expect(html).toContain('aria-label="Site status: unknown"')
     expect(html).toContain('bg-text-tertiary')
-    expect(html).not.toContain('8/8 online')
+    expect(html).not.toContain('All services operational')
     expect(html).not.toContain('aria-live')
   })
 
@@ -108,6 +109,6 @@ describe('HeaderSiteStatus', () => {
 
     expect(html).toContain('aria-label="Site status: checking"')
     expect(html).toContain('aria-busy="true"')
-    expect(html).toContain('checking')
+    expect(html).toContain('Checking services')
   })
 })
