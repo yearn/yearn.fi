@@ -1,4 +1,5 @@
 import { ScrollToTopButton } from '@pages/vaults/components/detail/ScrollToTopButton'
+import { SiteStatus } from '@shared/components/SiteStatus'
 import { cl } from '@shared/utils/cl'
 import type { ReactElement, ReactNode } from 'react'
 
@@ -14,7 +15,8 @@ export function AppFrame({ children, header }: TAppFrameProps): ReactElement {
       <div id={'app'} className={cl('mx-auto mb-0 flex', 'max-md:pt-[var(--header-height)]')}>
         <div className={'block size-full min-h-max'}>{children}</div>
       </div>
-      <ScrollToTopButton className="bottom-20 right-4 md:bottom-6 md:right-6" />
+      <SiteStatus />
+      <ScrollToTopButton className="bottom-20 right-4 md:bottom-6 md:right-6 min-[1700px]:bottom-24" />
     </>
   )
 }
