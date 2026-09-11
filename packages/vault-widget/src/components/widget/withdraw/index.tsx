@@ -516,7 +516,7 @@ export function WidgetWithdraw({
         withdrawToken,
         withdrawalSource ?? 'none',
         account ?? 'no-account',
-        flowRequiredShares.toString(),
+        effectiveSourceShares.toString(),
         zapSlippage,
         hasAssetTokenPrice,
         hasOutputTokenPrice
@@ -525,7 +525,7 @@ export function WidgetWithdraw({
       account,
       chainId,
       destinationChainId,
-      flowRequiredShares,
+      effectiveSourceShares,
       hasAssetTokenPrice,
       hasOutputTokenPrice,
       sourceToken,
@@ -581,7 +581,7 @@ export function WidgetWithdraw({
     stateKey: ensoSlippageCalibrationKey,
     isEnsoRoute,
     isCrossChain,
-    amount: flowRequiredShares,
+    amount: effectiveSourceShares,
     quoteRequest: ensoQuoteRequest,
     requestExecutionQuote,
     isLoadingQuote: isFetchingQuote,
@@ -629,7 +629,7 @@ export function WidgetWithdraw({
       requestSlippagePercentage: ensoQuoteSlippage,
       desiredProtectedSlippagePercentage: desiredEnsoQuoteSlippage,
       userTolerancePercentage: zapSlippage,
-      inputAmountRaw: flowRequiredShares.toString(),
+      inputAmountRaw: effectiveSourceShares.toString(),
       expectedOutRaw: activeFlow.periphery.expectedOut.toString(),
       minExpectedOutRaw: activeFlow.periphery.minExpectedOut.toString(),
       localPriceImpactPercentage: withdrawValueInfo.priceImpactPercentage,
@@ -685,7 +685,7 @@ export function WidgetWithdraw({
     ensoQuoteSlippage,
     ensoSlippageCalibrationKey,
     estimatedPriceImpactPercentage,
-    flowRequiredShares,
+    effectiveSourceShares,
     isFetchingQuote,
     outputToken?.symbol,
     routeType,
@@ -1280,7 +1280,8 @@ export function WidgetWithdraw({
         sourceTokenSymbol={withdrawalSource === 'staking' ? stakingToken?.symbol || vaultSymbol : vaultSymbol}
         vaultAssetSymbol={assetToken?.symbol || ''}
         outputTokenSymbol={outputToken?.symbol || ''}
-        withdrawAmount={effectiveRequiredShares > 0n ? formatWidgetValue(effectiveRequiredShares, sharesDecimals) : '0'}
+        sourceShareAmount={effectiveSourceShares}
+        sourceTokenDecimals={approvalState.tokenDecimals}
         expectedOutput={
           displayedExpectedOut > 0n ? formatWidgetValue(displayedExpectedOut, outputToken?.decimals ?? 18) : undefined
         }
