@@ -19,6 +19,8 @@ interface UseEnsoWithdrawParams {
   enabled: boolean
   slippage?: number
   quotePurpose?: EnsoQuotePurpose
+  isPreparingAmount?: boolean
+  amountError?: string
 }
 
 export function useEnsoWithdraw(params: UseEnsoWithdrawParams): UseWidgetWithdrawFlowReturn {
@@ -59,7 +61,7 @@ export function useEnsoWithdraw(params: UseEnsoWithdrawParams): UseWidgetWithdra
     quotePurpose: params.quotePurpose,
     routingStrategy: VAULT_ENSO_ROUTING_STRATEGY,
     requestKey: routeQueryKey,
-    enabled: params.enabled
+    enabled: params.enabled && !params.isPreparingAmount && !params.amountError
   })
 
   // Calculate if allowance is sufficient
@@ -67,14 +69,15 @@ export function useEnsoWithdraw(params: UseEnsoWithdrawParams): UseWidgetWithdra
 
   // Prepare Enso order for withdrawal
   const canWithdraw = ensoFlow.periphery.route && params.amount > 0n && isAllowanceSufficient
+  const isPreparingRoute = ensoFlow.periphery.isLoadingRoute || Boolean(params.isPreparingAmount)
   const refreshReadiness = useCallback(async () => {
     await refreshEnsoReadiness(ensoFlow.periphery.refetchAllowance, ensoFlow.methods.getRoute)
   }, [ensoFlow.methods.getRoute, ensoFlow.periphery.refetchAllowance])
   const { prepareEnsoOrder } = useEnsoOrder({
     getEnsoTransaction: ensoFlow.methods.getEnsoTransaction,
     refreshEnsoTransaction: refreshReadiness,
-    routeError: ensoFlow.periphery.error?.message,
-    isPreparingRoute: ensoFlow.periphery.isLoadingRoute,
+    routeError: params.amountError ?? ensoFlow.periphery.error?.message,
+    isPreparingRoute,
     enabled: canWithdraw,
     chainId: params.chainId
   })
@@ -88,23 +91,32 @@ export function useEnsoWithdraw(params: UseEnsoWithdrawParams): UseWidgetWithdra
       },
       periphery: {
         prepareApproveEnabled: ensoFlow.periphery.prepareApproveEnabled,
-        prepareWithdrawEnabled: !!canWithdraw && !ensoFlow.periphery.isLoadingRoute,
+        prepareWithdrawEnabled: !!canWithdraw && !isPreparingRoute,
         isAllowanceSufficient,
         allowance: ensoFlow.periphery.allowance,
         expectedOut: ensoFlow.periphery.expectedOut.raw,
         minExpectedOut: ensoFlow.periphery.minExpectedOut.raw,
         priceImpact: ensoFlow.periphery.priceImpact,
-        isLoadingRoute: ensoFlow.periphery.isLoadingRoute,
+        isLoadingRoute: isPreparingRoute,
         isCrossChain: ensoFlow.periphery.isCrossChain,
         routeHasSwap: ensoFlow.periphery.routeHasSwap,
         bridgeProtocol: ensoFlow.periphery.bridgeProtocol,
         routerAddress: ensoFlow.periphery.routerAddress,
-        error: ensoFlow.periphery.error?.message,
+        error: params.amountError ?? ensoFlow.periphery.error?.message,
+        shareAmount: params.amount,
         tx: ensoFlow.periphery.route?.tx,
         gas: ensoFlow.periphery.route?.gas,
         resetQuote: ensoFlow.methods.resetRoute
       }
     }),
-    [ensoFlow, prepareEnsoOrder, canWithdraw, isAllowanceSufficient]
+    [
+      ensoFlow,
+      prepareEnsoOrder,
+      canWithdraw,
+      isAllowanceSufficient,
+      isPreparingRoute,
+      params.amount,
+      params.amountError
+    ]
   )
 }
