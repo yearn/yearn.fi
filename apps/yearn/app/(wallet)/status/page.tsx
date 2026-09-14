@@ -63,15 +63,17 @@ export default async function Page(): Promise<ReactElement> {
 
   return (
     <div className={'min-h-[calc(100vh-var(--header-height))] bg-app text-text-primary'}>
-      <div className={'mx-auto w-full max-w-[960px] px-4 pb-16 pt-4 md:pt-8'}>
+      <div className={'mx-auto w-full max-w-[1232px] px-4'}>
         <Breadcrumbs
-          className={'mb-6'}
+          className={'mb-3 px-1'}
           items={[
             { label: 'Home', href: '/' },
-            { label: 'System status', href: '/status', isCurrent: true }
+            { label: 'Vaults', href: '/vaults' },
+            { label: 'Status', href: '/status', isCurrent: true }
           ]}
         />
-
+      </div>
+      <div className={'mx-auto w-full max-w-[1232px] px-4 pb-16 pt-4 md:pt-8'}>
         <header
           className={'flex flex-col gap-5 border-b border-border pb-6 sm:flex-row sm:items-center sm:justify-between'}
         >
