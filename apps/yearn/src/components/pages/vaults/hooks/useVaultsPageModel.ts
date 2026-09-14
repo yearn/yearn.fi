@@ -74,6 +74,7 @@ import type { TYvUsdListVaults } from './useYvUsdVaults'
 import { VAULTS_FILTERS_STORAGE_KEY } from './vaultsFiltersStorage'
 
 const DEFAULT_VAULT_TYPES = DEFAULT_VAULT_QUERY_TYPES
+const DEFAULT_CATEGORIES: string[] = []
 const DEFAULT_SORT_BY: TPossibleSortBy = DEFAULT_VAULT_QUERY_SORT_BY
 
 const areArraysEquivalent = (
@@ -235,10 +236,11 @@ export function useVaultsPageModel(
   initialVaults?: TVaultsInitialPayload
 ): TVaultsPageModel {
   const { address } = useWeb3()
-  const { enableVaultListFetch } = useYearn()
+  const { enableVaultListFetch, allVaults } = useYearn()
   const hasWalletAddress = !!address
   const initialVaultSource = useMemo(() => getVaultsInitialVaultSource(initialVaults), [initialVaults])
-  const activeVaultSource = hasWalletAddress ? undefined : initialVaultSource
+  // Keep the rendered catalog while connecting triggers the full catalog fetch for wallet discovery.
+  const activeVaultSource = hasWalletAddress && Object.keys(allVaults).length > 0 ? undefined : initialVaultSource
   const {
     vaultType,
     hasTypesParam,
@@ -269,11 +271,11 @@ export function useVaultsPageModel(
     sortDirection
   } = useVaultsQueryState({
     defaultTypes: DEFAULT_VAULT_TYPES,
-    defaultCategories: [],
+    defaultCategories: DEFAULT_CATEGORIES,
     defaultPathname: '/vaults',
     defaultSortBy: DEFAULT_SORT_BY,
     resetTypes: DEFAULT_VAULT_TYPES,
-    resetCategories: [],
+    resetCategories: DEFAULT_CATEGORIES,
     persistToStorage: true,
     storageKey: VAULTS_FILTERS_STORAGE_KEY,
     clearUrlAfterInit: false,

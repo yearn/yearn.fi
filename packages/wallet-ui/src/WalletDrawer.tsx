@@ -142,6 +142,13 @@ export function WalletDrawerProvider({
     (connector) => connector.id !== 'injected' || hasLegacyProvider
   )
 
+  const closeWalletDrawer = useCallback(() => {
+    attemptRef.current = undefined
+    setPendingConnector(undefined)
+    setErrorMessage(undefined)
+    setIsOpen(false)
+  }, [])
+
   // The legacy provider is a browser capability and cannot be checked during server rendering.
   useEffect(() => {
     setHasLegacyProvider(Boolean((window as Window & { ethereum?: unknown }).ethereum))
@@ -159,6 +166,10 @@ export function WalletDrawerProvider({
             ({ connector }) => connector.uid === account.connector?.uid
           )
           if (attempts.some((attempt) => attemptRef.current === attempt)) {
+            // A matching account can arrive before connectAsync settles. Same-wallet retries remain ambiguous.
+            if (attempts.length === 1 && !attempts[0].secondary) {
+              closeWalletDrawer()
+            }
             attempts
               .filter(({ secondary }) => secondary)
               .forEach((attempt) => {
@@ -177,15 +188,8 @@ export function WalletDrawerProvider({
           })
         }
       }),
-    [config]
+    [closeWalletDrawer, config]
   )
-
-  const closeWalletDrawer = useCallback(() => {
-    attemptRef.current = undefined
-    setPendingConnector(undefined)
-    setErrorMessage(undefined)
-    setIsOpen(false)
-  }, [])
 
   const openWalletDrawer = useCallback(() => {
     attemptRef.current = undefined
@@ -205,7 +209,7 @@ export function WalletDrawerProvider({
     }
   }, [closeWalletDrawer, isOpen, openWalletDrawer])
 
-  // Restored sessions close an idle picker; only its scoped promise can settle a pending detected attempt.
+  // Restored sessions close an idle picker; pending attempts require their scoped promise or matching account event.
   useEffect(() => {
     if (isConnected && !pendingConnector) {
       closeWalletDrawer()

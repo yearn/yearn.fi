@@ -129,6 +129,31 @@ afterEach(() => {
 })
 
 describe('connection attempt ownership', () => {
+  it('releases the mobile picker on the active account event before the connection promise settles', async () => {
+    const request = deferred()
+    mocks.connectAsync.mockReturnValueOnce(request.promise)
+    mocks.mobile = true
+    const view = render(<App />)
+    const trigger = open()
+    fireEvent.click(screen.getByRole('button', { name: 'Rabby Detected' }))
+    expect(document.body.style.overflow).toBe('hidden')
+    mocks.connector = { uid: 'rabby' }
+    await act(async () =>
+      mocks.accountChange?.({ status: 'connected', connector: mocks.connector }, { status: 'connecting' })
+    )
+    expect(screen.queryByRole('dialog')).toBeNull()
+    expect(screen.getByTestId('pending').textContent).toBe('false')
+    expect(view.container.inert).not.toBe(true)
+    expect(document.body.style.overflow).toBe('')
+    expect(document.activeElement).toBe(trigger)
+
+    open()
+    await act(async () => request.reject(new Error('Late transport failure')))
+    expect(screen.queryByRole('dialog')).not.toBeNull()
+    expect(screen.queryByRole('alert')).toBeNull()
+    expect(mocks.disconnect).not.toHaveBeenCalled()
+  })
+
   it('opens immediately, connects detected EIP-6963 through Wagmi and closes on success', async () => {
     render(<App />)
     open()
@@ -232,6 +257,9 @@ describe('connection attempt ownership', () => {
     fireEvent.click(screen.getByRole('button', { name: 'Rabby Detected' }))
     mocks.isConnected = true
     mocks.connector = { uid: 'rabby' }
+    await act(async () =>
+      mocks.accountChange?.({ status: 'connected', connector: mocks.connector }, { status: 'connecting' })
+    )
     view.rerender(<App />)
     await act(async () => first.resolve())
     expect(screen.queryByRole('dialog')).not.toBeNull()
