@@ -1,20 +1,22 @@
 'use client'
 
 import { setThemePreference, useThemePreference } from '@hooks/useThemePreference'
+import { AccountDropdown } from '@shared/components/AccountDropdown'
+import { HeaderNavMenu } from '@shared/components/HeaderNavMenu'
+import { MobileNavMenu } from '@shared/components/MobileNavMenu'
 import { toast } from '@shared/components/yToast'
 import { useNotifications } from '@shared/contexts/useNotifications'
 import { useTenderlyPanel } from '@shared/contexts/useTenderlyPanel'
-import { useWalletStatus } from '@shared/contexts/useWallet'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { IconBurgerPlain } from '@shared/icons/IconBurgerPlain'
 import { IconMoon } from '@shared/icons/IconMoon'
-import { IconSpinner } from '@shared/icons/IconSpinner'
 import { IconSun } from '@shared/icons/IconSun'
 import { IconWallet } from '@shared/icons/IconWallet'
 import { TypeMarkYearn } from '@shared/icons/TypeMarkYearn'
 import { cl } from '@shared/utils'
 import { normalizePathname } from '@shared/utils/routes'
 import { truncateHex } from '@shared/utils/tools.address'
+import { useWalletDrawer } from '@yearn/wallet-ui/context'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import type { KeyboardEvent, MouseEvent, ReactElement } from 'react'
@@ -28,28 +30,24 @@ import {
   resolveConnectedTenderlyExecutionChain,
   tenderlyConfiguredRuntime
 } from '@/config/tenderly'
-import { AccountDropdown } from './AccountDropdown'
-import { HeaderNavMenu } from './HeaderNavMenu'
-import { MobileNavMenu } from './MobileNavMenu'
 
 type TWalletSelectorProps = {
   onAccountClick: () => void
+  isAccountOpen: boolean
   notificationStatus: 'pending' | 'submitted' | 'success' | 'error' | null
 }
 
-function WalletSelector({ onAccountClick, notificationStatus }: TWalletSelectorProps): ReactElement {
-  const { isActive, isUserConnecting, isIdentityLoading, address, ens, clusters, openLoginModal } = useWeb3()
-  const { isLoading: isWalletLoading } = useWalletStatus()
+function WalletSelector({ onAccountClick, isAccountOpen, notificationStatus }: TWalletSelectorProps): ReactElement {
+  const { isActive, address, ens, clusters, openLoginModal } = useWeb3()
+  const { dialogId: walletDrawerId, isOpen: isWalletDrawerOpen } = useWalletDrawer()
+  const isDisconnected = !(isActive || address || ens || clusters)
 
   const walletIdentity = useMemo((): string | undefined => {
-    if (isUserConnecting) return 'Connecting...'
     if (ens) return ens
     if (clusters) return clusters.name
     if (address) return truncateHex(address, 4)
     return undefined
-  }, [ens, clusters, address, isUserConnecting])
-
-  const shouldShowSpinner = address && walletIdentity && !isUserConnecting && (isIdentityLoading || isWalletLoading)
+  }, [ens, clusters, address])
 
   const notificationDotColor = useMemo((): string => {
     switch (notificationStatus) {
@@ -66,7 +64,6 @@ function WalletSelector({ onAccountClick, notificationStatus }: TWalletSelectorP
   }, [notificationStatus])
 
   function handleClick(): void {
-    if (shouldShowSpinner || isUserConnecting) return
     if (isActive || address || ens || clusters) {
       onAccountClick()
       return
@@ -75,23 +72,31 @@ function WalletSelector({ onAccountClick, notificationStatus }: TWalletSelectorP
   }
 
   return (
-    <div
+    <button
+      type={'button'}
+      data-wallet-account-trigger={!isDisconnected || undefined}
+      data-wallet-drawer-trigger={isDisconnected ? true : undefined}
+      aria-controls={isDisconnected ? walletDrawerId : 'yearn-wallet-account'}
+      aria-expanded={isDisconnected ? isWalletDrawerOpen : isAccountOpen}
+      aria-haspopup="dialog"
+      aria-label={walletIdentity ? `Open wallet account ${walletIdentity}` : 'Connect wallet'}
       onMouseDown={(e) => e.stopPropagation()}
       onClick={handleClick}
-      className={cl('relative', shouldShowSpinner ? 'cursor-wait' : 'cursor-pointer')}
+      className={
+        'relative min-h-11 cursor-pointer rounded-lg text-left focus-visible:outline-2 focus-visible:outline-primary'
+      }
     >
       {walletIdentity && notificationStatus && (
-        <div className={cl('absolute -right-0.5 -top-0.5 size-2 rounded-full', notificationDotColor)} />
+        <span className={cl('absolute -right-0.5 -top-0.5 size-2 rounded-full', notificationDotColor)} />
       )}
-      <p
+      <span
         suppressHydrationWarning
-        className={'text-xs font-normal text-text-secondary transition-colors hover:text-text-primary md:text-sm'}
+        className={'block text-xs font-normal text-text-secondary transition-colors hover:text-text-primary md:text-sm'}
       >
         {walletIdentity ? (
           <span className={'inline-flex items-center gap-2 rounded-lg bg-surface-secondary px-3 py-1.5'}>
             <IconWallet className={'size-4 text-text-secondary'} />
             <span>{walletIdentity}</span>
-            {shouldShowSpinner && <IconSpinner className={'size-3.5 text-text-tertiary'} />}
           </span>
         ) : (
           <span>
@@ -106,8 +111,8 @@ function WalletSelector({ onAccountClick, notificationStatus }: TWalletSelectorP
             </span>
           </span>
         )}
-      </p>
-    </div>
+      </span>
+    </button>
   )
 }
 
@@ -265,8 +270,10 @@ function AppHeader(): ReactElement {
           <div className={'flex items-center justify-end gap-2'}>
             {!isHomePage && (
               <>
-                <div className={'hidden items-center justify-end md:flex gap-2'} data-tour="vaults-header-user">
-                  <TenderlyBadge />
+                <div className={'flex items-center justify-end gap-2'} data-tour="vaults-header-user">
+                  <div className="hidden md:block">
+                    <TenderlyBadge />
+                  </div>
                   <div className={'hidden md:flex gap-4'}>
                     <Link href={'/vaults'} prefetch={false}>
                       <span
@@ -290,7 +297,7 @@ function AppHeader(): ReactElement {
                   </div>
                   <button
                     className={
-                      'min-h-[44px] min-w-[44px] rounded-full p-2.5 text-text-secondary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400'
+                      'hidden md:block min-h-[44px] min-w-[44px] rounded-full p-2.5 text-text-secondary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400'
                     }
                     onClick={() => setThemePreference(isDarkTheme ? 'light' : 'soft-dark')}
                     title={isDarkTheme ? 'Switch to light mode' : 'Switch to dark mode'}
@@ -300,6 +307,7 @@ function AppHeader(): ReactElement {
                   </button>
                   <div className={'relative'}>
                     <WalletSelector
+                      isAccountOpen={isAccountSidebarOpen}
                       onAccountClick={() => setIsAccountSidebarOpen(!isAccountSidebarOpen)}
                       notificationStatus={notificationStatus}
                     />
@@ -312,6 +320,8 @@ function AppHeader(): ReactElement {
                     isHomePage ? 'text-white hover:bg-white/10' : 'text-text-primary hover:bg-surface-secondary'
                   )}
                   onClick={() => setIsMobileMenuOpen(true)}
+                  data-mobile-nav-trigger
+                  data-wallet-drawer-trigger={isHomePage || undefined}
                   aria-label={'Open navigation menu'}
                 >
                   <IconBurgerPlain className={'size-6'} />

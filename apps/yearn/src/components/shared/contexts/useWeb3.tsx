@@ -1,10 +1,11 @@
 import { usePlausible } from '@hooks/usePlausible'
-import { useAccountModal, useChainModal, useConnectModal } from '@rainbow-me/rainbowkit'
+import { useAccountModal, useChainModal } from '@rainbow-me/rainbowkit'
 import type { TAddress } from '@shared/types/address'
 import { fetchClusterName, getClusterImageUrl, isAddress, isSafeConnectorId } from '@shared/utils'
 import { isIframe } from '@shared/utils/helpers'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import { toAddress } from '@shared/utils/tools.address'
+import { useWalletDrawer } from '@yearn/wallet-ui'
 import type { ReactElement } from 'react'
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { mainnet } from 'viem/chains'
@@ -51,7 +52,7 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
     chainId: mainnet.id
   })
   const { openAccountModal } = useAccountModal()
-  const { openConnectModal } = useConnectModal()
+  const { openWalletDrawer, closeWalletDrawer, isConnecting: isDrawerConnecting } = useWalletDrawer()
   const { openChainModal } = useChainModal()
   const trackEvent = usePlausible()
   const [clusters, setClusters] = useState<{ name: string; avatar: string } | undefined>(undefined)
@@ -63,6 +64,7 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
 
   const chainID = resolveConnectedCanonicalChainId(chain?.id) ?? (isConnected ? 0 : 1)
 
+  // Wagmi publishes connection changes outside our UI event handlers.
   useEffect(() => {
     if (!wasConnectedRef.current && isConnected && hasUserRequestedConnectionRef.current) {
       trackEvent(PLAUSIBLE_EVENTS.CONNECT_WALLET, {
@@ -73,6 +75,7 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
     wasConnectedRef.current = isConnected
   }, [isConnected, connector, chainID, trackEvent])
 
+  // Preserve network analytics for wallet-initiated chain changes.
   useEffect(() => {
     if (isConnected && previousChainIDRef.current !== undefined && previousChainIDRef.current !== chainID) {
       trackEvent(PLAUSIBLE_EVENTS.CHANGE_NETWORK, {
@@ -86,6 +89,7 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
     }
   }, [isConnected, chainID, trackEvent])
 
+  // The development connector appears after browser hydration.
   useEffect(() => {
     if (hasAutoConnectedAgentWalletRef.current || isConnected || isConnecting || !shouldAutoConnectAgentWallet()) {
       return
@@ -112,8 +116,10 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
     trackEvent(PLAUSIBLE_EVENTS.DISCONNECT_WALLET, {
       props: { chainID: String(chainID) }
     })
+    hasUserRequestedConnectionRef.current = false
+    closeWalletDrawer()
     disconnect()
-  }, [disconnect, trackEvent, chainID])
+  }, [closeWalletDrawer, disconnect, trackEvent, chainID])
 
   const openLoginModal = useCallback(async (): Promise<void> => {
     if (isConnected && connector && address) {
@@ -135,14 +141,8 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
         return
       }
 
-      if (openConnectModal) {
-        hasUserRequestedConnectionRef.current = true
-        openConnectModal()
-      } else if (openChainModal) {
-        openChainModal()
-      } else {
-        console.warn('Impossible to open login modal')
-      }
+      hasUserRequestedConnectionRef.current = true
+      openWalletDrawer()
     }
   }, [
     address,
@@ -153,7 +153,7 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
     isConnected,
     openAccountModal,
     openChainModal,
-    openConnectModal
+    openWalletDrawer
   ])
 
   useEffect(() => {
@@ -234,7 +234,7 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
     }
   }, [address, ensName, isConnected])
 
-  const isUserConnecting = isConnecting && hasUserRequestedConnectionRef.current
+  const isUserConnecting = isDrawerConnecting
 
   const isIdentityLoading = Boolean((isEnsLoading && !!address) || isFetchingClusters)
   const isWalletSafe = isSafeConnectorId(connector?.id)
