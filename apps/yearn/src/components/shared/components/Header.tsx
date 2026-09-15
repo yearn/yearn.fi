@@ -80,10 +80,11 @@ function WalletSelector({ onAccountClick, isAccountOpen, notificationStatus }: T
       aria-expanded={isDisconnected ? isWalletDrawerOpen : isAccountOpen}
       aria-haspopup="dialog"
       aria-label={walletIdentity ? `Open wallet account ${walletIdentity}` : 'Connect wallet'}
+      title={walletIdentity}
       onMouseDown={(e) => e.stopPropagation()}
       onClick={handleClick}
       className={
-        'relative min-h-11 cursor-pointer rounded-lg text-left focus-visible:outline-2 focus-visible:outline-primary'
+        'relative flex h-11 w-11 shrink-0 cursor-pointer items-center rounded-lg focus-visible:outline-2 focus-visible:outline-primary md:w-36'
       }
     >
       {walletIdentity && notificationStatus && (
@@ -91,26 +92,15 @@ function WalletSelector({ onAccountClick, isAccountOpen, notificationStatus }: T
       )}
       <span
         suppressHydrationWarning
-        className={'block text-xs font-normal text-text-secondary transition-colors hover:text-text-primary md:text-sm'}
-      >
-        {walletIdentity ? (
-          <span className={'inline-flex items-center gap-2 rounded-lg bg-surface-secondary px-3 py-1.5'}>
-            <IconWallet className={'size-4 text-text-secondary'} />
-            <span>{walletIdentity}</span>
-          </span>
-        ) : (
-          <span>
-            <IconWallet className={'mt-0.5 block size-4 text-text-secondary md:hidden'} />
-            <span
-              className={
-                'relative hidden h-8 cursor-pointer items-center gap-2 justify-center rounded-lg border border-transparent bg-text-primary px-3 text-xs font-normal text-surface transition-all hover:opacity-90 md:flex'
-              }
-            >
-              <IconWallet className={'size-4 text-surface'} />
-              <span>{'Connect wallet'}</span>
-            </span>
-          </span>
+        className={cl(
+          'inline-flex h-8 w-full items-center justify-center gap-2 rounded-lg px-3 text-sm font-normal transition-colors duration-150 motion-reduce:transition-none',
+          walletIdentity
+            ? 'bg-surface-secondary text-text-secondary hover:text-text-primary'
+            : 'text-text-secondary md:bg-text-primary md:text-surface md:hover:bg-text-primary/90'
         )}
+      >
+        <IconWallet className={'size-4 shrink-0'} />
+        <span className={'hidden min-w-0 truncate md:block'}>{walletIdentity || 'Connect wallet'}</span>
       </span>
     </button>
   )

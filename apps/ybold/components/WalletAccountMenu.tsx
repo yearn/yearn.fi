@@ -398,7 +398,7 @@ export function WalletAccountMenu() {
         aria-expanded={isOpen}
         aria-haspopup="dialog"
         onClick={() => (isOpen ? closeMenu() : setIsOpen(true))}
-        className="min-h-10 rounded-full border border-navy px-4 py-2 font-mono text-sm font-medium text-navy transition duration-150 hover:bg-navy hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yearn"
+        className="h-10 w-36 shrink-0 rounded-full border border-navy px-4 py-2 font-mono text-sm font-medium text-navy transition-colors duration-150 hover:bg-navy hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yearn motion-reduce:transition-none"
       >
         {formatWalletAddress(address)}
       </button>

@@ -32,7 +32,7 @@ export function Header() {
             aria-expanded={isWalletDrawerOpen}
             aria-haspopup="dialog"
             onClick={toggleWalletDrawer}
-            className="min-h-10 rounded-full bg-yearn px-4 py-2 text-sm font-medium text-white transition duration-150 hover:bg-navy focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yearn"
+            className="h-10 w-36 shrink-0 rounded-full bg-yearn px-4 py-2 text-sm font-medium text-white transition-colors duration-150 hover:bg-navy focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yearn motion-reduce:transition-none"
           >
             Connect Wallet
           </button>
