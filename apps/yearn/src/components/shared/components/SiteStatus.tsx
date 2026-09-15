@@ -98,7 +98,7 @@ export function HeaderSiteStatus(): ReactElement {
   )
 }
 
-export function MobileSiteStatus(): ReactElement {
+export function MobileSiteStatus({ onNavigate }: { onNavigate: () => void }): ReactElement {
   const statusQuery = useSiteHealth()
   const health = statusQuery.isError ? undefined : statusQuery.data
   const overallState = getOverallSiteHealthState(health)
@@ -115,7 +115,12 @@ export function MobileSiteStatus(): ReactElement {
           {health ? `Checked ${formatSiteStatusDate(health.checkedAt)}` : 'Checking status'}
         </time>
         <ServiceLabel label={summary} state={overallState} title={summary} />
-        <Link href={'/status'} prefetch={false} className={'text-text-primary underline underline-offset-2'}>
+        <Link
+          href={'/status'}
+          prefetch={false}
+          onClick={onNavigate}
+          className={'text-text-primary underline underline-offset-2'}
+        >
           {'Full system status'}
         </Link>
       </div>

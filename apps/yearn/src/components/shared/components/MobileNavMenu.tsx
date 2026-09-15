@@ -658,7 +658,7 @@ export function MobileNavMenu({
                     </Link>
                   </div>
                   <div className={'mt-1.5'}>
-                    <MobileSiteStatus />
+                    <MobileSiteStatus onNavigate={onClose} />
                   </div>
                 </div>
               </div>
