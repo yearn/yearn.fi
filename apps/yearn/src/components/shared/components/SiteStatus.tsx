@@ -84,13 +84,11 @@ export function HeaderSiteStatus(): ReactElement {
         data-header-site-status-panel
         aria-label={'Site status details'}
         aria-busy={statusQuery.isPending}
-        className={
-          'pointer-events-none absolute top-1/2 right-1/2 z-0 w-[calc(100vw-22rem)] -translate-y-1/2 overflow-hidden lg:w-[32rem]'
-        }
+        className={'pointer-events-none absolute top-1/2 right-1/2 z-0 w-max -translate-y-1/2 overflow-hidden'}
       >
         <div
           className={
-            'flex h-8 translate-x-full items-center justify-end gap-2 whitespace-nowrap bg-app/95 pr-5 pl-3 text-sm text-text-secondary opacity-0 backdrop-blur-md transition-[translate,opacity] duration-300 ease-out group-hover/site-status:translate-x-0 group-hover/site-status:opacity-100 group-focus-within/site-status:translate-x-0 group-focus-within/site-status:opacity-100 motion-reduce:transition-none'
+            'flex h-8 translate-x-full items-center justify-end gap-2 whitespace-nowrap bg-app/95 pr-5 pl-2 text-sm text-text-secondary opacity-0 backdrop-blur-md transition-[translate,opacity] duration-300 ease-out group-hover/site-status:translate-x-0 group-hover/site-status:opacity-100 group-focus-within/site-status:translate-x-0 group-focus-within/site-status:opacity-100 motion-reduce:transition-none'
           }
         >
           <span className={'font-medium text-text-primary'}>{summary}</span>
