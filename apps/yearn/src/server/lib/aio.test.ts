@@ -217,3 +217,24 @@ describe('getVaultMarkdownListKind', () => {
     expect(getVaultMarkdownListKind(vault({ apiVersion: '2.0.0', v3: false, kind: 'Legacy' }))).toBe('legacy')
   })
 })
+
+describe.each(['catalog', 'vault'])('cache refresh timestamps in %s markdown', (kind) => {
+  it.each([null, 'not-a-date', '2026-09-01T13:00:00Z'])(
+    'normalizes valid refresh timestamps and omits missing or invalid ones (%s)',
+    (cacheRefreshedAt) => {
+      const timestamps = { generatedAt: '2026-09-01T15:00:00.000Z', cacheRefreshedAt }
+      const markdown =
+        kind === 'catalog'
+          ? buildVaultsMarkdown([vault({})], undefined, timestamps)
+          : buildVaultMarkdown({ name: 'Test Vault' }, 1, address(1), timestamps)
+
+      expect(markdown).toContain('generated_at: 2026-09-01T15:00:00.000Z')
+      expect(markdown).not.toContain('source_updated_at:')
+      if (cacheRefreshedAt === '2026-09-01T13:00:00Z') {
+        expect(markdown).toContain('cache_refreshed_at: 2026-09-01T13:00:00.000Z')
+      } else {
+        expect(markdown).not.toContain('cache_refreshed_at:')
+      }
+    }
+  )
+})

@@ -86,6 +86,7 @@ export type TVaultSnapshot = {
 export type TAioDocumentTimestamps = {
   generatedAt?: string | number | Date
   sourceUpdatedAt?: string | number | Date | null
+  cacheRefreshedAt?: string | number | Date | null
 }
 
 // --- Formatters ---
@@ -137,10 +138,12 @@ export function resolveSourceUpdatedAt(...values: unknown[]): string | undefined
 function resolveDocumentTimestamps(timestamps?: TAioDocumentTimestamps): {
   generatedAt: string
   sourceUpdatedAt?: string
+  cacheRefreshedAt?: string
 } {
   return {
     generatedAt: resolveSourceUpdatedAt(timestamps?.generatedAt) ?? new Date().toISOString(),
-    sourceUpdatedAt: resolveSourceUpdatedAt(timestamps?.sourceUpdatedAt)
+    sourceUpdatedAt: resolveSourceUpdatedAt(timestamps?.sourceUpdatedAt),
+    cacheRefreshedAt: resolveSourceUpdatedAt(timestamps?.cacheRefreshedAt)
   }
 }
 
@@ -267,8 +270,9 @@ export function buildVaultsMarkdown(
 
   const chainIds = [...new Set(filtered.map((v) => v.chainId))].sort((a, b) => a - b)
   const chainLabel = chainId != null ? ` — ${CHAIN_NAMES[chainId] ?? `Chain ${chainId}`}` : ''
-  const { generatedAt, sourceUpdatedAt } = resolveDocumentTimestamps(timestamps)
+  const { generatedAt, sourceUpdatedAt, cacheRefreshedAt } = resolveDocumentTimestamps(timestamps)
   const sourceUpdatedAtFrontmatter = sourceUpdatedAt ? `\nsource_updated_at: ${sourceUpdatedAt}` : ''
+  const cacheRefreshedAtFrontmatter = cacheRefreshedAt ? `\ncache_refreshed_at: ${cacheRefreshedAt}` : ''
 
   const chainSections = chainIds
     .map((id) => {
@@ -292,7 +296,7 @@ description: Kong-derived active public Yearn single asset and LP vault summary 
 source: ${KONG_VAULT_LIST_URL}
 canonical_data: ${KONG_VAULT_LIST_URL}
 derived_from_kong: true
-generated_at: ${generatedAt}${sourceUpdatedAtFrontmatter}
+generated_at: ${generatedAt}${sourceUpdatedAtFrontmatter}${cacheRefreshedAtFrontmatter}
 total_vaults: ${filtered.length}
 ---
 
@@ -301,6 +305,8 @@ total_vaults: ${filtered.length}
 Yearn operates automated yield vaults across multiple EVM-compatible chains. Each vault accepts a specific ERC-20 token and routes funds to on-chain strategies, compounding returns automatically.
 
 This markdown is generated live from Kong REST for discovery convenience. Use \`${KONG_VAULT_LIST_URL}\` as the canonical source for current vault data.
+
+\`cache_refreshed_at\`, when present, is Kong's last successful cache refresh. It does not establish when each vault's on-chain data was updated; CDN caching can delay the reported timestamp.
 
 Vault page URLs follow the pattern: \`${VAULT_PAGE_URL_PATTERN}\`
 Vault snapshots follow the pattern: \`${KONG_SNAPSHOT_URL_PATTERN}\`
@@ -336,8 +342,9 @@ export function buildVaultMarkdown(
   const description = snapshot.meta?.description ?? `Automated yield vault for ${tokenName} (${token}) on ${chainName}.`
   const vaultUrl = `${SITE_URL}/vaults/${chainId}/${address}`
   const sourceUrl = `${KONG_REST_BASE}/snapshot/${chainId}/${address}`
-  const { generatedAt, sourceUpdatedAt } = resolveDocumentTimestamps(timestamps)
+  const { generatedAt, sourceUpdatedAt, cacheRefreshedAt } = resolveDocumentTimestamps(timestamps)
   const sourceUpdatedAtFrontmatter = sourceUpdatedAt ? `\nsource_updated_at: ${sourceUpdatedAt}` : ''
+  const cacheRefreshedAtFrontmatter = cacheRefreshedAt ? `\ncache_refreshed_at: ${cacheRefreshedAt}` : ''
 
   const allStrategies = [...(snapshot.strategies ?? []), ...(snapshot.composition ?? [])].map(normalizeSnapshotStrategy)
   const strategiesSection =
@@ -366,7 +373,7 @@ url: ${vaultUrl}
 source: ${sourceUrl}
 canonical_data: ${sourceUrl}
 derived_from_kong: true
-generated_at: ${generatedAt}${sourceUpdatedAtFrontmatter}
+generated_at: ${generatedAt}${sourceUpdatedAtFrontmatter}${cacheRefreshedAtFrontmatter}
 ---
 
 # ${name}${symbol ? ` (${symbol})` : ''}
@@ -377,6 +384,8 @@ ${description}
 **Canonical data:** ${sourceUrl}
 
 This markdown is generated live from Kong REST for discovery convenience. Use the canonical JSON snapshot for current APY, TVL, strategy composition, fees, and availability.
+
+\`cache_refreshed_at\`, when present, is Kong's last successful cache refresh. It does not establish when this vault's on-chain data was updated; CDN caching can delay the reported timestamp.
 
 ## Overview
 

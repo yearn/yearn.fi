@@ -38,7 +38,12 @@ describe('vault markdown route', () => {
           apy: { net: 0.03, grossApr: 0.04 },
           fees: { performanceFee: 1000, managementFee: 0 }
         },
-        { headers: { 'Last-Modified': 'Mon, 31 Aug 2026 09:00:00 GMT' } }
+        {
+          headers: {
+            'Last-Modified': 'Mon, 31 Aug 2026 09:00:00 GMT',
+            'x-last-refresh': '2026-09-01T13:00:00.000Z'
+          }
+        }
       )
     )
     vi.stubGlobal('fetch', fetchStub)
@@ -53,6 +58,7 @@ describe('vault markdown route', () => {
     expect(markdown).toContain('# USDC Vault')
     expect(markdown).toContain('generated_at:')
     expect(markdown).toContain('source_updated_at: 2026-09-01T12:20:11.000Z')
+    expect(markdown).toContain('cache_refreshed_at: 2026-09-01T13:00:00.000Z')
     expect(markdown).not.toMatch(/^updated:/m)
   })
 

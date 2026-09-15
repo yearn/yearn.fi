@@ -19,7 +19,7 @@ const health: TSiteHealth = {
     kong: {
       state: 'operational',
       latencyMs: 42,
-      representationUpdatedAt: '2026-09-01T11:59:00.000Z'
+      cacheRefreshedAt: '2026-09-01T11:59:00.000Z'
     },
     prices: { state: 'operational', latencyMs: 35 },
     portfolio: { state: 'operational', latencyMs: 51 },
@@ -62,16 +62,28 @@ describe('system status page', () => {
     expect(html).toContain('Optimism')
     expect(html).toContain('Last checked')
     expect(html).toContain('Status generated')
-    expect(html).toContain('Checks are cached for 30 seconds.')
-    expect(html).toContain('Vault data modified')
+    expect(html).toContain('Kong cache refreshed')
+    expect(html).toContain('dateTime="2026-09-01T11:59:00.000Z"')
+    expect(html).not.toContain('Vault data modified')
     expect(html).toContain('Site build created')
-    expect(html).toContain('<summary')
     expect(html).toContain('Technical details')
     expect(html).not.toContain('Yearn infrastructure')
     expect(html).toContain('href="/api/status"')
     expect(html).toContain('href="/api/vaults/markdown"')
     expect(html).toContain('href="https://cms.yearn.fi"')
     expect(html).toContain('href="https://token-assets.yearn.fi"')
+  })
+
+  it('shows an explicit fallback when Kong has not reported its refresh time', async () => {
+    mockGetSiteHealth.mockResolvedValue({
+      ...health,
+      services: { ...health.services, kong: { state: 'operational', latencyMs: 42 } }
+    })
+
+    const html = renderToStaticMarkup(await Page())
+
+    expect(html).toContain('Kong cache refreshed')
+    expect(html).toContain('Not reported by Kong')
   })
 
   it('advertises a canonical HTML URL and JSON alternate', () => {

@@ -73,7 +73,8 @@ async function handleVaultMarkdown(request: Request, includeBody: boolean): Prom
     }
 
     const sourceUpdatedAt = getSourceUpdatedAt(payload, response.headers.get('Last-Modified'))
-    const markdown = buildVaultMarkdown(parsed.data, Number(chainId), address, { sourceUpdatedAt })
+    const cacheRefreshedAt = response.headers.get('x-last-refresh')
+    const markdown = buildVaultMarkdown(parsed.data, Number(chainId), address, { sourceUpdatedAt, cacheRefreshedAt })
     return markdownResponse(includeBody ? markdown : null)
   } catch (error) {
     console.error('Error generating vault markdown:', error)

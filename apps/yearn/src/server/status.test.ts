@@ -43,7 +43,13 @@ describe('site status', () => {
   it('reports Kong and every supported RPC as operational', async () => {
     configureServices()
     const responses = [
-      new Response(null, { status: 200, headers: { 'Last-Modified': 'Tue, 01 Sep 2026 11:59:00 GMT' } }),
+      new Response(null, {
+        status: 200,
+        headers: {
+          'Last-Modified': 'Tue, 01 Sep 2026 11:59:00 GMT',
+          'x-last-refresh': '2026-09-01T11:58:00.000Z'
+        }
+      }),
       priceResponse(),
       portfolioResponse(),
       transactionsResponse(),
@@ -62,7 +68,8 @@ describe('site status', () => {
     expect(response.headers.get('Cache-Control')).toBe('public, max-age=0, must-revalidate')
     expect(response.headers.get('Vercel-CDN-Cache-Control')).toBe('public, s-maxage=30, stale-while-revalidate=30')
     expect(payload.services.kong.state).toBe('operational')
-    expect(payload.services.kong.representationUpdatedAt).toBe('2026-09-01T11:59:00.000Z')
+    expect(payload.services.kong.cacheRefreshedAt).toBe('2026-09-01T11:58:00.000Z')
+    expect(payload.services.kong).not.toHaveProperty('representationUpdatedAt')
     expect(payload.services.prices.state).toBe('operational')
     expect(payload.services.portfolio.state).toBe('operational')
     expect(payload.services.transactions.state).toBe('operational')
@@ -77,7 +84,23 @@ describe('site status', () => {
     })
     expect(JSON.stringify(payload)).not.toContain('http')
     expect(fetchStub).toHaveBeenCalledTimes(canonicalChains.length + 6)
+    expect(fetchStub.mock.calls[0][1]).toMatchObject({ method: 'HEAD' })
   })
+
+  it.each([null, 'not-a-date'])(
+    'omits missing or invalid refresh time (%s) without affecting Kong availability',
+    async (lastRefresh) => {
+      configureServices()
+      const headers = new Headers({ 'Last-Modified': 'Tue, 01 Sep 2026 11:59:00 GMT' })
+      if (lastRefresh !== null) headers.set('x-last-refresh', lastRefresh)
+      vi.spyOn(globalThis, 'fetch').mockImplementation(async () => Response.json({}, { headers }))
+
+      const payload = await (await GET()).json()
+
+      expect(payload.services.kong.state).toBe('operational')
+      expect(payload.services.kong).not.toHaveProperty('cacheRefreshedAt')
+    }
+  )
 
   it('reports degraded RPC health when one supported chain fails', async () => {
     configureServices()

@@ -47,7 +47,7 @@ async function checkKong(): Promise<TSiteHealth['services']['kong']> {
     return {
       state: response.ok ? 'operational' : 'unavailable',
       latencyMs: Math.round(performance.now() - startedAt),
-      representationUpdatedAt: normalizeTimestamp(response.headers.get('last-modified'))
+      cacheRefreshedAt: normalizeTimestamp(response.headers.get('x-last-refresh'))
     }
   } catch {
     return { state: 'unavailable', latencyMs: Math.round(performance.now() - startedAt) }
@@ -239,7 +239,7 @@ async function checkSiteHealth(): Promise<TSiteHealth> {
 
 // Route handlers and server pages compile into separate bundles. A bound callback has the same
 // serialized form in both, so the explicit key below resolves to one shared Next Data Cache entry.
-const getDataCachedSiteHealth = unstable_cache(checkSiteHealth.bind(null), ['yearn-site-health-v3'], {
+const getDataCachedSiteHealth = unstable_cache(checkSiteHealth.bind(null), ['yearn-site-health-v4'], {
   revalidate: STATUS_DATA_CACHE_TTL_SECONDS,
   tags: ['site-health']
 })

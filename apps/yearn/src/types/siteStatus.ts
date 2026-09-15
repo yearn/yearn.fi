@@ -20,7 +20,7 @@ export type TSiteHealth = {
     kong: {
       state: Exclude<TSiteHealthState, 'degraded'>
       latencyMs: number
-      representationUpdatedAt?: string
+      cacheRefreshedAt?: string
     }
     prices: TSiteHealthService
     portfolio: TSiteHealthService

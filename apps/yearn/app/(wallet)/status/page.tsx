@@ -195,25 +195,26 @@ export default async function Page(): Promise<ReactElement> {
           </div>
         </section>
 
-        <details className={'border-t border-border py-5'}>
-          <summary className={'cursor-pointer text-sm font-medium'}>{'Technical details'}</summary>
+        <section aria-labelledby={'technical-details-heading'} className={'border-t border-border py-5'}>
+          <h2 id={'technical-details-heading'} className={'text-sm font-medium'}>
+            {'Technical details'}
+          </h2>
           <div className={'mt-5 grid gap-8 md:grid-cols-2'}>
             <div>
-              <h2 className={'text-sm font-medium'}>{'Times'}</h2>
+              <h3 className={'text-sm font-medium'}>{'Times'}</h3>
               <dl className={'mt-3'}>
                 <Timestamp label={'Last checked'} value={health.checkedAt} />
                 <Timestamp label={'Status generated'} value={health.generatedAt} />
                 <Timestamp
-                  label={'Vault data modified'}
-                  value={health.services.kong.representationUpdatedAt}
+                  label={'Kong cache refreshed'}
+                  value={health.services.kong.cacheRefreshedAt}
                   fallback={'Not reported by Kong'}
                 />
                 <Timestamp label={'Site build created'} value={health.builtAt} fallback={'Not available'} />
               </dl>
-              <p className={'mt-3 text-xs text-text-secondary'}>{'Checks are cached for 30 seconds.'}</p>
             </div>
             <nav aria-label={'Technical links'}>
-              <h2 className={'text-sm font-medium'}>{'Links'}</h2>
+              <h3 className={'text-sm font-medium'}>{'Links'}</h3>
               <ul className={'mt-4 space-y-3 text-sm'}>
                 <li>
                   <Link href={'/api/status'} prefetch={false} className={'underline underline-offset-4'}>
@@ -243,7 +244,7 @@ export default async function Page(): Promise<ReactElement> {
               </ul>
             </nav>
           </div>
-        </details>
+        </section>
       </div>
     </div>
   )
