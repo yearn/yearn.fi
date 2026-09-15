@@ -1,5 +1,6 @@
 import type { FC } from 'react'
 import { InfoOverlay } from '../shared/InfoOverlay'
+import { formatWidgetValue } from '../shared/valueDisplay'
 import type { WithdrawalSource, WithdrawRouteType } from './types'
 
 interface WithdrawDetailsOverlayProps {
@@ -10,7 +11,8 @@ interface WithdrawDetailsOverlayProps {
   vaultAssetSymbol: string
   outputTokenSymbol: string
 
-  withdrawAmount: string
+  sourceShareAmount: bigint
+  sourceTokenDecimals: number
   expectedOutput?: string
   hasInputValue: boolean
 
@@ -29,7 +31,8 @@ export const WithdrawDetailsOverlay: FC<WithdrawDetailsOverlayProps> = ({
   sourceTokenSymbol,
   vaultAssetSymbol,
   outputTokenSymbol,
-  withdrawAmount,
+  sourceShareAmount,
+  sourceTokenDecimals,
   expectedOutput,
   hasInputValue,
   withdrawalSource,
@@ -42,6 +45,7 @@ export const WithdrawDetailsOverlay: FC<WithdrawDetailsOverlayProps> = ({
   const isUnstake = routeType === 'DIRECT_UNSTAKE'
   const isYBoldZapperWithdraw = routeType === 'YBOLD_ZAPPER_WITHDRAW'
   const isUnstakeAndWithdrawFallback = routeType === 'DIRECT_UNSTAKE_WITHDRAW'
+  const formattedSourceShareAmount = formatWidgetValue(sourceShareAmount, sourceTokenDecimals)
 
   const renderReceiveValue = () => {
     // No input value - just show symbol
@@ -180,7 +184,7 @@ export const WithdrawDetailsOverlay: FC<WithdrawDetailsOverlayProps> = ({
               <li>
                 Withdrawing:{' '}
                 <span className="font-semibold text-text-primary">
-                  {withdrawAmount} {sourceTokenSymbol}
+                  {formattedSourceShareAmount} {sourceTokenSymbol}
                 </span>
               </li>
             )}
