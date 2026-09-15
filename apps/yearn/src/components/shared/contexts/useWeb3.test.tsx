@@ -26,6 +26,9 @@ const mocks = vi.hoisted(() => ({
 
 vi.mock('@hooks/usePlausible', () => ({ usePlausible: () => mocks.track }))
 vi.mock('@yearn/wallet-ui', () => ({ useWalletDrawer: () => mocks.drawer }))
+vi.mock('@yearn/wallet-ui/useWalletDisconnect', () => ({
+  useWalletDisconnect: () => ({ disconnect: mocks.disconnect })
+}))
 vi.mock('@rainbow-me/rainbowkit', () => ({
   useAccountModal: () => ({}),
   useChainModal: () => ({})
@@ -33,7 +36,6 @@ vi.mock('@rainbow-me/rainbowkit', () => ({
 vi.mock('wagmi', () => ({
   useAccount: () => mocks.account,
   useConnect: () => ({ connectors: mocks.connectors, connectAsync: mocks.connectAsync }),
-  useDisconnect: () => ({ disconnect: mocks.disconnect }),
   useEnsName: () => ({ data: 'example.eth', isLoading: false })
 }))
 vi.mock('@shared/utils', () => ({

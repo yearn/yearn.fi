@@ -1,6 +1,7 @@
 import { RainbowKitProvider, useConnectModal } from '@rainbow-me/rainbowkit'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { useWalletDisconnect } from '@yearn/wallet-ui/useWalletDisconnect'
 import { cancelWalletReconnect, WalletProvider } from '@yearn/wallet-ui/WalletProvider'
 import { type ReactNode, StrictMode } from 'react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
@@ -56,6 +57,7 @@ const createBrowserWalletConfig = (
 
 function WalletControls() {
   const { openConnectModal } = useConnectModal()
+  const { disconnect: disconnectWallet } = useWalletDisconnect()
   const { status } = useAccount()
   return (
     <>
@@ -63,6 +65,9 @@ function WalletControls() {
         More wallets
       </button>
       <span data-testid="status">{status}</span>
+      <button type="button" onClick={disconnectWallet}>
+        Disconnect
+      </button>
     </>
   )
 }
@@ -284,4 +289,18 @@ it('keeps an explicitly disconnected wallet disconnected after remount', async (
   await act(async () => {})
   expect(getAccount(config).status).toBe('disconnected')
   expect(provider.request).not.toHaveBeenCalled()
+})
+
+it('cancels a pending automatic reconnect when Disconnect is requested', async () => {
+  const { config, provider } = createBrowserWalletConfig(true)
+  const pending = Promise.withResolvers<string[]>()
+  provider.request.mockImplementation(async ({ method }) => (method === 'eth_chainId' ? '0x1' : pending.promise))
+  render(<Providers config={config} />)
+  await waitFor(() => expect(provider.request).toHaveBeenCalledWith({ method: 'eth_accounts' }))
+  fireEvent.click(screen.getByRole('button', { name: 'Disconnect' }))
+  await act(async () => {
+    pending.resolve([account])
+  })
+  await waitFor(() => expect(getAccount(config).isDisconnected).toBe(true))
+  expect(config.state.connections.size).toBe(0)
 })

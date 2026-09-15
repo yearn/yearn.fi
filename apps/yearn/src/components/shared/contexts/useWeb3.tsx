@@ -6,10 +6,11 @@ import { isIframe } from '@shared/utils/helpers'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import { toAddress } from '@shared/utils/tools.address'
 import { useWalletDrawer } from '@yearn/wallet-ui'
+import { useWalletDisconnect } from '@yearn/wallet-ui/useWalletDisconnect'
 import type { ReactElement } from 'react'
 import { createContext, useCallback, useContext, useEffect, useMemo, useRef, useState } from 'react'
 import { mainnet } from 'viem/chains'
-import { useAccount, useConnect, useDisconnect, useEnsName } from 'wagmi'
+import { useAccount, useConnect, useEnsName } from 'wagmi'
 import { AGENT_WALLET_ID, shouldAutoConnectAgentWallet } from '@/config/agentWallet'
 import { resolveConnectedCanonicalChainId, resolveExecutionChainId } from '@/config/tenderly'
 
@@ -46,7 +47,7 @@ const Web3Context = createContext<TWeb3Context>(defaultState)
 export const Web3ContextApp = (props: { children: ReactElement }): ReactElement => {
   const { address, isConnecting, isConnected, connector, chain } = useAccount()
   const { connectors, connectAsync } = useConnect()
-  const { disconnect } = useDisconnect()
+  const { disconnect } = useWalletDisconnect()
   const { data: ensName, isLoading: isEnsLoading } = useEnsName({
     address: isConnected ? address : undefined,
     chainId: mainnet.id

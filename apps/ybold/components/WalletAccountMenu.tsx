@@ -7,11 +7,12 @@ import { useVaultUserData } from '@yearn/vault-widget/internal/hooks/useVaultUse
 import { useVaultWidgetSpotPrices } from '@yearn/vault-widget/internal/hooks/useVaultWidgetSpotPrices'
 import { useVaultWidgetRuntime } from '@yearn/vault-widget/runtime'
 import { formatWalletAddress } from '@yearn/wallet-ui/connectors'
+import { useWalletDisconnect } from '@yearn/wallet-ui/useWalletDisconnect'
 import { WalletSurface } from '@yearn/wallet-ui/WalletSurface'
 import Image from 'next/image'
 import { useCallback, useMemo, useState } from 'react'
 import { formatUnits } from 'viem'
-import { useAccount, useDisconnect } from 'wagmi'
+import { useAccount } from 'wagmi'
 
 const YEARN_PORTFOLIO_URL = 'https://yearn.fi/portfolio'
 const YBOLD_PRICE_TOKENS = [{ address: BOLD, chainId: 1 }] as const
@@ -327,7 +328,7 @@ export function WalletAccountMenu() {
   const { address } = useAccount()
   const { activities } = useWalletActivity()
   const [isOpen, setIsOpen] = useState(false)
-  const { disconnectAsync, isPending: isDisconnecting } = useDisconnect()
+  const { disconnectAsync, isPending: isDisconnecting } = useWalletDisconnect()
   const [disconnectError, setDisconnectError] = useState('')
   const [view, setView] = useState<TAccountView>('account')
   const [wasCopied, setWasCopied] = useState(false)

@@ -23,8 +23,10 @@ const wallet = vi.hoisted(() => ({
 }))
 
 vi.mock('wagmi', () => ({
-  useAccount: () => ({ address: wallet.address, isConnected: wallet.isConnected }),
-  useDisconnect: () => ({ disconnectAsync: wallet.disconnect, isPending: false })
+  useAccount: () => ({ address: wallet.address, isConnected: wallet.isConnected })
+}))
+vi.mock('@yearn/wallet-ui/useWalletDisconnect', () => ({
+  useWalletDisconnect: () => ({ disconnectAsync: wallet.disconnect, isPending: false })
 }))
 vi.mock('@ybold/components/WalletActivityProvider', () => ({
   useWalletActivity: () => ({ activities: [] })

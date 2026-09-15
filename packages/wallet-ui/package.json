@@ -15,6 +15,7 @@
     "./WalletDrawer": "./src/WalletDrawer.tsx",
     "./WalletProvider": "./src/WalletProvider.tsx",
     "./WalletSurface": "./src/WalletSurface.tsx",
+    "./useWalletDisconnect": "./src/useWalletDisconnect.ts",
     "./rainbowkit": "./src/rainbowkit.ts",
     "./walletIcons": "./src/walletIcons.ts",
     "./styles.css": "./styles.css"
