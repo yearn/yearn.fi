@@ -106,10 +106,10 @@ describe('portfolioResponseSchema', () => {
       status: 'missing_pps',
       issues: ['missing_pps']
     })
-    expect(parsed.protocolReturn.dataPoints[0]?.growthUsdEstimated).toBe(false)
+    expect(parsed.protocolReturn.dataPoints[0]).not.toHaveProperty('growthUsd')
+    expect(parsed.protocolReturn.dataPoints[0]).not.toHaveProperty('growthUsdEstimated')
     expect(parsed.protocolReturn.familySeries[0]?.dataPoints[0]).toMatchObject({
       growthWeightEth: 0.001,
-      growthUsdEstimated: false,
       growthIndexContribution: null
     })
   })

@@ -87,7 +87,7 @@ describe('getSettledAddressScopedContext wallet event cache', () => {
   beforeEach(() => {
     vi.clearAllMocks()
     serviceMocks.fetchUserEvents.mockResolvedValue(EVENTS)
-    serviceMocks.getCachedWalletEvents.mockResolvedValueOnce(EVENTS).mockResolvedValueOnce(null)
+    serviceMocks.getCachedWalletEvents.mockReset().mockResolvedValueOnce(EVENTS).mockResolvedValueOnce(null)
     serviceMocks.saveCachedWalletEvents.mockResolvedValue(true)
     serviceMocks.prefetchGlobalVaultMetadata.mockResolvedValue(undefined)
     serviceMocks.fetchMultipleVaultsMetadata.mockResolvedValue(
@@ -112,6 +112,39 @@ describe('getSettledAddressScopedContext wallet event cache', () => {
       EVENTS
     )
   })
+
+  it.each(['cached', 'fetched'] as const)(
+    'returns an empty wallet with %s events without waiting for unavailable metadata',
+    async (eventSource) => {
+      const events: UserEvents = { deposits: [], withdrawals: [], transfersIn: [], transfersOut: [] }
+      const metadataPrefetch: { reject?: (error: Error) => void } = {}
+      serviceMocks.prefetchGlobalVaultMetadata.mockReturnValueOnce(
+        new Promise<void>((_resolve, reject) => {
+          metadataPrefetch.reject = reject
+        })
+      )
+      serviceMocks.getCachedWalletEvents.mockReset().mockResolvedValue(eventSource === 'cached' ? events : null)
+      serviceMocks.fetchUserEvents.mockResolvedValue(events)
+      const context = getSettledAddressScopedContext({ userAddress: CACHED_USER })
+
+      try {
+        const result = await Promise.race([context, new Promise<null>((resolve) => setImmediate(() => resolve(null)))])
+
+        expect(result).toMatchObject({
+          hasActivity: false,
+          timeline: [],
+          rawEvents: [],
+          rawVaultIdentifiers: [],
+          vaultMetadata: new Map(),
+          metadataFetchFailedVaults: 0
+        })
+        expect(serviceMocks.fetchMultipleVaultsMetadata).not.toHaveBeenCalled()
+      } finally {
+        metadataPrefetch.reject?.(new Error('Kong unavailable'))
+        await context
+      }
+    }
+  )
 
   it('requests PPS for each selected vault', async () => {
     const context = await getSettledAddressScopedContext({ userAddress: CACHED_USER })

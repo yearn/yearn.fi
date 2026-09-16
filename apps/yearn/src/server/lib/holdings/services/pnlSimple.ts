@@ -207,8 +207,6 @@ export interface HoldingsPnLSimpleResponse {
 export interface HoldingsPnLSimpleHistoryPoint {
   date: string
   timestamp: number
-  growthUsd: number | null
-  growthUsdEstimated: boolean
   growthWeightUsd: number | null
   growthWeightEth: number | null
   protocolReturnPct: number | null
@@ -222,8 +220,6 @@ export interface HoldingsPnLSimpleHistoryPoint {
 
 export interface HoldingsPnLSimpleHistoryFamilyPoint {
   timestamp: number
-  growthUsd: number | null
-  growthUsdEstimated: boolean
   growthWeightUsd: number | null
   growthWeightEth: number | null
   growthIndex: number | null
@@ -1984,7 +1980,6 @@ function isProtocolReturnHistoryOverlapEqual(
   current: HoldingsPnLSimpleHistoryPoint
 ): boolean {
   const numericFields = [
-    'growthUsd',
     'growthWeightUsd',
     'growthWeightEth',
     'protocolReturnPct',
@@ -1999,7 +1994,6 @@ function isProtocolReturnHistoryOverlapEqual(
   return (
     cached.date === current.date &&
     cached.timestamp === current.timestamp &&
-    cached.growthUsdEstimated === current.growthUsdEstimated &&
     numericFields.every((field) => areHistoryPointNumbersEqual(cached[field], current[field]))
   )
 }
@@ -2346,54 +2340,23 @@ export function materializeProtocolReturnVaults(args: {
   })
 }
 
-function getLatestFetchedTokenPriceUsd(
-  chainId: number,
-  tokenAddress: string | null,
-  priceData: Map<string, Map<number, number>>
-): number | null {
-  if (!tokenAddress) {
-    return null
-  }
-
-  const tokenKey = `${getChainPrefix(chainId)}:${tokenAddress.toLowerCase()}`
-  const latestPrice = Array.from(priceData.get(tokenKey)?.entries() ?? []).reduce<{
-    timestamp: number
-    price: number
-  } | null>((latest, [timestamp, price]) => {
-    if (!Number.isFinite(price) || price <= 0) {
-      return latest
-    }
-
-    return latest === null || timestamp > latest.timestamp ? { timestamp, price } : latest
-  }, null)
-
-  return latestPrice?.price ?? null
-}
-
-function getLatestFetchedAssetPriceUsd(
-  vault: HoldingsPnLSimpleVault,
-  priceData: Map<string, Map<number, number>>
-): number | null {
-  return getLatestFetchedTokenPriceUsd(vault.chainId, vault.metadata.tokenAddress, priceData)
-}
-
-function buildLatestAssetPriceUsdByVaultKey(
+function buildAssetPricesUsd(
   metadata: Map<string, VaultMetadata>,
-  priceData: Map<string, Map<number, number>>
+  priceData: Map<string, Map<number, number>>,
+  timestamp: number
 ): Map<string, number | null> {
   return new Map(
-    Array.from(metadata.entries()).map(([vaultKey, vaultMetadata]) => [
-      vaultKey,
-      getLatestFetchedTokenPriceUsd(
-        vaultMetadata.chainId,
-        resolveNestedVaultTerminalAsset({
-          chainId: vaultMetadata.chainId,
-          vaultAddress: vaultMetadata.address,
-          vaultMetadata: metadata
-        })?.address ?? null,
-        priceData
-      )
-    ])
+    Array.from(metadata.entries()).map(([vaultKey, vaultMetadata]) => {
+      const asset = resolveNestedVaultTerminalAsset({
+        chainId: vaultMetadata.chainId,
+        vaultAddress: vaultMetadata.address,
+        vaultMetadata: metadata
+      })
+      const price = asset
+        ? priceData.get(`${getChainPrefix(vaultMetadata.chainId)}:${asset.address.toLowerCase()}`)?.get(timestamp)
+        : undefined
+      return [vaultKey, price !== undefined && Number.isFinite(price) && price > 0 ? price : null]
+    })
   )
 }
 
@@ -2401,37 +2364,33 @@ function getGrowthUsd(vault: HoldingsPnLSimpleVault, latestAssetPriceUsd: number
   if (vault.unrealizedGrowthUnderlying === null) {
     return null
   }
-  const growthValuedAtLatestPrice =
-    latestAssetPriceUsd === null
-      ? 0
-      : (vault.unrealizedGrowthUnderlying + vault.unpricedRealizedGrowthUnderlying) * latestAssetPriceUsd
-  return vault.realizedGrowthUsdAtExit + growthValuedAtLatestPrice
-}
-
-function isGrowthUsdEstimated(vault: HoldingsPnLSimpleVault, latestAssetPriceUsd: number | null): boolean {
-  return latestAssetPriceUsd !== null && vault.issues.includes('missing_exit_price')
+  const growthToValue = vault.unrealizedGrowthUnderlying + vault.unpricedRealizedGrowthUnderlying
+  if (growthToValue !== 0 && latestAssetPriceUsd === null) {
+    return null
+  }
+  return vault.realizedGrowthUsdAtExit + growthToValue * (latestAssetPriceUsd ?? 0)
 }
 
 function buildPortfolioGrowthVault(
   vault: HoldingsPnLSimpleVault,
-  priceData: Map<string, Map<number, number>>
+  latestAssetPriceUsd: number | null
 ): HoldingsPortfolioGrowthVault {
-  const latestAssetPriceUsd = getLatestFetchedAssetPriceUsd(vault, priceData)
   const issues =
     latestAssetPriceUsd === null ? vault.issues : vault.issues.filter((issue) => issue !== 'missing_receipt_price')
   const baselineUsd = latestAssetPriceUsd === null ? 0 : vault.baselineUnderlying * latestAssetPriceUsd
   const baselineExposureUsdYears =
     latestAssetPriceUsd === null ? 0 : vault.baselineExposureUnderlyingYears * latestAssetPriceUsd
+  const growthUsd = getGrowthUsd(vault, latestAssetPriceUsd)
 
   return {
     chainId: vault.chainId,
     vaultAddress: vault.vaultAddress,
-    status: vaultStatus(issues),
+    status: growthUsd === null && vaultStatus(issues) === 'ok' ? 'partial' : vaultStatus(issues),
     issues,
     baselineUsd,
     baselineExposureUsdYears,
     growthUnderlying: vault.growthUnderlying,
-    growthUsd: getGrowthUsd(vault, latestAssetPriceUsd),
+    growthUsd,
     growthPct: protocolReturnPct(vault.growthUnderlying, vault.baselineUnderlying),
     annualizedProtocolReturnPct: annualizedProtocolReturnPct(
       vault.growthUnderlying,
@@ -2444,9 +2403,11 @@ function buildPortfolioGrowthVault(
 function buildPortfolioGrowth(
   vaults: HoldingsPnLSimpleVault[],
   generatedAt: string,
-  priceData: Map<string, Map<number, number>> = new Map()
+  assetPricesUsd: Map<string, number | null> = new Map()
 ): HoldingsPortfolioGrowthResponse {
-  const growthVaults = vaults.map((vault) => buildPortfolioGrowthVault(vault, priceData))
+  const growthVaults = vaults.map((vault) =>
+    buildPortfolioGrowthVault(vault, assetPricesUsd.get(toVaultKey(vault.chainId, vault.vaultAddress)) ?? null)
+  )
   const completeVaults = growthVaults.filter((vault) => vault.status === 'ok').length
   const partialVaults = growthVaults.length - completeVaults
 
@@ -2510,17 +2471,6 @@ function buildSummary(vaults: HoldingsPnLSimpleVault[]): HoldingsPnLSimpleRespon
     ),
     isComplete: partialVaults === 0
   }
-}
-
-function selectEligibleHistoryFamilies(
-  vaults: HoldingsPnLSimpleVault[],
-  priceData: Map<string, Map<number, number>>
-): HoldingsPnLSimpleVault[] {
-  return vaults
-    .map((vault) => ({ vault, growth: buildPortfolioGrowthVault(vault, priceData) }))
-    .filter(({ growth }) => growth.status === 'ok' && growth.baselineUsd > 0 && growth.growthPct !== null)
-    .toSorted((left, right) => right.growth.baselineUsd - left.growth.baselineUsd)
-    .map(({ vault }) => vault)
 }
 
 export function buildProtocolReturnHistorySeries(args: {
@@ -2605,7 +2555,6 @@ function calculateProtocolReturnHistorySeries(args: Parameters<typeof buildProto
   const userAddress = lowerCaseAddress(args.userAddress)
   const effectiveEvents = buildEffectiveSimpleEvents(args.events, userAddress)
   const groupedTransactions = groupEventsByTransaction(effectiveEvents)
-  const latestAssetPriceUsdByVaultKey = buildLatestAssetPriceUsdByVaultKey(args.metadata, args.priceData)
   const ledgers = new Map<string, TProtocolReturnLedger>()
   const state = {
     initialized: false,
@@ -2712,20 +2661,6 @@ function calculateProtocolReturnHistorySeries(args: Parameters<typeof buildProto
       history.push({
         date: timestampToDateString(timestamp),
         timestamp,
-        growthUsd: sumAvailable(
-          vaults.map((vault) =>
-            getGrowthUsd(
-              vault,
-              latestAssetPriceUsdByVaultKey.get(toVaultKey(vault.chainId, vault.vaultAddress)) ?? null
-            )
-          )
-        ),
-        growthUsdEstimated: vaults.some((vault) =>
-          isGrowthUsdEstimated(
-            vault,
-            latestAssetPriceUsdByVaultKey.get(toVaultKey(vault.chainId, vault.vaultAddress)) ?? null
-          )
-        ),
         growthWeightUsd: sumAvailable(indexVaults.map((vault) => vault.growthWeightUsd)),
         growthWeightEth: sumAvailable(
           vaults
@@ -2773,7 +2708,6 @@ export function buildProtocolReturnFamilyHistorySeries(args: {
   const selectedVaultsByKey = new Map(
     args.selectedVaults.map((vault) => [toVaultKey(vault.chainId, vault.vaultAddress), vault] as const)
   )
-  const latestAssetPriceUsdByVaultKey = buildLatestAssetPriceUsdByVaultKey(args.metadata, args.priceData)
   const familyPointMap = new Map<string, HoldingsPnLSimpleHistoryFamilyPoint[]>(
     Array.from(selectedVaultKeys, (key) => [key, []] as const)
   )
@@ -2899,14 +2833,6 @@ export function buildProtocolReturnFamilyHistorySeries(args: {
 
       familyPointMap.get(vaultKey)?.push({
         timestamp,
-        growthUsd:
-          familyVault === undefined
-            ? null
-            : getGrowthUsd(familyVault, latestAssetPriceUsdByVaultKey.get(vaultKey) ?? null),
-        growthUsdEstimated:
-          familyVault === undefined
-            ? false
-            : isGrowthUsdEstimated(familyVault, latestAssetPriceUsdByVaultKey.get(vaultKey) ?? null),
         growthWeightUsd: args.excludedVaultKeys?.usd.has(vaultKey)
           ? null
           : familyVault
@@ -3045,7 +2971,14 @@ async function calculateHoldingsProtocolReturnHistory(
   const receiptPriceRequests = expandNestedVaultAssetPriceRequests(baseReceiptPriceRequests, vaultMetadata)
   const exitPriceRequests = expandNestedVaultAssetPriceRequests(baseExitPriceRequests, vaultMetadata)
   const basePriceRequests = mergePriceRequests(baseReceiptPriceRequests, baseExitPriceRequests)
-  const priceRequests = expandNestedVaultAssetPriceRequests(basePriceRequests, vaultMetadata)
+  const currentPriceRequests = filteredVaultIdentifiers.flatMap((vault) => {
+    const asset = resolveNestedVaultTerminalAsset({ ...vault, vaultMetadata })
+    return asset ? [{ chainId: vault.chainId, address: asset.address, timestamps: [latestTimestamp] }] : []
+  })
+  const priceRequests = mergePriceRequests(
+    expandNestedVaultAssetPriceRequests(basePriceRequests, vaultMetadata),
+    currentPriceRequests
+  )
   const ethReceiptPriceTimestamps = Array.from(
     new Set(receiptPriceRequests.flatMap((request) => request.timestamps))
   ).sort((left, right) => left - right)
@@ -3065,6 +2998,7 @@ async function calculateHoldingsProtocolReturnHistory(
     fetchEthReceiptPrices(ethReceiptPriceTimestamps)
   ])
   const fetchedPriceData = receiptPriceResult.priceData
+  const assetPricesUsd = buildAssetPricesUsd(vaultMetadata, fetchedPriceData, latestTimestamp)
   const ethPriceData = ethPriceResult.priceData
   reportHoldingsProgress(72, 'Fetched historical asset prices', `${priceRequests.length} price series`)
   const priceData = deriveNestedVaultAssetPriceData({
@@ -3098,7 +3032,9 @@ async function calculateHoldingsProtocolReturnHistory(
     currentTimestamp: latestTimestamp
   })
   reportHoldingsProgress(82, 'Calculated protocol return ledgers', `${finalVaults.length} vaults`)
-  const eligibleHistoryFamilies = selectEligibleHistoryFamilies(finalVaults, priceData)
+  const eligibleHistoryFamilies = finalVaults.filter(
+    (vault) => vault.growthUnderlying !== null && vault.baselineUnderlying > 0
+  )
   const tailPlan = getProtocolReturnHistoryTailPlan({
     cached: cached ?? null,
     userAddress,
@@ -3221,7 +3157,7 @@ async function calculateHoldingsProtocolReturnHistory(
       dataPoints: history,
       familySeries
     },
-    growth: buildPortfolioGrowth(finalVaults, generatedAt, priceData),
+    growth: buildPortfolioGrowth(finalVaults, generatedAt, assetPricesUsd),
     vaults: ppsIdentifiers,
     failedPriceBatches: receiptPriceResult.failedBatches + ethPriceResult.failedBatches,
     failedPpsVaults: getPpsFetchFailedVaults(settledContext.ppsData),

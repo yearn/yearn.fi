@@ -184,8 +184,6 @@ export function usePortfolioHistoryBundle(
     return retainedData.protocolReturn.dataPoints.map((point) => ({
       date: point.date,
       growthWeightUsd: point.growthWeightUsd,
-      growthUsd: point.growthUsd,
-      growthUsdEstimated: point.growthUsdEstimated,
       growthWeightEth: point.growthWeightEth,
       protocolReturnPct: point.protocolReturnPct,
       annualizedProtocolReturnPct: point.annualizedProtocolReturnPct,
@@ -206,7 +204,10 @@ export function usePortfolioHistoryBundle(
   const progress = usePortfolioHistoryProgress(progressId, historyIsLoading, false)
   const errorStatus = getErrorStatus(error)
   const balanceIsEmpty =
-    !historyIsLoading && Boolean(address) && (errorStatus === 404 || Boolean(balanceData && balanceData.length === 0))
+    !historyIsLoading &&
+    Boolean(address) &&
+    (errorStatus === 404 ||
+      (currentData?.balance.dataPoints.length === 0 && !balanceData?.some((point) => point.value > 0)))
   const protocolReturnIsEmpty =
     !historyIsLoading &&
     Boolean(address) &&

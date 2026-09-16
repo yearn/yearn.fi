@@ -98,8 +98,6 @@ describe('selectProtocolReturnFamilySeriesCandidates', () => {
     ])
     expect(selected[0]?.dataPoints[0]).toEqual({
       timestamp: 0,
-      growthUsd: 5,
-      growthUsdEstimated: false,
       growthWeightUsd: 500,
       growthWeightEth: null,
       growthIndex: null,

@@ -134,6 +134,26 @@ describe('getHoldingsPortfolio', () => {
     await expect(loadCacheValidationVaults()).resolves.toEqual([{ chainId: 1, vaultAddress: VAULT }])
   })
 
+  it.each([false, true])('preserves zero balances only when the wallet has activity: %s', async (hasActivity) => {
+    getHistoricalHoldingsChartMock.mockResolvedValue({
+      address: USER,
+      periodDays: 1,
+      timeframe: '1y',
+      denomination: 'usd',
+      hasActivity,
+      dataPoints: [{ date: '2026-08-13', timestamp: 1_755_043_199, value: 0 }]
+    })
+    getHoldingsProtocolReturnPortfolioMock.mockResolvedValue({
+      protocolReturn: { dataPoints: [] },
+      growth: { vaults: [] }
+    })
+
+    const { getHoldingsPortfolio } = await import('@/server/lib/holdings/services/portfolio')
+    const response = await getHoldingsPortfolio(USER)
+
+    expect(response.balance.dataPoints).toEqual(hasActivity ? [{ date: '2026-08-13', value: 0 }] : [])
+  })
+
   it('constructs the shared settled context once when both cold paths request it', async () => {
     const generatedAt = '2026-08-14T00:00:00.000Z'
     getSettledAddressScopedContextMock.mockResolvedValue({ address: USER })

@@ -178,7 +178,7 @@ export async function getSettledAddressScopedContext(args: {
   }
 
   const request = (async () => {
-    const metadataPrefetch = prefetchGlobalVaultMetadata().catch(() => undefined)
+    void prefetchGlobalVaultMetadata().catch(() => undefined)
     const settledTimestamps = generateDailyTimestamps(holdingsConfig.historyDays, 1)
     const latestSettledDayTimestamp = settledTimestamps[settledTimestamps.length - 1] ?? 0
     const maxTimestamp = toSettledDayTimestamp(latestSettledDayTimestamp)
@@ -194,7 +194,6 @@ export async function getSettledAddressScopedContext(args: {
     const timeline = buildPositionTimeline(events.deposits, events.withdrawals, events.transfersIn, events.transfersOut)
     const rawEvents = buildAddressScopedRawPnlEvents(events)
     const rawVaultIdentifiers = timeline.length > 0 ? getUniqueVaults(timeline) : getVaultIdentifiers(rawEvents)
-    await metadataPrefetch
     const baseVaultMetadata =
       rawVaultIdentifiers.length > 0 ? await fetchMultipleVaultsMetadata(rawVaultIdentifiers) : new Map()
     const vaultMetadata = await resolveNestedVaultAssetMetadata(baseVaultMetadata)

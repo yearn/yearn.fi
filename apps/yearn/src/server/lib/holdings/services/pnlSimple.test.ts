@@ -957,7 +957,7 @@ describe('pnl simple protocol return', () => {
     expect(vault.protocolReturnPct).toBeCloseTo(20)
   })
 
-  it('freezes withdrawn growth at the exit price while valuing open growth at the latest price', () => {
+  it('keeps receipt-weighted history independent of exit and current prices', () => {
     const history = buildProtocolReturnHistorySeries({
       events: [
         baseEvent({
@@ -1010,11 +1010,14 @@ describe('pnl simple protocol return', () => {
       expect.closeTo(10),
       expect.closeTo(16)
     ])
-    expect(history.map((point) => point.growthUsd)).toEqual([expect.closeTo(0), expect.closeTo(38), expect.closeTo(68)])
-    expect(history.map((point) => point.growthUsdEstimated)).toEqual([false, false, false])
+    expect(history.map((point) => point.growthWeightUsd)).toEqual([
+      expect.closeTo(0),
+      expect.closeTo(10),
+      expect.closeTo(16)
+    ])
   })
 
-  it('accumulates multiple partial exits at each exit price', () => {
+  it('accumulates receipt-weighted growth across multiple partial exits', () => {
     const history = buildProtocolReturnHistorySeries({
       events: [
         baseEvent({
@@ -1073,15 +1076,15 @@ describe('pnl simple protocol return', () => {
       selectedVaultKey: VAULT_KEY
     })
 
-    expect(history.map((point) => point.growthUsd)).toEqual([
+    expect(history.map((point) => point.growthWeightUsd)).toEqual([
       expect.closeTo(0),
-      expect.closeTo(80),
-      expect.closeTo(125),
-      expect.closeTo(175)
+      expect.closeTo(10),
+      expect.closeTo(17.5),
+      expect.closeTo(22.5)
     ])
   })
 
-  it('freezes transfer-out growth at the transfer price', () => {
+  it('freezes receipt-weighted growth after a full transfer-out', () => {
     const history = buildProtocolReturnHistorySeries({
       events: [
         baseEvent({
@@ -1133,10 +1136,14 @@ describe('pnl simple protocol return', () => {
       expect.closeTo(20),
       expect.closeTo(20)
     ])
-    expect(history.map((point) => point.growthUsd)).toEqual([expect.closeTo(0), expect.closeTo(60), expect.closeTo(60)])
+    expect(history.map((point) => point.growthWeightUsd)).toEqual([
+      expect.closeTo(0),
+      expect.closeTo(20),
+      expect.closeTo(20)
+    ])
   })
 
-  it('falls back only the missing-price exit chunk to the latest price', () => {
+  it('keeps receipt-weighted growth available when an exit price is missing', () => {
     const history = buildProtocolReturnHistorySeries({
       events: [
         baseEvent({
@@ -1195,11 +1202,10 @@ describe('pnl simple protocol return', () => {
     })
 
     expect(history[3]?.growthUnderlying).toBeCloseTo(22.5)
-    expect(history[3]?.growthUsd).toBeCloseTo(205)
-    expect(history.map((point) => point.growthUsdEstimated)).toEqual([false, false, true, true])
+    expect(history[3]?.growthWeightUsd).toBeCloseTo(22.5)
   })
 
-  it('does not report a latest-price estimate when no fallback price is available', () => {
+  it('leaves receipt-weighted growth unavailable when prices are missing', () => {
     const history = buildProtocolReturnHistorySeries({
       events: [
         baseEvent({
@@ -1237,8 +1243,7 @@ describe('pnl simple protocol return', () => {
       timestamps: [100, 200, 300]
     })
 
-    expect(history.at(-1)?.growthUsd).toBe(0)
-    expect(history.at(-1)?.growthUsdEstimated).toBe(false)
+    expect(history.at(-1)?.growthWeightUsd).toBeNull()
   })
 
   it('exposes the latest-price fallback for an unpriced transfer-out', () => {
@@ -1529,8 +1534,6 @@ describe('pnl simple protocol return', () => {
     expect(history[0]).toEqual({
       date: '1970-01-01',
       timestamp: 100,
-      growthUsd: 0,
-      growthUsdEstimated: false,
       growthWeightUsd: 0,
       growthWeightEth: 0,
       protocolReturnPct: 0,
@@ -1538,7 +1541,6 @@ describe('pnl simple protocol return', () => {
       growthIndex: 100
     })
     expect(history[1]?.growthWeightUsd).toBeCloseTo(10)
-    expect(history[1]?.growthUsd).toBeCloseTo(30)
     expect(history[1]?.growthWeightEth).toBeCloseTo(5)
     expect(history[1]?.protocolReturnPct).toBeCloseTo(10)
     expect(history[1]?.annualizedProtocolReturnPct).not.toBeNull()
@@ -1548,7 +1550,6 @@ describe('pnl simple protocol return', () => {
     expect(history[2]?.protocolReturnPct).toBeCloseTo(6.6666666667)
     expect(history[2]?.growthIndex).toBeCloseTo(110)
     expect(history[3]?.growthWeightUsd).toBeCloseTo(24.5454545455)
-    expect(history[3]?.growthUsd).toBeCloseTo(73.6363636365)
     expect(history[3]?.growthWeightEth).toBeCloseTo(12.2727272727)
     expect(history[3]?.protocolReturnPct).toBeCloseTo(16.3636363636)
     expect(history[3]?.growthIndex).toBeCloseTo(120)
@@ -2573,8 +2574,6 @@ describe('pnl simple protocol return', () => {
         {
           date: '1970-01-01',
           timestamp: 100,
-          growthUsd: 0,
-          growthUsdEstimated: false,
           growthWeightUsd: 0,
           growthWeightEth: 0,
           protocolReturnPct: 0,
@@ -2584,8 +2583,6 @@ describe('pnl simple protocol return', () => {
         {
           date: '1970-01-01',
           timestamp: 200,
-          growthUsd: 10,
-          growthUsdEstimated: false,
           growthWeightUsd: 10,
           growthWeightEth: 5,
           protocolReturnPct: 10,
@@ -3071,17 +3068,11 @@ describe('pnl simple protocol return', () => {
     expect(
       familyHistory.find((series) => series.vaultAddress === YVUSD_LOCKED)?.dataPoints[1]?.growthWeightUsd
     ).toBeCloseTo(7.1)
-    expect(familyHistory.find((series) => series.vaultAddress === YVUSD_LOCKED)?.dataPoints[1]?.growthUsd).toBeCloseTo(
-      7.1
-    )
     expect(
       familyHistory.find((series) => series.vaultAddress === YVUSD_LOCKED)?.dataPoints[1]?.growthIndex
     ).toBeCloseTo(107.1)
     expect(
       familyHistory.find((series) => series.vaultAddress === YVUSD_UNLOCKED)?.dataPoints[1]?.growthWeightUsd
-    ).toBeCloseTo(2)
-    expect(
-      familyHistory.find((series) => series.vaultAddress === YVUSD_UNLOCKED)?.dataPoints[1]?.growthUsd
     ).toBeCloseTo(2)
   })
 
@@ -3398,11 +3389,6 @@ describe('pnl simple protocol return', () => {
       expect.closeTo(0),
       expect.closeTo(7.1),
       expect.closeTo(7.1)
-    ])
-    expect(history.map((point) => point.growthUsd)).toEqual([
-      expect.closeTo(0),
-      expect.closeTo(14.2),
-      expect.closeTo(14.2)
     ])
   })
 

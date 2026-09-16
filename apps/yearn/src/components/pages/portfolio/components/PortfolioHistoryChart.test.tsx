@@ -24,8 +24,6 @@ const props: ComponentProps<typeof PortfolioHistoryChart> = {
     {
       date: '2026-01-01',
       growthWeightUsd: 100,
-      growthUsd: 100,
-      growthUsdEstimated: false,
       growthWeightEth: 1,
       protocolReturnPct: 1,
       annualizedProtocolReturnPct: 10,
@@ -145,14 +143,8 @@ describe('portfolio growth pricing availability', () => {
     }
   )
 
-  it('does not label receipt-weighted growth estimated because mark-to-market growth was estimated', () => {
-    const html = renderToStaticMarkup(
-      <PortfolioHistoryChart
-        {...props}
-        growthDisplayModeOverride={'usd'}
-        protocolReturnData={[{ ...props.protocolReturnData![0]!, growthUsdEstimated: true }]}
-      />
-    )
+  it('renders complete receipt-weighted growth as exact', () => {
+    const html = renderToStaticMarkup(<PortfolioHistoryChart {...props} growthDisplayModeOverride={'usd'} />)
 
     expect(html).toContain('Contribution chart:exact')
   })

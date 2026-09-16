@@ -86,7 +86,7 @@ export async function getHoldingsPortfolio(
         address: balance.address,
         denomination: balance.denomination,
         timeframe: balance.timeframe,
-        dataPoints: balance.dataPoints.map((point) => ({
+        dataPoints: (balance.hasActivity ? balance.dataPoints : []).map((point) => ({
           date: point.date,
           value: point.value
         }))

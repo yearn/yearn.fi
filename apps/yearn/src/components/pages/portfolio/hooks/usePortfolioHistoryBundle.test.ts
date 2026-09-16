@@ -1,11 +1,22 @@
+// @vitest-environment jsdom
+
 import {
+  buildPortfolioHistoryBundleCacheKey,
   getIncompletePortfolioHistoryDiagnostics,
   resolvePortfolioHistoryBundleData,
-  resolvePortfolioHistoryBundleLoading
+  resolvePortfolioHistoryBundleLoading,
+  usePortfolioHistoryBundle
 } from '@pages/portfolio/hooks/usePortfolioHistoryBundle'
 import type { TPortfolioResponse } from '@pages/portfolio/types/api'
-import { keepPreviousData, QueryClient, QueryObserver } from '@tanstack/react-query'
+import { keepPreviousData, QueryClient, QueryClientProvider, QueryObserver } from '@tanstack/react-query'
+import { renderHook } from '@testing-library/react'
+import { createElement } from 'react'
 import { describe, expect, it, vi } from 'vitest'
+
+vi.mock('@shared/contexts/useWeb3', () => ({
+  useWeb3: () => ({ address: '0x1111111111111111111111111111111111111111' })
+}))
+vi.mock('@hooks/usePlausible', () => ({ usePlausible: () => vi.fn() }))
 
 const USER_ADDRESS = '0x1111111111111111111111111111111111111111'
 const VAULT_ADDRESS = '0x2222222222222222222222222222222222222222'
@@ -55,8 +66,6 @@ function createPortfolioResponse(
         {
           date: '2026-09-01',
           growthWeightUsd: growthUsd,
-          growthUsd,
-          growthUsdEstimated: false,
           growthWeightEth: 0.001,
           protocolReturnPct: 1,
           annualizedProtocolReturnPct: 2,
@@ -203,6 +212,42 @@ describe('getIncompletePortfolioHistoryDiagnostics', () => {
 
   it('returns no diagnostics for complete history', () => {
     expect(getIncompletePortfolioHistoryDiagnostics(createPortfolioResponse())).toBeNull()
+  })
+})
+
+describe('portfolio balance empty state', () => {
+  it.each([false, true])('uses indexed history even with a zero live balance; has history: %s', (hasHistory) => {
+    const response = createPortfolioResponse()
+    response.balance.dataPoints = hasHistory ? [{ date: '2026-09-01', value: 0 }] : []
+    const queryClient = new QueryClient()
+    queryClient.setQueryData(
+      buildPortfolioHistoryBundleCacheKey({ address: USER_ADDRESS, denomination: 'usd', timeframe: '1y' }),
+      response
+    )
+    const { result, rerender, unmount } = renderHook(
+      ({ liveValue }) =>
+        usePortfolioHistoryBundle('usd', '1y', true, {
+          date: '2026-09-02',
+          totalUsd: liveValue,
+          totalEth: 0,
+          vaults: []
+        }),
+      {
+        initialProps: { liveValue: 0 },
+        wrapper: ({ children }) => createElement(QueryClientProvider, { client: queryClient }, children)
+      }
+    )
+
+    expect(result.current.balance.isLoading).toBe(false)
+    expect(result.current.balance.isEmpty).toBe(!hasHistory)
+    expect(result.current.balance.data?.at(-1)).toEqual({ date: '2026-09-02', value: 0, isLive: true })
+
+    rerender({ liveValue: 100 })
+    expect(result.current.balance.isEmpty).toBe(false)
+    expect(result.current.balance.data?.at(-1)).toEqual({ date: '2026-09-02', value: 100, isLive: true })
+
+    unmount()
+    queryClient.clear()
   })
 })
 

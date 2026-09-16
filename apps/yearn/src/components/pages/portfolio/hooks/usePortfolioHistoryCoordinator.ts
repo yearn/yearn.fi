@@ -20,11 +20,10 @@ export function usePortfolioHistoryCoordinator(
   const { address } = useWeb3()
   const canLoad = Boolean(address) && enabled
   const combined = usePortfolioHistoryBundle(denomination, timeframe, canLoad, liveSnapshot)
-  const isCombinedPending = canLoad && !combined.hasResponse
 
   return {
-    balance: { ...combined.balance, isLoading: combined.balance.isLoading || isCombinedPending },
-    protocolReturn: { ...combined.protocolReturn, isLoading: combined.protocolReturn.isLoading || isCombinedPending },
+    balance: combined.balance,
+    protocolReturn: combined.protocolReturn,
     growth: combined.growth
   }
 }
