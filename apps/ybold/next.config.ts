@@ -20,6 +20,7 @@ const securityHeaders = [
 ]
 
 const nextConfig: NextConfig = {
+  agentRules: false,
   poweredByHeader: false,
   transpilePackages: ['@yearn/vault-widget', '@yearn/wallet-ui'],
   turbopack: {
