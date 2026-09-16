@@ -8,6 +8,7 @@ import { ConnectorAlreadyConnectedError } from 'wagmi'
 type TMockAccount = { status: string; connector?: { uid: string } }
 
 const mocks = vi.hoisted(() => ({
+  track: vi.fn(),
   connectAsync: vi.fn(),
   openConnectModal: vi.fn(),
   connectWalletConnect: vi.fn(),
@@ -67,7 +68,7 @@ function Trigger() {
   const { isConnecting, toggleWalletDrawer } = useWalletDrawer()
   return (
     <>
-      <button type="button" data-wallet-drawer-trigger onClick={toggleWalletDrawer}>
+      <button type="button" data-wallet-entry="header" data-wallet-drawer-trigger onClick={toggleWalletDrawer}>
         Wallet
       </button>
       <span data-testid="pending">{String(isConnecting)}</span>
@@ -78,7 +79,7 @@ function Trigger() {
 
 function App() {
   return (
-    <WalletDrawerProvider>
+    <WalletDrawerProvider onAnalytics={mocks.track}>
       <Trigger />
     </WalletDrawerProvider>
   )
@@ -101,6 +102,7 @@ const open = () => {
 }
 
 beforeEach(() => {
+  mocks.track.mockReset()
   mocks.connectAsync.mockReset()
   mocks.openConnectModal.mockReset()
   mocks.connectWalletConnect.mockReset()
@@ -129,6 +131,72 @@ afterEach(() => {
 })
 
 describe('connection attempt ownership', () => {
+  it('reports detected rejection, More wallets recovery, and only one successful connection', async () => {
+    mocks.connectAsync.mockRejectedValueOnce(Object.assign(new Error('User rejected'), { code: 4001 }))
+    const view = render(<App />)
+    open()
+    fireEvent.click(screen.getByRole('button', { name: 'Rabby Detected' }))
+    await waitFor(() =>
+      expect(mocks.track).toHaveBeenCalledWith(
+        'wallet_connect_result',
+        expect.objectContaining({
+          path: 'detected',
+          wallet_name: 'rabby',
+          outcome: 'rejected',
+          entry_point: 'header'
+        })
+      )
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'More wallets' }))
+    await waitFor(() => expect(mocks.openConnectModal).toHaveBeenCalledOnce())
+    mocks.connectModalOpen = true
+    view.rerender(<App />)
+    mocks.connector = mocks.connectors[1]
+    await act(async () =>
+      mocks.accountChange?.({ status: 'connected', connector: mocks.connector }, { status: 'disconnected' })
+    )
+    mocks.connectModalOpen = false
+    mocks.isConnected = true
+    view.rerender(<App />)
+    expect(mocks.track.mock.calls.filter(([event]) => event === 'connect_wallet')).toEqual([
+      [
+        'connect_wallet',
+        expect.objectContaining({
+          path: 'more_wallets',
+          wallet_name: 'walletchan',
+          initially_visible: true,
+          had_previous_failure: true,
+          attempt_number: 2,
+          used_more_wallets: true
+        })
+      ]
+    ])
+    expect(mocks.track.mock.calls.filter(([event]) => event === 'wallet_picker_closed')).toHaveLength(0)
+  })
+
+  it('reports QR dismissal without treating a late result as a new connection', async () => {
+    const view = render(<App />)
+    open()
+    fireEvent.click(screen.getByRole('button', { name: 'WalletConnect' }))
+    await waitFor(() => expect(mocks.connectWalletConnect).toHaveBeenCalledOnce())
+    mocks.connectModalOpen = true
+    view.rerender(<App />)
+    mocks.connectModalOpen = false
+    view.rerender(<App />)
+    await act(async () =>
+      mocks.accountChange?.({ status: 'connected', connector: mocks.connectors[2] }, { status: 'disconnected' })
+    )
+    expect(mocks.track).toHaveBeenCalledWith(
+      'wallet_connect_result',
+      expect.objectContaining({
+        path: 'walletconnect',
+        outcome: 'closed_without_connection',
+        attempt_scope: 'secondary_screen'
+      })
+    )
+    expect(mocks.track.mock.calls.filter(([event]) => event === 'connect_wallet')).toHaveLength(0)
+  })
+
   it('releases the mobile picker on the active account event before the connection promise settles', async () => {
     const request = deferred()
     mocks.connectAsync.mockReturnValueOnce(request.promise)
@@ -152,6 +220,8 @@ describe('connection attempt ownership', () => {
     expect(screen.queryByRole('dialog')).not.toBeNull()
     expect(screen.queryByRole('alert')).toBeNull()
     expect(mocks.disconnect).not.toHaveBeenCalled()
+    expect(mocks.track.mock.calls.filter(([event]) => event === 'connect_wallet')).toHaveLength(1)
+    expect(mocks.track.mock.calls.filter(([event]) => event === 'wallet_connect_result')).toHaveLength(0)
   })
 
   it('opens immediately, connects detected EIP-6963 through Wagmi and closes on success', async () => {

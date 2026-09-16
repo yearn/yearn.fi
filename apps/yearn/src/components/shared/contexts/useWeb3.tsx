@@ -142,7 +142,8 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
         return
       }
 
-      hasUserRequestedConnectionRef.current = true
+      // The shared picker owns analytics for its scoped connection attempts.
+      hasUserRequestedConnectionRef.current = false
       openWalletDrawer()
     }
   }, [

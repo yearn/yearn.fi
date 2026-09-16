@@ -27,6 +27,7 @@ export function Header() {
         ) : (
           <button
             type="button"
+            data-wallet-entry="header"
             data-wallet-drawer-trigger
             aria-controls={dialogId}
             aria-expanded={isWalletDrawerOpen}

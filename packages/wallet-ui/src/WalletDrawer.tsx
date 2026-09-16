@@ -1,6 +1,12 @@
 'use client'
 
 import { useConnectModal, WalletButton } from '@rainbow-me/rainbowkit'
+import {
+  connectionErrorCategory,
+  createWalletAnalytics,
+  type TWalletAnalytics,
+  type TWalletPath
+} from '@yearn/wallet-ui/analytics'
 import { restorePreviousAccount } from '@yearn/wallet-ui/connectionCleanup'
 import {
   getBrowserWalletLabel,
@@ -22,6 +28,7 @@ export { restorePreviousAccount } from '@yearn/wallet-ui/connectionCleanup'
 export { DEFAULT_WALLET_DRAWER_ID, type TWalletDrawerContext, useWalletDrawer } from '@yearn/wallet-ui/context'
 
 export type TWalletDrawerProviderProps = {
+  onAnalytics?: TWalletAnalytics
   additionalConnectorIds?: readonly string[]
   children: ReactNode
   desktopRight?: string
@@ -115,6 +122,7 @@ function WalletMethodButton({
 }
 
 export function WalletDrawerProvider({
+  onAnalytics,
   additionalConnectorIds = EMPTY_CONNECTOR_IDS,
   children,
   desktopRight = 'max(1.5rem,calc((100vw-72rem)/2+1.5rem))',
@@ -138,16 +146,27 @@ export function WalletDrawerProvider({
   const triggerRef = useRef<HTMLElement | null>(null)
   const wasRainbowModalOpen = useRef(false)
   const handedOff = useRef(false)
+  const analyticsCallback = useRef(onAnalytics)
+  // The host callback changes independently of the lifetime of a wallet attempt.
+  useEffect(() => {
+    analyticsCallback.current = onAnalytics
+  }, [onAnalytics])
+  const [analytics] = useState(() => createWalletAnalytics((event, props) => analyticsCallback.current?.(event, props)))
   const displayedConnectors = selectBrowserWalletConnectors(connectors, { additionalConnectorIds }).filter(
     (connector) => connector.id !== 'injected' || hasLegacyProvider
   )
 
-  const closeWalletDrawer = useCallback(() => {
+  const hideWalletDrawer = useCallback(() => {
     attemptRef.current = undefined
     setPendingConnector(undefined)
     setErrorMessage(undefined)
     setIsOpen(false)
   }, [])
+
+  const closeWalletDrawer = useCallback(() => {
+    analytics.close()
+    hideWalletDrawer()
+  }, [analytics, hideWalletDrawer])
 
   // The legacy provider is a browser capability and cannot be checked during server rendering.
   useEffect(() => {
@@ -165,7 +184,18 @@ export function WalletDrawerProvider({
           const attempts = Array.from(inFlightAttemptsRef.current).filter(
             ({ connector }) => connector.uid === account.connector?.uid
           )
+          const trackedAttempt = analytics.active()
+          if (
+            trackedAttempt &&
+            trackedAttempt.path !== 'detected' &&
+            !trackedAttempt.connector &&
+            handedOff.current &&
+            attempts.length === 0
+          ) {
+            analytics.finish(trackedAttempt, 'success', account.connector, account.chainId)
+          }
           if (attempts.some((attempt) => attemptRef.current === attempt)) {
+            if (attempts.length === 1) analytics.finish(trackedAttempt, 'success', account.connector, account.chainId)
             // A matching account can arrive before connectAsync settles. Same-wallet retries remain ambiguous.
             if (attempts.length === 1 && !attempts[0].secondary) {
               closeWalletDrawer()
@@ -188,7 +218,7 @@ export function WalletDrawerProvider({
           })
         }
       }),
-    [closeWalletDrawer, config]
+    [analytics, closeWalletDrawer, config]
   )
 
   const openWalletDrawer = useCallback(() => {
@@ -196,10 +226,15 @@ export function WalletDrawerProvider({
     handedOff.current = false
     restoreFocusRef.current = true
     triggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    const entry = triggerRef.current?.closest('[data-wallet-entry]')?.getAttribute('data-wallet-entry')
+    analytics.open({
+      entry_point: entry === 'header' || entry === 'widget' || entry === 'portfolio' ? entry : 'other',
+      device: isMobileWalletBrowser() ? 'mobile' : 'desktop'
+    })
     setPendingConnector(undefined)
     setErrorMessage(undefined)
     setIsOpen(true)
-  }, [])
+  }, [analytics])
 
   const toggleWalletDrawer = useCallback(() => {
     if (isOpen) {
@@ -219,6 +254,7 @@ export function WalletDrawerProvider({
   // RainbowKit owns secondary modal lifetime. Its dismissed transport may still be pending.
   useEffect(() => {
     if (wasRainbowModalOpen.current && !connectModalOpen && handedOff.current) {
+      analytics.close()
       handedOff.current = false
       attemptRef.current = undefined
       const trigger = triggerRef.current?.isConnected
@@ -229,17 +265,19 @@ export function WalletDrawerProvider({
       trigger?.focus()
     }
     wasRainbowModalOpen.current = connectModalOpen
-  }, [connectModalOpen])
+  }, [analytics, connectModalOpen])
 
   // Invalidating the token prevents a settled connector promise from updating an unmounted provider.
   useEffect(
     () => () => {
       attemptRef.current = undefined
+      analytics.close()
     },
-    []
+    [analytics]
   )
 
   const connectDetectedWallet = async (connector: Connector) => {
+    const trackedAttempt = analytics.start('detected', connector, displayedConnectors)
     cancelWalletReconnect(config, connector)
     const attempt: TConnectionAttempt = { connector, superseded: false }
     attemptRef.current = attempt
@@ -248,8 +286,9 @@ export function WalletDrawerProvider({
     setErrorMessage(undefined)
     try {
       // WalletButton.Custom only accepts configured RainbowKit wallets, not EIP-6963 connectors.
-      await connectAsync({ connector })
+      const result = await connectAsync({ connector })
       if (attemptRef.current === attempt) {
+        analytics.finish(trackedAttempt, 'success', connector, result?.chainId)
         closeWalletDrawer()
       } else if (attempt.superseded) {
         // Restore only the account this stale response displaced, preserving external switches/disconnects.
@@ -259,8 +298,17 @@ export function WalletDrawerProvider({
       if (attemptRef.current === attempt) {
         // Reconnect can restore this wallet before Wagmi finishes checking the other connectors.
         if (error instanceof ConnectorAlreadyConnectedError && getAccount(config).connector?.uid === connector.uid) {
+          analytics.finish(trackedAttempt, 'success', connector, getAccount(config).chainId)
           closeWalletDrawer()
         } else {
+          const category = connectionErrorCategory(error)
+          analytics.finish(
+            trackedAttempt,
+            category === 'rejected' ? 'rejected' : 'error',
+            connector,
+            undefined,
+            category
+          )
           setErrorMessage(getWalletConnectionErrorMessage(error))
         }
       }
@@ -273,12 +321,13 @@ export function WalletDrawerProvider({
     }
   }
 
-  const openSecondaryScreen = (open: () => void | Promise<void>, connector?: Connector) => {
+  const openSecondaryScreen = (open: () => void | Promise<void>, path: TWalletPath, connector?: Connector) => {
+    const trackedAttempt = analytics.start(path, connector, displayedConnectors)
     cancelWalletReconnect(config, connector)
     restoreFocusRef.current = false
     handedOff.current = true
     // Release the mobile inert/scroll/focus ownership before RainbowKit opens its own portal.
-    flushSync(closeWalletDrawer)
+    flushSync(hideWalletDrawer)
     // More wallets exposes modal lifetime, but its public API does not expose the chosen connection attempt.
     const secondaryAttempt = connector ? { connector, secondary: true, superseded: false } : undefined
     const attempt = secondaryAttempt ?? {}
@@ -294,11 +343,12 @@ export function WalletDrawerProvider({
     }
     void Promise.resolve()
       .then(open)
-      .catch(() => {
+      .catch((error) => {
         if (attemptRef.current !== attempt) {
           return
         }
         handedOff.current = false
+        analytics.finish(trackedAttempt, 'error', connector, undefined, connectionErrorCategory(error))
         openWalletDrawer()
         setErrorMessage('The wallet could not be opened. Please try again.')
       })
@@ -363,6 +413,7 @@ export function WalletDrawerProvider({
             onClick={() =>
               openSecondaryScreen(
                 connectWalletConnect,
+                'walletconnect',
                 connectors.find(({ uid }) => uid === walletConnectUid)
               )
             }
@@ -380,7 +431,7 @@ export function WalletDrawerProvider({
           label="More wallets"
           icon={<MethodIcon kind="more" />}
           disabled={!hasWalletConnect || !openConnectModal}
-          onClick={() => openConnectModal && openSecondaryScreen(openConnectModal)}
+          onClick={() => openConnectModal && openSecondaryScreen(openConnectModal, 'more_wallets')}
         />
       </div>
       {errorMessage && (
