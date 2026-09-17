@@ -77,12 +77,14 @@ export type VaultWidgetMigration = {
 export type VaultWidgetVault = {
   address: WidgetAddress
   chainId: number
-  version: string
+  version?: string
+  /** Explicit contract behavior; omitted by legacy Yearn consumers. */
+  contractKind?: 'erc4626' | 'yearn-v2'
   decimals: number
   symbol: string
   name: string
   asset: VaultWidgetAsset
-  forwardAPR: number
+  forwardAPR?: number
   staking?: VaultWidgetStaking
   migration?: VaultWidgetMigration
   isRetired: boolean
@@ -102,6 +104,15 @@ export type VaultUserData = {
   stakingWithdrawableAssets: bigint
   stakingRedeemableShares: bigint
   isLoading: boolean
+  /** Standard ERC-4626 limits, in raw asset/share units. Absent for legacy flows. */
+  erc4626?: {
+    maxDeposit: bigint
+    maxWithdraw: bigint
+    maxRedeem: bigint
+    redeemableAssets: bigint
+  }
+  /** A failed refresh must not silently authorize actions from an old snapshot. */
+  error?: string
   refetch: () => void | Promise<void>
 }
 

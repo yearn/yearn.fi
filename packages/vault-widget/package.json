@@ -32,7 +32,9 @@
     "./styles.css": "./styles.css",
     "./types": "./src/types.ts",
     "./wagmi": "./src/adapters/wagmiExecutionAdapter.ts",
-    "./ybold": "./src/ybold.ts"
+    "./ybold": "./src/ybold.ts",
+    "./erc4626/*": "./src/erc4626/*.ts",
+    "./erc4626": "./src/components/Erc4626VaultWidget.tsx"
   },
   "scripts": {
     "test": "vitest run",

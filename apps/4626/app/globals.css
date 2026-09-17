@@ -1,0 +1,17 @@
+@import "tailwindcss";
+@import "@yearn/vault-widget/styles.css";
+@source "../../../packages/vault-widget/src";
+
+body {
+  background: #f8f9fa;
+  color: #171717;
+  font-family: Arial, Helvetica, sans-serif;
+}
+button,
+select {
+  cursor: pointer;
+}
+:focus-visible {
+  outline: 2px solid #0657f9;
+  outline-offset: 3px;
+}

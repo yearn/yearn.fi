@@ -1,3 +1,4 @@
+import { useErc4626WithdrawQuote } from '@yearn/vault-widget/erc4626/useErc4626WithdrawQuote'
 import type { VaultWidgetTransactionPlan } from '@yearn/vault-widget/headless'
 import { Button } from '@yearn/vault-widget/internal/components/shared/Button'
 import { buildEligibleStyledWidgetPlan } from '@yearn/vault-widget/internal/components/widget/shared/plannedTransaction'
@@ -106,6 +107,7 @@ export function WidgetWithdraw({
   vaultSymbol,
   stakingSource,
   vaultVersion,
+  contractKind,
   vaultUserData,
   inputBalanceOverride,
   inputDisplayBalanceOverride,
@@ -287,12 +289,20 @@ export function WidgetWithdraw({
   const vaultDecimals = vault?.decimals ?? 18
 
   const totalBalanceInUnderlying = useMemo(() => {
+    if (vaultUserData.erc4626) return toNormalizedBN(vaultUserData.depositedValue, assetToken?.decimals ?? 18)
     if (pricePerShare === 0n || sourceVaultSharesRaw === 0n || !assetToken) {
       return toNormalizedBN(0n, assetToken?.decimals ?? 18)
     }
     const underlyingAmount = (sourceVaultSharesRaw * pricePerShare) / 10n ** BigInt(vaultDecimals)
     return toNormalizedBN(underlyingAmount, assetToken.decimals ?? 18)
-  }, [sourceVaultSharesRaw, pricePerShare, vaultDecimals, assetToken])
+  }, [
+    sourceVaultSharesRaw,
+    pricePerShare,
+    vaultDecimals,
+    assetToken,
+    vaultUserData.erc4626,
+    vaultUserData.depositedValue
+  ])
 
   useEffect(() => {
     onAmountChange?.(withdrawAmount.bn)
@@ -302,8 +312,11 @@ export function WidgetWithdraw({
     onTokenSelectionChange?.(withdrawToken, destinationChainId)
   }, [destinationChainId, onTokenSelectionChange, withdrawToken])
 
-  const usesErc4626 = Boolean(vaultVersion?.startsWith('3') || vaultVersion?.startsWith('~3'))
+  const usesErc4626 = contractKind
+    ? contractKind === 'erc4626'
+    : Boolean(vaultVersion?.startsWith('3') || vaultVersion?.startsWith('~3'))
   const effectiveMaxWithdrawAssets = useMemo(() => {
+    if (vaultUserData.erc4626) return vaultUserData.erc4626.maxWithdraw
     if (maxWithdrawAssets === undefined) {
       return totalBalanceInUnderlying.raw
     }
@@ -315,23 +328,39 @@ export function WidgetWithdraw({
     }
 
     return maxWithdrawAssets < totalBalanceInUnderlying.raw ? maxWithdrawAssets : totalBalanceInUnderlying.raw
-  }, [maxWithdrawAssets, totalBalanceInUnderlying.raw, inputBalanceOverride, disableFlow])
+  }, [maxWithdrawAssets, totalBalanceInUnderlying.raw, inputBalanceOverride, disableFlow, vaultUserData.erc4626])
   const inputBalance = inputBalanceOverride ?? effectiveMaxWithdrawAssets
   const displayedInputBalance = inputDisplayBalanceOverride ?? inputBalance
 
+  const standardQuote = useErc4626WithdrawQuote({
+    address: vaultAddress,
+    chainId,
+    amount: withdrawAmount.debouncedBn,
+    limits: vaultUserData.erc4626,
+    enabled: !!vaultUserData.erc4626 && !vaultUserData.error && !disableFlow
+  })
+
   const isMaxWithdraw = useMemo(() => {
+    if (vaultUserData.erc4626) return standardQuote.quote?.redeem === true
     return (
       withdrawAmount.bn > 0n &&
       totalBalanceInUnderlying.raw > 0n &&
       withdrawAmount.bn === effectiveMaxWithdrawAssets &&
       effectiveMaxWithdrawAssets === totalBalanceInUnderlying.raw
     )
-  }, [withdrawAmount.bn, effectiveMaxWithdrawAssets, totalBalanceInUnderlying.raw])
+  }, [
+    withdrawAmount.bn,
+    effectiveMaxWithdrawAssets,
+    totalBalanceInUnderlying.raw,
+    vaultUserData.erc4626,
+    standardQuote.quote?.redeem
+  ])
 
   // ============================================================================
   // Required Shares Calculation
   // ============================================================================
   const requiredShares = useMemo(() => {
+    if (vaultUserData.erc4626) return standardQuote.quote?.shares ?? 0n
     if (!withdrawAmount.bn || withdrawAmount.bn === 0n) return 0n
     if (isMaxWithdraw && sourceVaultSharesRaw > 0n) return sourceVaultSharesRaw
 
@@ -341,7 +370,15 @@ export function WidgetWithdraw({
     }
 
     return 0n
-  }, [withdrawAmount.bn, isMaxWithdraw, sourceVaultSharesRaw, pricePerShare, vaultDecimals])
+  }, [
+    withdrawAmount.bn,
+    isMaxWithdraw,
+    sourceVaultSharesRaw,
+    pricePerShare,
+    vaultDecimals,
+    vaultUserData.erc4626,
+    standardQuote.quote?.shares
+  ])
   const effectiveRequiredShares = requiredSharesOverride ?? requiredShares
   const flowCurrentAmount = disableFlow ? 0n : withdrawAmount.bn
   const flowDebouncedAmount = disableFlow ? 0n : withdrawAmount.debouncedBn
@@ -369,11 +406,16 @@ export function WidgetWithdraw({
     amount: flowDebouncedAmount,
     currentAmount: flowCurrentAmount,
     requiredShares: flowRequiredShares,
-    maxShares: sourceVaultSharesRaw,
+    maxShares: vaultUserData.erc4626?.maxRedeem ?? sourceVaultSharesRaw,
+    standardQuote: standardQuote.quote,
     redeemSharesOverride,
     isMaxWithdraw: flowIsMaxWithdraw,
     unstakeMaxRedeemShares: withdrawalSource === 'staking' ? stakingRedeemableShares : 0n,
-    allowDirectWithdrawStep: !disableFlow && !blockDirectWithdrawStep,
+    allowDirectWithdrawStep:
+      !disableFlow &&
+      !blockDirectWithdrawStep &&
+      !vaultUserData.error &&
+      (!vaultUserData.erc4626 || (!!standardQuote.quote && !standardQuote.isLoading && !withdrawAmount.isDebouncing)),
     optimisticApprovedShares,
     account,
     chainId,
@@ -454,6 +496,11 @@ export function WidgetWithdraw({
   })
   const exceedsExternalWithdrawLimit = maxWithdrawAssets !== undefined && withdrawAmount.bn > effectiveMaxWithdrawAssets
   const baseWithdrawError =
+    vaultUserData.error ||
+    standardQuote.error ||
+    (vaultUserData.erc4626 && withdrawAmount.bn > effectiveMaxWithdrawAssets
+      ? 'Amount exceeds currently available withdraw limit.'
+      : undefined) ||
     customErrorMessage ||
     actionDisabledReason ||
     (exceedsExternalWithdrawLimit ? 'Amount exceeds currently available withdraw limit.' : undefined) ||
@@ -1052,7 +1099,7 @@ export function WidgetWithdraw({
       actionLabel={actionLabel}
       requiredShares={effectiveRequiredShares}
       sharesDecimals={sharesDecimals}
-      isLoadingQuote={isEnsoRoute ? isDisplayLoadingEnsoQuote : isFetchingQuote}
+      isLoadingQuote={isEnsoRoute ? isDisplayLoadingEnsoQuote : isFetchingQuote || standardQuote.isLoading}
       isQuoteStale={withdrawAmount.isDebouncing || withdrawAmount.bn !== withdrawAmount.debouncedBn}
       expectedOut={displayedExpectedOut}
       outputDecimals={outputToken?.decimals ?? 18}
@@ -1292,7 +1339,7 @@ export function WidgetWithdraw({
         isZap={routeType === 'ENSO' && shouldShowZapUi}
         hasSwap={shouldRevealEnsoRouteDetails && displayedEnsoRouteHasSwap}
         usesMinExpectedOut={isEnsoRoute}
-        isLoadingQuote={isEnsoRoute ? isDisplayLoadingEnsoQuote : isFetchingQuote}
+        isLoadingQuote={isEnsoRoute ? isDisplayLoadingEnsoQuote : isFetchingQuote || standardQuote.isLoading}
       />
 
       <ApprovalOverlay
