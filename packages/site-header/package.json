@@ -2,6 +2,7 @@
   "name": "@yearn/site-header",
   "version": "0.0.0",
   "private": true,
+  "license": "SEE LICENSE IN LICENSE.md",
   "type": "module",
   "exports": {
     ".": "./src/SiteHeader.tsx",
