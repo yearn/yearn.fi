@@ -1,11 +1,17 @@
 @import "tailwindcss";
 @import "@yearn/vault-widget/styles.css";
+@import "@yearn/site-header/themes.css";
 @source "../../../packages/vault-widget/src";
+@source "../../../packages/site-header/src";
+
+:root {
+  --header-height: 4.25rem;
+}
 
 body {
-  background: #f8f9fa;
-  color: #171717;
-  font-family: Arial, Helvetica, sans-serif;
+  background: var(--color-app);
+  color: var(--color-text-primary);
+  font-family: Aeonik, Helvetica, Arial, sans-serif;
 }
 button,
 select {
@@ -14,4 +20,25 @@ select {
 :focus-visible {
   outline: 2px solid #0657f9;
   outline-offset: 3px;
+}
+
+/* The standalone widget normally supplies light defaults; this host supplies the theme. */
+:root[data-theme] .yv-widget {
+  --color-app: inherit;
+  --color-surface: inherit;
+  --color-surface-secondary: inherit;
+  --color-surface-tertiary: inherit;
+  --color-text-primary: inherit;
+  --color-text-secondary: inherit;
+  --color-text-tertiary: inherit;
+  --color-border: inherit;
+  --color-primary: inherit;
+}
+
+@font-face {
+  font-family: Aeonik;
+  src: url("/fonts/Aeonik-Regular.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
 }

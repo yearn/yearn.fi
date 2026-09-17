@@ -1,11 +1,13 @@
 'use client'
 
 import '@rainbow-me/rainbowkit/styles.css'
+import { WalletActivityContext } from '@erc4626/components/WalletActivity'
 import { getChain, resolveChainId } from '@erc4626/lib/chains'
 import { getSafeTransactionDetails } from '@erc4626/lib/safe'
 import { wagmiConfig } from '@erc4626/lib/wagmiConfig'
-import { lightTheme, RainbowKitProvider, useConnectModal } from '@rainbow-me/rainbowkit'
+import { darkTheme, lightTheme, RainbowKitProvider, useConnectModal } from '@rainbow-me/rainbowkit'
 import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from '@tanstack/react-query'
+import { useThemePreference } from '@yearn/site-header/theme'
 import { type VaultWidgetRuntimeOverrides, VaultWidgetRuntimeProvider } from '@yearn/vault-widget'
 import type {
   VaultWidgetNotificationInput,
@@ -22,10 +24,13 @@ type TNotice = VaultWidgetNotificationInput & {
   status: VaultWidgetNotificationStatus
   txHash?: Hash
   awaitingExecution?: boolean
+  ownerAddress?: string
+  createdAt: number
 }
 const refreshVaultReads = (queryClient: QueryClient) =>
   Promise.all([
     queryClient.invalidateQueries({ queryKey: ['erc4626-vault'] }),
+    queryClient.invalidateQueries({ queryKey: ['erc4626-wallet-vaults'] }),
     queryClient.invalidateQueries({ queryKey: ['readContract'] })
   ])
 
@@ -40,12 +45,26 @@ function WidgetHost({ children }: { children: ReactNode }) {
   const queryClient = useQueryClient()
   const [notices, setNotices] = useState<TNotice[]>([])
   const create = useCallback(
-    async (input: VaultWidgetNotificationInput & Partial<Pick<TNotice, 'txHash' | 'status' | 'awaitingExecution'>>) => {
+    async (
+      input: VaultWidgetNotificationInput &
+        Partial<Pick<TNotice, 'txHash' | 'status' | 'awaitingExecution' | 'ownerAddress'>>
+    ) => {
       const id = crypto.randomUUID()
-      setNotices((previous) => [{ ...input, id, status: input.status ?? 'pending' }, ...previous].slice(0, 10))
+      setNotices((previous) =>
+        [
+          {
+            ...input,
+            id,
+            ownerAddress: input.ownerAddress ?? address,
+            createdAt: Math.floor(Date.now() / 1000),
+            status: input.status ?? 'pending'
+          },
+          ...previous
+        ].slice(0, 10)
+      )
       return id
     },
-    []
+    [address]
   )
   const update = useCallback(async (input: VaultWidgetNotificationUpdate) => {
     setNotices((previous) =>
@@ -102,9 +121,13 @@ function WidgetHost({ children }: { children: ReactNode }) {
   )
   return (
     <VaultWidgetRuntimeProvider value={runtime}>
-      {children}
+      <WalletActivityContext.Provider
+        value={notices.map((notice) => ({ ...notice, fromTokenName: notice.fromSymbol, timestamp: notice.createdAt }))}
+      >
+        {children}
+      </WalletActivityContext.Provider>
       {notices.length > 0 && (
-        <aside aria-label="Recent transactions" className="mx-auto mb-12 w-full max-w-xl px-5">
+        <aside id="recent-transactions" aria-label="Recent transactions" className="mx-auto mb-12 w-full max-w-xl px-5">
           <h2 className="mb-3 text-sm font-semibold">Recent transactions</h2>
           <ul className="space-y-2">
             {notices.map((notice) => (
@@ -162,7 +185,7 @@ function Notice({
           ? 'Awaiting Safe execution'
           : 'Pending'
   return (
-    <li className="flex items-center justify-between gap-3 rounded-lg border border-border bg-white p-3 text-sm">
+    <li className="flex items-center justify-between gap-3 rounded-lg border border-border bg-surface p-3 text-sm">
       <span className="capitalize">
         {notice.type} · {label}
       </span>
@@ -177,10 +200,11 @@ function Notice({
 
 export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => new QueryClient())
+  const theme = useThemePreference() === 'light' ? lightTheme : darkTheme
   return (
     <WagmiProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider theme={lightTheme({ accentColor: '#0657f9', borderRadius: 'medium' })}>
+        <RainbowKitProvider theme={theme({ accentColor: '#0657f9', borderRadius: 'medium' })}>
           <WidgetHost>{children}</WidgetHost>
         </RainbowKitProvider>
       </QueryClientProvider>
