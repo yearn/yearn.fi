@@ -325,8 +325,8 @@ describe('pnl simple protocol return', () => {
     expect(history.map((point) => point.growthIndex)).toEqual([null, null, null])
     expect(history.map((point) => point.growthWeightUsd)).toEqual([null, null, null])
     expect(history.map((point) => point.growthWeightEth)).toEqual([null, null, null])
-    expect(history[1]?.protocolReturnPct).toBeNull()
-    expect(history[1]?.annualizedProtocolReturnPct).toBeNull()
+    expect(history.map((point) => point.protocolReturnPct)).toEqual([null, null, null])
+    expect(history.map((point) => point.annualizedProtocolReturnPct)).toEqual([null, null, null])
     const unavailableVault = materializeProtocolReturnVaults({
       ...inputs,
       ledgers: buildProtocolReturnLedgers({ ...inputs, currentTimestamp: 200 }),
@@ -503,7 +503,7 @@ describe('pnl simple protocol return', () => {
   })
 
   it.each(['zero PPS', 'missing metadata', 'missing receipt price', 'intermediate PPS gap'])(
-    'keeps consistent partial USD, ETH, and Index histories when another vault has %s',
+    'keeps consistent partial growth and annualized histories when another vault has %s',
     (issue) => {
       const badVault = '0x9999999999999999999999999999999999999999'
       const badAsset = '0xaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaaa'
@@ -568,8 +568,11 @@ describe('pnl simple protocol return', () => {
         expect(point.growthIndex).toBeCloseTo(control[index]!.growthIndex!, 10)
         expect(point.growthWeightUsd).toBeCloseTo(control[index]!.growthWeightUsd!, 10)
         expect(point.growthWeightEth).toBeCloseTo(control[index]!.growthWeightEth!, 10)
+        expect(point.protocolReturnPct).toEqual(control[index]!.protocolReturnPct)
+        expect(point.annualizedProtocolReturnPct).toEqual(control[index]!.annualizedProtocolReturnPct)
       })
       expect(history.at(-1)?.growthIndex).toBeCloseTo(120)
+      expect(history.at(-1)?.annualizedProtocolReturnPct).toBeGreaterThan(0)
 
       const selectedVaults = materializeProtocolReturnVaults({
         ...inputs,

@@ -151,6 +151,7 @@ type TPortfolioHeaderProps = Pick<
 > & {
   isProtocolReturnLoading: boolean
   annualizedProtocolReturnPct: number | null | undefined
+  annualizedIsPartial: boolean
 }
 
 type TPortfolioHoldingsProps = Pick<
@@ -1561,6 +1562,7 @@ function PortfolioHeaderSection({
   isSearchingBalances,
   isProtocolReturnLoading,
   annualizedProtocolReturnPct,
+  annualizedIsPartial,
   totalPortfolioValue
 }: TPortfolioHeaderProps): ReactElement {
   const annualizedProtocolReturnTooltip = (
@@ -1568,6 +1570,9 @@ function PortfolioHeaderSection({
       <p>{'All-time annualized protocol return while funds were actually held in your wallet.'}</p>
 
       <p>{'Time-weighted by baseline vault exposure. Price moves are excluded.'}</p>
+      {annualizedIsPartial ? (
+        <p>{'Some vaults could not be valued. This return covers only the included vaults.'}</p>
+      ) : null}
     </div>
   )
 
@@ -3396,6 +3401,7 @@ function PortfolioPage(): ReactElement {
                         model.isHoldingsLoading || (protocolReturnHistoryLoading && !hasProtocolReturnSnapshot)
                       }
                       annualizedProtocolReturnPct={annualizedProtocolReturnPct}
+                      annualizedIsPartial={Boolean(protocolReturnHistorySummary?.growthIsPartial?.usd)}
                       totalPortfolioValue={model.totalPortfolioValue}
                     />
                   </div>

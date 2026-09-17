@@ -34,8 +34,8 @@ const HOLDINGS_TOTALS_TTL_SECONDS = 30 * 24 * 60 * 60
 // Old hashes expire naturally and cannot reintroduce previously cached incomplete days.
 const HOLDINGS_TOTALS_KEY_PREFIX = 'holdings:totals:v3'
 const PROTOCOL_RETURN_HISTORY_TTL_SECONDS = 30 * 24 * 60 * 60
-// v21 uses latest-settled row prices and removes unused mark-to-market history fields.
-const PROTOCOL_RETURN_HISTORY_KEY_PREFIX = 'holdings:protocol-return-history:v21'
+// v22 calculates annualized returns from the same fixed valid-vault subset as USD/Index.
+const PROTOCOL_RETURN_HISTORY_KEY_PREFIX = 'holdings:protocol-return-history:v22'
 const PROTOCOL_RETURN_HISTORY_VALUE_PREFIX = 'br1:'
 const PROTOCOL_RETURN_HISTORY_MAX_ENCODED_BYTES = 4 * 1024 * 1024
 const PROTOCOL_RETURN_HISTORY_MAX_DECODED_BYTES = 64 * 1024 * 1024

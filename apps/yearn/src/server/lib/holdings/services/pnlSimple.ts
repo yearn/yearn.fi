@@ -2599,7 +2599,6 @@ function calculateProtocolReturnHistorySeries(args: Parameters<typeof buildProto
       ppsData: args.ppsData,
       currentTimestamp: timestamp
     })
-    const summary = buildSummary(vaults)
     const indexVaults = vaults.filter(
       (vault) => !excludedVaultKeys.usd.has(toVaultKey(vault.chainId, vault.vaultAddress))
     )
@@ -2626,7 +2625,7 @@ function calculateProtocolReturnHistorySeries(args: Parameters<typeof buildProto
           total + (excludedVaultKeys.usd.has(key) ? 0 : getOutstandingBaselineWeightUsd(ledger.lots)),
         0
       ) + indexSummary.unrealizedGrowthWeightUsd
-    return { vaults, summary, indexVaults }
+    return { vaults, summary: indexSummary, indexVaults }
   }
 
   return {

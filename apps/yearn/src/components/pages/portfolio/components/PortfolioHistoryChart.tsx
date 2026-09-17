@@ -704,6 +704,7 @@ export function PortfolioHistoryChart({
   const activeError = activeTab === 'balance' ? balanceError : protocolReturnError
   const activeHasRenderableValue = activeData.some((point) => point.value !== null)
   const growthIsPartial = activeTab === 'growth' && protocolReturnSummary?.growthIsPartial?.[resolvedGrowthDisplayMode]
+  const annualizedIsPartial = activeTab === 'annualized' && protocolReturnSummary?.growthIsPartial?.usd
   const growthLabel = resolvedGrowthDisplayMode === 'index' ? 'Index' : resolvedGrowthDisplayMode.toUpperCase()
   const yAxisFloor = activeTab === 'growth' && resolvedGrowthDisplayMode === 'index' ? 100 : 0
   const yAxisTicks = useMemo(
@@ -984,7 +985,9 @@ export function PortfolioHistoryChart({
           <p className={'text-center text-base text-text-secondary'}>
             {growthIsPartial
               ? `${growthLabel} growth unavailable: vault valuation data is incomplete.`
-              : getEmptyMessage(activeTab, resolvedGrowthDisplayMode)}
+              : annualizedIsPartial
+                ? 'Annualized return unavailable: vault valuation data is incomplete.'
+                : getEmptyMessage(activeTab, resolvedGrowthDisplayMode)}
           </p>
         </div>
       </section>
@@ -1018,6 +1021,11 @@ export function PortfolioHistoryChart({
 
   return (
     <section className={cl(sectionClassName, className)}>
+      {annualizedIsPartial ? (
+        <p className={'mb-2 text-xs text-text-secondary'}>
+          {'Some vaults could not be valued. Annualized return data may be partial.'}
+        </p>
+      ) : null}
       <div className={'min-h-0 flex-1'}>
         <ChartContainer
           config={chartConfig}

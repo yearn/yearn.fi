@@ -149,11 +149,11 @@ describe('portfolio growth pricing availability', () => {
     expect(html).toContain('Contribution chart:exact')
   })
 
-  it.each(['balance', 'annualized'] as const)('does not show growth coverage warnings on %s', (activeTab) => {
+  it('does not show growth coverage warnings on Balance', () => {
     const html = renderToStaticMarkup(
       <PortfolioHistoryChart
         {...props}
-        activeTab={activeTab}
+        activeTab={'balance'}
         growthDisplayModeOverride={'index'}
         protocolReturnSummary={{
           ...props.protocolReturnSummary!,
@@ -164,5 +164,37 @@ describe('portfolio growth pricing availability', () => {
 
     expect(html).not.toContain('data may be partial.')
     expect(html).not.toContain('growth unavailable')
+  })
+
+  it.each([false, true])('uses USD coverage for Annualized: partial=%s', (usd) => {
+    const html = renderToStaticMarkup(
+      <PortfolioHistoryChart
+        {...props}
+        activeTab={'annualized'}
+        protocolReturnSummary={{
+          ...props.protocolReturnSummary!,
+          growthIsPartial: { usd, eth: true, index: usd }
+        }}
+      />
+    )
+
+    expect(html.includes('Some vaults could not be valued. Annualized return data may be partial.')).toBe(usd)
+    expect(html).not.toContain('No annualized return history available')
+  })
+
+  it('explains an Annualized chart with no included valuations', () => {
+    const html = renderToStaticMarkup(
+      <PortfolioHistoryChart
+        {...props}
+        activeTab={'annualized'}
+        protocolReturnSummary={{
+          ...props.protocolReturnSummary!,
+          growthIsPartial: { usd: true, eth: true, index: true }
+        }}
+        protocolReturnData={[{ ...props.protocolReturnData![0]!, annualizedProtocolReturnPct: null }]}
+      />
+    )
+
+    expect(html).toContain('Annualized return unavailable: vault valuation data is incomplete.')
   })
 })
