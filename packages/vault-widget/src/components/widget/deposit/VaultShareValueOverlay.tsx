@@ -8,7 +8,7 @@ interface VaultShareValueOverlayProps {
   sharesLabel: string
   shareValue: string
   assetSymbol: string
-  usdValue: string
+  usdValue?: string
   showShareConversion?: boolean
   convertedVaultSharesAmount?: string
 }
@@ -33,9 +33,9 @@ export const VaultShareValueOverlay: FC<VaultShareValueOverlayProps> = ({
         <div className="space-y-2">
           <p className="font-medium text-sm text-text-primary">What this value means</p>
           <p className="text-sm text-text-secondary">
-            This is the amount of <span className="font-semibold text-text-primary">{assetSymbol}</span> you could
-            redeem immediately after depositing. It represents the value of the shares you will receive converted to the
-            underlying asset.
+            This is the accounting value of your expected shares in{' '}
+            <span className="font-semibold text-text-primary">{assetSymbol}</span>. Withdrawal fees and available
+            liquidity can affect the amount you can redeem.
           </p>
         </div>
 
@@ -53,7 +53,7 @@ export const VaultShareValueOverlay: FC<VaultShareValueOverlayProps> = ({
               <span className="font-semibold text-text-primary">
                 {shareValue} {assetSymbol}
               </span>{' '}
-              (${usdValue})
+              {usdValue !== undefined ? `($${usdValue})` : null}
             </p>
           ) : (
             <p className="text-sm text-text-secondary">
@@ -64,7 +64,7 @@ export const VaultShareValueOverlay: FC<VaultShareValueOverlayProps> = ({
               <span className="font-semibold text-text-primary">
                 {shareValue} {assetSymbol}
               </span>{' '}
-              (${usdValue})
+              {usdValue !== undefined ? `($${usdValue})` : null}
             </p>
           )}
         </div>

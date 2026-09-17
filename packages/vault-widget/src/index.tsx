@@ -104,3 +104,6 @@ export function YBoldVaultWidget({ apy = 0, className, onSuccess }: YBoldVaultWi
     </VaultWidgetRuntimeProvider>
   )
 }
+
+export { Erc4626VaultWidget, type Erc4626VaultWidgetProps } from '@yearn/vault-widget/erc4626'
+export { useErc4626Vault } from '@yearn/vault-widget/erc4626/useErc4626Vault'
