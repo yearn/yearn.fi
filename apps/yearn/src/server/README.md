@@ -117,7 +117,7 @@ Required env for a configured chain:
 | `ENSO_API_KEY` | Enso routes | Bearer token for Enso upstream requests |
 | `RELAY_API_KEY` | Enso bridge-status route | Server-only key for Relay request lookup by source transaction hash |
 | `UPSTASH_REDIS_REST_URL_BRIDGE_COORDINATION` | Enso bridge-status route | Tracks bridge events via ENSO |
-| `UPSTASH_REDIS_REST_BRIDGE_COORDINATION_TOKEN` | Enso bridge-status route | Tracks bridge events via ENSO |
+| `UPSTASH_REDIS_REST_TOKEN_BRIDGE_COORDINATION` | Enso bridge-status route | Tracks bridge events via ENSO |
 | `MERKL_API_KEY` | Merkl route | API key sent to Merkl as `X-API-Key` |
 | `KONG_REST_URL` | machine-readable vault routes | Optional server-only Kong REST base URL override |
 | `NEXT_PUBLIC_KONG_REST_URL` | vault pages, machine-readable vault routes | Public Kong REST base URL |
@@ -135,8 +135,8 @@ Required env for a configured chain:
 | `ADMIN_SECRET` | holdings admin | Required for `/api/admin/invalidate-cache` |
 | `UPSTASH_REDIS_REST_URL_PORTFOLIO` | holdings | Upstash Redis REST URL for holdings cache/progress |
 | `UPSTASH_REDIS_REST_TOKEN_PORTFOLIO` | holdings | Upstash Redis REST token for holdings storage |
-| `UPSTASH_REDIS_REST_DOA_URL` | optimization | Upstash Redis REST URL for optimization payloads |
-| `UPSTASH_REDIS_REST_DOA_TOKEN` | optimization | Upstash Redis REST token for optimization payloads |
+| `UPSTASH_REDIS_REST_URL_DOA` | optimization | Upstash Redis REST URL for optimization payloads |
+| `UPSTASH_REDIS_REST_TOKEN_DOA` | optimization | Upstash Redis REST token for optimization payloads |
 | `HOLDINGS_DEBUG` | holdings | Enables holdings debug logs |
 | `NEXT_PUBLIC_TENDERLY_MODE` | local Tenderly | Enables Tenderly config parsing |
 | `NEXT_PUBLIC_TENDERLY_CHAIN_ID_FOR_<id>` | local Tenderly | Tenderly execution chain ID for a canonical chain |

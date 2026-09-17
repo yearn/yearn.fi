@@ -28,8 +28,8 @@ describe('readOptimizations', () => {
   })
 
   it('accepts the standard Upstash URL and token credentials without a username', async () => {
-    vi.stubEnv('UPSTASH_REDIS_REST_DOA_URL', 'https://example.upstash.io')
-    vi.stubEnv('UPSTASH_REDIS_REST_DOA_TOKEN', 'test-token')
+    vi.stubEnv('UPSTASH_REDIS_REST_URL_DOA', 'https://example.upstash.io')
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN_DOA', 'test-token')
 
     const { readOptimizations } = await import('./redis')
 
@@ -38,7 +38,7 @@ describe('readOptimizations', () => {
   })
 
   it('rejects requests when the URL or token is missing', async () => {
-    vi.stubEnv('UPSTASH_REDIS_REST_DOA_URL', 'https://example.upstash.io')
+    vi.stubEnv('UPSTASH_REDIS_REST_URL_DOA', 'https://example.upstash.io')
 
     const { REDIS_MISSING_CONFIGURATION_MESSAGE, readOptimizations } = await import('./redis')
 

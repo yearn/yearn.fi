@@ -39,7 +39,7 @@ vi.mock('./_lib/explain-parse', () => ({
 
 vi.mock('./_lib/redis', () => ({
   REDIS_AUTHENTICATION_ERROR_MESSAGE:
-    'Backend Redis authentication failed. Check UPSTASH_REDIS_REST_DOA_URL and UPSTASH_REDIS_REST_DOA_TOKEN credentials.',
+    'Backend Redis authentication failed. Check UPSTASH_REDIS_REST_URL_DOA and UPSTASH_REDIS_REST_TOKEN_DOA credentials.',
   REDIS_CONNECTIVITY_ERROR_MESSAGE: 'Backend connectivity unavailable. Unable to access Redis.',
   findVaultOptimization: findVaultOptimizationMock,
   isRedisAuthenticationError: (error: unknown) => error instanceof MockRedisAuthenticationError,
@@ -134,7 +134,7 @@ describe('optimization handlers', () => {
     expect(response.headers.get('Access-Control-Allow-Origin')).toBe('*')
     await expect(response.json()).resolves.toEqual({
       error:
-        'Backend Redis authentication failed. Check UPSTASH_REDIS_REST_DOA_URL and UPSTASH_REDIS_REST_DOA_TOKEN credentials.'
+        'Backend Redis authentication failed. Check UPSTASH_REDIS_REST_URL_DOA and UPSTASH_REDIS_REST_TOKEN_DOA credentials.'
     })
   })
 
