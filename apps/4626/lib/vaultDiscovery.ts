@@ -52,6 +52,31 @@ export function parseWalletCandidates(payload: unknown): TWalletCandidate[] {
   return Array.from(new Map(candidates.map((candidate) => [key(candidate), candidate])).values())
 }
 
+/** Mirror the main site's selector: hide the vault and its staking alias on the same chain. */
+export function parseHiddenYearnVaultTokens(payload: unknown): TWalletCandidate[] {
+  if (!Array.isArray(payload)) throw new Error('The Yearn vault list returned an invalid response.')
+  return payload.flatMap((value): TWalletCandidate[] => {
+    const item = record(value)
+    const chainId = Number(item.chainId)
+    if (item.isHidden !== true || !getChain(chainId)) return []
+    const staking = record(item.staking)
+    return [item.address, staking.address].flatMap((address): TWalletCandidate[] => {
+      if (address == null || address === zeroAddress) return []
+      if (typeof address !== 'string' || !isAddress(address))
+        throw new Error('The Yearn vault list contains an invalid hidden vault address.')
+      return [{ address: getAddress(address), chainId }]
+    })
+  })
+}
+
+export function filterVisibleWalletVaults<T extends TWalletCandidate>(
+  vaults: T[],
+  hiddenTokens: TWalletCandidate[]
+): T[] {
+  const hidden = new Set(hiddenTokens.map(key))
+  return vaults.filter((vault) => !hidden.has(key(vault)))
+}
+
 /** Only synchronous V3 allocator candidates on this app's supported networks. */
 export function parseYearnAllocators(payload: unknown): TVaultChoice[] {
   if (!Array.isArray(payload)) throw new Error('The Yearn vault list returned an invalid response.')
