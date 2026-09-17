@@ -11,14 +11,14 @@ import { IconMoon } from '@shared/icons/IconMoon'
 import { IconSpinner } from '@shared/icons/IconSpinner'
 import { IconSun } from '@shared/icons/IconSun'
 import { IconWallet } from '@shared/icons/IconWallet'
-import { TypeMarkYearn } from '@shared/icons/TypeMarkYearn'
 import { cl } from '@shared/utils'
 import { normalizePathname } from '@shared/utils/routes'
 import { truncateHex } from '@shared/utils/tools.address'
+import { SiteHeader } from '@yearn/site-header'
 import Link from 'next/link'
 import { usePathname } from 'next/navigation'
 import type { KeyboardEvent, MouseEvent, ReactElement } from 'react'
-import { useMemo, useState } from 'react'
+import { useMemo, useRef, useState } from 'react'
 import { useAccount, useSwitchChain } from 'wagmi'
 import {
   canToggleTenderlyMode,
@@ -231,6 +231,7 @@ function TenderlyBadge(): ReactElement | null {
 
 function AppHeader(): ReactElement {
   const pathname = usePathname() || '/'
+  const accountTrigger = useRef<HTMLDivElement>(null)
   const [isAccountSidebarOpen, setIsAccountSidebarOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const { notificationStatus } = useNotifications()
@@ -248,79 +249,68 @@ function AppHeader(): ReactElement {
   }, [ens, clusters, address])
 
   return (
-    <div
-      id={'head'}
-      className={cl('sticky inset-x-0 top-0 z-50 w-full backdrop-blur-md', isHomePage ? 'bg-transparent' : 'bg-app')}
-    >
-      <div className={'mx-auto w-full max-w-[1232px] px-4'}>
-        <header className={'flex h-[var(--header-height)] w-full items-center justify-between px-0'}>
-          <div className={'flex items-center justify-start gap-x-6 px-1 py-2 md:py-1'} data-tour="vaults-header-nav">
-            <a href={'/'} className={'flex items-center gap-1 transition-colors hover:opacity-80'}>
-              <TypeMarkYearn className={'h-8 w-auto'} color={isHomePage || isDarkTheme ? '#FFFFFF' : '#0657F9'} />
-            </a>
-            <div className={'hidden items-center gap-3 pb-0.5 md:flex'}>
-              <HeaderNavMenu isHomePage={isHomePage} isDarkTheme={isDarkTheme} />
-            </div>
-          </div>
-          <div className={'flex items-center justify-end gap-2'}>
-            {!isHomePage && (
-              <>
-                <div className={'hidden items-center justify-end md:flex gap-2'} data-tour="vaults-header-user">
-                  <TenderlyBadge />
-                  <div className={'hidden md:flex gap-4'}>
-                    <Link href={'/vaults'} prefetch={false}>
-                      <span
-                        className={
-                          'text-base font-medium text-text-secondary transition-colors hover:text-text-primary'
-                        }
-                      >
-                        {'Vaults'}
-                      </span>
-                    </Link>
-
-                    <Link href={'/portfolio'} prefetch={false}>
-                      <span
-                        className={
-                          'text-base font-medium text-text-secondary transition-colors hover:text-text-primary'
-                        }
-                      >
-                        {'Portfolio'}
-                      </span>
-                    </Link>
-                  </div>
-                  <button
-                    className={
-                      'min-h-[44px] min-w-[44px] rounded-full p-2.5 text-text-secondary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400'
-                    }
-                    onClick={() => setThemePreference(isDarkTheme ? 'light' : 'soft-dark')}
-                    title={isDarkTheme ? 'Switch to light mode' : 'Switch to dark mode'}
-                    aria-label={isDarkTheme ? 'Switch to light mode' : 'Switch to dark mode'}
+    <SiteHeader
+      isHomePage={isHomePage}
+      isDarkTheme={isDarkTheme}
+      navigation={<HeaderNavMenu isHomePage={isHomePage} isDarkTheme={isDarkTheme} />}
+      actions={
+        !isHomePage && (
+          <>
+            <div className={'hidden items-center justify-end md:flex gap-2'} data-tour="vaults-header-user">
+              <TenderlyBadge />
+              <div className={'hidden md:flex gap-4'}>
+                <Link href={'/vaults'} prefetch={false}>
+                  <span
+                    className={'text-base font-medium text-text-secondary transition-colors hover:text-text-primary'}
                   >
-                    {isDarkTheme ? <IconSun className={'size-5'} /> : <IconMoon className={'size-5'} />}
-                  </button>
-                  <div className={'relative'}>
-                    <WalletSelector
-                      onAccountClick={() => setIsAccountSidebarOpen(!isAccountSidebarOpen)}
-                      notificationStatus={notificationStatus}
-                    />
-                    <AccountDropdown isOpen={isAccountSidebarOpen} onClose={() => setIsAccountSidebarOpen(false)} />
-                  </div>
-                </div>
-                <button
-                  className={cl(
-                    'flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2.5 transition-colors md:hidden',
-                    isHomePage ? 'text-white hover:bg-white/10' : 'text-text-primary hover:bg-surface-secondary'
-                  )}
-                  onClick={() => setIsMobileMenuOpen(true)}
-                  aria-label={'Open navigation menu'}
-                >
-                  <IconBurgerPlain className={'size-6'} />
-                </button>
-              </>
-            )}
-          </div>
-        </header>
-      </div>
+                    {'Vaults'}
+                  </span>
+                </Link>
+
+                <Link href={'/portfolio'} prefetch={false}>
+                  <span
+                    className={'text-base font-medium text-text-secondary transition-colors hover:text-text-primary'}
+                  >
+                    {'Portfolio'}
+                  </span>
+                </Link>
+              </div>
+              <button
+                className={
+                  'min-h-[44px] min-w-[44px] rounded-full p-2.5 text-text-secondary transition-colors hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400'
+                }
+                onClick={() => setThemePreference(isDarkTheme ? 'light' : 'soft-dark')}
+                title={isDarkTheme ? 'Switch to light mode' : 'Switch to dark mode'}
+                aria-label={isDarkTheme ? 'Switch to light mode' : 'Switch to dark mode'}
+              >
+                {isDarkTheme ? <IconSun className={'size-5'} /> : <IconMoon className={'size-5'} />}
+              </button>
+              <div ref={accountTrigger} className={'relative'}>
+                <WalletSelector
+                  onAccountClick={() => setIsAccountSidebarOpen(!isAccountSidebarOpen)}
+                  notificationStatus={notificationStatus}
+                />
+                <AccountDropdown
+                  triggerRef={accountTrigger}
+                  isOpen={isAccountSidebarOpen}
+                  onClose={() => setIsAccountSidebarOpen(false)}
+                />
+              </div>
+            </div>
+            <button
+              className={cl(
+                'flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2.5 transition-colors md:hidden',
+                isHomePage ? 'text-white hover:bg-white/10' : 'text-text-primary hover:bg-surface-secondary'
+              )}
+              onClick={() => setIsMobileMenuOpen(true)}
+              aria-label={'Open navigation menu'}
+            >
+              <IconBurgerPlain className={'size-6'} />
+            </button>
+          </>
+        )
+      }
+    >
       <MobileNavMenu
         isOpen={isMobileMenuOpen}
         onClose={() => setIsMobileMenuOpen(false)}
@@ -330,7 +320,7 @@ function AppHeader(): ReactElement {
         notificationStatus={notificationStatus}
         walletIdentity={walletIdentity}
       />
-    </div>
+    </SiteHeader>
   )
 }
 

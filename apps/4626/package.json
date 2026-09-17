@@ -22,7 +22,8 @@
     "react-rewards": "2.1.0",
     "viem": "2.55.11",
     "wagmi": "2.18.2",
-    "@safe-global/safe-apps-sdk": "9.1.0"
+    "@safe-global/safe-apps-sdk": "9.1.0",
+    "@yearn/site-header": "workspace:*"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.7",

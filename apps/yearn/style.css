@@ -8,6 +8,7 @@
 @import './src/styles/themes.css';
 /* Workspace sources */
 @source '../../packages/vault-widget/src';
+@source '../../packages/site-header/src';
 
 @theme {
   /* Font families */
