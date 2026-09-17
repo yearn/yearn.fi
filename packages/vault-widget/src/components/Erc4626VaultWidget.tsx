@@ -63,13 +63,25 @@ function Erc4626VaultContent({
           aria-label={vault ? `Change vault: ${vault.name}` : 'Select vault'}
         >
           <span className="min-w-0">
-            <span className="block text-xs text-text-secondary">
-              {vault ? runtime.chains.getChain(chainId)?.name : 'ERC-4626 vault'}
-              {isRetired ? ' · Retired' : ''}
-            </span>
-            <span className="mt-1 block truncate text-lg font-semibold">{vault?.name ?? 'Select vault'}</span>
+            {vault && (
+              <span className="mb-1 block text-xs text-text-secondary">
+                {runtime.chains.getChain(chainId)?.name}
+                {isRetired ? ' · Retired' : ''}
+              </span>
+            )}
+            <span className="block truncate text-lg font-semibold">{vault?.name ?? 'Select vault'}</span>
           </span>
-          {onSelectVault && <span aria-hidden="true">⌄</span>}
+          {onSelectVault && (
+            <svg
+              aria-hidden="true"
+              className="ml-1 size-5 shrink-0"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+            </svg>
+          )}
         </button>
         <WidgetTabs
           actions={[WidgetActionType.Deposit, WidgetActionType.Withdraw]}

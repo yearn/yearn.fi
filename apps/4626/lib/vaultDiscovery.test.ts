@@ -1,6 +1,8 @@
 import {
   discoverWalletVaults,
+  filterVisibleWalletVaults,
   inspectWalletCandidate,
+  parseHiddenYearnVaultTokens,
   parseWalletCandidates,
   parseYearnAllocators
 } from '@erc4626/lib/vaultDiscovery'
@@ -103,5 +105,50 @@ describe('Yearn allocator discovery', () => {
   })
   it('rejects service errors rather than presenting an empty catalog', () => {
     expect(() => parseYearnAllocators({ error: 'bad' })).toThrow()
+  })
+})
+
+describe('wallet vault visibility', () => {
+  it('hides vault and staking-token holdings only on their declared chain', () => {
+    const hiddenAddress = '0xabcdefabcdefabcdefabcdefabcdefabcdefabcd' as const
+    const hidden = parseHiddenYearnVaultTokens([
+      { address: hiddenAddress, chainId: 1, isHidden: true, staking: { address: asset, available: false } }
+    ])
+    const holdings = [
+      { address: `0x${hiddenAddress.slice(2).toUpperCase()}` as typeof hiddenAddress, chainId: 1 },
+      { address: asset, chainId: 1 },
+      { address: hiddenAddress, chainId: 8453 },
+      { address: vault, chainId: 1 }
+    ]
+    expect(filterVisibleWalletVaults(holdings, hidden)).toEqual(holdings.slice(2))
+  })
+  it('preserves retired, visible and uncatalogued external vaults without consulting prices', () => {
+    const hidden = parseHiddenYearnVaultTokens([
+      { address: vault, chainId: 1, isHidden: false, isRetired: true },
+      { address: asset, chainId: 1 },
+      { address: owner, chainId: 1, isHidden: null }
+    ])
+    const holdings = [candidate, { address: asset, chainId: 1 }, { address: owner, chainId: 1 }]
+    expect(filterVisibleWalletVaults(holdings, hidden)).toEqual(holdings)
+  })
+  it('includes hidden single-strategy and older vaults, independently of the allocator picker filter', () => {
+    expect(
+      parseHiddenYearnVaultTokens([
+        {
+          address: vault,
+          chainId: 1,
+          isHidden: true,
+          apiVersion: '0.4.3',
+          kind: 'Single Strategy',
+          staking: { address: zeroAddress }
+        },
+        { address: asset, chainId: 8453, isHidden: true, staking: null },
+        { address: owner, chainId: 146, isHidden: true }
+      ])
+    ).toEqual([candidate, { address: asset, chainId: 8453 }])
+  })
+  it('does not silently accept a failed or malformed visibility response', () => {
+    expect(() => parseHiddenYearnVaultTokens({ error: 'unavailable' })).toThrow()
+    expect(() => parseHiddenYearnVaultTokens([{ address: 'invalid', chainId: 1, isHidden: true }])).toThrow()
   })
 })

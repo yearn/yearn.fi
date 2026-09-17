@@ -230,6 +230,14 @@ export function VaultPicker({
               </button>
             </div>
           )}
+          {tab === 'wallet' && owner && wallet.visibilityUnavailable && (
+            <p role="status" className="mb-3 text-sm text-text-secondary">
+              Yearn visibility data is unavailable. Some hidden vaults may appear.{' '}
+              <button type="button" onClick={() => void wallet.refetch()} className="underline">
+                Retry
+              </button>
+            </p>
+          )}
           {listAvailable && (
             <>
               {query.isFetching && (

@@ -39,9 +39,7 @@ export function VaultApp({ initialChain, initialAddress }: { initialChain?: stri
     <>
       <Header />
       <main className="mx-auto w-full max-w-xl flex-1 px-5 pb-10 pt-8">
-        <p className="text-xs font-medium uppercase tracking-widest text-text-secondary">ERC-4626 utility</p>
-        <h1 className="mt-3 text-3xl font-semibold tracking-tight">Deposit. Withdraw.</h1>
-        <p className="mt-3 text-text-secondary">Select a vault to deposit or withdraw its underlying token.</p>
+        <h1 className="text-3xl font-semibold tracking-tight">ERC-4626 Widget</h1>
         <Erc4626VaultWidget
           className="mt-7"
           address={selection?.address}
