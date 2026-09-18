@@ -17,7 +17,7 @@ import type {
 import { createWagmiVaultWidgetExecutionAdapter } from '@yearn/vault-widget/wagmi'
 import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
 import type { Hash } from 'viem'
-import { useAccount, useWaitForTransactionReceipt, WagmiProvider } from 'wagmi'
+import { useAccount, usePublicClient, WagmiProvider } from 'wagmi'
 
 type TNotice = VaultWidgetNotificationInput & {
   id: string
@@ -156,12 +156,19 @@ function Notice({
   })
   const hash = notice.awaitingExecution ? safe.data?.executionTxHash : notice.txHash
   const [replacement, setReplacement] = useState<'repriced' | 'cancelled' | 'replaced'>()
-  const receipt = useWaitForTransactionReceipt({
-    hash,
-    onReplaced: (event) => setReplacement(event.reason),
-    chainId: notice.fromChainId,
-    confirmations: notice.fromChainId === 8453 ? 2 : 1,
-    query: { enabled: pending && !!hash }
+  const client = usePublicClient({ chainId: notice.fromChainId })
+  const receipt = useQuery({
+    queryKey: ['4626-notice-receipt', notice.fromChainId, hash],
+    enabled: pending && !!hash && !!client,
+    // Viem returns reverted receipts as data; Wagmi throws and discards that evidence.
+    queryFn: () =>
+      client!.waitForTransactionReceipt({
+        hash: hash!,
+        onReplaced: (event) => setReplacement(event.reason),
+        confirmations: notice.fromChainId === 8453 ? 2 : 1
+      }),
+    retry: false,
+    refetchInterval: pending ? 3_000 : false
   })
   // Receipt/Safe updates arrive outside UI events. Reconcile host notices even if the widget was unmounted.
   useEffect(() => {

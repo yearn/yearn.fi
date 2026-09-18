@@ -61,7 +61,7 @@
     "react-rewards": "2.1.0",
     "typescript": "5.9.3",
     "viem": "2.55.11",
-    "vitest": "4.1.10",
+    "vitest": "4.1.11",
     "wagmi": "2.18.2"
   }
 }

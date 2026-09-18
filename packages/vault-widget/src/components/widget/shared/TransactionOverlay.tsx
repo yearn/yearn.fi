@@ -700,7 +700,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   )
 
   const executePlannedStep = useCallback(async () => {
-    if (!plan || !step || !account) {
+    if (!plan || !step || !account || step.isEnabled === false) {
       setOverlayState('error')
       setErrorMessage('Transaction not ready. Please try again.')
       return
@@ -1773,6 +1773,9 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
               ) : null}
               <Button
                 onClick={displayedErrorPresentation.canRetry ? handleRetry : handleClose}
+                disabled={Boolean(
+                  displayedErrorPresentation.canRetry && plan && !failedStepSuccessId && !isStepEnabled
+                )}
                 variant="filled"
                 className="w-full max-w-xs"
                 classNameOverride="yearn--button--nextgen w-full"
