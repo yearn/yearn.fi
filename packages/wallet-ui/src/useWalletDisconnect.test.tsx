@@ -54,6 +54,25 @@ it('disconnects both records with one UI action and allows a fresh connection af
   expect(getAccount(config).isConnected).toBe(true)
 })
 
+it('clears a connected status without a connection record and permits reconnecting', async () => {
+  const { config, wrapper } = setup()
+  const connector = config.connectors[0]
+  await connect(config, { connector })
+  // Reproduce hydration clearing the records after an early provider connect event.
+  config.setState((state) => ({ ...state, connections: new Map() }))
+  expect(getAccount(config)).toMatchObject({ isConnected: true, address: undefined })
+  const { result } = renderHook(useWalletDisconnect, { wrapper })
+  await act(async () => {
+    await result.current.disconnectAsync()
+  })
+  expect(getAccount(config).isDisconnected).toBe(true)
+  expect(config.state.current).toBeNull()
+  await act(async () => {
+    await connect(config, { connector })
+  })
+  expect(getAccount(config).address).toBe(account)
+})
+
 it('keeps disconnect pending until both connector requests finish', async () => {
   const { config, wrapper } = setup()
   const [first, second] = config.connectors
