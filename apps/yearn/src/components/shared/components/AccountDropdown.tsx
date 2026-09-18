@@ -1,9 +1,8 @@
 import { setThemePreference, useThemePreference } from '@hooks/useThemePreference'
 import { useAppSettings } from '@pages/vaults/contexts/useAppSettings'
+import { WalletAccountValue } from '@shared/components/WalletAccountValue'
 import { yToast } from '@shared/components/yToast'
 import { useNotifications } from '@shared/contexts/useNotifications'
-import { useWalletStatus } from '@shared/contexts/useWallet'
-import { useWalletVaultTotals } from '@shared/contexts/useWalletVaultTotals'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import { IconArrowLeft } from '@shared/icons/IconArrowLeft'
@@ -15,12 +14,12 @@ import { IconPower } from '@shared/icons/IconPower'
 import { IconSettings } from '@shared/icons/IconSettings'
 import { IconSun } from '@shared/icons/IconSun'
 import { LogoYearn } from '@shared/icons/LogoYearn'
-import { cl, formatUSD } from '@shared/utils'
+import { cl } from '@shared/utils'
 import { truncateHex } from '@shared/utils/tools.address'
+import { WalletSurface } from '@yearn/wallet-ui'
 import { useRouter } from 'next/navigation'
 import type { ReactElement } from 'react'
-import { useCallback, useEffect, useMemo, useState } from 'react'
-import { DropdownPanel } from './DropdownPanel'
+import { useCallback, useMemo, useState } from 'react'
 
 type TAccountDropdownProps = {
   isOpen: boolean
@@ -31,8 +30,6 @@ type TView = 'account' | 'settings'
 
 function AccountView({ onSettingsClick, onClose }: { onSettingsClick: () => void; onClose: () => void }): ReactElement {
   const { address, ens, clusters, onDesactivate } = useWeb3()
-  const { isLoading: isWalletLoading } = useWalletStatus()
-  const { totalValue } = useWalletVaultTotals()
   const { cachedEntries } = useNotifications()
   const router = useRouter()
   const themePreference = useThemePreference()
@@ -46,10 +43,14 @@ function AccountView({ onSettingsClick, onClose }: { onSettingsClick: () => void
     return 'Not connected'
   }, [address, ens, clusters])
 
-  const handleCopyAddress = useCallback(() => {
+  const handleCopyAddress = useCallback(async () => {
     if (!address) return
-    navigator.clipboard.writeText(address)
-    toast({ content: 'Address copied', type: 'success' })
+    try {
+      await navigator.clipboard.writeText(address)
+      toast({ content: 'Address copied', type: 'success' })
+    } catch {
+      toast({ content: 'Unable to copy address', type: 'error' })
+    }
   }, [address, toast])
 
   const recentActivity = useMemo(() => {
@@ -103,6 +104,8 @@ function AccountView({ onSettingsClick, onClose }: { onSettingsClick: () => void
         <div className={'mb-4 flex items-start justify-between'}>
           <div className={'flex flex-col'}>
             <button
+              aria-label="Copy wallet address"
+              title={address}
               onClick={handleCopyAddress}
               disabled={!address}
               className={
@@ -112,26 +115,18 @@ function AccountView({ onSettingsClick, onClose }: { onSettingsClick: () => void
               <span>{displayName}</span>
               {address && <IconCopy className={'size-3.5 opacity-50 group-hover:opacity-100 transition-opacity'} />}
             </button>
-            {isWalletLoading ? (
-              <div className={'mt-1 h-7 w-20 animate-pulse rounded bg-surface-tertiary'} />
-            ) : (
-              <p className={'text-2xl font-bold text-text-primary'}>
-                <span>{formatUSD(Math.floor(totalValue), 0, 0)}</span>
-                <span className={'text-text-secondary'}>
-                  {totalValue > 0 ? `.${(totalValue % 1).toFixed(2).substring(2)}` : ''}
-                </span>
-              </p>
-            )}
+            <WalletAccountValue />
           </div>
           <div className={'flex items-center gap-1'}>
-            <button onClick={onSettingsClick} className={iconButtonClass}>
+            <button
+              id="yearn-wallet-settings"
+              aria-label="Wallet settings"
+              onClick={onSettingsClick}
+              className={iconButtonClass}
+            >
               <IconSettings className={'size-4'} />
             </button>
-            <button
-              onClick={handleDisconnect}
-              disabled={isWalletLoading}
-              className={cl(iconButtonClass, { 'opacity-50 cursor-not-allowed': isWalletLoading })}
-            >
+            <button onClick={handleDisconnect} aria-label="Disconnect wallet" className={iconButtonClass}>
               <IconPower className={'size-4'} />
             </button>
           </div>
@@ -255,7 +250,12 @@ function SettingsView({ onBack }: { onBack: () => void }): ReactElement {
   return (
     <div className={'flex flex-col'}>
       <div className={'mb-4 flex items-center'}>
-        <button onClick={onBack} className={backButtonClass}>
+        <button
+          id="yearn-wallet-settings-back"
+          aria-label="Back to account"
+          onClick={onBack}
+          className={backButtonClass}
+        >
           <IconArrowLeft className={'size-4'} />
         </button>
         <h2 className={'flex-1 text-center text-base font-semibold text-text-primary'}>{'Settings'}</h2>
@@ -266,6 +266,7 @@ function SettingsView({ onBack }: { onBack: () => void }): ReactElement {
         <span className={'text-sm font-medium text-text-primary'}>{'Theme'}</span>
         <div className={cl('flex rounded-full p-0.5', isDarkTheme ? 'bg-surface-secondary' : 'bg-neutral-100')}>
           <button
+            aria-label="Use light theme"
             onClick={() => setThemePreference('light')}
             className={cl(
               'flex items-center justify-center rounded-full px-3 py-1 text-sm font-medium transition-colors',
@@ -275,6 +276,7 @@ function SettingsView({ onBack }: { onBack: () => void }): ReactElement {
             <IconSun className={'size-4'} />
           </button>
           <button
+            aria-label="Use dark theme"
             onClick={() => setThemePreference(themePreference === 'light' ? 'soft-dark' : themePreference)}
             className={cl(
               'flex items-center justify-center rounded-full px-3 py-1 text-sm font-medium transition-colors',
@@ -358,22 +360,38 @@ function SettingsView({ onBack }: { onBack: () => void }): ReactElement {
   )
 }
 
-export function AccountDropdown({ isOpen, onClose }: TAccountDropdownProps): ReactElement {
+function AccountContent({ onClose }: { onClose: () => void }): ReactElement {
   const [view, setView] = useState<TView>('account')
-
-  useEffect(() => {
-    if (!isOpen) {
-      setTimeout(() => setView('account'), 200)
-    }
-  }, [isOpen])
-
+  const showView = (nextView: TView): void => {
+    setView(nextView)
+    requestAnimationFrame(() =>
+      document.getElementById(nextView === 'settings' ? 'yearn-wallet-settings-back' : 'yearn-wallet-settings')?.focus()
+    )
+  }
   return (
-    <DropdownPanel isOpen={isOpen} onClose={onClose} anchor={'right'} className={'w-80 max-md:w-full'}>
+    <div>
       {view === 'account' ? (
-        <AccountView onSettingsClick={() => setView('settings')} onClose={onClose} />
+        <AccountView onSettingsClick={() => showView('settings')} onClose={onClose} />
       ) : (
-        <SettingsView onBack={() => setView('account')} />
+        <SettingsView onBack={() => showView('account')} />
       )}
-    </DropdownPanel>
+    </div>
+  )
+}
+
+export function AccountDropdown({ isOpen, onClose }: TAccountDropdownProps): ReactElement {
+  const { address, isActive } = useWeb3()
+  return (
+    <WalletSurface
+      isOpen={isOpen && isActive}
+      onClose={onClose}
+      dialogId="yearn-wallet-account"
+      title="Wallet"
+      triggerSelector="[data-wallet-account-trigger], [data-mobile-nav-trigger]"
+      desktopTop="calc(var(--header-height) + 0.5rem)"
+      desktopRight="max(1rem,calc((100vw - 1232px)/2 + 1rem))"
+    >
+      {isOpen && <AccountContent key={address} onClose={onClose} />}
+    </WalletSurface>
   )
 }

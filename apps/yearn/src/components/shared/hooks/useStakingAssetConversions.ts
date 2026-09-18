@@ -2,8 +2,8 @@ import { getVaultChainID, getVaultStaking, type TKongVault } from '@pages/vaults
 import { getStakingWithdrawableAssets } from '@pages/vaults/hooks/actions/stakingAdapter'
 import type { TAddress, TDict, TNormalizedBN } from '@shared/types'
 import { isZeroAddress, toAddress } from '@shared/utils'
-import { useQueries } from '@tanstack/react-query'
-import { useMemo } from 'react'
+import { type UseQueryResult, useQueries } from '@tanstack/react-query'
+import { useCallback, useMemo } from 'react'
 import type { Address } from 'viem'
 import { useConfig } from 'wagmi'
 import { readContract } from 'wagmi/actions'
@@ -95,7 +95,20 @@ export function useStakingAssetConversions({
     return [...positions.values()]
   }, [getBalance, stakingVaults, userAddress])
 
-  const queries = useQueries({
+  // Query state changes must not invalidate holdings when the converted amounts are unchanged.
+  const combine = useCallback(
+    (queries: UseQueryResult<bigint | undefined>[]): Record<string, bigint> =>
+      Object.fromEntries(
+        queries.flatMap((query, index) => {
+          const position = stakingPositions[index]
+          return position && query.data !== undefined ? [[position.key, query.data]] : []
+        })
+      ),
+    [stakingPositions]
+  )
+
+  return useQueries({
+    combine,
     queries: stakingPositions.map((position) => ({
       queryKey: [
         'walletStakingConvertedAssets',
@@ -145,19 +158,4 @@ export function useStakingAssetConversions({
       refetchOnWindowFocus: false
     }))
   })
-
-  return useMemo(() => {
-    const conversions: Record<string, bigint> = {}
-
-    queries.forEach((query, index) => {
-      const position = stakingPositions[index]
-      if (!position || query.data === undefined) {
-        return
-      }
-
-      conversions[position.key] = query.data
-    })
-
-    return conversions
-  }, [queries, stakingPositions])
 }

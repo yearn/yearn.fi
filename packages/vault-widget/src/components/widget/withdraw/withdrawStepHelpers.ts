@@ -21,7 +21,7 @@ type TBuildWithdrawTransactionStepArgs = {
   approveNotificationParams?: TCreateNotificationParams
   unstakeNotificationParams?: TCreateNotificationParams
   withdrawNotificationParams?: TCreateNotificationParams
-  safeWithdrawBatch?: TransactionStep['batch']
+  withdrawBatch?: TransactionStep['batch']
   prepareApproveEnabled?: boolean
   prepareWithdrawEnabled?: boolean
   directUnstakePrepareEnabled?: boolean
@@ -74,24 +74,24 @@ export function buildWithdrawTransactionStep({
   approveNotificationParams,
   unstakeNotificationParams,
   withdrawNotificationParams,
-  safeWithdrawBatch,
+  withdrawBatch,
   prepareApproveEnabled = true,
   prepareWithdrawEnabled = true,
   directUnstakePrepareEnabled = prepareWithdrawEnabled,
   directWithdrawPrepareEnabled = prepareWithdrawEnabled
 }: TBuildWithdrawTransactionStepArgs): TransactionStep | undefined {
-  if (needsApproval && approvePrepare && safeWithdrawBatch) {
+  if (needsApproval && approvePrepare && withdrawBatch) {
     return {
       id: 'withdraw-batch',
       prepare: approvePrepare,
-      batch: safeWithdrawBatch,
+      batch: withdrawBatch,
       label: 'Approve & Withdraw',
-      confirmMessage: 'Submitting approval and withdraw to your Safe',
+      confirmMessage: 'Confirm approval and withdraw in your wallet',
       successTitle: isCrossChain ? 'Transaction Submitted' : 'Withdraw successful!',
       successMessage: isCrossChain
         ? 'Your cross-chain withdraw has been submitted.\nIt may take a few minutes to complete on the destination chain.'
         : `You have withdrawn ${formattedWithdrawAmount} ${assetTokenSymbol || ''}.`,
-      isEnabled: prepareApproveEnabled && safeWithdrawBatch.calls.length > 0,
+      isEnabled: prepareApproveEnabled && withdrawBatch.calls.length > 0,
       completesFlow: true,
       notification: withdrawNotificationParams
     }

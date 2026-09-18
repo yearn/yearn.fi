@@ -2,8 +2,7 @@ import { Dialog, Transition, TransitionChild } from '@headlessui/react'
 import { setThemePreference, useThemePreference } from '@hooks/useThemePreference'
 import { BottomDrawer } from '@pages/vaults/components/detail/BottomDrawer'
 import { useAppSettings } from '@pages/vaults/contexts/useAppSettings'
-import { useWalletStatus } from '@shared/contexts/useWallet'
-import { useWalletVaultTotals } from '@shared/contexts/useWalletVaultTotals'
+import { AccountDropdown } from '@shared/components/AccountDropdown'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconClose } from '@shared/icons/IconClose'
@@ -20,10 +19,9 @@ import { LogoGithub } from '@shared/icons/LogoGithub'
 import { LogoYearn } from '@shared/icons/LogoYearn'
 import { LogoYearnMark } from '@shared/icons/LogoYearnMark'
 import { TypeMarkYearn } from '@shared/icons/TypeMarkYearn'
-import { cl, formatUSD } from '@shared/utils'
-import { truncateHex } from '@shared/utils/tools.address'
+import { cl } from '@shared/utils'
+import { useWalletDrawer } from '@yearn/wallet-ui'
 import Link from 'next/link'
-import { useRouter } from 'next/navigation'
 import type { ReactElement } from 'react'
 import { useEffect, useState } from 'react'
 import { env } from '@/env'
@@ -114,95 +112,6 @@ function MobileNavTile({
   )
 }
 
-type TMobileWalletDrawerContentProps = {
-  displayName: string
-  isActive: boolean
-  onConnectWallet: () => void
-  onDisconnect: () => void
-  onViewPortfolio: () => void
-  onViewRecentActivity: () => void
-}
-
-function MobileWalletDrawerContent({
-  displayName,
-  isActive,
-  onConnectWallet,
-  onDisconnect,
-  onViewPortfolio,
-  onViewRecentActivity
-}: TMobileWalletDrawerContentProps): ReactElement {
-  const { isLoading: isWalletLoading } = useWalletStatus()
-  const { totalValue } = useWalletVaultTotals()
-
-  return (
-    <div className={'px-4 py-4'}>
-      <div className={'mb-4 flex items-start justify-between'}>
-        <div className={'flex flex-col'}>
-          <p className={'text-sm font-medium text-text-primary'}>{displayName}</p>
-          {!isActive ? (
-            <p className={'text-sm text-text-secondary'}>{'Not connected'}</p>
-          ) : isWalletLoading ? (
-            <div className={'mt-1 h-7 w-20 animate-pulse rounded bg-surface-tertiary'} />
-          ) : (
-            <p className={'text-2xl font-bold text-text-primary'}>
-              <span>{formatUSD(Math.floor(totalValue), 0, 0)}</span>
-              <span className={'text-text-secondary'}>
-                {totalValue > 0 ? `.${(totalValue % 1).toFixed(2).substring(2)}` : ''}
-              </span>
-            </p>
-          )}
-        </div>
-        {isActive && (
-          <button
-            onClick={onDisconnect}
-            className={cl(
-              'rounded-lg px-3 py-1.5 text-sm font-medium transition-colors',
-              'text-text-secondary hover:bg-surface-tertiary hover:text-text-primary'
-            )}
-          >
-            {'Disconnect'}
-          </button>
-        )}
-      </div>
-
-      {!isActive && (
-        <button
-          onClick={onConnectWallet}
-          className={cl(
-            'flex w-full items-center justify-center rounded-lg border py-2.5 text-sm font-medium transition-colors',
-            'border-border bg-surface text-text-primary hover:bg-surface-tertiary'
-          )}
-        >
-          {'Connect wallet'}
-        </button>
-      )}
-
-      {isActive && (
-        <div className={'flex flex-col gap-2'}>
-          <button
-            onClick={onViewPortfolio}
-            className={cl(
-              'flex w-full items-center justify-center rounded-lg border py-2.5 text-sm font-medium transition-colors',
-              'border-border bg-surface text-text-primary hover:bg-surface-tertiary'
-            )}
-          >
-            {'View portfolio'}
-          </button>
-          <button
-            onClick={onViewRecentActivity}
-            className={cl(
-              'flex w-full items-center justify-center rounded-lg border py-2.5 text-sm font-medium transition-colors',
-              'border-border bg-surface text-text-primary hover:bg-surface-tertiary'
-            )}
-          >
-            {'Recent activity'}
-          </button>
-        </div>
-      )}
-    </div>
-  )
-}
-
 export function MobileNavMenu({
   isOpen,
   onClose,
@@ -221,10 +130,10 @@ export function MobileNavMenu({
   const [isWalletDrawerOpen, setIsWalletDrawerOpen] = useState(false)
   const [isSettingsDrawerOpen, setIsSettingsDrawerOpen] = useState(false)
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false)
-  const { isActive, openLoginModal, onDesactivate, address, ens, clusters } = useWeb3()
+  const { isActive, openLoginModal } = useWeb3()
+  const { isOpen: isWalletPickerOpen } = useWalletDrawer()
   const { shouldHideDust, onSwitchHideDust } = useAppSettings()
   const themePreference = useThemePreference()
-  const router = useRouter()
 
   useEffect(() => {
     if (!isOpen) {
@@ -402,11 +311,13 @@ export function MobileNavMenu({
     { name: 'APR Oracle', href: 'https://oracle.yearn.fi', description: 'Projected Vault APY Tool' }
   ]
 
-  const displayName = walletIdentity || ens || clusters?.name || (address ? truncateHex(address, 4) : 'Wallet')
-
   const handleWalletClick = (): void => {
     onClose()
-    setIsWalletDrawerOpen(true)
+    if (isActive) {
+      setIsWalletDrawerOpen(true)
+    } else {
+      openLoginModal()
+    }
   }
 
   const handleSettingsClick = (): void => {
@@ -416,26 +327,6 @@ export function MobileNavMenu({
 
   const handleToggleSection = (key: TSectionKey): void => {
     setExpandedSections((prev) => ({ ...prev, [key]: !prev[key] }))
-  }
-
-  const handleViewPortfolio = (): void => {
-    router.push('/portfolio')
-    setIsWalletDrawerOpen(false)
-  }
-
-  const handleViewRecentActivity = (): void => {
-    router.push('/portfolio?tab=activity')
-    setIsWalletDrawerOpen(false)
-  }
-
-  const handleConnectWallet = (): void => {
-    setIsWalletDrawerOpen(false)
-    openLoginModal()
-  }
-
-  const handleDisconnect = (): void => {
-    onDesactivate()
-    setIsWalletDrawerOpen(false)
   }
 
   function getVariantButtonClass(variant: string): string {
@@ -452,228 +343,232 @@ export function MobileNavMenu({
 
   return (
     <>
-      <Transition show={isOpen} as={'div'}>
-        <Dialog as={'div'} className={'fixed inset-0 z-[100] overflow-y-auto'} onClose={onClose}>
-          <TransitionChild
-            as={'div'}
-            enter={'ease-out duration-300'}
-            enterFrom={'opacity-0'}
-            enterTo={'opacity-100'}
-            leave={'ease-in duration-200'}
-            leaveFrom={'opacity-100'}
-            leaveTo={'opacity-0'}
-          >
-            <div className={'fixed inset-0 bg-modal-overlay backdrop-blur-sm'} />
-          </TransitionChild>
-
-          <TransitionChild
-            as={'div'}
-            enter={'ease-out duration-300'}
-            enterFrom={'opacity-0 translate-y-4'}
-            enterTo={'opacity-100 translate-y-0'}
-            leave={'ease-in duration-200'}
-            leaveFrom={'opacity-100 translate-y-0'}
-            leaveTo={'opacity-0 translate-y-4'}
-          >
-            <div
-              className={cl('relative flex min-h-screen w-full flex-col', isDarkTheme ? 'bg-[#0a0a0a]' : 'bg-surface')}
+      {/* Release the navigation modal immediately when handing focus to a wallet surface. */}
+      {!isWalletDrawerOpen && !isWalletPickerOpen && (
+        <Transition show={isOpen} as={'div'}>
+          <Dialog as={'div'} className={'fixed inset-0 z-[100] overflow-y-auto'} onClose={onClose}>
+            <TransitionChild
+              as={'div'}
+              enter={'ease-out duration-300'}
+              enterFrom={'opacity-0'}
+              enterTo={'opacity-100'}
+              leave={'ease-in duration-200'}
+              leaveFrom={'opacity-100'}
+              leaveTo={'opacity-0'}
             >
-              <div className={'flex h-[var(--header-height)] items-center justify-between border-b border-border px-4'}>
-                <a href={'/'} onClick={onClose} className={'flex items-center'}>
-                  <TypeMarkYearn className={'h-8 w-auto'} color={isDarkTheme ? '#FFFFFF' : '#0657F9'} />
-                </a>
-                <button
-                  onClick={onClose}
-                  className={
-                    'flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-text-primary transition-colors hover:bg-surface-secondary'
-                  }
-                  aria-label={'Close navigation menu'}
+              <div className={'fixed inset-0 bg-modal-overlay backdrop-blur-sm'} />
+            </TransitionChild>
+
+            <TransitionChild
+              as={'div'}
+              enter={'ease-out duration-300'}
+              enterFrom={'opacity-0 translate-y-4'}
+              enterTo={'opacity-100 translate-y-0'}
+              leave={'ease-in duration-200'}
+              leaveFrom={'opacity-100 translate-y-0'}
+              leaveTo={'opacity-0 translate-y-4'}
+            >
+              <div
+                className={cl(
+                  'relative flex min-h-screen w-full flex-col',
+                  isDarkTheme ? 'bg-[#0a0a0a]' : 'bg-surface'
+                )}
+              >
+                <div
+                  className={'flex h-[var(--header-height)] items-center justify-between border-b border-border px-4'}
                 >
-                  <IconClose className={'size-6'} />
-                </button>
-              </div>
+                  <a href={'/'} onClick={onClose} className={'flex items-center'}>
+                    <TypeMarkYearn className={'h-8 w-auto'} color={isDarkTheme ? '#FFFFFF' : '#0657F9'} />
+                  </a>
+                  <button
+                    onClick={onClose}
+                    className={
+                      'flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-text-primary transition-colors hover:bg-surface-secondary'
+                    }
+                    aria-label={'Close navigation menu'}
+                  >
+                    <IconClose className={'size-6'} />
+                  </button>
+                </div>
 
-              <div className={'flex flex-1 flex-col px-4 py-6'}>
-                <nav className={'flex flex-col gap-4'}>
-                  <div className={'flex flex-col gap-1'}>
-                    <Link
-                      href={'/vaults'}
-                      prefetch={false}
-                      onClick={onClose}
-                      className={navItemClass(pathname.startsWith('/vaults'), false)}
-                    >
-                      <span>{'Vaults'}</span>
-                    </Link>
-                    <Link
-                      href={'/portfolio'}
-                      prefetch={false}
-                      onClick={onClose}
-                      className={navItemClass(pathname.startsWith('/portfolio'), false)}
-                    >
-                      <span>{'Portfolio'}</span>
-                    </Link>
-                  </div>
-
-                  <div className={'h-px w-full bg-border'} />
-
-                  <div className={'flex flex-col gap-1'}>
-                    <button
-                      onClick={handleWalletClick}
-                      className={
-                        'relative flex min-h-[44px] w-full items-center gap-3 rounded-lg px-4 text-lg font-medium text-text-primary transition-colors hover:bg-surface-tertiary'
-                      }
-                    >
-                      <IconWallet className={'size-5'} />
-                      <span>{walletIdentity || 'Wallet'}</span>
-                      {notificationStatus && (
-                        <div className={cl('absolute right-4 size-2.5 rounded-full', notificationDotColor)} />
-                      )}
-                    </button>
-
-                    <button
-                      onClick={() => {
-                        onThemeToggle()
-                      }}
-                      className={
-                        'flex min-h-[44px] w-full items-center gap-3 rounded-lg px-4 text-lg font-medium text-text-primary transition-colors hover:bg-surface-tertiary'
-                      }
-                    >
-                      {isDarkTheme ? <IconSun className={'size-5'} /> : <IconMoon className={'size-5'} />}
-                      <span>{isDarkTheme ? 'Light mode' : 'Dark mode'}</span>
-                    </button>
-
-                    <button
-                      onClick={handleSettingsClick}
-                      className={
-                        'flex min-h-[44px] w-full items-center gap-3 rounded-lg px-4 text-lg font-medium text-text-primary transition-colors hover:bg-surface-tertiary'
-                      }
-                    >
-                      <IconSettings className={'size-5'} />
-                      <span>{'Settings'}</span>
-                    </button>
-                  </div>
-
-                  <div className={'h-px w-full bg-border'} />
-
-                  <div className={'flex flex-col gap-1'}>
+                <div className={'flex flex-1 flex-col px-4 py-6'}>
+                  <nav className={'flex flex-col gap-4'}>
                     <div className={'flex flex-col gap-1'}>
-                      <button
-                        type={'button'}
-                        onClick={() => handleToggleSection('products')}
-                        className={navSectionClass}
+                      <Link
+                        href={'/vaults'}
+                        prefetch={false}
+                        onClick={onClose}
+                        className={navItemClass(pathname.startsWith('/vaults'), false)}
                       >
-                        <span>{'Products'}</span>
-                        <IconChevron
-                          className={cl('size-4 transition-transform', expandedSections.products ? 'rotate-180' : '')}
-                        />
-                      </button>
-                      {expandedSections.products &&
-                        products.map((item) => (
-                          <MobileNavTile key={item.href} item={item} isDark={isDarkTheme} onClick={onClose} />
-                        ))}
+                        <span>{'Vaults'}</span>
+                      </Link>
+                      <Link
+                        href={'/portfolio'}
+                        prefetch={false}
+                        onClick={onClose}
+                        className={navItemClass(pathname.startsWith('/portfolio'), false)}
+                      >
+                        <span>{'Portfolio'}</span>
+                      </Link>
                     </div>
 
-                    <div className={'flex flex-col gap-1'}>
-                      <button type={'button'} onClick={() => handleToggleSection('info')} className={navSectionClass}>
-                        <span>{'Information'}</span>
-                        <IconChevron
-                          className={cl('size-4 transition-transform', expandedSections.info ? 'rotate-180' : '')}
-                        />
-                      </button>
-                      {expandedSections.info &&
-                        resourceInfoItems.map((item) => (
-                          <MobileNavTile key={item.href} item={item} isDark={isDarkTheme} onClick={onClose} />
-                        ))}
-                    </div>
+                    <div className={'h-px w-full bg-border'} />
 
                     <div className={'flex flex-col gap-1'}>
                       <button
-                        type={'button'}
-                        onClick={() => handleToggleSection('community')}
-                        className={navSectionClass}
+                        onClick={handleWalletClick}
+                        className={
+                          'relative flex min-h-[44px] w-full items-center gap-3 rounded-lg px-4 text-lg font-medium text-text-primary transition-colors hover:bg-surface-tertiary'
+                        }
                       >
-                        <span>{'Community'}</span>
-                        <IconChevron
-                          className={cl('size-4 transition-transform', expandedSections.community ? 'rotate-180' : '')}
-                        />
+                        <IconWallet className={'size-5'} />
+                        <span>{walletIdentity || 'Wallet'}</span>
+                        {notificationStatus && (
+                          <div className={cl('absolute right-4 size-2.5 rounded-full', notificationDotColor)} />
+                        )}
                       </button>
-                      {expandedSections.community &&
-                        resourceCommunityItems.map((item) => (
-                          <MobileNavTile key={item.href} item={item} isDark={isDarkTheme} onClick={onClose} />
-                        ))}
+
+                      <button
+                        onClick={() => {
+                          onThemeToggle()
+                        }}
+                        className={
+                          'flex min-h-[44px] w-full items-center gap-3 rounded-lg px-4 text-lg font-medium text-text-primary transition-colors hover:bg-surface-tertiary'
+                        }
+                      >
+                        {isDarkTheme ? <IconSun className={'size-5'} /> : <IconMoon className={'size-5'} />}
+                        <span>{isDarkTheme ? 'Light mode' : 'Dark mode'}</span>
+                      </button>
+
+                      <button
+                        onClick={handleSettingsClick}
+                        className={
+                          'flex min-h-[44px] w-full items-center gap-3 rounded-lg px-4 text-lg font-medium text-text-primary transition-colors hover:bg-surface-tertiary'
+                        }
+                      >
+                        <IconSettings className={'size-5'} />
+                        <span>{'Settings'}</span>
+                      </button>
                     </div>
+
+                    <div className={'h-px w-full bg-border'} />
 
                     <div className={'flex flex-col gap-1'}>
-                      <button type={'button'} onClick={() => handleToggleSection('tools')} className={navSectionClass}>
-                        <span>{'Tools'}</span>
-                        <IconChevron
-                          className={cl('size-4 transition-transform', expandedSections.tools ? 'rotate-180' : '')}
-                        />
-                      </button>
-                      {expandedSections.tools &&
-                        resourceToolItems.map((item) => (
-                          <MobileNavTile key={item.href} item={item} isDark={isDarkTheme} onClick={onClose} />
-                        ))}
+                      <div className={'flex flex-col gap-1'}>
+                        <button
+                          type={'button'}
+                          onClick={() => handleToggleSection('products')}
+                          className={navSectionClass}
+                        >
+                          <span>{'Products'}</span>
+                          <IconChevron
+                            className={cl('size-4 transition-transform', expandedSections.products ? 'rotate-180' : '')}
+                          />
+                        </button>
+                        {expandedSections.products &&
+                          products.map((item) => (
+                            <MobileNavTile key={item.href} item={item} isDark={isDarkTheme} onClick={onClose} />
+                          ))}
+                      </div>
+
+                      <div className={'flex flex-col gap-1'}>
+                        <button type={'button'} onClick={() => handleToggleSection('info')} className={navSectionClass}>
+                          <span>{'Information'}</span>
+                          <IconChevron
+                            className={cl('size-4 transition-transform', expandedSections.info ? 'rotate-180' : '')}
+                          />
+                        </button>
+                        {expandedSections.info &&
+                          resourceInfoItems.map((item) => (
+                            <MobileNavTile key={item.href} item={item} isDark={isDarkTheme} onClick={onClose} />
+                          ))}
+                      </div>
+
+                      <div className={'flex flex-col gap-1'}>
+                        <button
+                          type={'button'}
+                          onClick={() => handleToggleSection('community')}
+                          className={navSectionClass}
+                        >
+                          <span>{'Community'}</span>
+                          <IconChevron
+                            className={cl(
+                              'size-4 transition-transform',
+                              expandedSections.community ? 'rotate-180' : ''
+                            )}
+                          />
+                        </button>
+                        {expandedSections.community &&
+                          resourceCommunityItems.map((item) => (
+                            <MobileNavTile key={item.href} item={item} isDark={isDarkTheme} onClick={onClose} />
+                          ))}
+                      </div>
+
+                      <div className={'flex flex-col gap-1'}>
+                        <button
+                          type={'button'}
+                          onClick={() => handleToggleSection('tools')}
+                          className={navSectionClass}
+                        >
+                          <span>{'Tools'}</span>
+                          <IconChevron
+                            className={cl('size-4 transition-transform', expandedSections.tools ? 'rotate-180' : '')}
+                          />
+                        </button>
+                        {expandedSections.tools &&
+                          resourceToolItems.map((item) => (
+                            <MobileNavTile key={item.href} item={item} isDark={isDarkTheme} onClick={onClose} />
+                          ))}
+                      </div>
                     </div>
-                  </div>
-                </nav>
+                  </nav>
 
-                <div className={'my-6 h-px bg-border'} />
+                  <div className={'my-6 h-px bg-border'} />
 
-                <div className={'mt-auto pt-6'}>
-                  <div className={'flex items-center justify-center gap-4'}>
-                    <Link
-                      href={'https://discord.com/invite/yearn'}
-                      target={'_blank'}
-                      rel={'noopener noreferrer'}
-                      className={
-                        'flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full bg-surface-secondary p-2.5 transition-colors hover:bg-surface-tertiary'
-                      }
-                      aria-label={'Discord'}
-                    >
-                      <IconDiscord className={cl('size-6', isDarkTheme ? 'text-white' : 'text-text-primary')} />
-                    </Link>
-                    <Link
-                      href={'https://github.com/yearn'}
-                      target={'_blank'}
-                      rel={'noopener noreferrer'}
-                      className={
-                        'flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full bg-surface-secondary p-2.5 transition-colors hover:bg-surface-tertiary'
-                      }
-                      aria-label={'GitHub'}
-                    >
-                      <LogoGithub className={cl('size-6', isDarkTheme ? 'text-white' : 'text-text-primary')} />
-                    </Link>
-                    <Link
-                      href={'https://x.com/yearnfi'}
-                      target={'_blank'}
-                      rel={'noopener noreferrer'}
-                      className={
-                        'flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full bg-surface-secondary p-2.5 transition-colors hover:bg-surface-tertiary'
-                      }
-                      aria-label={'Twitter'}
-                    >
-                      <IconTwitter className={cl('size-6', isDarkTheme ? 'text-white' : 'text-text-primary')} />
-                    </Link>
+                  <div className={'mt-auto pt-6'}>
+                    <div className={'flex items-center justify-center gap-4'}>
+                      <Link
+                        href={'https://discord.com/invite/yearn'}
+                        target={'_blank'}
+                        rel={'noopener noreferrer'}
+                        className={
+                          'flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full bg-surface-secondary p-2.5 transition-colors hover:bg-surface-tertiary'
+                        }
+                        aria-label={'Discord'}
+                      >
+                        <IconDiscord className={cl('size-6', isDarkTheme ? 'text-white' : 'text-text-primary')} />
+                      </Link>
+                      <Link
+                        href={'https://github.com/yearn'}
+                        target={'_blank'}
+                        rel={'noopener noreferrer'}
+                        className={
+                          'flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full bg-surface-secondary p-2.5 transition-colors hover:bg-surface-tertiary'
+                        }
+                        aria-label={'GitHub'}
+                      >
+                        <LogoGithub className={cl('size-6', isDarkTheme ? 'text-white' : 'text-text-primary')} />
+                      </Link>
+                      <Link
+                        href={'https://x.com/yearnfi'}
+                        target={'_blank'}
+                        rel={'noopener noreferrer'}
+                        className={
+                          'flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full bg-surface-secondary p-2.5 transition-colors hover:bg-surface-tertiary'
+                        }
+                        aria-label={'Twitter'}
+                      >
+                        <IconTwitter className={cl('size-6', isDarkTheme ? 'text-white' : 'text-text-primary')} />
+                      </Link>
+                    </div>
                   </div>
                 </div>
               </div>
-            </div>
-          </TransitionChild>
-        </Dialog>
-      </Transition>
-      <BottomDrawer isOpen={isWalletDrawerOpen} onClose={() => setIsWalletDrawerOpen(false)} title={'Wallet'}>
-        {isWalletDrawerOpen ? (
-          <MobileWalletDrawerContent
-            displayName={displayName}
-            isActive={isActive}
-            onConnectWallet={handleConnectWallet}
-            onDisconnect={handleDisconnect}
-            onViewPortfolio={handleViewPortfolio}
-            onViewRecentActivity={handleViewRecentActivity}
-          />
-        ) : null}
-      </BottomDrawer>
+            </TransitionChild>
+          </Dialog>
+        </Transition>
+      )}
+      <AccountDropdown isOpen={isWalletDrawerOpen} onClose={() => setIsWalletDrawerOpen(false)} />
       <BottomDrawer isOpen={isSettingsDrawerOpen} onClose={() => setIsSettingsDrawerOpen(false)} title={'Settings'}>
         <div className={'px-4 py-4'}>
           <div className={'mb-4 flex items-center justify-between'}>

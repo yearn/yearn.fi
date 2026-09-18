@@ -1,20 +1,20 @@
 'use client'
 
 import '@rainbow-me/rainbowkit/styles.css'
-import { lightTheme, RainbowKitProvider, useConnectModal } from '@rainbow-me/rainbowkit'
+import { RainbowKitProvider } from '@rainbow-me/rainbowkit'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { useWalletActivity, WalletActivityProvider } from '@ybold/components/WalletActivityProvider'
+import { initializeAnalytics, trackAnalytics } from '@ybold/lib/analytics'
 import { wagmiConfig } from '@ybold/lib/wagmi'
 import { type VaultWidgetRuntimeOverrides, VaultWidgetRuntimeProvider } from '@yearn/vault-widget'
 import { createWagmiVaultWidgetExecutionAdapter } from '@yearn/vault-widget/wagmi'
-import { useMemo, useState } from 'react'
-import { useAccount, WagmiProvider } from 'wagmi'
+import { useWalletDrawer, WalletDrawerProvider, WalletProvider } from '@yearn/wallet-ui'
+import { getWalletAnalyticsProperties } from '@yearn/wallet-ui/analytics'
+import { getYearnRainbowTheme } from '@yearn/wallet-ui/rainbowkit'
+import { useEffect, useMemo, useState } from 'react'
+import { useAccount } from 'wagmi'
 
-const theme = lightTheme({
-  accentColor: '#0657f9',
-  borderRadius: 'medium'
-})
-
-theme.radii.connectButton = '9999px'
+const theme = getYearnRainbowTheme('light')
 
 const queryClient = new QueryClient()
 const YEARN_ASSETS_BASE_URI =
@@ -27,12 +27,29 @@ const VAULT_WIDGET_EXECUTION = createWagmiVaultWidgetExecutionAdapter({
 })
 
 function WidgetHostProvider({ children }: { children: React.ReactNode }) {
-  const { openConnectModal } = useConnectModal()
-  const { address, chainId, connector, isConnecting, status } = useAccount()
+  const { notifications } = useWalletActivity()
+  const { openWalletDrawer, isConnecting } = useWalletDrawer()
+  const { address, chainId, connector, status } = useAccount()
   const [slippagePercent, setSlippagePercent] = useState(0.5)
   const [autoStake, setAutoStake] = useState(true)
   const runtime = useMemo<VaultWidgetRuntimeOverrides>(
     () => ({
+      analytics: {
+        track: (event, props) => {
+          void getWalletAnalyticsProperties(connector)
+            .then((wallet) =>
+              trackAnalytics(event, {
+                ...wallet,
+                ...Object.fromEntries(
+                  Object.entries(props ?? {})
+                    .filter(([, value]) => value !== undefined && value !== null)
+                    .map(([key, value]) => [key, String(value)])
+                )
+              })
+            )
+            .catch(() => undefined)
+        }
+      },
       assets: {
         baseUri: YEARN_ASSETS_BASE_URI,
         isDevelopment: process.env.NODE_ENV === 'development'
@@ -51,6 +68,7 @@ function WidgetHostProvider({ children }: { children: React.ReactNode }) {
         resolveExecutionChainId
       },
       execution: VAULT_WIDGET_EXECUTION,
+      notifications,
       prices: {
         spotPriceEndpoint: '/api/prices/spot'
       },
@@ -58,7 +76,7 @@ function WidgetHostProvider({ children }: { children: React.ReactNode }) {
         isEnsoEnabled: () => false
       },
       safe: {
-        isSafe: connector?.id.toLowerCase().includes('safe') === true
+        isSafe: connector?.id.toLowerCase() === 'safe'
       },
       settings: {
         autoStake,
@@ -71,23 +89,36 @@ function WidgetHostProvider({ children }: { children: React.ReactNode }) {
         chainId,
         connected: status === 'connected',
         connecting: isConnecting,
-        open: () => openConnectModal?.()
+        open: openWalletDrawer
       }
     }),
-    [address, autoStake, chainId, connector?.id, isConnecting, openConnectModal, slippagePercent, status]
+    [address, autoStake, chainId, connector, isConnecting, notifications, openWalletDrawer, slippagePercent, status]
   )
 
   return <VaultWidgetRuntimeProvider value={runtime}>{children}</VaultWidgetRuntimeProvider>
 }
 
 export function Providers({ children }: { children: React.ReactNode }) {
+  // Initialize the browser analytics client once after hydration.
+  useEffect(() => {
+    void initializeAnalytics()?.catch(() => undefined)
+  }, [])
   return (
-    <WagmiProvider config={wagmiConfig}>
+    <WalletProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
         <RainbowKitProvider theme={theme}>
-          <WidgetHostProvider>{children}</WidgetHostProvider>
+          <WalletDrawerProvider
+            onAnalytics={trackAnalytics}
+            desktopTop="5rem"
+            desktopRight="max(1.5rem, calc((100vw - 72rem) / 2 + 1.5rem))"
+            themeClassName="ybold-wallet-ui"
+          >
+            <WalletActivityProvider>
+              <WidgetHostProvider>{children}</WidgetHostProvider>
+            </WalletActivityProvider>
+          </WalletDrawerProvider>
         </RainbowKitProvider>
       </QueryClientProvider>
-    </WagmiProvider>
+    </WalletProvider>
   )
 }

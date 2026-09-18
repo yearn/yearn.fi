@@ -12,6 +12,7 @@
     "tslint": "tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
+    "@plausible-analytics/tracker": "0.4.5",
     "@rainbow-me/rainbowkit": "2.2.11",
     "@tanstack/react-query": "5.101.4",
     "@wagmi/core": "2.22.1",
@@ -21,7 +22,8 @@
     "react-dom": "19.2.8",
     "react-rewards": "2.1.0",
     "viem": "2.55.11",
-    "wagmi": "2.18.2"
+    "wagmi": "2.18.2",
+    "@yearn/wallet-ui": "workspace:*"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.12",
@@ -32,6 +34,8 @@
     "postcss": "8.5.28",
     "tailwindcss": "4.3.3",
     "typescript": "5.9.3",
-    "vitest": "4.1.10"
+    "vitest": "4.1.11",
+    "@testing-library/react": "16.3.2",
+    "jsdom": "29.1.1"
   }
 }

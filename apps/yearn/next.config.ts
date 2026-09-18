@@ -48,9 +48,10 @@ const securityHeaders = [
 ]
 
 const nextConfig: NextConfig = {
+  agentRules: false,
   reactStrictMode: true,
   poweredByHeader: false,
-  transpilePackages: ['@yearn/vault-widget'],
+  transpilePackages: ['@yearn/vault-widget', '@yearn/wallet-ui'],
   turbopack: {
     resolveAlias: {
       '@safe-global/safe-apps-sdk': '../../node_modules/@safe-global/safe-apps-sdk/dist/esm'

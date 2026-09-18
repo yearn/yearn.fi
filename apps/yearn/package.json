@@ -35,7 +35,8 @@
     "use-indexeddb": "2.0.2",
     "viem": "2.55.11",
     "wagmi": "2.18.2",
-    "zod": "4.4.3"
+    "zod": "4.4.3",
+    "@yearn/wallet-ui": "workspace:*"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "4.3.3",
@@ -47,6 +48,6 @@
     "postcss": "8.5.28",
     "tailwindcss": "4.3.3",
     "typescript": "5.9.3",
-    "vitest": "4.1.10"
+    "vitest": "4.1.11"
   }
 }
