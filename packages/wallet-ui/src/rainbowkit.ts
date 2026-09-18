@@ -1,4 +1,4 @@
-import { darkTheme, getWalletConnectConnector, lightTheme, type WalletList } from '@rainbow-me/rainbowkit'
+import { darkTheme, lightTheme, type WalletList } from '@rainbow-me/rainbowkit'
 import {
   binanceWallet,
   bitgetWallet,
@@ -55,15 +55,16 @@ const customWallets = [
 
 const [fireblocksWallet, ironWallet, safeWalletConnect] = customWallets.map(
   (wallet): TCreateWallet =>
-    ({ projectId, walletConnectParameters }) => ({
+    (options) => ({
+      // Reuse the built-in transport so every curated wallet shares the same WalletConnect client.
+      ...walletConnectWallet(options),
       id: wallet.id,
       name: wallet.name,
       iconUrl: CUSTOM_WALLET_ICONS[wallet.id],
       iconBackground: '#fff',
       downloadUrls: { ios: wallet.ios, android: wallet.android },
       qrCode: { getUri: (uri) => uri },
-      mobile: { getUri: (uri) => `${wallet.mobileUri}?uri=${encodeURIComponent(uri)}` },
-      createConnector: getWalletConnectConnector({ projectId, walletConnectParameters })
+      mobile: { getUri: (uri) => `${wallet.mobileUri}?uri=${encodeURIComponent(uri)}` }
     })
 )
 
