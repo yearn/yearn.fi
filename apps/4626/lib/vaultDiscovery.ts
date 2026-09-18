@@ -78,7 +78,7 @@ export function filterVisibleWalletVaults<T extends TWalletCandidate>(
 }
 
 /** Only synchronous V3 allocator candidates on this app's supported networks. */
-export function parseYearnAllocators(payload: unknown): TVaultChoice[] {
+export function parseYearnAllocators(payload: unknown, { includeHidden = false } = {}): TVaultChoice[] {
   if (!Array.isArray(payload)) throw new Error('The Yearn vault list returned an invalid response.')
   return payload
     .flatMap((value): TVaultChoice[] => {
@@ -86,7 +86,7 @@ export function parseYearnAllocators(payload: unknown): TVaultChoice[] {
       if (
         item.origin !== 'yearn' ||
         item.kind !== 'Multi Strategy' ||
-        item.isHidden === true ||
+        (!includeHidden && item.isHidden === true) ||
         !String(item.apiVersion ?? '')
           .replace(/^~/, '')
           .startsWith('3.') ||

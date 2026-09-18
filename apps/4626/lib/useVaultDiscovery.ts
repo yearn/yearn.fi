@@ -25,7 +25,10 @@ const yearnCatalogOptions = queryOptions({
   retry: 1,
   queryFn: async ({ signal }) => {
     const payload = await fetchJson('https://kong.yearn.fi/api/rest/list/vaults?origin=yearn', signal)
-    return { allocators: parseYearnAllocators(payload), hiddenTokens: parseHiddenYearnVaultTokens(payload) }
+    return {
+      allocators: parseYearnAllocators(payload, { includeHidden: true }),
+      hiddenTokens: parseHiddenYearnVaultTokens(payload)
+    }
   }
 })
 
@@ -64,6 +67,11 @@ export function useWalletVaults(owner: Address | undefined, enabled: boolean) {
   }
 }
 
-export function useYearnAllocators(enabled: boolean) {
-  return useQuery({ ...yearnCatalogOptions, enabled, select: (catalog) => catalog.allocators })
+export function useYearnAllocators(enabled: boolean, { includeHidden = false } = {}) {
+  return useQuery({
+    ...yearnCatalogOptions,
+    enabled,
+    select: (catalog) =>
+      includeHidden ? catalog.allocators : filterVisibleWalletVaults(catalog.allocators, catalog.hiddenTokens)
+  })
 }

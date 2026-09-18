@@ -16,7 +16,7 @@ export function VaultApp({ initialChain, initialAddress }: { initialChain?: stri
   const [selection, setSelection] = useState<{ address: Address; chainId: number; retired?: boolean } | undefined>(
     initial.ok ? initial : undefined
   )
-  const catalog = useYearnAllocators(!!selection)
+  const catalog = useYearnAllocators(!!selection, { includeHidden: true })
   const isRetired =
     selection?.retired === true ||
     catalog.data?.some(
