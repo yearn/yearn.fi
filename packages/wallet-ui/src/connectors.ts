@@ -73,7 +73,12 @@ export function getWalletConnectionErrorMessage(error: unknown): string | undefi
   if (/rejected|denied|cancelled|canceled|closed by user/i.test(message)) {
     return undefined
   }
-  if (/provider.*not found|no provider|not installed|unavailable/i.test(message)) {
+  const normalizedMessage = message.toLowerCase()
+  const providerIndex = normalizedMessage.indexOf('provider')
+  if (
+    (providerIndex !== -1 && normalizedMessage.includes('not found', providerIndex)) ||
+    /no provider|not installed|unavailable/i.test(message)
+  ) {
     return 'No browser wallet was found. Install or enable a wallet extension, then try again.'
   }
   return 'The wallet could not be opened. Check the extension or network connection and try again.'
