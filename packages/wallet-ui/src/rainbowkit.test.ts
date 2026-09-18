@@ -1,7 +1,53 @@
+import { connectorsForWallets } from '@rainbow-me/rainbowkit'
+import { getBrowserWalletIcon, selectBrowserWalletConnectors } from '@yearn/wallet-ui/connectors'
 import { getYearnRainbowTheme, getYearnWallets, WALLETCONNECT_QR_WALLET_ID } from '@yearn/wallet-ui/rainbowkit'
 import { afterEach, expect, it, vi } from 'vitest'
+import { createConfig, http } from 'wagmi'
+import { mainnet } from 'wagmi/chains'
 
 afterEach(() => vi.unstubAllGlobals())
+
+it('preserves public Trust metadata and selects a late EIP-6963 announcement over its configured connector', async () => {
+  vi.stubGlobal('navigator', { userAgent: 'Mozilla/5.0 (iPhone)' })
+  const provider = { isTrust: true, request: vi.fn(), on: vi.fn(), removeListener: vi.fn() }
+  vi.stubGlobal('ethereum', provider)
+  const trust = getYearnWallets()[1].wallets[0]
+  const config = createConfig({
+    chains: [mainnet],
+    transports: { [mainnet.id]: http() },
+    connectors: connectorsForWallets([{ groupName: 'Test', wallets: [trust] }], {
+      projectId: 'test',
+      appName: 'Yearn'
+    }),
+    storage: null
+  })
+  const configured = config.connectors.find(({ id }) => id === 'trust')!
+  expect(selectBrowserWalletConnectors(config.connectors)).toEqual([configured])
+  expect(await configured.getProvider()).toBe(provider)
+  const icon = getBrowserWalletIcon(configured, config.connectors)
+  expect(typeof icon).toBe('function')
+  expect(typeof icon === 'function' && (await icon())).toMatch(/^data:image\//)
+
+  window.dispatchEvent(
+    new CustomEvent('eip6963:announceProvider', {
+      detail: {
+        info: {
+          rdns: 'com.trustwallet.app',
+          uuid: '00000000-0000-4000-8000-000000000004',
+          name: 'Trust Wallet',
+          icon: 'data:image/svg+xml,<svg />'
+        },
+        provider
+      }
+    })
+  )
+  await vi.waitFor(() => expect(config.connectors.some(({ id }) => id === 'com.trustwallet.app')).toBe(true))
+  const selected = selectBrowserWalletConnectors(config.connectors)
+  expect(selected.map(({ id }) => id)).toEqual(['com.trustwallet.app'])
+  expect(await selected[0].getProvider()).toBe(provider)
+  expect(getBrowserWalletIcon(selected[0], config.connectors)).toBe('data:image/svg+xml,<svg />')
+  expect(provider.request).not.toHaveBeenCalled()
+})
 
 it('keeps the generic QR choice on desktop and curated app choices on phones and tablets', () => {
   const qrWallet = getYearnWallets()[0].wallets[1]({ projectId: 'test', appName: 'Yearn' })

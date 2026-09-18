@@ -68,7 +68,7 @@ const [fireblocksWallet, ironWallet, safeWalletConnect] = customWallets.map(
 )
 
 export function getYearnWallets(): WalletList {
-  return [
+  const groups: WalletList = [
     { groupName: 'Connect', wallets: [injectedWallet, yearnWalletConnect] },
     {
       groupName: 'More wallets',
@@ -89,6 +89,26 @@ export function getYearnWallets(): WalletList {
     // Safe's iframe SDK remains available without labelling it an installed browser extension.
     { groupName: 'Safe Apps', wallets: [safeWallet] }
   ]
+  return groups.map((group) => ({
+    ...group,
+    wallets: group.wallets.map(
+      (createWallet): TCreateWallet =>
+        (options) => {
+          const wallet = createWallet(options)
+          return {
+            ...wallet,
+            createConnector: (details) => {
+              const createConnector = wallet.createConnector(details)
+              return (config) => ({
+                ...createConnector(config),
+                // Keep public wallet metadata for our picker without reading RainbowKit's connector internals.
+                yearnWallet: { rdns: wallet.rdns, iconUrl: wallet.iconUrl }
+              })
+            }
+          }
+        }
+    )
+  }))
 }
 
 export function getYearnRainbowTheme(mode: 'light' | 'dark' = 'light'): ReturnType<typeof lightTheme> {
