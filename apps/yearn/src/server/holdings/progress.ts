@@ -22,5 +22,3 @@ export async function GET(request: Request): Promise<Response> {
     }
   })
 }
-
-export default GET

@@ -1,129 +1,138 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { fetchMultipleVaultsPPS, getPPS, getPpsFetchFailedVaults } from './kong'
 
-function createResponse(points: Array<{ time: number; value: string }>): Response {
-  return new Response(JSON.stringify(points.map((point) => ({ ...point, component: 'pps' }))), {
+function createPpsResponse(value = '1.25'): Response {
+  return new Response(JSON.stringify([{ time: 86_400, component: 'humanized', value }]), {
     status: 200,
     headers: { 'content-type': 'application/json' }
   })
 }
 
+afterEach(() => {
+  vi.restoreAllMocks()
+})
+
 describe('getPPS', () => {
-  it('returns null for an empty timeline instead of defaulting to 1', () => {
+  it('returns null for an empty timeline', () => {
     expect(getPPS(new Map(), 123)).toBeNull()
+  })
+
+  it('uses floor semantics and refreshes its timestamp index when the timeline changes', () => {
+    const timeline = new Map([
+      [300, 1.3],
+      [100, 1.1]
+    ])
+    const keysSpy = vi.spyOn(timeline, 'keys')
+
+    expect(getPPS(timeline, 50)).toBe(1.1)
+    expect(getPPS(timeline, 250)).toBe(1.1)
+    expect(getPPS(timeline, 350)).toBe(1.3)
+    expect(keysSpy).toHaveBeenCalledTimes(1)
+    timeline.set(200, 1.2)
+    expect(getPPS(timeline, 250)).toBe(1.2)
+    expect(keysSpy).toHaveBeenCalledTimes(2)
   })
 })
 
 describe('fetchMultipleVaultsPPS', () => {
-  afterEach(() => {
-    vi.restoreAllMocks()
-  })
-
-  it('deduplicates vault requests and retries transient socket resets', async () => {
-    const fetchFn = vi
-      .fn()
-      .mockRejectedValueOnce(
-        Object.assign(new Error('The socket connection was closed unexpectedly'), { code: 'ECONNRESET' })
-      )
-      .mockResolvedValue(createResponse([{ time: 100, value: '1.25' }])) as typeof fetch
+  it('uses only the deployed public Kong PPS route', async () => {
+    const firstAddress = '0x0000000000000000000000000000000000000001'
+    const secondAddress = '0x0000000000000000000000000000000000000002'
+    const fetchFn = vi.fn(async () => createPpsResponse()) as typeof fetch
 
     const timelines = await fetchMultipleVaultsPPS(
       [
-        { chainId: 1, vaultAddress: '0xABC' },
-        { chainId: 1, vaultAddress: '0xabc' }
+        { chainId: 1, vaultAddress: firstAddress },
+        { chainId: 10, vaultAddress: secondAddress }
       ],
-      {
-        fetchFn,
-        maxRetries: 1,
-        retryDelayMs: 0,
-        concurrency: 1
-      }
+      { fetchFn, maxRetries: 0 }
     )
 
     expect(fetchFn).toHaveBeenCalledTimes(2)
-    expect(timelines.size).toBe(1)
-    expect(timelines.get('1:0xabc')?.get(100)).toBe(1.25)
+    expect(fetchFn.mock.calls.map((call) => call[0])).toEqual([
+      `https://kong.yearn.fi/api/rest/timeseries/pps/1/${firstAddress}`,
+      `https://kong.yearn.fi/api/rest/timeseries/pps/10/${secondAddress}`
+    ])
+    expect(fetchFn.mock.calls[0]?.[1]).not.toHaveProperty('headers')
+    expect(timelines.get(`1:${firstAddress}`)?.get(86_400)).toBe(1.25)
+    expect(timelines.get(`10:${secondAddress}`)?.get(86_400)).toBe(1.25)
+    expect(getPpsFetchFailedVaults(timelines)).toBe(0)
   })
 
-  it('retries bun connection refused errors', async () => {
-    const fetchFn = vi
-      .fn()
-      .mockRejectedValueOnce(Object.assign(new Error('Unable to connect'), { code: 'ConnectionRefused' }))
-      .mockResolvedValue(createResponse([{ time: 100, value: '1.1' }])) as typeof fetch
-
-    const timelines = await fetchMultipleVaultsPPS([{ chainId: 1, vaultAddress: '0xDEF' }], {
-      fetchFn,
-      maxRetries: 1,
-      retryDelayMs: 0,
-      concurrency: 1
-    })
-
-    expect(fetchFn).toHaveBeenCalledTimes(2)
-    expect(timelines.get('1:0xdef')?.get(100)).toBe(1.1)
-  })
-
-  it('caps concurrent Kong requests', async () => {
-    const activeRequests = { current: 0, max: 0 }
-    const fetchFn = vi.fn(async () => {
-      activeRequests.current += 1
-      activeRequests.max = Math.max(activeRequests.max, activeRequests.current)
-      await new Promise((resolve) => setTimeout(resolve, 10))
-      activeRequests.current -= 1
-      return createResponse([{ time: 100, value: '1.05' }])
-    }) as typeof fetch
-
-    await fetchMultipleVaultsPPS(
-      [
-        { chainId: 1, vaultAddress: '0x1' },
-        { chainId: 1, vaultAddress: '0x2' },
-        { chainId: 1, vaultAddress: '0x3' },
-        { chainId: 1, vaultAddress: '0x4' },
-        { chainId: 1, vaultAddress: '0x5' }
-      ],
-      {
-        fetchFn,
-        concurrency: 2,
-        maxRetries: 0
-      }
-    )
-
-    expect(activeRequests.max).toBe(2)
-  })
-
-  it('reuses in-flight vault PPS fetches across concurrent callers', async () => {
-    const fetchFn = vi.fn(async () => {
-      await new Promise((resolve) => setTimeout(resolve, 10))
-      return createResponse([{ time: 100, value: '1.2' }])
-    }) as typeof fetch
+  it('deduplicates vaults within and across concurrent callers', async () => {
+    const vaultAddress = '0x0000000000000000000000000000000000000001'
+    const fetchFn = vi.fn(async () => createPpsResponse()) as typeof fetch
+    const vaults = [
+      { chainId: 1, vaultAddress: vaultAddress.toUpperCase() },
+      { chainId: 1, vaultAddress }
+    ]
 
     const [first, second] = await Promise.all([
-      fetchMultipleVaultsPPS([{ chainId: 1, vaultAddress: '0xABC' }], {
-        fetchFn,
-        concurrency: 1,
-        maxRetries: 0
-      }),
-      fetchMultipleVaultsPPS([{ chainId: 1, vaultAddress: '0xabc' }], {
-        fetchFn,
-        concurrency: 1,
-        maxRetries: 0
-      })
+      fetchMultipleVaultsPPS(vaults, { fetchFn, maxRetries: 0 }),
+      fetchMultipleVaultsPPS(vaults, { fetchFn, maxRetries: 0 })
     ])
 
     expect(fetchFn).toHaveBeenCalledTimes(1)
-    expect(first.get('1:0xabc')?.get(100)).toBe(1.2)
-    expect(second.get('1:0xabc')?.get(100)).toBe(1.2)
+    expect(first.size).toBe(1)
+    expect(second.get(`1:${vaultAddress}`)?.get(86_400)).toBe(1.25)
   })
 
-  it('reports PPS requests that still fail after retries', async () => {
-    vi.spyOn(console, 'error').mockImplementation(() => {})
-    const fetchFn = vi.fn().mockRejectedValue(new Error('permanent failure')) as typeof fetch
+  it('retries transient failures', async () => {
+    const vaultAddress = '0x0000000000000000000000000000000000000001'
+    const fetchFn = vi
+      .fn()
+      .mockRejectedValueOnce(Object.assign(new Error('Unable to connect'), { code: 'ConnectionRefused' }))
+      .mockResolvedValue(createPpsResponse()) as typeof fetch
 
-    const timelines = await fetchMultipleVaultsPPS([{ chainId: 1, vaultAddress: '0xABC' }], {
+    const timelines = await fetchMultipleVaultsPPS([{ chainId: 1, vaultAddress }], {
+      fetchFn,
+      maxRetries: 1,
+      retryDelayMs: 0
+    })
+
+    expect(fetchFn).toHaveBeenCalledTimes(2)
+    expect(timelines.get(`1:${vaultAddress}`)?.get(86_400)).toBe(1.25)
+    expect(getPpsFetchFailedVaults(timelines)).toBe(0)
+  })
+
+  it('marks failed PPS requests without returning fabricated values', async () => {
+    const vaultAddress = '0x0000000000000000000000000000000000000001'
+    const fetchFn = vi.fn().mockResolvedValue(new Response(null, { status: 404 })) as typeof fetch
+
+    const timelines = await fetchMultipleVaultsPPS([{ chainId: 1, vaultAddress }], {
       fetchFn,
       maxRetries: 0
     })
 
-    expect(timelines.get('1:0xabc')).toEqual(new Map())
+    expect(fetchFn).toHaveBeenCalledTimes(1)
+    expect(timelines.get(`1:${vaultAddress}`)).toEqual(new Map())
     expect(getPpsFetchFailedVaults(timelines)).toBe(1)
+  })
+
+  it('applies one concurrency limit across independent callers', async () => {
+    const activity = { active: 0, peak: 0 }
+    const fetchFn = vi.fn(async () => {
+      activity.active += 1
+      activity.peak = Math.max(activity.peak, activity.active)
+      await new Promise((resolve) => setTimeout(resolve, 1))
+      activity.active -= 1
+      return createPpsResponse()
+    }) as typeof fetch
+    const requests = Array.from({ length: 26 }, (_value, index) =>
+      fetchMultipleVaultsPPS(
+        [
+          {
+            chainId: 1,
+            vaultAddress: `0x${String(index + 1).padStart(40, '0')}`
+          }
+        ],
+        { fetchFn, maxRetries: 0 }
+      )
+    )
+
+    await Promise.all(requests)
+
+    expect(fetchFn).toHaveBeenCalledTimes(26)
+    expect(activity.peak).toBeLessThanOrEqual(12)
   })
 })

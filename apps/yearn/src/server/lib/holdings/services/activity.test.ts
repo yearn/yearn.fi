@@ -705,9 +705,9 @@ describe('getHoldingsActivity', () => {
     )
 
     const { getHoldingsActivity } = await import('./activity')
-    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 4)
+    const response = await getHoldingsActivity(USER_ADDRESS, 4)
 
-    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 'all', 200)
+    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 200)
     expect(response.entries).toEqual([
       {
         chainId: 1,
@@ -798,9 +798,9 @@ describe('getHoldingsActivity', () => {
     })
 
     const { getHoldingsActivity } = await import('./activity')
-    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 500)
+    const response = await getHoldingsActivity(USER_ADDRESS, 500)
 
-    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 'all', 1000)
+    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 1000)
     expect(response.pageInfo).toEqual({
       hasMore: false,
       nextOffset: null
@@ -820,10 +820,10 @@ describe('getHoldingsActivity', () => {
     })
 
     const { getHoldingsActivity } = await import('./activity')
-    await getHoldingsActivity(USER_ADDRESS, 'all', 500)
+    await getHoldingsActivity(USER_ADDRESS, 500)
 
     expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledTimes(1)
-    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 'all', 1000)
+    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 1000)
   })
 
   it('enriches router-mediated deposits with the user input token from the tx receipt', async () => {
@@ -874,7 +874,7 @@ describe('getHoldingsActivity', () => {
     })
 
     const { getHoldingsActivity } = await import('./activity')
-    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 10)
+    const response = await getHoldingsActivity(USER_ADDRESS, 10)
 
     expect(response.entries).toEqual([
       {
@@ -1019,10 +1019,10 @@ describe('getHoldingsActivity', () => {
     )
 
     const { getHoldingsActivity } = await import('./activity')
-    const allResponse = await getHoldingsActivity(USER_ADDRESS, 'all', 10)
-    const swapResponse = await getHoldingsActivity(USER_ADDRESS, 'all', 10, 0, { type: 'swap' })
-    const depositResponse = await getHoldingsActivity(USER_ADDRESS, 'all', 10, 0, { type: 'deposit' })
-    const withdrawResponse = await getHoldingsActivity(USER_ADDRESS, 'all', 10, 0, { type: 'withdraw' })
+    const allResponse = await getHoldingsActivity(USER_ADDRESS, 10)
+    const swapResponse = await getHoldingsActivity(USER_ADDRESS, 10, 0, { type: 'swap' })
+    const depositResponse = await getHoldingsActivity(USER_ADDRESS, 10, 0, { type: 'deposit' })
+    const withdrawResponse = await getHoldingsActivity(USER_ADDRESS, 10, 0, { type: 'withdraw' })
 
     expect(allResponse.entries).toEqual([
       {
@@ -1122,7 +1122,7 @@ describe('getHoldingsActivity', () => {
     )
 
     const { getHoldingsActivity } = await import('./activity')
-    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 10)
+    const response = await getHoldingsActivity(USER_ADDRESS, 10)
 
     expect(response.entries.map((entry) => [entry.action, entry.txHash, entry.vaultAddress])).toEqual([
       ['swap', '0xensodirectswap', DESTINATION_VAULT]
@@ -1152,7 +1152,7 @@ describe('getHoldingsActivity', () => {
     fetchMultipleVaultsMetadataMock.mockResolvedValue(new Map())
 
     const { getHoldingsActivity } = await import('./activity')
-    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 10)
+    const response = await getHoldingsActivity(USER_ADDRESS, 10)
 
     expect(response.entries).toEqual([
       {
@@ -1246,9 +1246,9 @@ describe('getHoldingsActivity', () => {
     )
 
     const { getHoldingsActivity } = await import('./activity')
-    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 1, 1)
+    const response = await getHoldingsActivity(USER_ADDRESS, 1, 1)
 
-    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 'all', 200)
+    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 200)
     expect(response.entries).toEqual([
       {
         chainId: 1,
@@ -1339,9 +1339,9 @@ describe('getHoldingsActivity', () => {
     )
 
     const { getHoldingsActivity } = await import('./activity')
-    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 1, 0, { type: 'withdraw' })
+    const response = await getHoldingsActivity(USER_ADDRESS, 1, 0, { type: 'withdraw' })
 
-    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 'all', 200)
+    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 200)
     expect(response.entries).toEqual([
       {
         chainId: 1,
@@ -1453,7 +1453,7 @@ describe('getHoldingsActivity', () => {
     )
 
     const { getHoldingsActivity } = await import('./activity')
-    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 1, 0, { chainId: 137 })
+    const response = await getHoldingsActivity(USER_ADDRESS, 1, 0, { chainId: 137 })
 
     expect(response.entries).toEqual([
       {
@@ -1537,13 +1537,12 @@ describe('getHoldingsActivity', () => {
     )
 
     const { getHoldingsActivity } = await import('./activity')
-    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 1, 0, { chainId: 8453 })
+    const response = await getHoldingsActivity(USER_ADDRESS, 1, 0, { chainId: 8453 })
 
-    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 'all', 200)
+    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 200)
     expect(fetchUserEventsMock).not.toHaveBeenCalled()
     expect(fetchActivityEventsByTransactionHashesMock).toHaveBeenCalledWith(
-      new Map([[8453, ['0xeae5d579a571e592719d0815674744238a49993e7a7322c29d81b88343ef1c7b']]]),
-      'all'
+      new Map([[8453, ['0xeae5d579a571e592719d0815674744238a49993e7a7322c29d81b88343ef1c7b']]])
     )
     expect(response.entries).toEqual([
       {
@@ -1634,12 +1633,12 @@ describe('getHoldingsActivity', () => {
     )
 
     const { getHoldingsActivity } = await import('./activity')
-    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 1, 0, {
+    const response = await getHoldingsActivity(USER_ADDRESS, 1, 0, {
       startTimestamp: 240,
       endTimestamp: 260
     })
 
-    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 'all', 200, 260)
+    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 200, 260)
     expect(response.entries).toEqual([
       {
         chainId: 1,
@@ -1669,7 +1668,7 @@ describe('getHoldingsActivity', () => {
 
   it('seeks date-filtered scans from the selected end timestamp', async () => {
     fetchRecentAddressScopedActivityEventsMock.mockImplementation(
-      async (_userAddress: string, _version: string, _limitPerSource: number, maxTimestamp?: number) => ({
+      async (_userAddress: string, _limitPerSource: number, maxTimestamp?: number) => ({
         deposits:
           maxTimestamp === 260
             ? [
@@ -1722,12 +1721,12 @@ describe('getHoldingsActivity', () => {
     )
 
     const { getHoldingsActivity } = await import('./activity')
-    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 1, 0, {
+    const response = await getHoldingsActivity(USER_ADDRESS, 1, 0, {
       startTimestamp: 240,
       endTimestamp: 260
     })
 
-    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 'all', 200, 260)
+    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenCalledWith(USER_ADDRESS, 200, 260)
     expect(response.entries.map((entry) => entry.txHash)).toEqual(['0xolder'])
     expect(response.pageInfo).toEqual({
       hasMore: false,
@@ -1810,12 +1809,12 @@ describe('getHoldingsActivity', () => {
     )
 
     const { getHoldingsActivity } = await import('./activity')
-    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 1, 0, {
+    const response = await getHoldingsActivity(USER_ADDRESS, 1, 0, {
       chainId: 8453
     })
 
-    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenNthCalledWith(1, USER_ADDRESS, 'all', 200)
-    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenNthCalledWith(2, USER_ADDRESS, 'all', 200)
+    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenNthCalledWith(1, USER_ADDRESS, 200)
+    expect(fetchRecentAddressScopedActivityEventsMock).toHaveBeenNthCalledWith(2, USER_ADDRESS, 200)
     expect(response.entries.map((entry) => [entry.chainId, entry.txHash])).toEqual([[8453, '0xbase']])
     expect(response.pageInfo).toEqual({
       hasMore: false,
@@ -1866,7 +1865,7 @@ describe('getHoldingsActivity', () => {
     )
 
     const { getHoldingsActivity } = await import('./activity')
-    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 10)
+    const response = await getHoldingsActivity(USER_ADDRESS, 10)
 
     expect(response.entries).toEqual([
       {
@@ -1938,7 +1937,7 @@ describe('getHoldingsActivity', () => {
     )
 
     const { getHoldingsActivity } = await import('./activity')
-    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 10)
+    const response = await getHoldingsActivity(USER_ADDRESS, 10)
 
     expect(response.entries).toMatchObject([
       {
@@ -2001,7 +2000,7 @@ describe('getHoldingsActivity', () => {
     )
 
     const { getHoldingsActivity } = await import('./activity')
-    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 10)
+    const response = await getHoldingsActivity(USER_ADDRESS, 10)
 
     expect(response.entries).toMatchObject([
       {
@@ -2065,7 +2064,7 @@ describe('getHoldingsActivity', () => {
     )
 
     const { getHoldingsActivity } = await import('./activity')
-    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 10)
+    const response = await getHoldingsActivity(USER_ADDRESS, 10)
 
     expect(response.entries).toMatchObject([
       {
@@ -2131,9 +2130,9 @@ describe('getHoldingsActivity', () => {
     )
 
     const { getHoldingsActivity } = await import('./activity')
-    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 10)
-    const depositResponse = await getHoldingsActivity(USER_ADDRESS, 'all', 10, 0, { type: 'deposit' })
-    const transferResponse = await getHoldingsActivity(USER_ADDRESS, 'all', 10, 0, { type: 'transfer' })
+    const response = await getHoldingsActivity(USER_ADDRESS, 10)
+    const depositResponse = await getHoldingsActivity(USER_ADDRESS, 10, 0, { type: 'deposit' })
+    const transferResponse = await getHoldingsActivity(USER_ADDRESS, 10, 0, { type: 'transfer' })
 
     expect(response.entries).toMatchObject([
       {
@@ -2205,9 +2204,9 @@ describe('getHoldingsActivity', () => {
     )
 
     const { getHoldingsActivity } = await import('./activity')
-    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 10)
-    const withdrawResponse = await getHoldingsActivity(USER_ADDRESS, 'all', 10, 0, { type: 'withdraw' })
-    const transferResponse = await getHoldingsActivity(USER_ADDRESS, 'all', 10, 0, { type: 'transfer' })
+    const response = await getHoldingsActivity(USER_ADDRESS, 10)
+    const withdrawResponse = await getHoldingsActivity(USER_ADDRESS, 10, 0, { type: 'withdraw' })
+    const transferResponse = await getHoldingsActivity(USER_ADDRESS, 10, 0, { type: 'transfer' })
 
     expect(response.entries).toMatchObject([
       {
@@ -2356,7 +2355,7 @@ describe('getHoldingsActivity', () => {
     )
 
     const { getHoldingsActivity } = await import('./activity')
-    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 10)
+    const response = await getHoldingsActivity(USER_ADDRESS, 10)
 
     expect(response.entries.map((entry) => [entry.txHash, entry.action, entry.displayType])).toEqual([
       ['0xunknownzapper', 'transfer', undefined],
@@ -2401,7 +2400,7 @@ describe('getHoldingsActivity', () => {
     fetchMultipleVaultsMetadataMock.mockResolvedValue(new Map())
 
     const { getHoldingsActivity } = await import('./activity')
-    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 10)
+    const response = await getHoldingsActivity(USER_ADDRESS, 10)
 
     expect(response.entries.map((entry) => entry.action)).toEqual(['deposit'])
   })
@@ -2500,7 +2499,7 @@ describe('getHoldingsActivity', () => {
     )
 
     const { getHoldingsActivity } = await import('./activity')
-    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 10)
+    const response = await getHoldingsActivity(USER_ADDRESS, 10)
 
     expect(response.entries).toMatchObject([
       {
@@ -2539,8 +2538,8 @@ describe('getHoldingsActivity', () => {
     fetchMultipleVaultsMetadataMock.mockResolvedValue(new Map())
 
     const { getHoldingsActivity } = await import('./activity')
-    const transferResponse = await getHoldingsActivity(USER_ADDRESS, 'all', 10, 0, { type: 'transfer' })
-    const depositResponse = await getHoldingsActivity(USER_ADDRESS, 'all', 10, 0, { type: 'deposit' })
+    const transferResponse = await getHoldingsActivity(USER_ADDRESS, 10, 0, { type: 'transfer' })
+    const depositResponse = await getHoldingsActivity(USER_ADDRESS, 10, 0, { type: 'deposit' })
 
     expect(transferResponse.entries).toHaveLength(1)
     expect(transferResponse.entries[0]?.action).toBe('transfer')
@@ -2604,7 +2603,7 @@ describe('getHoldingsActivity', () => {
     })
 
     const { getHoldingsActivity } = await import('./activity')
-    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 10)
+    const response = await getHoldingsActivity(USER_ADDRESS, 10)
 
     expect(response.entries.map((entry) => [entry.txHash, entry.action, entry.displayType])).toEqual([
       ['0xrewardclaimybs', 'transfer', 'reward_claim'],
@@ -2675,7 +2674,7 @@ describe('getHoldingsActivity', () => {
     })
 
     const { getHoldingsActivity } = await import('./activity')
-    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 10)
+    const response = await getHoldingsActivity(USER_ADDRESS, 10)
 
     expect(response.entries).toEqual([
       {
@@ -2736,7 +2735,7 @@ describe('getHoldingsActivity', () => {
     })
 
     const { getHoldingsActivity } = await import('./activity')
-    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 10)
+    const response = await getHoldingsActivity(USER_ADDRESS, 10)
 
     expect(response.entries).toMatchObject([
       {
@@ -2836,9 +2835,9 @@ describe('getHoldingsActivity', () => {
     })
 
     const { getHoldingsActivity } = await import('./activity')
-    const response = await getHoldingsActivity(USER_ADDRESS, 'all', 10)
+    const response = await getHoldingsActivity(USER_ADDRESS, 10)
 
-    expect(fetchActivityEventsByTransactionHashesMock).toHaveBeenCalledWith(new Map([[1, ['0xroute']]]), 'all')
+    expect(fetchActivityEventsByTransactionHashesMock).toHaveBeenCalledWith(new Map([[1, ['0xroute']]]))
     expect(response.entries).toEqual([
       {
         chainId: 1,
