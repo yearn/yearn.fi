@@ -30,8 +30,8 @@ beforeEach(() => {
   vi.stubEnv('NEXT_PUBLIC_TRANSACTION_LIFECYCLE_BRIDGES', 'true')
   vi.stubEnv('ENSO_API_KEY', 'test-key')
   vi.stubEnv('RELAY_API_KEY', '')
-  vi.stubEnv('UPSTASH_REDIS_REST_URL', 'https://redis.invalid')
-  vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', 'test-token')
+  vi.stubEnv('UPSTASH_REDIS_REST_URL_BRIDGE_COORDINATION', 'https://redis.invalid')
+  vi.stubEnv('UPSTASH_REDIS_REST_TOKEN_BRIDGE_COORDINATION', 'test-token')
   redis.set.mockResolvedValue('OK')
 })
 afterEach(() => {

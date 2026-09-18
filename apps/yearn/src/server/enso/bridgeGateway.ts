@@ -107,8 +107,8 @@ export async function bridgeGateway(
   identity: string,
   request: (signal: AbortSignal, identity: string) => Promise<Response>
 ): Promise<Response> {
-  const url = process.env.UPSTASH_REDIS_REST_URL
-  const token = process.env.UPSTASH_REDIS_REST_TOKEN
+  const url = process.env.UPSTASH_REDIS_REST_URL_BRIDGE_COORDINATION
+  const token = process.env.UPSTASH_REDIS_REST_TOKEN_BRIDGE_COORDINATION
   if (!url || !token)
     return Response.json({ error: 'Shared bridge tracking is unavailable. Tracking will retry.' }, { status: 503 })
   const namespace = createHash('sha256')

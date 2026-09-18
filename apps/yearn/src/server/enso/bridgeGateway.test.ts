@@ -13,8 +13,8 @@ const store = (claim: [string, string, string]) => ({
 afterEach(() => vi.unstubAllEnvs())
 describe('shared bridge gateway', () => {
   it('fails closed without shared coordination and never calls upstream', async () => {
-    vi.stubEnv('UPSTASH_REDIS_REST_URL', '')
-    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN', '')
+    vi.stubEnv('UPSTASH_REDIS_REST_URL_BRIDGE_COORDINATION', '')
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN_BRIDGE_COORDINATION', '')
     const request = vi.fn()
     expect((await bridgeGateway('route', request)).status).toBe(503)
     expect(request).not.toHaveBeenCalled()

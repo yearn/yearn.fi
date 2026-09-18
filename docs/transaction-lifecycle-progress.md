@@ -295,8 +295,8 @@ The queue is bounded to 1,024 entries and expires abandoned entries. Coordinatio
 limitation and makes no upstream request. All consumers of the shared Enso status credential must use this gateway
 and the same Redis database for the budget guarantee to hold.
 
-Activation requires `NEXT_PUBLIC_TRANSACTION_LIFECYCLE_BRIDGES=true`, plus `UPSTASH_REDIS_REST_URL` and
-`UPSTASH_REDIS_REST_TOKEN` on every server instance. This checkout has no shared Redis configuration, so the flag
+Activation requires `NEXT_PUBLIC_TRANSACTION_LIFECYCLE_BRIDGES=true`, plus `UPSTASH_REDIS_REST_URL_BRIDGE_COORDINATION` and
+`UPSTASH_REDIS_REST_TOKEN_BRIDGE_COORDINATION` on every server instance. This checkout has no shared Redis configuration, so the flag
 remains off and the existing cross-chain path stays functional. Same-chain lifecycle execution stays enabled.
 When the new path is enabled, unfinished legacy cross-chain notifications for the reviewed wallet block a new
 cross-chain submission until the earlier outcome is reconciled; unreadable legacy history also blocks submission.
