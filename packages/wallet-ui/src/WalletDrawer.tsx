@@ -9,6 +9,7 @@ import {
 } from '@yearn/wallet-ui/analytics'
 import { restorePreviousAccount } from '@yearn/wallet-ui/connectionCleanup'
 import {
+  getBrowserWalletIcon,
   getBrowserWalletLabel,
   getWalletConnectionErrorMessage,
   isMobileWalletBrowser,
@@ -18,7 +19,7 @@ import { DEFAULT_WALLET_DRAWER_ID, WalletDrawerContext } from '@yearn/wallet-ui/
 import { WALLETCONNECT_QR_WALLET_ID } from '@yearn/wallet-ui/rainbowkit'
 import { cancelWalletReconnect } from '@yearn/wallet-ui/WalletProvider'
 import { WalletSurface } from '@yearn/wallet-ui/WalletSurface'
-import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { type ReactNode, Suspense, use, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { type Connector, ConnectorAlreadyConnectedError, useAccount, useConfig, useConnect } from 'wagmi'
 import { getAccount, watchAccount } from 'wagmi/actions'
@@ -46,7 +47,27 @@ type TConnectionAttempt = {
   previousConnector?: Connector
 }
 
-function MethodIcon({ icon, kind }: { icon?: string; kind?: 'walletConnect' | 'more' }) {
+type TIconLoader = () => Promise<string>
+const iconPromises = new WeakMap<TIconLoader, Promise<string | undefined>>()
+
+function LoadedMethodIcon({ loadIcon }: { loadIcon: TIconLoader }) {
+  const promise =
+    iconPromises.get(loadIcon) ??
+    Promise.resolve()
+      .then(loadIcon)
+      .catch(() => undefined)
+  iconPromises.set(loadIcon, promise)
+  return <MethodIcon icon={use(promise)} />
+}
+
+function MethodIcon({ icon, kind }: { icon?: string | TIconLoader; kind?: 'walletConnect' | 'more' }) {
+  if (typeof icon === 'function') {
+    return (
+      <Suspense fallback={<MethodIcon />}>
+        <LoadedMethodIcon loadIcon={icon} />
+      </Suspense>
+    )
+  }
   if (icon) {
     return <img aria-hidden src={icon} alt="" className="size-6 rounded-md" />
   }
@@ -389,7 +410,7 @@ export function WalletDrawerProvider({
               key={connector.uid}
               label={getBrowserWalletLabel(connector)}
               detail="Detected"
-              icon={<MethodIcon icon={connector.icon} />}
+              icon={<MethodIcon icon={getBrowserWalletIcon(connector, connectors)} />}
               disabled={pendingConnector === connector.uid}
               isPending={pendingConnector === connector.uid}
               onClick={() => void connectDetectedWallet(connector)}

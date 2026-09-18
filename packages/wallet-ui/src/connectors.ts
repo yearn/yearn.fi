@@ -1,8 +1,11 @@
+import type { Wallet } from '@rainbow-me/rainbowkit'
+
 export type TWalletConnectorSummary = {
   icon?: string
   id: string
   name: string
   type: string
+  yearnWallet?: Pick<Wallet, 'rdns' | 'iconUrl'>
 }
 
 const NON_BROWSER_CONNECTOR_IDS = new Set(['auth', 'baseaccount', 'coinbasewalletsdk', 'safe', 'walletconnect'])
@@ -23,8 +26,13 @@ export function selectBrowserWalletConnectors<TConnector extends TWalletConnecto
   const browserConnectors = connectors.filter(
     (connector) => connector.type === 'injected' && !NON_BROWSER_CONNECTOR_IDS.has(connector.id.toLowerCase())
   )
-  const discoveredConnectors = browserConnectors.filter((connector) => connector.id !== 'injected')
-  const browserChoices = discoveredConnectors.length > 0 ? discoveredConnectors : browserConnectors
+  const namedConnectors = browserConnectors.filter((connector) => connector.id !== 'injected')
+  const discoveredIds = new Set(
+    namedConnectors.filter((connector) => !connector.yearnWallet).map((connector) => connector.id.toLowerCase())
+  )
+  const browserChoices = (namedConnectors.length > 0 ? namedConnectors : browserConnectors).filter(
+    (connector) => !connector.yearnWallet?.rdns || !discoveredIds.has(connector.yearnWallet.rdns.toLowerCase())
+  )
   const additionalIds = new Set(additionalConnectorIds.map((id) => id.toLowerCase()))
   const choices = [
     ...browserChoices.filter((connector) => !EXCLUDED_BROWSER_WALLET_IDS.has(connector.id.toLowerCase())),
@@ -34,6 +42,18 @@ export function selectBrowserWalletConnectors<TConnector extends TWalletConnecto
   return choices.filter(
     (connector, index) =>
       choices.findIndex((choice) => choice.id.toLowerCase() === connector.id.toLowerCase()) === index
+  )
+}
+
+export function getBrowserWalletIcon(
+  connector: TWalletConnectorSummary,
+  connectors: readonly TWalletConnectorSummary[]
+): Wallet['iconUrl'] | undefined {
+  return (
+    connector.icon ||
+    connector.yearnWallet?.iconUrl ||
+    connectors.find((candidate) => candidate.yearnWallet?.rdns?.toLowerCase() === connector.id.toLowerCase())
+      ?.yearnWallet?.iconUrl
   )
 }
 

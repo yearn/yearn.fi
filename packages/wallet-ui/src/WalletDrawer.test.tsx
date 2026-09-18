@@ -1,4 +1,5 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import type { TWalletConnectorSummary } from '@yearn/wallet-ui/connectors'
 import { useWalletDrawer } from '@yearn/wallet-ui/context'
 import { WalletDrawerProvider } from '@yearn/wallet-ui/WalletDrawer'
 import type { ReactNode } from 'react'
@@ -24,7 +25,7 @@ const mocks = vi.hoisted(() => ({
     { id: 'io.rabby', uid: 'rabby', name: 'Rabby', type: 'injected' },
     { id: 'com.walletchan', uid: 'walletchan', name: 'WalletChan', type: 'injected' },
     { id: 'walletConnect', uid: 'wc', name: 'WalletConnect', type: 'walletConnect' }
-  ]
+  ] as (TWalletConnectorSummary & { uid: string })[]
 }))
 
 vi.mock('wagmi', async (importOriginal) => ({
@@ -195,6 +196,99 @@ describe('connection attempt ownership', () => {
       })
     )
     expect(mocks.track.mock.calls.filter(([event]) => event === 'connect_wallet')).toHaveLength(0)
+  })
+
+  it.each([false, true])('shows one Trust row and connects its discovered provider (mobile: %s)', async (mobile) => {
+    mocks.mobile = mobile
+    const discovered = {
+      id: 'com.trustwallet.app',
+      uid: 'trust-discovered',
+      name: 'Trust Wallet',
+      type: 'injected',
+      icon: 'trust-discovered.svg'
+    }
+    mocks.connectors.unshift(
+      {
+        id: 'trust',
+        uid: 'trust-configured',
+        name: 'Trust Wallet',
+        type: 'injected',
+        yearnWallet: { rdns: 'com.trustwallet.app', iconUrl: 'trust-configured.svg' }
+      },
+      discovered
+    )
+    render(<App />)
+    open()
+    const rows = screen.getAllByRole('button', { name: 'Trust Wallet Detected' })
+    expect(rows).toHaveLength(1)
+    expect(rows[0].querySelector('img')?.getAttribute('src')).toBe('trust-discovered.svg')
+    fireEvent.click(rows[0])
+    expect(mocks.connectAsync).toHaveBeenCalledWith({ connector: discovered })
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(mocks.track.mock.calls.filter(([event]) => event === 'connect_wallet')).toEqual([
+      [
+        'connect_wallet',
+        expect.objectContaining({
+          path: 'detected',
+          wallet_name: 'trust',
+          initially_visible: true,
+          outcome: 'success'
+        })
+      ]
+    ])
+  })
+
+  it('opens and connects while a fallback icon is loading, then reuses it on reopening', async () => {
+    const loading: { resolve?: (icon: string) => void } = {}
+    const loadIcon = vi.fn(
+      () =>
+        new Promise<string>((resolve) => {
+          loading.resolve = resolve
+        })
+    )
+    mocks.connectors.unshift({
+      id: 'trust',
+      uid: 'trust-configured',
+      name: 'Trust Wallet',
+      type: 'injected',
+      yearnWallet: { rdns: 'com.trustwallet.app', iconUrl: loadIcon }
+    })
+    render(<App />)
+    open()
+    expect(screen.getByRole('dialog')).toBeTruthy()
+    fireEvent.click(screen.getByRole('button', { name: 'Trust Wallet Detected' }))
+    expect(mocks.connectAsync).toHaveBeenCalledWith({ connector: mocks.connectors[0] })
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    await act(async () => loading.resolve?.('trust-loaded.svg'))
+    open()
+    await waitFor(() =>
+      expect(
+        screen.getByRole('button', { name: 'Trust Wallet Detected' }).querySelector('img')?.getAttribute('src')
+      ).toBe('trust-loaded.svg')
+    )
+    expect(loadIcon).toHaveBeenCalledOnce()
+  })
+
+  it('keeps the picker usable when a fallback icon cannot load', async () => {
+    const loadIcon = vi.fn().mockRejectedValue(new Error('Icon unavailable'))
+    mocks.connectors.unshift({
+      id: 'trust',
+      uid: 'trust-configured',
+      name: 'Trust Wallet',
+      type: 'injected',
+      yearnWallet: { rdns: 'com.trustwallet.app', iconUrl: loadIcon }
+    })
+    render(<App />)
+    open()
+    await act(async () => {
+      await Promise.resolve()
+    })
+    const button = screen.getByRole('button', { name: 'Trust Wallet Detected' })
+    expect(button.querySelector('img')).toBeNull()
+    expect(button.querySelector('svg')).not.toBeNull()
+    fireEvent.click(button)
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(mocks.connectAsync).toHaveBeenCalledOnce()
   })
 
   it('releases the mobile picker on the active account event before the connection promise settles', async () => {
