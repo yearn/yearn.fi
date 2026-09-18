@@ -58,7 +58,3 @@ export function useAtomicBatchCapability({
           : 'unsupported'
   return { supported: canQuery && !capabilities.isError && supportsAtomicBatch(capabilities.data), status }
 }
-
-export function useAtomicBatchSupport(args: Parameters<typeof useAtomicBatchCapability>[0]): boolean {
-  return useAtomicBatchCapability(args).supported
-}

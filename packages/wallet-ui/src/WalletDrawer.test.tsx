@@ -13,8 +13,7 @@ const mocks = vi.hoisted(() => ({
   connectAsync: vi.fn(),
   openConnectModal: vi.fn(),
   connectWalletConnect: vi.fn(),
-  switchAccount: vi.fn(),
-  disconnect: vi.fn(),
+  restorePreviousAccount: vi.fn(),
   accountChange: undefined as ((account: TMockAccount, previousAccount: TMockAccount) => void) | undefined,
   config: {},
   connectModalOpen: false,
@@ -37,9 +36,6 @@ vi.mock('wagmi', async (importOriginal) => ({
 
 vi.mock('wagmi/actions', () => ({
   getAccount: () => ({ connector: mocks.connector }),
-  getConnections: () => [...mocks.connectors, { uid: 'external-wallet' }].map((connector) => ({ connector })),
-  switchAccount: mocks.switchAccount,
-  disconnect: mocks.disconnect,
   watchAccount: (
     _config: unknown,
     { onChange }: { onChange: (account: TMockAccount, previousAccount: TMockAccount) => void }
@@ -51,6 +47,8 @@ vi.mock('wagmi/actions', () => ({
     }
   }
 }))
+
+vi.mock('@yearn/wallet-ui/connectionCleanup', () => ({ restorePreviousAccount: mocks.restorePreviousAccount }))
 
 vi.mock('@rainbow-me/rainbowkit', () => ({
   useConnectModal: () => ({ openConnectModal: mocks.openConnectModal, connectModalOpen: mocks.connectModalOpen }),
@@ -107,8 +105,7 @@ beforeEach(() => {
   mocks.connectAsync.mockReset()
   mocks.openConnectModal.mockReset()
   mocks.connectWalletConnect.mockReset()
-  mocks.switchAccount.mockReset()
-  mocks.disconnect.mockReset()
+  mocks.restorePreviousAccount.mockReset().mockResolvedValue(undefined)
   mocks.accountChange = undefined
   mocks.connectModalOpen = false
   mocks.isConnected = false
@@ -313,7 +310,7 @@ describe('connection attempt ownership', () => {
     await act(async () => request.reject(new Error('Late transport failure')))
     expect(screen.queryByRole('dialog')).not.toBeNull()
     expect(screen.queryByRole('alert')).toBeNull()
-    expect(mocks.disconnect).not.toHaveBeenCalled()
+    expect(mocks.restorePreviousAccount).not.toHaveBeenCalled()
     expect(mocks.track.mock.calls.filter(([event]) => event === 'connect_wallet')).toHaveLength(1)
     expect(mocks.track.mock.calls.filter(([event]) => event === 'wallet_connect_result')).toHaveLength(0)
   })
@@ -353,7 +350,7 @@ describe('connection attempt ownership', () => {
     expect(screen.queryByRole('dialog')).toBeNull()
     expect(screen.queryByRole('alert')).toBeNull()
     expect(screen.getByTestId('pending').textContent).toBe('false')
-    expect(mocks.disconnect).not.toHaveBeenCalled()
+    expect(mocks.restorePreviousAccount).not.toHaveBeenCalled()
   })
 
   it('does not let a restored wallet close a newer connection attempt', async () => {
@@ -484,8 +481,13 @@ describe('connection attempt ownership', () => {
         { status: 'connected', connector: { uid: previousUid } }
       )
       await act(async () => first.resolve())
-      expect(mocks.switchAccount).toHaveBeenCalledWith(mocks.config, { connector: { uid: previousUid } })
-      expect(mocks.disconnect).toHaveBeenCalledWith(mocks.config, { connector: mocks.connectors[0] })
+      expect(mocks.restorePreviousAccount).toHaveBeenCalledWith(
+        mocks.config,
+        expect.objectContaining({
+          connector: mocks.connectors[0],
+          previousConnector: { uid: previousUid }
+        })
+      )
     }
   )
 
@@ -499,8 +501,13 @@ describe('connection attempt ownership', () => {
     mocks.connector = { uid: 'rabby' }
     mocks.accountChange?.({ status: 'connected', connector: mocks.connector }, { status: 'disconnected' })
     await act(async () => request.resolve())
-    expect(mocks.disconnect).toHaveBeenCalledWith(mocks.config, { connector: mocks.connectors[0] })
-    expect(mocks.switchAccount).not.toHaveBeenCalled()
+    expect(mocks.restorePreviousAccount).toHaveBeenCalledWith(
+      mocks.config,
+      expect.objectContaining({
+        connector: mocks.connectors[0],
+        previousConnector: undefined
+      })
+    )
   })
 
   it('restores a newer detected account if an abandoned QR pairing later connects', async () => {
@@ -522,7 +529,13 @@ describe('connection attempt ownership', () => {
         { status: 'connected', connector: { uid: 'walletchan' } }
       )
     )
-    expect(mocks.switchAccount).toHaveBeenCalledWith(mocks.config, { connector: { uid: 'walletchan' } })
+    expect(mocks.restorePreviousAccount).toHaveBeenCalledWith(
+      mocks.config,
+      expect.objectContaining({
+        connector: mocks.connectors[2],
+        previousConnector: { uid: 'walletchan' }
+      })
+    )
   })
 
   it('accepts the active QR pairing and leaves its modal lifecycle to RainbowKit', async () => {
@@ -536,8 +549,7 @@ describe('connection attempt ownership', () => {
     await act(async () =>
       mocks.accountChange?.({ status: 'connected', connector: mocks.connector }, { status: 'disconnected' })
     )
-    expect(mocks.switchAccount).not.toHaveBeenCalled()
-    expect(mocks.disconnect).not.toHaveBeenCalled()
+    expect(mocks.restorePreviousAccount).not.toHaveBeenCalled()
   })
 
   it('uses RainbowKit for More wallets and supports missing WalletConnect configuration', async () => {

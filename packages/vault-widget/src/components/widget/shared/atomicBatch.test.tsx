@@ -4,13 +4,13 @@ import { EventEmitter } from 'node:events'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, fireEvent, render, renderHook, screen, waitFor } from '@testing-library/react'
 import { connect, disconnect } from '@wagmi/core'
-import { buildDepositBatch } from '@yearn/vault-widget/internal/components/widget/deposit/safeDepositBatch'
+import { buildDepositBatch } from '@yearn/vault-widget/internal/components/widget/deposit/depositBatch'
 import {
   TransactionOverlay,
   type TransactionStep
 } from '@yearn/vault-widget/internal/components/widget/shared/TransactionOverlay'
-import { buildWithdrawBatch } from '@yearn/vault-widget/internal/components/widget/withdraw/safeWithdrawBatch'
-import { useAtomicBatchSupport } from '@yearn/vault-widget/internal/hooks/useAtomicBatchSupport'
+import { buildWithdrawBatch } from '@yearn/vault-widget/internal/components/widget/withdraw/withdrawBatch'
+import { useAtomicBatchCapability } from '@yearn/vault-widget/internal/hooks/useAtomicBatchCapability'
 import type { TWidgetAnalyticsContext } from '@yearn/vault-widget/internal/utils/analytics'
 import { BOLD_ADDRESS, YBOLD_ZAPPER_ADDRESS } from '@yearn/vault-widget/internal/utils/yBold'
 import { type VaultWidgetRuntimeOverrides, VaultWidgetRuntimeProvider } from '@yearn/vault-widget/runtime'
@@ -201,29 +201,29 @@ afterEach(() => {
 describe('atomic wallet capabilities', () => {
   it('uses the requested chain, and isolates capabilities by extension and account', async () => {
     const h = await setup()
-    const { result, rerender } = renderHook(({ account, chainId }) => useAtomicBatchSupport({ account, chainId }), {
+    const { result, rerender } = renderHook(({ account, chainId }) => useAtomicBatchCapability({ account, chainId }), {
       wrapper: h.wrapper,
       initialProps: { account: ACCOUNT as `0x${string}`, chainId: 1 }
     })
-    await waitFor(() => expect(result.current).toBe(true))
+    await waitFor(() => expect(result.current.supported).toBe(true))
     expect(h.first.request).toHaveBeenCalledWith(
       { method: 'wallet_getCapabilities', params: [ACCOUNT, ['0x1']] },
       undefined
     )
     rerender({ account: ACCOUNT, chainId: 8453 })
-    expect(result.current).toBe(false)
+    expect(result.current.supported).toBe(false)
     await waitFor(() => expect(h.first.capabilities).toHaveBeenCalledTimes(2))
     rerender({ account: ACCOUNT, chainId: 1 })
-    await waitFor(() => expect(result.current).toBe(true))
+    await waitFor(() => expect(result.current.supported).toBe(true))
     await act(async () => {
       await connect(h.config, { connector: h.config.connectors[1] })
     })
     await waitFor(() => expect(h.second.capabilities).toHaveBeenCalled())
-    expect(result.current).toBe(false)
+    expect(result.current.supported).toBe(false)
     await act(async () => {
       await connect(h.config, { connector: h.config.connectors[0] })
     })
-    await waitFor(() => expect(result.current).toBe(true))
+    await waitFor(() => expect(result.current.supported).toBe(true))
     h.first.capabilities.mockResolvedValue({
       '0x1': { atomic: { status: 'unsupported' } },
       '0x2105': { atomic: { status: 'unsupported' } }
@@ -233,19 +233,21 @@ describe('atomic wallet capabilities', () => {
       h.first.events.emit('accountsChanged', [OTHER_ACCOUNT])
     })
     rerender({ account: OTHER_ACCOUNT, chainId: 1 })
-    expect(result.current).toBe(false)
+    expect(result.current.supported).toBe(false)
     await act(async () => {
       await disconnect(h.config)
     })
-    expect(result.current).toBe(false)
+    expect(result.current.supported).toBe(false)
   })
 
   it('does not block on an unsupported capability RPC or use a stale result from another wallet', async () => {
     const h = await setup()
     const pending = deferred<Awaited<ReturnType<typeof h.first.capabilities>>>()
     h.first.capabilities.mockReturnValue(pending.promise)
-    const { result } = renderHook(() => useAtomicBatchSupport({ account: ACCOUNT, chainId: 1 }), { wrapper: h.wrapper })
-    expect(result.current).toBe(false)
+    const { result } = renderHook(() => useAtomicBatchCapability({ account: ACCOUNT, chainId: 1 }), {
+      wrapper: h.wrapper
+    })
+    expect(result.current.supported).toBe(false)
     await waitFor(() => expect(h.first.capabilities).toHaveBeenCalled())
     h.second.capabilities.mockRejectedValue(Object.assign(new Error('Unsupported method'), { code: 4200 }))
     await act(async () => {
@@ -255,18 +257,20 @@ describe('atomic wallet capabilities', () => {
     await act(async () => {
       pending.resolve({ '0x1': { atomic: { status: 'ready' } }, '0x2105': { atomic: { status: 'unsupported' } } })
     })
-    expect(result.current).toBe(false)
+    expect(result.current.supported).toBe(false)
   })
 
   it('queries the mapped execution chain', async () => {
     const h = await setup({ chains: { resolveExecutionChainId: () => 8453 } })
-    const { result } = renderHook(() => useAtomicBatchSupport({ account: ACCOUNT, chainId: 1 }), { wrapper: h.wrapper })
+    const { result } = renderHook(() => useAtomicBatchCapability({ account: ACCOUNT, chainId: 1 }), {
+      wrapper: h.wrapper
+    })
     await waitFor(() => expect(h.first.capabilities).toHaveBeenCalled())
     expect(h.first.request).toHaveBeenCalledWith(
       { method: 'wallet_getCapabilities', params: [ACCOUNT, ['0x2105']] },
       undefined
     )
-    expect(result.current).toBe(false)
+    expect(result.current.supported).toBe(false)
   })
 })
 

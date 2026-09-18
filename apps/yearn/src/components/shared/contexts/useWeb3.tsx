@@ -1,5 +1,4 @@
 import { usePlausible } from '@hooks/usePlausible'
-import { useAccountModal, useChainModal } from '@rainbow-me/rainbowkit'
 import type { TAddress } from '@shared/types/address'
 import { fetchClusterName, getClusterImageUrl, isAddress, isSafeConnectorId } from '@shared/utils'
 import { isIframe } from '@shared/utils/helpers'
@@ -21,7 +20,6 @@ type TWeb3Context = {
   chainID: number
   isActive: boolean
   isWalletSafe: boolean
-  isWalletLedger: boolean
   isUserConnecting: boolean
   isIdentityLoading: boolean
   openLoginModal: () => void
@@ -35,7 +33,6 @@ const defaultState: TWeb3Context = {
   chainID: 1,
   isActive: false,
   isWalletSafe: false,
-  isWalletLedger: false,
   isUserConnecting: false,
   isIdentityLoading: false,
   openLoginModal: (): void => undefined,
@@ -52,9 +49,7 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
     address: isConnected ? address : undefined,
     chainId: mainnet.id
   })
-  const { openAccountModal } = useAccountModal()
   const { openWalletDrawer, closeWalletDrawer, isConnecting: isDrawerConnecting } = useWalletDrawer()
-  const { openChainModal } = useChainModal()
   const trackEvent = usePlausible()
   const [clusters, setClusters] = useState<{ name: string; avatar: string } | undefined>(undefined)
   const [isFetchingClusters, setIsFetchingClusters] = useState(false)
@@ -123,40 +118,22 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
   }, [closeWalletDrawer, disconnect, trackEvent, chainID])
 
   const openLoginModal = useCallback(async (): Promise<void> => {
-    if (isConnected && connector && address) {
-      if (openAccountModal) {
-        openAccountModal()
-      } else if (openChainModal) {
-        openChainModal()
-      } else {
-        console.warn('Impossible to open account modal')
-      }
-    } else {
-      const ledgerConnector = connectors.find((c) => c.id.toLowerCase().includes('ledger'))
-      if (isIframe() && ledgerConnector) {
-        hasUserRequestedConnectionRef.current = true
-        await connectAsync({
-          connector: ledgerConnector,
-          chainId: resolveExecutionChainId(chainID) ?? chainID
-        })
-        return
-      }
+    if (isConnected) return
 
-      // The shared picker owns analytics for its scoped connection attempts.
-      hasUserRequestedConnectionRef.current = false
-      openWalletDrawer()
+    const ledgerConnector = connectors.find((c) => c.id.toLowerCase().includes('ledger'))
+    if (isIframe() && ledgerConnector) {
+      hasUserRequestedConnectionRef.current = true
+      await connectAsync({
+        connector: ledgerConnector,
+        chainId: resolveExecutionChainId(chainID) ?? chainID
+      })
+      return
     }
-  }, [
-    address,
-    connectAsync,
-    connector,
-    connectors,
-    chainID,
-    isConnected,
-    openAccountModal,
-    openChainModal,
-    openWalletDrawer
-  ])
+
+    // The shared picker owns analytics for its scoped connection attempts.
+    hasUserRequestedConnectionRef.current = false
+    openWalletDrawer()
+  }, [connectAsync, connectors, chainID, isConnected, openWalletDrawer])
 
   useEffect(() => {
     if (!isConnected || !isAddress(address)) {
@@ -240,7 +217,6 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
 
   const isIdentityLoading = Boolean((isEnsLoading && !!address) || isFetchingClusters)
   const isWalletSafe = isSafeConnectorId(connector?.id)
-  const isWalletLedger = connector?.id.toLowerCase().includes('ledger') ?? false
 
   const contextValue = useMemo(
     () => ({
@@ -250,7 +226,6 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
       chainID,
       isActive: isConnected,
       isWalletSafe,
-      isWalletLedger,
       isUserConnecting,
       isIdentityLoading,
       openLoginModal,
@@ -263,7 +238,6 @@ export const Web3ContextApp = (props: { children: ReactElement }): ReactElement 
       chainID,
       isConnected,
       isWalletSafe,
-      isWalletLedger,
       isUserConnecting,
       isIdentityLoading,
       openLoginModal,

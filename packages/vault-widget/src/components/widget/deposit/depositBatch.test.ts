@@ -1,4 +1,4 @@
-import { buildDepositBatch } from '@yearn/vault-widget/internal/components/widget/deposit/safeDepositBatch'
+import { buildDepositBatch } from '@yearn/vault-widget/internal/components/widget/deposit/depositBatch'
 import { vaultAbi } from '@yearn/vault-widget/internal/contracts/abi/vaultV2.abi'
 import { yBoldZapperAbi } from '@yearn/vault-widget/internal/contracts/abi/yBoldZapper.abi'
 import { getApproveAbi } from '@yearn/vault-widget/internal/utils/approve'

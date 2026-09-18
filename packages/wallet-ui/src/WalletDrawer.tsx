@@ -24,10 +24,6 @@ import { flushSync } from 'react-dom'
 import { type Connector, ConnectorAlreadyConnectedError, useAccount, useConfig, useConnect } from 'wagmi'
 import { getAccount, watchAccount } from 'wagmi/actions'
 
-export { restorePreviousAccount } from '@yearn/wallet-ui/connectionCleanup'
-
-export { DEFAULT_WALLET_DRAWER_ID, type TWalletDrawerContext, useWalletDrawer } from '@yearn/wallet-ui/context'
-
 export type TWalletDrawerProviderProps = {
   onAnalytics?: TWalletAnalytics
   additionalConnectorIds?: readonly string[]

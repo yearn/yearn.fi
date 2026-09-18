@@ -1,4 +1,4 @@
-import { supportsAtomicBatch } from '@yearn/vault-widget/internal/hooks/useAtomicBatchSupport'
+import { supportsAtomicBatch } from '@yearn/vault-widget/internal/hooks/useAtomicBatchCapability'
 import { describe, expect, it } from 'vitest'
 
 describe('supportsAtomicBatch', () => {

@@ -29,10 +29,6 @@ vi.mock('@yearn/wallet-ui', () => ({ useWalletDrawer: () => mocks.drawer }))
 vi.mock('@yearn/wallet-ui/useWalletDisconnect', () => ({
   useWalletDisconnect: () => ({ disconnect: mocks.disconnect })
 }))
-vi.mock('@rainbow-me/rainbowkit', () => ({
-  useAccountModal: () => ({}),
-  useChainModal: () => ({})
-}))
 vi.mock('wagmi', () => ({
   useAccount: () => mocks.account,
   useConnect: () => ({ connectors: mocks.connectors, connectAsync: mocks.connectAsync }),

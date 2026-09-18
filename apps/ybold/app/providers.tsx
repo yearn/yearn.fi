@@ -76,7 +76,7 @@ function WidgetHostProvider({ children }: { children: React.ReactNode }) {
         isEnsoEnabled: () => false
       },
       safe: {
-        isSafe: connector?.id.toLowerCase().includes('safe') === true
+        isSafe: connector?.id.toLowerCase() === 'safe'
       },
       settings: {
         autoStake,

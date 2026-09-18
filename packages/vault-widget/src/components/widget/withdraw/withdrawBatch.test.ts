@@ -1,4 +1,4 @@
-import { buildWithdrawBatch } from '@yearn/vault-widget/internal/components/widget/withdraw/safeWithdrawBatch'
+import { buildWithdrawBatch } from '@yearn/vault-widget/internal/components/widget/withdraw/withdrawBatch'
 import { yBoldZapperAbi } from '@yearn/vault-widget/internal/contracts/abi/yBoldZapper.abi'
 import { getApproveAbi } from '@yearn/vault-widget/internal/utils/approve'
 import { YBOLD_ZAPPER_ADDRESS } from '@yearn/vault-widget/internal/utils/yBold'
