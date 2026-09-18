@@ -19,6 +19,7 @@ interface UseDirectDepositParams {
   chainId: number
   decimals: number
   enabled: boolean
+  maxDeposit?: bigint
 }
 
 export function useDirectDeposit(params: UseDirectDepositParams): UseWidgetDepositFlowReturn {
@@ -32,7 +33,11 @@ export function useDirectDeposit(params: UseDirectDepositParams): UseWidgetDepos
   })
 
   // Use previewDeposit to get expected shares (standard ERC4626 method)
-  const { data: expectedOut = 0n, isError: isPreviewError } = useReadContract({
+  const {
+    data: expectedOut = 0n,
+    isError: isPreviewError,
+    isFetching: isPreviewFetching
+  } = useReadContract({
     address: params.vaultAddress,
     abi: erc4626Abi,
     functionName: 'previewDeposit',
@@ -41,7 +46,11 @@ export function useDirectDeposit(params: UseDirectDepositParams): UseWidgetDepos
     query: { enabled: params.enabled && params.amount > 0n }
   })
 
-  const isValidInput = params.amount > 0n
+  const isValidInput =
+    params.enabled &&
+    params.amount > 0n &&
+    (params.maxDeposit === undefined ||
+      (params.amount <= params.maxDeposit && expectedOut > 0n && !isPreviewError && !isPreviewFetching))
   const isAllowanceSufficient = allowance >= params.amount
   const prepareApproveEnabled = !isAllowanceSufficient && isValidInput && !!params.account
   const prepareDepositEnabled = isAllowanceSufficient && isValidInput && !!params.account
@@ -67,7 +76,11 @@ export function useDirectDeposit(params: UseDirectDepositParams): UseWidgetDepos
     query: { enabled: prepareDepositEnabled }
   })
 
-  const error = isPreviewError ? 'Failed to preview deposit' : undefined
+  const error = isPreviewError
+    ? 'Failed to preview deposit'
+    : params.maxDeposit !== undefined && params.amount > 0n && !isPreviewFetching && expectedOut === 0n
+      ? 'This deposit would receive no shares.'
+      : undefined
 
   return {
     actions: {

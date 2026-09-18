@@ -40,6 +40,8 @@ interface UseDepositFlowProps {
   ensoEnabled: boolean
   routeRefreshKey?: number
   stakingSource?: string
+  directDepositLimit?: bigint
+  directDepositDisabled?: boolean
 }
 
 export interface DepositFlowResult {
@@ -99,7 +101,9 @@ export const useDepositFlow = ({
   ensoQuotePurpose,
   ensoEnabled,
   routeRefreshKey,
-  stakingSource
+  stakingSource,
+  directDepositLimit,
+  directDepositDisabled
 }: UseDepositFlowProps): DepositFlowResult => {
   // Determine routing type
   const routeType = useDepositRoute({
@@ -129,7 +133,8 @@ export const useDepositFlow = ({
     account,
     chainId,
     decimals: inputDecimals,
-    enabled: routeType === 'DIRECT_DEPOSIT' && amount > 0n && !isYvUsdLockedZapDeposit
+    maxDeposit: directDepositLimit,
+    enabled: routeType === 'DIRECT_DEPOSIT' && amount > 0n && !isYvUsdLockedZapDeposit && !directDepositDisabled
   })
 
   const yvUsdLockedZapDeposit = useYvUsdLockedZapDeposit({

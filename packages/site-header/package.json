@@ -1,0 +1,28 @@
+{
+  "name": "@yearn/site-header",
+  "version": "0.0.0",
+  "private": true,
+  "license": "SEE LICENSE IN LICENSE.md",
+  "type": "module",
+  "exports": {
+    ".": "./src/SiteHeader.tsx",
+    "./navigation": "./src/HeaderNavMenu.tsx",
+    "./icons/*": "./src/icons/*.tsx",
+    "./utils": "./src/utils.ts",
+    "./DropdownPanel": "./src/DropdownPanel.tsx",
+    "./theme": "./src/theme.ts",
+    "./themes.css": "./themes.css",
+    "./account": "./src/AccountMenu.tsx"
+  },
+  "peerDependencies": {
+    "next": "16.3.4",
+    "react": "19.2.8"
+  },
+  "devDependencies": {
+    "@types/react": "19.2.18",
+    "typescript": "5.9.3"
+  },
+  "sideEffects": [
+    "**/*.css"
+  ]
+}
