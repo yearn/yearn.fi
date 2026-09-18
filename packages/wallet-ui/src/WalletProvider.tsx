@@ -42,7 +42,15 @@ export function WalletProvider({
     const lifecycle = { cancelled: false, unwatch: () => {} }
     void startup.hydration
       .then(async () => {
-        if (!reconnectOnMount || startup.reconnected || lifecycle.cancelled) return
+        if (lifecycle.cancelled) return
+        // Hydration without automatic reconnect clears connections, but can leave a wallet's early
+        // connect event marked connected. Clear its dangling selection before restoring the last wallet.
+        config.setState((state) =>
+          state.current && !state.connections.has(state.current)
+            ? { ...state, current: null, status: state.status === 'connected' ? 'disconnected' : state.status }
+            : state
+        )
+        if (!reconnectOnMount || startup.reconnected) return
         const recentId = await config.storage?.getItem('recentConnectorId')
         const connectorId =
           recentId ??

@@ -2,6 +2,12 @@ import nextConfig from '@ybold/next.config'
 import { describe, expect, it } from 'vitest'
 
 describe('yBOLD Next configuration', () => {
+  it('proxies the same analytics endpoint as Yearn', async () => {
+    expect(await nextConfig.rewrites?.()).toContainEqual({
+      source: '/proxy/plausible/:path*',
+      destination: 'https://plausible.io/:path*'
+    })
+  })
   it('protects every route from untrusted framing while preserving Safe embedding', async () => {
     const configuredRoutes = await nextConfig.headers?.()
 

@@ -75,6 +75,7 @@ function WalletSelector({ onAccountClick, isAccountOpen, notificationStatus }: T
     <button
       type={'button'}
       data-wallet-account-trigger={!isDisconnected || undefined}
+      data-wallet-entry="header"
       data-wallet-drawer-trigger={isDisconnected ? true : undefined}
       aria-controls={isDisconnected ? walletDrawerId : 'yearn-wallet-account'}
       aria-expanded={isDisconnected ? isWalletDrawerOpen : isAccountOpen}
@@ -311,6 +312,7 @@ function AppHeader(): ReactElement {
                   )}
                   onClick={() => setIsMobileMenuOpen(true)}
                   data-mobile-nav-trigger
+                  data-wallet-entry="header"
                   data-wallet-drawer-trigger={isHomePage || undefined}
                   aria-label={'Open navigation menu'}
                 >

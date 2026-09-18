@@ -19,6 +19,7 @@
       "name": "@yearn/ybold",
       "version": "0.1.0",
       "dependencies": {
+        "@plausible-analytics/tracker": "0.4.5",
         "@rainbow-me/rainbowkit": "2.2.11",
         "@tanstack/react-query": "5.101.4",
         "@wagmi/core": "2.22.1",

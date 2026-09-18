@@ -112,19 +112,19 @@ describe('wallet connection integration', () => {
     expect(mocks.track).not.toHaveBeenCalled()
   })
 
-  it('tracks one requested connection with the existing properties and ignores reconnect', () => {
+  it('leaves picker connection tracking to the shared drawer and ignores reconnect', () => {
     const view = render(<Subject />)
     fireEvent.click(screen.getByRole('button', { name: 'Connect wallet' }))
     connectAccount()
     view.rerender(<Subject />)
     view.rerender(<Subject />)
-    expect(mocks.track.mock.calls).toEqual([['connect_wallet', { props: { connector: 'Rabby', chainID: '1' } }]])
+    expect(mocks.track).not.toHaveBeenCalled()
 
     mocks.account.isConnected = false
     view.rerender(<Subject />)
     connectAccount()
     view.rerender(<Subject />)
-    expect(mocks.track).toHaveBeenCalledOnce()
+    expect(mocks.track).not.toHaveBeenCalled()
   })
 
   it('does not track restored connections and clears requested tracking when disconnected', () => {

@@ -11,9 +11,10 @@ import {
 } from '@yearn/vault-widget/internal/components/widget/shared/TransactionOverlay'
 import { buildWithdrawBatch } from '@yearn/vault-widget/internal/components/widget/withdraw/safeWithdrawBatch'
 import { useAtomicBatchSupport } from '@yearn/vault-widget/internal/hooks/useAtomicBatchSupport'
+import type { TWidgetAnalyticsContext } from '@yearn/vault-widget/internal/utils/analytics'
 import { BOLD_ADDRESS, YBOLD_ZAPPER_ADDRESS } from '@yearn/vault-widget/internal/utils/yBold'
 import { type VaultWidgetRuntimeOverrides, VaultWidgetRuntimeProvider } from '@yearn/vault-widget/runtime'
-import { type PropsWithChildren, useState } from 'react'
+import { type PropsWithChildren, StrictMode, useState } from 'react'
 import { custom, type EIP1193Provider } from 'viem'
 import { base, mainnet } from 'viem/chains'
 import { afterEach, describe, expect, it, vi } from 'vitest'
@@ -26,6 +27,15 @@ const ACCOUNT = '0x1111111111111111111111111111111111111111'
 const OTHER_ACCOUNT = '0x2222222222222222222222222222222222222222'
 const VAULT = '0x3333333333333333333333333333333333333333'
 const HASH = `0x${'a'.repeat(64)}` as const
+const analyticsContext: TWidgetAnalyticsContext = {
+  action: 'deposit',
+  route: 'direct_deposit',
+  source_chain: 1,
+  destination_chain: 1,
+  batch_capability: 'supported',
+  batch_reason: 'eligible',
+  approval_required: true
+}
 const RECEIPT = {
   transactionHash: HASH,
   blockHash: HASH,
@@ -159,10 +169,12 @@ function step(
 
 function Overlay({
   transactionStep = step(),
-  onAllComplete = vi.fn()
+  onAllComplete = vi.fn(),
+  context = analyticsContext
 }: {
   transactionStep?: TransactionStep
   onAllComplete?: () => void
+  context?: TWidgetAnalyticsContext
 }) {
   const [open, setOpen] = useState(true)
   return (
@@ -171,6 +183,7 @@ function Overlay({
         Toggle overlay
       </button>
       <TransactionOverlay
+        analyticsContext={context}
         isOpen={open}
         onClose={() => setOpen(false)}
         step={transactionStep}
@@ -261,10 +274,19 @@ describe('atomic transaction overlay', () => {
   it('keeps Safe queue tracking until execution', async () => {
     const safeId = `0x${'b'.repeat(64)}` as const
     const getTransactionDetails = vi.fn().mockResolvedValue({ safeTxHash: safeId, status: 'awaiting-confirmations' })
-    const h = await setup({ safe: { isSafe: true, getTransactionDetails } })
+    const track = vi.fn()
+    const h = await setup({ safe: { isSafe: true, getTransactionDetails }, analytics: { track } })
     h.first.sendCalls.mockResolvedValue({ id: safeId })
     render(<Overlay />, { wrapper: h.wrapper })
     await screen.findByText(/Your transaction has been submitted to your Safe/)
+    expect(track).toHaveBeenCalledWith(
+      'widget_step_result',
+      expect.objectContaining({
+        execution_mode: 'safe_batch',
+        outcome: 'awaiting_execution'
+      })
+    )
+    expect(track.mock.calls.filter(([event]) => event === 'widget_flow_result')).toHaveLength(0)
     expect(h.createSubmitted).toHaveBeenCalledWith(expect.objectContaining({ txHash: safeId }))
     expect(h.publicRequest).not.toHaveBeenCalledWith(
       expect.objectContaining({ method: 'eth_getTransactionReceipt' }),
@@ -276,10 +298,12 @@ describe('atomic transaction overlay', () => {
     })
     await screen.findByText('Deposit successful!')
     expect(h.createSubmitted).toHaveBeenCalledTimes(1)
+    expect(track).toHaveBeenCalledWith('widget_flow_result', expect.objectContaining({ outcome: 'success' }))
   })
 
   it('keeps bridge tracking on the real source hash for a cross-chain batch', async () => {
-    const h = await setup()
+    const track = vi.fn()
+    const h = await setup({ analytics: { track } })
     h.first.callsStatus.mockResolvedValue({
       id: 'bundle-1',
       version: '2.0.0',
@@ -297,6 +321,10 @@ describe('atomic transaction overlay', () => {
     }
     render(<Overlay transactionStep={transactionStep} />, { wrapper: h.wrapper })
     await screen.findByText(/Bridging to/)
+    expect(track).toHaveBeenCalledWith('widget_step_result', expect.objectContaining({ outcome: 'confirmed' }))
+    expect(track.mock.calls.filter(([event]) => event === 'widget_flow_result')).toHaveLength(0)
+    fireEvent.click(screen.getByText('Toggle overlay'))
+    expect(track).toHaveBeenCalledWith('widget_flow_result', expect.objectContaining({ outcome: 'pending_or_unknown' }))
     expect(h.createSubmitted).toHaveBeenCalledTimes(1)
     expect(h.createSubmitted).toHaveBeenCalledWith(expect.objectContaining({ txHash: HASH, type: 'crosschain zap' }))
     expect(h.update).toHaveBeenCalledWith(
@@ -358,7 +386,8 @@ describe('atomic transaction overlay', () => {
   it.each(['yearn', 'ybold-deposit', 'ybold-withdraw'] as const)(
     'submits and confirms %s as one atomic request',
     async (route) => {
-      const h = await setup()
+      const track = vi.fn()
+      const h = await setup({ analytics: { track } })
       const batch =
         route === 'yearn'
           ? step().batch
@@ -382,7 +411,22 @@ describe('atomic transaction overlay', () => {
                 maxLoss: 50n
               })
       const onAllComplete = vi.fn()
-      render(<Overlay transactionStep={step(batch)} onAllComplete={onAllComplete} />, { wrapper: h.wrapper })
+      render(
+        <StrictMode>
+          <h.wrapper>
+            <Overlay
+              transactionStep={step(batch)}
+              onAllComplete={onAllComplete}
+              context={{
+                ...analyticsContext,
+                route:
+                  route === 'yearn' ? 'direct_deposit' : route === 'ybold-deposit' ? 'ybold_zap_in' : 'ybold_zap_out',
+                action: route === 'ybold-withdraw' ? 'withdraw' : 'deposit'
+              }}
+            />
+          </h.wrapper>
+        </StrictMode>
+      )
       await waitFor(() => expect(h.first.sendCalls).toHaveBeenCalledTimes(1))
       expect(
         h.first.request.mock.calls.find(([request]) => request.method === 'wallet_sendCalls')?.[0].params?.[0]
@@ -393,6 +437,9 @@ describe('atomic transaction overlay', () => {
         calls: batch?.calls.map((call) => ({ to: call.to, data: call.data, value: undefined }))
       })
       await screen.findByText('Approve & Deposit transaction pending')
+      expect(track.mock.calls.filter(([event]) => event === 'widget_flow_started')).toHaveLength(1)
+      expect(track.mock.calls.filter(([event]) => event === 'widget_step_started')).toHaveLength(1)
+      expect(track.mock.calls.filter(([event]) => event === 'widget_flow_result')).toHaveLength(0)
       expect(h.createSubmitted).not.toHaveBeenCalled()
       expect(h.publicRequest).not.toHaveBeenCalledWith(expect.objectContaining({ method: 'eth_getTransactionReceipt' }))
       expect(screen.queryByText('Deposit successful!')).toBeNull()
@@ -419,15 +466,30 @@ describe('atomic transaction overlay', () => {
       )
       expect(onAllComplete).toHaveBeenCalledTimes(1)
       expect(h.first.sendTransaction).not.toHaveBeenCalled()
+      expect(track.mock.calls.filter(([event]) => event === 'widget_flow_result')).toEqual([
+        [
+          'widget_flow_result',
+          expect.objectContaining({
+            outcome: 'success',
+            batch_used: true,
+            retry_count: 0,
+            execution_mode: 'atomic_batch'
+          })
+        ]
+      ])
+      expect(JSON.stringify(track.mock.calls)).not.toContain(ACCOUNT)
+      expect(JSON.stringify(track.mock.calls)).not.toContain(HASH)
     }
   )
 
   it('clears a rejected request and can reopen without sending separate transactions', async () => {
-    const h = await setup()
+    const track = vi.fn()
+    const h = await setup({ analytics: { track } })
     h.first.sendCalls.mockRejectedValueOnce(Object.assign(new Error('User rejected the request.'), { code: 4001 }))
     render(<Overlay />, { wrapper: h.wrapper })
     await waitFor(() => expect(h.first.sendCalls).toHaveBeenCalledTimes(1))
     await waitFor(() => expect(screen.queryByText('Confirm in your wallet')).toBeNull())
+    expect(track).toHaveBeenCalledWith('widget_flow_result', expect.objectContaining({ outcome: 'rejected' }))
     fireEvent.click(screen.getByText('Toggle overlay'))
     await waitFor(() => expect(h.first.sendCalls).toHaveBeenCalledTimes(2))
     await screen.findByText('Approve & Deposit transaction pending')
@@ -435,7 +497,8 @@ describe('atomic transaction overlay', () => {
   })
 
   it('reports failed bundles and lets a new attempt succeed without stale notification writes', async () => {
-    const h = await setup()
+    const track = vi.fn()
+    const h = await setup({ analytics: { track } })
     const registration = deferred<string>()
     h.createSubmitted.mockReturnValueOnce(registration.promise).mockResolvedValue('notification-2')
     h.first.callsStatus.mockResolvedValueOnce({
@@ -469,6 +532,9 @@ describe('atomic transaction overlay', () => {
     expect(h.update).toHaveBeenCalledWith(expect.objectContaining({ id: 'notification-2', status: 'success' }))
     expect(h.first.sendCalls).toHaveBeenCalledTimes(2)
     expect(onAllComplete).toHaveBeenCalledTimes(1)
+    expect(track.mock.calls.filter(([event]) => event === 'widget_flow_result')).toEqual([
+      ['widget_flow_result', expect.objectContaining({ outcome: 'success', retry_count: 1 })]
+    ])
   })
 
   it('waits for notification persistence before recording a fast receipt', async () => {

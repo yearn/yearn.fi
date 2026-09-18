@@ -5,7 +5,8 @@ export default defineConfig({
   resolve: {
     dedupe: ['react', 'react-dom'],
     alias: {
-      '@ybold': import.meta.dirname
+      '@ybold': import.meta.dirname,
+      '@plausible-analytics/tracker': `${import.meta.dirname}/../../node_modules/@plausible-analytics/tracker/plausible.js`
     }
   }
 })

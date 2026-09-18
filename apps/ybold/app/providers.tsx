@@ -4,12 +4,14 @@ import '@rainbow-me/rainbowkit/styles.css'
 import { RainbowKitProvider } from '@rainbow-me/rainbowkit'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useWalletActivity, WalletActivityProvider } from '@ybold/components/WalletActivityProvider'
+import { initializeAnalytics, trackAnalytics } from '@ybold/lib/analytics'
 import { wagmiConfig } from '@ybold/lib/wagmi'
 import { type VaultWidgetRuntimeOverrides, VaultWidgetRuntimeProvider } from '@yearn/vault-widget'
 import { createWagmiVaultWidgetExecutionAdapter } from '@yearn/vault-widget/wagmi'
 import { useWalletDrawer, WalletDrawerProvider, WalletProvider } from '@yearn/wallet-ui'
+import { getWalletAnalyticsProperties } from '@yearn/wallet-ui/analytics'
 import { getYearnRainbowTheme } from '@yearn/wallet-ui/rainbowkit'
-import { useMemo, useState } from 'react'
+import { useEffect, useMemo, useState } from 'react'
 import { useAccount } from 'wagmi'
 
 const theme = getYearnRainbowTheme('light')
@@ -32,6 +34,22 @@ function WidgetHostProvider({ children }: { children: React.ReactNode }) {
   const [autoStake, setAutoStake] = useState(true)
   const runtime = useMemo<VaultWidgetRuntimeOverrides>(
     () => ({
+      analytics: {
+        track: (event, props) => {
+          void getWalletAnalyticsProperties(connector)
+            .then((wallet) =>
+              trackAnalytics(event, {
+                ...wallet,
+                ...Object.fromEntries(
+                  Object.entries(props ?? {})
+                    .filter(([, value]) => value !== undefined && value !== null)
+                    .map(([key, value]) => [key, String(value)])
+                )
+              })
+            )
+            .catch(() => undefined)
+        }
+      },
       assets: {
         baseUri: YEARN_ASSETS_BASE_URI,
         isDevelopment: process.env.NODE_ENV === 'development'
@@ -74,18 +92,23 @@ function WidgetHostProvider({ children }: { children: React.ReactNode }) {
         open: openWalletDrawer
       }
     }),
-    [address, autoStake, chainId, connector?.id, isConnecting, notifications, openWalletDrawer, slippagePercent, status]
+    [address, autoStake, chainId, connector, isConnecting, notifications, openWalletDrawer, slippagePercent, status]
   )
 
   return <VaultWidgetRuntimeProvider value={runtime}>{children}</VaultWidgetRuntimeProvider>
 }
 
 export function Providers({ children }: { children: React.ReactNode }) {
+  // Initialize the browser analytics client once after hydration.
+  useEffect(() => {
+    void initializeAnalytics()?.catch(() => undefined)
+  }, [])
   return (
     <WalletProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
         <RainbowKitProvider theme={theme}>
           <WalletDrawerProvider
+            onAnalytics={trackAnalytics}
             desktopTop="5rem"
             desktopRight="max(1.5rem, calc((100vw - 72rem) / 2 + 1.5rem))"
             themeClassName="ybold-wallet-ui"

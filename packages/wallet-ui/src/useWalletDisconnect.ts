@@ -10,9 +10,15 @@ export function useWalletDisconnect() {
   const { disconnectAsync: disconnectConnector, ...state } = useDisconnect()
   const disconnectAsync = useCallback(async () => {
     cancelWalletReconnect(config)
+    const connections = getConnections(config)
+    if (connections.length === 0) {
+      // Clear a stale current/status too, even when there is no connector record to disconnect.
+      await disconnectConnector()
+      return
+    }
     // Wagmi otherwise selects a remaining connection. Remove this session's
     // connections sequentially, since each disconnect updates the same store.
-    await getConnections(config).reduce(
+    await connections.reduce(
       (pending, { connector }) => pending.then(() => disconnectConnector({ connector })),
       Promise.resolve()
     )

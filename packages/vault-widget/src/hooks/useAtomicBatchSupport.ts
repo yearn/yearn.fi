@@ -19,7 +19,7 @@ export function supportsAtomicBatch(capabilities: unknown): boolean {
   return status === 'supported' || status === 'ready'
 }
 
-export function useAtomicBatchSupport({
+export function useAtomicBatchCapability({
   account,
   chainId,
   enabled = true
@@ -27,8 +27,8 @@ export function useAtomicBatchSupport({
   account?: Address
   chainId: number
   enabled?: boolean
-}): boolean {
-  const { address: connectedAccount, connector, status } = useAccount()
+}): { supported: boolean; status: string } {
+  const { address: connectedAccount, connector, status: accountStatus } = useAccount()
   const config = useConfig()
   const runtime = useVaultWidgetRuntime()
   const executionChainId = runtime.chains.resolveExecutionChainId(chainId) ?? chainId
@@ -37,7 +37,7 @@ export function useAtomicBatchSupport({
       account &&
       account.toLowerCase() === connectedAccount?.toLowerCase() &&
       connector &&
-      status === 'connected'
+      accountStatus === 'connected'
   )
   const capabilities = useQuery({
     queryKey: ['vault-widget', 'atomic-capabilities', account, executionChainId, connector?.uid],
@@ -47,5 +47,18 @@ export function useAtomicBatchSupport({
     staleTime: 30_000
   })
 
-  return canQuery && !capabilities.isError && supportsAtomicBatch(capabilities.data)
+  const status = !canQuery
+    ? 'unknown'
+    : capabilities.isError
+      ? 'error'
+      : capabilities.isPending
+        ? 'pending'
+        : supportsAtomicBatch(capabilities.data)
+          ? String((capabilities.data as TAtomicCapability).atomic?.status)
+          : 'unsupported'
+  return { supported: canQuery && !capabilities.isError && supportsAtomicBatch(capabilities.data), status }
+}
+
+export function useAtomicBatchSupport(args: Parameters<typeof useAtomicBatchCapability>[0]): boolean {
+  return useAtomicBatchCapability(args).supported
 }

@@ -192,6 +192,28 @@ it('restores a saved EIP-6963 wallet announced after hydration', async () => {
   expect(getAccount(config).connector?.id).toBe('com.walletchan')
 })
 
+it.each([true, false])('handles an early wallet connection with reconnectOnMount=%s', async (reconnectOnMount) => {
+  const provider = {
+    request: vi.fn(async ({ method }: { method: string }) => (method === 'eth_chainId' ? '0x1' : [account])),
+    on: vi.fn(),
+    removeListener: vi.fn()
+  }
+  const { config } = createBrowserWalletConfig(false, {
+    announceOnRequest: false,
+    connectors: [injected({ target: { id: 'trust', name: 'Trust Wallet', provider: provider as TInjectedProvider } })]
+  })
+  await config.storage?.setItem('recentConnectorId', 'trust')
+  await config.connectors[0].onConnect?.({ chainId: '0x1' })
+  expect(getAccount(config).address).toBe(account)
+
+  render(<Providers config={config} reconnectOnMount={reconnectOnMount} />)
+  await act(async () => {})
+  await waitFor(() => expect(getAccount(config).address).toBe(reconnectOnMount ? account : undefined))
+  expect(getAccount(config).status).toBe(reconnectOnMount ? 'connected' : 'disconnected')
+  fireEvent.click(screen.getByRole('button', { name: 'Disconnect' }))
+  await waitFor(() => expect(getAccount(config).isDisconnected).toBe(true))
+})
+
 it('does not restore a late saved wallet after the user selects another wallet', async () => {
   const chosenProvider = {
     request: vi.fn(async ({ method }: { method: string }) => (method === 'eth_chainId' ? '0x1' : [account])),
