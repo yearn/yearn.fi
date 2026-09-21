@@ -1,7 +1,19 @@
 # Transaction lifecycle implementation progress
 
-Branch: `codex/transaction-lifecycle-v2`, based on `main` at `afd41bcb`.
+Branch: `codex/transaction-lifecycle-v2`, rebased onto `origin/main` at `8774a145` on 2026-09-18.
+Last committed integration: `50a8f398` (dedicated bridge coordination Redis configuration).
 Design: [v2 proposal](./v2-transaction-lifecycle.md).
+
+## Current status (2026-09-18)
+
+| Work | Status |
+| --- | --- |
+| Stages 1–3 | Implemented; controlled real-wallet/Safe parity still needs verification. |
+| Stage 4 | Implemented; local shared Redis validation passes; bridge rollout remains disabled. |
+| Stage 5 | Started: shared version-0 legacy decoder. Canonical history cutover and acknowledgement remain pending. |
+| Simplification | First deletion pass complete; old owners remain until migration/rollout gates pass. |
+
+Historical validation counts below describe their individual stages, not the latest checkout.
 
 Each completed stage must preserve existing supported transaction flows and equivalent normal UX.
 Unmigrated paths keep their existing implementation. Document intentional failure/status changes and
@@ -103,8 +115,8 @@ callbacks are retained. These differences still require controlled wallet QA bef
 
 ### Remaining stages and limits
 
-Stage 3 migrates sequential and Safe paths; stage 4 migrates destination settlement; stage 5 completes legacy
-persistence/presentation cutover and versioned decoding. The shared Enso gateway budget remains outstanding.
+Stages 3 and 4 are implemented below. Stage 4 remains rollout-gated; stage 5 completes legacy
+persistence/presentation cutover and versioned decoding. The shared Enso gateway is implemented.
 
 The durable guarantee starts once the submitted record is saved. A page closed before the wallet returns a hash,
 or while storage remains unavailable, cannot promise reload recovery. No-hash ambiguous wallet responses remain
@@ -296,8 +308,8 @@ limitation and makes no upstream request. All consumers of the shared Enso statu
 and the same Redis database for the budget guarantee to hold.
 
 Activation requires `NEXT_PUBLIC_TRANSACTION_LIFECYCLE_BRIDGES=true`, plus `UPSTASH_REDIS_REST_URL_BRIDGE_COORDINATION` and
-`UPSTASH_REDIS_REST_TOKEN_BRIDGE_COORDINATION` on every server instance. This checkout has no shared Redis configuration, so the flag
-remains off and the existing cross-chain path stays functional. Same-chain lifecycle execution stays enabled.
+`UPSTASH_REDIS_REST_TOKEN_BRIDGE_COORDINATION` on every server instance. Local DOA and bridge coordination credentials are now configured separately.
+The rollout flag remains off and the existing cross-chain path stays functional. Same-chain lifecycle execution stays enabled.
 When the new path is enabled, unfinished legacy cross-chain notifications for the reviewed wallet block a new
 cross-chain submission until the earlier outcome is reconciled; unreadable legacy history also blocks submission.
 Stage 5 will replace that conservative migration guard with legacy record decoding and presentation cutover.
@@ -353,3 +365,52 @@ The next deletion targets have concrete prerequisites:
 
 The service's flow/record state and its separate storage/live merge paths need a deeper design pass. Their
 policies currently differ; this conservative pass does not merge them or claim those responsibilities are removed.
+
+
+## 2026-09-18: rebase and stage 5 foundation
+
+- Rebased all ten lifecycle commits onto `8774a145`; preserved main's withdrawal amount validation.
+- Gateway, regression tests, and activation documentation use only the dedicated
+  `UPSTASH_REDIS_REST_*_BRIDGE_COORDINATION` pair, with no DOA fallback.
+- Rebase verification: 434 widget tests, 19 gateway tests, workspace TypeScript, both boundary checks,
+  and a webpack production build passed. Turbopack encountered an environment worker-port restriction.
+- Stage 5 begins with one runtime decoder for unversioned/version-0 legacy notification history.
+  Activity hydration and the legacy bridge guard reject malformed/unsupported batches rather than
+  silently discarding entries. Decoding preserves original rows and reported status; it never fabricates
+  receipt evidence, transaction hashes, timestamps, executable requests, or canonical flow membership.
+  This is a compatibility boundary, not a completed canonical migration. Existing legacy trackers remain owners.
+
+Remaining work, in order:
+
+1. Validate production deployment configuration and scheduling across deployed instances. The local configured
+   Upstash instance passes isolated competing-client gateway checks (see below), but this does not certify
+   every deployment uses the same database. Keep the rollout flag disabled until controlled bridge QA.
+2. Exercise direct/approval/Enso/Safe/bridge execution with controlled wallets or a clearly labelled virtual
+   network. Actual-wallet parity remains unverified; simulated tests must not be reported as real execution.
+3. Define limited historical records separately from executable canonical records, then migrate their
+   activity presentation and tracking ownership without inventing missing evidence. Preserve old rows for rollback.
+4. Add persisted acknowledgement and technical approval grouping, using shared owner-scoped selectors.
+5. Remove legacy partial-update APIs, pollers, projections, and overlay fallbacks only when every remaining
+   producer/host is migrated and rollout/rollback checks pass. The first simplification pass is not this cutover.
+
+The untracked root `.env.example` is user-owned and is not part of this implementation pass.
+
+### Live bridge coordination validation
+
+The local bridge URL had an unmatched trailing quote; it was corrected without changing credentials.
+An isolated namespace on the configured Upstash instance verified atomic Lua execution/Redis time,
+competing clients sharing one cooldown, cache reuse, and servicing another caller's queued JSON route.
+All validation keys were removed. No Enso requests or wallet transactions were made. The configured
+bridge URL differs from the DOA URL; production deployment settings have not been inspected.
+
+This exposed an SDK integration defect: Upstash recursively deserializes JSON Lua return values by default.
+The gateway requires raw JSON strings for queued request identities and cached response decoding. Its client
+now disables automatic deserialization. Regression tests retain the actual Upstash SDK and simulate its HTTP
+wire response, including base64 encoding, rather than replacing the Redis client with a mock.
+
+Current pass validation: all 890 Yearn tests, workspace TypeScript, formatting/lint for changed source files,
+and both architecture boundary checks pass. This includes real-SDK queue/cache serialization regressions,
+legacy malformed/future-version rejection, preservation of partial historical evidence, and hydration errors
+without database mutation. The webpack production build passes. Chromium checks on the rebuilt preview
+pass desktop/mobile rendering, deposit/withdraw tab navigation, no horizontal overflow, and no page errors.
+These checks do not exercise connected-wallet signing.

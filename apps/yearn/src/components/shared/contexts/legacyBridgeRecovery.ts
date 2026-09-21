@@ -1,3 +1,4 @@
+import { decodeLegacyNotifications } from '@shared/contexts/legacyNotificationDecoder'
 import type { TNotification } from '@shared/types/notifications'
 import type { TStartTransaction } from '@yearn/vault-widget/lifecycle'
 
@@ -46,7 +47,11 @@ export async function guardLegacyBridgeRecovery(input: TStartTransaction, signal
       transaction.oncomplete = () => {
         db.close()
         signal.removeEventListener('abort', abort)
-        resolve(read.result)
+        try {
+          resolve(decodeLegacyNotifications(read.result))
+        } catch (error) {
+          reject(error)
+        }
       }
       transaction.onerror = transaction.onabort = () => {
         db.close()

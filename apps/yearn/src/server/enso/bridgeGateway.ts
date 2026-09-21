@@ -116,7 +116,12 @@ export async function bridgeGateway(
     .digest('hex')
     .slice(0, 24)
   try {
-    return await runBridgeGateway(new Redis({ url, token }), namespace, identity, request)
+    return await runBridgeGateway(
+      new Redis({ url, token, automaticDeserialization: false }),
+      namespace,
+      identity,
+      request
+    )
   } catch {
     return Response.json({ error: 'Bridge tracking is temporarily unavailable. Tracking will retry.' }, { status: 503 })
   }

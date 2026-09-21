@@ -1,3 +1,4 @@
+import { decodeLegacyNotifications } from '@shared/contexts/legacyNotificationDecoder'
 import { applyNotificationUpdate } from '@shared/contexts/notificationTransitions'
 import { useYearnTransactionLifecycle } from '@shared/contexts/transactionLifecycleContext'
 import { projectLifecycleNotification } from '@shared/contexts/transactionLifecycleProjection'
@@ -90,7 +91,7 @@ export const WithNotifications = ({ children }: { children: React.ReactElement }
     setError(null)
     try {
       const entriesFromDB = await getAll()
-      setCachedEntries(filterNotificationsForAddress(entriesFromDB || [], address))
+      setCachedEntries(filterNotificationsForAddress(decodeLegacyNotifications(entriesFromDB ?? []), address))
     } catch (error) {
       console.error('Failed to fetch notifications from IndexedDB:', error)
       setCachedEntries([])

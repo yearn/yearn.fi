@@ -6,7 +6,7 @@ import type { ReactNode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
 const mocks = vi.hoisted(() => ({
-  address: '0x111',
+  address: '0x1111111111111111111111111111111111111111',
   getAll: vi.fn(),
   getByID: vi.fn(),
   update: vi.fn(),
@@ -15,7 +15,14 @@ const mocks = vi.hoisted(() => ({
 }))
 vi.mock('@shared/contexts/useWeb3', () => ({ useWeb3: () => ({ address: mocks.address }) }))
 vi.mock('use-indexeddb', () => ({ useIndexedDBStore: () => mocks }))
-const pending: TNotification = { id: 1, type: 'deposit', address: '0x111', chainId: 1, amount: '1', status: 'pending' }
+const pending: TNotification = {
+  id: 1,
+  type: 'deposit',
+  address: '0x1111111111111111111111111111111111111111',
+  chainId: 1,
+  amount: '1',
+  status: 'pending'
+}
 const wrapper = ({ children }: { children: ReactNode }) => (
   <WithNotifications>
     <div>{children}</div>
@@ -27,7 +34,7 @@ describe('notification indicator state', () => {
     vi.useFakeTimers()
     vi.setSystemTime(100_000)
     vi.resetAllMocks()
-    mocks.address = '0x111'
+    mocks.address = '0x1111111111111111111111111111111111111111'
     mocks.getAll.mockResolvedValue([pending, { ...pending, id: 2, status: 'success', timeFinished: 100 }])
     mocks.getByID.mockResolvedValue(pending)
     mocks.update.mockResolvedValue(undefined)
@@ -54,11 +61,23 @@ describe('notification indicator state', () => {
     expect(result.current.notificationStatus).toBeNull()
   })
 
+  it('reports unsupported persisted history without rewriting or deleting it', async () => {
+    const errorLog = vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    mocks.getAll.mockResolvedValue([pending, { ...pending, version: 99 }])
+    const { result } = renderHook(useNotifications, { wrapper })
+    await act(async () => undefined)
+    expect(result.current.error).toBe('Failed to load notifications')
+    expect(result.current.cachedEntries).toEqual([])
+    expect(mocks.update).not.toHaveBeenCalled()
+    expect(mocks.deleteByID).not.toHaveBeenCalled()
+    errorLog.mockRestore()
+  })
+
   it('hides the previous wallet immediately while the next wallet is still loading', async () => {
     const { result, rerender } = renderHook(useNotifications, { wrapper })
     await act(async () => undefined)
     expect(result.current.notificationStatus).toBe('pending')
-    mocks.address = '0x222'
+    mocks.address = '0x2222222222222222222222222222222222222222'
     mocks.getAll.mockReturnValue(new Promise(() => undefined))
     rerender()
     expect(result.current.cachedEntries).toEqual([])
