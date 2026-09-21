@@ -6,6 +6,7 @@ import {
   BASE_WETH_TOKEN_ADDRESS,
   ETH_TOKEN_ADDRESS,
   OPT_WETH_TOKEN_ADDRESS,
+  ROBINHOOD_ETH_TOKEN_ADDRESS,
   WETH_TOKEN_ADDRESS,
   WFTM_TOKEN_ADDRESS,
   ZERO_ADDRESS
@@ -28,7 +29,8 @@ const YEARN_PRICE_CHAIN_NAME_BY_ID: Readonly<Record<number, string>> = {
   8453: 'base',
   42161: 'arbitrum',
   80094: 'berachain',
-  747474: 'katana'
+  747474: 'katana',
+  4663: 'robinhood'
 }
 const YEARN_PRICE_CHAIN_NAMES = new Set(Object.values(YEARN_PRICE_CHAIN_NAME_BY_ID))
 
@@ -37,7 +39,8 @@ const NATIVE_WRAPPER_BY_CHAIN_ID: Readonly<Partial<Record<number, `0x${string}`>
   10: OPT_WETH_TOKEN_ADDRESS,
   250: WFTM_TOKEN_ADDRESS,
   8453: BASE_WETH_TOKEN_ADDRESS,
-  42161: ARB_WETH_TOKEN_ADDRESS
+  42161: ARB_WETH_TOKEN_ADDRESS,
+  4663: ROBINHOOD_ETH_TOKEN_ADDRESS
 }
 
 type TSpotPriceToken = VaultWidgetTokenReference | null | undefined

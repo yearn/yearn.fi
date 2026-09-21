@@ -11,7 +11,8 @@ export const SUPPORTED_CHAINS: ChainConfig[] = [
   { id: 8453, name: 'base', defillamaPrefix: 'base' },
   { id: 42161, name: 'arbitrum', defillamaPrefix: 'arbitrum' },
   { id: 137, name: 'polygon', defillamaPrefix: 'polygon' },
-  { id: 747474, name: 'katana', defillamaPrefix: 'katana' }
+  { id: 747474, name: 'katana', defillamaPrefix: 'katana' },
+  { id: 4663, name: 'robinhood', defillamaPrefix: 'robinhood' }
 ]
 
 export interface DepositEvent {

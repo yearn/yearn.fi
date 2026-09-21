@@ -4,6 +4,7 @@ import {
   BASE_WETH_TOKEN_ADDRESS,
   ETH_TOKEN_ADDRESS,
   OPT_WETH_TOKEN_ADDRESS,
+  ROBINHOOD_ETH_TOKEN_ADDRESS,
   WETH_TOKEN_ADDRESS,
   WFTM_TOKEN_ADDRESS
 } from './constants'
@@ -28,7 +29,8 @@ export const YEARN_PRICES_CHAIN_NAME_BY_ID = {
   8453: 'base',
   42161: 'arbitrum',
   80094: 'berachain',
-  747474: 'katana'
+  747474: 'katana',
+  4663: 'robinhood'
 } as const
 
 const YEARN_PRICES_CHAIN_ID_BY_NAME = Object.fromEntries(
@@ -40,7 +42,8 @@ const NATIVE_WRAPPER_BY_CHAIN_ID: Partial<Record<number, TAddress>> = {
   10: OPT_WETH_TOKEN_ADDRESS,
   250: WFTM_TOKEN_ADDRESS,
   8453: BASE_WETH_TOKEN_ADDRESS,
-  42161: ARB_WETH_TOKEN_ADDRESS
+  42161: ARB_WETH_TOKEN_ADDRESS,
+  4663: ROBINHOOD_ETH_TOKEN_ADDRESS
 }
 
 export function resolveYearnPricesSpotAddress(address: string | null | undefined, chainID: number): TAddress | null {
