@@ -3,6 +3,7 @@ import { Button } from '@yearn/vault-widget/internal/components/shared/Button'
 import { buildSafeDepositBatch } from '@yearn/vault-widget/internal/components/widget/deposit/safeDepositBatch'
 import { InputTokenAmount } from '@yearn/vault-widget/internal/components/widget/InputTokenAmount'
 import { buildEligibleStyledWidgetPlan } from '@yearn/vault-widget/internal/components/widget/shared/plannedTransaction'
+import { useReadContract } from '@yearn/vault-widget/internal/hooks/useAppWagmi'
 import { useDebouncedInput } from '@yearn/vault-widget/internal/hooks/useDebouncedInput'
 import type { VaultUserData } from '@yearn/vault-widget/internal/hooks/useVaultUserData'
 import { useVaultWidgetSpotPrices } from '@yearn/vault-widget/internal/hooks/useVaultWidgetSpotPrices'
@@ -17,7 +18,7 @@ import type { TToken } from '@yearn/vault-widget/types'
 import { YBOLD_STAKING_ADDRESS, YBOLD_VAULT_ADDRESS } from '@yearn/vault-widget/ybold'
 import type { ReactElement, ReactNode } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { formatUnits, isAddressEqual } from 'viem'
+import { erc4626Abi, formatUnits, isAddressEqual } from 'viem'
 import { SettingsPanel } from '../SettingsPanel'
 import { PriceImpactWarning } from '../shared/PriceImpactWarning'
 import { getProtectedEnsoQuoteError } from '../shared/protectedEnsoQuoteError'
@@ -60,7 +61,7 @@ interface Props {
   stakingAddress?: `0x${string}`
   disableDepositStaking?: boolean
   chainId: number
-  vaultAPR: number
+  vaultAPR?: number
   vaultSymbol: string
   stakingSource?: string
   vaultUserData: VaultUserData
@@ -367,7 +368,10 @@ export function WidgetDeposit({
     setIsDetailsPanelOpen(false)
   }
 
+  const availableDeposit = vaultUserData.erc4626 ? vaultUserData.availableToDeposit : inputToken?.balance.raw
   const { routeType, activeFlow } = useDepositFlow({
+    directDepositLimit: vaultUserData.erc4626?.maxDeposit,
+    directDepositDisabled: !!vaultUserData.error || (!!vaultUserData.erc4626 && depositAmount.isDebouncing),
     depositToken,
     assetAddress,
     directDepositTokenAddress,
@@ -415,7 +419,7 @@ export function WidgetDeposit({
     amount: depositAmount.bn,
     debouncedAmount: depositAmount.debouncedBn,
     isDebouncing: depositAmount.isDebouncing,
-    balance: inputToken?.balance.raw || 0n,
+    balance: availableDeposit ?? 0n,
     account,
     isLoadingRoute: activeFlow.periphery.isLoadingRoute,
     flowError: activeFlow.periphery.error,
@@ -436,19 +440,44 @@ export function WidgetDeposit({
   const isLoadingQuote = activeFlow.periphery.isLoadingRoute || activeFlow.periphery.isLoadingExpectedOutNormalization
 
   const estimatedAnnualReturn = useMemo(() => {
-    if (depositAmount.debouncedBn === 0n || vaultAPR === 0) return 0
+    if (depositAmount.debouncedBn === 0n || !vaultAPR) return 0
     return Number(formatUnits(depositAmount.debouncedBn, inputToken?.decimals ?? 18)) * vaultAPR
   }, [depositAmount.debouncedBn, inputToken?.decimals, vaultAPR])
 
+  const standardAssetValue = useReadContract({
+    address: vaultAddress,
+    abi: erc4626Abi,
+    functionName: 'convertToAssets',
+    args: [normalizedExpectedOut],
+    chainId,
+    query: { enabled: !!vaultUserData.erc4626 && normalizedExpectedOut > 0n, refetchInterval: 15_000 }
+  })
+
   const expectedOutInAsset = useMemo(() => {
+    if (vaultUserData.erc4626) return standardAssetValue.data ?? 0n
     if (normalizedExpectedOut === 0n || !pricePerShare || depositAmount.bn === 0n) return 0n
     return (normalizedExpectedOut * pricePerShare) / 10n ** BigInt(vaultDecimals)
-  }, [normalizedExpectedOut, vaultDecimals, pricePerShare, depositAmount.bn])
+  }, [
+    normalizedExpectedOut,
+    vaultDecimals,
+    pricePerShare,
+    depositAmount.bn,
+    vaultUserData.erc4626,
+    standardAssetValue.data
+  ])
 
   const minExpectedOutInAsset = useMemo(() => {
+    if (vaultUserData.erc4626) return standardAssetValue.data ?? 0n
     if (normalizedMinExpectedOut === 0n || !pricePerShare || depositAmount.bn === 0n) return 0n
     return (normalizedMinExpectedOut * pricePerShare) / 10n ** BigInt(vaultDecimals)
-  }, [normalizedMinExpectedOut, vaultDecimals, pricePerShare, depositAmount.bn])
+  }, [
+    normalizedMinExpectedOut,
+    vaultDecimals,
+    pricePerShare,
+    depositAmount.bn,
+    vaultUserData.erc4626,
+    standardAssetValue.data
+  ])
 
   const inputTokenPrice =
     inputToken?.address && inputToken?.chainId
@@ -689,7 +718,13 @@ export function WidgetDeposit({
     isDebouncing: depositAmount.isDebouncing,
     flow: 'deposit'
   })
-  const effectiveDepositError = depositError || protectedEnsoDepositError
+  const effectiveDepositError =
+    vaultUserData.error ||
+    (vaultUserData.erc4626 && typeof activeFlow.periphery.error === 'string'
+      ? activeFlow.periphery.error
+      : undefined) ||
+    depositError ||
+    protectedEnsoDepositError
 
   const {
     spenderAddress: approvalSpenderAddress,
@@ -1136,10 +1171,14 @@ export function WidgetDeposit({
     : activeFlow.periphery.expectedOut
   const displayedVaultShareValueInAsset = isEnsoRoute
     ? protectedEnsoQuote.display.vaultShareValueInAsset
-    : depositValueInfo.vaultShareValueInAsset
+    : vaultUserData.erc4626
+      ? expectedOutInAsset
+      : depositValueInfo.vaultShareValueInAsset
   const displayedVaultShareValueUsdRaw = isEnsoRoute
     ? protectedEnsoQuote.display.vaultShareValueUsdRaw
-    : depositValueInfo.vaultShareValueUsdRaw
+    : vaultUserData.erc4626
+      ? Number(formatUnits(expectedOutInAsset, assetToken?.decimals ?? 18)) * assetTokenPrice
+      : depositValueInfo.vaultShareValueUsdRaw
   const displayedPriceImpactPercentage = isEnsoRoute
     ? worstCaseRouteImpactPercentage
     : depositValueInfo.priceImpactPercentage
@@ -1157,6 +1196,8 @@ export function WidgetDeposit({
     detailsContent
   ) : hideDetails ? null : (
     <DepositDetails
+      showAnnualReturn={vaultAPR !== undefined}
+      showShareValue={!vaultUserData.erc4626 || (!standardAssetValue.isError && standardAssetValue.data !== undefined)}
       depositAmountBn={depositAmount.bn}
       inputTokenSymbol={inputToken?.symbol}
       inputTokenDecimals={inputToken?.decimals ?? 18}
@@ -1353,7 +1394,7 @@ export function WidgetDeposit({
           input={depositInput}
           title="Amount"
           placeholder="0.00"
-          balance={inputToken?.balance.raw}
+          balance={availableDeposit}
           decimals={inputToken?.decimals}
           symbol={inputToken?.symbol}
           disabled={isFetchingMaxQuote}
@@ -1451,14 +1492,16 @@ export function WidgetDeposit({
         routeType={routeType}
       />
 
-      <AnnualReturnOverlay
-        isOpen={showAnnualReturnModal}
-        onClose={() => setShowAnnualReturnModal(false)}
-        depositAmount={formatWidgetValue(depositAmount.debouncedBn, inputToken?.decimals ?? 18)}
-        tokenSymbol={inputToken?.symbol}
-        estimatedReturn={formatWidgetValue(estimatedAnnualReturn)}
-        currentAPR={vaultAPR}
-      />
+      {vaultAPR !== undefined && (
+        <AnnualReturnOverlay
+          isOpen={showAnnualReturnModal}
+          onClose={() => setShowAnnualReturnModal(false)}
+          depositAmount={formatWidgetValue(depositAmount.debouncedBn, inputToken?.decimals ?? 18)}
+          tokenSymbol={inputToken?.symbol}
+          estimatedReturn={formatWidgetValue(estimatedAnnualReturn)}
+          currentAPR={vaultAPR}
+        />
+      )}
 
       <VaultShareValueOverlay
         isOpen={showVaultShareValueModal}
@@ -1467,7 +1510,7 @@ export function WidgetDeposit({
         sharesLabel={receivedSharesLabel}
         shareValue={formatWidgetValue(displayedVaultShareValueInAsset, assetToken?.decimals ?? 18)}
         assetSymbol={assetToken?.symbol || ''}
-        usdValue={formatWidgetValue(displayedVaultShareValueUsdRaw)}
+        usdValue={assetTokenPrice > 0 ? formatWidgetValue(displayedVaultShareValueUsdRaw) : undefined}
         showShareConversion={shouldShowShareConversion}
         convertedVaultSharesAmount={
           shouldShowShareConversion ? formatWidgetValue(displayedConvertedVaultShares, vaultDecimals) : undefined

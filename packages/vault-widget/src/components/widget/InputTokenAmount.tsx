@@ -297,7 +297,7 @@ export const InputTokenAmount: FC<Props> = ({
           {errorMessage ? (
             <div className="text-sm text-red-500">{errorMessage}</div>
           ) : (
-            <div className="text-sm text-text-secondary">${inputUsdValue}</div>
+            <div className="text-sm text-text-secondary">{inputTokenUsdPrice > 0 ? `$${inputUsdValue}` : null}</div>
           )}
           {!accountAddress ? (
             <button

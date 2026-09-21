@@ -2,6 +2,7 @@
   "name": "@yearn/vault-widget",
   "version": "0.0.0",
   "private": true,
+  "license": "SEE LICENSE IN LICENSE.md",
   "type": "module",
   "sideEffects": [
     "**/*.css"
@@ -32,7 +33,9 @@
     "./styles.css": "./styles.css",
     "./types": "./src/types.ts",
     "./wagmi": "./src/adapters/wagmiExecutionAdapter.ts",
-    "./ybold": "./src/ybold.ts"
+    "./ybold": "./src/ybold.ts",
+    "./erc4626/*": "./src/erc4626/*.ts",
+    "./erc4626": "./src/components/Erc4626VaultWidget.tsx"
   },
   "scripts": {
     "test": "vitest run",
@@ -58,7 +61,7 @@
     "react-rewards": "2.1.0",
     "typescript": "5.9.3",
     "viem": "2.55.11",
-    "vitest": "4.1.10",
+    "vitest": "4.1.11",
     "wagmi": "2.18.2"
   }
 }
