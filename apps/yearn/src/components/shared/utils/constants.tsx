@@ -3,6 +3,7 @@ import { arbitrum, base, fantom, mainnet, optimism, polygon, sonic } from 'viem/
 import { supportedAppChains } from '@/config/supportedChains'
 import { toAddress } from './tools.address'
 
+// set chains in apps/yearn/src/config/chainDefinitions.ts, not here.
 export const SUPPORTED_NETWORKS = supportedAppChains.length
   ? supportedAppChains
   : [mainnet, optimism, polygon, fantom, base, arbitrum, sonic]
@@ -17,6 +18,7 @@ export const WFTM_TOKEN_ADDRESS = toAddress('0x21be370D5312f44cB42ce377BC9b8a0cE
 export const OPT_WETH_TOKEN_ADDRESS = toAddress('0x4200000000000000000000000000000000000006')
 export const BASE_WETH_TOKEN_ADDRESS = toAddress('0x4200000000000000000000000000000000000006')
 export const ARB_WETH_TOKEN_ADDRESS = toAddress('0x82aF49447D8a07e3bd95BD0d56f35241523fBab1')
+export const ROBINHOOD_ETH_TOKEN_ADDRESS = toAddress('0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73')
 export const MAX_UINT_256 = 0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffn
 
 export const DEFAULT_ERC20: TToken = {
