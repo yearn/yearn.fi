@@ -4,8 +4,10 @@ import { describe, expect, it } from 'vitest'
 
 const address = '0x028eC7330ff87667b6dfb0D94b954c820195336c'
 describe('vault selection', () => {
-  it('preserves the old app’s five supported networks', () =>
-    expect(SUPPORTED_CHAINS.map((chain) => chain.id)).toEqual([1, 8453, 42161, 10, 137]))
+  it('preserves the old networks and includes Robinhood', () =>
+    expect(SUPPORTED_CHAINS.map((chain) => chain.id)).toEqual([1, 8453, 42161, 10, 137, 4663]))
+  it('accepts a Robinhood vault deep link', () =>
+    expect(parseVaultSelection('4663', address)).toEqual({ ok: true, chainId: 4663, address }))
   it.each(['0', '999', 'abc'])('rejects unsupported chain %s instead of falling back to Ethereum', (chain) =>
     expect(parseVaultSelection(chain, address).error).toBeDefined()
   )

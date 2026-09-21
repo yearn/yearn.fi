@@ -19,7 +19,7 @@ If Turbopack cannot create its worker sockets in a restricted environment, use `
 
 Copy `.env.example` to `.env.local` for optional RPC overrides and a WalletConnect project ID. Injected wallets and Safe remain available without a WalletConnect ID. Production should configure suitable RPC providers for each network.
 
-Supported networks: Ethereum, Base, Arbitrum, Optimism and Polygon. Links can select a vault with `/?chain=1&vault=0x…`. Unsupported chain IDs are rejected rather than silently mapped to Ethereum.
+Supported networks: Ethereum, Base, Arbitrum, Optimism, Polygon and Robinhood Chain (4663). Configure `NEXT_PUBLIC_RPC_ROBINHOOD` to override the Robinhood public RPC. Links can select a vault with `/?chain=1&vault=0x…`. Unsupported chain IDs are rejected rather than silently mapped to Ethereum.
 
 Direct address entry and transactions require no price service, Kong catalog or Yearn vault metadata. Token inputs, capacity and positions are displayed in underlying-asset units. A share token’s decimals can differ from its asset’s decimals. The preset disables staking, swaps and cross-chain zaps.
 
