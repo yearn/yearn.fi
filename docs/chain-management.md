@@ -6,9 +6,9 @@ The shared `@yearn/chains` workspace package owns chain metadata and app policy.
 
 1. **Register it in `packages/chains/src/registry.ts`.** Import its Viem chain definition. If Viem does not provide one, use `defineChain` in this file with verified chain ID, native currency, public RPC, explorer, and applicable contract deployments. Add a registry entry with `chain`, `displayName`, and `prices` (an empty object is valid for direct-only use). Add `wrappedNative` if the native-token price must resolve through that contract. Never copy a wrapped-token or router address from another network without verifying it.
 2. **Set app policy in `packages/chains/src/profiles.ts`.** Add an entry to each app that should offer it. ERC-4626 and yBOLD use `APP_PROFILES`; Yearn uses `YEARN_PROFILE`. App membership enables that app's wallet-chain configuration, not every optional integration. For Yearn configure the fields below. A registry entry alone does not enable a chain in any app.
-3. **Configure RPC overrides, if needed.** Set `NEXT_PUBLIC_CHAIN_RPC_URLS` in the app's local environment and deployment settings. This is one JSON object keyed by canonical chain ID. New chains need no `env.ts` edit or additional named environment variable. Public defaults are available when an override is absent. Rebuild the Next.js app after changing public environment variables.
+3. **Configure individual RPC variables, if needed.** Keep one `NAME=value` entry per line in `.env` and the existing deployment injection setup. Yearn uses `NEXT_PUBLIC_RPC_URI_FOR_<id>`; ERC-4626 uses named variables such as `NEXT_PUBLIC_RPC_ROBINHOOD`; yBOLD uses `NEXT_PUBLIC_RPC_URL` for Ethereum. When adding a new override, add its explicit `process.env.NEXT_PUBLIC_...` binding to Yearn's `src/env.ts` or the standalone app's `lib/wagmiConfig.ts` / `lib/wagmi.ts`, and document it in `.env.example`. Next.js needs those literal reads to inline browser values. Apps assemble transport maps internally; there is no JSON environment variable. Public defaults apply when an override is absent. Rebuild after changing public values.
 4. **Prepare external services for the enabled features.** Confirm Kong catalog/detail coverage, indexed history, provider prices and chain/token assets on the configured CDN. These services remain separate deployments. Configuration does not certify live coverage or a particular vault route.
-5. **Run `bun run chains:check`, then the relevant checks.** Use `bun run test:chains`, `bun run tslint:all`, `bun run test:all`, and the affected app's production build. The configuration check is offline and requires no credentials. Add behavior tests when introducing a new capability or exception; ordinary chain additions should not require updating consumer code.
+5. **Run `bun run chains:check`, then the relevant checks.** Use `bun run test:chains`, `bun run tslint:all`, `bun run test:all`, and the affected app's production build. The configuration check is offline and requires no credentials. Add behavior tests when introducing a new capability or exception; ordinary chain additions should only require registry/profile edits and any explicit environment bindings described above.
 6. **Verify a preview before launch.** Check network selection, vault loading, native balances, provider request keys, token suggestions and explorer links. Check deposits/withdrawals, approval spender matching, and optional Enso/history integrations where enabled. Keep unavailable data distinct from zero. A deployment entry for Enso does not guarantee support for all vaults or cross-chain routes.
 
 ### Yearn policy fields
@@ -36,21 +36,25 @@ Example policy for a registered direct-only chain:
 Example public override:
 
 ```dotenv
-NEXT_PUBLIC_CHAIN_RPC_URLS={"4663":"https://rpc.mainnet.chain.robinhood.com"}
+# Yearn:
+NEXT_PUBLIC_RPC_URI_FOR_4663=https://rpc.mainnet.chain.robinhood.com
+
+# ERC-4626 (its own .env):
+NEXT_PUBLIC_RPC_ROBINHOOD=https://rpc.mainnet.chain.robinhood.com
 ```
 
 The registry's `prices` object uses separate `'yearn-prices'` and `defillama` identifiers. Do not infer either from a website slug. `enso` contains `router` and an official deployment `source` URL. These are reviewed metadata, not live availability flags.
 
 ## Environment compatibility and precedence
 
-All three apps read `process.env.NEXT_PUBLIC_CHAIN_RPC_URLS` explicitly at the Next.js boundary. The package's parser is pure and does not inspect the process environment.
+Apps retain their explicit individual environment reads. The shared package receives an ordinary JavaScript map and does not inspect the process environment. No environment-name migration or deployment injection changes are required.
 
-- Yearn: Tenderly execution override, then shared public map, then existing `NEXT_PUBLIC_RPC_URI_FOR_<id>` values, an explicit profile `rpcDefault`, and older transport fallbacks. Existing `NEXT_PUBLIC_JSON_RPC_*` handling remains compatibility-only.
-- ERC-4626: shared map, then existing `NEXT_PUBLIC_RPC_ETHEREUM`, `NEXT_PUBLIC_RPC_BASE`, `NEXT_PUBLIC_RPC_ARBITRUM`, `NEXT_PUBLIC_RPC_OPTIMISM`, `NEXT_PUBLIC_RPC_POLYGON`, or `NEXT_PUBLIC_RPC_ROBINHOOD`, then the app profile's public default.
-- yBOLD: shared map, then `NEXT_PUBLIC_RPC_URL`, then the profile's public default.
-- Yearn server enrichment: `RPC_URI_FOR_<id>` remains private and takes priority, followed by the public map and legacy numbered public override. Timelock and receipt enrichment still require explicit configuration; they do not silently start using a public fallback. Optimization retains its ordered feature-specific defaults in the registry.
+- Yearn: Tenderly execution override, then `NEXT_PUBLIC_RPC_URI_FOR_<id>`, an explicit profile `rpcDefault`, and older transport fallbacks. Existing `NEXT_PUBLIC_JSON_RPC_*` handling remains unchanged.
+- ERC-4626: `NEXT_PUBLIC_RPC_ETHEREUM`, `NEXT_PUBLIC_RPC_BASE`, `NEXT_PUBLIC_RPC_ARBITRUM`, `NEXT_PUBLIC_RPC_OPTIMISM`, `NEXT_PUBLIC_RPC_POLYGON`, or `NEXT_PUBLIC_RPC_ROBINHOOD`, then the app profile's public default.
+- yBOLD: `NEXT_PUBLIC_RPC_URL` applies to Ethereum, then the profile's public default. Additional chains need their own explicit binding.
+- Yearn server enrichment: private `RPC_URI_FOR_<id>` takes priority over `NEXT_PUBLIC_RPC_URI_FOR_<id>`. Timelock and receipt enrichment still require explicit configuration; they do not silently start using a public fallback. Optimization retains its ordered feature-specific defaults in the registry.
 
-Public configuration is shipped to the browser. Do not put server-only keys or Tenderly Admin RPC credentials in it. Invalid JSON, unknown chain IDs and invalid endpoint schemes fail with a configuration error; error messages do not print endpoint values.
+Public configuration is shipped to the browser. Do not put server-only keys or Tenderly Admin RPC credentials in public variables.
 
 Tenderly remains a Yearn-owned execution overlay. This refactor retains its existing opt-in configuration and filtering behavior. Canonical IDs identify vaults and pricing; execution IDs identify the chain used for transactions and receipts. Do not substitute a production RPC for an unavailable fork. New Tenderly forks still use the existing Tenderly setup workflow and explicit environment bindings; they are not part of ordinary production-chain onboarding.
 
@@ -59,7 +63,7 @@ Tenderly remains a Yearn-owned execution overlay. This refactor retains its exis
 - `registry.ts`: Viem definitions, display names, wrapped native tokens, provider identifiers, verified router addresses, and existing optimization RPC defaults.
 - `profiles.ts`: explicit app membership, feature enablement, order and token suggestions. yBOLD remains Ethereum-only; ERC-4626 remains direct-only. Metadata-only pricing chains remain outside wallet profiles.
 - `selectors.ts`: derived chain sets, price mappings, wrappers, routing choices and suggestions.
-- `rpc.ts`: pure public-map parsing and endpoint precedence helpers.
+- `rpc.ts`: pure endpoint precedence helpers for maps assembled by each host.
 - `validation.ts`: offline cross-configuration checks, run in CI through `test:all`.
 
 Feature-specific deployments such as strategy timelocks and executors stay with their owning feature; their chain lookup and explicit RPC resolution use shared helpers. Adding a chain does not imply a timelock deployment.

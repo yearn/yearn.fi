@@ -1,4 +1,4 @@
-import { APP_PROFILES, getRpcOverride, parseRpcOverrides } from '@yearn/chains'
+import { APP_PROFILES } from '@yearn/chains'
 import type { Chain } from 'viem'
 import { defineChain } from 'viem'
 import * as wagmiChains from 'viem/chains'
@@ -68,8 +68,6 @@ const isChain = (chain: wagmiChains.Chain | unknown): chain is wagmiChains.Chain
   )
 }
 
-const rpcOverrides = parseRpcOverrides(env.NEXT_PUBLIC_CHAIN_RPC_URLS)
-
 export function getRpcUriFor(chainId: number | string): string {
   const normalizedChainId = Number(chainId)
   if (Number.isInteger(normalizedChainId)) {
@@ -82,8 +80,8 @@ export function getRpcUriFor(chainId: number | string): string {
   const key = `NEXT_PUBLIC_RPC_URI_FOR_${chainId}`
   const value = env[key]
   return (
-    getRpcOverride(normalizedChainId, rpcOverrides, typeof value === 'string' ? value : undefined) ??
-    APP_PROFILES.yearn.find(({ id }) => id === normalizedChainId)?.rpcDefault ??
+    (typeof value === 'string' ? value.trim() : '') ||
+    APP_PROFILES.yearn.find(({ id }) => id === normalizedChainId)?.rpcDefault ||
     ''
   )
 }

@@ -1,13 +1,13 @@
-import { getAppChains, getAppRpcUrl, parseRpcOverrides } from '@yearn/chains'
+import { getAppChains, getAppRpcUrl } from '@yearn/chains'
 import { getDefaultConfig } from '@rainbow-me/rainbowkit'
 import { createConfig, http, type Config } from 'wagmi'
 import { injected } from 'wagmi/connectors'
 
 const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID?.trim()
 const chains = getAppChains('ybold')
-const rpcOverrides = parseRpcOverrides(process.env.NEXT_PUBLIC_CHAIN_RPC_URLS)
+const rpcOverrides = { 1: process.env.NEXT_PUBLIC_RPC_URL }
 const transports = Object.fromEntries(chains.map(({ id }) =>
-  [id, http(getAppRpcUrl('ybold', id, rpcOverrides, process.env.NEXT_PUBLIC_RPC_URL))]
+  [id, http(getAppRpcUrl('ybold', id, rpcOverrides))]
 ))
 
 function createWagmiConfig(): Config {

@@ -59,4 +59,4 @@ Known retired Yearn allocator vaults open on Withdraw. Clicking Deposit opens a 
 
 Wallet-list visibility follows yearn.fi: explicitly hidden Yearn vault addresses and their staking-token aliases are excluded per chain, using the same Kong catalog fetched for the Yearn tab. Retired and uncatalogued external vaults remain eligible. The first catalog lookup finishes before wallet rows appear. If visibility metadata is unavailable, cached exclusions are retained when available and a retry notice is shown; unknown vaults are not treated as hidden. Filtering affects the picker list, not raw wallet balances or direct address entry.
 
-Chain configuration is managed by `@yearn/chains`; see [chain onboarding](../../docs/chain-management.md). Use `NEXT_PUBLIC_CHAIN_RPC_URLS` for new public RPC overrides. Existing named RPC variables remain supported.
+Chain configuration is managed by `@yearn/chains`; see [chain onboarding](../../docs/chain-management.md). RPC overrides use the existing individual environment variables; apps assemble their transport maps internally.

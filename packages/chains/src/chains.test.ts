@@ -1,6 +1,6 @@
 import { APP_PROFILES } from '@yearn/chains/profiles'
 import { CHAIN_REGISTRY, type TChainRegistration } from '@yearn/chains/registry'
-import { getAppRpcUrl, getRpcOverride, parseRpcOverrides } from '@yearn/chains/rpc'
+import { getAppRpcUrl } from '@yearn/chains/rpc'
 import {
   getAppChain,
   getAppChains,
@@ -64,30 +64,16 @@ describe('chain migration compatibility', () => {
 })
 
 describe('RPC configuration', () => {
-  it('prioritizes the new map, then legacy variables, then per-app defaults', () => {
-    const overrides = parseRpcOverrides('{"4663":" https://rpc.example "}')
-    expect(getAppRpcUrl('erc4626', 4663, overrides, 'https://legacy.example')).toBe('https://rpc.example')
-    expect(getAppRpcUrl('erc4626', 4663, {}, ' https://legacy.example ')).toBe('https://legacy.example')
+  it('uses individual environment values assembled by the host before app defaults', () => {
+    const overrides = { 4663: ' https://rpc.example ' }
+    expect(getAppRpcUrl('erc4626', 4663, overrides)).toBe('https://rpc.example')
     expect(getAppRpcUrl('erc4626', 1, {})).toBe('https://ethereum-rpc.publicnode.com')
-    expect(getAppRpcUrl('ybold', 1, {})).toBe('https://ethereum-rpc.publicnode.com')
-    expect(getRpcOverride(1, {}, ' ')).toBeUndefined()
+    expect(getAppRpcUrl('ybold', 1, { 1: 'https://ybold.example' })).toBe('https://ybold.example')
     expect(() => getAppRpcUrl('ybold', 4663, overrides)).toThrow('not enabled')
   })
-  it.each([
-    '[]',
-    'null',
-    '42',
-    '{',
-    '{"999999":"https://rpc.example"}',
-    '{"01":"https://rpc.example"}',
-    '{"1":"ftp://secret.example"}',
-    '{"1":123}'
-  ])('rejects invalid map %s', (raw) => {
-    expect(() => parseRpcOverrides(raw)).toThrow()
-  })
-  it('does not include URLs or credentials in validation errors', () => {
-    expect(() => parseRpcOverrides('{"1":"invalid-secret-key"}')).toThrow('requires an HTTP(S) URL for chain 1')
-    expect(parseRpcOverrides(' ')).toEqual({})
+  it('uses defaults for missing or blank per-chain settings', () => {
+    expect(getAppRpcUrl('erc4626', 4663, { 4663: ' ' })).toBe('https://rpc.mainnet.chain.robinhood.com')
+    expect(getAppRpcUrl('ybold', 1, { 1: undefined })).toBe('https://ethereum-rpc.publicnode.com')
   })
 })
 

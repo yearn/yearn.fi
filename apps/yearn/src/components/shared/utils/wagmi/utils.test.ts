@@ -21,12 +21,11 @@ describe('getNetwork', () => {
 
     expect(getNetwork(73571).defaultBlockExplorer).toBe('')
   })
-  it('keeps Tenderly ahead of shared RPC overrides and uses the map for new canonical chains', async () => {
+  it('keeps Tenderly ahead of individual public RPC variables', async () => {
     vi.doMock('@/env', () => ({
       env: {
-        NEXT_PUBLIC_CHAIN_RPC_URLS:
-          '{"4663":"https://robinhood.override.example","1":"https://ethereum.override.example"}',
-        NEXT_PUBLIC_RPC_URI_FOR_4663: 'https://legacy.example'
+        NEXT_PUBLIC_RPC_URI_FOR_1: 'https://ethereum.override.example',
+        NEXT_PUBLIC_RPC_URI_FOR_4663: ' https://robinhood.override.example '
       }
     }))
     vi.doMock('@/config/tenderly', () => ({
