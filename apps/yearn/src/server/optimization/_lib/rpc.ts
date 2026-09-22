@@ -1,51 +1,14 @@
+import { getChainRegistration } from '@yearn/chains'
+import { getServerRpcOverride } from '@/server/lib/chainRpc'
 export interface RpcConfig {
   primary: string
   fallbacks: string[]
 }
 
-const RPC_CONFIG: Record<number, RpcConfig> = {
-  1: {
-    primary: 'https://ethereum-rpc.publicnode.com',
-    fallbacks: [
-      'https://1rpc.io/eth',
-      'https://rpc.ankr.com/eth',
-      'https://eth-mainnet.nodereal.io/v1/1659dfb40aa24bbb8153a677b98064d7'
-    ]
-  },
-  10: {
-    primary: 'https://optimism.public.blockpi.network/v1/rpc/public',
-    fallbacks: [
-      'https://1rpc.io/op',
-      'https://optimism-public.nodies.app',
-      'https://optimism-mainnet.public.blastapi.io'
-    ]
-  },
-  137: {
-    primary: 'https://polygon-bor-rpc.publicnode.com',
-    fallbacks: ['https://rpc.ankr.com/polygon', 'https://1rpc.io/matic', 'https://polygon-public.nodies.app']
-  },
-  42161: {
-    primary: 'https://arbitrum-one.public.blastapi.io',
-    fallbacks: ['https://1rpc.io/arb', 'https://arbitrum-one-public.nodies.app', 'https://rpc.ankr.com/arbitrum']
-  },
-  8453: {
-    primary: 'https://base-mainnet.public.blastapi.io',
-    fallbacks: [
-      'https://1rpc.io/base',
-      'https://base-public.nodies.app',
-      'https://base.public.blockpi.network/v1/rpc/public'
-    ]
-  },
-  250: {
-    primary: 'https://fantom-rpc.publicnode.com',
-    fallbacks: ['https://1rpc.io/ftm', 'https://fantom-public.nodies.app', 'https://fantom-mainnet.public.blastapi.io']
-  }
-}
-
 export function getAllRpcEndpoints(chainId: number): string[] {
-  const config = RPC_CONFIG[chainId]
-  if (!config) return []
-  return [config.primary, ...config.fallbacks]
+  const defaults = getChainRegistration(chainId)?.optimizationRpcUrls ?? []
+  const override = getServerRpcOverride(chainId)
+  return [...new Set([...(override ? [override] : []), ...defaults])]
 }
 
 const MULTICALL3_ADDRESS = '0xcA11bde05977b3631167028862bE2a173976CA11'

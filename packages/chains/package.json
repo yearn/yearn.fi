@@ -1,0 +1,27 @@
+{
+  "name": "@yearn/chains",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    ".": "./src/index.ts",
+    "./registry": "./src/registry.ts",
+    "./profiles": "./src/profiles.ts",
+    "./selectors": "./src/selectors.ts",
+    "./rpc": "./src/rpc.ts",
+    "./validation": "./src/validation.ts"
+  },
+  "scripts": {
+    "test": "vitest run",
+    "typecheck": "tsc -p tsconfig.json --noEmit",
+    "check": "bun src/check.ts"
+  },
+  "dependencies": {
+    "viem": "2.55.11"
+  },
+  "devDependencies": {
+    "typescript": "5.9.3",
+    "vitest": "4.1.11"
+  }
+}

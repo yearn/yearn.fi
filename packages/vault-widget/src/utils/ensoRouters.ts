@@ -1,15 +1,8 @@
+import { ENSO_ROUTERS } from '@yearn/chains'
 import { toAddress } from '@yearn/vault-widget/internal/utils'
 import { type Address, isAddressEqual } from 'viem'
 
-export const KNOWN_ENSO_ROUTER_ADDRESSES_BY_CHAIN: Record<number, Address> = {
-  1: '0xF75584eF6673aD213a685a1B58Cc0330B8eA22Cf',
-  10: '0xF75584eF6673aD213a685a1B58Cc0330B8eA22Cf',
-  137: '0xF75584eF6673aD213a685a1B58Cc0330B8eA22Cf',
-  42161: '0xF75584eF6673aD213a685a1B58Cc0330B8eA22Cf',
-  8453: '0xF75584eF6673aD213a685a1B58Cc0330B8eA22Cf',
-  747474: '0x3067BDBa0e6628497d527bEF511c22DA8b32cA3F',
-  4663: '0xCfBAa9Cfce952Ca4F4069874fF1Df8c05e37a3c7'
-}
+export const KNOWN_ENSO_ROUTER_ADDRESSES_BY_CHAIN = ENSO_ROUTERS
 
 export const UNKNOWN_ENSO_APPROVAL_ROUTER_MESSAGE = 'This approval address is not a known Enso router address.'
 

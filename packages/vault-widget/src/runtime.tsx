@@ -146,6 +146,8 @@ export type VaultWidgetRoutingRuntime = {
 }
 
 export type VaultWidgetChainsRuntime = {
+  /** Chains the host offers for token routing; independent of wallet metadata lookup. */
+  selectableChains?: readonly VaultWidgetChain[]
   getChain: (chainId: number) => VaultWidgetChain | undefined
   isConnectedToExecutionChain: (connectedChainId: number | undefined, targetChainId: number | undefined) => boolean
   resolveCanonicalChainId: (chainId: number | undefined) => number | undefined
@@ -342,6 +344,7 @@ export function createVaultWidgetRuntime(overrides: VaultWidgetRuntimeOverrides 
       tokenListsByChain: overrides.catalog?.tokenListsByChain ?? DEFAULT_VAULT_WIDGET_RUNTIME.catalog.tokenListsByChain
     },
     chains: {
+      selectableChains: overrides.chains?.selectableChains ?? [],
       getChain: overrides.chains?.getChain ?? DEFAULT_VAULT_WIDGET_RUNTIME.chains.getChain,
       isConnectedToExecutionChain:
         overrides.chains?.isConnectedToExecutionChain ??

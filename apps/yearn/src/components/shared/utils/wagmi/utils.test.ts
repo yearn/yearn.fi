@@ -5,6 +5,7 @@ describe('getNetwork', () => {
   afterEach(() => {
     vi.resetModules()
     vi.doUnmock('@/config/tenderly')
+    vi.doUnmock('@/env')
   })
 
   it('leaves the default block explorer empty for Tenderly execution chains without explicit explorer URIs', async () => {
@@ -19,5 +20,21 @@ describe('getNetwork', () => {
     const { getNetwork } = await import('./utils')
 
     expect(getNetwork(73571).defaultBlockExplorer).toBe('')
+  })
+  it('keeps Tenderly ahead of individual public RPC variables', async () => {
+    vi.doMock('@/env', () => ({
+      env: {
+        NEXT_PUBLIC_RPC_URI_FOR_1: 'https://ethereum.override.example',
+        NEXT_PUBLIC_RPC_URI_FOR_4663: ' https://robinhood.override.example '
+      }
+    }))
+    vi.doMock('@/config/tenderly', () => ({
+      resolveTenderlyExplorerUriForExecutionChainId: () => undefined,
+      resolveTenderlyRpcUriForExecutionChainId: (id: number) => (id === 1 ? 'https://fork.example' : undefined),
+      supportedChainLookup: []
+    }))
+    const { getRpcUriFor } = await import('./utils')
+    expect(getRpcUriFor(4663)).toBe('https://robinhood.override.example')
+    expect(getRpcUriFor(1)).toBe('https://fork.example')
   })
 })

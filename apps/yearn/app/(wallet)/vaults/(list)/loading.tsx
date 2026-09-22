@@ -7,6 +7,7 @@ import { IconGitCompare } from '@shared/icons/IconGitCompare'
 import { IconSearch } from '@shared/icons/IconSearch'
 import { LogoYearn } from '@shared/icons/LogoYearn'
 import { cl, SUPPORTED_NETWORKS } from '@shared/utils'
+import { getVaultChainIds } from '@yearn/chains'
 import type { ReactElement } from 'react'
 import { env } from '@/env'
 
@@ -16,7 +17,7 @@ const VAULT_LIST_HEAD_ITEMS = [
   { label: 'Est. APY', className: 'col-span-6' },
   { label: 'TVL', className: 'col-span-5' }
 ] as const
-const LOADING_CHAIN_IDS = [1, 747474, 8453, 10] as const
+const LOADING_CHAIN_IDS = getVaultChainIds('all')
 const CHAIN_FILTERS = [
   { label: 'All Chains', chainId: null },
   ...LOADING_CHAIN_IDS.map((chainId) => ({

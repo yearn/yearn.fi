@@ -21,7 +21,7 @@ const securityHeaders = [
 
 const nextConfig: NextConfig = {
   poweredByHeader: false,
-  transpilePackages: ['@yearn/vault-widget'],
+  transpilePackages: ['@yearn/chains', '@yearn/vault-widget'],
   turbopack: {
     resolveAlias: {
       '@safe-global/safe-apps-sdk': '../../node_modules/@safe-global/safe-apps-sdk/dist/esm'

@@ -1,4 +1,5 @@
 import { useQuery } from '@tanstack/react-query'
+import { getRpcBalanceFallbackChainIds } from '@yearn/chains'
 import { useMemo } from 'react'
 import type { TAddress } from '../types/address'
 import type { TChainTokens, TNDict } from '../types/mixed'
@@ -24,7 +25,7 @@ type TEnsoBalanceResponse = {
 /*******************************************************************************
  ** Enso API configuration - uses server proxy to handle auth
  ******************************************************************************/
-export const ENSO_UNSUPPORTED_NETWORKS = [250]
+export const ENSO_UNSUPPORTED_NETWORKS = getRpcBalanceFallbackChainIds()
 
 /*******************************************************************************
  ** Fetch balances from Enso API for a given address

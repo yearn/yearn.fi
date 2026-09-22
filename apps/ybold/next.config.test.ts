@@ -29,7 +29,7 @@ describe('yBOLD Next configuration', () => {
       }
     ])
     expect(nextConfig.poweredByHeader).toBe(false)
-    expect(nextConfig.transpilePackages).toEqual(['@yearn/vault-widget'])
+    expect(nextConfig.transpilePackages).toEqual(['@yearn/chains', '@yearn/vault-widget'])
     expect(nextConfig.turbopack?.resolveAlias?.['@safe-global/safe-apps-sdk']).toBe(
       '../../node_modules/@safe-global/safe-apps-sdk/dist/esm'
     )

@@ -1,3 +1,4 @@
+import { CHAIN_REGISTRY } from '@yearn/chains'
 export const KONG_REST_BASE = (
   process.env.KONG_REST_URL ||
   process.env.NEXT_PUBLIC_KONG_REST_URL ||
@@ -9,16 +10,9 @@ export const KONG_VAULT_LIST_URL = `${KONG_REST_BASE}/list/vaults`
 export const KONG_SNAPSHOT_URL_PATTERN = `${KONG_REST_BASE}/snapshot/{chainId}/{address}`
 export const VAULT_PAGE_URL_PATTERN = `${SITE_URL}/vaults/{chainId}/{address}`
 
-export const CHAIN_NAMES: Record<number, string> = {
-  1: 'Ethereum',
-  10: 'Optimism',
-  137: 'Polygon',
-  250: 'Fantom',
-  8453: 'Base',
-  42161: 'Arbitrum',
-  146: 'Sonic',
-  747474: 'Katana'
-}
+export const CHAIN_NAMES: Record<number, string> = Object.fromEntries(
+  CHAIN_REGISTRY.map(({ chain, displayName }) => [chain.id, displayName])
+)
 
 export const SITEMAP_STATIC_PAGES = [
   { path: '/', priority: '1.0', changefreq: 'daily' },
