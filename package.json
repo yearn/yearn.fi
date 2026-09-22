@@ -32,12 +32,12 @@
     "tslint:yearn": "bun run --cwd apps/yearn tslint",
     "tslint:ybold": "bun run --cwd apps/ybold tslint",
     "tslint:widget": "bun run --cwd packages/vault-widget typecheck",
-    "tslint:all": "bun run tslint:widget && bun run tslint:ybold && bun run tslint:yearn && bun run tslint:4626",
+    "tslint:all": "bun run tslint:chains && bun run tslint:widget && bun run tslint:ybold && bun run tslint:yearn && bun run tslint:4626",
     "test": "bun run test:yearn",
     "test:yearn": "bun run --cwd apps/yearn test",
     "test:ybold": "bun run --cwd apps/ybold test",
     "test:widget": "bun run --cwd packages/vault-widget test",
-    "test:all": "bun run test:widget && bun run test:ybold && bun run test:yearn && bun run test:4626",
+    "test:all": "bun run chains:check && bun run test:chains && bun run test:widget && bun run test:ybold && bun run test:yearn && bun run test:4626",
     "check:yearn": "bun run tslint:yearn && bun run test:yearn && bun run build:yearn",
     "check:ybold": "bun run tslint:ybold && bun run test:ybold && bun run build:ybold",
     "check:widget": "bun run check:vault-widget-boundary && bun run tslint:widget && bun run test:widget",
@@ -50,7 +50,10 @@
     "preview:4626": "bun run --cwd apps/4626 start",
     "tslint:4626": "bun run --cwd apps/4626 tslint",
     "test:4626": "bun run --cwd apps/4626 test",
-    "check:4626": "bun run tslint:4626 && bun run test:4626 && bun run build:4626"
+    "check:4626": "bun run tslint:4626 && bun run test:4626 && bun run build:4626",
+    "chains:check": "bun run --cwd packages/chains check",
+    "tslint:chains": "bun run --cwd packages/chains typecheck",
+    "test:chains": "bun run --cwd packages/chains test"
   },
   "overrides": {
     "qr": "0.5.5"

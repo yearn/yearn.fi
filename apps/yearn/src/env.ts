@@ -9,6 +9,7 @@ type TClientEnv = {
 
 export const env: TClientEnv = {
   BASE_URL: '/',
+  NEXT_PUBLIC_CHAIN_RPC_URLS: process.env.NEXT_PUBLIC_CHAIN_RPC_URLS,
   DEV: process.env.NODE_ENV !== 'production',
   MODE: process.env.NODE_ENV || 'development',
   PROD: process.env.NODE_ENV === 'production',

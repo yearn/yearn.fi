@@ -63,5 +63,8 @@
     "viem": "2.55.11",
     "vitest": "4.1.11",
     "wagmi": "2.18.2"
+  },
+  "dependencies": {
+    "@yearn/chains": "workspace:*"
   }
 }

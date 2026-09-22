@@ -100,7 +100,7 @@ function WidgetHost({ children }: { children: ReactNode }) {
         isConnectedToExecutionChain: (connected, target) => connected === target,
         getChain: (id) => {
           const chain = getChain(id)
-          return chain ? { id, name: chain.name, blockExplorerUrl: chain.blockExplorers.default.url } : undefined
+          return chain ? { id, name: chain.name, blockExplorerUrl: chain.blockExplorers?.default.url } : undefined
         }
       },
       execution,
@@ -182,7 +182,7 @@ function Notice({
       void update({ id: notice.id, status: 'error' })
     }
   }, [notice.id, pending, queryClient, receipt.data, replacement, safe.data?.status, update])
-  const explorer = getChain(notice.fromChainId)?.blockExplorers.default.url
+  const explorer = getChain(notice.fromChainId)?.blockExplorers?.default.url
   const label =
     notice.status === 'success'
       ? 'Confirmed'

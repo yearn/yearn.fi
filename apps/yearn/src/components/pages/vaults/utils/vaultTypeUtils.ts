@@ -1,8 +1,8 @@
+import { getVaultChainIds } from '@yearn/chains'
 import { V2_SUPPORTED_CHAINS, V3_SUPPORTED_CHAINS } from './constants'
 import type { TVaultType } from './vaultTypeCopy'
 
-//TODO: see what can be combined with src/components/pages/vaults/utils/constants.ts
-export const ALL_SUPPORTED_CHAINS = [1, 747474, 8453, 10, 4663]
+export const ALL_SUPPORTED_CHAINS = getVaultChainIds('all')
 
 export function normalizeVaultTypeParam(typeParam: string | null): TVaultType {
   if (typeParam === 'all') return 'all'

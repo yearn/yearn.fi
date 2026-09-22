@@ -1,24 +1,21 @@
 import type { TToken } from '@shared/types'
-import { arbitrum, base, fantom, mainnet, optimism, polygon, sonic } from 'viem/chains'
+import { getWrappedNativeAddress } from '@yearn/chains'
 import { supportedAppChains } from '@/config/supportedChains'
 import { toAddress } from './tools.address'
 
-// set chains in apps/yearn/src/config/chainDefinitions.ts, not here.
-export const SUPPORTED_NETWORKS = supportedAppChains.length
-  ? supportedAppChains
-  : [mainnet, optimism, polygon, fantom, base, arbitrum, sonic]
+export const SUPPORTED_NETWORKS = supportedAppChains
 
 export const MULTICALL3_ADDRESS = toAddress('0xcA11bde05977b3631167028862bE2a173976CA11')
 
 // Various tokens that are used in the app
 export const ZERO_ADDRESS = toAddress('0x0000000000000000000000000000000000000000')
 export const ETH_TOKEN_ADDRESS = toAddress('0xeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeeee')
-export const WETH_TOKEN_ADDRESS = toAddress('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2')
-export const WFTM_TOKEN_ADDRESS = toAddress('0x21be370D5312f44cB42ce377BC9b8a0cEF1A4C83')
-export const OPT_WETH_TOKEN_ADDRESS = toAddress('0x4200000000000000000000000000000000000006')
-export const BASE_WETH_TOKEN_ADDRESS = toAddress('0x4200000000000000000000000000000000000006')
-export const ARB_WETH_TOKEN_ADDRESS = toAddress('0x82aF49447D8a07e3bd95BD0d56f35241523fBab1')
-export const ROBINHOOD_ETH_TOKEN_ADDRESS = toAddress('0x0Bd7D308f8E1639FAb988df18A8011f41EAcAD73')
+export const WETH_TOKEN_ADDRESS = toAddress(getWrappedNativeAddress(1)!)
+export const WFTM_TOKEN_ADDRESS = toAddress(getWrappedNativeAddress(250)!)
+export const OPT_WETH_TOKEN_ADDRESS = toAddress(getWrappedNativeAddress(10)!)
+export const BASE_WETH_TOKEN_ADDRESS = toAddress(getWrappedNativeAddress(8453)!)
+export const ARB_WETH_TOKEN_ADDRESS = toAddress(getWrappedNativeAddress(42161)!)
+export const ROBINHOOD_ETH_TOKEN_ADDRESS = toAddress(getWrappedNativeAddress(4663)!)
 export const MAX_UINT_256 = 0x7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffn
 
 export const DEFAULT_ERC20: TToken = {

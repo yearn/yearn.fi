@@ -1,13 +1,6 @@
 import type { TAddress } from '@shared/types'
-import {
-  ARB_WETH_TOKEN_ADDRESS,
-  BASE_WETH_TOKEN_ADDRESS,
-  ETH_TOKEN_ADDRESS,
-  OPT_WETH_TOKEN_ADDRESS,
-  ROBINHOOD_ETH_TOKEN_ADDRESS,
-  WETH_TOKEN_ADDRESS,
-  WFTM_TOKEN_ADDRESS
-} from './constants'
+import { getWrappedNativeAddress, PRICE_CHAIN_NAMES } from '@yearn/chains'
+import { ETH_TOKEN_ADDRESS } from './constants'
 import type { TYearnPricesSpotResponse } from './schemas/yearnPricesSpotSchema'
 import { toAddress } from './tools.address'
 import { isZeroAddress } from './tools.is'
@@ -19,32 +12,11 @@ export type TYearnPriceToken = {
 
 export type TYearnPricesByChain = Record<number, Partial<Record<TAddress, number>>>
 
-export const YEARN_PRICES_CHAIN_NAME_BY_ID = {
-  1: 'ethereum',
-  10: 'optimism',
-  100: 'gnosis',
-  137: 'polygon',
-  146: 'sonic',
-  250: 'fantom',
-  8453: 'base',
-  42161: 'arbitrum',
-  80094: 'berachain',
-  747474: 'katana',
-  4663: 'robinhood'
-} as const
+export const YEARN_PRICES_CHAIN_NAME_BY_ID = PRICE_CHAIN_NAMES
 
 const YEARN_PRICES_CHAIN_ID_BY_NAME = Object.fromEntries(
   Object.entries(YEARN_PRICES_CHAIN_NAME_BY_ID).map(([chainID, name]) => [name, Number(chainID)])
 ) as Record<string, number>
-
-const NATIVE_WRAPPER_BY_CHAIN_ID: Partial<Record<number, TAddress>> = {
-  1: WETH_TOKEN_ADDRESS,
-  10: OPT_WETH_TOKEN_ADDRESS,
-  250: WFTM_TOKEN_ADDRESS,
-  8453: BASE_WETH_TOKEN_ADDRESS,
-  42161: ARB_WETH_TOKEN_ADDRESS,
-  4663: ROBINHOOD_ETH_TOKEN_ADDRESS
-}
 
 export function resolveYearnPricesSpotAddress(address: string | null | undefined, chainID: number): TAddress | null {
   const normalizedAddress = toAddress(address)
@@ -53,7 +25,7 @@ export function resolveYearnPricesSpotAddress(address: string | null | undefined
   }
 
   if (normalizedAddress.toLowerCase() === ETH_TOKEN_ADDRESS.toLowerCase()) {
-    return NATIVE_WRAPPER_BY_CHAIN_ID[chainID] ?? normalizedAddress
+    return getWrappedNativeAddress(chainID) ?? normalizedAddress
   }
 
   return normalizedAddress
