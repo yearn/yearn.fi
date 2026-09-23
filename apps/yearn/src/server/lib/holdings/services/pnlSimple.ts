@@ -2548,7 +2548,14 @@ function getProtocolReturnHistoryExclusions(
   return excluded
 }
 
-function calculateProtocolReturnHistorySeries(args: Parameters<typeof buildProtocolReturnHistorySeries>[0]): {
+function calculateProtocolReturnHistorySeries(
+  args: Parameters<typeof buildProtocolReturnHistorySeries>[0],
+  observer?: {
+    excludedVaultKeys?: TGrowthExclusions
+    onValuation: (vaults: HoldingsPnLSimpleVault[], indexPointsPerGrowthUsd: number) => void
+    onHistoryPoint: (timestamp: number, vaults: HoldingsPnLSimpleVault[]) => void
+  }
+): {
   dataPoints: HoldingsPnLSimpleHistoryPoint[]
   excludedVaultKeys: TGrowthExclusions
 } {
@@ -2590,7 +2597,7 @@ function calculateProtocolReturnHistorySeries(args: Parameters<typeof buildProto
   ].toSorted(
     (left, right) => left.timestamp - right.timestamp || Number(left.event === null) - Number(right.event === null)
   )
-  const excludedVaultKeys = getProtocolReturnHistoryExclusions(timeline, eventContext)
+  const excludedVaultKeys = observer?.excludedVaultKeys ?? getProtocolReturnHistoryExclusions(timeline, eventContext)
   const growthIndexSeed = excludedVaultKeys.eth.size === 0 ? args.growthIndexSeed : undefined
   const markGrowthIndex = (timestamp: number, afterReceipt = false) => {
     const vaults = materializeProtocolReturnVaults({
@@ -2604,6 +2611,12 @@ function calculateProtocolReturnHistorySeries(args: Parameters<typeof buildProto
     )
     const indexSummary = buildSummary(indexVaults)
     const receivedCapital = afterReceipt ? Math.max(0, indexSummary.baselineWeightUsd - state.baselineWeightUsd) : 0
+    const capitalWeightUsd = state.openCapitalWeightUsd + receivedCapital
+    // Attribute each vault before netting returns, including intervals whose gains and losses cancel.
+    const indexPointsPerGrowthUsd =
+      state.initialized && state.indexValuationComplete && capitalWeightUsd > 0
+        ? (state.growthIndex ?? 100) / capitalWeightUsd
+        : 0
     // An unknown cached return cannot be linked later by silently starting again at 100.
     state.growthIndex = !state.indexValuationComplete
       ? null
@@ -2611,7 +2624,7 @@ function calculateProtocolReturnHistorySeries(args: Parameters<typeof buildProto
         ? advanceGrowthIndex({
             previousIndex: state.growthIndex,
             deltaGrowthWeightUsd: indexSummary.growthWeightUsd - state.growthWeightUsd,
-            capitalWeightUsd: state.openCapitalWeightUsd + receivedCapital
+            capitalWeightUsd
           })
         : indexSummary.baselineWeightUsd > 0 || indexSummary.growthWeightUsd !== 0
           ? 100
@@ -2625,6 +2638,7 @@ function calculateProtocolReturnHistorySeries(args: Parameters<typeof buildProto
           total + (excludedVaultKeys.usd.has(key) ? 0 : getOutstandingBaselineWeightUsd(ledger.lots)),
         0
       ) + indexSummary.unrealizedGrowthWeightUsd
+    observer?.onValuation(indexVaults, indexPointsPerGrowthUsd)
     return { vaults, summary: indexSummary, indexVaults }
   }
 
@@ -2654,6 +2668,7 @@ function calculateProtocolReturnHistorySeries(args: Parameters<typeof buildProto
           state.indexValuationComplete = false
         }
       }
+      observer?.onHistoryPoint(timestamp, vaults)
       const selectedVaults = selectedVaultKeys.length
         ? vaults.filter((vault) => selectedVaultKeySet.has(toVaultKey(vault.chainId, vault.vaultAddress)))
         : []
@@ -2700,9 +2715,6 @@ export function buildProtocolReturnFamilyHistorySeries(args: {
     return []
   }
 
-  const userAddress = lowerCaseAddress(args.userAddress)
-  const effectiveEvents = buildEffectiveSimpleEvents(args.events, userAddress)
-  const groupedTransactions = groupEventsByTransaction(effectiveEvents)
   const selectedVaultKeys = new Set(args.selectedVaults.map((vault) => toVaultKey(vault.chainId, vault.vaultAddress)))
   const selectedVaultsByKey = new Map(
     args.selectedVaults.map((vault) => [toVaultKey(vault.chainId, vault.vaultAddress), vault] as const)
@@ -2711,9 +2723,6 @@ export function buildProtocolReturnFamilyHistorySeries(args: {
     Array.from(selectedVaultKeys, (key) => [key, []] as const)
   )
 
-  let ledgers = new Map<string, TProtocolReturnLedger>()
-  let transactionIndex = 0
-  let previousPortfolioPoint: HoldingsPnLSimpleHistoryPoint | null = null
   const portfolioPointByTimestamp = new Map(
     (args.portfolioPoints ?? []).map((point) => [point.timestamp, point] as const)
   )
@@ -2743,117 +2752,77 @@ export function buildProtocolReturnFamilyHistorySeries(args: {
     )
   )
 
-  args.timestamps.forEach((timestamp) => {
-    while (
-      transactionIndex < groupedTransactions.length &&
-      groupedTransactions[transactionIndex]![0]!.blockTimestamp <= timestamp
-    ) {
-      groupTransactionEventsByFamily(groupedTransactions[transactionIndex]!).forEach((txFamilyEvents) => {
-        normalizeStakingWrapperEvents(txFamilyEvents, userAddress).forEach((event) => {
-          processEvent(ledgers, event, {
-            userAddress,
-            metadata: args.metadata,
-            ppsData: args.ppsData,
-            priceData: args.priceData,
-            exitPriceData: args.exitPriceData ?? args.priceData,
-            ethPriceData: args.ethPriceData ?? new Map(),
-            useDailyPpsForFlows: true
+  const firstPortfolioPoint = args.portfolioPoints?.[0]
+  calculateProtocolReturnHistorySeries(
+    {
+      ...args,
+      growthIndexSeed: firstPortfolioPoint
+        ? { timestamp: firstPortfolioPoint.timestamp, growthIndex: firstPortfolioPoint.growthIndex }
+        : undefined
+    },
+    {
+      excludedVaultKeys: args.excludedVaultKeys,
+      onValuation: (vaults, indexPointsPerGrowthUsd) => {
+        vaults.forEach((vault) => {
+          const key = toVaultKey(vault.chainId, vault.vaultAddress)
+          const currentGrowth = vault.growthWeightUsd ?? 0
+          if (selectedVaultKeys.has(key)) {
+            const deltaGrowth = currentGrowth - (previousFamilyGrowthWeightUsd.get(key) ?? 0)
+            familyIndexContribution.set(
+              key,
+              (familyIndexContribution.get(key) ?? 0) + deltaGrowth * indexPointsPerGrowthUsd
+            )
+          }
+          previousFamilyGrowthWeightUsd.set(key, currentGrowth)
+        })
+      },
+      onHistoryPoint: (timestamp, vaults) => {
+        const vaultsByKey = new Map(vaults.map((vault) => [toVaultKey(vault.chainId, vault.vaultAddress), vault]))
+        const portfolioPoint = portfolioPointByTimestamp.get(timestamp)
+        selectedVaultKeys.forEach((vaultKey) => {
+          const familyVault = vaultsByKey.get(vaultKey)
+          const state = familyIndexState.get(vaultKey)
+
+          if (!state) {
+            return
+          }
+
+          const hasOpenPosition = (familyVault?.sharesFormatted ?? 0) > 0
+          const currentPps = familyVault?.pricePerShare ?? null
+          const closesPosition = state.wasOpen && !hasOpenPosition
+
+          state.growthIndex = advanceVaultPerformanceIndex({
+            previousIndex: state.growthIndex,
+            previousPps: state.previousPps,
+            currentPps,
+            wasOpen: state.wasOpen,
+            isOpen: hasOpenPosition
+          })
+          state.previousPps = hasOpenPosition && currentPps !== null && currentPps > 0 ? currentPps : null
+          state.wasOpen = hasOpenPosition
+
+          familyPointMap.get(vaultKey)?.push({
+            timestamp,
+            growthWeightUsd: args.excludedVaultKeys?.usd.has(vaultKey)
+              ? null
+              : familyVault
+                ? familyVault.growthWeightUsd
+                : 0,
+            growthWeightEth: args.excludedVaultKeys?.eth.has(vaultKey)
+              ? null
+              : familyVault
+                ? familyVault.growthWeightEth
+                : 0,
+            growthIndex: hasOpenPosition || closesPosition ? state.growthIndex : null,
+            growthIndexContribution:
+              !args.excludedVaultKeys?.usd.has(vaultKey) && typeof portfolioPoint?.growthIndex === 'number'
+                ? (familyIndexContribution.get(vaultKey) ?? 0)
+                : null
           })
         })
-      })
-      transactionIndex += 1
-    }
-
-    ledgers = Array.from(ledgers.entries()).reduce<Map<string, TProtocolReturnLedger>>((nextLedgers, [key, ledger]) => {
-      nextLedgers.set(key, accrueLedgerExposure(ledger, timestamp))
-      return nextLedgers
-    }, new Map())
-
-    const vaultsByKey = new Map(
-      materializeProtocolReturnVaults({
-        ledgers,
-        metadata: args.metadata,
-        ppsData: args.ppsData,
-        currentTimestamp: timestamp
-      }).map((vault) => [toVaultKey(vault.chainId, vault.vaultAddress), vault] as const)
-    )
-    const portfolioPoint = portfolioPointByTimestamp.get(timestamp) ?? null
-    const previousPortfolioIndex = previousPortfolioPoint?.growthIndex
-    const portfolioIndex = portfolioPoint?.growthIndex
-    const canAttributeIndex = typeof previousPortfolioIndex === 'number' && typeof portfolioIndex === 'number'
-    const growthWeightDelta = Array.from(vaultsByKey.entries()).reduce(
-      (total, [key, vault]) =>
-        args.excludedVaultKeys?.usd.has(key)
-          ? total
-          : total + (vault.growthWeightUsd ?? 0) - (previousFamilyGrowthWeightUsd.get(key) ?? 0),
-      0
-    )
-    const indexPointsPerGrowthUsd =
-      canAttributeIndex && Math.abs(growthWeightDelta) > Number.EPSILON
-        ? (portfolioIndex - previousPortfolioIndex) / growthWeightDelta
-        : 0
-
-    if (canAttributeIndex) {
-      selectedVaultKeys.forEach((vaultKey) => {
-        if (args.excludedVaultKeys?.usd.has(vaultKey)) {
-          return
-        }
-        const currentGrowthWeightUsd = vaultsByKey.get(vaultKey)?.growthWeightUsd ?? 0
-        const previousGrowthWeightUsd = previousFamilyGrowthWeightUsd.get(vaultKey) ?? 0
-        familyIndexContribution.set(
-          vaultKey,
-          (familyIndexContribution.get(vaultKey) ?? 0) +
-            (currentGrowthWeightUsd - previousGrowthWeightUsd) * indexPointsPerGrowthUsd
-        )
-      })
-    }
-
-    selectedVaultKeys.forEach((vaultKey) => {
-      const familyVault = vaultsByKey.get(vaultKey)
-      const state = familyIndexState.get(vaultKey)
-
-      if (!state) {
-        return
       }
-
-      const hasOpenPosition = (familyVault?.sharesFormatted ?? 0) > 0
-      const currentPps = familyVault?.pricePerShare ?? null
-      const closesPosition = state.wasOpen && !hasOpenPosition
-
-      state.growthIndex = advanceVaultPerformanceIndex({
-        previousIndex: state.growthIndex,
-        previousPps: state.previousPps,
-        currentPps,
-        wasOpen: state.wasOpen,
-        isOpen: hasOpenPosition
-      })
-      state.previousPps = hasOpenPosition && currentPps !== null && currentPps > 0 ? currentPps : null
-      state.wasOpen = hasOpenPosition
-
-      familyPointMap.get(vaultKey)?.push({
-        timestamp,
-        growthWeightUsd: args.excludedVaultKeys?.usd.has(vaultKey)
-          ? null
-          : familyVault
-            ? familyVault.growthWeightUsd
-            : 0,
-        growthWeightEth: args.excludedVaultKeys?.eth.has(vaultKey)
-          ? null
-          : familyVault
-            ? familyVault.growthWeightEth
-            : 0,
-        growthIndex: hasOpenPosition || closesPosition ? state.growthIndex : null,
-        growthIndexContribution:
-          !args.excludedVaultKeys?.usd.has(vaultKey) && typeof portfolioPoint?.growthIndex === 'number'
-            ? (familyIndexContribution.get(vaultKey) ?? 0)
-            : null
-      })
-    })
-    vaultsByKey.forEach((vault, vaultKey) => {
-      previousFamilyGrowthWeightUsd.set(vaultKey, vault.growthWeightUsd ?? 0)
-    })
-    previousPortfolioPoint = portfolioPoint
-  })
+    }
+  )
 
   return Array.from(selectedVaultKeys).flatMap((vaultKey) => {
     const selectedVault = selectedVaultsByKey.get(vaultKey)

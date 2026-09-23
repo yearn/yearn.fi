@@ -1,3 +1,4 @@
+import { buildPortfolioGrowthContributionChart } from '@pages/portfolio/utils/portfolioGrowthContributions'
 import * as viem from 'viem'
 import { describe, expect, it, vi } from 'vitest'
 import type { VaultMetadata } from '../types'
@@ -2505,6 +2506,162 @@ describe('pnl simple protocol return', () => {
     expect(history[1]?.protocolReturnPct).toBeCloseTo(9.0909090909)
     expect(history[1]?.growthIndex).toBeCloseTo(109.0909090909)
   })
+
+  it.each([0, 1e-12])('preserves offsetting Index contributions and chart rebasing (residual %s)', (residual) => {
+    const day = 86_400
+    const losingVault = NESTED_OUTER_VAULT
+    const losingKey = toVaultKey(1, losingVault)
+    const inputs = {
+      userAddress: USER,
+      events: [
+        baseEvent({ id: 'winner' }),
+        baseEvent({ id: 'loser', vaultAddress: losingVault, familyVaultAddress: losingVault })
+      ],
+      metadata: new Map([...metadata, [losingKey, { ...metadata.get(VAULT_KEY)!, address: losingVault }]]),
+      ppsData: new Map([
+        [
+          VAULT_KEY,
+          new Map([
+            [100, 1],
+            [day + 100, 1.25],
+            [2 * day + 100, 1.5]
+          ])
+        ],
+        [
+          losingKey,
+          new Map([
+            [100, 1],
+            [day + 100, 0.75 + residual],
+            [2 * day + 100, 0.5 + residual]
+          ])
+        ]
+      ]),
+      priceData: new Map([[ASSET_PRICE_KEY, new Map([[0, 1]])]]),
+      timestamps: [100, day + 100, 2 * day + 100]
+    }
+    const portfolioPoints = buildProtocolReturnHistorySeries(inputs)
+    const selectedVaults = materializeProtocolReturnVaults({
+      ...inputs,
+      ledgers: buildProtocolReturnLedgers({ ...inputs, currentTimestamp: inputs.timestamps[2]! }),
+      currentTimestamp: inputs.timestamps[2]!
+    })
+    const families = buildProtocolReturnFamilyHistorySeries({ ...inputs, selectedVaults, portfolioPoints })
+    expect(
+      families.find((family) => family.vaultAddress === VAULT)!.dataPoints.map((point) => point.growthIndexContribution)
+    ).toEqual([0, expect.closeTo(12.5, 8), expect.closeTo(25, 8)])
+    expect(
+      families
+        .find((family) => family.vaultAddress === losingVault)!
+        .dataPoints.map((point) => point.growthIndexContribution)
+    ).toEqual([0, expect.closeTo(-12.5, 8), expect.closeTo(-25, 8)])
+    portfolioPoints.forEach((point, index) => {
+      expect(
+        100 + families.reduce((sum, family) => sum + family.dataPoints[index]!.growthIndexContribution!, 0)
+      ).toBeCloseTo(point.growthIndex!, 10)
+    })
+
+    // Exercise the same period rebasing and series selection used by Growth > Index.
+    const periodStarts = [0, 1]
+    periodStarts.forEach((start) => {
+      const visiblePoints = portfolioPoints.slice(start)
+      const scale = 100 / visiblePoints[0]!.growthIndex!
+      const chart = buildPortfolioGrowthContributionChart({
+        totalPoints: visiblePoints.map((point) => ({ date: point.date, value: point.growthIndex! * scale })),
+        familySeries: families.map((family) => ({
+          ...family,
+          label: family.vaultAddress,
+          dataPoints: family.dataPoints.map((point) => ({
+            timestamp: point.timestamp,
+            value: point.growthIndexContribution! * scale
+          }))
+        })),
+        baseContribution: { key: 'starting_index', label: 'Starting index', value: 100 }
+      })
+      const named = chart.series.filter((series) => !series.isBase && !series.isOther)
+      expect(named).toHaveLength(2)
+      expect(named.find((series) => series.vaultAddress === VAULT)?.terminalValue).toBeCloseTo(
+        start === 0 ? 25 : 12.5,
+        8
+      )
+      expect(named.find((series) => series.vaultAddress === losingVault)?.terminalValue).toBeCloseTo(
+        start === 0 ? -25 : -12.5,
+        8
+      )
+      expect(chart.data.at(-1)?.other).toBeCloseTo(0, 10)
+    })
+  })
+
+  it.each(['deposit', 'withdrawal'] as const)(
+    'weights offsetting Index contributions around an intervening %s',
+    (kind) => {
+      const day = 86_400
+      const losingVault = NESTED_OUTER_VAULT
+      const losingKey = toVaultKey(1, losingVault)
+      const isDeposit = kind === 'deposit'
+      const inputs = {
+        userAddress: USER,
+        events: [
+          baseEvent({ id: 'winner' }),
+          baseEvent({ id: 'loser', vaultAddress: losingVault, familyVaultAddress: losingVault }),
+          baseEvent({
+            kind,
+            id: 'flow',
+            blockTimestamp: day + 100,
+            blockNumber: 2,
+            shares: (isDeposit ? 100n : 50n) * ONE,
+            assets: isDeposit ? 125n * ONE : (625n * ONE) / 10n,
+            owner: USER,
+            sender: USER,
+            receiver: isDeposit ? USER : OTHER
+          })
+        ],
+        metadata: new Map([...metadata, [losingKey, { ...metadata.get(VAULT_KEY)!, address: losingVault }]]),
+        ppsData: new Map([
+          [
+            VAULT_KEY,
+            new Map([
+              [0, 1],
+              [day, 1.25],
+              [2 * day, isDeposit ? 1.375 : 1.75]
+            ])
+          ],
+          [
+            losingKey,
+            new Map([
+              [0, 1],
+              [day, 0.75],
+              [2 * day, 0.5]
+            ])
+          ]
+        ]),
+        priceData: new Map([
+          [
+            ASSET_PRICE_KEY,
+            new Map([
+              [0, 1],
+              [day, 1]
+            ])
+          ]
+        ]),
+        timestamps: [day - 1, 3 * day - 1]
+      }
+      const portfolioPoints = buildProtocolReturnHistorySeries(inputs)
+      const selectedVaults = materializeProtocolReturnVaults({
+        ...inputs,
+        ledgers: buildProtocolReturnLedgers({ ...inputs, currentTimestamp: 3 * day - 1 }),
+        currentTimestamp: 3 * day - 1
+      })
+      const families = buildProtocolReturnFamilyHistorySeries({ ...inputs, selectedVaults, portfolioPoints })
+      const expectedContribution = 12.5 + (25 * 100) / (isDeposit ? 325 : 137.5)
+      expect(portfolioPoints.at(-1)?.growthIndex).toBeCloseTo(100)
+      expect(
+        families.find((family) => family.vaultAddress === VAULT)!.dataPoints.at(-1)?.growthIndexContribution
+      ).toBeCloseTo(expectedContribution)
+      expect(
+        families.find((family) => family.vaultAddress === losingVault)!.dataPoints.at(-1)?.growthIndexContribution
+      ).toBeCloseTo(-expectedContribution)
+    }
+  )
 
   it('builds family comparison history for selected vaults', () => {
     const ledgers = buildProtocolReturnLedgers({
