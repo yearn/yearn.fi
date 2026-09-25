@@ -55,7 +55,7 @@ describe('buildPositionTimeline', () => {
 })
 
 describe('position timeline index', () => {
-  it('matches timeline scans before, between, on, and after balance changes', () => {
+  it('returns settled balances before, at, and after event boundaries', () => {
     const vaultAddress = '0x00000000000000000000000000000000000000AA'
     const otherVaultAddress = '0x00000000000000000000000000000000000000bb'
     const timeline: TimelineEvent[] = [
@@ -70,14 +70,14 @@ describe('position timeline index', () => {
     const timestamps = [50, 100, 199, 200, 299, 300, 350, 400, 500]
 
     expect(timestamps.map((timestamp) => getIndexedShareBalanceAtTimestamp(index, vaultAddress, 1, timestamp))).toEqual(
-      timestamps.map((timestamp) => getShareBalanceAtTimestamp(timeline, vaultAddress, 1, timestamp))
+      [0n, 10n, 10n, 8n, 8n, 0n, 0n, 0n, 0n]
     )
     expect(index.get(`1:${vaultAddress.toLowerCase()}`)?.timestamps).toEqual([100, 200, 300, 400])
     expect(getIndexedShareBalanceAtTimestamp(index, otherVaultAddress.toUpperCase(), 1, 150)).toBe(50n)
     expect(getIndexedShareBalanceAtTimestamp(index, vaultAddress, 10, 500)).toBe(0n)
   })
 
-  it('indexes a large event history once while preserving exact query results', () => {
+  it('returns hand-counted balances from a large event history', () => {
     const vaults = Array.from({ length: 200 }, (_value, index) => `0x${index.toString(16).padStart(40, '0')}`)
     const timeline: TimelineEvent[] = Array.from({ length: 20_000 }, (_value, index) => ({
       vaultAddress: vaults[index % vaults.length]!,
@@ -98,10 +98,6 @@ describe('position timeline index', () => {
       sampleQueries.map(({ vaultAddress, timestamp }) =>
         getIndexedShareBalanceAtTimestamp(positionIndex, vaultAddress, 1, timestamp)
       )
-    ).toEqual(
-      sampleQueries.map(({ vaultAddress, timestamp }) =>
-        getShareBalanceAtTimestamp(timeline, vaultAddress, 1, timestamp)
-      )
-    )
+    ).toEqual([0n, 114n, 200n]) // Negative balance; 57 deposits of 2; 100 deposits of 2.
   })
 })
