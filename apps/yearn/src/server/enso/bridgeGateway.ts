@@ -111,6 +111,9 @@ export async function bridgeGateway(
   const token = process.env.UPSTASH_REDIS_REST_TOKEN_BRIDGE_COORDINATION
   if (!url || !token)
     return Response.json({ error: 'Shared bridge tracking is unavailable. Tracking will retry.' }, { status: 503 })
+  // This server-only fingerprint groups requests using the same provider API key
+  // into one Redis queue and rate-limit budget. It is not a password verifier or
+  // authentication mechanism; it assumes a high-entropy provider-issued key.
   const namespace = createHash('sha256')
     .update(process.env.ENSO_API_KEY ?? 'unauthenticated')
     .digest('hex')
