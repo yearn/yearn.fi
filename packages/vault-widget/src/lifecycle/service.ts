@@ -628,11 +628,12 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
       return flow.id
     }
     const adapter = options.execution()
-    const assertWallet = (): void => {
+    const reviewedChainId = options.wallet().chainId
+    const assertWallet = (expectedChainId = executionChainId, authorize = true): void => {
       if (paused.has(flow.id)) throw new Error('Transaction paused. Close and review before continuing.')
-      input.authorize?.()
+      if (authorize) input.authorize?.()
       const wallet = options.wallet()
-      if (wallet.address?.toLowerCase() !== flow.owner.toLowerCase() || wallet.chainId !== executionChainId)
+      if (wallet.address?.toLowerCase() !== flow.owner.toLowerCase() || wallet.chainId !== expectedChainId)
         throw new Error('Wallet or network changed. Close and review the transaction again.')
     }
     const assertPriorReceipts = (): void => {
@@ -681,6 +682,29 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
         await boundedStorage((signal) => options.beforeStart!(input, signal)).catch((error) => {
           throw new VaultWidgetPreparationError(error)
         })
+      // Request the initial source-network switch only after recovery/deduplication.
+      // Subsequent account/network changes still require explicit review/Continue.
+      try {
+        assertWallet(reviewedChainId, false)
+        if (reviewedChainId !== executionChainId) {
+          await adapter.switchChain({ chainId: call.chainId })
+          const deadline = Date.now() + 10_000
+          const waitForWalletNetwork = async (): Promise<void> => {
+            // React-backed hosts may publish the new chain after the switch promise resolves.
+            const chainId = options.wallet().chainId
+            assertWallet(chainId, false)
+            if (chainId === executionChainId) return
+            if (chainId !== reviewedChainId || Date.now() >= deadline)
+              throw new Error('Wallet network switch did not complete. Close and review the transaction again.')
+            await new Promise<void>((resolve) => setTimeout(resolve, 50))
+            return waitForWalletNetwork()
+          }
+          await waitForWalletNetwork()
+        }
+        assertWallet(executionChainId, false)
+      } catch (error) {
+        throw new VaultWidgetPreparationError(error)
+      }
       await executeTransactionPlan({
         account: flow.owner,
         plan: frozen.plan,

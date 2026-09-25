@@ -219,10 +219,7 @@ export async function GET(request: Request): Promise<Response> {
   })()
   if (input instanceof Response) return input
   const identity = JSON.stringify(input)
-  const result =
-    process.env.NEXT_PUBLIC_TRANSACTION_LIFECYCLE_BRIDGES === 'true'
-      ? await bridgeGateway(identity, requestBridgeStatus)
-      : await requestBridgeStatus(AbortSignal.timeout(9_000), identity)
+  const result = await bridgeGateway(identity, requestBridgeStatus)
 
   return new Response(result.body, {
     status: result.status,

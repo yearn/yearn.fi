@@ -4,12 +4,12 @@ Branch: `codex/transaction-lifecycle-v2`, rebased onto `origin/main` at `8774a14
 Last committed integration: `50a8f398` (dedicated bridge coordination Redis configuration).
 Design: [v2 proposal](./v2-transaction-lifecycle.md).
 
-## Current status (2026-09-18)
+## Current status (2026-09-25)
 
 | Work | Status |
 | --- | --- |
 | Stages 1–3 | Implemented; controlled real-wallet/Safe parity still needs verification. |
-| Stage 4 | Implemented; local shared Redis validation passes; bridge rollout remains disabled. |
+| Stage 4 | Enabled by default in Yearn; local shared Redis validation passes; controlled bridge QA remains pending. |
 | Stage 5 | Started: shared version-0 legacy decoder. Canonical history cutover and acknowledgement remain pending. |
 | Simplification | First deletion pass complete; old owners remain until migration/rollout gates pass. |
 
@@ -115,7 +115,7 @@ callbacks are retained. These differences still require controlled wallet QA bef
 
 ### Remaining stages and limits
 
-Stages 3 and 4 are implemented below. Stage 4 remains rollout-gated; stage 5 completes legacy
+Stages 3 and 4 are implemented below. Stage 4 is now enabled by default in Yearn; stage 5 completes legacy
 persistence/presentation cutover and versioned decoding. The shared Enso gateway is implemented.
 
 The durable guarantee starts once the submitted record is saved. A page closed before the wallet returns a hash,
@@ -275,7 +275,7 @@ Workspace TypeScript, lint, both boundary checks, and Yearn/yBOLD production bui
 cover both Enso modes through the actual shared overlay, plan builder, service, native IndexedDB, BroadcastChannel,
 and Web Locks. These harnesses mirror the widget's path selection; wallet calls and receipts are simulated.
 
-## Stage 4: destination settlement (implemented behind rollout flag)
+## Stage 4: destination settlement (enabled by default in Yearn)
 
 The shared lifecycle now accepts a source-chain sequence with a fixed Enso destination requirement. Approval
 records remain same-chain; the final source submission captures the executable quote's available protocols,
@@ -307,10 +307,11 @@ The queue is bounded to 1,024 entries and expires abandoned entries. Coordinatio
 limitation and makes no upstream request. All consumers of the shared Enso status credential must use this gateway
 and the same Redis database for the budget guarantee to hold.
 
-Activation requires `NEXT_PUBLIC_TRANSACTION_LIFECYCLE_BRIDGES=true`, plus `UPSTASH_REDIS_REST_URL_BRIDGE_COORDINATION` and
+Tracking requires `UPSTASH_REDIS_REST_URL_BRIDGE_COORDINATION` and
 `UPSTASH_REDIS_REST_TOKEN_BRIDGE_COORDINATION` on every server instance. Local DOA and bridge coordination credentials are now configured separately.
-The rollout flag remains off and the existing cross-chain path stays functional. Same-chain lifecycle execution stays enabled.
-When the new path is enabled, unfinished legacy cross-chain notifications for the reviewed wallet block a new
+Yearn always supplies the settlement observer and routes bridge status through the shared gateway.
+Unavailable Redis returns a retryable tracking limitation; it does not select the legacy implementation.
+Unfinished legacy cross-chain notifications for the reviewed wallet block a new
 cross-chain submission until the earlier outcome is reconciled; unreadable legacy history also blocks submission.
 Stage 5 will replace that conservative migration guard with legacy record decoding and presentation cutover.
 
@@ -320,7 +321,7 @@ legacy migration guard. Chromium uses native IndexedDB, BroadcastChannel and Web
 withdrawal: close/reopen, competing tabs, reload, manual action, refund, outage recovery and legacy pending-history
 blocking. Real Redis checks exercise concurrent claims, queue advancement, cached evidence and servicing an absent
 tab's queued route. Wallet calls, source receipts and provider outcomes in these checks are simulated; controlled
-real-wallet/bridge QA and shared Redis deployment configuration are required before enabling the rollout flag.
+real-wallet/bridge QA and shared Redis deployment configuration are required before production release.
 
 Final checks pass: 1,289 tests across the three workspaces (428 widget, 856 Yearn, 5 yBOLD), workspace TypeScript,
 lint, both architecture boundary checks, and Yearn/yBOLD production builds. The rebuilt Yearn preview passes
@@ -340,7 +341,7 @@ and dropped provider backoff between the status proxy and gateway.
   deadline returned to clients. Cached errors retain the evidence timestamp and remaining retry delay.
 - Validation passes 42 focused tests, including API/gateway integration, and five checks against isolated
   Redis covering queued attribution, competing requests and concurrent backoff. TypeScript, lint, both
-  boundary checks and the Yearn production build pass. The bridge rollout flag remains disabled.
+  boundary checks and the Yearn production build pass. The bridge rollout flag was disabled at that review; it was removed on 2026-09-25.
 
 ## Next: stage 5
 
@@ -384,7 +385,7 @@ Remaining work, in order:
 
 1. Validate production deployment configuration and scheduling across deployed instances. The local configured
    Upstash instance passes isolated competing-client gateway checks (see below), but this does not certify
-   every deployment uses the same database. Keep the rollout flag disabled until controlled bridge QA.
+   every deployment uses the same database. Complete controlled bridge QA before merging/releasing.
 2. Exercise direct/approval/Enso/Safe/bridge execution with controlled wallets or a clearly labelled virtual
    network. Actual-wallet parity remains unverified; simulated tests must not be reported as real execution.
 3. Define limited historical records separately from executable canonical records, then migrate their
@@ -414,3 +415,38 @@ legacy malformed/future-version rejection, preservation of partial historical ev
 without database mutation. The webpack production build passes. Chromium checks on the rebuilt preview
 pass desktop/mobile rendering, deposit/withdraw tab navigation, no horizontal overflow, and no page errors.
 These checks do not exercise connected-wallet signing.
+
+
+## 2026-09-25: remove the bridge rollout flag
+
+Yearn now enables destination settlement unconditionally. The bridge status API always uses the Redis
+coordination gateway, and the environment template no longer advertises an opt-in flag. Existing local
+values of the retired flag have no effect. Same-chain behavior, legacy-history guards, and host capability
+fallbacks remain unchanged. No old records are deleted or rewritten by this change.
+
+The lifecycle branch and its private preview are the test boundary. Controlled wallet/Safe/bridge parity
+remains a release requirement, not a reason to hide the new path in the development branch.
+
+Validation: 48 focused gateway/proxy/settlement/history-guard tests, Yearn TypeScript, changed-source
+formatting/lint, both architecture boundary checks, and the webpack production build pass. The rebuilt
+preview passes Chromium desktop/mobile rendering and deposit/withdraw navigation without page errors or
+horizontal overflow. Connected-wallet cross-chain execution has not yet been tested in this build.
+
+
+## 2026-09-25: restore initial wallet network switching
+
+Manual QA found that opening an approval/cross-chain withdrawal on another wallet network displayed
+“Wallet or network changed” instead of requesting the source-chain switch. The lifecycle service now
+requests the canonical source chain through the existing adapter after history recovery and duplicate
+adoption checks, before preparing the first action. It waits up to ten seconds after wallet approval for
+host network state to update, then retains the existing account, network, quote, and pre-submission checks.
+Closing or changing the account during switching prevents submission; rejected/unsuccessful switches do
+not create records. Mid-sequence network changes still pause for explicit Continue.
+
+Regression coverage includes delayed host updates, duplicate starts, rejection, close/account changes,
+wrong-chain results, timeout, already-correct networks, and approval → bridge execution switching to the
+source rather than destination. All 441 widget tests passed, followed by the expanded 54-test service suite
+including the approval/bridge regression. Real-wallet confirmation of the fix remains pending.
+
+Workspace TypeScript, both boundary checks, the webpack production build, and refreshed Chromium
+desktop/mobile navigation smoke checks also pass. The preview now includes the network-switch fix.

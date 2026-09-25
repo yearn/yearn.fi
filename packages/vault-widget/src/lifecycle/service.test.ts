@@ -89,6 +89,59 @@ describe('provider-owned transaction lifecycle', () => {
     vi.restoreAllMocks()
   })
 
+  it('switches to the canonical source chain before preparation and sends once after the host updates', async () => {
+    const f = fixture()
+    f.wallet.chainId = 2
+    const validation = vi.fn().mockResolvedValue(undefined)
+    vi.mocked(f.adapter.switchChain).mockImplementation(async () => {
+      setTimeout(() => {
+        f.wallet.chainId = 1001
+      }, 50)
+    })
+    f.service.start({ commandId: 'one', owner, plan: makePlan(), validate: validation })
+    f.start('reopen')
+    await settle()
+    expect(f.adapter.switchChain).toHaveBeenCalledExactlyOnceWith({ chainId: 1 })
+    expect(validation).not.toHaveBeenCalled()
+    expect(f.execute).not.toHaveBeenCalled()
+    await vi.advanceTimersByTimeAsync(50)
+    expect(validation).toHaveBeenCalledOnce()
+    expect(f.execute).toHaveBeenCalledOnce()
+    f.disconnect()
+  })
+
+  it('does not switch an already correct execution network', async () => {
+    const f = fixture()
+    f.start()
+    await settle()
+    expect(f.adapter.switchChain).not.toHaveBeenCalled()
+    expect(f.execute).toHaveBeenCalledOnce()
+    f.disconnect()
+  })
+
+  it.each(['close', 'account', 'wrong-chain', 'reject', 'timeout'])(
+    'never submits when the initial switch encounters %s',
+    async (change) => {
+      const f = fixture()
+      f.wallet.chainId = 2
+      const switched = deferred<void>()
+      vi.mocked(f.adapter.switchChain).mockReturnValue(switched.promise)
+      f.start()
+      await settle()
+      expect(f.adapter.switchChain).toHaveBeenCalledOnce()
+      if (change === 'close') f.service.pause('one')
+      if (change === 'account') f.wallet.address = to
+      if (change === 'wrong-chain') f.wallet.chainId = 3
+      if (change === 'reject') switched.reject({ code: 4001, message: 'Rejected' })
+      else switched.resolve()
+      await vi.advanceTimersByTimeAsync(10_001)
+      expect(f.execute).not.toHaveBeenCalled()
+      expect(f.service.getSnapshot().records).toEqual([])
+      expect(['blocked', 'rejected']).toContain(f.service.getSnapshot().flows[0].phase)
+      f.disconnect()
+    }
+  )
+
   it('runs one wallet call and one observer through duplicate starts, then derives success before refresh', async () => {
     const f = fixture()
     const refresh = deferred<void>()
@@ -512,6 +565,35 @@ describe('sequential EOA lifecycle', () => {
       })
     return { ...f, start, final }
   }
+
+  it('switches an approval/bridge sequence to its source, never its destination', async () => {
+    const f = setup()
+    f.wallet.chainId = 10
+    vi.mocked(f.adapter.switchChain).mockImplementation(async () => {
+      f.wallet.chainId = 1001
+    })
+    f.service.start({
+      commandId: 'bridge',
+      owner,
+      plan: plan(),
+      settlement: {
+        provider: 'enso',
+        destinationChainId: 10,
+        protocols: ['ccip'],
+        coverage: 'incomplete',
+        legs: []
+      }
+    })
+    await settle()
+    expect(f.adapter.switchChain).toHaveBeenCalledExactlyOnceWith({ chainId: 1 })
+    expect(f.service.getSnapshot().records[0].stepId).toBe('approve-0')
+    f.gate.resolve({ receipt })
+    await settle()
+    expect(f.execute).toHaveBeenCalledTimes(2)
+    expect(f.adapter.switchChain).toHaveBeenCalledOnce()
+    expect(f.service.getSnapshot().records[1].settlement).toMatchObject({ destinationChainId: 10 })
+    f.disconnect()
+  })
 
   it('requests each step once, only after the earlier source receipt, with separate frozen records', async () => {
     const f = setup()

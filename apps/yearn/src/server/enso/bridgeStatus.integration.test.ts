@@ -27,7 +27,6 @@ const queued = (params: Record<string, unknown>) => {
 }
 
 beforeEach(() => {
-  vi.stubEnv('NEXT_PUBLIC_TRANSACTION_LIFECYCLE_BRIDGES', 'true')
   vi.stubEnv('ENSO_API_KEY', 'test-key')
   vi.stubEnv('RELAY_API_KEY', '')
   vi.stubEnv('UPSTASH_REDIS_REST_URL_BRIDGE_COORDINATION', 'https://redis.invalid')
@@ -42,6 +41,18 @@ afterEach(() => {
 })
 
 describe('bridge API and shared gateway integration', () => {
+  it.each(['', 'false'])('requires coordination even when the retired flag is %j', async (flag) => {
+    vi.stubEnv('NEXT_PUBLIC_TRANSACTION_LIFECYCLE_BRIDGES', flag)
+    vi.stubEnv('UPSTASH_REDIS_REST_URL_BRIDGE_COORDINATION', '')
+    vi.stubEnv('UPSTASH_REDIS_REST_TOKEN_BRIDGE_COORDINATION', '')
+    const upstream = vi.fn()
+    vi.stubGlobal('fetch', upstream)
+    const response = await get({ protocol: 'ccip', chainId: '1', txHash: source })
+    expect(response.status).toBe(503)
+    expect(upstream).not.toHaveBeenCalled()
+    expect(redis.eval).not.toHaveBeenCalled()
+  })
+
   it('executes the queued protocol, chain and hash and caches only that result', async () => {
     const payload = queued({ protocol: 'ccip', chainId: 1, txHash: source })
     const fetchMock = vi.fn(async (url: string) =>

@@ -40,8 +40,7 @@ export function YearnTransactionLifecycleProvider({ children }: { children: Reac
       persistence: createTransactionLifecycleStorage(),
       coordinate: coordinateTransactionObservation,
       beforeStart: guardLegacyBridgeRecovery,
-      observeSettlement:
-        process.env.NEXT_PUBLIC_TRANSACTION_LIFECYCLE_BRIDGES === 'true' ? observeEnsoSettlement : undefined,
+      observeSettlement: observeEnsoSettlement,
       refresh: (record, milestone) => {
         const notification = projectLifecycleNotification(record)
         const sourceOnly = milestone === 'source' || milestone === 'refund'
