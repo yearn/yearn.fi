@@ -1,5 +1,5 @@
 import { randomBytes } from 'node:crypto'
-import { brotliCompressSync } from 'node:zlib'
+import { brotliCompressSync, brotliDecompressSync } from 'node:zlib'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const getHoldingsRedisClientMock = vi.fn()
@@ -102,7 +102,13 @@ describe('protocol return history snapshot cache', () => {
     expect(key).not.toContain(identity.userAddress)
     expect(savedValue).toEqual(expect.stringMatching(/^br1:/))
     expect(savedValue).not.toContain('2026-07-15')
-    expect(setMock).toHaveBeenCalledWith(key, savedValue, { ex: 30 * 24 * 60 * 60 })
+    expect(setMock).toHaveBeenCalledWith(key, expect.any(String), { ex: 30 * 24 * 60 * 60 })
+    expect(JSON.parse(brotliDecompressSync(Buffer.from(savedValue.slice(4), 'base64')).toString())).toEqual({
+      settledDate: '2026-07-15',
+      updatedAt: 1234,
+      vaults: [{ address: '0x00000000000000000000000000000000000000a1', chainId: 1 }],
+      response: { summary: { isComplete: true }, dataPoints: [{ date: '2026-07-15' }] }
+    })
   })
 
   it('round trips a large compressed snapshot without changing its response', async () => {

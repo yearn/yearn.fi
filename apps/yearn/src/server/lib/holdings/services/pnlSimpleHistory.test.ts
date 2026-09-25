@@ -1035,8 +1035,11 @@ describe('getHoldingsProtocolReturnHistory', () => {
     })
     debugLogMock.mockClear()
 
-    await getHoldingsProtocolReturnHistory(USER, '1y')
+    const rebuilt = await getHoldingsProtocolReturnHistory(USER, '1y')
 
+    // The 100 deposited shares now have PPS 2, so both visible days must show $100 growth.
+    expect(rebuilt.dataPoints.map((point) => point.timestamp)).toEqual([secondDay + 1, thirdDay + 1])
+    expect(rebuilt.dataPoints.map((point) => point.growthWeightUsd)).toEqual([100, 100])
     expect(debugLogMock).toHaveBeenCalledWith(
       'protocol-return-history',
       'rebuilt protocol return history',

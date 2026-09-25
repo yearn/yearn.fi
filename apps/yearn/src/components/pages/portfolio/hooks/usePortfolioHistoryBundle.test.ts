@@ -8,15 +8,19 @@ import {
   usePortfolioHistoryBundle
 } from '@pages/portfolio/hooks/usePortfolioHistoryBundle'
 import type { TPortfolioResponse } from '@pages/portfolio/types/api'
-import { keepPreviousData, QueryClient, QueryClientProvider, QueryObserver } from '@tanstack/react-query'
-import { renderHook } from '@testing-library/react'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { act, renderHook, waitFor } from '@testing-library/react'
 import { createElement } from 'react'
-import { describe, expect, it, vi } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@shared/contexts/useWeb3', () => ({
   useWeb3: () => ({ address: '0x1111111111111111111111111111111111111111' })
 }))
 vi.mock('@hooks/usePlausible', () => ({ usePlausible: () => vi.fn() }))
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
 
 const USER_ADDRESS = '0x1111111111111111111111111111111111111111'
 const VAULT_ADDRESS = '0x2222222222222222222222222222222222222222'
@@ -254,50 +258,53 @@ describe('portfolio balance empty state', () => {
 describe('portfolio history query transition', () => {
   it('keeps same-wallet Growth while ALL history loads', async () => {
     const queryClient = new QueryClient()
-    const allRequest = createDeferred<TPortfolioResponse>()
-    const oneYearResponse = createPortfolioResponse()
-    const allResponse = createPortfolioResponse(USER_ADDRESS, 'all', 2)
-    const observer = new QueryObserver<TPortfolioResponse>(queryClient, {
-      queryKey: ['portfolio', '1y'],
-      queryFn: () => Promise.resolve(oneYearResponse),
-      placeholderData: keepPreviousData,
-      staleTime: Number.POSITIVE_INFINITY
-    })
-    const unsubscribe = observer.subscribe(() => undefined)
+    const allRequest = createDeferred<Response>()
+    vi.stubGlobal(
+      'fetch',
+      vi.fn((input: string) => {
+        const url = new URL(input, 'https://yearn.fi')
+        if (url.pathname === '/api/holdings/progress') {
+          return Promise.resolve(new Response(null, { status: 204 }))
+        }
+        return url.searchParams.get('timeframe') === 'all'
+          ? allRequest.promise
+          : Promise.resolve(Response.json(createPortfolioResponse()))
+      })
+    )
+    const { result, rerender, unmount } = renderHook(
+      ({ timeframe }: { timeframe: TPortfolioResponse['timeframe'] }) => usePortfolioHistoryBundle('usd', timeframe),
+      {
+        initialProps: { timeframe: '1y' },
+        wrapper: ({ children }) => createElement(QueryClientProvider, { client: queryClient }, children)
+      }
+    )
 
-    await vi.waitFor(() => expect(observer.getCurrentResult().data).toEqual(oneYearResponse))
+    try {
+      await waitFor(() => expect(result.current.growth.vaults[0]?.growthUsd).toBe(1))
+      expect(result.current.balance.isLoading).toBe(false)
 
-    observer.setOptions({
-      queryKey: ['portfolio', 'all'],
-      queryFn: () => allRequest.promise,
-      placeholderData: keepPreviousData,
-      staleTime: Number.POSITIVE_INFINITY
-    })
+      rerender({ timeframe: 'all' })
 
-    const pendingResult = observer.getCurrentResult()
-    const pendingData = resolvePortfolioHistoryBundleData({
-      address: USER_ADDRESS,
-      data: pendingResult.data,
-      isPlaceholderData: pendingResult.isPlaceholderData
-    })
-    const pendingLoading = resolvePortfolioHistoryBundleLoading({
-      hasCurrentData: Boolean(pendingData.currentData),
-      hasRetainedGrowth: Boolean(pendingData.retainedData?.growth),
-      isFetching: pendingResult.isFetching,
-      isLoading: pendingResult.isLoading,
-      isPlaceholderData: pendingResult.isPlaceholderData
-    })
+      expect(result.current.hasResponse).toBe(false)
+      expect(result.current.balance.data).toBeNull()
+      expect(result.current.balance.isLoading).toBe(true)
+      expect(result.current.protocolReturn.isLoading).toBe(true)
+      expect(result.current.protocolReturn.data?.[0]?.growthWeightUsd).toBe(1)
+      expect(result.current.growth.vaults[0]?.growthUsd).toBe(1)
+      expect(result.current.growth.isLoading).toBe(false)
 
-    expect(pendingResult.isPlaceholderData).toBe(true)
-    expect(pendingData.currentData).toBeNull()
-    expect(pendingData.retainedData?.growth.vaults[0]?.growthUsd).toBe(1)
-    expect(pendingLoading).toEqual({ historyIsLoading: true, growthIsLoading: false })
+      await act(async () => allRequest.resolve(Response.json(createPortfolioResponse(USER_ADDRESS, 'all', 2))))
 
-    allRequest.resolve(allResponse)
-
-    await vi.waitFor(() => expect(observer.getCurrentResult().isPlaceholderData).toBe(false))
-    expect(observer.getCurrentResult().data?.growth.vaults[0]?.growthUsd).toBe(2)
-
-    unsubscribe()
+      await waitFor(() => expect(result.current.growth.vaults[0]?.growthUsd).toBe(2))
+      expect(result.current.hasResponse).toBe(true)
+      expect(result.current.balance.data).toEqual([{ date: '2026-09-01', value: 100 }])
+      expect(result.current.balance.isLoading).toBe(false)
+      expect(result.current.protocolReturn.isLoading).toBe(false)
+      expect(result.current.protocolReturn.timeframe).toBe('all')
+      expect(result.current.protocolReturn.data?.[0]?.growthWeightUsd).toBe(2)
+    } finally {
+      unmount()
+      queryClient.clear()
+    }
   })
 })
