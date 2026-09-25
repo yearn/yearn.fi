@@ -105,6 +105,51 @@ describe('protocol return history snapshot cache', () => {
     expect(setMock).toHaveBeenCalledWith(key, savedValue, { ex: 30 * 24 * 60 * 60 })
   })
 
+  it('ignores a previous-version snapshot and reads newly saved history', async () => {
+    const legacyKey =
+      'holdings:protocol-return-history:v23:0b035a6e9fdc18c7c68a425dec79e35afaa3b8df716663fedd32abd78335bc00:1y:all'
+    const entries = new Map<string, string>([
+      [
+        legacyKey,
+        encodeSnapshot({
+          settledDate: '2026-07-15',
+          updatedAt: 1234,
+          vaults: [],
+          response: { dataPoints: [{ date: '2026-07-15', growthWeightUsd: null }] }
+        })
+      ]
+    ])
+    isHoldingsStorageEnabledMock.mockReturnValue(true)
+    getHoldingsRedisClientMock.mockReturnValue({
+      get: vi.fn(async (key: string) => entries.get(key) ?? null),
+      set: vi.fn(async (key: string, value: string) => {
+        entries.set(key, value)
+        return 'OK'
+      })
+    })
+    const { getCachedProtocolReturnHistorySnapshot, saveCachedProtocolReturnHistory } = await import(
+      '@/server/lib/holdings/services/cache'
+    )
+    const identity = { userAddress: '0x0000000000000000000000000000000000000001', timeframe: '1y' }
+
+    await expect(getCachedProtocolReturnHistorySnapshot(identity, '2026-07-15')).resolves.toBeNull()
+    await expect(
+      saveCachedProtocolReturnHistory(
+        identity,
+        '2026-07-15',
+        [],
+        {
+          dataPoints: [{ date: '2026-07-15', growthWeightUsd: 12.5 }]
+        },
+        2345
+      )
+    ).resolves.toBe(true)
+    await expect(getCachedProtocolReturnHistorySnapshot(identity, '2026-07-15')).resolves.toEqual({
+      settledDate: '2026-07-15',
+      response: { dataPoints: [{ date: '2026-07-15', growthWeightUsd: 12.5 }] }
+    })
+  })
+
   it('round trips a large compressed snapshot without changing its response', async () => {
     const setMock = vi.fn().mockResolvedValue('OK')
     const getMock = vi.fn()
