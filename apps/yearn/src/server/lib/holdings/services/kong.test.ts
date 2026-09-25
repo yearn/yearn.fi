@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { fetchMultipleVaultsPPS, getPPS, getPpsFetchFailedVaults } from './kong'
+import { fetchMultipleVaultsPPS, getPPS, getPpsFetchFailedVaults } from '@/server/lib/holdings/services/kong'
 
 function createPpsResponse(value = '1.25'): Response {
   return new Response(JSON.stringify([{ time: 86_400, component: 'humanized', value }]), {
@@ -95,6 +95,26 @@ describe('fetchMultipleVaultsPPS', () => {
     expect(getPpsFetchFailedVaults(timelines)).toBe(0)
   })
 
+  it('cancels error response bodies before retrying their HTTP status', async () => {
+    const vaultAddress = '0x0000000000000000000000000000000000000001'
+    const cancel = vi.fn().mockRejectedValue(new Error('Stream already disconnected'))
+    const fetchFn = vi
+      .fn()
+      .mockResolvedValueOnce(new Response(new ReadableStream({ cancel }), { status: 503 }))
+      .mockResolvedValueOnce(createPpsResponse()) as typeof fetch
+
+    const timelines = await fetchMultipleVaultsPPS([{ chainId: 1, vaultAddress }], {
+      fetchFn,
+      maxRetries: 1,
+      retryDelayMs: 0
+    })
+
+    expect(cancel).toHaveBeenCalledTimes(1)
+    expect(fetchFn).toHaveBeenCalledTimes(2)
+    expect(timelines.get(`1:${vaultAddress}`)?.get(86_400)).toBe(1.25)
+    expect(getPpsFetchFailedVaults(timelines)).toBe(0)
+  })
+
   it('marks failed PPS requests without returning fabricated values', async () => {
     const vaultAddress = '0x0000000000000000000000000000000000000001'
     const fetchFn = vi.fn().mockResolvedValue(new Response(null, { status: 404 })) as typeof fetch
@@ -109,30 +129,46 @@ describe('fetchMultipleVaultsPPS', () => {
     expect(getPpsFetchFailedVaults(timelines)).toBe(1)
   })
 
-  it('applies one concurrency limit across independent callers', async () => {
-    const activity = { active: 0, peak: 0 }
-    const fetchFn = vi.fn(async () => {
-      activity.active += 1
-      activity.peak = Math.max(activity.peak, activity.active)
-      await new Promise((resolve) => setTimeout(resolve, 1))
-      activity.active -= 1
-      return createPpsResponse()
-    }) as typeof fetch
-    const requests = Array.from({ length: 26 }, (_value, index) =>
-      fetchMultipleVaultsPPS(
-        [
-          {
-            chainId: 1,
-            vaultAddress: `0x${String(index + 1).padStart(40, '0')}`
-          }
-        ],
-        { fetchFn, maxRetries: 0 }
-      )
-    )
+  it.each([0, 12])(
+    'bounds body downloads across callers and releases slots after %i body failures',
+    async (failures) => {
+      const activity = { active: 0, peak: 0 }
+      const fetchFn = vi.fn(async (input: string | URL | Request) => {
+        const index = Number(new URL(String(input)).pathname.split('/').at(-1)) - 1
+        activity.active += 1
+        activity.peak = Math.max(activity.peak, activity.active)
+        return new Response(
+          new ReadableStream({
+            start(controller) {
+              setTimeout(() => {
+                activity.active -= 1
+                if (index < failures) {
+                  controller.error(new Error('Response body interrupted'))
+                } else {
+                  controller.enqueue(new TextEncoder().encode(JSON.stringify([{ time: 86_400, value: '1.25' }])))
+                  controller.close()
+                }
+              }, 10)
+            }
+          })
+        )
+      }) as typeof fetch
+      const vaults = Array.from({ length: 26 }, (_value, index) => ({
+        chainId: 1,
+        vaultAddress: `0x${(index + 1).toString(16).padStart(40, '0')}`
+      }))
+      const results = await Promise.all([
+        fetchMultipleVaultsPPS(vaults.slice(0, 13), { fetchFn, maxRetries: 0 }),
+        fetchMultipleVaultsPPS(vaults.slice(13), { fetchFn, maxRetries: 0 })
+      ])
 
-    await Promise.all(requests)
-
-    expect(fetchFn).toHaveBeenCalledTimes(26)
-    expect(activity.peak).toBeLessThanOrEqual(12)
-  })
+      expect(fetchFn).toHaveBeenCalledTimes(26)
+      expect(activity.peak).toBe(12)
+      expect(activity.active).toBe(0)
+      expect(results.reduce((sum, result) => sum + getPpsFetchFailedVaults(result), 0)).toBe(failures)
+      expect(
+        results.flatMap((result) => [...result.values()]).filter((timeline) => timeline.get(86_400) === 1.25)
+      ).toHaveLength(26 - failures)
+    }
+  )
 })
