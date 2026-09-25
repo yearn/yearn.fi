@@ -47,7 +47,6 @@ function notificationsContext(updateEntry: TNotificationsContext['updateEntry'])
     notificationStatus: null,
     isLoading: false,
     error: null,
-    setNotificationStatus: vi.fn(),
     deleteByID: vi.fn(),
     updateEntry,
     addNotification: vi.fn()
@@ -81,5 +80,37 @@ describe('useEnsoBridgeStatusPoller', () => {
       await vi.advanceTimersByTimeAsync(ENSO_BRIDGE_POLL_INTERVAL_MS)
     })
     expect(fetchEnsoBridgeStatusMock).toHaveBeenCalledTimes(2)
+  })
+  it.each(['hung', 'rejected'])('records delivery and continues scheduling despite a %s refresh', async (failure) => {
+    const updateEntry = vi.fn().mockResolvedValue(undefined)
+    const refresh = vi.fn(() =>
+      failure === 'hung' ? new Promise<void>(() => undefined) : Promise.reject(new Error('offline'))
+    )
+    vi.spyOn(console, 'warn').mockImplementation(() => undefined)
+    useNotificationsMock.mockReturnValue(notificationsContext(updateEntry))
+    useNotificationAssetRefreshMock.mockReturnValue(refresh)
+    fetchEnsoBridgeStatusMock.mockResolvedValueOnce({ status: 'delivered' })
+    const { rerender } = renderHook(({ records }) => useEnsoBridgeStatusPoller(records), {
+      initialProps: { records: [NOTIFICATION] }
+    })
+    await act(async () => undefined)
+    expect(updateEntry).toHaveBeenCalledWith(
+      expect.objectContaining({ status: 'success', bridgeStatus: 'delivered' }),
+      1
+    )
+    expect(updateEntry.mock.invocationCallOrder[0]).toBeLessThan(refresh.mock.invocationCallOrder[0])
+    rerender({
+      records: [
+        { ...NOTIFICATION, status: 'success' },
+        { ...NOTIFICATION, id: 2 }
+      ]
+    })
+    await act(async () => {
+      await vi.advanceTimersByTimeAsync(ENSO_BRIDGE_POLL_INTERVAL_MS)
+    })
+    expect(fetchEnsoBridgeStatusMock).toHaveBeenLastCalledWith(
+      expect.objectContaining({ id: 2 }),
+      expect.any(AbortSignal)
+    )
   })
 })

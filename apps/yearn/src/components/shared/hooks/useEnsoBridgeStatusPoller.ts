@@ -9,6 +9,7 @@ import {
 } from '@shared/hooks/ensoBridgeStatus'
 import { useNotificationAssetRefresh } from '@shared/hooks/useNotificationAssetRefresh'
 import type { TNotification } from '@shared/types/notifications'
+import { awaitTransactionRefresh } from '@yearn/vault-widget/headless'
 import { useCallback, useEffect, useRef } from 'react'
 
 const BRIDGE_STATUS_REQUEST_TIMEOUT_MS = 9_000
@@ -33,13 +34,15 @@ export function useEnsoBridgeStatusPoller(notifications: TNotification[]): void 
       const result = await fetchEnsoBridgeStatus(candidate, controller.signal)
       const latestCandidate = latestNotificationsRef.current.find((notification) => notification.id === candidate.id)
       if (!latestCandidate || !isTrackableEnsoBridgeNotification(latestCandidate)) return
-      if (result.status === 'delivered') {
-        await refreshNotificationAssets(latestCandidate).catch((error) => {
-          console.warn('[Enso] Bridge delivered, but asset refresh failed', error)
-        })
-      }
       const update = buildEnsoBridgeNotificationUpdate(result, Date.now() / 1000, latestCandidate)
       await updateEntry(update, candidate.id)
+      if (result.status === 'delivered') {
+        void awaitTransactionRefresh(() => refreshNotificationAssets({ ...latestCandidate, ...update })).catch(
+          (error) => {
+            console.warn('[Enso] Bridge delivered, but asset refresh failed', error)
+          }
+        )
+      }
     } catch (error) {
       const latestCandidate = latestNotificationsRef.current.find((notification) => notification.id === candidate.id)
       if (latestCandidate && isTrackableEnsoBridgeNotification(latestCandidate)) {

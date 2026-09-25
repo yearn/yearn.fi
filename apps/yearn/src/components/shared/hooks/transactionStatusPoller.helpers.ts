@@ -29,14 +29,6 @@ export function shouldPollNotificationStatus(params: {
   return false
 }
 
-export function shouldRefreshBeforeNotificationSettlement(params: {
-  currentStatus: TNotificationStatus
-  awaitingExecution?: boolean
-  nextStatus: 'success' | 'error'
-}): boolean {
-  return params.currentStatus === 'submitted' && params.awaitingExecution === true && params.nextStatus === 'success'
-}
-
 export function resolvePolledTransactionStatus(params: {
   receipt: TransactionReceipt
   requestedHash: Hash

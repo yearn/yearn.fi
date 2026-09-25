@@ -3,8 +3,7 @@ import { describe, expect, it } from 'vitest'
 import {
   resolvePolledTransactionStatus,
   shouldApplyPolledTransactionSettlement,
-  shouldPollNotificationStatus,
-  shouldRefreshBeforeNotificationSettlement
+  shouldPollNotificationStatus
 } from './transactionStatusPoller.helpers'
 
 const submittedHash = `0x${'1'.repeat(64)}` as Hash
@@ -41,38 +40,6 @@ describe('shouldPollNotificationStatus', () => {
         status: 'submitted',
         txHash: '0xabc',
         awaitingExecution: false
-      })
-    ).toBe(false)
-  })
-})
-
-describe('shouldRefreshBeforeNotificationSettlement', () => {
-  it('refreshes before settling a successful Safe execution notification', () => {
-    expect(
-      shouldRefreshBeforeNotificationSettlement({
-        currentStatus: 'submitted',
-        awaitingExecution: true,
-        nextStatus: 'success'
-      })
-    ).toBe(true)
-  })
-
-  it('does not pre-refresh failed Safe execution notifications', () => {
-    expect(
-      shouldRefreshBeforeNotificationSettlement({
-        currentStatus: 'submitted',
-        awaitingExecution: true,
-        nextStatus: 'error'
-      })
-    ).toBe(false)
-  })
-
-  it('does not pre-refresh ordinary pending notifications', () => {
-    expect(
-      shouldRefreshBeforeNotificationSettlement({
-        currentStatus: 'pending',
-        awaitingExecution: false,
-        nextStatus: 'success'
       })
     ).toBe(false)
   })

@@ -9,10 +9,11 @@ function SourceTransactionTracker({ notification }: { notification: TNotificatio
 }
 
 export function TransactionTrackingCoordinator({ notifications }: { notifications: TNotification[] }): ReactElement {
-  useEnsoBridgeStatusPoller(notifications)
+  const legacyNotifications = notifications.filter((notification) => !notification.lifecycleRecord)
+  useEnsoBridgeStatusPoller(legacyNotifications)
   return (
     <>
-      {notifications.map((notification) => (
+      {legacyNotifications.map((notification) => (
         <SourceTransactionTracker
           key={notification.id ?? `${notification.type}-${notification.txHash}`}
           notification={notification}

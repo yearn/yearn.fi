@@ -1,4 +1,4 @@
-import type { Address, Hash, Hex, TransactionReceipt } from 'viem'
+import type { Address, Hash, Hex, TransactionReceipt, TypedDataDefinition } from 'viem'
 
 export type VaultWidgetTransactionMode = 'deposit' | 'withdraw'
 
@@ -60,6 +60,17 @@ export type VaultWidgetSafeProposalStep = {
   requests: readonly VaultWidgetTransactionRequest[]
 }
 
+export type TPermitStep = {
+  id: string
+  kind: 'permit'
+  label: string
+  chainId: number
+  data: TypedDataDefinition
+}
+export type TDeferredStep = { id: string; kind: 'prepare'; label: string; chainId: number }
+export type TPreparedStep = VaultWidgetRequestStep | VaultWidgetSafeProposalStep | TPermitStep
+export type TSafeExecution = { status: 'pending' | 'success' | 'failed' | 'cancelled'; hash?: Hash }
+
 export type VaultWidgetRefreshStep = {
   id: string
   kind: 'refresh'
@@ -71,6 +82,8 @@ export type VaultWidgetExecutionStep =
   | VaultWidgetRequestStep
   | VaultWidgetSafeProposalStep
   | VaultWidgetRefreshStep
+  | TPermitStep
+  | TDeferredStep
 
 export type VaultWidgetTransactionPlan = {
   id: string
@@ -90,6 +103,7 @@ export type VaultWidgetPlanSubmission = {
 
 export type VaultWidgetPlanOutcome = {
   submissions: readonly VaultWidgetPlanSubmission[]
+  signatures?: Readonly<Record<string, Hex>>
 }
 
 export type VaultWidgetTransactionReplacement = {
@@ -104,12 +118,33 @@ export type VaultWidgetTransactionReceiptResult = {
 
 export type VaultWidgetExecutionAdapter = {
   switchChain: (params: { chainId: number }) => Promise<void>
-  execute: (params: { account: Address; request: VaultWidgetTransactionRequest }) => Promise<Hash>
-  waitForReceipt: (params: { chainId: number; hash: Hash }) => Promise<VaultWidgetTransactionReceiptResult>
+  execute: (params: {
+    account: Address
+    request: VaultWidgetTransactionRequest
+    beforeSubmit?: () => void
+  }) => Promise<Hash>
+  waitForReceipt: (params: {
+    chainId: number
+    hash: Hash
+    executionChainId?: number
+    confirmations?: number
+  }) => Promise<VaultWidgetTransactionReceiptResult>
+  signPermit?: (params: {
+    account: Address
+    chainId: number
+    data: TypedDataDefinition
+    beforeSubmit?: () => void
+  }) => Promise<Hex>
+  observeSafeExecution?: (params: {
+    chainId: number
+    executionChainId: number
+    proposalId: Hex
+  }) => Promise<TSafeExecution>
   proposeSafeBatch?: (params: {
     account: Address
     chainId: number
     requests: readonly VaultWidgetTransactionRequest[]
+    beforeSubmit?: () => void
   }) => Promise<Hex>
   waitForSafeExecution?: (params: { chainId: number; proposalId: Hex }) => Promise<Hash>
 }
@@ -123,7 +158,7 @@ type VaultWidgetPlanExecutionProgress = {
 export type VaultWidgetPlanExecutionState =
   | (VaultWidgetPlanExecutionProgress & {
       status: 'confirming'
-      step: VaultWidgetSwitchChainStep | VaultWidgetRequestStep | VaultWidgetSafeProposalStep
+      step: VaultWidgetSwitchChainStep | TPreparedStep | TDeferredStep
     })
   | (VaultWidgetPlanExecutionProgress & {
       status: 'pending'

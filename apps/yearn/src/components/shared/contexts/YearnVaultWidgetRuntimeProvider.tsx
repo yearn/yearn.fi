@@ -12,6 +12,7 @@ import {
   getVaultTVL,
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
+import { useYearnTransactionLifecycle } from '@shared/contexts/transactionLifecycleContext'
 import { useNotifications } from '@shared/contexts/useNotifications'
 import { useNotificationsActions } from '@shared/contexts/useNotificationsActions'
 import { useWalletActions, useWalletStatus, useWalletTokens } from '@shared/contexts/useWallet'
@@ -26,6 +27,7 @@ import {
 import type { TChainTokens, TToken } from '@shared/types'
 import type { TNotificationType } from '@shared/types/notifications'
 import { isZeroAddress } from '@shared/utils'
+import { getTransactionConfirmations } from '@yearn/vault-widget/headless'
 import {
   type VaultWidgetAnalyticsProperties,
   type VaultWidgetCatalogVault,
@@ -158,10 +160,11 @@ function toPlausibleProperties(properties?: VaultWidgetAnalyticsProperties): Rec
 }
 
 export function resolveVaultWidgetConfirmations(canonicalChainId: number): number {
-  return canonicalChainId === 8453 ? 2 : 1
+  return getTransactionConfirmations(canonicalChainId)
 }
 
 export function YearnVaultWidgetRuntimeProvider({ children }: { children: ReactNode }): ReactElement {
+  const lifecycle = useYearnTransactionLifecycle()
   const { chainId: connectedExecutionChainId } = useAccount()
   const wagmiConfig = useConfig()
   const trackEvent = usePlausible()
@@ -379,6 +382,7 @@ export function YearnVaultWidgetRuntimeProvider({ children }: { children: ReactN
         resolveExecutionChainId
       },
       execution,
+      lifecycle,
       notifications: {
         create: createRuntimeNotification,
         createSubmitted: createSubmittedRuntimeNotification,
@@ -438,6 +442,7 @@ export function YearnVaultWidgetRuntimeProvider({ children }: { children: ReactN
       isWalletLoading,
       isWalletSafe,
       knownVaults,
+      lifecycle,
       openLoginModal,
       refreshWallet,
       setIsAutoStakingEnabled,

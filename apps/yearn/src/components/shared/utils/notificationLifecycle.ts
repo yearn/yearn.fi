@@ -1,4 +1,5 @@
 import type { TNotification, TNotificationStatus } from '@shared/types/notifications'
+import { selectTransaction } from '@yearn/vault-widget/lifecycle'
 import type { Hash } from 'viem'
 
 export type TNotificationLifecyclePresentation = {
@@ -10,6 +11,16 @@ export type TNotificationLifecyclePresentation = {
 }
 
 export function getNotificationLifecyclePresentation(notification: TNotification): TNotificationLifecyclePresentation {
+  if (notification.lifecycleRecord) {
+    const view = selectTransaction(notification.lifecycleRecord)
+    return {
+      label: view.outcome === 'success' ? 'Success' : view.label,
+      detail: view.detail,
+      styleStatus: view.outcome === 'unknown' ? 'submitted' : view.outcome,
+      transactionHash: view.reference.hash,
+      transactionChainId: view.reference.executionChainId
+    }
+  }
   const sourceTransaction = {
     transactionHash: notification.txHash,
     transactionChainId: notification.executionChainId ?? notification.chainId
@@ -22,8 +33,9 @@ export function getNotificationLifecyclePresentation(notification: TNotification
       label: 'Bridge complete',
       detail: 'Assets arrived on the destination chain.',
       styleStatus: 'success',
-      transactionHash: notification.destinationTxHash ?? notification.txHash,
-      transactionChainId: notification.toChainId ?? notification.chainId
+      ...(notification.destinationTxHash && notification.toChainId && notification.toChainId > 0
+        ? { transactionHash: notification.destinationTxHash, transactionChainId: notification.toChainId }
+        : sourceTransaction)
     }
   }
   if (notification.status === 'success') return { label: 'Success', styleStatus: 'success', ...sourceTransaction }
@@ -77,4 +89,22 @@ export function getNotificationLifecyclePresentation(notification: TNotification
   }
   if (notification.status === 'submitted') return { label: 'Submitted', styleStatus: 'submitted', ...sourceTransaction }
   return { label: 'Pending', styleStatus: 'pending', ...sourceTransaction }
+}
+
+// Until acknowledgement is part of the record model, terminal indicators expire after five minutes.
+export const NOTIFICATION_INDICATOR_WINDOW_SECONDS = 5 * 60
+
+export function selectNotificationStatus(
+  notifications: TNotification[],
+  nowSeconds: number
+): TNotificationStatus | null {
+  if (notifications.some((entry) => entry.status === 'pending')) return 'pending'
+  if (notifications.some((entry) => entry.status === 'submitted')) return 'submitted'
+  const recent = notifications.filter((entry) => {
+    const timestamp = entry.timeFinished ?? entry.createdAt
+    return timestamp !== undefined && nowSeconds < timestamp + NOTIFICATION_INDICATOR_WINDOW_SECONDS
+  })
+  if (recent.some((entry) => entry.status === 'error')) return 'error'
+  if (recent.some((entry) => entry.status === 'success')) return 'success'
+  return null
 }

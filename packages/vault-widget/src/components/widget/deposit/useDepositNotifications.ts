@@ -26,7 +26,7 @@ interface UseDepositNotificationsProps {
   routeType: DepositRouteType
   routerAddress?: string
   isCrossChain: boolean
-  bridgeProtocol?: 'stargate' | 'ccip' | 'relay'
+  bridgeProtocol?: string
 }
 
 interface DepositNotificationsResult {

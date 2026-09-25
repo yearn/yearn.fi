@@ -20,6 +20,7 @@
     "./internal/components/widget/deposit/safeDepositBatch": "./src/components/widget/deposit/safeDepositBatch.ts",
     "./internal/components/widget/deposit/types": "./src/components/widget/deposit/types.ts",
     "./internal/components/widget/shared/valueDisplay": "./src/components/widget/shared/valueDisplay.ts",
+    "./internal/components/widget/shared/transactionOverlay.helpers": "./src/components/widget/shared/transactionOverlay.helpers.ts",
     "./internal/components/widget/shared/*": "./src/components/widget/shared/*.tsx",
     "./internal/components/widget/tokenLogo.utils": "./src/components/widget/tokenLogo.utils.ts",
     "./internal/components/widget/tokenSelectorList.utils": "./src/components/widget/tokenSelectorList.utils.ts",
@@ -32,7 +33,10 @@
     "./styles.css": "./styles.css",
     "./types": "./src/types.ts",
     "./wagmi": "./src/adapters/wagmiExecutionAdapter.ts",
-    "./ybold": "./src/ybold.ts"
+    "./ybold": "./src/ybold.ts",
+    "./lifecycle": "./src/lifecycle/index.ts",
+    "./lifecycle/*": "./src/lifecycle/*.ts",
+    "./internal/components/widget/deposit/ApprovalOverlay": "./src/components/widget/deposit/ApprovalOverlay.tsx"
   },
   "scripts": {
     "test": "vitest run",
