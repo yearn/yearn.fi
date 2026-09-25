@@ -1,5 +1,5 @@
 import { ADMIN_POST_CORS_HEADERS, json, noContent, readJsonBody } from '../http'
-import { ensureHoldingsStorageInitialized, isHoldingsStorageEnabled } from '../lib/holdings'
+import { isHoldingsStorageEnabled } from '../lib/holdings'
 import { invalidateVaults, type VaultIdentifier } from '../lib/holdings/services/cache'
 
 function isValidAddress(address: string): boolean {
@@ -65,14 +65,6 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   try {
-    await ensureHoldingsStorageInitialized()
-    if (!isHoldingsStorageEnabled()) {
-      return json(
-        { error: 'Caching not enabled (UPSTASH_REDIS_REST_URL_PORTFOLIO/TOKEN_PORTFOLIO not configured)' },
-        { status: 503, headers: ADMIN_POST_CORS_HEADERS }
-      )
-    }
-
     const vaults: VaultIdentifier[] = body.vaults.map((v) => ({
       address: v.address,
       chainId: v.chainId

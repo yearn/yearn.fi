@@ -1,6 +1,23 @@
 import type { DepositEvent, TimelineEvent, TransferEvent, WithdrawEvent } from '../types'
 import { getFamilyVaultAddress } from './staking'
 
+type TMutablePositionTimelineIndexEntry = {
+  timestamps: number[]
+  balances: bigint[]
+  balance: bigint
+}
+
+export type TPositionTimelineIndexEntry = Readonly<{
+  timestamps: readonly number[]
+  balances: readonly bigint[]
+}>
+
+export type TPositionTimelineIndex = ReadonlyMap<string, TPositionTimelineIndexEntry>
+
+function getPositionTimelineVaultKey(chainId: number, vaultAddress: string): string {
+  return `${chainId}:${vaultAddress.toLowerCase()}`
+}
+
 export function buildPositionTimeline(
   deposits: DepositEvent[],
   withdrawals: WithdrawEvent[],
@@ -77,6 +94,65 @@ export function getShareBalanceAtTimestamp(
     }
   }
 
+  return balance < BigInt(0) ? BigInt(0) : balance
+}
+
+export function buildPositionTimelineIndex(timeline: readonly TimelineEvent[]): TPositionTimelineIndex {
+  const mutableIndex = timeline.reduce<Map<string, TMutablePositionTimelineIndexEntry>>((index, event) => {
+    const key = getPositionTimelineVaultKey(event.chainId, event.vaultAddress)
+    const entry = index.get(key) ?? { timestamps: [], balances: [], balance: BigInt(0) }
+    const nextBalance = entry.balance + event.sharesChange
+    const lastIndex = entry.timestamps.length - 1
+
+    if (lastIndex >= 0 && entry.timestamps[lastIndex] === event.blockTimestamp) {
+      entry.balances[lastIndex] = nextBalance
+    } else {
+      entry.timestamps.push(event.blockTimestamp)
+      entry.balances.push(nextBalance)
+    }
+
+    entry.balance = nextBalance
+    index.set(key, entry)
+    return index
+  }, new Map())
+
+  return new Map(
+    Array.from(mutableIndex.entries()).map(([key, entry]) => [
+      key,
+      { timestamps: entry.timestamps, balances: entry.balances }
+    ])
+  )
+}
+
+function findLastTimestampIndex(
+  timestamps: readonly number[],
+  timestamp: number,
+  left = 0,
+  right = timestamps.length - 1
+): number {
+  if (left > right) {
+    return right
+  }
+
+  const midpoint = Math.floor((left + right) / 2)
+  return timestamps[midpoint]! <= timestamp
+    ? findLastTimestampIndex(timestamps, timestamp, midpoint + 1, right)
+    : findLastTimestampIndex(timestamps, timestamp, left, midpoint - 1)
+}
+
+export function getIndexedShareBalanceAtTimestamp(
+  index: TPositionTimelineIndex,
+  vaultAddress: string,
+  chainId: number,
+  timestamp: number
+): bigint {
+  const entry = index.get(getPositionTimelineVaultKey(chainId, vaultAddress))
+  if (!entry) {
+    return BigInt(0)
+  }
+
+  const balanceIndex = findLastTimestampIndex(entry.timestamps, timestamp)
+  const balance = balanceIndex >= 0 ? (entry.balances[balanceIndex] ?? BigInt(0)) : BigInt(0)
   return balance < BigInt(0) ? BigInt(0) : balance
 }
 

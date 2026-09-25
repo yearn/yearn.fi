@@ -1,0 +1,250 @@
+const DEFAULT_MAX_VAULTS = 4
+const ZERO_EPSILON = 1e-9
+
+export type TPortfolioGrowthContributionFamily = {
+  chainId: number
+  vaultAddress: string
+  label: string
+  dataPoints: Array<{
+    timestamp: number
+    value: number | null
+  }>
+}
+
+export type TPortfolioGrowthContributionSeries = {
+  key: string
+  label: string
+  chainId: number | null
+  vaultAddress: string | null
+  isOther: boolean
+  isBase: boolean
+  terminalValue: number
+}
+
+export type TPortfolioGrowthContributionChartPoint = {
+  date: string
+  portfolioGrowth: number | null
+  stackBands: Record<string, [number, number] | null>
+  [key: string]: string | number | boolean | null | undefined | Record<string, [number, number] | null>
+}
+
+export type TPortfolioGrowthContributionChart = {
+  data: TPortfolioGrowthContributionChartPoint[]
+  series: TPortfolioGrowthContributionSeries[]
+  bounds: number[]
+}
+
+export function toPortfolioGrowthContributionPoint(
+  point: {
+    timestamp: number
+    growthWeightUsd: number | null
+    growthWeightEth: number | null
+  },
+  mode: 'usd' | 'eth'
+): TPortfolioGrowthContributionFamily['dataPoints'][number] {
+  return {
+    timestamp: point.timestamp,
+    value: mode === 'eth' ? point.growthWeightEth : point.growthWeightUsd
+  }
+}
+
+type TPreparedFamily = TPortfolioGrowthContributionFamily & {
+  originalIndex: number
+  values: Array<number | null>
+  terminalValue: number
+}
+
+function isFiniteNumber(value: unknown): value is number {
+  return typeof value === 'number' && Number.isFinite(value)
+}
+
+function normalizeTimestamp(timestamp: number): number {
+  return timestamp > 1_000_000_000_000 ? Math.floor(timestamp / 1000) : Math.floor(timestamp)
+}
+
+function timestampToUtcDate(timestamp: number): string | null {
+  const normalizedTimestamp = normalizeTimestamp(timestamp)
+  if (!Number.isFinite(normalizedTimestamp)) {
+    return null
+  }
+
+  return new Date(normalizedTimestamp * 1000).toISOString().slice(0, 10)
+}
+
+function normalizeZero(value: number): number {
+  return Math.abs(value) <= ZERO_EPSILON ? 0 : value
+}
+
+function buildRebasedFamilyValues(
+  points: TPortfolioGrowthContributionFamily['dataPoints'],
+  dates: string[]
+): Array<number | null> {
+  const sortedPoints = points
+    .flatMap((point) => {
+      const date = timestampToUtcDate(point.timestamp)
+      return date ? [{ date, value: point.value }] : []
+    })
+    .toSorted((left, right) => left.date.localeCompare(right.date))
+
+  const initialState = {
+    pointIndex: 0,
+    baselineValue: null as number | null,
+    lastValue: null as number | null,
+    values: [] as Array<number | null>
+  }
+
+  return dates.reduce<typeof initialState>((state, date) => {
+    while (state.pointIndex < sortedPoints.length && sortedPoints[state.pointIndex]!.date <= date) {
+      const nextValue = sortedPoints[state.pointIndex]!.value
+      state.lastValue = isFiniteNumber(nextValue) ? nextValue : null
+      state.pointIndex += 1
+    }
+
+    if (state.baselineValue === null && state.lastValue !== null) {
+      state.baselineValue = state.lastValue
+    }
+
+    state.values.push(
+      state.baselineValue !== null && state.lastValue !== null
+        ? normalizeZero(state.lastValue - state.baselineValue)
+        : null
+    )
+    return state
+  }, initialState).values
+}
+
+function prepareFamilies(familySeries: TPortfolioGrowthContributionFamily[], dates: string[]): TPreparedFamily[] {
+  return familySeries
+    .map((family, originalIndex) => {
+      const values = buildRebasedFamilyValues(family.dataPoints, dates)
+      return {
+        ...family,
+        originalIndex,
+        values,
+        terminalValue: values.at(-1) ?? 0
+      }
+    })
+    .filter((family) => Math.abs(family.terminalValue) > ZERO_EPSILON)
+    .toSorted(
+      (left, right) =>
+        Math.abs(right.terminalValue) - Math.abs(left.terminalValue) || left.originalIndex - right.originalIndex
+    )
+}
+
+export function buildPortfolioGrowthContributionChart(args: {
+  totalPoints: Array<{ date: string; value: number | null }>
+  familySeries: TPortfolioGrowthContributionFamily[]
+  maxVaults?: number
+  baseContribution?: { key: string; label: string; value: number }
+}): TPortfolioGrowthContributionChart {
+  const dates = args.totalPoints.map((point) => point.date)
+  const requestedMaxVaults = args.maxVaults ?? DEFAULT_MAX_VAULTS
+  const maxVaults = Number.isFinite(requestedMaxVaults)
+    ? Math.max(0, Math.floor(requestedMaxVaults))
+    : DEFAULT_MAX_VAULTS
+  const selectedFamilies = prepareFamilies(args.familySeries, dates).slice(0, maxVaults)
+  const namedSeries: TPortfolioGrowthContributionSeries[] = selectedFamilies.map((family, index) => ({
+    key: `vault_${index}`,
+    label: family.label,
+    chainId: family.chainId,
+    vaultAddress: family.vaultAddress,
+    isOther: false,
+    isBase: false,
+    terminalValue: family.terminalValue
+  }))
+  const baseSeries: TPortfolioGrowthContributionSeries | null = args.baseContribution
+    ? {
+        key: args.baseContribution.key,
+        label: args.baseContribution.label,
+        chainId: null,
+        vaultAddress: null,
+        isOther: false,
+        isBase: true,
+        terminalValue: args.baseContribution.value
+      }
+    : null
+  const bounds: number[] = []
+
+  const data = args.totalPoints.map<TPortfolioGrowthContributionChartPoint>((totalPoint, pointIndex) => {
+    if (!isFiniteNumber(totalPoint.value)) {
+      return {
+        date: totalPoint.date,
+        portfolioGrowth: null,
+        stackBands: {},
+        ...Object.fromEntries([...selectedFamilies.map((_, index) => [`vault_${index}`, null]), ['other', null]])
+      }
+    }
+
+    const portfolioGrowth = totalPoint.value
+    const baseValue = args.baseContribution?.value ?? 0
+    const row: TPortfolioGrowthContributionChartPoint = {
+      date: totalPoint.date,
+      portfolioGrowth,
+      stackBands: {}
+    }
+
+    selectedFamilies.forEach((family, familyIndex) => {
+      const value = family.values[pointIndex]
+      row[`vault_${familyIndex}`] = value
+    })
+
+    const displayedGrowth = selectedFamilies.reduce((total, family) => {
+      const value = family.values[pointIndex]
+      return total + (isFiniteNumber(value) ? value : 0)
+    }, 0)
+    row.other = normalizeZero(portfolioGrowth - baseValue - displayedGrowth)
+
+    if (baseSeries) {
+      row[baseSeries.key] = baseValue
+      row.stackBands[baseSeries.key] = [Math.min(0, baseValue), Math.max(0, baseValue)]
+      bounds.push(baseValue)
+    }
+
+    const contributionRows: Array<{ series: TPortfolioGrowthContributionSeries; value: number }> = [
+      ...namedSeries.map((series) => {
+        const value = row[series.key]
+        return { series, value: isFiniteNumber(value) ? value : 0 }
+      }),
+      {
+        series: {
+          key: 'other',
+          label: 'Other',
+          chainId: null,
+          vaultAddress: null,
+          isOther: true,
+          isBase: false,
+          terminalValue: 0
+        } satisfies TPortfolioGrowthContributionSeries,
+        value: isFiniteNumber(row.other) ? row.other : 0
+      }
+    ]
+      .toReversed()
+      .toSorted((left, right) => Number(left.value >= 0) - Number(right.value >= 0))
+    contributionRows.reduce((runningTotal, contribution) => {
+      const nextTotal = runningTotal + contribution.value
+      row.stackBands[contribution.series.key] = [Math.min(runningTotal, nextTotal), Math.max(runningTotal, nextTotal)]
+      bounds.push(runningTotal, nextTotal)
+      return nextTotal
+    }, baseValue)
+    return row
+  })
+  const otherTerminalValue = data.map((point) => point.other).findLast(isFiniteNumber) ?? 0
+
+  return {
+    data,
+    series: [
+      ...(baseSeries ? [baseSeries] : []),
+      ...namedSeries,
+      {
+        key: 'other',
+        label: 'Other',
+        chainId: null,
+        vaultAddress: null,
+        isOther: true,
+        isBase: false,
+        terminalValue: otherTerminalValue
+      }
+    ],
+    bounds
+  }
+}
