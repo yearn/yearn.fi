@@ -359,9 +359,15 @@ All surfaces share selectors for transaction outcome, flow progress, tracking/st
 explorer references. Available commands are explicit: start, continue after review, retry preparation, recheck a
 record, refresh balances, or invoke a supported recovery action. A generic Retry button must not guess among them.
 
-The wallet indicator aggregates owner-scoped records after hydration. Active work and required user action take
-priority, then unresolved outcomes, unacknowledged failures, and recent success. Metadata-only writes cannot clear
-the indicator. Acknowledgement and display windows are presentation policy; neither changes transaction evidence.
+The wallet indicator aggregates unread owner-scoped records after hydration. Clicking the address/account control
+acknowledges their current displayed status and dismisses the dot. Store acknowledgement on the canonical record
+and synchronize it across tabs; reloads do not restore dismissed alerts. A new transaction or changed outcome/label
+raises an alert again. Balance refreshes and other metadata changes do not. There is no five-minute auto-dismissal;
+seven-day retention still applies to fully resolved flows. Acknowledgement never stops tracking or hides history.
+
+Recent activity prioritizes unresolved entries, showing a spinner in their left icon slot. Completion updates the
+same record/row instead of appending a second entry. Desktop and mobile share the list; all unresolved entries stay
+accessible even when there are more than three, followed by completed entries up to the usual three-row limit.
 
 Persist approval-management submissions through the same lifecycle, with technical approval rows hidden from
 default activity and available when expanded. This applies to EOA and Safe wallets. Do not couple tracking

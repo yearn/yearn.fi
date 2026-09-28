@@ -162,7 +162,10 @@ export function createTransactionLifecycleStorage(): TTransactionPersistence {
                     message: seed.refreshError
                   })
                 : withMilestones
-            const next = observation ? reduceTransaction(recovered, observation) : recovered
+            const acknowledged = seed.acknowledged
+              ? reduceTransaction(recovered, { kind: 'acknowledge', ...seed.acknowledged })
+              : recovered
+            const next = observation ? reduceTransaction(acknowledged, observation) : acknowledged
             result.record = { ...next, storageError: undefined }
             store.put(result.record)
           } catch (error) {

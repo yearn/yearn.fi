@@ -30,6 +30,7 @@ export type TTransactionRecord = {
   owner: Address
   createdAt: number // Unix milliseconds throughout the lifecycle API.
   revision: number
+  acknowledged?: { status: string; observedAt: number }
   request: Omit<VaultWidgetTransactionRequest, 'value'> & { value: string }
   display?: VaultWidgetNotificationInput
   original: TTransactionReference
@@ -52,6 +53,7 @@ export type TTransactionRecord = {
   refreshError?: string
 }
 export type TTransactionObservation =
+  | { kind: 'acknowledge'; status: string; observedAt: number }
   | { kind: 'settlement'; evidence: TSettlementEvidence }
   | { kind: 'settlement-check'; tracking: TSettlementTracking }
   | {
@@ -166,10 +168,28 @@ export function selectTransaction(record: TTransactionRecord): TTransactionPrese
   return { ...common, outcome: 'pending', label: 'Transaction pending' }
 }
 
+/** Only changes visible to the user should raise the activity indicator again. */
+export function transactionStatusKey(record: TTransactionRecord): string {
+  const { outcome, label } = selectTransaction(record)
+  return JSON.stringify([outcome, label])
+}
+
+export function isTransactionAcknowledged(record: TTransactionRecord): boolean {
+  return record.acknowledged?.status === transactionStatusKey(record)
+}
+
 export function reduceTransaction(
   record: TTransactionRecord,
   observation: TTransactionObservation
 ): TTransactionRecord {
+  if (observation.kind === 'acknowledge') {
+    if (record.acknowledged && record.acknowledged.observedAt >= observation.observedAt) return record
+    return {
+      ...record,
+      revision: record.revision + 1,
+      acknowledged: { status: observation.status, observedAt: observation.observedAt }
+    }
+  }
   if (observation.kind === 'settlement-check') {
     if (
       record.settlement === 'same-chain' ||

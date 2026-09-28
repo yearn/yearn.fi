@@ -5,11 +5,13 @@ import {
 } from '@yearn/vault-widget/headless'
 import {
   createTransactionLifecycle,
+  isTransactionAcknowledged,
   reduceTransaction,
   selectTransaction,
   TRANSACTION_RETENTION_MS,
   type TTransactionPersistence,
-  type TTransactionRecord
+  type TTransactionRecord,
+  transactionStatusKey
 } from '@yearn/vault-widget/lifecycle'
 import type { TransactionReceipt } from 'viem'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
@@ -1031,5 +1033,37 @@ describe('Safe proposals and dependent preparations', () => {
     expect(service.getSnapshot().records.map((item) => item.id)).toEqual([record.id])
     expect(original.execute).toHaveBeenCalledTimes(1)
     stop()
+  })
+  it('acknowledges only the active owner and raises a new alert when the pending transaction completes', async () => {
+    const f = fixture()
+    await f.start()
+    await settle()
+    await f.service.acknowledge(to)
+    expect(isTransactionAcknowledged(f.service.getSnapshot().records[0])).toBe(false)
+    await f.service.acknowledge(owner)
+    const acknowledged = f.service.getSnapshot().records[0]
+    expect(isTransactionAcknowledged(acknowledged)).toBe(true)
+    expect(f.execute).toHaveBeenCalledOnce()
+    f.gate.resolve({ receipt })
+    await settle()
+    const completed = f.service.getSnapshot().records[0]
+    expect(completed.id).toBe(acknowledged.id)
+    expect(isTransactionAcknowledged(completed)).toBe(false)
+    await f.service.acknowledge(owner)
+    const seen = f.service.getSnapshot().records[0]
+    expect(isTransactionAcknowledged(seen)).toBe(true)
+    const stale = reduceTransaction(seen, {
+      kind: 'acknowledge',
+      status: transactionStatusKey(acknowledged),
+      observedAt: acknowledged.acknowledged!.observedAt
+    })
+    expect(isTransactionAcknowledged(stale)).toBe(true)
+    expect(
+      isTransactionAcknowledged(
+        reduceTransaction(seen, { kind: 'refresh', status: 'error', message: 'Retry balances' })
+      )
+    ).toBe(true)
+    expect(f.service.getSnapshot().records).toHaveLength(1)
+    f.disconnect()
   })
 })

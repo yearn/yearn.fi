@@ -1,5 +1,5 @@
 import type { TNotification, TNotificationStatus } from '@shared/types/notifications'
-import { selectTransaction } from '@yearn/vault-widget/lifecycle'
+import { isTransactionAcknowledged, selectTransaction } from '@yearn/vault-widget/lifecycle'
 import type { Hash } from 'viem'
 
 export type TNotificationLifecyclePresentation = {
@@ -91,20 +91,13 @@ export function getNotificationLifecyclePresentation(notification: TNotification
   return { label: 'Pending', styleStatus: 'pending', ...sourceTransaction }
 }
 
-// Until acknowledgement is part of the record model, terminal indicators expire after five minutes.
-export const NOTIFICATION_INDICATOR_WINDOW_SECONDS = 5 * 60
-
-export function selectNotificationStatus(
-  notifications: TNotification[],
-  nowSeconds: number
-): TNotificationStatus | null {
-  if (notifications.some((entry) => entry.status === 'pending')) return 'pending'
-  if (notifications.some((entry) => entry.status === 'submitted')) return 'submitted'
-  const recent = notifications.filter((entry) => {
-    const timestamp = entry.timeFinished ?? entry.createdAt
-    return timestamp !== undefined && nowSeconds < timestamp + NOTIFICATION_INDICATOR_WINDOW_SECONDS
-  })
-  if (recent.some((entry) => entry.status === 'error')) return 'error'
-  if (recent.some((entry) => entry.status === 'success')) return 'success'
+export function selectNotificationStatus(notifications: TNotification[]): TNotificationStatus | null {
+  const unread = notifications.filter(
+    (entry) => !entry.lifecycleRecord || !isTransactionAcknowledged(entry.lifecycleRecord)
+  )
+  if (unread.some((entry) => entry.status === 'pending')) return 'pending'
+  if (unread.some((entry) => entry.status === 'submitted')) return 'submitted'
+  if (unread.some((entry) => entry.status === 'error')) return 'error'
+  if (unread.some((entry) => entry.status === 'success')) return 'success'
   return null
 }

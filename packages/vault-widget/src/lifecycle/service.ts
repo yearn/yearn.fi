@@ -11,12 +11,14 @@ import {
 } from '@yearn/vault-widget/headless'
 import {
   hasSuccessfulSourceReceipt,
+  isTransactionAcknowledged,
   reduceTransaction,
   selectTransaction,
   type TTransactionObservation,
   type TTransactionPersistence,
   type TTransactionRecord,
-  transactionIdentity
+  transactionIdentity,
+  transactionStatusKey
 } from '@yearn/vault-widget/lifecycle/model'
 import { expiredTransactionIds } from '@yearn/vault-widget/lifecycle/retention'
 import {
@@ -212,6 +214,8 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
     })
     if (record.conflict)
       putRecord(reduceTransaction(getRecord(record.id)!, { kind: 'conflict', message: record.conflict }))
+    if (record.acknowledged)
+      putRecord(reduceTransaction(getRecord(record.id)!, { kind: 'acknowledge', ...record.acknowledged }))
   }
   const persist = (record: TTransactionRecord, observation?: TTransactionObservation): Promise<void> => {
     if (!options.persistence) return Promise.resolve()
@@ -1022,6 +1026,19 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
           }
         }).then(() => settleNext())
       } else void track(recordId)
+    },
+    acknowledge: async (owner: Address): Promise<void> => {
+      await Promise.all(
+        state.snapshot.records
+          .filter((record) => record.owner.toLowerCase() === owner.toLowerCase() && !isTransactionAcknowledged(record))
+          .map((record) =>
+            observe(record.id, {
+              kind: 'acknowledge',
+              status: transactionStatusKey(record),
+              observedAt: Math.max(now(), (record.acknowledged?.observedAt ?? 0) + 1)
+            })
+          )
+      )
     },
     recheckHistory: () => {
       if (state.running) void hydrate()

@@ -2,6 +2,8 @@ import { Dialog, Transition, TransitionChild } from '@headlessui/react'
 import { setThemePreference, useThemePreference } from '@hooks/useThemePreference'
 import { BottomDrawer } from '@pages/vaults/components/detail/BottomDrawer'
 import { useAppSettings } from '@pages/vaults/contexts/useAppSettings'
+import { RecentActivity } from '@shared/components/RecentActivity'
+import { useNotifications } from '@shared/contexts/useNotifications'
 import { useWalletStatus } from '@shared/contexts/useWallet'
 import { useWalletVaultTotals } from '@shared/contexts/useWalletVaultTotals'
 import { useWeb3 } from '@shared/contexts/useWeb3'
@@ -188,15 +190,7 @@ function MobileWalletDrawerContent({
           >
             {'View portfolio'}
           </button>
-          <button
-            onClick={onViewRecentActivity}
-            className={cl(
-              'flex w-full items-center justify-center rounded-lg border py-2.5 text-sm font-medium transition-colors',
-              'border-border bg-surface text-text-primary hover:bg-surface-tertiary'
-            )}
-          >
-            {'Recent activity'}
-          </button>
+          <RecentActivity onViewAll={onViewRecentActivity} />
         </div>
       )}
     </div>
@@ -404,7 +398,10 @@ export function MobileNavMenu({
 
   const displayName = walletIdentity || ens || clusters?.name || (address ? truncateHex(address, 4) : 'Wallet')
 
+  const { acknowledge } = useNotifications()
+
   const handleWalletClick = (): void => {
+    acknowledge()
     onClose()
     setIsWalletDrawerOpen(true)
   }
@@ -526,7 +523,11 @@ export function MobileNavMenu({
                       <IconWallet className={'size-5'} />
                       <span>{walletIdentity || 'Wallet'}</span>
                       {notificationStatus && (
-                        <div className={cl('absolute right-4 size-2.5 rounded-full', notificationDotColor)} />
+                        <div
+                          role="img"
+                          aria-label="Unread transaction activity"
+                          className={cl('absolute right-4 size-2.5 rounded-full', notificationDotColor)}
+                        />
                       )}
                     </button>
 

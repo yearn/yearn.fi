@@ -3,9 +3,9 @@ import { projectLifecycleNotification } from '@shared/contexts/transactionLifecy
 import { filterNotificationsForAddress } from '@shared/contexts/useNotifications.helpers'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import type { TNotificationsContext } from '@shared/types/notifications'
-import { NOTIFICATION_INDICATOR_WINDOW_SECONDS, selectNotificationStatus } from '@shared/utils/notificationLifecycle'
+import { selectNotificationStatus } from '@shared/utils/notificationLifecycle'
 import type React from 'react'
-import { createContext, useContext, useEffect, useMemo, useState, useSyncExternalStore } from 'react'
+import { createContext, useContext, useMemo, useSyncExternalStore } from 'react'
 
 const EMPTY_LIFECYCLE_RECORDS = Object.freeze([])
 const noLifecycleSubscribe = () => () => undefined
@@ -15,7 +15,8 @@ const defaultProps: TNotificationsContext = {
   cachedEntries: [],
   notificationStatus: null,
   isLoading: true,
-  error: null
+  error: null,
+  acknowledge: () => undefined
 }
 
 const NotificationsContext = createContext<TNotificationsContext>(defaultProps)
@@ -27,26 +28,12 @@ export const WithNotifications = ({ children }: { children: React.ReactElement }
     lifecycle ? () => lifecycle.getSnapshot().records : emptyLifecycleRecords,
     emptyLifecycleRecords
   )
-  const [clockSeconds, setNowSeconds] = useState(() => Date.now() / 1000)
-  const nowSeconds = Math.max(clockSeconds, Date.now() / 1000)
   // Filter at render time as well as hydration, so changing wallets cannot expose the previous wallet's records.
   const visibleEntries = useMemo(
     () => filterNotificationsForAddress(lifecycleRecords.map(projectLifecycleNotification), address),
     [lifecycleRecords, address]
   )
-  const notificationStatus = selectNotificationStatus(visibleEntries, nowSeconds)
-  const nextExpiry = visibleEntries.reduce((next, entry) => {
-    const timestamp = entry.timeFinished ?? entry.createdAt
-    if (timestamp === undefined || (entry.status !== 'success' && entry.status !== 'error')) return next
-    const expiry = timestamp + NOTIFICATION_INDICATOR_WINDOW_SECONDS
-    return expiry > nowSeconds ? Math.min(next, expiry) : next
-  }, Number.POSITIVE_INFINITY)
-  // Wall-clock expiration needs a timer even when IndexedDB and React receive no new events.
-  useEffect(() => {
-    if (!Number.isFinite(nextExpiry)) return
-    const timer = setTimeout(() => setNowSeconds(Date.now() / 1000), Math.max(0, nextExpiry * 1000 - Date.now()))
-    return () => clearTimeout(timer)
-  }, [nextExpiry])
+  const notificationStatus = selectNotificationStatus(visibleEntries)
 
   const history = useSyncExternalStore(
     lifecycle?.subscribe ?? noLifecycleSubscribe,
@@ -55,6 +42,9 @@ export const WithNotifications = ({ children }: { children: React.ReactElement }
   )
   const contextValue: TNotificationsContext = {
     cachedEntries: visibleEntries,
+    acknowledge: () => {
+      if (address) void lifecycle?.acknowledge(address)
+    },
     notificationStatus,
     isLoading: history === 'loading',
     error: history === 'unavailable' ? 'Failed to load transaction history' : null

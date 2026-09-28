@@ -59,6 +59,7 @@ export type TNotification = {
 }
 
 export type TNotificationsContext = {
+  acknowledge: () => void
   cachedEntries: TNotification[]
   notificationStatus: TNotificationStatus | null
   isLoading: boolean

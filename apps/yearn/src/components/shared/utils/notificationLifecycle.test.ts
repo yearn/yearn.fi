@@ -83,20 +83,19 @@ describe('transaction references and aggregate status', () => {
   it('keeps active work visible when another transaction completes or changes metadata', () => {
     const pending = { ...notification, status: 'pending' as const }
     const done = { ...notification, status: 'success' as const, timeFinished: 100 }
-    expect(selectNotificationStatus([pending, done], 101)).toBe('pending')
-    expect(selectNotificationStatus([done, { ...pending, blockNumber: 123n }], 101)).toBe('pending')
-    expect(selectNotificationStatus([done, notification], 101)).toBe('submitted')
+    expect(selectNotificationStatus([pending, done])).toBe('pending')
+    expect(selectNotificationStatus([done, { ...pending, blockNumber: 123n }])).toBe('pending')
+    expect(selectNotificationStatus([done, notification])).toBe('submitted')
   })
 
-  it('shows unresolved tracking, recent failures, and recent success in priority order', () => {
+  it('shows unresolved tracking, failures, and success until acknowledged', () => {
     const failed = { ...notification, status: 'error' as const, timeFinished: 100 }
     const done = { ...notification, status: 'success' as const, timeFinished: 110 }
-    expect(selectNotificationStatus([done, failed, { ...notification, bridgeTrackingState: 'unavailable' }], 111)).toBe(
+    expect(selectNotificationStatus([done, failed, { ...notification, bridgeTrackingState: 'unavailable' }])).toBe(
       'submitted'
     )
-    expect(selectNotificationStatus([done, failed], 111)).toBe('error')
-    expect(selectNotificationStatus([done], 111)).toBe('success')
-    expect(selectNotificationStatus([done, failed], 410)).toBeNull()
-    expect(selectNotificationStatus([], 111)).toBeNull()
+    expect(selectNotificationStatus([done, failed])).toBe('error')
+    expect(selectNotificationStatus([done])).toBe('success')
+    expect(selectNotificationStatus([])).toBeNull()
   })
 })

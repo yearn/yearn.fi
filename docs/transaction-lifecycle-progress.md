@@ -10,7 +10,7 @@ Design: [v2 proposal](./v2-transaction-lifecycle.md).
 | --- | --- |
 | Stages 1–3 | Implemented; controlled real-wallet/Safe parity still needs verification. |
 | Stage 4 | Enabled by default in Yearn; local shared Redis validation passes; controlled bridge QA remains pending. |
-| Stage 5 | Simplified canonical cutover and seven-day cleanup implemented; persisted acknowledgement and approval grouping remain pending. |
+| Stage 5 | Simplified canonical cutover, seven-day cleanup and persisted acknowledgement implemented; approval grouping remains pending. |
 | Simplification | Yearn legacy notification storage readers/writers, source/bridge pollers, decoder and bridge guard removed. Widget fallback remains for other hosts. |
 
 Historical validation counts below describe their individual stages, not the latest checkout.
@@ -477,3 +477,23 @@ desktop/mobile layout without browser errors or horizontal overflow. No real wal
 Remaining: persisted acknowledgement and technical approval grouping, removal of reusable host fallbacks when
 those hosts are migrated, and controlled real-wallet/Safe/bridge validation before merge. Older migration/guard
 requirements and their validation entries above describe earlier stages and are superseded by this cutover.
+
+
+## 2026-09-28: acknowledge activity and show pending rows
+
+- Clicking the desktop account control or mobile wallet control acknowledges the active owner's current statuses
+  and dismisses the alert dot. Acknowledgement is stored on canonical records, survives reloads and merges across
+  tabs without replacing newer acknowledgement with stale writes. No separate notification store was introduced.
+- New records and changed displayed statuses raise a fresh alert. Metadata/balance refresh changes do not. Removed
+  the temporary five-minute indicator timeout; acknowledged pending transactions remain visible and tracked.
+- Desktop and mobile now share Recent activity. Unresolved entries sort first and show a spinner in the left icon
+  space plus a status label. Completion updates the existing stable record key. All unresolved entries are available
+  in the scrollable list, alongside completed history up to the usual three-row limit.
+- Technical approval grouping and controlled real-wallet/Safe/bridge validation remain outstanding.
+
+Validation: 460 widget, 832 Yearn and 5 yBOLD tests pass (including the focused loading-state account-click
+regression), plus workspace TypeScript, lint, both boundary checks and both production builds. Native Chromium
+storage checks cover persisted acknowledgement and stale writes. Production UI checks with simulated wallet
+identity/local records verify desktop dismissal, completion re-alerting, one updated row, dismissal after reload,
+and mobile pending activity. Account opening now remains available during background balance/identity loading.
+No real transactions were submitted; real-wallet/Safe/bridge validation is still outstanding.
