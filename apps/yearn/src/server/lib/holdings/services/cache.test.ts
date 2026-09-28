@@ -98,7 +98,7 @@ describe('protocol return history snapshot cache', () => {
     const savedValue = setMock.mock.calls[0]?.[1]
 
     expect(saved).toBe(true)
-    expect(key).toMatch(/^holdings:protocol-return-history:v23:[a-f0-9]{64}:1y:all$/)
+    expect(key).toMatch(/^holdings:protocol-return-history:v24:[a-f0-9]{64}:1y:all$/)
     expect(key).not.toContain(identity.userAddress)
     expect(savedValue).toEqual(expect.stringMatching(/^br1:/))
     expect(savedValue).not.toContain('2026-07-15')
@@ -108,6 +108,51 @@ describe('protocol return history snapshot cache', () => {
       updatedAt: 1234,
       vaults: [{ address: '0x00000000000000000000000000000000000000a1', chainId: 1 }],
       response: { summary: { isComplete: true }, dataPoints: [{ date: '2026-07-15' }] }
+    })
+  })
+
+  it('ignores a previous-version snapshot and reads newly saved history', async () => {
+    const legacyKey =
+      'holdings:protocol-return-history:v23:0b035a6e9fdc18c7c68a425dec79e35afaa3b8df716663fedd32abd78335bc00:1y:all'
+    const entries = new Map<string, string>([
+      [
+        legacyKey,
+        encodeSnapshot({
+          settledDate: '2026-07-15',
+          updatedAt: 1234,
+          vaults: [],
+          response: { dataPoints: [{ date: '2026-07-15', growthWeightUsd: null }] }
+        })
+      ]
+    ])
+    isHoldingsStorageEnabledMock.mockReturnValue(true)
+    getHoldingsRedisClientMock.mockReturnValue({
+      get: vi.fn(async (key: string) => entries.get(key) ?? null),
+      set: vi.fn(async (key: string, value: string) => {
+        entries.set(key, value)
+        return 'OK'
+      })
+    })
+    const { getCachedProtocolReturnHistorySnapshot, saveCachedProtocolReturnHistory } = await import(
+      '@/server/lib/holdings/services/cache'
+    )
+    const identity = { userAddress: '0x0000000000000000000000000000000000000001', timeframe: '1y' }
+
+    await expect(getCachedProtocolReturnHistorySnapshot(identity, '2026-07-15')).resolves.toBeNull()
+    await expect(
+      saveCachedProtocolReturnHistory(
+        identity,
+        '2026-07-15',
+        [],
+        {
+          dataPoints: [{ date: '2026-07-15', growthWeightUsd: 12.5 }]
+        },
+        2345
+      )
+    ).resolves.toBe(true)
+    await expect(getCachedProtocolReturnHistorySnapshot(identity, '2026-07-15')).resolves.toEqual({
+      settledDate: '2026-07-15',
+      response: { dataPoints: [{ date: '2026-07-15', growthWeightUsd: 12.5 }] }
     })
   })
 
@@ -208,7 +253,7 @@ describe('protocol return history snapshot cache', () => {
     const key = getProtocolReturnHistoryCacheKey(identity)
 
     expect(key).toBe(getProtocolReturnHistoryCacheKey(reversedIdentity))
-    expect(key).toMatch(/^holdings:protocol-return-history:v23:[a-f0-9]{64}:1y:[a-f0-9]{64}$/)
+    expect(key).toMatch(/^holdings:protocol-return-history:v24:[a-f0-9]{64}:1y:[a-f0-9]{64}$/)
     expect(key).not.toContain(identity.vaultScope[0].address)
   })
 

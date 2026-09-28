@@ -199,19 +199,20 @@ async function fetchVaultPpsWithRetry(
 ): Promise<PPSTimeline> {
   try {
     const url = `${getKongPpsRestBaseUrl()}/timeseries/pps/${chainId}/${vaultAddress}`
-    const response = await withPpsRequestSlot(() =>
-      getFetchFn(options)(url, {
+    const responseText = await withPpsRequestSlot(async () => {
+      const response = await getFetchFn(options)(url, {
         signal: AbortSignal.timeout(getTimeoutMs(options))
       })
-    )
 
-    if (!response.ok) {
-      const error = new Error(`Kong PPS request failed: ${response.status} for ${vaultAddress}`) as TKongFetchError
-      error.status = response.status
-      throw error
-    }
+      if (!response.ok) {
+        await response.body?.cancel().catch(() => undefined)
+        const error = new Error(`Kong PPS request failed: ${response.status} for ${vaultAddress}`) as TKongFetchError
+        error.status = response.status
+        throw error
+      }
 
-    const responseText = await response.text()
+      return response.text()
+    })
     const responseValue = JSON.parse(responseText)
     if (!Array.isArray(responseValue)) {
       throw new Error(`Invalid Kong PPS response for ${vaultAddress}`)

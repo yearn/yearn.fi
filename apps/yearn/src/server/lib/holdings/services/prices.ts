@@ -706,7 +706,11 @@ export async function fetchHistoricalPricesForTokenTimestamps(
             coinsToFetch.map((coin) => ({
               chain: coin.chain,
               address: coin.address,
-              timestamps: timestampGroup
+              // Normalize only the upstream request; callers still need their original timestamp keys.
+              timestamps: coin.timestamps.filter((timestamp) => {
+                const dayEnd = normalizeToUtcDayEnd(timestamp)
+                return dayEnd >= timestampGroup[0]! && dayEnd <= timestampGroup[timestampGroup.length - 1]!
+              })
             }))
           )
     const batches = buildRequestBatches(tokenRequests, effectiveTuning)

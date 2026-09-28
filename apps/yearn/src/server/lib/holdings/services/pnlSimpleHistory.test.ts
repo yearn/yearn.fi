@@ -1,4 +1,4 @@
-import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import type { VaultMetadata } from '../types'
 import { toVaultKey } from './pnlShared'
 import type { TRawPnlEvent } from './pnlTypes'
@@ -312,6 +312,11 @@ async function runNestedHybridHistoryScenario(hasExitPrice: boolean) {
 }
 
 describe('getHoldingsProtocolReturnHistory', () => {
+  afterEach(() => {
+    vi.unstubAllGlobals()
+    vi.unstubAllEnvs()
+  })
+
   beforeEach(() => {
     vi.resetModules()
     vi.clearAllMocks()
@@ -423,6 +428,118 @@ describe('getHoldingsProtocolReturnHistory', () => {
         }
       }
     ])
+  })
+
+  it('keeps two-token USD and Index history complete when current prices enable shared range batching', async () => {
+    vi.stubEnv('YEARN_PRICES_API_KEY', 'test-key')
+    vi.stubEnv('YEARN_PRICES_BASE_URL', 'https://prices.example')
+    const prices = await vi.importActual<typeof import('@/server/lib/holdings/services/prices')>(
+      '@/server/lib/holdings/services/prices'
+    )
+    fetchHistoricalPricesForTokenTimestampsMock.mockImplementation(prices.fetchHistoricalPricesForTokenTimestamps)
+    getPriceAtTimestampMock.mockImplementation(prices.getPriceAtTimestamp)
+    const day = 86_400
+    const firstDay = 1_767_312_000 // Jan 2, 2026
+    const latest = firstDay + 3 * day - 1
+    const secondAsset = '0x6666666666666666666666666666666666666666'
+    const vaultMetadata = new Map([
+      ...metadata,
+      [
+        NESTED_VAULT_KEY,
+        {
+          ...metadata.get(VAULT_KEY)!,
+          address: NESTED_VAULT,
+          token: { address: secondAsset, symbol: 'SECOND', decimals: 18 }
+        }
+      ] as const
+    ])
+    const events = [
+      { ...event, blockTimestamp: firstDay },
+      {
+        ...event,
+        id: 'second-token-deposit',
+        vaultAddress: NESTED_VAULT,
+        familyVaultAddress: NESTED_VAULT,
+        blockTimestamp: firstDay
+      },
+      {
+        ...event,
+        id: 'second-token-top-up',
+        vaultAddress: NESTED_VAULT,
+        familyVaultAddress: NESTED_VAULT,
+        blockNumber: 2,
+        blockTimestamp: firstDay + day
+      }
+    ]
+    const vaultIdentifiers = [
+      { chainId: 1, vaultAddress: VAULT },
+      { chainId: 1, vaultAddress: NESTED_VAULT }
+    ]
+    const context = {
+      ...settledContext,
+      latestSettledDayTimestamp: latest - 1,
+      maxTimestamp: latest,
+      vaultMetadata,
+      rawEvents: events,
+      selectedEvents: events,
+      rawVaultIdentifiers: vaultIdentifiers,
+      selectedVaultIdentifiers: vaultIdentifiers,
+      ppsIdentifiers: vaultIdentifiers,
+      ppsData: new Map([
+        [VAULT_KEY, new Map([[firstDay, 1]])],
+        [NESTED_VAULT_KEY, new Map([[firstDay, 1]])]
+      ])
+    }
+    getSettledAddressScopedContextMock.mockResolvedValue(context)
+    getSettledPpsContextMock.mockResolvedValue(context)
+    getVaultIdentifiersMock.mockReturnValue(vaultIdentifiers)
+    selectEventsMock.mockReturnValue({ events, vaultIdentifiers })
+    getPPSMock.mockImplementation((_timeline: unknown, timestamp: number) =>
+      timestamp >= firstDay + 2 * day ? 1.1 : 1
+    )
+    generateDailyTimestampsMock.mockReturnValue([firstDay + day - 2, firstDay + 2 * day - 2, latest - 1])
+    const fetchStub = vi.fn(async (input: string | URL | Request) => {
+      const url = new URL(String(input))
+      const coins = JSON.parse(url.searchParams.get('coins')!) as Record<string, number[]>
+      return new Response(
+        JSON.stringify({
+          coins: Object.fromEntries(
+            Object.keys(coins).map((key) => [
+              key,
+              {
+                symbol: 'TKN',
+                prices: [0, 1, 2].map((offset) => ({
+                  timestamp: firstDay + (offset + 1) * day - 1,
+                  price: 1,
+                  confidence: 1
+                }))
+              }
+            ])
+          )
+        })
+      )
+    })
+    vi.stubGlobal('fetch', fetchStub)
+
+    const { getHoldingsProtocolReturnPortfolio } = await import('@/server/lib/holdings/services/pnlSimple')
+    const response = await getHoldingsProtocolReturnPortfolio(USER, '1y')
+
+    expect(response.growth.summary).toMatchObject({
+      totalVaults: 2,
+      completeVaults: 2,
+      partialVaults: 0,
+      isComplete: true
+    })
+    expect(response.growth.vaults.map((vault) => vault.issues)).toEqual([[], []])
+    expect(response.growth.vaults.reduce((sum, vault) => sum + vault.growthUsd!, 0)).toBeCloseTo(30)
+    expect(response.protocolReturn.dataPoints.at(-1)).toMatchObject({
+      growthWeightUsd: expect.closeTo(30),
+      growthIndex: expect.closeTo(110)
+    })
+    expect(response.protocolReturn.familySeries).toHaveLength(2)
+    expect(
+      fetchStub.mock.calls.some(([input]) => new URL(String(input)).pathname === '/api/prices/rangeHistorical')
+    ).toBe(true)
   })
 
   it.each(['withdrawal', 'transfer_out'] as const)(

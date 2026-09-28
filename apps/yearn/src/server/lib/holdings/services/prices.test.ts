@@ -120,6 +120,50 @@ describe('Yearn Prices holdings history', () => {
     expect(prices.get(`ethereum:${secondToken}`)?.get(timestamps[0]!)).toBe(1)
   })
 
+  it.each([3, 185])('preserves receipt and current timestamps across a shared %i-day range', async (days) => {
+    useYearnPrices()
+    const day = 86_400
+    const midnights = Array.from({ length: days }, (_value, index) => 1_767_312_000 + index * day)
+    const currentTimestamp = midnights.at(-1)! + day - 1
+    const requests = [
+      { chainId: 1, address: '0x4444444444444444444444444444444444444444', timestamps: midnights.slice(0, -1) },
+      { chainId: 1, address: '0x5555555555555555555555555555555555555555', timestamps: midnights }
+    ]
+    const fetchStub = vi.fn(async (input: string | URL | Request) => {
+      const url = new URL(input.toString())
+      const ranges = JSON.parse(url.searchParams.get('coins')!) as Record<string, [number, number]>
+      return createBatchResponse({
+        coins: Object.fromEntries(
+          Object.entries(ranges).map(([key, [start, end]]) => [
+            key,
+            {
+              symbol: 'TKN',
+              prices: midnights
+                .map((timestamp) => timestamp + day - 1)
+                .filter((timestamp) => timestamp >= start && timestamp <= end)
+                .map((timestamp) => ({ timestamp, price: 1, confidence: 1 }))
+            }
+          ])
+        )
+      })
+    })
+    vi.stubGlobal('fetch', fetchStub)
+
+    const combinedRequests = requests.map((request) => ({
+      ...request,
+      timestamps: [...request.timestamps, currentTimestamp]
+    }))
+    const prices = await fetchHistoricalPricesForTokenTimestamps(combinedRequests)
+
+    combinedRequests.forEach(({ address, timestamps }) => {
+      expect(prices.get(`ethereum:${address}`)).toEqual(new Map(timestamps.map((timestamp) => [timestamp, 1])))
+    })
+    expect(
+      fetchStub.mock.calls.every(([input]) => new URL(String(input)).pathname === '/api/prices/rangeHistorical')
+    ).toBe(true)
+    expect(fetchStub).toHaveBeenCalledTimes(days === 3 ? 1 : 2)
+  })
+
   it('keeps requests under the configured token-timestamp cap', async () => {
     useYearnPrices()
     const tokens = Array.from({ length: 4 }, (_value, index) => ({
