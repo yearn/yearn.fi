@@ -1,4 +1,5 @@
 import {
+  expiredTransactionIds,
   isSettlementRequirement,
   reduceTransaction,
   type TTransactionPersistence,
@@ -8,6 +9,7 @@ import {
 
 const DATABASE = 'yearn-transaction-lifecycle'
 const STORE = 'records'
+const RETIRED = 'retired-record-ids'
 
 function openDatabase(signal: AbortSignal): Promise<IDBDatabase> {
   return new Promise((resolve, reject) => {
@@ -15,8 +17,11 @@ function openDatabase(signal: AbortSignal): Promise<IDBDatabase> {
       reject(new Error('History request aborted'))
       return
     }
-    const request = indexedDB.open(DATABASE, 1)
-    request.onupgradeneeded = () => request.result.createObjectStore(STORE, { keyPath: 'id' })
+    const request = indexedDB.open(DATABASE, 2)
+    request.onupgradeneeded = () => {
+      if (!request.result.objectStoreNames.contains(STORE)) request.result.createObjectStore(STORE, { keyPath: 'id' })
+      if (!request.result.objectStoreNames.contains(RETIRED)) request.result.createObjectStore(RETIRED)
+    }
     const abort = () => reject(new Error('History request aborted'))
     request.onerror = () => {
       signal.removeEventListener('abort', abort)
@@ -63,8 +68,17 @@ export function createTransactionLifecycleStorage(): TTransactionPersistence {
     async load(signal) {
       const db = await openDatabase(signal)
       return new Promise((resolve, reject) => {
-        const transaction = db.transaction(STORE, 'readonly')
+        const transaction = db.transaction([STORE, RETIRED], 'readwrite')
         const request = transaction.objectStore(STORE).getAll()
+        const expired = new Set<string>()
+        request.onsuccess = () => {
+          if (request.result.some((record: unknown) => !compatibleRecord(record))) return
+          expiredTransactionIds(request.result, Date.now()).forEach((id) => {
+            expired.add(id)
+            transaction.objectStore(STORE).delete(id)
+            transaction.objectStore(RETIRED).put(true, id)
+          })
+        }
         const abort = () => transaction.abort()
         signal.addEventListener('abort', abort, { once: true })
         transaction.oncomplete = () => {
@@ -74,7 +88,8 @@ export function createTransactionLifecycleStorage(): TTransactionPersistence {
             reject(new Error('Transaction history contains unsupported records'))
             return
           }
-          resolve(request.result)
+          if (expired.size) signalChange()
+          resolve(request.result.filter((record: TTransactionRecord) => !expired.has(record.id)))
         }
         transaction.onabort = transaction.onerror = () => {
           signal.removeEventListener('abort', abort)
@@ -86,13 +101,15 @@ export function createTransactionLifecycleStorage(): TTransactionPersistence {
     async apply(seed, observation, signal) {
       const db = await openDatabase(signal)
       return new Promise((resolve, reject) => {
-        const transaction = db.transaction(STORE, 'readwrite')
+        const transaction = db.transaction([STORE, RETIRED], 'readwrite')
         const store = transaction.objectStore(STORE)
+        const retired = transaction.objectStore(RETIRED).get(seed.id)
         const request = store.get(seed.id)
         const result: { record?: TTransactionRecord } = {}
         const abort = () => transaction.abort()
         signal.addEventListener('abort', abort, { once: true })
         request.onsuccess = () => {
+          if (retired.result) return
           try {
             const previous = request.result as TTransactionRecord | undefined
             if (
@@ -157,7 +174,7 @@ export function createTransactionLifecycleStorage(): TTransactionPersistence {
           signal.removeEventListener('abort', abort)
           db.close()
           signalChange()
-          resolve(result.record!)
+          resolve(result.record)
         }
         transaction.onabort = transaction.onerror = () => {
           signal.removeEventListener('abort', abort)

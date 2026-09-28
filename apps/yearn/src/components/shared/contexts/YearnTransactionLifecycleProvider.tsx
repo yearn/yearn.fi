@@ -1,6 +1,5 @@
 'use client'
 
-import { guardLegacyBridgeRecovery } from '@shared/contexts/legacyBridgeRecovery'
 import { TransactionLifecycleContext } from '@shared/contexts/transactionLifecycleContext'
 import { projectLifecycleNotification } from '@shared/contexts/transactionLifecycleProjection'
 import {
@@ -39,7 +38,6 @@ export function YearnTransactionLifecycleProvider({ children }: { children: Reac
       wallet: () => current.current,
       persistence: createTransactionLifecycleStorage(),
       coordinate: coordinateTransactionObservation,
-      beforeStart: guardLegacyBridgeRecovery,
       observeSettlement: observeEnsoSettlement,
       refresh: (record, milestone) => {
         const notification = projectLifecycleNotification(record)

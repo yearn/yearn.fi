@@ -275,6 +275,16 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = (props) => {
     return props.isOpen ? (
       <LifecycleTransactionOverlay {...props} lifecycleRecipe={props.plan ? props.lifecycleRecipe : recipe} />
     ) : null
+  // A host that owns destination settlement must never submit via the legacy writer.
+  if (runtime.lifecycle?.supportsDestinationSettlement)
+    return props.isOpen ? (
+      <div className="p-6 text-center" role="status">
+        <p>Preparing transaction. If this does not finish, close and review the route again.</p>
+        <button type="button" onClick={props.onClose}>
+          Close
+        </button>
+      </div>
+    ) : null
   return <LegacyTransactionOverlay {...props} />
 }
 

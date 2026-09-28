@@ -347,11 +347,12 @@ export function reduceTransaction(
 // A host must perform read/reduce/write atomically. No UI or legacy notification writer can patch these rows.
 export type TTransactionPersistence = {
   load: (signal: AbortSignal) => Promise<readonly TTransactionRecord[]>
+  /** Return undefined when the record was retired; stale writers must not recreate it. */
   apply: (
     record: TTransactionRecord,
     observation: TTransactionObservation | undefined,
     signal: AbortSignal
-  ) => Promise<TTransactionRecord>
+  ) => Promise<TTransactionRecord | undefined>
   subscribe?: (listener: () => void) => () => void
 }
 

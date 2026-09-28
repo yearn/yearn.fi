@@ -410,19 +410,27 @@ does not establish that parity.
 | 2. One complete same-chain path | Shared runner/tracker/reducer from preparation through overlay and activity; cover direct and raw Enso submissions. In-memory and durable hosts both work. | Migrated overlay receipt polling and direct status merges; a second executor for the migrated path. |
 | 3. Sequential and Safe paths | Approvals, permits, dynamic unstake, and Safe proposals/batches through the same engine. Include app-specific migration, rewards, portfolio claims, and yvUSD producers. | Equivalent step-advancement effects, completion flags, and separate receipt implementations. |
 | 4. Destination settlement | Common Enso normalization, fair gateway scheduling, recovery links/capabilities, milestone refresh. | Bridge-specific outcome logic in overlays and independent notification writers. |
-| 5. Finish persistence and presentation cutover | Versioned legacy decoding; all owner-scoped surfaces use selectors; documented reload guarantees. | Legacy partial-update APIs and duplicated lifecycle types, once all producers are migrated. |
+| 5. Finish persistence and presentation cutover | Fresh canonical Recent activity; all owner-scoped surfaces use selectors; documented reload and seven-day retention guarantees. | Legacy partial-update APIs and duplicated lifecycle types, once all producers are migrated. |
 
 Each migrated record has exactly one authoritative engine. A read-only shadow comparison can validate projection
 differences; it cannot submit, poll independently, or execute refresh effects. Legacy writes for migrated records
 must be disabled or translated into observations before they can touch the canonical store.
 
 Compatibility projections flow from canonical records to legacy views. Do not maintain two writable truths.
-Decode old rows conservatively: preserve usable references and reported history, but never invent missing receipts,
-destination evidence, amounts, or flow membership. An incomplete historical record can remain explicitly limited.
+At the approved cutover, discard legacy local activity from the presentation rather than importing or decoding it.
+Old pending entries do not block new bridges. Portfolio Activity uses indexed on-chain history and is unaffected.
+This exception applies only to the old notification store, not to records already written by the new lifecycle.
 
 Rollout and rollback preserve record IDs and schema readability. Disable a new execution path without discarding
-its submitted records or creating duplicate attempts. Schema migrations must be repeatable and preserve old rows
-until the decoder and rollback path have been verified.
+its submitted records or creating duplicate attempts. Preserve existing canonical rows during schema upgrades.
+
+Fully resolved local flows expire seven days after their latest completion evidence. Cleanup runs during history
+loading and hourly while the app is open; closing the browser does not schedule background work. Delete a completed
+sequence together, retaining pending or unknown outcomes, conflicts, unfinished prerequisites, pending refreshes,
+and bridges awaiting delivery or refund/recovery. A failed bridge with confirmed source execution is eligible only
+after a confirmed refund. Confirmed source failures can expire. Time passing alone never resolves a transaction.
+Deletion is atomic with an ID-only retirement marker so stale tabs cannot recreate removed transaction data.
+These small markers remain; full transaction details are deleted. Redis bridge coordination has its own retention.
 
 Completion criteria: one execution lifecycle for all in-scope producers; one record transition implementation;
 no receipt polling in presentation components; no direct notification-status writes outside the compatibility

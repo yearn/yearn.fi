@@ -7,6 +7,7 @@ import {
   createTransactionLifecycle,
   reduceTransaction,
   selectTransaction,
+  TRANSACTION_RETENTION_MS,
   type TTransactionPersistence,
   type TTransactionRecord
 } from '@yearn/vault-widget/lifecycle'
@@ -984,5 +985,51 @@ describe('Safe proposals and dependent preparations', () => {
     expect(f.execute).not.toHaveBeenCalled()
     expect(f.service.getSnapshot().flows[0].phase).toBe('blocked')
     f.disconnect()
+  })
+  it('removes expired history from an already open service during hourly cleanup', async () => {
+    const original = fixture()
+    await original.start()
+    original.gate.resolve({ receipt })
+    await settle()
+    const record = original.service.getSnapshot().records[0]
+    original.disconnect()
+    const load = vi.fn().mockResolvedValueOnce([record]).mockResolvedValue([])
+    const service = createTransactionLifecycle({
+      execution: () => original.adapter,
+      executionChainId: () => 1001,
+      wallet: () => original.wallet,
+      persistence: { load, apply: async (value) => value },
+      now: () => TRANSACTION_RETENTION_MS + 101
+    })
+    const stop = service.connect()
+    await settle()
+    expect(service.getSnapshot().records).toHaveLength(1)
+    await vi.advanceTimersByTimeAsync(60 * 60 * 1000)
+    expect(service.getSnapshot().records).toEqual([])
+    expect(service.getSnapshot().flows).toEqual([])
+    expect(original.execute).toHaveBeenCalledTimes(1)
+    stop()
+  })
+
+  it('does not forget unresolved local records absent from a refreshed history snapshot', async () => {
+    const original = fixture()
+    await original.start()
+    await settle()
+    const record = original.service.getSnapshot().records[0]
+    original.disconnect()
+    const load = vi.fn().mockResolvedValueOnce([record]).mockResolvedValue([])
+    const service = createTransactionLifecycle({
+      execution: () => original.adapter,
+      executionChainId: () => 1001,
+      wallet: () => original.wallet,
+      persistence: { load, apply: async (value) => value },
+      now: () => TRANSACTION_RETENTION_MS + 101
+    })
+    const stop = service.connect()
+    await settle()
+    await vi.advanceTimersByTimeAsync(60 * 60 * 1000)
+    expect(service.getSnapshot().records.map((item) => item.id)).toEqual([record.id])
+    expect(original.execute).toHaveBeenCalledTimes(1)
+    stop()
   })
 })

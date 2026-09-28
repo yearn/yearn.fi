@@ -2,6 +2,7 @@
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { buildTransactionPlan } from '@yearn/vault-widget/headless'
 import { LifecycleTransactionOverlay } from '@yearn/vault-widget/internal/components/widget/shared/LifecycleTransactionOverlay'
+import { TransactionOverlay } from '@yearn/vault-widget/internal/components/widget/shared/TransactionOverlay'
 import {
   createTransactionLifecycle,
   selectTransaction,
@@ -249,4 +250,24 @@ describe('sequential lifecycle overlay', () => {
     expect(onStepSuccess).toHaveBeenCalledExactlyOnceWith('deposit', receipt)
     expect(done).toHaveBeenCalledTimes(1)
   })
+})
+
+it('does not fall back to legacy execution while a canonical host is preparing its recipe', () => {
+  const execute = vi.fn()
+  const service = createTransactionLifecycle({
+    execution: () => ({ execute, switchChain: vi.fn(), waitForReceipt: vi.fn() }),
+    wallet: () => ({ address: owner, chainId: 1 }),
+    executionChainId: (id) => id,
+    observeSettlement: vi.fn()
+  })
+  const close = vi.fn()
+  render(
+    <VaultWidgetRuntimeProvider value={{ lifecycle: service }}>
+      <TransactionOverlay isOpen onClose={close} />
+    </VaultWidgetRuntimeProvider>
+  )
+  expect(screen.getByRole('status').textContent).toContain('Preparing transaction')
+  expect(execute).not.toHaveBeenCalled()
+  fireEvent.click(screen.getByRole('button', { name: 'Close' }))
+  expect(close).toHaveBeenCalledOnce()
 })

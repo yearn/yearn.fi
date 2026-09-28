@@ -10,8 +10,8 @@ Design: [v2 proposal](./v2-transaction-lifecycle.md).
 | --- | --- |
 | Stages 1–3 | Implemented; controlled real-wallet/Safe parity still needs verification. |
 | Stage 4 | Enabled by default in Yearn; local shared Redis validation passes; controlled bridge QA remains pending. |
-| Stage 5 | Started: shared version-0 legacy decoder. Canonical history cutover and acknowledgement remain pending. |
-| Simplification | First deletion pass complete; old owners remain until migration/rollout gates pass. |
+| Stage 5 | Simplified canonical cutover and seven-day cleanup implemented; persisted acknowledgement and approval grouping remain pending. |
+| Simplification | Yearn legacy notification storage readers/writers, source/bridge pollers, decoder and bridge guard removed. Widget fallback remains for other hosts. |
 
 Historical validation counts below describe their individual stages, not the latest checkout.
 
@@ -115,8 +115,8 @@ callbacks are retained. These differences still require controlled wallet QA bef
 
 ### Remaining stages and limits
 
-Stages 3 and 4 are implemented below. Stage 4 is now enabled by default in Yearn; stage 5 completes legacy
-persistence/presentation cutover and versioned decoding. The shared Enso gateway is implemented.
+Stages 3 and 4 are implemented below. Stage 4 is enabled by default in Yearn. Stage 5 now uses the approved
+simplified canonical cutover described at the end of this document. The shared Enso gateway is implemented.
 
 The durable guarantee starts once the submitted record is saved. A page closed before the wallet returns a hash,
 or while storage remains unavailable, cannot promise reload recovery. No-hash ambiguous wallet responses remain
@@ -343,10 +343,10 @@ and dropped provider backoff between the status proxy and gateway.
   Redis covering queued attribution, competing requests and concurrent backoff. TypeScript, lint, both
   boundary checks and the Yearn production build pass. The bridge rollout flag was disabled at that review; it was removed on 2026-09-25.
 
-## Next: stage 5
+## Stage 5 scope update
 
-Decode legacy persistence without inventing missing evidence, complete activity/acknowledgement presentation,
-and remove superseded execution/notification ownership after the rollout gates are satisfied.
+The approved simplified cutover supersedes the legacy migration requirements below. Recent activity starts from
+canonical lifecycle records; old local notifications may disappear. See the latest implementation entry.
 
 ## Simplification pass 1
 
@@ -450,3 +450,30 @@ including the approval/bridge regression. Real-wallet confirmation of the fix re
 
 Workspace TypeScript, both boundary checks, the webpack production build, and refreshed Chromium
 desktop/mobile navigation smoke checks also pass. The preview now includes the network-switch fix.
+
+
+## 2026-09-28: simplified stage 5 and local retention
+
+- Recent activity and the wallet indicator now read only owner-scoped canonical lifecycle records. Removed the
+  legacy notification IndexedDB provider, decoder, partial-update APIs, source/Safe/bridge pollers and Yearn runtime
+  notification callbacks. The old notification database is ignored, not imported. Portfolio Activity is unchanged.
+- Removed the legacy pending-bridge guard. Old local pending entries no longer block a reviewed new bridge.
+  Existing canonical records retain recovery, hydration blocking and deduplication protections.
+- Fully resolved flows are deleted seven days after their latest completion evidence, on history load and hourly
+  while open. Whole sequences are retained until finished. Pending/unknown/conflicted transactions, unfinished
+  prerequisites, pending refreshes and bridges with unresolved funds remain. Confirmed failures can expire; a
+  bridge whose source succeeded must be delivered or confirmed refunded before cleanup.
+- The canonical IndexedDB upgrade preserves existing rows. Deletion and a compact ID-only retirement marker are
+  atomic; stale tabs cannot restore the full record. Markers remain indefinitely without transaction details.
+- Yearn cannot submit through the legacy overlay when a lifecycle recipe is unavailable. Other widget hosts retain
+  their existing fallback. The notification projection remains a read-only adapter for current presentation.
+
+Validation: 459 widget, 828 Yearn and 5 yBOLD tests pass, together with workspace TypeScript, lint and both
+architecture boundary checks and both production builds. Native Chromium IndexedDB checks cover the version-1 upgrade, seven-day deletion,
+retention of pending/conflicted/incomplete flows, stale-write rejection, BroadcastChannel invalidation and
+fail-closed malformed history without partial deletion. Production preview checks cover vault navigation and
+desktop/mobile layout without browser errors or horizontal overflow. No real wallet transactions were submitted.
+
+Remaining: persisted acknowledgement and technical approval grouping, removal of reusable host fallbacks when
+those hosts are migrated, and controlled real-wallet/Safe/bridge validation before merge. Older migration/guard
+requirements and their validation entries above describe earlier stages and are superseded by this cutover.

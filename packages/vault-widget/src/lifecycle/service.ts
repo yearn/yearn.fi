@@ -18,6 +18,7 @@ import {
   type TTransactionRecord,
   transactionIdentity
 } from '@yearn/vault-widget/lifecycle/model'
+import { expiredTransactionIds } from '@yearn/vault-widget/lifecycle/retention'
 import {
   isSettlementRequirement,
   settlementOutcome,
@@ -217,6 +218,14 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
     const write = (pendingWrites.get(record.id) ?? Promise.resolve()).then(async () => {
       try {
         const saved = await boundedStorage((signal) => options.persistence!.apply(record, observation, signal))
+        if (!saved) {
+          publish({
+            ...state.snapshot,
+            records: state.snapshot.records.filter((item) => item.id !== record.id),
+            flows: state.snapshot.flows.filter((flow) => flow.recordId !== record.id)
+          })
+          return
+        }
         mergeSaved(saved)
         const latest = getRecord(record.id)
         if (latest?.storageError) putRecord({ ...latest, storageError: undefined })
@@ -490,7 +499,8 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
         })
     } finally {
       observers.delete(recordId)
-      if (!getRecord(recordId)?.source && selectTransaction(getRecord(recordId)!).outcome !== 'error')
+      const remaining = getRecord(recordId)
+      if (remaining && !remaining.source && selectTransaction(remaining).outcome !== 'error')
         schedule(`observe:${recordId}`, () => void track(recordId))
     }
   }
@@ -500,6 +510,26 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
     try {
       const records = await boundedStorage(options.persistence.load)
       if (generation !== state.generation) return
+      const savedIds = new Set(records.map((record) => record.id))
+      const expired = expiredTransactionIds(state.snapshot.records, now())
+      const removed = new Set(
+        state.snapshot.records
+          .filter(
+            (record) =>
+              !savedIds.has(record.id) &&
+              expired.has(record.id) &&
+              !runningFlows.has(record.flowId) &&
+              !pendingWrites.has(record.id) &&
+              !observers.has(record.id)
+          )
+          .map((record) => record.id)
+      )
+      if (removed.size)
+        publish({
+          ...state.snapshot,
+          records: state.snapshot.records.filter((record) => !removed.has(record.id)),
+          flows: state.snapshot.flows.filter((flow) => !flow.recordId || !removed.has(flow.recordId))
+        })
       records.forEach((record) => {
         mergeSaved(record)
         const previousFlow = state.snapshot.flows.find((flow) => flow.id === record.flowId)
@@ -1015,7 +1045,11 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
       state.generation += 1
       if (options.persistence) publish({ ...state.snapshot, history: 'loading' })
       state.unsubscribe = options.persistence?.subscribe?.(() => void hydrate())
-      void hydrate()
+      const cleanupHistory = async (): Promise<void> => {
+        await hydrate()
+        if (options.persistence) schedule('history-retention', () => void cleanupHistory(), 60 * 60 * 1000)
+      }
+      void cleanupHistory()
       state.snapshot.records.forEach((record) => void track(record.id))
       schedule('settlement', () => void settleNext(), 0)
       return () => {

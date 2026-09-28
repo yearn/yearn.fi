@@ -1,86 +1,58 @@
 // @vitest-environment jsdom
+import { TransactionLifecycleContext } from '@shared/contexts/transactionLifecycleContext'
 import { useNotifications, WithNotifications } from '@shared/contexts/useNotifications'
-import type { TNotification } from '@shared/types/notifications'
-import { act, renderHook } from '@testing-library/react'
+import { act, cleanup, renderHook } from '@testing-library/react'
+import { createTransactionLifecycle, type TTransactionRecord } from '@yearn/vault-widget/lifecycle'
 import type { ReactNode } from 'react'
-import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, expect, it, vi } from 'vitest'
 
-const mocks = vi.hoisted(() => ({
-  address: '0x1111111111111111111111111111111111111111',
-  getAll: vi.fn(),
-  getByID: vi.fn(),
-  update: vi.fn(),
-  add: vi.fn(),
-  deleteByID: vi.fn()
-}))
-vi.mock('@shared/contexts/useWeb3', () => ({ useWeb3: () => ({ address: mocks.address }) }))
-vi.mock('use-indexeddb', () => ({ useIndexedDBStore: () => mocks }))
-const pending: TNotification = {
-  id: 1,
-  type: 'deposit',
-  address: '0x1111111111111111111111111111111111111111',
-  chainId: 1,
-  amount: '1',
-  status: 'pending'
-}
-const wrapper = ({ children }: { children: ReactNode }) => (
-  <WithNotifications>
-    <div>{children}</div>
-  </WithNotifications>
-)
+const wallet = vi.hoisted(() => ({ address: '0x1111111111111111111111111111111111111111' }))
+vi.mock('@shared/contexts/useWeb3', () => ({ useWeb3: () => wallet }))
+const record = {
+  version: 1,
+  id: 'one',
+  flowId: 'flow',
+  attemptId: 'attempt',
+  stepId: 'deposit',
+  intentKey: 'deposit',
+  owner: wallet.address,
+  original: { canonicalChainId: 1, executionChainId: 1, hash: `0x${'a'.repeat(64)}` },
+  effective: { canonicalChainId: 1, executionChainId: 1, hash: `0x${'a'.repeat(64)}` },
+  request: { chainId: 1, to: wallet.address, data: '0x', value: '1' },
+  confirmations: 1,
+  createdAt: Date.now(),
+  revision: 0,
+  refresh: 'idle',
+  settlement: 'same-chain'
+} as TTransactionRecord
 
-describe('notification indicator state', () => {
-  beforeEach(() => {
-    vi.useFakeTimers()
-    vi.setSystemTime(100_000)
-    vi.resetAllMocks()
-    mocks.address = '0x1111111111111111111111111111111111111111'
-    mocks.getAll.mockResolvedValue([pending, { ...pending, id: 2, status: 'success', timeFinished: 100 }])
-    mocks.getByID.mockResolvedValue(pending)
-    mocks.update.mockResolvedValue(undefined)
+afterEach(() => {
+  cleanup()
+  vi.restoreAllMocks()
+})
+it('shows canonical owner-scoped history without exposing a legacy writer', async () => {
+  const service = createTransactionLifecycle({
+    execution: () => ({ execute: vi.fn(), switchChain: vi.fn(), waitForReceipt: () => new Promise(() => undefined) }),
+    executionChainId: (id) => id,
+    wallet: () => ({}),
+    persistence: { load: async () => [record], apply: async (item) => item }
   })
-  afterEach(() => {
-    vi.useRealTimers()
-  })
-
-  it('derives activity after reload and retains it through metadata-only updates and deletion', async () => {
-    const { result } = renderHook(useNotifications, { wrapper })
-    await act(async () => undefined)
-    expect(result.current.notificationStatus).toBe('pending')
-    await act(async () => {
-      await result.current.updateEntry({ blockNumber: 10n }, 1)
-    })
-    expect(result.current.notificationStatus).toBe('pending')
-    await act(async () => {
-      await result.current.deleteByID(1)
-    })
-    expect(result.current.notificationStatus).toBe('success')
-    await act(async () => {
-      await vi.advanceTimersByTimeAsync(300_000)
-    })
-    expect(result.current.notificationStatus).toBeNull()
-  })
-
-  it('reports unsupported persisted history without rewriting or deleting it', async () => {
-    const errorLog = vi.spyOn(console, 'error').mockImplementation(() => undefined)
-    mocks.getAll.mockResolvedValue([pending, { ...pending, version: 99 }])
-    const { result } = renderHook(useNotifications, { wrapper })
-    await act(async () => undefined)
-    expect(result.current.error).toBe('Failed to load notifications')
-    expect(result.current.cachedEntries).toEqual([])
-    expect(mocks.update).not.toHaveBeenCalled()
-    expect(mocks.deleteByID).not.toHaveBeenCalled()
-    errorLog.mockRestore()
-  })
-
-  it('hides the previous wallet immediately while the next wallet is still loading', async () => {
-    const { result, rerender } = renderHook(useNotifications, { wrapper })
-    await act(async () => undefined)
-    expect(result.current.notificationStatus).toBe('pending')
-    mocks.address = '0x2222222222222222222222222222222222222222'
-    mocks.getAll.mockReturnValue(new Promise(() => undefined))
-    rerender()
-    expect(result.current.cachedEntries).toEqual([])
-    expect(result.current.notificationStatus).toBeNull()
-  })
+  const wrapper = ({ children }: { children: ReactNode }) => (
+    <TransactionLifecycleContext.Provider value={service}>
+      <WithNotifications>
+        <div>{children}</div>
+      </WithNotifications>
+    </TransactionLifecycleContext.Provider>
+  )
+  const stop = service.connect()
+  const { result, rerender } = renderHook(useNotifications, { wrapper })
+  await act(async () => undefined)
+  expect(result.current.cachedEntries).toHaveLength(1)
+  expect(result.current.cachedEntries[0].lifecycleRecord?.id).toBe('one')
+  expect(result.current).not.toHaveProperty('addNotification')
+  expect(result.current).not.toHaveProperty('updateEntry')
+  wallet.address = '0x2222222222222222222222222222222222222222'
+  rerender()
+  expect(result.current.cachedEntries).toEqual([])
+  stop()
 })
