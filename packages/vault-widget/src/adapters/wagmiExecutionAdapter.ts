@@ -1,27 +1,38 @@
 import type { Config } from '@wagmi/core'
 import {
   getAccount,
+  getCallsStatus,
   getConnectorClient,
   getPublicClient,
   sendCalls,
   sendTransaction,
+  signTypedData,
   switchChain as wagmiSwitchChain,
   waitForCallsStatus
 } from '@wagmi/core/actions'
-import type { VaultWidgetExecutionAdapter, VaultWidgetTransactionRequest } from '@yearn/vault-widget/headless'
+import {
+  type TSafeExecution,
+  type VaultWidgetExecutionAdapter,
+  VaultWidgetPreparationError,
+  type VaultWidgetTransactionReceiptResult,
+  type VaultWidgetTransactionRequest
+} from '@yearn/vault-widget/headless'
 import {
   type Address,
   BaseError,
   type Client,
   type Hash,
   type Hex,
+  isAddress,
   isHash,
   isHex,
   MethodNotFoundRpcError,
   MethodNotSupportedRpcError,
+  parseAbi,
   type ReplacementReturnType,
   type Transaction,
-  TransactionNotFoundError
+  TransactionNotFoundError,
+  type TransactionReceipt
 } from 'viem'
 import {
   getTransaction,
@@ -33,6 +44,7 @@ export type TWagmiVaultWidgetExecutionAdapterOptions = {
   config: Config
   resolveConfirmations?: (canonicalChainId: number) => number
   resolveExecutionChainId?: (canonicalChainId: number) => number | undefined
+  receiptTimeoutMs?: number
   safePollingIntervalMs?: number
   safeTimeoutMs?: number
 }
@@ -49,8 +61,9 @@ type TSubmittedTransactionIdentity = Pick<
 >
 
 type TSubmittedTransactionContext = {
-  connectorClient: Client
+  connectorClient?: Client
   identity?: TSubmittedTransactionIdentity
+  provisionalReplacement?: VaultWidgetTransactionReceiptResult
 }
 
 const TRANSACTION_IDENTITY_TIMEOUT_MS = 3_000
@@ -70,6 +83,35 @@ function isTransactionHash(value: unknown): value is Hash {
 
 function getSubmittedTransactionKey(executionChainId: number, hash: Hash): string {
   return `${executionChainId}:${hash.toLowerCase()}`
+}
+
+function validateDetectedReceipt(
+  receipt: TransactionReceipt,
+  hash: Hash,
+  replacement: ReplacementReturnType | undefined,
+  usedSubmittedIdentity: boolean
+): VaultWidgetTransactionReceiptResult {
+  if (!isTransactionHash(receipt.transactionHash)) throw new Error('Wallet returned an invalid transaction receipt')
+  if (receipt.transactionHash.toLowerCase() === hash.toLowerCase()) {
+    if (replacement) throw new Error('Wallet returned invalid transaction replacement details')
+    return { receipt }
+  }
+  if (
+    !replacement ||
+    !['repriced', 'cancelled', 'replaced'].includes(replacement.reason) ||
+    !isTransactionHash(replacement.replacedTransaction.hash) ||
+    replacement.replacedTransaction.hash.toLowerCase() !== hash.toLowerCase() ||
+    !isTransactionHash(replacement.transaction.hash) ||
+    replacement.transaction.hash.toLowerCase() !== receipt.transactionHash.toLowerCase() ||
+    !isTransactionHash(replacement.transactionReceipt.transactionHash) ||
+    replacement.transactionReceipt.transactionHash.toLowerCase() !== receipt.transactionHash.toLowerCase()
+  ) {
+    throw new Error('Wallet returned a receipt for an unexpected transaction')
+  }
+  if (usedSubmittedIdentity && replacement.reason === 'replaced') {
+    throw new Error('Wallet returned an unverifiable transaction replacement')
+  }
+  return { receipt, replacement: { reason: replacement.reason, replacedHash: hash } }
 }
 
 function normalizeAddress(address: Address): Address {
@@ -217,33 +259,39 @@ export function createWagmiVaultWidgetExecutionAdapter(
     async switchChain({ chainId }) {
       await wagmiSwitchChain(options.config, { chainId: requireExecutionChainId(chainId) })
     },
-    async execute({ account, request }) {
-      const executionChainId = requireExecutionChainId(request.chainId)
-      const publicClient = getPublicClient(options.config, { chainId: executionChainId })
-      if (!publicClient) throw new Error(`No public client is configured for chain ${executionChainId}`)
-      const connector = getAccount(options.config).connector
-      if (!connector) throw new Error('No wallet connector is available for execution')
+    async execute({ account, request, beforeSubmit }) {
+      const { executionChainId, connector, gasEstimate, connectorClient, expectedNoncePromise } = await (async () => {
+        const executionChainId = requireExecutionChainId(request.chainId)
+        const publicClient = getPublicClient(options.config, { chainId: executionChainId })
+        if (!publicClient) throw new Error(`No public client is configured for chain ${executionChainId}`)
+        const connector = getAccount(options.config).connector
+        if (!connector) throw new Error('No wallet connector is available for execution')
 
-      const connectorClientPromise = getConnectorClient(options.config, {
-        account,
-        assertChainId: false,
-        chainId: executionChainId,
-        connector
-      })
-      const [gasEstimate, connectorClient] = await Promise.all([
-        publicClient.estimateGas({
+        const connectorClientPromise = getConnectorClient(options.config, {
           account,
-          data: request.data,
-          to: request.to,
-          value: request.value ?? 0n
-        }),
-        connectorClientPromise
-      ])
-      const expectedNoncePromise = getExpectedTransactionNonce({
-        account,
-        connectorClient: connectorClient as Client,
-        publicClient: publicClient as Client
+          assertChainId: false,
+          chainId: executionChainId,
+          connector
+        })
+        const [gasEstimate, connectorClient] = await Promise.all([
+          publicClient.estimateGas({
+            account,
+            data: request.data,
+            to: request.to,
+            value: request.value ?? 0n
+          }),
+          connectorClientPromise
+        ])
+        const expectedNoncePromise = getExpectedTransactionNonce({
+          account,
+          connectorClient: connectorClient as Client,
+          publicClient: publicClient as Client
+        })
+        return { executionChainId, connector, gasEstimate, connectorClient, expectedNoncePromise }
+      })().catch((cause: unknown) => {
+        throw new VaultWidgetPreparationError(cause)
       })
+      beforeSubmit?.()
       const hash = await sendTransaction(options.config, {
         account,
         chainId: executionChainId,
@@ -254,36 +302,45 @@ export function createWagmiVaultWidgetExecutionAdapter(
         value: request.value ?? 0n
       })
       if (!isTransactionHash(hash)) throw new Error('Wallet returned an invalid transaction hash')
-      const expectedNonce = await expectedNoncePromise
-      submittedTransactions.set(getSubmittedTransactionKey(executionChainId, hash), {
-        connectorClient: connectorClient as Client,
-        ...(expectedNonce !== undefined
-          ? { identity: createSubmittedTransactionIdentity({ account, hash, nonce: expectedNonce, request }) }
-          : {})
+      const context: TSubmittedTransactionContext = { connectorClient: connectorClient as Client }
+      submittedTransactions.set(getSubmittedTransactionKey(executionChainId, hash), context)
+      // Return the accepted hash immediately; optional identity enrichment cannot hold up registration.
+      void expectedNoncePromise.then((nonce) => {
+        if (nonce !== undefined)
+          context.identity = createSubmittedTransactionIdentity({ account, hash, nonce, request })
       })
       return hash
     },
-    async waitForReceipt({ chainId, hash }) {
-      const executionChainId = requireExecutionChainId(chainId)
+    async waitForReceipt({
+      chainId,
+      hash,
+      executionChainId: submittedExecutionChainId,
+      confirmations: requiredConfirmations
+    }) {
+      const executionChainId = submittedExecutionChainId ?? requireExecutionChainId(chainId)
       const publicClient = getPublicClient(options.config, { chainId: executionChainId })
       if (!publicClient) throw new Error(`No public client is configured for chain ${executionChainId}`)
       const transactionKey = getSubmittedTransactionKey(executionChainId, hash)
       const submittedTransaction = submittedTransactions.get(transactionKey)
+      const submittedConnector = submittedTransaction?.connectorClient
+      const cachedReplacement = submittedTransaction?.provisionalReplacement
       const observedReplacement: { current?: ReplacementReturnType } = {}
       const usedSubmittedIdentity = { current: false }
-      const confirmations = requireConfirmations(chainId)
+      const completed = { current: false }
+      const confirmations = requiredConfirmations ?? requireConfirmations(chainId)
       const waitParameters = {
         confirmations: 1,
         hash,
         onReplaced: (replacement: ReplacementReturnType) => {
           observedReplacement.current = replacement
         },
-        timeout: 0
+        timeout: options.receiptTimeoutMs ?? 0
       }
 
       try {
         const detectedReceipt = await (async () => {
-          if (!submittedTransaction) return publicClient.waitForTransactionReceipt(waitParameters)
+          if (cachedReplacement) return cachedReplacement.receipt
+          if (!submittedConnector) return publicClient.waitForTransactionReceipt(waitParameters)
 
           const replacementAwareClient = {
             ...publicClient,
@@ -306,10 +363,10 @@ export function createWagmiVaultWidgetExecutionAdapter(
               }
 
               const connectorTransaction = await getKnownTransaction(() =>
-                getTransaction(submittedTransaction.connectorClient, { hash: requestedHash })
+                getTransaction(submittedConnector, { hash: requestedHash })
               )
               if (connectorTransaction) return normalizeTransactionIdentity(connectorTransaction)
-              if (submittedTransaction.identity) {
+              if (submittedTransaction?.identity) {
                 usedSubmittedIdentity.current = true
                 return submittedTransaction.identity as Transaction
               }
@@ -319,63 +376,101 @@ export function createWagmiVaultWidgetExecutionAdapter(
           return viemWaitForTransactionReceipt(replacementAwareClient, waitParameters)
         })()
 
-        if (!isTransactionHash(detectedReceipt.transactionHash)) {
-          throw new Error('Wallet returned an invalid transaction receipt')
+        const detected =
+          cachedReplacement ??
+          validateDetectedReceipt(detectedReceipt, hash, observedReplacement.current, usedSubmittedIdentity.current)
+        if (detected.replacement && !cachedReplacement) {
+          // Keep validated evidence through bounded receipt retries, including resumed observations.
+          // It remains provisional until a fresh receipt satisfies the full confirmation policy.
+          submittedTransactions.set(transactionKey, {
+            ...submittedTransaction,
+            provisionalReplacement: structuredClone(detected)
+          })
         }
         const receipt =
-          confirmations === 1
+          confirmations === 1 && !cachedReplacement
             ? detectedReceipt
             : await publicClient.waitForTransactionReceipt({
                 checkReplacement: false,
                 confirmations,
                 hash: detectedReceipt.transactionHash,
-                timeout: 0
+                timeout: options.receiptTimeoutMs ?? 0
               })
 
         if (!isTransactionHash(receipt.transactionHash)) {
           throw new Error('Wallet returned an invalid transaction receipt')
         }
 
-        const replacement = observedReplacement.current
-        if (receipt.transactionHash.toLowerCase() === hash.toLowerCase()) {
-          if (replacement) throw new Error('Wallet returned invalid transaction replacement details')
-          return { receipt }
-        }
-
-        if (
-          !replacement ||
-          !isTransactionHash(replacement.replacedTransaction.hash) ||
-          replacement.replacedTransaction.hash.toLowerCase() !== hash.toLowerCase() ||
-          !isTransactionHash(replacement.transaction.hash) ||
-          replacement.transaction.hash.toLowerCase() !== receipt.transactionHash.toLowerCase() ||
-          !isTransactionHash(replacement.transactionReceipt.transactionHash) ||
-          replacement.transactionReceipt.transactionHash.toLowerCase() !== receipt.transactionHash.toLowerCase()
-        ) {
+        if (receipt.transactionHash.toLowerCase() !== detectedReceipt.transactionHash.toLowerCase()) {
           throw new Error('Wallet returned a receipt for an unexpected transaction')
         }
-        if (usedSubmittedIdentity.current && replacement.reason === 'replaced') {
-          throw new Error('Wallet returned an unverifiable transaction replacement')
-        }
 
-        return {
-          receipt,
-          replacement: {
-            reason: replacement.reason,
-            replacedHash: hash
-          }
-        }
+        completed.current = true
+        return detected.replacement ? { receipt, replacement: detected.replacement } : { receipt }
       } finally {
-        submittedTransactions.delete(transactionKey)
+        if (completed.current) submittedTransactions.delete(transactionKey)
       }
     },
-    async proposeSafeBatch({ account, chainId, requests }) {
+    async signPermit({ account, chainId, data, beforeSubmit }) {
+      const message = data.message as Record<string, unknown>
+      const token = data.domain?.verifyingContract
+      try {
+        if (
+          data.primaryType !== 'Permit' ||
+          String(message.owner).toLowerCase() !== account.toLowerCase() ||
+          Number(data.domain?.chainId) !== chainId ||
+          !token ||
+          !isAddress(token) ||
+          !isAddress(String(message.spender)) ||
+          BigInt(String(message.value)) < 0n ||
+          BigInt(String(message.deadline ?? 0)) <= BigInt(Math.floor(Date.now() / 1000))
+        )
+          throw new Error('Permit owner, network, spender, amount, or deadline changed')
+        const client = getPublicClient(options.config, { chainId: requireExecutionChainId(chainId) })
+        if (!client) throw new Error('Permit execution client is unavailable')
+        const nonce = await client.readContract({
+          address: token,
+          abi: parseAbi(['function nonces(address) view returns (uint256)']),
+          functionName: 'nonces',
+          args: [account]
+        })
+        if (nonce !== BigInt(String(message.nonce))) throw new Error('Permit nonce changed. Close and review again.')
+      } catch (error) {
+        throw new VaultWidgetPreparationError(error)
+      }
+      beforeSubmit?.()
+      return signTypedData(options.config, {
+        ...data,
+        account,
+        chainId: requireExecutionChainId(chainId)
+      } as Parameters<typeof signTypedData>[1])
+    },
+    async observeSafeExecution({ executionChainId, proposalId }): Promise<TSafeExecution> {
+      const status = await getCallsStatus(options.config, { id: proposalId })
+      if (status.chainId !== undefined && status.chainId !== executionChainId)
+        throw new Error('Safe execution network changed')
+      if (status.status === 'failure') return { status: status.statusCode === 400 ? 'cancelled' : 'failed' }
+      if (status.status !== 'success') return { status: 'pending' }
+      const receipts = status.receipts ?? []
+      if (receipts.some((receipt) => receipt.status !== 'success')) return { status: 'failed' }
+      const hash = receipts[0]?.transactionHash
+      if (!isTransactionHash(hash) || receipts.some((receipt) => receipt.transactionHash !== hash))
+        throw new Error('Safe batch execution could not be established atomically')
+      return { status: 'success', hash }
+    },
+    async proposeSafeBatch({ account, chainId, requests, beforeSubmit }) {
       if (requests.length === 0) throw new Error('Safe batch cannot be empty')
       if (requests.some((request) => request.chainId !== chainId)) {
         throw new Error('Safe batch contains requests from different canonical chains')
       }
 
       const executionChainId = requireExecutionChainId(chainId)
-      await simulateSafeBatch({ account, executionChainId, requests })
+      try {
+        await simulateSafeBatch({ account, executionChainId, requests })
+      } catch (error) {
+        throw new VaultWidgetPreparationError(error)
+      }
+      beforeSubmit?.()
       const result = await sendCalls(options.config, {
         account,
         calls: requests.map(({ data, to, value }) => ({ data, to, value })),

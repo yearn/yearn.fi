@@ -1,14 +1,20 @@
 import {
   buildTransactionPlan,
   type VaultWidgetTransactionMode,
-  type VaultWidgetTransactionPlan
+  type VaultWidgetTransactionPlan,
+  type VaultWidgetTransactionRequest
 } from '@yearn/vault-widget/headless'
-import type { AppUseSimulateContractReturnType } from '@yearn/vault-widget/types'
+import { buildSafeDepositBatch } from '@yearn/vault-widget/internal/components/widget/deposit/safeDepositBatch'
+import {
+  type AppUseSimulateContractReturnType,
+  isRawTransactionPreparation,
+  type TTransactionPreparation
+} from '@yearn/vault-widget/types'
 import { type Abi, encodeFunctionData, type Hex, isAddress, isHex } from 'viem'
 
 const ELIGIBLE_ROUTES: Readonly<Record<VaultWidgetTransactionMode, readonly string[]>> = Object.freeze({
-  deposit: Object.freeze(['DIRECT_DEPOSIT', 'DIRECT_STAKE', 'YBOLD_ZAPPER']),
-  withdraw: Object.freeze(['DIRECT_WITHDRAW', 'DIRECT_UNSTAKE', 'YBOLD_ZAPPER_WITHDRAW'])
+  deposit: Object.freeze(['DIRECT_DEPOSIT', 'DIRECT_STAKE', 'YBOLD_ZAPPER', 'ENSO']),
+  withdraw: Object.freeze(['DIRECT_WITHDRAW', 'DIRECT_UNSTAKE', 'YBOLD_ZAPPER_WITHDRAW', 'ENSO'])
 })
 
 type TPreparedRequest = NonNullable<NonNullable<AppUseSimulateContractReturnType['data']>['request']>
@@ -26,7 +32,7 @@ export type TBuildEligibleStyledWidgetPlanParams = {
   label: string
   mode: VaultWidgetTransactionMode
   needsApproval: boolean
-  prepare?: AppUseSimulateContractReturnType
+  prepare?: TTransactionPreparation
   routeType: string
 }
 
@@ -51,8 +57,8 @@ function isEligibleRoute(mode: VaultWidgetTransactionMode, routeType: string): b
 
 /**
  * Converts the final, already-simulated styled-widget request into the public
- * headless plan shape. Returning undefined is intentional: callers must keep
- * using the battle-tested legacy overlay whenever eligibility is uncertain.
+ * headless plan shape. Returning undefined leaves deferred preparation or
+ * legacy fallback to the overlay, according to host capabilities.
  */
 export function buildEligibleStyledWidgetPlan({
   canonicalChainId,
@@ -87,6 +93,30 @@ export function buildEligibleStyledWidgetPlan({
     return undefined
   }
 
+  const planForRequest = (request: VaultWidgetTransactionRequest) =>
+    buildTransactionPlan({
+      connectedChainId: canonicalChainId,
+      walletType: 'eoa',
+      intent: { id, mode, calls: [{ id: mode, label, request }] }
+    })
+
+  if (isRawTransactionPreparation(prepare)) {
+    const raw = prepare.transaction
+    if (
+      routeType !== 'ENSO' ||
+      !prepare.validate ||
+      !raw ||
+      raw.chainId !== canonicalChainId ||
+      !isAddress(raw.to) ||
+      !isAddress(raw.from) ||
+      !isHex(raw.data) ||
+      !/^\d+$/.test(raw.value)
+    )
+      return undefined
+    return planForRequest({ chainId: canonicalChainId, to: raw.to, data: raw.data, value: BigInt(raw.value) })
+  }
+  if (routeType === 'ENSO') return undefined
+
   const request = prepare.data?.request
   if (
     !request ||
@@ -101,24 +131,54 @@ export function buildEligibleStyledWidgetPlan({
   const data = resolvePreparedCallData(request)
   if (!data) return undefined
 
+  return planForRequest({
+    chainId: canonicalChainId,
+    to: request.address,
+    data,
+    value: request.value as bigint | undefined
+  })
+}
+
+/** Freeze direct call inputs now; the adapter simulates each call only when its turn arrives. */
+export function buildDirectApprovalPlan(
+  params: Parameters<typeof buildSafeDepositBatch>[0] & {
+    id: string
+    label: string
+    tokenSymbol: string
+    connectedCanonicalChainId?: number
+    isExecutionConfigured: boolean
+    isWalletSafe: boolean
+    isEnabled: boolean
+    isCrossChain: boolean
+    needsApproval: boolean
+  }
+): VaultWidgetTransactionPlan | undefined {
+  if (
+    !params.isExecutionConfigured ||
+    params.isWalletSafe ||
+    !params.isEnabled ||
+    params.isCrossChain ||
+    !params.needsApproval ||
+    params.connectedCanonicalChainId !== params.chainId ||
+    !['DIRECT_DEPOSIT', 'DIRECT_STAKE'].includes(params.routeType)
+  )
+    return undefined
+  const batch = buildSafeDepositBatch({ ...params, currentAllowance: 0n })
+  const action = batch?.calls.at(-1)
+  if (!action || !params.approvalSpenderAddress) return undefined
   return buildTransactionPlan({
-    connectedChainId: connectedCanonicalChainId,
-    walletType: 'eoa',
+    connectedChainId: params.chainId,
     intent: {
-      id,
-      mode,
-      calls: [
+      id: params.id,
+      mode: 'deposit',
+      approvals: [
         {
-          id: mode,
-          label,
-          request: {
-            chainId: canonicalChainId,
-            to: request.address,
-            data,
-            value: request.value as bigint | undefined
-          }
+          token: { address: params.depositToken, chainId: params.chainId, symbol: params.tokenSymbol },
+          spender: params.approvalSpenderAddress,
+          amount: params.amount
         }
-      ]
+      ],
+      calls: [{ id: 'deposit', label: params.label, request: { ...action, chainId: params.chainId } }]
     }
   })
 }

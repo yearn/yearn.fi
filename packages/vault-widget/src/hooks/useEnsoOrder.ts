@@ -72,6 +72,32 @@ export const useEnsoOrder = ({
   const executionChainId = runtime.chains.resolveExecutionChainId(chainId)
   const publicClient = usePublicClient({ chainId })
 
+  const currentTransaction = useRef(getEnsoTransaction)
+  currentTransaction.current = getEnsoTransaction
+  const validateOrder = useCallback(
+    async (expected: TEnsoTransaction): Promise<void> => {
+      const latest = currentTransaction.current()
+      if (!latest || getEnsoTransactionFingerprint(latest) !== getEnsoTransactionFingerprint(expected)) {
+        throw new Error('The quote changed. Close and review the updated route before submitting.')
+      }
+      if (!publicClient || !executionChainId) throw new Error('No execution client available')
+      const fingerprint = getEnsoTransactionFingerprint(expected)
+      if (failedSimulationRef.current?.transactionFingerprint === fingerprint) throw failedSimulationRef.current.error
+      try {
+        await simulateEnsoOrder(publicClient, expected)
+      } catch (cause) {
+        const error = cause as EnsoSimulationError
+        const failure = { error, transactionFingerprint: fingerprint }
+        failedSimulationRef.current = failure
+        setFailedSimulation(failure)
+        setError(error)
+        void refreshEnsoTransaction?.().catch(() => undefined)
+        throw error
+      }
+    },
+    [executionChainId, publicClient, refreshEnsoTransaction]
+  )
+
   const executeOrder = useCallback(async () => {
     const ensoTx = getEnsoTransaction()
     if (!ensoTx) {
@@ -94,7 +120,7 @@ export const useEnsoOrder = ({
       if (!publicClient) throw new Error('No public client available')
       if (!executionChainId) throw new Error(`No execution chain configured for chain ${chainId}`)
 
-      await simulateEnsoOrder(publicClient, ensoTx)
+      await validateOrder(ensoTx)
       return await runtime.execution.execute({
         account: ensoTx.from,
         request: {
@@ -107,17 +133,19 @@ export const useEnsoOrder = ({
     } catch (executionError) {
       const normalizedError = executionError as Error
       setError(normalizedError)
-      if (normalizedError instanceof EnsoSimulationError) {
-        const failedEnsoSimulation = { error: normalizedError, transactionFingerprint }
-        failedSimulationRef.current = failedEnsoSimulation
-        setFailedSimulation(failedEnsoSimulation)
-        await refreshEnsoTransaction?.().catch(() => undefined)
-      }
       throw executionError
     } finally {
       setIsExecuting(false)
     }
-  }, [chainId, executionChainId, getEnsoTransaction, publicClient, refreshEnsoTransaction, runtime.execution])
+  }, [
+    chainId,
+    executionChainId,
+    getEnsoTransaction,
+    publicClient,
+    refreshEnsoTransaction,
+    runtime.execution,
+    validateOrder
+  ])
 
   const ensoTx = getEnsoTransaction()
   const transactionFingerprint = ensoTx ? getEnsoTransactionFingerprint(ensoTx) : undefined
@@ -147,6 +175,7 @@ export const useEnsoOrder = ({
   const prepareEnsoOrder = useMemo(
     (): TRawTransactionPreparation => ({
       kind: 'raw',
+      validate: validateOrder,
       transaction: ensoTx,
       chainId: executionChainId ?? chainId,
       execute: executeOrder,
@@ -169,6 +198,7 @@ export const useEnsoOrder = ({
       isExecuting,
       isPreparingRoute,
       preparationError,
+      validateOrder,
       refreshEnsoTransaction
     ]
   )

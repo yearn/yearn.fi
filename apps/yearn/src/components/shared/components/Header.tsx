@@ -66,7 +66,7 @@ function WalletSelector({ onAccountClick, notificationStatus }: TWalletSelectorP
   }, [notificationStatus])
 
   function handleClick(): void {
-    if (shouldShowSpinner || isUserConnecting) return
+    if (isUserConnecting) return
     if (isActive || address || ens || clusters) {
       onAccountClick()
       return
@@ -78,10 +78,14 @@ function WalletSelector({ onAccountClick, notificationStatus }: TWalletSelectorP
     <div
       onMouseDown={(e) => e.stopPropagation()}
       onClick={handleClick}
-      className={cl('relative', shouldShowSpinner ? 'cursor-wait' : 'cursor-pointer')}
+      className={cl('relative', isUserConnecting ? 'cursor-wait' : 'cursor-pointer')}
     >
       {walletIdentity && notificationStatus && (
-        <div className={cl('absolute -right-0.5 -top-0.5 size-2 rounded-full', notificationDotColor)} />
+        <div
+          role="img"
+          aria-label="Unread transaction activity"
+          className={cl('absolute -right-0.5 -top-0.5 size-2 rounded-full', notificationDotColor)}
+        />
       )}
       <p
         suppressHydrationWarning
@@ -233,7 +237,7 @@ function AppHeader(): ReactElement {
   const pathname = usePathname() || '/'
   const [isAccountSidebarOpen, setIsAccountSidebarOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const { notificationStatus } = useNotifications()
+  const { notificationStatus, acknowledge } = useNotifications()
   const { address, ens, clusters } = useWeb3()
   const themePreference = useThemePreference()
   const isDarkTheme = themePreference !== 'light'
@@ -300,7 +304,10 @@ function AppHeader(): ReactElement {
                   </button>
                   <div className={'relative'}>
                     <WalletSelector
-                      onAccountClick={() => setIsAccountSidebarOpen(!isAccountSidebarOpen)}
+                      onAccountClick={() => {
+                        acknowledge()
+                        setIsAccountSidebarOpen(!isAccountSidebarOpen)
+                      }}
                       notificationStatus={notificationStatus}
                     />
                     <AccountDropdown isOpen={isAccountSidebarOpen} onClose={() => setIsAccountSidebarOpen(false)} />
