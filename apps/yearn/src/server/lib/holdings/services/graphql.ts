@@ -86,7 +86,7 @@ const TRANSFERS_OUT_QUERY = `
 `
 
 const BATCH_SIZE = 1000
-const SINGLE_QUERY_LIMIT = 50000
+const COUNT_FREE_PARALLEL_PAGE_CONCURRENCY = 8
 const SUPPORTED_CHAIN_IDS = new Set(SUPPORTED_CHAINS.map((chain) => chain.id))
 
 // V2 Vault Queries (with optional maxTimestamp filter)
@@ -326,41 +326,6 @@ const TRANSFERS_BY_TX_HASHES_QUERY = `
   }
 `
 
-const USER_EVENT_COUNTS_AGGREGATE_QUERY = `
-  query GetUserEventCountsAggregate($address: String!, $maxTimestamp: Int!) {
-    deposits: Deposit_aggregate(where: { owner: { _eq: $address }, blockTimestamp: { _lte: $maxTimestamp } }) {
-      aggregate {
-        count
-      }
-    }
-    withdrawals: Withdraw_aggregate(where: { owner: { _eq: $address }, blockTimestamp: { _lte: $maxTimestamp } }) {
-      aggregate {
-        count
-      }
-    }
-    transfersIn: Transfer_aggregate(where: { receiver: { _eq: $address }, blockTimestamp: { _lte: $maxTimestamp } }) {
-      aggregate {
-        count
-      }
-    }
-    transfersOut: Transfer_aggregate(where: { sender: { _eq: $address }, blockTimestamp: { _lte: $maxTimestamp } }) {
-      aggregate {
-        count
-      }
-    }
-    v2Deposits: V2Deposit_aggregate(where: { recipient: { _eq: $address }, blockTimestamp: { _lte: $maxTimestamp } }) {
-      aggregate {
-        count
-      }
-    }
-    v2Withdrawals: V2Withdraw_aggregate(where: { recipient: { _eq: $address }, blockTimestamp: { _lte: $maxTimestamp } }) {
-      aggregate {
-        count
-      }
-    }
-  }
-`
-
 const ADDRESS_ACTIVITY_CHAIN_PRESENCE_QUERY = `
   query GetAddressActivityChainPresence($address: String!, $chainId: Int!) {
     deposits: Deposit(where: { owner: { _eq: $address }, chainId: { _eq: $chainId } }, limit: 1) {
@@ -383,30 +348,6 @@ const ADDRESS_ACTIVITY_CHAIN_PRESENCE_QUERY = `
     }
   }
 `
-
-interface UserCounts {
-  depositCount: number
-  withdrawCount: number
-  transferInCount: number
-  transferOutCount: number
-  v2DepositCount: number
-  v2WithdrawCount: number
-}
-
-interface AggregateCountField {
-  aggregate: {
-    count: number
-  } | null
-}
-
-interface UserCountsAggregateQuery {
-  deposits: AggregateCountField | null
-  withdrawals: AggregateCountField | null
-  transfersIn: AggregateCountField | null
-  transfersOut: AggregateCountField | null
-  v2Deposits: AggregateCountField | null
-  v2Withdrawals: AggregateCountField | null
-}
 
 interface ChainPresenceQuery {
   deposits: Array<{ id: string }> | null
@@ -447,78 +388,26 @@ async function executeQuery<T>(query: string, variables: Record<string, unknown>
   return json.data
 }
 
-function getAggregateCount(field: AggregateCountField | null | undefined): number {
-  return field?.aggregate?.count ?? 0
-}
-
 function getGraphqlAddress(address: string): string {
   return getAddress(address)
-}
-
-async function fetchUserCounts(userAddress: string, maxTimestamp?: number): Promise<UserCounts | null> {
-  const address = getGraphqlAddress(userAddress)
-  const addressLower = address.toLowerCase()
-  const ts = maxTimestamp ?? DEFAULT_MAX_TIMESTAMP
-
-  try {
-    const data = await executeQuery<UserCountsAggregateQuery>(USER_EVENT_COUNTS_AGGREGATE_QUERY, {
-      address,
-      maxTimestamp: ts
-    })
-
-    debugLog('graphql', 'loaded aggregate user event counts', {
-      address: addressLower,
-      maxTimestamp: ts
-    })
-    return {
-      depositCount: getAggregateCount(data.deposits),
-      withdrawCount: getAggregateCount(data.withdrawals),
-      transferInCount: getAggregateCount(data.transfersIn),
-      transferOutCount: getAggregateCount(data.transfersOut),
-      v2DepositCount: getAggregateCount(data.v2Deposits),
-      v2WithdrawCount: getAggregateCount(data.v2Withdrawals)
-    }
-  } catch (error) {
-    debugError(
-      'graphql',
-      'aggregate user event counts fetch failed, falling back to count-free bulk event pagination',
-      error,
-      {
-        address: addressLower,
-        maxTimestamp: ts
-      }
-    )
-    return null
-  }
 }
 
 function hasAnyRows(rows: Array<{ id: string }> | null | undefined): boolean {
   return Boolean(rows?.length)
 }
 
-function hasActivityForVersion(data: ChainPresenceQuery, version: VaultVersion): boolean {
-  const hasV3Activity =
+function hasActivity(data: ChainPresenceQuery): boolean {
+  return (
     hasAnyRows(data.deposits) ||
     hasAnyRows(data.withdrawals) ||
     hasAnyRows(data.transfersIn) ||
-    hasAnyRows(data.transfersOut)
-  const hasV2Activity = hasAnyRows(data.v2Deposits) || hasAnyRows(data.v2Withdrawals)
-
-  if (version === 'v2') {
-    return hasV2Activity
-  }
-
-  if (version === 'v3') {
-    return hasV3Activity
-  }
-
-  return hasV3Activity || hasV2Activity
+    hasAnyRows(data.transfersOut) ||
+    hasAnyRows(data.v2Deposits) ||
+    hasAnyRows(data.v2Withdrawals)
+  )
 }
 
-export async function fetchAddressActivityChainIdsByExistence(
-  userAddress: string,
-  version: VaultVersion = 'all'
-): Promise<number[]> {
+export async function fetchAddressActivityChainIdsByExistence(userAddress: string): Promise<number[]> {
   const address = getGraphqlAddress(userAddress)
   const addressLower = address.toLowerCase()
 
@@ -529,7 +418,7 @@ export async function fetchAddressActivityChainIdsByExistence(
         chainId: chain.id
       })
 
-      return hasActivityForVersion(data, version) ? chain.id : null
+      return hasActivity(data) ? chain.id : null
     })
   )
 
@@ -539,7 +428,6 @@ export async function fetchAddressActivityChainIdsByExistence(
 
   debugLog('graphql', 'loaded address activity chain presence', {
     address: addressLower,
-    version,
     chainIds
   })
 
@@ -551,73 +439,6 @@ export async function fetchAddressActivityChainIdsByExistence(
 const DEFAULT_MAX_TIMESTAMP = 2000000000 // ~year 2033, safe 32-bit integer
 const TX_HASH_BATCH_SIZE = 200
 const TX_HASH_QUERY_CONCURRENCY = 5
-
-// Sequential pagination - fetch pages until we get fewer results than BATCH_SIZE
-async function fetchAllSequential<T>(
-  query: string,
-  variableKey: string,
-  address: string,
-  resultKey: string,
-  maxTimestamp?: number
-): Promise<T[]> {
-  const allResults: T[] = []
-  let offset = 0
-  const ts = maxTimestamp ?? DEFAULT_MAX_TIMESTAMP
-  let pages = 0
-
-  while (true) {
-    const variables: Record<string, unknown> = { [variableKey]: address, limit: BATCH_SIZE, offset, maxTimestamp: ts }
-    let data: Record<string, T[]>
-    const pageNumber = pages + 1
-    const startedAt = Date.now()
-
-    try {
-      data = await executeQuery<Record<string, T[]>>(query, variables)
-    } catch (error) {
-      debugError('graphql', 'sequential event fetch failed', error, {
-        resultKey,
-        variableKey,
-        address,
-        offset,
-        maxTimestamp: ts
-      })
-      throw error
-    }
-    const batch = data[resultKey] || []
-    pages += 1
-    const durationMs = Date.now() - startedAt
-
-    debugLog('graphql', 'fetched sequential event page', {
-      resultKey,
-      variableKey,
-      address,
-      page: pageNumber,
-      offset,
-      limit: BATCH_SIZE,
-      batchCount: batch.length,
-      durationMs,
-      maxTimestamp: ts
-    })
-
-    allResults.push(...batch)
-
-    if (batch.length < BATCH_SIZE) {
-      break
-    }
-
-    offset += BATCH_SIZE
-  }
-
-  debugLog('graphql', 'fetched sequential event set', {
-    resultKey,
-    variableKey,
-    address,
-    count: allResults.length,
-    pages,
-    maxTimestamp: ts
-  })
-  return allResults
-}
 
 function chunkArray<T>(items: T[], chunkSize: number): T[][] {
   const chunks: T[][] = []
@@ -740,74 +561,107 @@ async function fetchAllByTransactionHashes<T>(
   return allResults
 }
 
-// Parallel batch fetching using aggregate event counts from GraphQL
-async function fetchAllParallel<T>(
+async function fetchParallelEventPage<T>(
   query: string,
   variableKey: string,
   address: string,
   resultKey: string,
-  count: number,
+  offset: number,
   maxTimestamp?: number
 ): Promise<T[]> {
-  if (count === 0) {
-    debugLog('graphql', 'skipping parallel event fetch because expected count is zero', {
-      resultKey,
-      variableKey,
-      address
-    })
-    return []
+  const ts = maxTimestamp ?? DEFAULT_MAX_TIMESTAMP
+  const startedAt = Date.now()
+  const variables: Record<string, unknown> = {
+    [variableKey]: address,
+    limit: BATCH_SIZE,
+    offset,
+    maxTimestamp: ts
   }
 
-  const ts = maxTimestamp ?? DEFAULT_MAX_TIMESTAMP
-  const batchCount = Math.ceil(count / BATCH_SIZE)
-  const offsets = Array.from({ length: batchCount }, (_, i) => i * BATCH_SIZE)
+  try {
+    const data = await executeQuery<Record<string, T[]>>(query, variables)
+    const batch = data[resultKey] || []
 
-  const batchResults = await Promise.all(
-    offsets.map(async (offset, index) => {
-      const variables: Record<string, unknown> = { [variableKey]: address, limit: BATCH_SIZE, offset, maxTimestamp: ts }
-      const startedAt = Date.now()
-
-      try {
-        const data = await executeQuery<Record<string, T[]>>(query, variables)
-        const batch = data[resultKey] || []
-        const durationMs = Date.now() - startedAt
-
-        debugLog('graphql', 'fetched parallel event page', {
-          resultKey,
-          variableKey,
-          address,
-          page: index + 1,
-          offset,
-          limit: BATCH_SIZE,
-          batchCount: batch.length,
-          durationMs,
-          maxTimestamp: ts
-        })
-
-        return batch
-      } catch (error) {
-        debugError('graphql', 'parallel event fetch failed', error, {
-          resultKey,
-          variableKey,
-          address,
-          offset,
-          maxTimestamp: ts
-        })
-        throw error
-      }
+    debugLog('graphql', 'fetched count-free parallel event page', {
+      resultKey,
+      variableKey,
+      address,
+      offset,
+      limit: BATCH_SIZE,
+      batchCount: batch.length,
+      durationMs: Date.now() - startedAt,
+      maxTimestamp: ts
     })
-  )
+    return batch
+  } catch (error) {
+    debugError('graphql', 'count-free parallel event page failed', error, {
+      resultKey,
+      variableKey,
+      address,
+      offset,
+      maxTimestamp: ts
+    })
+    throw error
+  }
+}
 
-  const results = batchResults.flat()
-  debugLog('graphql', 'fetched parallel event set', {
-    resultKey,
+async function fetchCountFreeParallelContinuation<T>(
+  query: string,
+  variableKey: string,
+  address: string,
+  resultKey: string,
+  offset: number,
+  maxTimestamp?: number
+): Promise<T[]> {
+  const offsets = Array.from(
+    { length: COUNT_FREE_PARALLEL_PAGE_CONCURRENCY },
+    (_value, index) => offset + index * BATCH_SIZE
+  )
+  const pages = await Promise.all(
+    offsets.map((pageOffset) =>
+      fetchParallelEventPage<T>(query, variableKey, address, resultKey, pageOffset, maxTimestamp)
+    )
+  )
+  const firstShortPageIndex = pages.findIndex((page) => page.length < BATCH_SIZE)
+  const completePages = firstShortPageIndex === -1 ? pages : pages.slice(0, firstShortPageIndex + 1)
+  const results = completePages.flat()
+
+  if (firstShortPageIndex !== -1) {
+    return results
+  }
+
+  const continuation = await fetchCountFreeParallelContinuation<T>(
+    query,
     variableKey,
     address,
-    count: results.length,
-    batches: batchCount,
-    maxTimestamp: ts
-  })
-  return results
+    resultKey,
+    offset + COUNT_FREE_PARALLEL_PAGE_CONCURRENCY * BATCH_SIZE,
+    maxTimestamp
+  )
+  return [...results, ...continuation]
+}
+
+async function fetchAllCountFreeParallel<T>(
+  query: string,
+  variableKey: string,
+  address: string,
+  resultKey: string,
+  maxTimestamp?: number
+): Promise<T[]> {
+  const firstPage = await fetchParallelEventPage<T>(query, variableKey, address, resultKey, 0, maxTimestamp)
+  if (firstPage.length < BATCH_SIZE) {
+    return firstPage
+  }
+
+  const continuation = await fetchCountFreeParallelContinuation<T>(
+    query,
+    variableKey,
+    address,
+    resultKey,
+    BATCH_SIZE,
+    maxTimestamp
+  )
+  return [...firstPage, ...continuation]
 }
 
 function normalizeV2Deposit(v2: V2DepositEvent): DepositEvent {
@@ -842,10 +696,6 @@ function normalizeV2Withdraw(v2: V2WithdrawEvent): WithdrawEvent {
     shares: v2.shares
   }
 }
-
-export type VaultVersion = 'v2' | 'v3' | 'all'
-export type HoldingsEventFetchType = 'seq' | 'parallel'
-export type HoldingsEventPaginationMode = 'paged' | 'all'
 
 type AddressEventFetches = [
   Promise<DepositEvent[]>,
@@ -887,144 +737,14 @@ function sortByBlockDesc<T extends { blockTimestamp: number; blockNumber: number
   )
 }
 
-function getDepositsByVersion(
-  v3Deposits: DepositEvent[],
-  v2DepositsRaw: V2DepositEvent[],
-  version: VaultVersion
-): DepositEvent[] {
+function mergeDeposits(v3Deposits: DepositEvent[], v2DepositsRaw: V2DepositEvent[]): DepositEvent[] {
   const v2Deposits = v2DepositsRaw.map(normalizeV2Deposit)
-
-  return version === 'v3' ? v3Deposits : version === 'v2' ? v2Deposits : sortByBlock([...v3Deposits, ...v2Deposits])
+  return sortByBlock([...v3Deposits, ...v2Deposits])
 }
 
-function getWithdrawalsByVersion(
-  v3Withdrawals: WithdrawEvent[],
-  v2WithdrawalsRaw: V2WithdrawEvent[],
-  version: VaultVersion
-): WithdrawEvent[] {
+function mergeWithdrawals(v3Withdrawals: WithdrawEvent[], v2WithdrawalsRaw: V2WithdrawEvent[]): WithdrawEvent[] {
   const v2Withdrawals = v2WithdrawalsRaw.map(normalizeV2Withdraw)
-
-  return version === 'v3'
-    ? v3Withdrawals
-    : version === 'v2'
-      ? v2Withdrawals
-      : sortByBlock([...v3Withdrawals, ...v2Withdrawals])
-}
-
-function getSequentialAddressEventFetches(addressLower: string, maxTimestamp?: number): AddressEventFetches {
-  return [
-    fetchAllSequential<DepositEvent>(DEPOSITS_QUERY, 'owner', addressLower, 'Deposit', maxTimestamp),
-    fetchAllSequential<WithdrawEvent>(WITHDRAWALS_QUERY, 'owner', addressLower, 'Withdraw', maxTimestamp),
-    fetchAllSequential<V2DepositEvent>(V2_DEPOSITS_QUERY, 'recipient', addressLower, 'V2Deposit', maxTimestamp),
-    fetchAllSequential<V2WithdrawEvent>(V2_WITHDRAWALS_QUERY, 'recipient', addressLower, 'V2Withdraw', maxTimestamp),
-    fetchAllSequential<TransferEvent>(TRANSFERS_IN_QUERY, 'receiver', addressLower, 'Transfer', maxTimestamp),
-    fetchAllSequential<TransferEvent>(TRANSFERS_OUT_QUERY, 'sender', addressLower, 'Transfer', maxTimestamp)
-  ]
-}
-
-async function fetchSingleQueryPage<T>(
-  query: string,
-  variableKey: string,
-  address: string,
-  resultKey: string,
-  offset: number,
-  maxTimestamp?: number
-): Promise<T[]> {
-  const ts = maxTimestamp ?? DEFAULT_MAX_TIMESTAMP
-  const startedAt = Date.now()
-  const variables: Record<string, unknown> = {
-    [variableKey]: address,
-    limit: SINGLE_QUERY_LIMIT,
-    offset,
-    maxTimestamp: ts
-  }
-
-  try {
-    const data = await executeQuery<Record<string, T[]>>(query, variables)
-    const results = data[resultKey] || []
-
-    debugLog('graphql', 'fetched single-query event page', {
-      resultKey,
-      variableKey,
-      address,
-      count: results.length,
-      durationMs: Date.now() - startedAt,
-      maxTimestamp: ts,
-      limit: SINGLE_QUERY_LIMIT,
-      offset,
-      hasMore: results.length === SINGLE_QUERY_LIMIT
-    })
-
-    return results
-  } catch (error) {
-    debugError('graphql', 'single-query event page fetch failed', error, {
-      resultKey,
-      variableKey,
-      address,
-      maxTimestamp: ts,
-      limit: SINGLE_QUERY_LIMIT,
-      offset
-    })
-    throw error
-  }
-}
-
-async function fetchAllSingleQuery<T>(
-  query: string,
-  variableKey: string,
-  address: string,
-  resultKey: string,
-  maxTimestamp?: number
-): Promise<T[]> {
-  const ts = maxTimestamp ?? DEFAULT_MAX_TIMESTAMP
-  const startedAt = Date.now()
-  const fetchFromOffset = async (offset: number): Promise<T[]> => {
-    const page = await fetchSingleQueryPage<T>(query, variableKey, address, resultKey, offset, maxTimestamp)
-
-    if (page.length < SINGLE_QUERY_LIMIT) {
-      return page
-    }
-
-    const remaining = await fetchFromOffset(offset + SINGLE_QUERY_LIMIT)
-    return [...page, ...remaining]
-  }
-
-  try {
-    const results = await fetchFromOffset(0)
-
-    debugLog('graphql', 'fetched single-query event set', {
-      resultKey,
-      variableKey,
-      address,
-      count: results.length,
-      durationMs: Date.now() - startedAt,
-      maxTimestamp: ts,
-      limit: SINGLE_QUERY_LIMIT,
-      pages: Math.ceil((results.length + 1) / SINGLE_QUERY_LIMIT)
-    })
-
-    return results
-  } catch (error) {
-    debugError('graphql', 'single-query event fetch failed', error, {
-      resultKey,
-      variableKey,
-      address,
-      maxTimestamp: ts,
-      limit: SINGLE_QUERY_LIMIT
-    })
-    throw error
-  }
-}
-
-function getSingleQueryAddressEventFetches(addressLower: string, maxTimestamp?: number): AddressEventFetches {
-  return [
-    fetchAllSingleQuery<DepositEvent>(DEPOSITS_QUERY, 'owner', addressLower, 'Deposit', maxTimestamp),
-    fetchAllSingleQuery<WithdrawEvent>(WITHDRAWALS_QUERY, 'owner', addressLower, 'Withdraw', maxTimestamp),
-    fetchAllSingleQuery<V2DepositEvent>(V2_DEPOSITS_QUERY, 'recipient', addressLower, 'V2Deposit', maxTimestamp),
-    fetchAllSingleQuery<V2WithdrawEvent>(V2_WITHDRAWALS_QUERY, 'recipient', addressLower, 'V2Withdraw', maxTimestamp),
-    fetchAllSingleQuery<TransferEvent>(TRANSFERS_IN_QUERY, 'receiver', addressLower, 'Transfer', maxTimestamp),
-    fetchAllSingleQuery<TransferEvent>(TRANSFERS_OUT_QUERY, 'sender', addressLower, 'Transfer', maxTimestamp)
-  ]
+  return sortByBlock([...v3Withdrawals, ...v2Withdrawals])
 }
 
 async function fetchRecentLimited<T>(
@@ -1074,108 +794,52 @@ async function fetchRecentLimited<T>(
   }
 }
 
-function getParallelAddressEventFetches(
-  addressLower: string,
-  counts: UserCounts,
-  maxTimestamp?: number
-): AddressEventFetches {
+function getCountFreeParallelAddressEventFetches(addressLower: string, maxTimestamp?: number): AddressEventFetches {
   return [
-    fetchAllParallel<DepositEvent>(DEPOSITS_QUERY, 'owner', addressLower, 'Deposit', counts.depositCount, maxTimestamp),
-    fetchAllParallel<WithdrawEvent>(
-      WITHDRAWALS_QUERY,
-      'owner',
-      addressLower,
-      'Withdraw',
-      counts.withdrawCount,
-      maxTimestamp
-    ),
-    fetchAllParallel<V2DepositEvent>(
-      V2_DEPOSITS_QUERY,
-      'recipient',
-      addressLower,
-      'V2Deposit',
-      counts.v2DepositCount,
-      maxTimestamp
-    ),
-    fetchAllParallel<V2WithdrawEvent>(
+    fetchAllCountFreeParallel<DepositEvent>(DEPOSITS_QUERY, 'owner', addressLower, 'Deposit', maxTimestamp),
+    fetchAllCountFreeParallel<WithdrawEvent>(WITHDRAWALS_QUERY, 'owner', addressLower, 'Withdraw', maxTimestamp),
+    fetchAllCountFreeParallel<V2DepositEvent>(V2_DEPOSITS_QUERY, 'recipient', addressLower, 'V2Deposit', maxTimestamp),
+    fetchAllCountFreeParallel<V2WithdrawEvent>(
       V2_WITHDRAWALS_QUERY,
       'recipient',
       addressLower,
       'V2Withdraw',
-      counts.v2WithdrawCount,
       maxTimestamp
     ),
-    fetchAllParallel<TransferEvent>(
-      TRANSFERS_IN_QUERY,
-      'receiver',
-      addressLower,
-      'Transfer',
-      counts.transferInCount,
-      maxTimestamp
-    ),
-    fetchAllParallel<TransferEvent>(
-      TRANSFERS_OUT_QUERY,
-      'sender',
-      addressLower,
-      'Transfer',
-      counts.transferOutCount,
-      maxTimestamp
-    )
+    fetchAllCountFreeParallel<TransferEvent>(TRANSFERS_IN_QUERY, 'receiver', addressLower, 'Transfer', maxTimestamp),
+    fetchAllCountFreeParallel<TransferEvent>(TRANSFERS_OUT_QUERY, 'sender', addressLower, 'Transfer', maxTimestamp)
   ]
 }
 
-function getAddressScopedEventFetchKey(
-  addressLower: string,
-  maxTimestamp: number | undefined,
-  fetchType: HoldingsEventFetchType,
-  paginationMode: HoldingsEventPaginationMode
-): string {
-  return `${addressLower}:${maxTimestamp ?? DEFAULT_MAX_TIMESTAMP}:${fetchType}:${paginationMode}`
+function getAddressScopedEventFetchKey(addressLower: string, maxTimestamp: number | undefined): string {
+  return `${addressLower}:${maxTimestamp ?? DEFAULT_MAX_TIMESTAMP}`
 }
 
 async function fetchAddressScopedEventsUncached(
   addressLower: string,
-  maxTimestamp: number | undefined,
-  fetchType: HoldingsEventFetchType,
-  paginationMode: HoldingsEventPaginationMode
+  maxTimestamp: number | undefined
 ): Promise<AddressEventResults> {
-  if (paginationMode === 'all') {
-    return Promise.all(getSingleQueryAddressEventFetches(addressLower, maxTimestamp)) as Promise<AddressEventResults>
-  }
-
-  if (fetchType === 'seq') {
-    return Promise.all(getSequentialAddressEventFetches(addressLower, maxTimestamp)) as Promise<AddressEventResults>
-  }
-
-  const counts = await fetchUserCounts(addressLower, maxTimestamp)
-  const fetches =
-    counts === null
-      ? getSingleQueryAddressEventFetches(addressLower, maxTimestamp)
-      : getParallelAddressEventFetches(addressLower, counts, maxTimestamp)
-
-  return Promise.all(fetches) as Promise<AddressEventResults>
+  return Promise.all(
+    getCountFreeParallelAddressEventFetches(addressLower, maxTimestamp)
+  ) as Promise<AddressEventResults>
 }
 
 async function fetchAddressScopedEvents(
   addressLower: string,
-  maxTimestamp: number | undefined,
-  fetchType: HoldingsEventFetchType,
-  paginationMode: HoldingsEventPaginationMode
+  maxTimestamp: number | undefined
 ): Promise<AddressEventResults> {
-  const key = getAddressScopedEventFetchKey(addressLower, maxTimestamp, fetchType, paginationMode)
+  const key = getAddressScopedEventFetchKey(addressLower, maxTimestamp)
   const existing = inFlightAddressScopedEventFetches.get(key)
 
   if (existing) {
     debugLog('graphql', 'reusing in-flight address-scoped event fetch', {
       address: addressLower,
-      maxTimestamp: maxTimestamp ?? DEFAULT_MAX_TIMESTAMP,
-      fetchType,
-      paginationMode
+      maxTimestamp: maxTimestamp ?? DEFAULT_MAX_TIMESTAMP
     })
     return existing
   }
 
-  const request = fetchAddressScopedEventsUncached(addressLower, maxTimestamp, fetchType, paginationMode)
+  const request = fetchAddressScopedEventsUncached(addressLower, maxTimestamp)
     .then(filterSupportedAddressEventResults)
     .finally(() => {
       inFlightAddressScopedEventFetches.delete(key)
@@ -1185,34 +849,16 @@ async function fetchAddressScopedEvents(
   return request
 }
 
-// Main export - defaults to sequential paged fetching but allows overrides for experimentation/debugging.
-export async function fetchUserEvents(
-  userAddress: string,
-  version: VaultVersion = 'all',
-  maxTimestamp?: number,
-  fetchType: HoldingsEventFetchType = 'seq',
-  paginationMode: HoldingsEventPaginationMode = 'paged'
-): Promise<UserEvents> {
+export async function fetchUserEvents(userAddress: string, maxTimestamp?: number): Promise<UserEvents> {
   const address = getGraphqlAddress(userAddress)
   const addressLower = address.toLowerCase()
 
   const [v3Deposits, v3Withdrawals, v2DepositsRaw, v2WithdrawalsRaw, transfersIn, transfersOut] =
-    await fetchAddressScopedEvents(address, maxTimestamp, fetchType, paginationMode)
+    await fetchAddressScopedEvents(address, maxTimestamp)
 
-  const processed = processEvents(
-    v3Deposits,
-    v3Withdrawals,
-    v2DepositsRaw,
-    v2WithdrawalsRaw,
-    transfersIn,
-    transfersOut,
-    version
-  )
+  const processed = processEvents(v3Deposits, v3Withdrawals, v2DepositsRaw, v2WithdrawalsRaw, transfersIn, transfersOut)
   debugLog('graphql', 'fetched user events', {
     address: addressLower,
-    version,
-    fetchType,
-    paginationMode,
     deposits: processed.deposits.length,
     withdrawals: processed.withdrawals.length,
     transfersIn: processed.transfersIn.length,
@@ -1241,7 +887,6 @@ export interface TransactionActivityEvents {
 
 export async function fetchRecentAddressScopedActivityEvents(
   userAddress: string,
-  version: VaultVersion = 'all',
   limitPerSource = 25,
   maxTimestamp?: number,
   offsetPerSource = 0
@@ -1317,28 +962,17 @@ export async function fetchRecentAddressScopedActivityEvents(
     supportedTransfersIn,
     supportedTransfersOut
   ] = supportedEventGroups
-  const deposits = sortByBlockDesc(getDepositsByVersion(supportedV3Deposits, supportedV2Deposits, version))
-  const withdrawals = sortByBlockDesc(getWithdrawalsByVersion(supportedV3Withdrawals, supportedV2Withdrawals, version))
+  const deposits = sortByBlockDesc(mergeDeposits(supportedV3Deposits, supportedV2Deposits))
+  const withdrawals = sortByBlockDesc(mergeWithdrawals(supportedV3Withdrawals, supportedV2Withdrawals))
   const sortedTransfersIn = sortByBlockDesc(supportedTransfersIn)
   const sortedTransfersOut = sortByBlockDesc(supportedTransfersOut)
-  const hasMoreDeposits =
-    version === 'v3'
-      ? v3Deposits.length === boundedLimit
-      : version === 'v2'
-        ? v2DepositsRaw.length === boundedLimit
-        : v3Deposits.length === boundedLimit || v2DepositsRaw.length === boundedLimit
-  const hasMoreWithdrawals =
-    version === 'v3'
-      ? v3Withdrawals.length === boundedLimit
-      : version === 'v2'
-        ? v2WithdrawalsRaw.length === boundedLimit
-        : v3Withdrawals.length === boundedLimit || v2WithdrawalsRaw.length === boundedLimit
+  const hasMoreDeposits = v3Deposits.length === boundedLimit || v2DepositsRaw.length === boundedLimit
+  const hasMoreWithdrawals = v3Withdrawals.length === boundedLimit || v2WithdrawalsRaw.length === boundedLimit
   const hasMoreTransfersIn = transfersIn.length === boundedLimit
   const hasMoreTransfersOut = transfersOut.length === boundedLimit
 
   debugLog('graphql', 'fetched recent address-scoped activity events', {
     address: addressLower,
-    version,
     limitPerSource: boundedLimit,
     deposits: deposits.length,
     withdrawals: withdrawals.length,
@@ -1366,7 +1000,6 @@ export async function fetchRecentAddressScopedActivityEvents(
 
 export async function fetchActivityEventsByTransactionHashes(
   transactionHashesByChain: Map<number, string[]>,
-  version: VaultVersion = 'all',
   maxTimestamp?: number
 ): Promise<TransactionActivityEvents> {
   const supportedTransactionHashesByChain = new Map(
@@ -1407,10 +1040,8 @@ export async function fetchActivityEventsByTransactionHashes(
     ])
 
   return {
-    deposits: sortByBlock(dedupeById([...getDepositsByVersion(txHashV3Deposits, txHashV2DepositsRaw, version)])),
-    withdrawals: sortByBlock(
-      dedupeById([...getWithdrawalsByVersion(txHashV3Withdrawals, txHashV2WithdrawalsRaw, version)])
-    ),
+    deposits: sortByBlock(dedupeById(mergeDeposits(txHashV3Deposits, txHashV2DepositsRaw))),
+    withdrawals: sortByBlock(dedupeById(mergeWithdrawals(txHashV3Withdrawals, txHashV2WithdrawalsRaw))),
     transfers: sortByBlock(dedupeById(txHashTransfers))
   }
 }
@@ -1422,8 +1053,7 @@ function processEvents(
   v2DepositsRaw: V2DepositEvent[],
   v2WithdrawalsRaw: V2WithdrawEvent[],
   transfersIn: TransferEvent[],
-  transfersOut: TransferEvent[],
-  version: VaultVersion
+  transfersOut: TransferEvent[]
 ): UserEvents {
   const v2Deposits = v2DepositsRaw.map(normalizeV2Deposit)
   const v2Withdrawals = v2WithdrawalsRaw.map(normalizeV2Withdraw)
@@ -1453,19 +1083,10 @@ function processEvents(
     }
   }
 
-  // Filter deposits/withdrawals by version
-  const deposits = getDepositsByVersion(v3Deposits, v2DepositsRaw, version)
+  const deposits = mergeDeposits(v3Deposits, v2DepositsRaw)
+  const withdrawals = mergeWithdrawals(v3Withdrawals, v2WithdrawalsRaw)
 
-  const withdrawals = getWithdrawalsByVersion(v3Withdrawals, v2WithdrawalsRaw, version)
-
-  // Filter transfers by vault version
-  // For "all" version, include transfer-only vaults (vaults where user has no deposits/withdrawals but received shares via transfer)
-  const allowedVaults =
-    version === 'v3'
-      ? v3VaultAddresses
-      : version === 'v2'
-        ? v2VaultAddresses
-        : new Set([...v3VaultAddresses, ...v2VaultAddresses, ...transferOnlyVaults])
+  const allowedVaults = new Set([...v3VaultAddresses, ...v2VaultAddresses, ...transferOnlyVaults])
 
   // Filter transfers:
   // - For vaults WITH deposit/withdraw events: exclude mints (from zero) and burns (to zero) since they're covered by Deposit/Withdraw events
