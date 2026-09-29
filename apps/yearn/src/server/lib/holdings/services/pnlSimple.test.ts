@@ -9,6 +9,7 @@ import {
   buildExitPriceRequests,
   buildProtocolReturnFamilyHistorySeries,
   buildProtocolReturnHistorySeries,
+  buildProtocolReturnHistoryWithFamilies,
   buildProtocolReturnLedgers,
   buildReceiptPriceRequests,
   type HoldingsPnLSimpleVault,
@@ -2546,6 +2547,13 @@ describe('pnl simple protocol return', () => {
       currentTimestamp: inputs.timestamps[2]!
     })
     const families = buildProtocolReturnFamilyHistorySeries({ ...inputs, selectedVaults, portfolioPoints })
+    const combined = buildProtocolReturnHistoryWithFamilies({ ...inputs, selectedVaults })
+    expect(combined.dataPoints).toEqual(portfolioPoints)
+    expect(combined.familySeries).toEqual(families)
+    expect(buildProtocolReturnHistoryWithFamilies({ ...inputs, selectedVaults: [] })).toEqual({
+      ...combined,
+      familySeries: []
+    })
     expect(
       families.find((family) => family.vaultAddress === VAULT)!.dataPoints.map((point) => point.growthIndexContribution)
     ).toEqual([0, expect.closeTo(12.5, 8), expect.closeTo(25, 8)])
@@ -2652,6 +2660,13 @@ describe('pnl simple protocol return', () => {
         currentTimestamp: 3 * day - 1
       })
       const families = buildProtocolReturnFamilyHistorySeries({ ...inputs, selectedVaults, portfolioPoints })
+      const combined = buildProtocolReturnHistoryWithFamilies({ ...inputs, selectedVaults })
+      expect(combined.dataPoints).toEqual(portfolioPoints)
+      expect(combined.familySeries).toEqual(families)
+      expect(buildProtocolReturnHistoryWithFamilies({ ...inputs, selectedVaults: [] })).toEqual({
+        ...combined,
+        familySeries: []
+      })
       const expectedContribution = 12.5 + (25 * 100) / (isDeposit ? 325 : 137.5)
       expect(portfolioPoints.at(-1)?.growthIndex).toBeCloseTo(100)
       expect(
