@@ -269,7 +269,7 @@ function AppHeader(): ReactElement {
                 <div className={'hidden items-center justify-end md:flex gap-2'} data-tour="vaults-header-user">
                   <TenderlyBadge />
                   <div className={'hidden items-center gap-4 md:flex'}>
-                    <div className={'flex items-center gap-0.5'}>
+                    <div className={'flex items-center gap-2'}>
                       <HeaderSiteStatus />
                       <Link href={'/vaults'} prefetch={false}>
                         <span

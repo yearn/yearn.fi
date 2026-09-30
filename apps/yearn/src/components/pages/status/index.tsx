@@ -51,7 +51,6 @@ export default function StatusPage({ initialHealth }: { initialHealth: TSiteHeal
           className={'mb-3 px-1'}
           items={[
             { label: 'Home', href: '/' },
-            { label: 'Vaults', href: '/vaults' },
             { label: 'Status', href: '/status', isCurrent: true }
           ]}
         />
