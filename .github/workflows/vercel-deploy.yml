@@ -41,7 +41,6 @@ jobs:
               - '.npmrc'
               - 'tsconfig.base.json'
               - 'vercel.json'
-              - '.github/workflows/vercel-deploy.yml'
               - 'packages/chains/**'
               - 'packages/vault-widget/**'
             yearn:
