@@ -302,6 +302,7 @@ export const InputTokenAmount: FC<Props> = ({
           {!accountAddress ? (
             <button
               type="button"
+              data-wallet-entry="widget"
               onClick={openLoginModal}
               className="text-sm text-text-secondary hover:text-text-primary transition-colors"
             >
