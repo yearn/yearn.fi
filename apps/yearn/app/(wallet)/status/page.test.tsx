@@ -1,3 +1,5 @@
+import { HeaderSiteStatus } from '@shared/components/SiteStatus'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { renderToStaticMarkup } from 'react-dom/server'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import type { TSiteHealth } from '@/types/siteStatus'
@@ -38,13 +40,23 @@ const health: TSiteHealth = {
   }
 }
 
+async function renderPage(): Promise<string> {
+  const page = await Page()
+  return renderToStaticMarkup(
+    <QueryClientProvider client={new QueryClient()}>
+      <HeaderSiteStatus />
+      {page}
+    </QueryClientProvider>
+  )
+}
+
 describe('system status page', () => {
   beforeEach(() => {
     mockGetSiteHealth.mockResolvedValue(health)
   })
 
   it('renders current service state, networks, and explicit timestamp semantics in HTML', async () => {
-    const html = renderToStaticMarkup(await Page())
+    const html = await renderPage()
 
     expect(html).toContain('<h1')
     expect(html).toContain('System status')
@@ -60,6 +72,9 @@ describe('system status page', () => {
     expect(html).toContain('Network connections')
     expect(html).toContain('Ethereum')
     expect(html).toContain('Optimism')
+    expect(html).toContain('Degraded')
+    expect(html).toContain('Unavailable')
+    expect(html).toContain('dateTime="2026-09-01T12:00:00.000Z"')
     expect(html).toContain('Last checked')
     expect(html).toContain('Status generated')
     expect(html).toContain('Kong cache refreshed')
@@ -80,7 +95,7 @@ describe('system status page', () => {
       services: { ...health.services, kong: { state: 'operational', latencyMs: 42 } }
     })
 
-    const html = renderToStaticMarkup(await Page())
+    const html = await renderPage()
 
     expect(html).toContain('Kong cache refreshed')
     expect(html).toContain('Not reported by Kong')

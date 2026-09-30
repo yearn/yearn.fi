@@ -7,35 +7,17 @@ import {
   getOverallSiteHealthSummary,
   getSiteHealthStateClassName
 } from '@shared/utils/siteStatus'
-import { useQuery } from '@tanstack/react-query'
 import Link from 'next/link'
 import type { ReactElement } from 'react'
 import { useId } from 'react'
-import type { TSiteHealth, TSiteHealthState } from '@/types/siteStatus'
+import { useSiteHealth } from '@/hooks/useSiteHealth'
+import type { TSiteHealthState } from '@/types/siteStatus'
 
 type TServiceLabelProps = {
   label: string
   state?: TSiteHealthState
   status?: string
   title: string
-}
-
-async function fetchSiteHealth(): Promise<TSiteHealth> {
-  const response = await fetch('/api/status', { headers: { Accept: 'application/json' } })
-  if (!response.ok) {
-    throw new Error(`Site status request failed (${response.status})`)
-  }
-  return (await response.json()) as TSiteHealth
-}
-
-function useSiteHealth() {
-  return useQuery({
-    queryKey: ['site-status'],
-    queryFn: fetchSiteHealth,
-    refetchInterval: 60_000,
-    staleTime: 30_000,
-    retry: 1
-  })
 }
 
 function ServiceLabel({ label, state, status, title }: TServiceLabelProps): ReactElement {
@@ -111,9 +93,11 @@ export function MobileSiteStatus({ onNavigate }: { onNavigate: () => void }): Re
       className={'font-aeonik-mono text-[10px] uppercase tracking-[0.08em] text-text-secondary'}
     >
       <div className={'flex flex-col items-center gap-1 whitespace-nowrap text-center'}>
-        <time className={'whitespace-nowrap'} dateTime={health?.checkedAt} title={health?.checkedAt}>
-          {health ? `Checked ${formatSiteStatusDate(health.checkedAt)}` : 'Checking status'}
-        </time>
+        {!statusQuery.isError && (
+          <time className={'whitespace-nowrap'} dateTime={health?.checkedAt} title={health?.checkedAt}>
+            {health ? `Checked ${formatSiteStatusDate(health.checkedAt)}` : 'Checking status'}
+          </time>
+        )}
         <ServiceLabel label={summary} state={overallState} title={summary} />
         <Link
           href={'/status'}
