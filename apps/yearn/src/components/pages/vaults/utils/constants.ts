@@ -1,13 +1,13 @@
 import { ALL_VAULTSV3_CATEGORIES } from '@pages/vaults/constants'
 import type { TVaultAggressiveness } from '@pages/vaults/utils/vaultListFacets'
+import { getVaultChainIds, getVaultFilterChainIds } from '@yearn/chains'
 
-//TODO: see what can be combined with src/components/pages/vaults/utils/vaultTypeUtils.ts
-export const V2_SUPPORTED_CHAINS = [1, 10, 8453]
-export const V3_SUPPORTED_CHAINS = [1, 747474, 8453, 4663]
+export const V2_SUPPORTED_CHAINS = getVaultChainIds('v2')
+export const V3_SUPPORTED_CHAINS = getVaultChainIds('v3')
 
 export const AVAILABLE_TOGGLE_VALUE = 'available'
-export const V3_PRIMARY_CHAIN_IDS = [1, 747474]
-export const V3_DEFAULT_SECONDARY_CHAIN_IDS = [8453]
+export const V3_PRIMARY_CHAIN_IDS = getVaultFilterChainIds('primary')
+export const V3_DEFAULT_SECONDARY_CHAIN_IDS = getVaultFilterChainIds('secondary')
 export const AGGRESSIVENESS_OPTIONS: TVaultAggressiveness[] = ['Conservative', 'Moderate', 'Aggressive']
 export const V3_ASSET_CATEGORIES = [ALL_VAULTSV3_CATEGORIES.Stablecoin, ALL_VAULTSV3_CATEGORIES.Volatile]
 export const DEFAULT_MIN_TVL = 500

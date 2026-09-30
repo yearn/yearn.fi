@@ -1,5 +1,6 @@
-import { type Chain, createPublicClient, http, isAddressEqual } from 'viem'
-import { arbitrum, base, mainnet, optimism, polygon } from 'viem/chains'
+import { getRegisteredChain } from '@yearn/chains'
+import { createPublicClient, http, isAddressEqual } from 'viem'
+import { getServerRpcOverride } from '@/server/lib/chainRpc'
 import { strategyMetadataAbi, timelockControllerAbi } from './abi'
 import { getTimelockStrategyController } from './config'
 import { decodePendingTimelockStrategies, type TTimelockOperationStatus, type TTimelockScheduledCall } from './decode'
@@ -54,30 +55,13 @@ type TFetchPendingTimelockStrategiesParams = {
 
 const cache = new Map<string, TCacheEntry>()
 
-const KATANA_CHAIN = {
-  id: 747474,
-  name: 'Katana',
-  nativeCurrency: { decimals: 18, name: 'Ether', symbol: 'ETH' },
-  rpcUrls: { default: { http: [''] } }
-} as const satisfies Chain
-
-const CHAINS_BY_ID = new Map<number, Chain>([
-  [1, mainnet],
-  [10, optimism],
-  [137, polygon],
-  [8453, base],
-  [42161, arbitrum],
-  [747474, KATANA_CHAIN]
-])
-
 const CALL_SCHEDULED_EVENT = timelockControllerAbi[0]
 
-const resolveRpcUrl = (chainId: number): string | undefined =>
-  (process.env[`RPC_URI_FOR_${chainId}`] || process.env[`NEXT_PUBLIC_RPC_URI_FOR_${chainId}`])?.trim()
+const resolveRpcUrl = getServerRpcOverride
 
 function createTimelockClient(chainId: number, rpcUrl: string): TTimelockPublicClient {
   return createPublicClient({
-    chain: CHAINS_BY_ID.get(chainId),
+    chain: getRegisteredChain(chainId),
     transport: http(rpcUrl, { batch: true })
   }) as TTimelockPublicClient
 }

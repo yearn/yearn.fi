@@ -472,7 +472,7 @@ Response:
 | Arbitrum | 42161 | `arbitrum` |
 | Katana | 747474 | `katana` |
 
-`getChainPrefix` falls back to `ethereum` for unknown chain IDs, so new chains should be added to `SUPPORTED_CHAINS` before requests are expected to value correctly.
+`getChainPrefix` rejects unsupported chain IDs and uses the selected provider identifier from `@yearn/chains`. Configure holdings membership in `packages/chains/src/profiles.ts` and provider identifiers in its registry; do not edit the derived `SUPPORTED_CHAINS` export.
 
 ## Environment Variables
 

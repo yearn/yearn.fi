@@ -26,6 +26,7 @@ import {
 import type { TChainTokens, TToken } from '@shared/types'
 import type { TNotificationType } from '@shared/types/notifications'
 import { isZeroAddress } from '@shared/utils'
+import { getRoutingChains } from '@yearn/chains'
 import {
   type VaultWidgetAnalyticsProperties,
   type VaultWidgetCatalogVault,
@@ -256,7 +257,10 @@ export function YearnVaultWidgetRuntimeProvider({ children }: { children: ReactN
 
   const isEnsoEnabled = useCallback(
     ({ chainId: targetChainId, vaultAddress }: { chainId: number; vaultAddress?: `0x${string}` }): boolean =>
-      env.NEXT_PUBLIC_ENSO_DISABLED !== 'true' && !isEnsoFailed && !isVaultEnsoDisabled(targetChainId, vaultAddress),
+      getRoutingChains('yearn').some(({ id }) => id === targetChainId) &&
+      env.NEXT_PUBLIC_ENSO_DISABLED !== 'true' &&
+      !isEnsoFailed &&
+      !isVaultEnsoDisabled(targetChainId, vaultAddress),
     [isEnsoFailed]
   )
 
@@ -373,6 +377,7 @@ export function YearnVaultWidgetRuntimeProvider({ children }: { children: ReactN
         tokenListsByChain
       },
       chains: {
+        selectableChains: getRoutingChains('yearn'),
         getChain,
         isConnectedToExecutionChain,
         resolveCanonicalChainId,

@@ -73,6 +73,12 @@ describe('createVaultWidgetRuntime', () => {
     )
   })
 
+  it('uses only the routing networks supplied by the host', () => {
+    expect(createVaultWidgetRuntime().chains.selectableChains).toEqual([])
+    const chains = [{ id: 4663, name: 'Robinhood' }]
+    expect(createVaultWidgetRuntime({ chains: { selectableChains: chains } }).chains.selectableChains).toEqual(chains)
+  })
+
   it('merges nested host adapters and derives asset URLs', () => {
     const track = vi.fn()
     const runtime = createVaultWidgetRuntime({

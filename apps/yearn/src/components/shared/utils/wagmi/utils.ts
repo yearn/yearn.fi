@@ -1,3 +1,4 @@
+import { APP_PROFILES } from '@yearn/chains'
 import type { Chain } from 'viem'
 import { defineChain } from 'viem'
 import * as wagmiChains from 'viem/chains'
@@ -78,10 +79,11 @@ export function getRpcUriFor(chainId: number | string): string {
 
   const key = `NEXT_PUBLIC_RPC_URI_FOR_${chainId}`
   const value = env[key]
-  if (typeof value !== 'string') {
-    return ''
-  }
-  return value.trim()
+  return (
+    (typeof value === 'string' ? value.trim() : '') ||
+    APP_PROFILES.yearn.find(({ id }) => id === normalizedChainId)?.rpcDefault ||
+    ''
+  )
 }
 
 function getAlchemyBaseURL(chainID: number): string {

@@ -1,5 +1,7 @@
 'use client'
 
+import { getAppChain } from '@yearn/chains'
+
 import '@rainbow-me/rainbowkit/styles.css'
 import { lightTheme, RainbowKitProvider, useConnectModal } from '@rainbow-me/rainbowkit'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
@@ -20,7 +22,7 @@ const queryClient = new QueryClient()
 const YEARN_ASSETS_BASE_URI =
   process.env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI ?? 'https://cdn.jsdelivr.net/gh/yearn/tokenassets@main'
 const resolveExecutionChainId = (requestedChainId: number | undefined): number | undefined =>
-  requestedChainId === 1 ? 1 : undefined
+  requestedChainId && getAppChain('ybold', requestedChainId) ? requestedChainId : undefined
 const VAULT_WIDGET_EXECUTION = createWagmiVaultWidgetExecutionAdapter({
   config: wagmiConfig,
   resolveExecutionChainId
@@ -38,16 +40,15 @@ function WidgetHostProvider({ children }: { children: React.ReactNode }) {
         isDevelopment: process.env.NODE_ENV === 'development'
       },
       chains: {
-        getChain: (requestedChainId) =>
-          requestedChainId === 1
-            ? {
-                id: 1,
-                name: 'Ethereum',
-                blockExplorerUrl: 'https://etherscan.io'
-              }
-            : undefined,
+        getChain: (requestedChainId) => {
+          const chain = getAppChain('ybold', requestedChainId)
+          return chain
+            ? { id: chain.id, name: chain.name, blockExplorerUrl: chain.blockExplorers?.default.url }
+            : undefined
+        },
         isConnectedToExecutionChain: (connectedChainId, targetChainId) => connectedChainId === targetChainId,
-        resolveCanonicalChainId: (requestedChainId) => (requestedChainId === 1 ? 1 : undefined),
+        resolveCanonicalChainId: (requestedChainId) =>
+          requestedChainId && getAppChain('ybold', requestedChainId) ? requestedChainId : undefined,
         resolveExecutionChainId
       },
       execution: VAULT_WIDGET_EXECUTION,

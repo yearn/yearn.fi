@@ -36,7 +36,8 @@
     "viem": "2.55.11",
     "wagmi": "2.18.2",
     "zod": "4.4.3",
-    "@yearn/site-header": "workspace:*"
+    "@yearn/site-header": "workspace:*",
+    "@yearn/chains": "workspace:*"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "4.3.3",

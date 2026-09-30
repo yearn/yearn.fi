@@ -90,5 +90,7 @@ The repository is a Bun workspace. The production application lives in
 
 ## Multi-Chain
 
-Supported chains configured in `src/components/shared/utils/constants.tsx`:
-Ethereum (1), Optimism (10), Polygon (137), Fantom (250), Base (8453), Arbitrum (42161), Sonic (146), Katana (747474)
+Chain metadata and app profiles live in `packages/chains`. Follow
+`docs/chain-management.md` when adding a chain. Do not add independent chain
+lists, provider maps, native-token metadata or router allowlists to consumers.
+Run `bun run chains:check` for offline configuration validation.

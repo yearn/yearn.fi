@@ -8,6 +8,7 @@ import {
   hexToString,
   parseAbiItem
 } from 'viem'
+import { getServerRpcOverride } from '@/server/lib/chainRpc'
 import { debugError } from './debug'
 import { formatAmount, lowerCaseAddress, ZERO } from './pnlShared'
 
@@ -194,7 +195,7 @@ function toDecodeTopics(topics: string[]): TDecodeTopics {
 }
 
 function getChainRpcUrl(chainId: number): string | null {
-  const rpcUrl = (process.env[`RPC_URI_FOR_${chainId}`] || process.env[`NEXT_PUBLIC_RPC_URI_FOR_${chainId}`])?.trim()
+  const rpcUrl = getServerRpcOverride(chainId)
   return rpcUrl && rpcUrl.length > 0 ? rpcUrl : null
 }
 

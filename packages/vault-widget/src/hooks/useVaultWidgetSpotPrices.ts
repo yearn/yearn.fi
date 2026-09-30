@@ -1,16 +1,8 @@
 'use client'
 
 import { keepPreviousData, useQuery } from '@tanstack/react-query'
-import {
-  ARB_WETH_TOKEN_ADDRESS,
-  BASE_WETH_TOKEN_ADDRESS,
-  ETH_TOKEN_ADDRESS,
-  OPT_WETH_TOKEN_ADDRESS,
-  ROBINHOOD_ETH_TOKEN_ADDRESS,
-  WETH_TOKEN_ADDRESS,
-  WFTM_TOKEN_ADDRESS,
-  ZERO_ADDRESS
-} from '@yearn/vault-widget/internal/utils/constants'
+import { getWrappedNativeAddress, PRICE_CHAIN_NAMES } from '@yearn/chains'
+import { ETH_TOKEN_ADDRESS, ZERO_ADDRESS } from '@yearn/vault-widget/internal/utils/constants'
 import { useVaultWidgetRuntime, type VaultWidgetTokenReference } from '@yearn/vault-widget/runtime'
 import { useCallback } from 'react'
 import { isAddress } from 'viem'
@@ -19,29 +11,8 @@ const SPOT_PRICE_BATCH_SIZE = 50
 const SPOT_PRICE_STALE_TIME = 120_000
 const SPOT_PRICE_GC_TIME = 10 * 60_000
 
-const YEARN_PRICE_CHAIN_NAME_BY_ID: Readonly<Record<number, string>> = {
-  1: 'ethereum',
-  10: 'optimism',
-  100: 'gnosis',
-  137: 'polygon',
-  146: 'sonic',
-  250: 'fantom',
-  8453: 'base',
-  42161: 'arbitrum',
-  80094: 'berachain',
-  747474: 'katana',
-  4663: 'robinhood'
-}
+const YEARN_PRICE_CHAIN_NAME_BY_ID = PRICE_CHAIN_NAMES
 const YEARN_PRICE_CHAIN_NAMES = new Set(Object.values(YEARN_PRICE_CHAIN_NAME_BY_ID))
-
-const NATIVE_WRAPPER_BY_CHAIN_ID: Readonly<Partial<Record<number, `0x${string}`>>> = {
-  1: WETH_TOKEN_ADDRESS,
-  10: OPT_WETH_TOKEN_ADDRESS,
-  250: WFTM_TOKEN_ADDRESS,
-  8453: BASE_WETH_TOKEN_ADDRESS,
-  42161: ARB_WETH_TOKEN_ADDRESS,
-  4663: ROBINHOOD_ETH_TOKEN_ADDRESS
-}
 
 type TSpotPriceToken = VaultWidgetTokenReference | null | undefined
 type TSpotPrices = Readonly<Record<string, number>>
@@ -88,7 +59,7 @@ export function buildVaultWidgetSpotPriceKey(token: VaultWidgetTokenReference): 
 
   const priceAddress =
     normalizedAddress === ETH_TOKEN_ADDRESS.toLowerCase()
-      ? (NATIVE_WRAPPER_BY_CHAIN_ID[token.chainId] ?? token.address)
+      ? (getWrappedNativeAddress(token.chainId) ?? token.address)
       : token.address
   return `${chainName}:${priceAddress.toLowerCase()}`
 }

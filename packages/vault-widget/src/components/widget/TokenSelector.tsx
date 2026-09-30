@@ -22,16 +22,6 @@ import { type Address, formatUnits, isAddress } from 'viem'
 
 type TTokenType = 'asset' | 'vault' | 'staking' | undefined
 
-const AVAILABLE_CHAINS = [
-  { id: 1, name: 'Ethereum' },
-  { id: 10, name: 'Optimism' },
-  { id: 137, name: 'Polygon' },
-  { id: 42161, name: 'Arbitrum' },
-  { id: 8453, name: 'Base' },
-  { id: 747474, name: 'Katana' },
-  { id: 4663, name: 'Robinhood' }
-] as const
-
 const LEGACY_SELECTOR_TOKEN_ADDRESSES_BY_CHAIN: Record<number, `0x${string}`[]> = {
   1: ['0x85E30b8b263bC64d94b827ed450F2EdFEE8579dA'] // Legacy USDaf
 }
@@ -158,7 +148,7 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
 }) => {
   const [searchText, setSearchText] = useState('')
   const [selectedChainId, setSelectedChainId] = useState(chainId)
-  const { assets, catalog, prices, wallet } = useVaultWidgetRuntime()
+  const { assets, catalog, prices, wallet, chains } = useVaultWidgetRuntime()
   const { isLoading, tokensByChain: balances } = wallet
   const { knownVaults: allVaults, tokenListsByChain: tokenLists } = catalog
   const getToken = useCallback(
@@ -439,7 +429,7 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
       {/* Header with chain selector and close button */}
       <div className="flex items-center justify-between p-4 border-b border-border">
         <div className="flex items-center gap-1 rounded-lg bg-surface-secondary p-1 shadow-inner">
-          {AVAILABLE_CHAINS.map((chain) => (
+          {(chains.selectableChains ?? []).map((chain) => (
             <button
               key={chain.id}
               onClick={() => setSelectedChainId(chain.id)}

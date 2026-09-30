@@ -19,6 +19,7 @@ import { isZeroAddress, toAddress } from '@shared/utils'
 import { ETH_TOKEN_ADDRESS } from '@shared/utils/constants'
 import { isDisabledVeyfiGaugePair } from '@shared/utils/veyfiGauges'
 import { getNetwork } from '@shared/utils/wagmi'
+import { getNativeBalanceChains } from '@yearn/chains'
 import { useMemo } from 'react'
 
 function mergeTokenMetadata(existing: TUseBalancesTokens, incoming: TUseBalancesTokens): TUseBalancesTokens {
@@ -120,14 +121,11 @@ export function useYearnTokens({
     const extraTokens: TUseBalancesTokens[] = []
     extraTokens.push(
       ...[
-        { chainID: 1, address: ETH_TOKEN_ADDRESS, decimals: 18, name: 'Ether', symbol: 'ETH' },
-        { chainID: 10, address: ETH_TOKEN_ADDRESS, decimals: 18, name: 'Ether', symbol: 'ETH' },
-        { chainID: 137, address: ETH_TOKEN_ADDRESS, decimals: 18, name: 'Matic', symbol: 'POL' },
-        { chainID: 250, address: ETH_TOKEN_ADDRESS, decimals: 18, name: 'Fantom', symbol: 'FTM' },
-        { chainID: 8453, address: ETH_TOKEN_ADDRESS, decimals: 18, name: 'Ether', symbol: 'ETH' },
-        { chainID: 42161, address: ETH_TOKEN_ADDRESS, decimals: 18, name: 'Ether', symbol: 'ETH' },
-        { chainID: 747474, address: ETH_TOKEN_ADDRESS, decimals: 18, name: 'Ether', symbol: 'ETH' },
-        { chainID: 4663, address: ETH_TOKEN_ADDRESS, decimals: 18, name: 'Ether', symbol: 'ETH' },
+        ...getNativeBalanceChains().map(({ id, nativeCurrency }) => ({
+          chainID: id,
+          address: ETH_TOKEN_ADDRESS,
+          ...nativeCurrency
+        })),
         {
           chainID: YVUSD_CHAIN_ID,
           address: YVUSD_UNLOCKED_ADDRESS,

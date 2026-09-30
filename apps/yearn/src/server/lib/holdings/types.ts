@@ -1,19 +1,15 @@
+import { getHistoryChainIds, getPriceChainName } from '@yearn/chains'
 export interface ChainConfig {
   id: number
   name: string
   defillamaPrefix: string
 }
 
-export const SUPPORTED_CHAINS: ChainConfig[] = [
-  { id: 1, name: 'ethereum', defillamaPrefix: 'ethereum' },
-  { id: 10, name: 'optimism', defillamaPrefix: 'optimism' },
-  { id: 250, name: 'fantom', defillamaPrefix: 'fantom' },
-  { id: 8453, name: 'base', defillamaPrefix: 'base' },
-  { id: 42161, name: 'arbitrum', defillamaPrefix: 'arbitrum' },
-  { id: 137, name: 'polygon', defillamaPrefix: 'polygon' },
-  { id: 747474, name: 'katana', defillamaPrefix: 'katana' },
-  { id: 4663, name: 'robinhood', defillamaPrefix: 'robinhood' }
-]
+export const SUPPORTED_CHAINS: ChainConfig[] = getHistoryChainIds().map((id) => ({
+  id,
+  name: getPriceChainName(id, 'yearn-prices')!,
+  defillamaPrefix: getPriceChainName(id, 'defillama')!
+}))
 
 export interface DepositEvent {
   id: string

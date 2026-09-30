@@ -1,3 +1,4 @@
+import { getPriceChainName } from '@yearn/chains'
 import { holdingsConfig } from '../config'
 import { type DefiLlamaBatchResponse, SUPPORTED_CHAINS } from '../types'
 import { debugError, debugLog } from './debug'
@@ -86,7 +87,10 @@ export function getChainPrefix(chainId: number): string {
     throw new Error(`Unsupported holdings price chain ID: ${chainId}`)
   }
 
-  return chain.defillamaPrefix
+  const provider = getHistoricalPriceProviderConfig().provider
+  const prefix = getPriceChainName(chainId, provider)
+  if (!prefix) throw new Error(`No ${provider} price identifier for chain ${chainId}`)
+  return prefix
 }
 
 function normalizeToUtcDayEnd(timestamp: number): number {

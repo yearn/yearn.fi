@@ -1,8 +1,6 @@
-import { arbitrum, base, fantom, katana, mainnet, optimism, polygon, robinhood, sonic } from 'viem/chains'
+import { getAppChains } from '@yearn/chains'
 
-// Define chains locally here only when they are unavailable in viem.
-export { katana }
-
-export const canonicalChains = [mainnet, optimism, polygon, fantom, base, arbitrum, sonic, katana, robinhood] as const
-
+// Compatibility export for existing callers. Chain metadata lives in @yearn/chains.
+export { katana } from 'viem/chains'
+export const canonicalChains = getAppChains('yearn')
 export type TCanonicalChainId = (typeof canonicalChains)[number]['id']
