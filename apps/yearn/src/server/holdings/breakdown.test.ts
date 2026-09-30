@@ -3,13 +3,11 @@ import { GET, parseUtcDateParam } from './breakdown'
 
 const TEST_ADDRESS = '0x2222222222222222222222222222222222222222'
 
-const { ensureHoldingsStorageInitializedMock, getHoldingsBreakdownMock } = vi.hoisted(() => ({
-  ensureHoldingsStorageInitializedMock: vi.fn(),
+const { getHoldingsBreakdownMock } = vi.hoisted(() => ({
   getHoldingsBreakdownMock: vi.fn()
 }))
 
 vi.mock('../lib/holdings', () => ({
-  ensureHoldingsStorageInitialized: ensureHoldingsStorageInitializedMock,
   getHoldingsBreakdown: getHoldingsBreakdownMock
 }))
 
@@ -32,7 +30,6 @@ describe('parseUtcDateParam', () => {
 describe('holdings breakdown route', () => {
   beforeEach(() => {
     vi.clearAllMocks()
-    ensureHoldingsStorageInitializedMock.mockResolvedValue(undefined)
     getHoldingsBreakdownMock.mockResolvedValue({
       address: TEST_ADDRESS,
       version: 'all',

@@ -31,7 +31,7 @@ function createVaultListResponse(): Response {
   )
 }
 
-function createVaultSnapshotResponse(): Response {
+function createVaultSnapshotResponse(assetDecimals: number | string = 6): Response {
   return new Response(
     JSON.stringify({
       address: '0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204',
@@ -43,7 +43,7 @@ function createVaultSnapshotResponse(): Response {
       asset: {
         address: '0xA0b86991c6218b36c1d19d4a2e9eb0ce3606eb48',
         symbol: 'USDC',
-        decimals: 6
+        decimals: assetDecimals
       },
       staking: {
         address: '0x622fa41799406b120f9a40da843d358b7b2cfee3',
@@ -108,6 +108,30 @@ describe('fetchMultipleVaultsMetadata', () => {
 
     expect(metadata.get(`1:${UNDERLYING_VAULT}`)?.token.address).toBe('0xa0b86991c6218b36c1d19d4a2e9eb0ce3606eb48')
     expect(fetchStub).toHaveBeenCalledTimes(4)
+  })
+
+  it('normalizes string decimals from vault snapshot metadata', async () => {
+    vi.spyOn(console, 'error').mockImplementation(() => {})
+    const fetchStub = vi.fn(async (input: string | URL | Request) => {
+      const url = String(input)
+
+      if (url.includes('/list/vaults?origin=yearn')) {
+        throw Object.assign(new Error('socket closed'), { code: 'ECONNRESET' })
+      }
+
+      if (url.includes(`/snapshot/1/${UNDERLYING_VAULT}`)) {
+        return createVaultSnapshotResponse('6')
+      }
+
+      throw new Error(`Unexpected URL: ${url}`)
+    })
+
+    vi.stubGlobal('fetch', fetchStub)
+
+    const { fetchMultipleVaultsMetadata } = await importVaultsModule()
+    const metadata = await fetchMultipleVaultsMetadata([{ chainId: 1, vaultAddress: UNDERLYING_VAULT }])
+
+    expect(metadata.get(`1:${UNDERLYING_VAULT}`)?.token.decimals).toBe(6)
   })
 
   it('builds staking metadata from the underlying snapshot fallback', async () => {

@@ -17,9 +17,9 @@ type TUseVaultUserHistoryParams = {
 
 const vaultUserHistoryPointSchema = z.object({
   date: z.string(),
-  growthWeightUsd: z.number().optional().default(0),
-  currentUnderlying: z.number().optional().default(0),
-  growthUnderlying: z.number().optional().default(0),
+  growthWeightUsd: z.number().nullable().optional().default(null),
+  currentUnderlying: z.number().nullable().optional().default(null),
+  growthUnderlying: z.number().nullable().optional().default(null),
   sharesFormatted: z.number().optional().default(0),
   pricePerShare: z.number().optional().default(0)
 })
@@ -72,7 +72,7 @@ export function useVaultUserHistory({
       return null
     }
 
-    return `/api/holdings/protocol-return/history?address=${address}&${vaultFilter}&timeframe=${apiTimeframe}&fetchType=seq`
+    return `/api/holdings/protocol-return/history?address=${address}&${vaultFilter}&timeframe=${apiTimeframe}`
   }, [address, apiTimeframe, enabled, vaultFilter])
 
   const balanceEndpoint = useMemo(() => {
@@ -80,7 +80,7 @@ export function useVaultUserHistory({
       return null
     }
 
-    return `/api/holdings/history?address=${address}&${vaultFilter}&denomination=usd&timeframe=${apiTimeframe}&fetchType=seq`
+    return `/api/holdings/history?address=${address}&${vaultFilter}&denomination=usd&timeframe=${apiTimeframe}`
   }, [address, apiTimeframe, enabled, valueMode, vaultFilter])
 
   const {

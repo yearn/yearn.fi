@@ -19,7 +19,7 @@ describe('holdings progress route', () => {
   it('returns no content when a progress record is not available', async () => {
     getHoldingsProgressMock.mockResolvedValue(null)
 
-    const { default: handler } = await import('./progress')
+    const { GET: handler } = await import('./progress')
     const response = await handler(createRequest('portfolio-history:usd:1y:test'))
 
     expect(response.status).toBe(204)
@@ -42,7 +42,7 @@ describe('holdings progress route', () => {
     }
     getHoldingsProgressMock.mockResolvedValue(progress)
 
-    const { default: handler } = await import('./progress')
+    const { GET: handler } = await import('./progress')
     const response = await handler(createRequest(progress.id))
 
     expect(response.status).toBe(200)
