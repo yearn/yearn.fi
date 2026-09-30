@@ -18,19 +18,61 @@ permissions:
 cache-mode: none
 
 jobs:
+  changes:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      pull-requests: read
+    outputs:
+      yearn: ${{ steps.filter.outputs.yearn }}
+      ybold: ${{ steps.filter.outputs.ybold }}
+      erc4626: ${{ steps.filter.outputs.erc4626 }}
+    steps:
+      - uses: actions/checkout@v4
+      - uses: dorny/paths-filter@v3
+        id: filter
+        with:
+          filters: |
+            shared: &shared
+              - 'package.json'
+              - 'bun.lock'
+              - 'bunfig.toml'
+              - '.bunfig.toml'
+              - '.npmrc'
+              - 'tsconfig.base.json'
+              - 'vercel.json'
+              - 'packages/vault-widget/**'
+            yearn:
+              - *shared
+              - 'packages/site-header/**'
+              - 'apps/yearn/**'
+            ybold:
+              - *shared
+              - 'apps/ybold/**'
+            erc4626:
+              - *shared
+              - 'packages/site-header/**'
+              - 'apps/4626/**'
+
   yearn:
+    needs: changes
+    if: needs.changes.outputs.yearn == 'true'
     uses: yearn/yearn-gha/.github/workflows/vercel-deploy.yml@17446bfb9e9c7911367379222fa5b7e3fff52fa3
     with:
       project: yearn-fi
       identity-id: ${{ github.event_name == 'pull_request' && vars.DOPPLER_PREVIEW_IDENTITY_ID || vars.DOPPLER_PRODUCTION_IDENTITY_ID }}
 
   ybold:
+    needs: changes
+    if: needs.changes.outputs.ybold == 'true'
     uses: yearn/yearn-gha/.github/workflows/vercel-deploy.yml@17446bfb9e9c7911367379222fa5b7e3fff52fa3
     with:
       project: yearn-bold
       identity-id: ${{ github.event_name == 'pull_request' && vars.DOPPLER_PREVIEW_IDENTITY_ID || vars.DOPPLER_PRODUCTION_IDENTITY_ID }}
 
   erc4626:
+    needs: changes
+    if: needs.changes.outputs.erc4626 == 'true'
     uses: yearn/yearn-gha/.github/workflows/vercel-deploy.yml@17446bfb9e9c7911367379222fa5b7e3fff52fa3
     with:
       project: yearn-4626
