@@ -1,11 +1,9 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 
-const ensureHoldingsStorageInitializedMock = vi.fn()
 const getHistoricalHoldingsChartMock = vi.fn()
 const TEST_WALLET_ADDRESS = process.env.HOLDINGS_TEST_WALLET_ADDRESS ?? '0x1111111111111111111111111111111111111111'
 
 vi.mock('../lib/holdings', () => ({
-  ensureHoldingsStorageInitialized: ensureHoldingsStorageInitializedMock,
   getHistoricalHoldingsChart: getHistoricalHoldingsChartMock
 }))
 
@@ -17,7 +15,6 @@ describe('holdings history route', () => {
   beforeEach(() => {
     vi.resetModules()
     vi.clearAllMocks()
-    ensureHoldingsStorageInitializedMock.mockResolvedValue(undefined)
     process.env.ENVIO_GRAPHQL_URL = 'https://envio.example/graphql'
   })
 
@@ -34,7 +31,7 @@ describe('holdings history route', () => {
       ]
     })
 
-    const { default: handler } = await import('./history')
+    const { GET: handler } = await import('./history')
     const response = await handler(
       createRequest({
         address: TEST_WALLET_ADDRESS
@@ -65,7 +62,7 @@ describe('holdings history route', () => {
       dataPoints: [{ date: '2026-04-21', timestamp: 1776815999, value: 42 }]
     })
 
-    const { default: handler } = await import('./history')
+    const { GET: handler } = await import('./history')
     const response = await handler(
       createRequest({
         address: TEST_WALLET_ADDRESS,
@@ -74,21 +71,13 @@ describe('holdings history route', () => {
     )
 
     expect(response.status).toBe(200)
-    expect(getHistoricalHoldingsChartMock).toHaveBeenCalledWith(
-      TEST_WALLET_ADDRESS,
-      'all',
-      'seq',
-      'paged',
-      'usd',
-      '1y',
-      [
-        { chainId: 1, vaultAddress: '0x696d02Db93291651ED510704c9b286841d506987' },
-        { chainId: 1, vaultAddress: '0xAaaFEa48472f77563961Cdb53291DEDfB46F9040' }
-      ]
-    )
+    expect(getHistoricalHoldingsChartMock).toHaveBeenCalledWith(TEST_WALLET_ADDRESS, 'usd', '1y', [
+      { chainId: 1, vaultAddress: '0x696d02Db93291651ED510704c9b286841d506987' },
+      { chainId: 1, vaultAddress: '0xAaaFEa48472f77563961Cdb53291DEDfB46F9040' }
+    ])
   })
 
-  it('uses the requested event fetch type while ignoring advanced pagination mode', async () => {
+  it('uses the requested timeframe and denomination', async () => {
     getHistoricalHoldingsChartMock.mockResolvedValue({
       address: TEST_WALLET_ADDRESS,
       periodDays: 365,
@@ -98,27 +87,17 @@ describe('holdings history route', () => {
       dataPoints: [{ date: '2026-04-21', timestamp: 1776815999, value: 1 }]
     })
 
-    const { default: handler } = await import('./history')
+    const { GET: handler } = await import('./history')
     const response = await handler(
       createRequest({
         address: TEST_WALLET_ADDRESS,
-        fetchType: 'parallel',
-        paginationMode: 'all',
         timeframe: 'all',
         denomination: 'eth'
       })
     )
 
     expect(response.status).toBe(200)
-    expect(getHistoricalHoldingsChartMock).toHaveBeenCalledWith(
-      TEST_WALLET_ADDRESS,
-      'all',
-      'parallel',
-      'paged',
-      'eth',
-      'all',
-      undefined
-    )
+    expect(getHistoricalHoldingsChartMock).toHaveBeenCalledWith(TEST_WALLET_ADDRESS, 'eth', 'all', undefined)
     await expect(response.json()).resolves.toMatchObject({
       denomination: 'eth',
       timeframe: 'all'

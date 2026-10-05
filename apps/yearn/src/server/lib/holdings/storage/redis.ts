@@ -3,8 +3,7 @@ import { holdingsConfig } from '../config'
 
 const holdingsRedisState = {
   client: null as Redis | null,
-  disabled: false,
-  initializationPromise: null as Promise<void> | null
+  disabled: false
 }
 
 function hasRedisConfig(): boolean {
@@ -48,34 +47,4 @@ export function getHoldingsRedisClient(): Redis | null {
   }
 
   return holdingsRedisState.client
-}
-
-export async function initializeHoldingsStorage(): Promise<void> {
-  const redis = getHoldingsRedisClient()
-  if (!redis) {
-    console.log('[Holdings Redis] No Redis configured, skipping storage initialization')
-    return
-  }
-
-  try {
-    await redis.ping()
-    console.log('[Holdings Redis] Storage initialized successfully')
-  } catch (error) {
-    handleHoldingsRedisError('storage initialization failed', error)
-  }
-}
-
-export function ensureHoldingsStorageInitialized(): Promise<void> {
-  if (!isHoldingsStorageEnabled()) {
-    return Promise.resolve()
-  }
-
-  if (!holdingsRedisState.initializationPromise) {
-    holdingsRedisState.initializationPromise = initializeHoldingsStorage().catch((error) => {
-      holdingsRedisState.initializationPromise = null
-      throw error
-    })
-  }
-
-  return holdingsRedisState.initializationPromise
 }
