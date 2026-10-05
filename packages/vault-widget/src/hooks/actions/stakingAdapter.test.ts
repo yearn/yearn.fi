@@ -9,6 +9,7 @@ import {
   getRedeemPreviewCall,
   getStakePreviewCall,
   getStakingWithdrawableAssets,
+  getWithdrawPreviewCall,
   normalizeStakingSource
 } from './stakingAdapter'
 
@@ -47,6 +48,25 @@ describe('stakingAdapter', () => {
       args: [shares]
     })
     expect(getRedeemPreviewCall('Legacy', shares)).toBeUndefined()
+  })
+
+  it('builds withdraw previews that convert vault assets back to staking shares', () => {
+    const assets = 42n
+    expect(getWithdrawPreviewCall('VeYFI', assets)).toMatchObject({
+      abi: VEYFI_GAUGE_ABI,
+      functionName: 'previewWithdraw',
+      args: [assets]
+    })
+    expect(getWithdrawPreviewCall('yBOLD', assets)).toMatchObject({
+      abi: TOKENIZED_STRATEGY_ABI,
+      functionName: 'previewWithdraw',
+      args: [assets]
+    })
+    expect(getWithdrawPreviewCall('Legacy', assets)).toMatchObject({
+      abi: erc4626Abi,
+      functionName: 'previewWithdraw',
+      args: [assets]
+    })
   })
 
   it('builds direct stake calls per staking source', () => {

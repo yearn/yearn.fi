@@ -20,7 +20,7 @@ There is no standalone Bun API mirror and no catch-all pathname dispatcher. Loca
 | `/api/holdings/activity` | `GET` | Next Node | Recent classified vault activity |
 | `/api/holdings/activity-facets` | `GET` | Next Node | Chain facets for holdings activity filters |
 | `/api/holdings/protocol-return/history` | `GET` | Next Node | Protocol-return history for vault exposure |
-| `/api/holdings/pnl/simple-history` | `GET` | Next Node | Compatibility alias for protocol-return history |
+| `/api/holdings/portfolio` | `GET` | Next Node | Combined balance, protocol-return, and growth history |
 | `/api/admin/invalidate-cache` | `POST` | Next Node | Lazy vault cache invalidation, admin-protected |
 | `/sitemap.xml` | `GET` | Next Node | XML sitemap for public pages and vault detail URLs |
 | `/api/sitemap` | `GET` | Next Node | Compatibility alias for the sitemap XML response |
@@ -46,10 +46,10 @@ There is no standalone Bun API mirror and no catch-all pathname dispatcher. Loca
 The holdings implementation is the largest API surface here. See [`lib/holdings/README.md`](./lib/holdings/README.md) for:
 
 - Endpoint query params and response shapes.
-- Envio, Kong, yearn-prices, and DefiLlama data flow.
+- Envio, Kong, and yearn-prices data flow.
 - `timeframe=all` support from `2024-01-01`.
 - Cache schema, hashed user cache keys, and invalidation behavior.
-- Historical price provider switching and yearn-prices range requests.
+- Historical yearn-prices batch and range requests.
 
 ## Enso Proxies
 
@@ -116,6 +116,8 @@ Required env for a configured chain:
 |----------|---------|-------------|
 | `ENSO_API_KEY` | Enso routes | Bearer token for Enso upstream requests |
 | `RELAY_API_KEY` | Enso bridge-status route | Server-only key for Relay request lookup by source transaction hash |
+| `UPSTASH_REDIS_REST_URL_BRIDGE_COORDINATION` | Enso bridge-status route | Tracks bridge events via ENSO |
+| `UPSTASH_REDIS_REST_TOKEN_BRIDGE_COORDINATION` | Enso bridge-status route | Tracks bridge events via ENSO |
 | `MERKL_API_KEY` | Merkl route | API key sent to Merkl as `X-API-Key` |
 | `KONG_REST_URL` | machine-readable vault routes | Optional server-only Kong REST base URL override |
 | `NEXT_PUBLIC_KONG_REST_URL` | vault pages, machine-readable vault routes | Public Kong REST base URL |
@@ -124,17 +126,15 @@ Required env for a configured chain:
 | `ENVIO_GRAPHQL_URL` | holdings, optimization alignment | Envio GraphQL endpoint |
 | `ENVIO_PASSWORD` | holdings, optimization alignment | Optional Envio secret or bearer token |
 | `RPC_URI_FOR_<id>` | holdings activity | Optional server-only chain RPC URL for receipt enrichment; falls back to `NEXT_PUBLIC_RPC_URI_FOR_<id>` |
-| `HOLDINGS_PRICE_PROVIDER` | holdings | `auto`, `yearn-prices`, or `defillama` |
 | `YEARN_PRICES_BASE_URL` | holdings | yearn-prices base URL |
 | `YEARN_PRICES_API_URL` | holdings | Legacy alias for `YEARN_PRICES_BASE_URL` |
 | `YEARN_PRICES_API_KEY` | holdings | Bearer token for yearn-prices |
 | `API_KEY_PORTFOLIO` | holdings | Fallback bearer token for yearn-prices |
-| `DEFILLAMA_API_KEY` | holdings | Enables DefiLlama Pro |
 | `ADMIN_SECRET` | holdings admin | Required for `/api/admin/invalidate-cache` |
 | `UPSTASH_REDIS_REST_URL_PORTFOLIO` | holdings | Upstash Redis REST URL for holdings cache/progress |
 | `UPSTASH_REDIS_REST_TOKEN_PORTFOLIO` | holdings | Upstash Redis REST token for holdings storage |
-| `UPSTASH_REDIS_REST_URL` | optimization | Upstash Redis REST URL for optimization payloads |
-| `UPSTASH_REDIS_REST_TOKEN` | optimization | Upstash Redis REST token for optimization payloads |
+| `UPSTASH_REDIS_REST_URL_DOA` | optimization | Upstash Redis REST URL for optimization payloads |
+| `UPSTASH_REDIS_REST_TOKEN_DOA` | optimization | Upstash Redis REST token for optimization payloads |
 | `HOLDINGS_DEBUG` | holdings | Enables holdings debug logs |
 | `NEXT_PUBLIC_TENDERLY_MODE` | local Tenderly | Enables Tenderly config parsing |
 | `NEXT_PUBLIC_TENDERLY_CHAIN_ID_FOR_<id>` | local Tenderly | Tenderly execution chain ID for a canonical chain |

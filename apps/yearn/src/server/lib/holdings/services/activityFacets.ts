@@ -1,23 +1,20 @@
-import { fetchAddressActivityChainIdsByExistence, type VaultVersion } from './graphql'
+import { fetchAddressActivityChainIdsByExistence } from './graphql'
 import { lowerCaseAddress } from './pnlShared'
 
 export interface HoldingsActivityFacetsResponse {
   address: string
-  version: VaultVersion
+  version: 'all'
   facets: {
     chainIds: number[]
   }
 }
 
-export async function getHoldingsActivityFacetResponse(
-  userAddress: string,
-  version: VaultVersion
-): Promise<HoldingsActivityFacetsResponse> {
-  const chainIds = await fetchAddressActivityChainIdsByExistence(userAddress, version)
+export async function getHoldingsActivityFacetResponse(userAddress: string): Promise<HoldingsActivityFacetsResponse> {
+  const chainIds = await fetchAddressActivityChainIdsByExistence(userAddress)
 
   return {
     address: lowerCaseAddress(userAddress),
-    version,
+    version: 'all',
     facets: { chainIds }
   }
 }

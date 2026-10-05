@@ -83,6 +83,30 @@ export function getRedeemPreviewCall(stakingSource: string | undefined, amount: 
   return undefined
 }
 
+export function getWithdrawPreviewCall(stakingSource: string | undefined, amount: bigint): StakingCall {
+  const source = normalizeStakingSource(stakingSource)
+
+  if (source === 'VeYFI') {
+    return {
+      abi: VEYFI_GAUGE_ABI,
+      functionName: 'previewWithdraw',
+      args: [amount]
+    }
+  }
+  if (source === 'yBOLD') {
+    return {
+      abi: TOKENIZED_STRATEGY_ABI,
+      functionName: 'previewWithdraw',
+      args: [amount]
+    }
+  }
+  return {
+    abi: erc4626Abi,
+    functionName: 'previewWithdraw',
+    args: [amount]
+  }
+}
+
 export function getDirectStakeCall({ stakingSource, amount, account }: DirectStakeCallInput): StakingCall {
   const source = normalizeStakingSource(stakingSource)
 
