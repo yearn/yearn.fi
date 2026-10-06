@@ -37,6 +37,8 @@
 
 ### Install and run
 
+Use Node.js 22 and Bun 1.4.2 or newer. Older Bun versions can link the TypeScript 6 compatibility compiler as `tsc` instead of TypeScript 7.
+
 1. Run `bun install` from the repository root.
 2. Run `bun run dev` (or `bun run dev:yearn`) for Yearn at `http://localhost:3000`.
 3. Run `bun run dev:ybold` for yBOLD at `http://localhost:3002`.

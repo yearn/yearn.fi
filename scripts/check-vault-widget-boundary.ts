@@ -1,7 +1,7 @@
 import fs from 'node:fs'
 import path from 'node:path'
 import { fileURLToPath } from 'node:url'
-import * as ts from 'typescript'
+import * as ts from '@typescript/typescript6'
 
 const REPOSITORY_ROOT = path.resolve(path.dirname(fileURLToPath(import.meta.url)), '..')
 const PACKAGE_ROOT = path.join(REPOSITORY_ROOT, 'packages', 'vault-widget')

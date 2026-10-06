@@ -56,7 +56,7 @@
     "react": "19.2.8",
     "react-dom": "19.2.8",
     "react-rewards": "2.1.0",
-    "typescript": "5.9.3",
+    "typescript": "7.0.2",
     "viem": "2.55.11",
     "vitest": "4.1.10",
     "wagmi": "2.18.2"
