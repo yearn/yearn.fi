@@ -1,6 +1,5 @@
+import type { TAddress, TAddressLike } from '@shared/types'
 import { getAddress, zeroAddress } from 'viem'
-import type { TAddress, TAddressLike, TAddressSmol } from '../types'
-import { isTAddress, isZeroAddress } from './tools.is'
 
 /******************************************************************************
  ** toAddress - Wagmi only requires a 0xString as a valid address. To use our
@@ -8,30 +7,24 @@ import { isTAddress, isZeroAddress } from './tools.is'
  ** around.
  *****************************************************************************/
 export function toAddress(address?: TAddressLike | null): TAddress {
-  if (!address) {
+  if (!address || address === zeroAddress) {
     return zeroAddress
   }
   const trimmedAddress = address.trim()
-  return getAddress(toChecksumAddress(trimmedAddress)?.valueOf())
+  try {
+    return getAddress(trimmedAddress)
+  } catch {
+    return zeroAddress
+  }
 }
 
-/******************************************************************************
- ** checksumAddress - Used to convert something looking like an address to
- ** a valid address. It will return the zero address if the address is not
- ** valid.
- *****************************************************************************/
-function toChecksumAddress(address?: string | null | undefined): TAddressSmol {
-  try {
-    if (address && address !== 'GENESIS') {
-      const checksummedAddress = getAddress(address)
-      if (isTAddress(checksummedAddress)) {
-        return checksummedAddress as TAddressSmol
-      }
-    }
-  } catch {
-    // console.error(error);
+export function isZeroAddress(address?: string): boolean {
+  if (!address) {
+    return true
   }
-  return zeroAddress as TAddressSmol
+  const trimmedAddress = address.trim()
+  // Preserve the invalid-address fallback without computing a checksum just to compare against zero.
+  return trimmedAddress === zeroAddress || !/^0x[0-9a-fA-F]{40}$/.test(trimmedAddress)
 }
 
 /******************************************************************************

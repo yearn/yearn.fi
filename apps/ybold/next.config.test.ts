@@ -1,7 +1,13 @@
+import nextConfig from '@ybold/next.config'
 import { describe, expect, it } from 'vitest'
-import nextConfig from './next.config'
 
 describe('yBOLD Next configuration', () => {
+  it('proxies the same analytics endpoint as Yearn', async () => {
+    expect(await nextConfig.rewrites?.()).toContainEqual({
+      source: '/proxy/plausible/:path*',
+      destination: 'https://plausible.io/:path*'
+    })
+  })
   it('protects every route from untrusted framing while preserving Safe embedding', async () => {
     const configuredRoutes = await nextConfig.headers?.()
 
@@ -29,7 +35,7 @@ describe('yBOLD Next configuration', () => {
       }
     ])
     expect(nextConfig.poweredByHeader).toBe(false)
-    expect(nextConfig.transpilePackages).toEqual(['@yearn/vault-widget'])
+    expect(nextConfig.transpilePackages).toEqual(['@yearn/vault-widget', '@yearn/wallet-ui'])
     expect(nextConfig.turbopack?.resolveAlias?.['@safe-global/safe-apps-sdk']).toBe(
       '../../node_modules/@safe-global/safe-apps-sdk/dist/esm'
     )
