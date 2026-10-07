@@ -5,14 +5,13 @@ import { AppSettingsContextApp } from '@pages/vaults/contexts/useAppSettings'
 import { EnsoStatusProvider } from '@pages/vaults/contexts/useEnsoStatus'
 import { RainbowKitProvider } from '@rainbow-me/rainbowkit'
 import { ChartStyleContextApp } from '@shared/contexts/useChartStyle'
-import { IndexedDB } from '@shared/contexts/useIndexedDB'
 import { WithNotifications } from '@shared/contexts/useNotifications'
-import { WithNotificationsActions } from '@shared/contexts/useNotificationsActions'
 import { TenderlyPanelProvider } from '@shared/contexts/useTenderlyPanel'
 import { WalletContextApp } from '@shared/contexts/useWallet'
 import { Web3ContextApp } from '@shared/contexts/useWeb3'
 import { YearnContextApp } from '@shared/contexts/useYearn'
 import { WithTokenList } from '@shared/contexts/WithTokenList'
+import { YearnTransactionLifecycleProvider } from '@shared/contexts/YearnTransactionLifecycleProvider'
 import { IconAlertCritical } from '@shared/icons/IconAlertCritical'
 import { IconAlertError } from '@shared/icons/IconAlertError'
 import { IconCheckmark } from '@shared/icons/IconCheckmark'
@@ -68,17 +67,15 @@ export function AppProviders({ children }: { children: ReactNode }): ReactElemen
                       <ChartStyleContextApp>
                         <YearnContextApp>
                           <WalletContextApp>
-                            <IndexedDB>
+                            <YearnTransactionLifecycleProvider>
                               <WithNotifications>
-                                <WithNotificationsActions>
-                                  <TenderlyPanelProvider>
-                                    <AppClientEffects />
-                                    {children}
-                                    <TenderlyControlPanel />
-                                  </TenderlyPanelProvider>
-                                </WithNotificationsActions>
+                                <TenderlyPanelProvider>
+                                  <AppClientEffects />
+                                  {children}
+                                  <TenderlyControlPanel />
+                                </TenderlyPanelProvider>
                               </WithNotifications>
-                            </IndexedDB>
+                            </YearnTransactionLifecycleProvider>
                           </WalletContextApp>
                         </YearnContextApp>
                       </ChartStyleContextApp>

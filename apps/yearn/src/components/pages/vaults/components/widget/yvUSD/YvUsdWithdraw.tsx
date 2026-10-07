@@ -19,8 +19,10 @@ import { useChainTimestamp } from '@shared/hooks/useChainTimestamp'
 import { IconCheck } from '@shared/icons/IconCheck'
 import { formatTAmount, toAddress } from '@shared/utils'
 import { InfoOverlay, TransactionOverlay, type TransactionStep } from '@yearn/vault-widget/advanced'
+import { getUnstakedShares } from '@yearn/vault-widget/lifecycle/withdrawalEvidence'
 import type { ReactElement } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
+import type { TransactionReceipt } from 'viem'
 import { formatUnits } from 'viem'
 import { useAccount } from 'wagmi'
 import { WidgetWithdraw } from '../advanced'
@@ -830,7 +832,6 @@ export function YvUsdWithdraw({
     ]
   )
   const lockedWithdrawArgs = lockedWithdrawExecutionPlan[0]?.args
-  const unlockedWithdrawArgs = lockedWithdrawExecutionPlan[1]?.args
 
   const prepareLockedRedeemNow: AppUseSimulateContractReturnType = useSimulateContract({
     address: YVUSD_LOCKED_ADDRESS,
@@ -872,8 +873,8 @@ export function YvUsdWithdraw({
   const prepareUnlockedWithdraw: AppUseSimulateContractReturnType = useSimulateContract({
     address: YVUSD_UNLOCKED_ADDRESS,
     abi: erc4626Abi,
-    functionName: 'withdraw',
-    args: unlockedWithdrawArgs,
+    functionName: 'redeem',
+    args: account ? [executionLockedWithdrawAssets, toAddress(account), toAddress(account)] : undefined,
     account: account ? toAddress(account) : undefined,
     chainId,
     query: {
@@ -934,11 +935,16 @@ export function YvUsdWithdraw({
   }, [refetchLockedWithdrawState])
 
   const handleLockedWithdrawStepSuccess = useCallback(
-    (stepId: string): void => {
-      if (stepId !== 'unlock') {
+    (stepId: string, receipt?: TransactionReceipt): void => {
+      if (stepId !== 'unlock' || lockedWithdrawMode === 'unlock') {
         return
       }
 
+      if (!receipt || !account) throw new Error('Confirmed unlock evidence is unavailable')
+      const received = getUnstakedShares(receipt, YVUSD_UNLOCKED_ADDRESS, YVUSD_LOCKED_ADDRESS, toAddress(account))
+      setLockedWithdrawExecutionSnapshot((snapshot) =>
+        snapshot ? { ...snapshot, receivedLockedAssets: received } : snapshot
+      )
       setLockedWithdrawPhase('redeem')
       refetchLockedWithdrawState()
       refreshWalletBalances([
@@ -946,7 +952,7 @@ export function YvUsdWithdraw({
         { address: YVUSD_UNLOCKED_ADDRESS, chainID: chainId }
       ])
     },
-    [chainId, refetchLockedWithdrawState, refreshWalletBalances]
+    [account, chainId, lockedWithdrawMode, refetchLockedWithdrawState, refreshWalletBalances]
   )
 
   const handleLockedWithdrawBeforeSuccess = useCallback(
@@ -1320,7 +1326,42 @@ export function YvUsdWithdraw({
       <TransactionOverlay
         isOpen={showLockedWithdrawOverlay}
         onClose={() => setShowLockedWithdrawOverlay(false)}
-        step={lockedReadyWithdrawStep}
+        step={
+          lockedReadyWithdrawStep
+            ? {
+                ...lockedReadyWithdrawStep,
+                notification: {
+                  type: lockedWithdrawPhase === 'withdraw' ? 'unstake' : 'withdraw',
+                  fromChainId: chainId,
+                  fromAddress: lockedWithdrawPhase === 'withdraw' ? YVUSD_LOCKED_ADDRESS : YVUSD_UNLOCKED_ADDRESS,
+                  fromSymbol:
+                    lockedWithdrawPhase === 'withdraw'
+                      ? lockedVaultTokenSymbol
+                      : (lockedUserData.assetToken?.symbol ?? 'yvUSD'),
+                  amount: formatTAmount({
+                    value:
+                      lockedWithdrawPhase === 'withdraw'
+                        ? executionLockedWithdrawShares
+                        : executionLockedWithdrawAssets,
+                    decimals: lockedWithdrawPhase === 'withdraw' ? lockedVaultTokenDecimals : lockedAssetDecimals
+                  }),
+                  toAddress: lockedWithdrawPhase === 'withdraw' ? YVUSD_UNLOCKED_ADDRESS : unlockedAssetAddress,
+                  toSymbol:
+                    lockedWithdrawPhase === 'withdraw'
+                      ? (lockedUserData.assetToken?.symbol ?? 'yvUSD')
+                      : (unlockedUserData.assetToken?.symbol ?? 'USDC')
+                }
+              }
+            : undefined
+        }
+        lifecycleRecipe={{
+          id: ['yvUSD-withdraw', chainId, lockedWithdrawMode, draftWithdrawAmount.toString()].join(':'),
+          chainId,
+          steps: [
+            ...(lockedWithdrawPhase === 'withdraw' ? [{ id: 'unlock', label: 'Unlock' }] : []),
+            ...(lockedWithdrawMode === 'unlock-and-withdraw' ? [{ id: 'withdraw', label: 'Withdraw' }] : [])
+          ]
+        }}
         isLastStep={lockedWithdrawMode === 'unlock' || lockedWithdrawPhase === 'redeem'}
         autoContinueToNextStep={lockedWithdrawMode === 'unlock-and-withdraw'}
         autoContinueStepIds={['unlock']}

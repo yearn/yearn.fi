@@ -1,5 +1,5 @@
 import type { TNotification } from '@shared/types/notifications'
-import { getNotificationLifecyclePresentation } from '@shared/utils/notificationLifecycle'
+import { getNotificationLifecyclePresentation, selectNotificationStatus } from '@shared/utils/notificationLifecycle'
 import { describe, expect, it } from 'vitest'
 
 const notification: TNotification = {
@@ -60,5 +60,42 @@ describe('notification lifecycle presentation', () => {
       detail: 'The destination action needs manual completion. Check the bridge tracker or source transaction.',
       styleStatus: 'submitted'
     })
+  })
+})
+
+describe('transaction references and aggregate status', () => {
+  it.each([
+    { destinationTxHash: undefined, toChainId: 8453 },
+    { destinationTxHash: `0x${'b'.repeat(64)}` as const, toChainId: undefined },
+    { destinationTxHash: `0x${'b'.repeat(64)}` as const, toChainId: 0 }
+  ])('keeps the source hash on its execution chain if destination evidence is incomplete', (destination) => {
+    expect(
+      getNotificationLifecyclePresentation({
+        ...notification,
+        status: 'success',
+        bridgeStatus: 'delivered',
+        executionChainId: 10001,
+        ...destination
+      })
+    ).toMatchObject({ transactionHash: notification.txHash, transactionChainId: 10001 })
+  })
+
+  it('keeps active work visible when another transaction completes or changes metadata', () => {
+    const pending = { ...notification, status: 'pending' as const }
+    const done = { ...notification, status: 'success' as const, timeFinished: 100 }
+    expect(selectNotificationStatus([pending, done])).toBe('pending')
+    expect(selectNotificationStatus([done, { ...pending, blockNumber: 123n }])).toBe('pending')
+    expect(selectNotificationStatus([done, notification])).toBe('submitted')
+  })
+
+  it('shows unresolved tracking, failures, and success until acknowledged', () => {
+    const failed = { ...notification, status: 'error' as const, timeFinished: 100 }
+    const done = { ...notification, status: 'success' as const, timeFinished: 110 }
+    expect(selectNotificationStatus([done, failed, { ...notification, bridgeTrackingState: 'unavailable' }])).toBe(
+      'submitted'
+    )
+    expect(selectNotificationStatus([done, failed])).toBe('error')
+    expect(selectNotificationStatus([done])).toBe('success')
+    expect(selectNotificationStatus([])).toBeNull()
   })
 })

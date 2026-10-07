@@ -23,6 +23,7 @@ const resolveExecutionChainId = (requestedChainId: number | undefined): number |
   requestedChainId === 1 ? 1 : undefined
 const VAULT_WIDGET_EXECUTION = createWagmiVaultWidgetExecutionAdapter({
   config: wagmiConfig,
+  receiptTimeoutMs: 30_000,
   resolveExecutionChainId
 })
 

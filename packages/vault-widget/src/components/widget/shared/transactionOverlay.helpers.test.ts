@@ -1,9 +1,9 @@
-import { describe, expect, it } from 'vitest'
 import {
   AUTO_CONTINUE_SUCCESS_DELAY_MS,
   formatPendingTransactionFunctionName,
   getAutoContinueConfirmDelayMs,
   getInitialOverlayState,
+  getLegacyTransactionErrorPresentation,
   getPendingTransactionTitle,
   getSubmittedTransactionCopy,
   hasExecutableWalletConnector,
@@ -19,7 +19,8 @@ import {
   shouldRefetchNextStepAfterReceipt,
   shouldRunDeferredCompletion,
   shouldStartStepOnOpen
-} from './transactionOverlay.helpers'
+} from '@yearn/vault-widget/internal/components/widget/shared/transactionOverlay.helpers'
+import { describe, expect, it } from 'vitest'
 
 describe('resolveOverlayConnectedChainId', () => {
   it('prefers the target chain for Safe sessions when account.chain is missing', () => {
@@ -507,5 +508,23 @@ describe('getAutoContinueConfirmDelayMs', () => {
 
   it('does not delay the confirm screen for non-Safe flows', () => {
     expect(getAutoContinueConfirmDelayMs({ isWalletSafe: false })).toBe(0)
+  })
+})
+
+describe('legacy transaction error presentation', () => {
+  it('retains confirmation and offers only Close when balance refresh fails', () => {
+    expect(getLegacyTransactionErrorPresentation(true, 'Refresh failed')).toMatchObject({
+      canRetry: false,
+      actionLabel: 'Close',
+      title: 'Transaction confirmed'
+    })
+  })
+  it('preserves the submission error and retry action', () => {
+    expect(getLegacyTransactionErrorPresentation(false, 'Wallet rejected')).toEqual({
+      canRetry: true,
+      actionLabel: 'Try Again',
+      title: 'Transaction failed',
+      message: 'Wallet rejected'
+    })
   })
 })

@@ -125,7 +125,7 @@ Execution may happen separately after the required confirmations are collected.`
 }
 
 export function getBridgeTrackerLink(params: {
-  bridgeProtocol?: 'stargate' | 'ccip' | 'relay'
+  bridgeProtocol?: string
   bridgeRequestId?: string
   sourceTxHash?: string
 }): { label: string; url: string } | undefined {
@@ -347,4 +347,16 @@ export function shouldRunDeferredCompletion(params: {
   }
 
   return false
+}
+
+/** The legacy overlay distinguishes submission errors from a failed refresh after confirmation. */
+export function getLegacyTransactionErrorPresentation(hasRefreshFailed: boolean, message: string) {
+  if (hasRefreshFailed)
+    return {
+      actionLabel: 'Close',
+      canRetry: false,
+      message: 'Your transaction was confirmed, but balances could not be refreshed. Close this window and reload.',
+      title: 'Transaction confirmed'
+    }
+  return { actionLabel: 'Try Again', canRetry: true, message, title: 'Transaction failed' }
 }
