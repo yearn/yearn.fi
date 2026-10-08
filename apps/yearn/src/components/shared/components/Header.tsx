@@ -4,6 +4,7 @@ import { setThemePreference, useThemePreference } from '@hooks/useThemePreferenc
 import { AccountDropdown } from '@shared/components/AccountDropdown'
 import { HeaderNavMenu } from '@shared/components/HeaderNavMenu'
 import { MobileNavMenu } from '@shared/components/MobileNavMenu'
+import { HeaderSiteStatus } from '@shared/components/SiteStatus'
 import { toast } from '@shared/components/yToast'
 import { useNotifications } from '@shared/contexts/useNotifications'
 import { useTenderlyPanel } from '@shared/contexts/useTenderlyPanel'
@@ -265,16 +266,19 @@ function AppHeader(): ReactElement {
                   <div className="hidden md:block">
                     <TenderlyBadge />
                   </div>
-                  <div className={'hidden md:flex gap-4'}>
-                    <Link href={'/vaults'} prefetch={false}>
-                      <span
-                        className={
-                          'text-base font-medium text-text-secondary transition-colors hover:text-text-primary'
-                        }
-                      >
-                        {'Vaults'}
-                      </span>
-                    </Link>
+                  <div className={'hidden items-center gap-4 md:flex'}>
+                    <div className={'flex items-center gap-2'}>
+                      <HeaderSiteStatus />
+                      <Link href={'/vaults'} prefetch={false}>
+                        <span
+                          className={
+                            'text-base font-medium text-text-secondary transition-colors hover:text-text-primary'
+                          }
+                        >
+                          {'Vaults'}
+                        </span>
+                      </Link>
+                    </div>
 
                     <Link href={'/portfolio'} prefetch={false}>
                       <span

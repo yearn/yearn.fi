@@ -27,6 +27,9 @@ vi.mock('@shared/contexts/useNotifications', () => ({ useNotifications: () => ({
 vi.mock('@shared/contexts/useYearn', () => ({ useYearn: () => ({}) }))
 vi.mock('@pages/vaults/contexts/useAppSettings', () => ({ useAppSettings: () => ({}) }))
 vi.mock('@hooks/useThemePreference', () => ({ useThemePreference: () => 'light', setThemePreference: vi.fn() }))
+vi.mock('@/hooks/useSiteHealth', () => ({
+  useSiteHealth: () => ({ data: undefined, isError: false, isPending: true })
+}))
 vi.mock('next/navigation', () => ({ useRouter: () => ({ push: vi.fn() }) }))
 
 function MobileNavigation() {
@@ -96,7 +99,21 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-describe('mobile navigation wallet handoff', () => {
+describe('mobile navigation', () => {
+  it('closes navigation when opening full system status', async () => {
+    render(<MobileNavigation />)
+    fireEvent.click(screen.getByRole('button', { name: 'Open navigation menu' }))
+    const statusLink = await screen.findByRole('link', { name: 'Full system status' })
+
+    expect(statusLink.getAttribute('href')).toBe('/status')
+    statusLink.addEventListener('click', (event) => event.preventDefault())
+    fireEvent.click(statusLink)
+
+    expect(wallet.closeNavigation).toHaveBeenCalledTimes(1)
+    await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
+    expect(document.body.style.overflow).toBe('')
+  })
+
   it.each([true, false])(
     'releases navigation immediately and restores the menu opener (connected: %s)',
     async (isActive) => {
