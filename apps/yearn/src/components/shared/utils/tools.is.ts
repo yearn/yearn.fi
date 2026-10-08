@@ -1,7 +1,8 @@
-import { zeroAddress } from 'viem'
-import type { TAddress } from '../types/address'
-import { ETH_TOKEN_ADDRESS } from './constants'
-import { toAddress } from './tools.address'
+import type { TAddress } from '@shared/types/address'
+import { ETH_TOKEN_ADDRESS } from '@shared/utils/constants'
+import { isZeroAddress, toAddress } from '@shared/utils/tools.address'
+
+export { isZeroAddress }
 
 export function isZero(value?: bigint | number | string | null): boolean {
   if (value === null || value === undefined) {
@@ -43,13 +44,6 @@ export function isAddress(address?: string | null): address is TAddress {
 export function isTAddress(address?: string | null): address is TAddress {
   const regex = /^0x([0-9a-f][0-9a-f])*$/i
   return !!address && regex.test(address)
-}
-
-/******************************************************************************
- * isTAddress - Checks if the address is the zero address.
- *****************************************************************************/
-export function isZeroAddress(address?: string): boolean {
-  return toAddress(address) === toAddress(zeroAddress)
 }
 
 /******************************************************************************
