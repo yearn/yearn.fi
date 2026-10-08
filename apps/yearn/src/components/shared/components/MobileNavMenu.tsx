@@ -3,6 +3,7 @@ import { setThemePreference, useThemePreference } from '@hooks/useThemePreferenc
 import { BottomDrawer } from '@pages/vaults/components/detail/BottomDrawer'
 import { useAppSettings } from '@pages/vaults/contexts/useAppSettings'
 import { AccountDropdown } from '@shared/components/AccountDropdown'
+import { MobileSiteStatus } from '@shared/components/SiteStatus'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconClose } from '@shared/icons/IconClose'
@@ -561,6 +562,9 @@ export function MobileNavMenu({
                         <IconTwitter className={cl('size-6', isDarkTheme ? 'text-white' : 'text-text-primary')} />
                       </Link>
                     </div>
+                  </div>
+                  <div className={'mt-1.5'}>
+                    <MobileSiteStatus onNavigate={onClose} />
                   </div>
                 </div>
               </div>
