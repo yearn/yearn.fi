@@ -4,11 +4,11 @@
   "private": true,
   "scripts": {
     "dev": "next dev --hostname 127.0.0.1 --port 3000",
-    "dev:ts": "tsc --watch",
+    "dev:ts": "node ../../node_modules/typescript/bin/tsc --watch",
     "build": "next build",
     "start": "next start --hostname 127.0.0.1 --port 3000",
     "test": "vitest run",
-    "tslint": "tsc -p tsconfig.json --noEmit"
+    "tslint": "node ../../node_modules/typescript/bin/tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
     "@headlessui/react": "2.2.10",
@@ -47,7 +47,7 @@
     "jsdom": "29.1.1",
     "postcss": "8.5.28",
     "tailwindcss": "4.3.3",
-    "typescript": "5.9.3",
+    "typescript": "7.0.2",
     "vitest": "4.1.11"
   }
 }

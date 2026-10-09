@@ -38,7 +38,7 @@
   },
   "scripts": {
     "test": "vitest run",
-    "typecheck": "tsc -p tsconfig.json --noEmit"
+    "typecheck": "node ../../node_modules/typescript/bin/tsc -p tsconfig.json --noEmit"
   },
   "peerDependencies": {
     "@tanstack/react-query": "5.103.2",
@@ -58,7 +58,7 @@
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "react-rewards": "2.1.0",
-    "typescript": "5.9.3",
+    "typescript": "7.0.2",
     "viem": "2.56.9",
     "vitest": "4.1.11",
     "wagmi": "2.18.2"

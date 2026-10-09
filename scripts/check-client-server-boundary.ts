@@ -1,6 +1,6 @@
 import fs from 'node:fs'
 import path from 'node:path'
-import * as ts from 'typescript'
+import * as ts from '@typescript/typescript6'
 
 const PROJECT_ROOT = path.join(process.cwd(), 'apps/yearn')
 const SOURCE_ROOTS = ['app', 'src', 'pages']
