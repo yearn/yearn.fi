@@ -14,14 +14,14 @@
   "dependencies": {
     "@plausible-analytics/tracker": "0.4.5",
     "@rainbow-me/rainbowkit": "2.2.11",
-    "@tanstack/react-query": "5.103.2",
+    "@tanstack/react-query": "5.104.1",
     "@wagmi/core": "2.22.1",
     "@yearn/vault-widget": "workspace:*",
     "next": "16.3.8",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "react-rewards": "2.1.0",
-    "viem": "2.56.9",
+    "viem": "2.57.2",
     "wagmi": "2.18.2",
     "@yearn/wallet-ui": "workspace:*"
   },
