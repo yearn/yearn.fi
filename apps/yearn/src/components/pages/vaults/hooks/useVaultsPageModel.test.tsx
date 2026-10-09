@@ -25,7 +25,11 @@ vi.mock('@shared/contexts/useYearn', () => ({
     isLoadingVaultList: mocks.isLoadingVaultList
   })
 }))
-vi.mock('@react-hookz/web', () => ({ useMediaQuery: () => false }))
+vi.mock('@react-hookz/web', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@react-hookz/web')>()),
+  useMediaQuery: () => false
+}))
+vi.mock('@pages/vaults/hooks/useCurvePoolApy', () => ({ useCurvePoolApyVaults: (vaults: unknown[]) => vaults }))
 vi.mock('@pages/vaults/hooks/useVaultsListModel', () => ({
   useVaultsListModel: mocks.useVaultsListModel
 }))

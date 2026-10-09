@@ -12,6 +12,7 @@ import {
   isPendleArbVault,
   projectVeYfiRange
 } from '@pages/vaults/utils/apy'
+import { CURVE_POOL_APY_TYPE } from '@pages/vaults/utils/curvePoolApy'
 import { isZero } from '@shared/utils'
 import {
   calculateKatanaTotalApr,
@@ -100,6 +101,9 @@ export function useVaultApyData(vault: TKongVaultInput): TVaultApyData {
     veYfiRange?: [number, number]
     estAprRange?: [number, number]
   } => {
+    if (apr.forwardAPR.type === CURVE_POOL_APY_TYPE) {
+      return { mode: 'spot' }
+    }
     if (katanaExtras && katanaEstApr !== undefined) {
       return { mode: 'katana' }
     }

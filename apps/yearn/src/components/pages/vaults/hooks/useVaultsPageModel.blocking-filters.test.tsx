@@ -57,9 +57,11 @@ vi.mock('@shared/hooks/useOptimisticValue', () => ({
   useOptimisticValue: (value: unknown) => [value, vi.fn()]
 }))
 
-vi.mock('@react-hookz/web', () => ({
+vi.mock('@react-hookz/web', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@react-hookz/web')>()),
   useMediaQuery: vi.fn(() => false)
 }))
+vi.mock('@pages/vaults/hooks/useCurvePoolApy', () => ({ useCurvePoolApyVaults: (vaults: unknown[]) => vaults }))
 
 vi.mock('@shared/hooks/useVaultFilterUtils', () => ({
   getVaultKey: (vault: typeof HIDDEN_ZERO_TVL_VAULT) => vault.key

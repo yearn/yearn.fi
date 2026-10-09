@@ -12,6 +12,7 @@ import {
   getVaultTVL,
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
+import { useCurvePoolApyVaults } from '@pages/vaults/hooks/useCurvePoolApy'
 import type { TPossibleSortBy } from '@pages/vaults/hooks/useSortVaults'
 import {
   getBlockingFilterActionGroups,
@@ -48,7 +49,7 @@ import {
 } from '@pages/vaults/utils/vaultsQueryState'
 import type { TVaultType } from '@pages/vaults/utils/vaultTypeCopy'
 import { getSupportedChainsForVaultType } from '@pages/vaults/utils/vaultTypeUtils'
-import { useMediaQuery } from '@react-hookz/web'
+import { useDeepCompareMemo, useMediaQuery } from '@react-hookz/web'
 import type { TMultiSelectOptionProps } from '@shared/components/MultiSelectDropdown'
 import { TokenLogo } from '@shared/components/TokenLogo'
 import { useWeb3 } from '@shared/contexts/useWeb3'
@@ -238,7 +239,13 @@ export function useVaultsPageModel(
   const { address } = useWeb3()
   const { enableVaultListFetch, allVaults } = useYearn()
   const hasWalletAddress = !!address
-  const initialVaultSource = useMemo(() => getVaultsInitialVaultSource(initialVaults), [initialVaults])
+  const rawInitialVaultSource = useMemo(() => getVaultsInitialVaultSource(initialVaults), [initialVaults])
+  const initialCurveVaults = useCurvePoolApyVaults(Object.values(rawInitialVaultSource?.vaults ?? {}))
+  const initialVaultSource = useDeepCompareMemo(() => {
+    if (!rawInitialVaultSource) return undefined
+    const vaults = Object.fromEntries(initialCurveVaults.map((vault) => [vault.address, vault]))
+    return { ...rawInitialVaultSource, vaults, allVaults: vaults }
+  }, [rawInitialVaultSource, initialCurveVaults])
   // Keep the rendered catalog while connecting triggers the full catalog fetch for wallet discovery.
   const activeVaultSource = hasWalletAddress && Object.keys(allVaults).length > 0 ? undefined : initialVaultSource
   const {

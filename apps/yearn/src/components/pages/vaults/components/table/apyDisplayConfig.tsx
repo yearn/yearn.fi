@@ -9,6 +9,7 @@ import {
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
 import type { TVaultApyData } from '@pages/vaults/hooks/useVaultApyData'
+import { CURVE_POOL_APY_TYPE } from '@pages/vaults/utils/curvePoolApy'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
 import { IconPendle } from '@shared/icons/IconPendle'
 import { IconSpectra } from '@shared/icons/IconSpectra'
@@ -242,9 +243,15 @@ export function resolveForwardApyDisplayConfig({
     showBoostDetails && displayVariant !== 'factory-list' && data.mode === 'boosted' && data.isBoosted
       ? `Boost ${formatAmount(data.boost || 0, 2, 2)}x`
       : null
-  const allowTooltip = showSublineTooltip || Boolean(boostTooltipLine)
+  const curvePoolTooltipLine =
+    apr.forwardAPR?.type === CURVE_POOL_APY_TYPE
+      ? 'Curve pool base APY from trading fees and underlying asset yield. Assets are held in the vault and earn no strategy emissions.'
+      : null
+  const allowTooltip = showSublineTooltip || Boolean(boostTooltipLine) || Boolean(curvePoolTooltipLine)
   const extraTooltipLines = showSublineTooltip ? [...sublineLines, ...fixedRateTooltipLines] : []
-  const standardTooltipLines = [boostTooltipLine, ...extraTooltipLines].filter((line): line is string => Boolean(line))
+  const standardTooltipLines = [curvePoolTooltipLine, boostTooltipLine, ...extraTooltipLines].filter(
+    (line): line is string => Boolean(line)
+  )
   const standardTooltipContent = buildStandardTooltipContent({
     lines: standardTooltipLines,
     fixedTermProviders: fixedTermContext.fixedTermProviders,

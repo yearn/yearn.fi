@@ -5,6 +5,7 @@ import {
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
 import { isYBoldProductAddress } from '@pages/vaults/domain/normalizeVault'
+import { CURVE_POOL_APY_TYPE } from '@pages/vaults/utils/curvePoolApy'
 import { isZero } from '@shared/utils'
 
 const KATANA_CHAIN_ID = 747474
@@ -78,6 +79,8 @@ export function calculateVaultEstimatedAPY(vault: TKongVaultInput): number {
   const apr = getVaultAPR(vault)
   const chainID = getVaultChainID(vault)
   const forwardAPY = getVaultForwardAPY(vault)
+
+  if (apr.forwardAPR.type === CURVE_POOL_APY_TYPE) return forwardAPY
 
   if (isYBoldProductAddress(getVaultAddress(vault))) {
     return forwardAPY

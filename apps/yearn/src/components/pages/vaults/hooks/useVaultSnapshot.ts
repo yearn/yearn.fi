@@ -1,3 +1,4 @@
+import { useCurvePoolApySnapshot } from '@pages/vaults/hooks/useCurvePoolApy'
 import { PUBLIC_VAULT_DATA_CACHE_TIME } from '@shared/data/publicQueryCache'
 import { buildVaultSnapshotEndpoint } from '@shared/data/publicQueryEndpoints'
 import { useFetch } from '@shared/hooks/useFetch'
@@ -24,5 +25,6 @@ export function useVaultSnapshot({ chainId, address }: UseVaultSnapshotProps) {
     }
   })
 
-  return result
+  const data = useCurvePoolApySnapshot(result.data)
+  return { ...result, data }
 }

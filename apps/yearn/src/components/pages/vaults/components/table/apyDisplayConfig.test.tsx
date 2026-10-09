@@ -84,6 +84,26 @@ const PENDLE_ARB_APY_DATA = {
 } as TVaultApyData
 
 describe('resolveForwardApyDisplayConfig', () => {
+  it('explains that an idle Curve vault earns only the pool base yield', () => {
+    const { displayConfig, modalConfig } = resolveForwardApyDisplayConfig({
+      currentVault: {
+        ...PENDLE_ARB_VAULT,
+        version: '0.4.5',
+        token: { address: '0x06325440D014e39736583c165C2963BA99fAf14E' },
+        apr: { type: 'crv', forwardAPR: { type: 'curve-pool' } }
+      } as unknown as TKongVaultInput,
+      data: { ...PENDLE_ARB_APY_DATA, baseForwardApr: 0.0127, hasPendleArbRewards: false },
+      displayVariant: 'default',
+      showSubline: false,
+      showSublineTooltip: false,
+      showBoostDetails: true,
+      canOpenModal: true
+    })
+    expect(renderToStaticMarkup(displayConfig.value)).toContain('1.27%')
+    expect(renderToStaticMarkup(displayConfig.tooltip?.content)).toContain('earn no strategy emissions')
+    expect(displayConfig.tooltip?.mode).toBe('tooltip')
+    expect(modalConfig).toBeUndefined()
+  })
   it('includes Pendle ARB rewards in the subline tooltip content', () => {
     const { displayConfig } = resolveForwardApyDisplayConfig({
       currentVault: PENDLE_ARB_VAULT,

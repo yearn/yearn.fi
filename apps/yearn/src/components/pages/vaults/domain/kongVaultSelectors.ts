@@ -1,4 +1,5 @@
 import { isYBoldProductAddress } from '@pages/vaults/domain/yBoldProduct'
+import { CURVE_POOL_APY_TYPE } from '@pages/vaults/utils/curvePoolApy'
 import { normalizeVaultCategory } from '@pages/vaults/utils/normalizeVaultCategory'
 import { toAddress, toBigInt, toNormalizedBN } from '@shared/utils'
 import type { TKongVaultListItem, TKongVaultListItemStakingReward } from '@shared/utils/schemas/kongVaultListSchema'
@@ -631,7 +632,9 @@ export const getVaultAPR = (vault: TKongVaultInput, snapshot?: TKongVaultSnapsho
       )
   const forwardNet = isYBoldVault
     ? pickNumber(snapshot?.performance?.oracle?.netAPY, vault.performance?.oracle?.netAPY)
-    : defaultForwardNet
+    : estimated?.type === CURVE_POOL_APY_TYPE
+      ? normalizeNumber(estimated.apy)
+      : defaultForwardNet
 
   const defaultForwardType = snapshot?.performance?.estimated
     ? 'estimated'
@@ -640,7 +643,11 @@ export const getVaultAPR = (vault: TKongVaultInput, snapshot?: TKongVaultSnapsho
       : oracle?.apy !== null && oracle?.apy !== undefined
         ? 'oracle'
         : (estimated?.type ?? '')
-  const forwardType = isYBoldVault ? 'oracle' : defaultForwardType
+  const forwardType = isYBoldVault
+    ? 'oracle'
+    : estimated?.type === CURVE_POOL_APY_TYPE
+      ? CURVE_POOL_APY_TYPE
+      : defaultForwardType
 
   return {
     type:

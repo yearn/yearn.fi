@@ -1,4 +1,5 @@
 import { patchYBoldVaults } from '@pages/vaults/domain/normalizeVault'
+import { useCurvePoolApyVaults } from '@pages/vaults/hooks/useCurvePoolApy'
 import { isCatalogYearnVault } from '@pages/vaults/utils/catalogYearnVault'
 import { useDeepCompareMemo } from '@react-hookz/web'
 import { PUBLIC_VAULT_DATA_CACHE_TIME } from '@shared/data/publicQueryCache'
@@ -38,7 +39,7 @@ function useFetchYearnVaults(
     }
   })
 
-  const filteredByChain = useDeepCompareMemo((): TKongVaultListItem[] => {
+  const vaultsByChain = useDeepCompareMemo((): TKongVaultListItem[] => {
     if (!kongVaultList) {
       return []
     }
@@ -46,6 +47,7 @@ function useFetchYearnVaults(
     const chainIdSet = new Set(resolvedChainIds)
     return kongVaultList.filter((item) => chainIdSet.has(item.chainId))
   }, [kongVaultList, resolvedChainIds])
+  const filteredByChain = useCurvePoolApyVaults(vaultsByChain)
 
   const allVaultsObject = useDeepCompareMemo((): TDict<TKongVaultListItem> => {
     if (!filteredByChain.length) {
