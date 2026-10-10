@@ -412,6 +412,7 @@ function SectionSelectorBar({
   sectionSelectorRef,
   sectionTabs,
   isCompressed,
+  hasActionFooter = false,
   includeTourAttributes = true
 }: {
   activeSectionKey?: string
@@ -425,6 +426,7 @@ function SectionSelectorBar({
     notificationAriaLabel?: string
   }[]
   isCompressed: boolean
+  hasActionFooter?: boolean
   includeTourAttributes?: boolean
 }): ReactElement {
   return (
@@ -435,7 +437,8 @@ function SectionSelectorBar({
     >
       <div
         className={cl(
-          'flex w-full flex-wrap justify-between gap-2 rounded-b-lg border-border bg-surface-secondary p-1',
+          'flex w-full flex-wrap justify-between gap-2 border-border bg-surface-secondary p-1',
+          hasActionFooter ? 'rounded-none' : 'rounded-b-lg',
           isCompressed ? 'border-t' : 'border-x border-b'
         )}
       >
@@ -1110,6 +1113,8 @@ type TVaultDetailsHeaderBaseProps = {
   onWidgetWalletOpen?: () => void
   isWidgetWalletOpen?: boolean
   onWidgetCloseOverlays?: () => void
+  hideBreadcrumbs?: boolean
+  hasActionFooter?: boolean
 }
 
 type TVaultDetailsHeaderPresentationProps = TVaultDetailsHeaderBaseProps & {
@@ -1132,6 +1137,8 @@ export function VaultDetailsHeaderPresentation({
   onWidgetWalletOpen,
   isWidgetWalletOpen,
   onWidgetCloseOverlays,
+  hideBreadcrumbs = false,
+  hasActionFooter = false,
   isCompressed,
   includeTourAttributes = true
 }: TVaultDetailsHeaderPresentationProps): ReactElement {
@@ -1149,25 +1156,29 @@ export function VaultDetailsHeaderPresentation({
 
   return (
     <div
-      className={'grid w-full grid-cols-1 gap-y-0 gap-x-6 text-left md:auto-rows-min md:grid-cols-20 bg-app rounded-lg'}
+      className={
+        'grid w-full grid-cols-1 gap-x-6 gap-y-0 rounded-lg bg-app text-left md:auto-rows-min min-[1101px]:grid-cols-[minmax(0,1fr)_408px]'
+      }
     >
-      <div className={'hidden md:flex items-center gap-2 text-sm text-text-secondary md:col-span-20 px-1'}>
-        <a href={'/'} className={'transition-colors hover:text-text-primary'}>
-          {'Home'}
-        </a>
-        <span>{'>'}</span>
-        <Link href={'/v3'} className={'transition-colors hover:text-text-primary'}>
-          {'Vaults'}
-        </Link>
-        <span>{'>'}</span>
-        <span className={'font-medium text-text-primary'}>{getVaultName(currentVault)}</span>
-      </div>
+      {!hideBreadcrumbs ? (
+        <div className={'hidden items-center gap-2 px-1 text-sm text-text-secondary md:flex min-[1101px]:col-span-2'}>
+          <a href={'/'} className={'transition-colors hover:text-text-primary'}>
+            {'Home'}
+          </a>
+          <span>{'>'}</span>
+          <Link href={'/v3'} className={'transition-colors hover:text-text-primary'}>
+            {'Vaults'}
+          </Link>
+          <span>{'>'}</span>
+          <span className={'font-medium text-text-primary'}>{getVaultName(currentVault)}</span>
+        </div>
+      ) : null}
       {isCompressed ? (
-        <div className={'md:col-span-13 md:row-start-2 pt-4'}>
+        <div className={cl('pt-4 min-[1101px]:col-start-1', hideBreadcrumbs ? 'md:row-start-1' : 'md:row-start-2')}>
           <div
             className={cl(
-              'rounded-lg border border-border bg-surface'
-              // 'border border-border',
+              'border border-border bg-surface',
+              hasActionFooter ? 'rounded-t-lg border-b-0' : 'rounded-lg'
             )}
           >
             <div className={'flex flex-col'}>
@@ -1196,6 +1207,7 @@ export function VaultDetailsHeaderPresentation({
                     sectionSelectorRef={sectionSelectorRef}
                     sectionTabs={sectionTabs}
                     isCompressed={isCompressed}
+                    hasActionFooter={hasActionFooter}
                     includeTourAttributes={includeTourAttributes}
                   />
                 </div>
@@ -1206,7 +1218,7 @@ export function VaultDetailsHeaderPresentation({
       ) : (
         <>
           {isYvUsd ? (
-            <div className={'md:col-span-20 md:row-start-2 md:flex md:items-stretch md:gap-6'}>
+            <div className={'md:row-start-2 md:flex md:items-stretch md:gap-6 min-[1101px]:col-span-2'}>
               <VaultHeaderIdentity
                 currentVault={currentVault}
                 isCompressed={isCompressed}
@@ -1221,11 +1233,11 @@ export function VaultDetailsHeaderPresentation({
             <VaultHeaderIdentity
               currentVault={currentVault}
               isCompressed={isCompressed}
-              className={'md:col-span-20 md:row-start-2'}
+              className={'md:row-start-2 min-[1101px]:col-span-2'}
               includeTourAttributes={includeTourAttributes}
             />
           )}
-          <div className={cl('md:col-span-13 md:row-start-3')}>
+          <div className={'md:row-start-3 min-[1101px]:col-start-1'}>
             {' '}
             {/* step 2 should be here*/}
             <div className={'flex flex-col'}>
@@ -1255,8 +1267,8 @@ export function VaultDetailsHeaderPresentation({
 
       <div
         className={cl(
-          'flex flex-col pt-4',
-          isCompressed ? 'md:col-span-7 md:col-start-14 md:row-start-2' : 'md:col-span-7 md:col-start-14 md:row-start-3'
+          'hidden flex-col pt-4 min-[1101px]:col-start-2 min-[1101px]:flex',
+          isCompressed ? 'min-[1101px]:row-start-2' : 'min-[1101px]:row-start-3'
         )}
       >
         {' '}
@@ -1288,21 +1300,27 @@ export function VaultDetailsHeaderPresentation({
 
 export function VaultDetailsHeader({
   isCollapsibleMode = true,
+  forceCompressed = false,
   onCompressionChange,
   onCompressionStateChange,
   ...presentationProps
 }: TVaultDetailsHeaderBaseProps & {
   isCollapsibleMode?: boolean
+  forceCompressed?: boolean
   onCompressionChange?: (isCompressed: boolean) => void
   onCompressionStateChange?: (state: { isCompressed: boolean; isForceCompressed: boolean }) => void
 }): ReactElement {
-  const [forceCompressed, setForceCompressed] = useState(false)
-  const { isCompressed } = useHeaderCompression({ enabled: isCollapsibleMode, forceCompressed })
+  const [forceCompressedByHeight, setForceCompressedByHeight] = useState(false)
+  const shouldForceCompressed = forceCompressed || forceCompressedByHeight
+  const { isCompressed } = useHeaderCompression({
+    enabled: isCollapsibleMode,
+    forceCompressed: shouldForceCompressed
+  })
 
   useEffect(() => {
     if (typeof window === 'undefined') return
     const updateViewport = (): void => {
-      setForceCompressed(window.innerHeight < 890)
+      setForceCompressedByHeight(window.innerHeight < 890)
     }
     updateViewport()
     window.addEventListener('resize', updateViewport)
@@ -1314,8 +1332,8 @@ export function VaultDetailsHeader({
   }, [isCompressed, onCompressionChange])
 
   useEffect(() => {
-    onCompressionStateChange?.({ isCompressed, isForceCompressed: forceCompressed })
-  }, [isCompressed, forceCompressed, onCompressionStateChange])
+    onCompressionStateChange?.({ isCompressed, isForceCompressed: shouldForceCompressed })
+  }, [isCompressed, onCompressionStateChange, shouldForceCompressed])
 
   return <VaultDetailsHeaderPresentation {...presentationProps} isCompressed={isCompressed} />
 }
