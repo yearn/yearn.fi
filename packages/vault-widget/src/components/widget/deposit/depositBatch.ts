@@ -1,13 +1,15 @@
 import type { DepositRouteType } from '@yearn/vault-widget/internal/components/widget/deposit/types'
 import { vaultAbi } from '@yearn/vault-widget/internal/contracts/abi/vaultV2.abi'
+import { yBoldZapperAbi } from '@yearn/vault-widget/internal/contracts/abi/yBoldZapper.abi'
 import { yvUsdLockedZapAbi } from '@yearn/vault-widget/internal/contracts/abi/yvUsdLockedZap.abi'
 import { getDirectStakeCall } from '@yearn/vault-widget/internal/hooks/actions/stakingAdapter'
 import { getApproveAbi } from '@yearn/vault-widget/internal/utils/approve'
+import { YBOLD_ZAPPER_ADDRESS } from '@yearn/vault-widget/internal/utils/yBold'
 import { YVUSD_LOCKED_ZAP_ADDRESS } from '@yearn/vault-widget/internal/utils/yvUsd'
 import type { Address, Hex } from 'viem'
 import { encodeFunctionData, isAddressEqual } from 'viem'
 
-export type TSafeBatchCall = {
+export type TDepositBatchCall = {
   to: Address
   data: Hex
   value?: bigint
@@ -19,7 +21,7 @@ type TEnsoTransaction = {
   value: string
 }
 
-type TBuildSafeDepositBatchParams = {
+type TBuildDepositBatchParams = {
   routeType: DepositRouteType
   account?: Address
   depositToken: Address
@@ -42,7 +44,7 @@ function buildApproveCall({
   depositToken: Address
   approvalSpenderAddress: Address
   amount: bigint
-}): TSafeBatchCall {
+}): TDepositBatchCall {
   return {
     to: depositToken,
     data: encodeFunctionData({
@@ -64,7 +66,7 @@ function buildApprovalCalls({
   approvalSpenderAddress: Address
   amount: bigint
   currentAllowance?: bigint
-}): TSafeBatchCall[] {
+}): TDepositBatchCall[] {
   const approveAmountCall = buildApproveCall({
     depositToken,
     approvalSpenderAddress,
@@ -85,7 +87,7 @@ function buildApprovalCalls({
   ]
 }
 
-function buildDirectDepositCall(params: TBuildSafeDepositBatchParams & { account: Address }): TSafeBatchCall {
+function buildDirectDepositCall(params: TBuildDepositBatchParams & { account: Address }): TDepositBatchCall {
   if (params.routerAddress && isAddressEqual(params.routerAddress, YVUSD_LOCKED_ZAP_ADDRESS)) {
     return {
       to: YVUSD_LOCKED_ZAP_ADDRESS,
@@ -109,7 +111,7 @@ function buildDirectDepositCall(params: TBuildSafeDepositBatchParams & { account
   }
 }
 
-function buildDirectStakeCall(params: TBuildSafeDepositBatchParams & { account: Address }): TSafeBatchCall | undefined {
+function buildDirectStakeCall(params: TBuildDepositBatchParams & { account: Address }): TDepositBatchCall | undefined {
   if (!params.stakingAddress) {
     return undefined
   }
@@ -135,7 +137,19 @@ function buildDirectStakeCall(params: TBuildSafeDepositBatchParams & { account: 
   }
 }
 
-function buildEnsoCall(ensoTx?: TEnsoTransaction): TSafeBatchCall | undefined {
+function buildYBoldZapperCall(params: TBuildDepositBatchParams & { account: Address }): TDepositBatchCall {
+  return {
+    to: YBOLD_ZAPPER_ADDRESS,
+    data: encodeFunctionData({
+      abi: yBoldZapperAbi,
+      functionName: 'zapIn',
+      args: [params.amount, params.account]
+    }),
+    value: 0n
+  }
+}
+
+function buildEnsoCall(ensoTx?: TEnsoTransaction): TDepositBatchCall | undefined {
   if (!ensoTx) {
     return undefined
   }
@@ -147,9 +161,9 @@ function buildEnsoCall(ensoTx?: TEnsoTransaction): TSafeBatchCall | undefined {
   }
 }
 
-export function buildSafeDepositBatch(
-  params: TBuildSafeDepositBatchParams
-): { calls: readonly TSafeBatchCall[]; chainId: number } | undefined {
+export function buildDepositBatch(
+  params: TBuildDepositBatchParams
+): { calls: readonly TDepositBatchCall[]; chainId: number } | undefined {
   if (!params.account || !params.approvalSpenderAddress || params.amount <= 0n) {
     return undefined
   }
@@ -165,7 +179,9 @@ export function buildSafeDepositBatch(
       ? buildDirectDepositCall({ ...params, account: params.account })
       : params.routeType === 'DIRECT_STAKE'
         ? buildDirectStakeCall({ ...params, account: params.account })
-        : buildEnsoCall(params.ensoTx)
+        : params.routeType === 'YBOLD_ZAPPER'
+          ? buildYBoldZapperCall({ ...params, account: params.account })
+          : buildEnsoCall(params.ensoTx)
 
   if (!executionCall) {
     return undefined

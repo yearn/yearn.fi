@@ -98,7 +98,6 @@ export function YBoldVaultWidget({ apy = 0, className, onSuccess }: YBoldVaultWi
           handleSuccess={onSuccess}
           forceDepositStake
           disableTokenSelector
-          withdrawalSource="staking"
         />
       </div>
     </VaultWidgetRuntimeProvider>

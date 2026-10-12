@@ -2553,7 +2553,12 @@ function calculateProtocolReturnHistorySeries(
   observer?: {
     excludedVaultKeys?: TGrowthExclusions
     onValuation: (vaults: HoldingsPnLSimpleVault[], indexPointsPerGrowthUsd: number) => void
-    onHistoryPoint: (timestamp: number, vaults: HoldingsPnLSimpleVault[]) => void
+    onHistoryPoint: (
+      timestamp: number,
+      vaults: HoldingsPnLSimpleVault[],
+      growthIndex: number | null,
+      excludedVaultKeys: TGrowthExclusions
+    ) => void
   }
 ): {
   dataPoints: HoldingsPnLSimpleHistoryPoint[]
@@ -2668,7 +2673,7 @@ function calculateProtocolReturnHistorySeries(
           state.indexValuationComplete = false
         }
       }
-      observer?.onHistoryPoint(timestamp, vaults)
+      observer?.onHistoryPoint(timestamp, vaults, state.growthIndex, excludedVaultKeys)
       const selectedVaults = selectedVaultKeys.length
         ? vaults.filter((vault) => selectedVaultKeySet.has(toVaultKey(vault.chainId, vault.vaultAddress)))
         : []
@@ -2698,34 +2703,15 @@ function calculateProtocolReturnHistorySeries(
   }
 }
 
-export function buildProtocolReturnFamilyHistorySeries(args: {
-  events: TRawPnlEvent[]
-  userAddress: string
-  metadata: Map<string, VaultMetadata>
-  ppsData: Map<string, Map<number, number>>
-  priceData: Map<string, Map<number, number>>
-  exitPriceData?: Map<string, Map<number, number>>
-  ethPriceData?: Map<number, number>
-  timestamps: number[]
-  selectedVaults: HoldingsPnLSimpleVault[]
-  portfolioPoints?: HoldingsPnLSimpleHistoryPoint[]
-  excludedVaultKeys?: TGrowthExclusions
-}): HoldingsPnLSimpleHistoryFamilySeries[] {
-  if (args.selectedVaults.length === 0) {
-    return []
-  }
-
-  const selectedVaultKeys = new Set(args.selectedVaults.map((vault) => toVaultKey(vault.chainId, vault.vaultAddress)))
+function createProtocolReturnFamilyHistoryObserver(selectedVaults: HoldingsPnLSimpleVault[]) {
+  const selectedVaultKeys = new Set(selectedVaults.map((vault) => toVaultKey(vault.chainId, vault.vaultAddress)))
   const selectedVaultsByKey = new Map(
-    args.selectedVaults.map((vault) => [toVaultKey(vault.chainId, vault.vaultAddress), vault] as const)
+    selectedVaults.map((vault) => [toVaultKey(vault.chainId, vault.vaultAddress), vault] as const)
   )
   const familyPointMap = new Map<string, HoldingsPnLSimpleHistoryFamilyPoint[]>(
     Array.from(selectedVaultKeys, (key) => [key, []] as const)
   )
 
-  const portfolioPointByTimestamp = new Map(
-    (args.portfolioPoints ?? []).map((point) => [point.timestamp, point] as const)
-  )
   const previousFamilyGrowthWeightUsd = new Map<string, number>(
     Array.from(selectedVaultKeys, (key) => [key, 0] as const)
   )
@@ -2752,6 +2738,103 @@ export function buildProtocolReturnFamilyHistorySeries(args: {
     )
   )
 
+  return {
+    onValuation: (vaults: HoldingsPnLSimpleVault[], indexPointsPerGrowthUsd: number) => {
+      vaults.forEach((vault) => {
+        const key = toVaultKey(vault.chainId, vault.vaultAddress)
+        const currentGrowth = vault.growthWeightUsd ?? 0
+        if (selectedVaultKeys.has(key)) {
+          const deltaGrowth = currentGrowth - (previousFamilyGrowthWeightUsd.get(key) ?? 0)
+          familyIndexContribution.set(
+            key,
+            (familyIndexContribution.get(key) ?? 0) + deltaGrowth * indexPointsPerGrowthUsd
+          )
+        }
+        previousFamilyGrowthWeightUsd.set(key, currentGrowth)
+      })
+    },
+    onHistoryPoint: (
+      timestamp: number,
+      vaults: HoldingsPnLSimpleVault[],
+      growthIndex: number | null,
+      excludedVaultKeys?: TGrowthExclusions
+    ) => {
+      const vaultsByKey = new Map(vaults.map((vault) => [toVaultKey(vault.chainId, vault.vaultAddress), vault]))
+      selectedVaultKeys.forEach((vaultKey) => {
+        const familyVault = vaultsByKey.get(vaultKey)
+        const state = familyIndexState.get(vaultKey)
+
+        if (!state) {
+          return
+        }
+
+        const hasOpenPosition = (familyVault?.sharesFormatted ?? 0) > 0
+        const currentPps = familyVault?.pricePerShare ?? null
+        const closesPosition = state.wasOpen && !hasOpenPosition
+
+        state.growthIndex = advanceVaultPerformanceIndex({
+          previousIndex: state.growthIndex,
+          previousPps: state.previousPps,
+          currentPps,
+          wasOpen: state.wasOpen,
+          isOpen: hasOpenPosition
+        })
+        state.previousPps = hasOpenPosition && currentPps !== null && currentPps > 0 ? currentPps : null
+        state.wasOpen = hasOpenPosition
+
+        familyPointMap.get(vaultKey)?.push({
+          timestamp,
+          growthWeightUsd: excludedVaultKeys?.usd.has(vaultKey) ? null : familyVault ? familyVault.growthWeightUsd : 0,
+          growthWeightEth: excludedVaultKeys?.eth.has(vaultKey) ? null : familyVault ? familyVault.growthWeightEth : 0,
+          growthIndex: hasOpenPosition || closesPosition ? state.growthIndex : null,
+          growthIndexContribution:
+            !excludedVaultKeys?.usd.has(vaultKey) && typeof growthIndex === 'number'
+              ? (familyIndexContribution.get(vaultKey) ?? 0)
+              : null
+        })
+      })
+    },
+    familySeries: Array.from(selectedVaultKeys).flatMap((vaultKey) => {
+      const selectedVault = selectedVaultsByKey.get(vaultKey)
+      const points = familyPointMap.get(vaultKey)
+
+      if (!selectedVault || !points) {
+        return []
+      }
+
+      return [
+        {
+          chainId: selectedVault.chainId,
+          vaultAddress: selectedVault.vaultAddress,
+          symbol: selectedVault.metadata.symbol,
+          status: selectedVault.status,
+          dataPoints: points
+        }
+      ]
+    })
+  }
+}
+
+export function buildProtocolReturnFamilyHistorySeries(args: {
+  events: TRawPnlEvent[]
+  userAddress: string
+  metadata: Map<string, VaultMetadata>
+  ppsData: Map<string, Map<number, number>>
+  priceData: Map<string, Map<number, number>>
+  exitPriceData?: Map<string, Map<number, number>>
+  ethPriceData?: Map<number, number>
+  timestamps: number[]
+  selectedVaults: HoldingsPnLSimpleVault[]
+  portfolioPoints?: HoldingsPnLSimpleHistoryPoint[]
+  excludedVaultKeys?: TGrowthExclusions
+}): HoldingsPnLSimpleHistoryFamilySeries[] {
+  if (args.selectedVaults.length === 0) {
+    return []
+  }
+  const observer = createProtocolReturnFamilyHistoryObserver(args.selectedVaults)
+  const portfolioPointByTimestamp = new Map(
+    (args.portfolioPoints ?? []).map((point) => [point.timestamp, point] as const)
+  )
   const firstPortfolioPoint = args.portfolioPoints?.[0]
   calculateProtocolReturnHistorySeries(
     {
@@ -2761,87 +2844,28 @@ export function buildProtocolReturnFamilyHistorySeries(args: {
         : undefined
     },
     {
+      ...observer,
       excludedVaultKeys: args.excludedVaultKeys,
-      onValuation: (vaults, indexPointsPerGrowthUsd) => {
-        vaults.forEach((vault) => {
-          const key = toVaultKey(vault.chainId, vault.vaultAddress)
-          const currentGrowth = vault.growthWeightUsd ?? 0
-          if (selectedVaultKeys.has(key)) {
-            const deltaGrowth = currentGrowth - (previousFamilyGrowthWeightUsd.get(key) ?? 0)
-            familyIndexContribution.set(
-              key,
-              (familyIndexContribution.get(key) ?? 0) + deltaGrowth * indexPointsPerGrowthUsd
-            )
-          }
-          previousFamilyGrowthWeightUsd.set(key, currentGrowth)
-        })
-      },
-      onHistoryPoint: (timestamp, vaults) => {
-        const vaultsByKey = new Map(vaults.map((vault) => [toVaultKey(vault.chainId, vault.vaultAddress), vault]))
-        const portfolioPoint = portfolioPointByTimestamp.get(timestamp)
-        selectedVaultKeys.forEach((vaultKey) => {
-          const familyVault = vaultsByKey.get(vaultKey)
-          const state = familyIndexState.get(vaultKey)
-
-          if (!state) {
-            return
-          }
-
-          const hasOpenPosition = (familyVault?.sharesFormatted ?? 0) > 0
-          const currentPps = familyVault?.pricePerShare ?? null
-          const closesPosition = state.wasOpen && !hasOpenPosition
-
-          state.growthIndex = advanceVaultPerformanceIndex({
-            previousIndex: state.growthIndex,
-            previousPps: state.previousPps,
-            currentPps,
-            wasOpen: state.wasOpen,
-            isOpen: hasOpenPosition
-          })
-          state.previousPps = hasOpenPosition && currentPps !== null && currentPps > 0 ? currentPps : null
-          state.wasOpen = hasOpenPosition
-
-          familyPointMap.get(vaultKey)?.push({
-            timestamp,
-            growthWeightUsd: args.excludedVaultKeys?.usd.has(vaultKey)
-              ? null
-              : familyVault
-                ? familyVault.growthWeightUsd
-                : 0,
-            growthWeightEth: args.excludedVaultKeys?.eth.has(vaultKey)
-              ? null
-              : familyVault
-                ? familyVault.growthWeightEth
-                : 0,
-            growthIndex: hasOpenPosition || closesPosition ? state.growthIndex : null,
-            growthIndexContribution:
-              !args.excludedVaultKeys?.usd.has(vaultKey) && typeof portfolioPoint?.growthIndex === 'number'
-                ? (familyIndexContribution.get(vaultKey) ?? 0)
-                : null
-          })
-        })
-      }
+      onHistoryPoint: (timestamp, vaults) =>
+        observer.onHistoryPoint(
+          timestamp,
+          vaults,
+          portfolioPointByTimestamp.get(timestamp)?.growthIndex ?? null,
+          args.excludedVaultKeys
+        )
     }
   )
+  return observer.familySeries
+}
 
-  return Array.from(selectedVaultKeys).flatMap((vaultKey) => {
-    const selectedVault = selectedVaultsByKey.get(vaultKey)
-    const points = familyPointMap.get(vaultKey)
-
-    if (!selectedVault || !points) {
-      return []
-    }
-
-    return [
-      {
-        chainId: selectedVault.chainId,
-        vaultAddress: selectedVault.vaultAddress,
-        symbol: selectedVault.metadata.symbol,
-        status: selectedVault.status,
-        dataPoints: points
-      }
-    ]
-  })
+export function buildProtocolReturnHistoryWithFamilies(
+  args: Parameters<typeof buildProtocolReturnHistorySeries>[0] & { selectedVaults: HoldingsPnLSimpleVault[] }
+) {
+  const observer = args.selectedVaults.length
+    ? createProtocolReturnFamilyHistoryObserver(args.selectedVaults)
+    : undefined
+  const history = calculateProtocolReturnHistorySeries(args, observer)
+  return { ...history, familySeries: observer?.familySeries ?? [] }
 }
 
 async function calculateHoldingsProtocolReturnHistory(
@@ -3014,9 +3038,10 @@ async function calculateHoldingsProtocolReturnHistory(
     : undefined
   const buildHistory = (
     historyTimestamps: number[],
-    growthIndexSeed?: { timestamp: number; growthIndex: number | null }
+    growthIndexSeed?: { timestamp: number; growthIndex: number | null },
+    includeFamilies = true
   ) =>
-    calculateProtocolReturnHistorySeries({
+    buildProtocolReturnHistoryWithFamilies({
       events: settledEvents,
       userAddress,
       metadata: vaultMetadata,
@@ -3026,9 +3051,10 @@ async function calculateHoldingsProtocolReturnHistory(
       ethPriceData,
       timestamps: historyTimestamps,
       selectedVaultKeys,
+      selectedVaults: includeFamilies && !requestedVaults ? eligibleHistoryFamilies : [],
       ...(growthIndexSeed ? { growthIndexSeed } : {})
     })
-  const tailResult = buildHistory(tailPlan?.calculationTimestamps ?? timestamps, tailPlan?.growthIndexSeed)
+  const tailResult = buildHistory(tailPlan?.calculationTimestamps ?? timestamps, tailPlan?.growthIndexSeed, !tailPlan)
   const tailHistory = tailResult.dataPoints
   const canAppend = Boolean(
     tailPlan &&
@@ -3052,19 +3078,23 @@ async function calculateHoldingsProtocolReturnHistory(
       overlapMatched: tailPlan ? canAppend : null
     }
   )
-  const familySeries = buildProtocolReturnFamilyHistorySeries({
-    events: settledEvents,
-    userAddress,
-    metadata: vaultMetadata,
-    ppsData: settledContext.ppsData,
-    priceData,
-    exitPriceData,
-    ethPriceData,
-    timestamps,
-    selectedVaults: requestedVaults ? [] : eligibleHistoryFamilies,
-    portfolioPoints: history,
-    excludedVaultKeys
-  })
+  // Appended totals retain their cached Index seed; full rebuilds collect both series in one pass.
+  const familySeries =
+    tailPlan && canAppend
+      ? buildProtocolReturnFamilyHistorySeries({
+          events: settledEvents,
+          userAddress,
+          metadata: vaultMetadata,
+          ppsData: settledContext.ppsData,
+          priceData,
+          exitPriceData,
+          ethPriceData,
+          timestamps,
+          selectedVaults: requestedVaults ? [] : eligibleHistoryFamilies,
+          portfolioPoints: history,
+          excludedVaultKeys
+        })
+      : historyResult.familySeries
   reportHoldingsProgress(92, 'Built historical chart series', `${history.length} chart points`)
   const openBaselineCompositionUsd = buildOpenBaselineCompositionUsd({
     ledgers: finalLedgers,

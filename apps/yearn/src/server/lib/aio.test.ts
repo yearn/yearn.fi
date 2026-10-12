@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import {
+  buildSitemap,
   buildVaultMarkdown,
   buildVaultsMarkdown,
   formatFeePct,
@@ -11,6 +12,54 @@ import {
 function address(seed: number): string {
   return `0x${seed.toString(16).padStart(40, '0')}`
 }
+
+describe('buildSitemap', () => {
+  it('uses the same public catalog eligibility as the Markdown index', () => {
+    const eligible = vault({ address: address(1), name: 'Eligible' })
+    const sitemap = buildSitemap([
+      eligible,
+      vault({ address: address(2), name: 'Partner', origin: 'partner' }),
+      vault({ address: address(3), name: 'Hidden', isHidden: true }),
+      vault({ address: address(4), name: 'Retired', isRetired: true }),
+      vault({ address: address(5), name: 'Strategy', kind: 'Single Strategy' }),
+      vault({ address: address(6), name: 'Legacy', apiVersion: '2.0.0', v3: false, kind: 'Legacy' })
+    ])
+
+    expect(sitemap).toContain(`<loc>https://yearn.fi/vaults/1/${eligible.address}</loc>`)
+    expect(sitemap).not.toContain(address(2))
+    expect(sitemap).not.toContain(address(3))
+    expect(sitemap).not.toContain(address(4))
+    expect(sitemap).not.toContain(address(5))
+    expect(sitemap).not.toContain(address(6))
+  })
+
+  it('includes status but omits fabricated and ignored sitemap metadata', () => {
+    const sitemap = buildSitemap([vault({ address: address(1) })])
+
+    expect(sitemap).toContain('<loc>https://yearn.fi/status</loc>')
+    expect(sitemap).not.toContain('<lastmod>')
+    expect(sitemap).not.toContain('<changefreq>')
+    expect(sitemap).not.toContain('<priority>')
+  })
+
+  it('uses only a valid explicit upstream modification timestamp', () => {
+    const sitemap = buildSitemap([
+      vault({ address: address(1), updatedAt: 1_788_265_211 }),
+      vault({ address: address(2), updatedAt: 'not-a-date' })
+    ])
+
+    expect(sitemap).toContain('<lastmod>2026-09-01T12:20:11.000Z</lastmod>')
+    expect(sitemap.match(/<lastmod>/g)).toHaveLength(1)
+  })
+
+  it('skips unsafe identities and deduplicates vault URLs', () => {
+    const duplicate = vault({ address: address(1) })
+    const sitemap = buildSitemap([duplicate, { ...duplicate }, vault({ address: 'not-an-address' })])
+
+    expect(sitemap.match(new RegExp(address(1), 'g'))).toHaveLength(1)
+    expect(sitemap).not.toContain('not-an-address')
+  })
+})
 
 function vault(overrides: Partial<TVaultListEntry>): TVaultListEntry {
   return {
@@ -119,6 +168,17 @@ describe('buildVaultsMarkdown', () => {
     expect(markdown).toContain('[Base LP Token]')
     expect(markdown).not.toContain('Ethereum Single Asset')
   })
+
+  it('distinguishes document generation from upstream source freshness', () => {
+    const markdown = buildVaultsMarkdown([vault({})], undefined, {
+      generatedAt: '2026-09-01T15:00:00.000Z',
+      sourceUpdatedAt: 1_788_265_211
+    })
+
+    expect(markdown).toContain('generated_at: 2026-09-01T15:00:00.000Z')
+    expect(markdown).toContain('source_updated_at: 2026-09-01T12:20:11.000Z')
+    expect(markdown).not.toMatch(/^updated:/m)
+  })
 })
 
 describe('buildVaultMarkdown', () => {
@@ -136,11 +196,14 @@ describe('buildVaultMarkdown', () => {
         fees: { performanceFee: 1_000, managementFee: 0 }
       },
       1,
-      address(11)
+      address(11),
+      { generatedAt: '2026-09-01T15:00:00.000Z' }
     )
 
     expect(markdown).toContain('| Performance | 10.00% |')
     expect(markdown).toContain('| Management | 0.00% |')
+    expect(markdown).toContain('generated_at: 2026-09-01T15:00:00.000Z')
+    expect(markdown).not.toContain('source_updated_at:')
   })
 })
 
@@ -153,4 +216,25 @@ describe('getVaultMarkdownListKind', () => {
     ).toBe('lp')
     expect(getVaultMarkdownListKind(vault({ apiVersion: '2.0.0', v3: false, kind: 'Legacy' }))).toBe('legacy')
   })
+})
+
+describe.each(['catalog', 'vault'])('cache refresh timestamps in %s markdown', (kind) => {
+  it.each([null, 'not-a-date', '2026-09-01T13:00:00Z'])(
+    'normalizes valid refresh timestamps and omits missing or invalid ones (%s)',
+    (cacheRefreshedAt) => {
+      const timestamps = { generatedAt: '2026-09-01T15:00:00.000Z', cacheRefreshedAt }
+      const markdown =
+        kind === 'catalog'
+          ? buildVaultsMarkdown([vault({})], undefined, timestamps)
+          : buildVaultMarkdown({ name: 'Test Vault' }, 1, address(1), timestamps)
+
+      expect(markdown).toContain('generated_at: 2026-09-01T15:00:00.000Z')
+      expect(markdown).not.toContain('source_updated_at:')
+      if (cacheRefreshedAt === '2026-09-01T13:00:00Z') {
+        expect(markdown).toContain('cache_refreshed_at: 2026-09-01T13:00:00.000Z')
+      } else {
+        expect(markdown).not.toContain('cache_refreshed_at:')
+      }
+    }
+  )
 })

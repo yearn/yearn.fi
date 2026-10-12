@@ -2,14 +2,13 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "rootDirs": ["."],
-    "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"],
-      "@shared/*": ["src/components/shared/*"],
-      "@pages/*": ["src/components/pages/*"],
-      "@components/*": ["src/components/*"],
-      "@hooks/*": ["src/hooks/*"],
-      "/src/*": ["src/*"]
+      "@/*": ["./src/*"],
+      "@shared/*": ["./src/components/shared/*"],
+      "@pages/*": ["./src/components/pages/*"],
+      "@components/*": ["./src/components/*"],
+      "@hooks/*": ["./src/hooks/*"],
+      "/src/*": ["./src/*"]
     },
     "incremental": true,
     "plugins": [
