@@ -303,7 +303,21 @@ export function buildVaultStructuredDataFromInput({
 }
 
 export const landingMetadata = buildManifestMetadata(landingManifest)
-export const vaultsMetadata = buildManifestMetadata(vaultsManifest)
+const manifestVaultsMetadata = buildManifestMetadata(vaultsManifest)
+export const vaultsMetadata: Metadata = {
+  ...manifestVaultsMetadata,
+  alternates: {
+    ...manifestVaultsMetadata.alternates,
+    types: {
+      'text/markdown': [
+        {
+          title: 'Yearn vault catalog',
+          url: 'https://yearn.fi/api/vaults/markdown'
+        }
+      ]
+    }
+  }
+}
 export const portfolioMetadata: Metadata = {
   ...vaultsMetadata,
   title: 'Yearn Portfolio',
