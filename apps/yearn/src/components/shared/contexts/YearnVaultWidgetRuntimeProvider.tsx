@@ -36,6 +36,7 @@ import {
   type VaultWidgetWalletRuntime
 } from '@yearn/vault-widget/runtime'
 import { createWagmiVaultWidgetExecutionAdapter } from '@yearn/vault-widget/wagmi'
+import { getWalletAnalyticsProperties } from '@yearn/wallet-ui/analytics'
 import { type ReactElement, type ReactNode, useCallback, useMemo } from 'react'
 import { isAddressEqual, zeroAddress } from 'viem'
 import { useAccount, useConfig } from 'wagmi'
@@ -159,7 +160,7 @@ export function resolveVaultWidgetConfirmations(canonicalChainId: number): numbe
 
 export function YearnVaultWidgetRuntimeProvider({ children }: { children: ReactNode }): ReactElement {
   const lifecycle = useYearnTransactionLifecycle()
-  const { chainId: connectedExecutionChainId } = useAccount()
+  const { chainId: connectedExecutionChainId, connector } = useAccount()
   const wagmiConfig = useConfig()
   const trackEvent = usePlausible()
   const { isEnsoFailed } = useEnsoStatus()
@@ -262,9 +263,13 @@ export function YearnVaultWidgetRuntimeProvider({ children }: { children: ReactN
 
   const track = useCallback(
     (event: string, properties?: VaultWidgetAnalyticsProperties): void => {
-      trackEvent(event, { props: toPlausibleProperties(properties) })
+      void getWalletAnalyticsProperties(connector)
+        .then((wallet) => {
+          trackEvent(event, { props: toPlausibleProperties({ ...wallet, ...properties, app: 'yearn' }) })
+        })
+        .catch(() => undefined)
     },
-    [trackEvent]
+    [connector, trackEvent]
   )
 
   const runtime = useMemo<VaultWidgetRuntimeOverrides>(

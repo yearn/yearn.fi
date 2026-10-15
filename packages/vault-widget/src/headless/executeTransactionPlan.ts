@@ -1,6 +1,7 @@
 import { awaitTransactionRefresh } from '@yearn/vault-widget/internal/utils/transactionLifecycle'
 import { type Address, type Hash, isHash, type TransactionReceipt } from 'viem'
 import type {
+  TAtomicBatchStep,
   TDeferredStep,
   TPreparedStep,
   VaultWidgetExecutionAdapter,
@@ -203,20 +204,30 @@ async function executeRequestStep(
   return executePlanStep(params, stepIndex + 1, confirmedOutcome)
 }
 
-async function executeSafeProposalStep(
+async function executeBatchStep(
   params: ExecuteTransactionPlanParams,
-  step: VaultWidgetSafeProposalStep,
+  step: VaultWidgetSafeProposalStep | TAtomicBatchStep,
   stepIndex: number,
   outcome: VaultWidgetPlanOutcome
 ): Promise<VaultWidgetPlanOutcome> {
   const stepCount = params.plan.steps.length
   const initialContext = { outcome, step, stepIndex, stepCount }
-  const proposeSafeBatch = params.adapter.proposeSafeBatch
-  const waitForSafeExecution = params.adapter.waitForSafeExecution
-  if (!proposeSafeBatch || !waitForSafeExecution) {
+  const isAtomicBatch = step.kind === 'atomic-batch'
+  const proposeSafeBatch = isAtomicBatch ? params.adapter.submitAtomicBatch : params.adapter.proposeSafeBatch
+  const waitForSafeExecution = isAtomicBatch
+    ? (parameters: { chainId: number; proposalId: `0x${string}` }) => {
+        if (!params.adapter.waitForAtomicExecution) throw new Error('Wallet batch tracking is unavailable')
+        return params.adapter.waitForAtomicExecution({ chainId: parameters.chainId, bundleId: parameters.proposalId })
+      }
+    : params.adapter.waitForSafeExecution
+  if (!proposeSafeBatch || !waitForSafeExecution || (isAtomicBatch && !params.adapter.waitForAtomicExecution)) {
     throw createExecutionError(
       params,
-      new Error('Safe batch execution and tracking are not configured'),
+      new Error(
+        isAtomicBatch
+          ? 'Wallet batch execution and tracking are not configured'
+          : 'Safe batch execution and tracking are not configured'
+      ),
       initialContext
     )
   }
@@ -232,7 +243,7 @@ async function executeSafeProposalStep(
   const submittedOutcome = appendSubmission(outcome, {
     stepId: step.id,
     chainId: step.chainId,
-    proposalId
+    ...(isAtomicBatch ? { bundleId: proposalId } : { proposalId })
   })
   params.onState?.({
     status: 'submitted',
@@ -319,8 +330,8 @@ async function executePlanStep(
     })
     return executePlanStep(params, stepIndex + 1, signed)
   }
-  if (step.kind === 'safe-proposal') {
-    return executeSafeProposalStep(params, step, stepIndex, outcome)
+  if (step.kind === 'safe-proposal' || step.kind === 'atomic-batch') {
+    return executeBatchStep(params, step, stepIndex, outcome)
   }
   return executeRequestStep(params, step, stepIndex, outcome)
 }

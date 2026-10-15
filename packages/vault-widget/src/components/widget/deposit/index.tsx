@@ -1,11 +1,12 @@
 import type { VaultWidgetTransactionPlan } from '@yearn/vault-widget/headless'
 import { Button } from '@yearn/vault-widget/internal/components/shared/Button'
-import { buildSafeDepositBatch } from '@yearn/vault-widget/internal/components/widget/deposit/safeDepositBatch'
+import { buildDepositBatch } from '@yearn/vault-widget/internal/components/widget/deposit/depositBatch'
 import { InputTokenAmount } from '@yearn/vault-widget/internal/components/widget/InputTokenAmount'
 import {
   buildDirectApprovalPlan,
   buildEligibleStyledWidgetPlan
 } from '@yearn/vault-widget/internal/components/widget/shared/plannedTransaction'
+import { useAtomicBatchCapability } from '@yearn/vault-widget/internal/hooks/useAtomicBatchCapability'
 import { useDebouncedInput } from '@yearn/vault-widget/internal/hooks/useDebouncedInput'
 import type { VaultUserData } from '@yearn/vault-widget/internal/hooks/useVaultUserData'
 import { useVaultWidgetSpotPrices } from '@yearn/vault-widget/internal/hooks/useVaultWidgetSpotPrices'
@@ -13,8 +14,11 @@ import { IconChevron } from '@yearn/vault-widget/internal/icons/IconChevron'
 import { IconCross } from '@yearn/vault-widget/internal/icons/IconCross'
 import { IconSettings } from '@yearn/vault-widget/internal/icons/IconSettings'
 import { cl, formatTAmount, toAddress } from '@yearn/vault-widget/internal/utils'
+import { getBatchReason, type TWidgetAnalyticsContext } from '@yearn/vault-widget/internal/utils/analytics'
 import { requiresAllowanceResetBeforeApproval } from '@yearn/vault-widget/internal/utils/approve'
 import { ETH_TOKEN_ADDRESS } from '@yearn/vault-widget/internal/utils/constants'
+import { YVUSD_LOCKED_ZAP_ADDRESS } from '@yearn/vault-widget/internal/utils/yvUsd'
+import type { VaultWidgetAnalyticsProperties } from '@yearn/vault-widget/runtime'
 import { isVaultWidgetExecutionConfigured, useVaultWidgetRuntime } from '@yearn/vault-widget/runtime'
 import type { TToken } from '@yearn/vault-widget/types'
 import { YBOLD_STAKING_ADDRESS, YBOLD_VAULT_ADDRESS } from '@yearn/vault-widget/ybold'
@@ -242,6 +246,11 @@ export function WidgetDeposit({
   // Derived token values
   const depositToken = selectedToken || assetAddress
   const sourceChainId = selectedChainId || chainId
+  const { supported: supportsAtomicBatch, status: batchCapability } = useAtomicBatchCapability({
+    account,
+    chainId: sourceChainId,
+    enabled: !isWalletSafe
+  })
   const isNativeToken = toAddress(depositToken) === toAddress(ETH_TOKEN_ADDRESS)
   const selectedExtraToken = useMemo(
     () =>
@@ -723,21 +732,27 @@ export function WidgetDeposit({
     })
   const approvalFlowKey = useMemo(
     () =>
-      [routeType, depositToken, destinationToken, sourceChainId, chainId, depositAmount.debouncedBn.toString()].join(
-        ':'
-      ),
-    [chainId, depositAmount.debouncedBn, depositToken, destinationToken, routeType, sourceChainId]
+      [
+        account,
+        routeType,
+        depositToken,
+        destinationToken,
+        sourceChainId,
+        chainId,
+        depositAmount.debouncedBn.toString()
+      ].join(':'),
+    [account, chainId, depositAmount.debouncedBn, depositToken, destinationToken, routeType, sourceChainId]
   )
   const depositIntentKey = `deposit:${approvalFlowKey}:${zapSlippage}`
   const [completedApprovalFlowKey, setCompletedApprovalFlowKey] = useState<string | null>(null)
   const hasCompletedApprovalInActiveFlow = completedApprovalFlowKey === approvalFlowKey
   const effectiveNeedsApproval = needsApproval && !hasCompletedApprovalInActiveFlow
-  const safeDepositBatch = useMemo(() => {
-    if (!isWalletSafe || !needsApproval) {
+  const depositBatch = useMemo(() => {
+    if ((!isWalletSafe && !supportsAtomicBatch) || !effectiveNeedsApproval) {
       return undefined
     }
 
-    return buildSafeDepositBatch({
+    return buildDepositBatch({
       routeType,
       account,
       depositToken: toAddress(depositToken),
@@ -767,12 +782,13 @@ export function WidgetDeposit({
     depositAmount.debouncedBn,
     depositToken,
     isWalletSafe,
-    needsApproval,
+    effectiveNeedsApproval,
     executableEnsoTx,
     routeType,
     sourceChainId,
     stakingDepositAddress,
     stakingSource,
+    supportsAtomicBatch,
     vaultAddress
   ])
 
@@ -797,13 +813,13 @@ export function WidgetDeposit({
   }
 
   const currentStep = useMemo((): TransactionStep => {
-    if (safeDepositBatch) {
+    if (depositBatch) {
       return {
         id: 'deposit-batch',
         prepare: activeFlow.actions.prepareApprove,
-        batch: safeDepositBatch,
+        batch: depositBatch,
         label: `Approve & ${actionLabel}`,
-        confirmMessage: `Submitting approval and ${actionLabel.toLowerCase()} to your Safe`,
+        confirmMessage: `Confirm approval and ${actionLabel.toLowerCase()} in your wallet`,
         successTitle: isCrossChain ? 'Transaction Submitted' : `${actionLabel} successful!`,
         successMessage: isCrossChain
           ? `Your cross-chain ${actionLabel.toLowerCase()} has been submitted.\nIt may take a few minutes to complete on the destination chain.`
@@ -811,7 +827,7 @@ export function WidgetDeposit({
         isEnabled:
           !isWaitingForProtectedEnsoQuote &&
           activeFlow.periphery.prepareApproveEnabled &&
-          safeDepositBatch.calls.length > 0,
+          depositBatch.calls.length > 0,
         completesFlow: true,
         showConfetti: true,
         notification: depositNotificationParams,
@@ -840,7 +856,7 @@ export function WidgetDeposit({
     activeFlow.actions.prepareDeposit,
     activeFlow.periphery.prepareApproveEnabled,
     activeFlow.periphery.prepareDepositEnabled,
-    safeDepositBatch,
+    depositBatch,
     formattedDepositAmount,
     inputToken?.symbol,
     vaultSymbol,
@@ -871,7 +887,10 @@ export function WidgetDeposit({
       isExecutionConfigured: isVaultWidgetExecutionConfigured(runtime),
       isWalletSafe,
       isEnabled: Boolean(
-        currentStep?.isEnabled && currentStep.prepare.isSuccess && !shouldBlockApprovalForAllowanceReset
+        currentStep?.isEnabled &&
+          !currentStep.batch &&
+          currentStep.prepare.isSuccess &&
+          !shouldBlockApprovalForAllowanceReset
       ),
       isCrossChain,
       needsApproval: effectiveNeedsApproval
@@ -896,6 +915,27 @@ export function WidgetDeposit({
   const directPlanSteps = {
     'approve-0': { ...currentStep, id: 'approve-0' },
     deposit: depositActionStep
+  }
+
+  const analyticsContext: TWidgetAnalyticsContext = {
+    action: routeType === 'DIRECT_STAKE' ? 'stake' : 'deposit',
+    route:
+      routeType === 'ENSO'
+        ? 'enso_zap_in'
+        : routeType === 'YBOLD_ZAPPER'
+          ? 'ybold_zap_in'
+          : activeFlow.periphery.routerAddress?.toLowerCase() === YVUSD_LOCKED_ZAP_ADDRESS.toLowerCase()
+            ? 'yvusd_locked_zap_in'
+            : routeType.toLowerCase(),
+    source_chain: sourceChainId,
+    destination_chain: chainId,
+    approval_required: effectiveNeedsApproval,
+    batch_capability: isWalletSafe ? 'safe' : batchCapability,
+    batch_reason: getBatchReason({
+      approvalRequired: effectiveNeedsApproval,
+      capability: isWalletSafe ? 'safe' : batchCapability,
+      hasBatch: Boolean(depositBatch)
+    })
   }
 
   const handleOpenTransactionOverlay = useCallback(() => {
@@ -991,49 +1031,55 @@ export function WidgetDeposit({
     setDisableApprovalOverlaySetUnlimited(false)
   }, [])
 
-  const handleDepositSuccess = useCallback(() => {
-    const amountToDeposit = formatUnits(depositAmount.bn, inputToken?.decimals ?? 18)
-    const priceUsd = inputTokenPrice
-    const valueUsd = Number(amountToDeposit) * inputTokenPrice
+  const handleDepositSuccess = useCallback(
+    (analytics?: VaultWidgetAnalyticsProperties) => {
+      const amountToDeposit = formatUnits(depositAmount.bn, inputToken?.decimals ?? 18)
+      const priceUsd = inputTokenPrice
+      const valueUsd = Number(amountToDeposit) * inputTokenPrice
 
-    trackEvent('deposit', {
-      props: {
-        chainID: String(chainId),
-        vaultAddress,
-        vaultSymbol,
-        amountToDeposit,
-        tokenAddress: toAddress(depositToken),
-        tokenSymbol: inputToken?.symbol || '',
-        priceUsd: String(priceUsd),
-        valueUsd: String(valueUsd),
-        isZap: String(routeType === 'ENSO'),
-        action: 'deposit'
+      trackEvent('deposit', {
+        props: {
+          chainID: String(chainId),
+          vaultAddress,
+          vaultSymbol,
+          amountToDeposit,
+          tokenAddress: toAddress(depositToken),
+          tokenSymbol: inputToken?.symbol || '',
+          priceUsd: String(priceUsd),
+          valueUsd: String(valueUsd),
+          isZap: String(
+            routeType === 'ENSO' || routeType.startsWith('YBOLD_ZAPPER') || analytics?.route === 'yvusd_locked_zap_in'
+          ),
+          ...analytics,
+          action: 'deposit'
+        }
+      })
+
+      setCompletedApprovalFlowKey(null)
+      setDepositInput('')
+      if (forceStake && routeType === 'DIRECT_STAKE') {
+        setSelectedToken(assetAddress)
+        setSelectedChainId(undefined)
       }
-    })
-
-    setCompletedApprovalFlowKey(null)
-    setDepositInput('')
-    if (forceStake && routeType === 'DIRECT_STAKE') {
-      setSelectedToken(assetAddress)
-      setSelectedChainId(undefined)
-    }
-    onDepositSuccess?.()
-  }, [
-    depositAmount.bn,
-    inputToken?.decimals,
-    inputToken?.symbol,
-    inputTokenPrice,
-    trackEvent,
-    chainId,
-    vaultAddress,
-    vaultSymbol,
-    depositToken,
-    routeType,
-    forceStake,
-    assetAddress,
-    setDepositInput,
-    onDepositSuccess
-  ])
+      onDepositSuccess?.()
+    },
+    [
+      depositAmount.bn,
+      inputToken?.decimals,
+      inputToken?.symbol,
+      inputTokenPrice,
+      trackEvent,
+      chainId,
+      vaultAddress,
+      vaultSymbol,
+      depositToken,
+      routeType,
+      forceStake,
+      assetAddress,
+      setDepositInput,
+      onDepositSuccess
+    ]
+  )
 
   const handleTokenChange = useCallback(
     (address: `0x${string}`, tokenChainId?: number) => {
@@ -1302,6 +1348,7 @@ export function WidgetDeposit({
         <div className="flex-1">
           {hideActionButton ? null : !account ? (
             <Button
+              data-wallet-entry="widget"
               onClick={openLoginModal}
               variant="filled"
               className="w-full"
@@ -1425,6 +1472,7 @@ export function WidgetDeposit({
 
       {/* Transaction Overlay */}
       <TransactionOverlay
+        analyticsContext={analyticsContext}
         isOpen={showTransactionOverlay}
         onClose={handleCloseTransactionOverlay}
         plan={activeTransactionPlan}
@@ -1441,7 +1489,7 @@ export function WidgetDeposit({
                 legs: []
               })
             : undefined,
-          steps: safeDepositBatch
+          steps: depositBatch
             ? [{ id: 'deposit-batch', label: currentStep.label }]
             : [
                 ...(effectiveNeedsApproval ? [{ id: 'approve', label: 'Approve' }] : []),

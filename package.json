@@ -3,7 +3,8 @@
   "version": "0.3.7",
   "private": true,
   "engines": {
-    "node": "22"
+    "bun": ">=1.4.2",
+    "node": "^22.22.1"
   },
   "workspaces": [
     "apps/*",
@@ -32,31 +33,35 @@
     "tslint:yearn": "bun run --cwd apps/yearn tslint",
     "tslint:ybold": "bun run --cwd apps/ybold tslint",
     "tslint:widget": "bun run --cwd packages/vault-widget typecheck",
-    "tslint:all": "bun run tslint:widget && bun run tslint:ybold && bun run tslint:yearn",
+    "tslint:all": "bun run tslint:wallet-ui && bun run tslint:widget && bun run tslint:ybold && bun run tslint:yearn",
     "test": "bun run test:yearn",
     "test:yearn": "bun run --cwd apps/yearn test",
     "test:ybold": "bun run --cwd apps/ybold test",
     "test:widget": "bun run --cwd packages/vault-widget test",
-    "test:all": "bun run test:widget && bun run test:ybold && bun run test:yearn",
+    "test:all": "bun run test:wallet-ui && bun run test:widget && bun run test:ybold && bun run test:yearn",
     "check:yearn": "bun run tslint:yearn && bun run test:yearn && bun run build:yearn",
     "check:ybold": "bun run tslint:ybold && bun run test:ybold && bun run build:ybold",
     "check:widget": "bun run check:vault-widget-boundary && bun run tslint:widget && bun run test:widget",
-    "check:workspaces": "bun run check:widget && bun run check:ybold && bun run check:yearn",
+    "check:workspaces": "bun run check:wallet-ui && bun run check:widget && bun run check:ybold && bun run check:yearn",
     "bump": "bump",
     "clean": "bash clean.sh",
-    "prepare": "husky"
+    "prepare": "husky",
+    "test:wallet-ui": "bun run --cwd packages/wallet-ui test",
+    "tslint:wallet-ui": "bun run --cwd packages/wallet-ui typecheck",
+    "check:wallet-ui": "bun run tslint:wallet-ui && bun run test:wallet-ui"
   },
   "overrides": {
     "qr": "0.5.5"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.12",
-    "@types/node": "25.3.0",
+    "@biomejs/biome": "2.5.14",
+    "@types/node": "26.6.3",
+    "@typescript/typescript6": "6.0.2",
     "bump": "0.2.5",
     "husky": "9.1.7",
-    "lint-staged": "16.2.7",
-    "next": "16.3.4",
-    "typescript": "5.9.3",
-    "vitest": "4.1.10"
+    "lint-staged": "17.6.0",
+    "next": "16.3.8",
+    "typescript": "7.0.2",
+    "vitest": "4.1.11"
   }
 }

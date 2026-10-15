@@ -21,12 +21,14 @@ export function projectLifecycleNotification(record: TTransactionRecord): TNotif
     toTokenName: record.display?.toSymbol,
     toAmount: record.display?.toAmount,
     txHash: record.effective.hash,
-    awaitingExecution: Boolean(record.safe && !record.safe.execution),
+    awaitingExecution: Boolean(
+      (record.safe ?? record.walletBatch) && (record.safe ?? record.walletBatch)?.execution?.status !== 'success'
+    ),
     createdAt: record.createdAt / 1000,
     timeFinished: ['success', 'error'].includes(view.outcome)
       ? (record.destination?.observedAt ??
           record.source?.observedAt ??
-          record.safe?.execution?.observedAt ??
+          (record.safe ?? record.walletBatch)?.execution?.observedAt ??
           record.createdAt) / 1000
       : undefined,
     blockNumber: record.source?.receipt.blockNumber,

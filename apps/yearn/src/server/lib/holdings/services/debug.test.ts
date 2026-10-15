@@ -62,4 +62,27 @@ describe('holdings debug context', () => {
     await expect(request).resolves.toBe('done')
     expect(requestState.settled).toBe(true)
   })
+
+  it('isolates concurrent progress reporters', async () => {
+    const balanceReporter = vi.fn()
+    const growthReporter = vi.fn()
+    const { reportHoldingsProgress, withHoldingsProgressReporter } = await import(
+      '@/server/lib/holdings/services/debug'
+    )
+
+    await Promise.all([
+      withHoldingsProgressReporter(balanceReporter, async () => {
+        await Promise.resolve()
+        reportHoldingsProgress(76, 'Fetched balance prices')
+      }),
+      withHoldingsProgressReporter(growthReporter, async () => {
+        await Promise.resolve()
+        reportHoldingsProgress(52, 'Prepared Growth prices')
+      })
+    ])
+
+    expect(balanceReporter).toHaveBeenCalledWith(76, 'Fetched balance prices', undefined)
+    expect(growthReporter).toHaveBeenCalledWith(52, 'Prepared Growth prices', undefined)
+    expect(updateHoldingsProgressMock).not.toHaveBeenCalled()
+  })
 })

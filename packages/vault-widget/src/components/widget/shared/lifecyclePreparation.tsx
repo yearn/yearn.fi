@@ -121,8 +121,7 @@ function createPreparationBridge(owner: Address, recipe: TOverlayRecipe) {
     }
     const requests = await (async () => {
       if (step.batch) {
-        if (!attachment.isSafe || step.batch.chainId !== recipe.chainId)
-          throw preparationError('Batch network or wallet changed')
+        if (step.batch.chainId !== recipe.chainId) throw preparationError('Batch network or wallet changed')
         return step.batch.calls.map((call) => ({ ...call, chainId: recipe.chainId }))
       }
       if (isRawTransactionPreparation(step.prepare)) {
@@ -163,6 +162,7 @@ function createPreparationBridge(owner: Address, recipe: TOverlayRecipe) {
       return [{ chainId: recipe.chainId, to, data, value: request.value }]
     })()
     current()
+    if (step.batch && !attachment.isSafe) return { ...base, kind: 'atomic-batch', requests: structuredClone(requests) }
     return attachment.isSafe
       ? { ...base, kind: 'safe-proposal', requests: structuredClone(requests) }
       : { ...base, kind: step.id.includes('approve') ? 'approve' : 'execute', request: structuredClone(requests[0]) }
@@ -178,7 +178,7 @@ function createPreparationBridge(owner: Address, recipe: TOverlayRecipe) {
       const fingerprint = (value: unknown) =>
         JSON.stringify(value, (_key, value) => (typeof value === 'bigint' ? value.toString() : value))
       if (active?.batch && fingerprint(active.batch) !== fingerprint(latest?.batch))
-        throw preparationError('The reviewed Safe calls changed. Close and review again.')
+        throw preparationError('The reviewed wallet calls changed. Close and review again.')
       if (
         isRawTransactionPreparation(active?.prepare) &&
         (!isRawTransactionPreparation(latest?.prepare) ||

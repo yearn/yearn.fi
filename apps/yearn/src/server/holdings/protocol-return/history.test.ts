@@ -2,13 +2,11 @@ import { beforeEach, describe, expect, it, vi } from 'vitest'
 
 const TEST_ADDRESS = '0x2222222222222222222222222222222222222222'
 
-const ensureHoldingsStorageInitializedMock = vi.fn()
 const getHoldingsProtocolReturnHistoryMock = vi.fn()
 const startHoldingsProgressMock = vi.fn()
 const updateHoldingsProgressMock = vi.fn()
 
 vi.mock('../../lib/holdings', () => ({
-  ensureHoldingsStorageInitialized: ensureHoldingsStorageInitializedMock,
   getHoldingsProtocolReturnHistory: getHoldingsProtocolReturnHistoryMock
 }))
 
@@ -33,7 +31,6 @@ describe('holdings protocol return history route', () => {
   beforeEach(() => {
     vi.resetModules()
     vi.clearAllMocks()
-    ensureHoldingsStorageInitializedMock.mockResolvedValue(undefined)
     startHoldingsProgressMock.mockResolvedValue('progress-id')
     updateHoldingsProgressMock.mockResolvedValue(undefined)
     getHoldingsProtocolReturnHistoryMock.mockResolvedValue({
@@ -47,7 +44,7 @@ describe('holdings protocol return history route', () => {
   })
 
   it('returns private no-store cache headers for wallet-scoped protocol return history responses', async () => {
-    const { default: handler } = await import('./history')
+    const { GET: handler } = await import('./history')
     const response = await handler(createRequest({ address: TEST_ADDRESS }))
 
     expect(response.status).toBe(200)
@@ -55,18 +52,11 @@ describe('holdings protocol return history route', () => {
   })
 
   it('treats an empty vaults query as an unfiltered request', async () => {
-    const { default: handler } = await import('./history')
+    const { GET: handler } = await import('./history')
 
     const response = await handler(createRequest({ address: TEST_ADDRESS, vaults: '' }))
 
     expect(response.status).toBe(200)
-    expect(getHoldingsProtocolReturnHistoryMock).toHaveBeenCalledWith(
-      TEST_ADDRESS,
-      'all',
-      'seq',
-      'paged',
-      '1y',
-      undefined
-    )
+    expect(getHoldingsProtocolReturnHistoryMock).toHaveBeenCalledWith(TEST_ADDRESS, '1y', undefined)
   })
 })

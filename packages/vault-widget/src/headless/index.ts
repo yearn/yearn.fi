@@ -12,6 +12,7 @@ export {
   VaultWidgetPlanExecutionError
 } from './executeTransactionPlan'
 export type {
+  TAtomicBatchStep,
   TDeferredStep,
   TPermitStep,
   TPreparedStep,

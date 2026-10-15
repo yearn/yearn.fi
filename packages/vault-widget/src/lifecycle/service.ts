@@ -59,6 +59,7 @@ export type TStartTransaction = {
   displayByStep?: Readonly<Record<string, VaultWidgetNotificationInput | undefined>>
   prepareStep?: ExecuteTransactionPlanParams['prepareStep']
   afterStep?: ExecuteTransactionPlanParams['afterStep']
+  onExecutionState?: ExecuteTransactionPlanParams['onState']
   validate?: () => Promise<void>
   authorize?: () => void
   refresh?: () => Promise<void>
@@ -170,11 +171,12 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
       throw new Error('Hydrated transaction identity changed')
     // Provider errors can increase a local revision while another tab confirms. Merge evidence,
     // rather than letting a larger local counter hide a durable receipt.
-    const withSafe = record.safe?.execution
+    const batch = record.safe ?? record.walletBatch
+    const withSafe = batch?.execution
       ? reduceTransaction(local, {
-          kind: 'safe-execution',
-          result: record.safe.execution,
-          observedAt: record.safe.execution.observedAt
+          kind: record.safe ? 'safe-execution' : 'wallet-batch-execution',
+          result: batch.execution,
+          observedAt: batch.execution.observedAt
         })
       : local
     if (withSafe !== local) putRecord(withSafe)
@@ -195,7 +197,7 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
           ? reduceTransaction(withConflict, { kind: 'refresh', status: record.refresh, message: record.refreshError })
           : withConflict
       if (next !== local) putRecord(next)
-    } else if (!local.source && record.revision > local.revision && !local.safe?.execution)
+    } else if (!local.source && record.revision > local.revision && !(local.safe ?? local.walletBatch)?.execution)
       putRecord({ ...record, conflict: local.conflict ?? record.conflict, storageError: local.storageError })
     if (record.settlementTracking)
       putRecord(
@@ -457,18 +459,26 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
         )
           return
         try {
-          if (latest.safe && latest.safe.execution?.status !== 'success') {
-            const observeSafe = options.execution().observeSafeExecution
-            if (!observeSafe) throw new Error('Safe execution observation is unavailable')
-            const result = await boundedStorage(() =>
-              observeSafe({
-                chainId: latest.original.canonicalChainId,
-                executionChainId: latest.original.executionChainId,
-                proposalId: latest.safe!.proposalId
-              })
-            )
+          const batch = latest.safe ?? latest.walletBatch
+          if (batch && batch.execution?.status !== 'success') {
+            const adapter = options.execution()
+            const parameters = {
+              chainId: latest.original.canonicalChainId,
+              executionChainId: latest.original.executionChainId
+            }
+            const result = await boundedStorage(() => {
+              if (latest.safe && adapter.observeSafeExecution)
+                return adapter.observeSafeExecution({ ...parameters, proposalId: latest.safe.proposalId })
+              if (latest.walletBatch && adapter.observeAtomicExecution)
+                return adapter.observeAtomicExecution({ ...parameters, bundleId: latest.walletBatch.id })
+              throw new Error('Wallet batch execution observation is unavailable')
+            })
             if (generation !== state.generation) return
-            await observe(recordId, { kind: 'safe-execution', result, observedAt: now() })
+            await observe(recordId, {
+              kind: latest.safe ? 'safe-execution' : 'wallet-batch-execution',
+              result,
+              observedAt: now()
+            })
             if (result.status !== 'success') return
           }
           const admitted = getRecord(recordId)!
@@ -577,7 +587,7 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
     new Promise((resolve, reject) => {
       const check = (): void => {
         const record = getRecord(recordId)
-        if (record?.safe && selectTransaction(record).outcome === 'error') {
+        if ((record?.safe || record?.walletBatch) && selectTransaction(record).outcome === 'error') {
           listeners.delete(check)
           reject(new Error(selectTransaction(record).label))
           return
@@ -624,7 +634,16 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
       !call ||
       frozenPlan.steps.some(
         (step) =>
-          !['execute', 'approve', 'reset-approval', 'safe-proposal', 'permit', 'prepare', 'refresh'].includes(step.kind)
+          ![
+            'execute',
+            'approve',
+            'reset-approval',
+            'safe-proposal',
+            'atomic-batch',
+            'permit',
+            'prepare',
+            'refresh'
+          ].includes(step.kind)
       ) ||
       new Set(steps.map((step) => step.id)).size !== steps.length ||
       steps.some((step) => step.chainId !== call.chainId) ||
@@ -803,6 +822,22 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
             })
           },
           waitForSafeExecution: async () => (await waitForRecord(active.recordId)).receipt.transactionHash,
+          submitAtomicBatch: async (parameters) => {
+            assertWallet()
+            assertPriorReceipts()
+            await input.validate?.()
+            assertWallet()
+            if (!adapter.submitAtomicBatch)
+              throw new VaultWidgetPreparationError(new Error('Wallet batches are unavailable'))
+            return adapter.submitAtomicBatch({
+              ...parameters,
+              beforeSubmit: () => {
+                assertWallet()
+                assertPriorReceipts()
+              }
+            })
+          },
+          waitForAtomicExecution: async () => (await waitForRecord(active.recordId)).receipt.transactionHash,
           execute: async (parameters) => {
             try {
               assertWallet()
@@ -838,17 +873,29 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
         },
         refresh: async () => undefined,
         onState: (progress) => {
+          try {
+            input.onExecutionState?.(progress)
+          } catch {
+            // Analytics and other view observers must never interrupt transaction tracking.
+          }
           if (
             progress.status === 'confirming' &&
-            ['execute', 'approve', 'reset-approval', 'safe-proposal', 'permit'].includes(progress.step.kind)
+            ['execute', 'approve', 'reset-approval', 'safe-proposal', 'atomic-batch', 'permit'].includes(
+              progress.step.kind
+            )
           ) {
             const step = progress.step as TPreparedStep
             const requests =
-              step.kind === 'permit' ? [] : step.kind === 'safe-proposal' ? step.requests : [step.request]
+              step.kind === 'permit'
+                ? []
+                : step.kind === 'safe-proposal' || step.kind === 'atomic-batch'
+                  ? step.requests
+                  : [step.request]
             if (
               step.chainId !== call.chainId ||
               requests.some((request) => request.chainId !== call.chainId) ||
               (step.kind === 'safe-proposal' && (!step.requests.length || frozen.plan.walletType !== 'safe')) ||
+              (step.kind === 'atomic-batch' && (!step.requests.length || frozen.plan.walletType !== 'eoa')) ||
               (step.kind !== 'safe-proposal' && frozen.plan.walletType === 'safe')
             )
               throw new VaultWidgetPreparationError(new Error('Prepared action changed the reviewed wallet or network'))
@@ -871,14 +918,16 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
           if (step.kind === 'permit') return
           const recordId = active.recordId
           const stepIndex = steps.findIndex((item) => item.id === step.id)
-          const requests = step.kind === 'safe-proposal' ? step.requests : [step.request]
+          const requests =
+            step.kind === 'safe-proposal' || step.kind === 'atomic-batch' ? step.requests : [step.request]
           const request = requests[0]
           if (!request) throw new Error('Submitted action has no calls')
           const reference = {
             canonicalChainId: step.chainId,
             executionChainId,
             hash: submission.hash,
-            ...(submission.proposalId ? { proposalId: submission.proposalId } : {})
+            ...(submission.proposalId ? { proposalId: submission.proposalId } : {}),
+            ...(submission.bundleId ? { bundleId: submission.bundleId } : {})
           }
           const record: TTransactionRecord = {
             version: 1,
@@ -896,6 +945,14 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
               ? {
                   safe: {
                     proposalId: submission.proposalId,
+                    requests: requests.map((request) => ({ ...request, value: (request.value ?? 0n).toString() }))
+                  }
+                }
+              : {}),
+            ...(submission.bundleId
+              ? {
+                  walletBatch: {
+                    id: submission.bundleId,
                     requests: requests.map((request) => ({ ...request, value: (request.value ?? 0n).toString() }))
                   }
                 }

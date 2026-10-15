@@ -20,8 +20,12 @@ const securityHeaders = [
 ]
 
 const nextConfig: NextConfig = {
+  agentRules: false,
   poweredByHeader: false,
-  transpilePackages: ['@yearn/vault-widget'],
+  transpilePackages: ['@yearn/vault-widget', '@yearn/wallet-ui'],
+  async rewrites() {
+    return [{ source: '/proxy/plausible/:path*', destination: 'https://plausible.io/:path*' }]
+  },
   turbopack: {
     resolveAlias: {
       '@safe-global/safe-apps-sdk': '../../node_modules/@safe-global/safe-apps-sdk/dist/esm'

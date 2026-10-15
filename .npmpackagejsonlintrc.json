@@ -3,7 +3,7 @@
     "prefer-absolute-version-dependencies": [
       "error",
       {
-        "exceptions": ["@yearn/vault-widget"]
+        "exceptions": ["@yearn/vault-widget", "@yearn/wallet-ui"]
       }
     ],
     "prefer-absolute-version-devDependencies": "error"

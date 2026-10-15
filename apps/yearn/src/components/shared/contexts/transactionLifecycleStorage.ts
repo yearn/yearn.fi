@@ -56,7 +56,7 @@ function compatibleRecord(value: unknown): value is TTransactionRecord {
     Number.isSafeInteger(record.original?.executionChainId) &&
     Number.isSafeInteger(record.effective?.executionChainId) &&
     (record.settlement === 'same-chain' || isSettlementRequirement(record.settlement)) &&
-    Boolean((record.original?.hash || record.safe?.proposalId) && record.request)
+    Boolean((record.original?.hash || record.safe?.proposalId || record.walletBatch?.id) && record.request)
   )
 }
 
@@ -121,11 +121,12 @@ export function createTransactionLifecycleStorage(): TTransactionPersistence {
             )
               throw new Error('Stored transaction identity does not match')
             const stored = previous ?? seed
-            const base = seed.safe?.execution
+            const batch = seed.safe ?? seed.walletBatch
+            const base = batch?.execution
               ? reduceTransaction(stored, {
-                  kind: 'safe-execution',
-                  result: seed.safe.execution,
-                  observedAt: seed.safe.execution.observedAt
+                  kind: seed.safe ? 'safe-execution' : 'wallet-batch-execution',
+                  result: batch.execution,
+                  observedAt: batch.execution.observedAt
                 })
               : stored
             // Failed writes are retried using the same record ID; merge its retained evidence atomically.

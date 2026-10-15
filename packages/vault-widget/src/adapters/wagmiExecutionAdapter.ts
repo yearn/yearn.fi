@@ -255,7 +255,7 @@ export function createWagmiVaultWidgetExecutionAdapter(
     }
   }
 
-  return {
+  const adapter: VaultWidgetExecutionAdapter = {
     async switchChain({ chainId }) {
       await wagmiSwitchChain(options.config, { chainId: requireExecutionChainId(chainId) })
     },
@@ -507,5 +507,13 @@ export function createWagmiVaultWidgetExecutionAdapter(
       }
       return receipt.transactionHash
     }
+  }
+  return {
+    ...adapter,
+    submitAtomicBatch: adapter.proposeSafeBatch,
+    observeAtomicExecution: ({ bundleId, ...parameters }) =>
+      adapter.observeSafeExecution!({ ...parameters, proposalId: bundleId }),
+    waitForAtomicExecution: ({ bundleId, ...parameters }) =>
+      adapter.waitForSafeExecution!({ ...parameters, proposalId: bundleId })
   }
 }

@@ -6,6 +6,7 @@ import {
   ErrorIcon,
   Spinner
 } from '@yearn/vault-widget/internal/components/widget/shared/TransactionStateIndicators'
+import { createWidgetAnalytics, widgetErrorCategory } from '@yearn/vault-widget/internal/utils/analytics'
 import { selectTransaction } from '@yearn/vault-widget/lifecycle'
 import { useVaultWidgetRuntime } from '@yearn/vault-widget/runtime'
 import { isRawTransactionPreparation } from '@yearn/vault-widget/types'
@@ -15,6 +16,21 @@ import { useReward } from 'react-rewards'
 export function LifecycleTransactionOverlay(props: TransactionOverlayProps) {
   const runtime = useVaultWidgetRuntime()
   const service = runtime.lifecycle!
+  const analyticsProps = useRef({ track: runtime.analytics.track, context: props.analyticsContext })
+  analyticsProps.current = { track: runtime.analytics.track, context: props.analyticsContext }
+  const [analytics] = useState(() => createWidgetAnalytics(() => analyticsProps.current.track))
+  const analyticsMounted = useRef(false)
+  // This view owns analytics visibility; execution continues in the provider after it closes.
+  useEffect(() => {
+    analyticsMounted.current = true
+    analytics.open(analyticsProps.current.context)
+    return () => {
+      analyticsMounted.current = false
+      queueMicrotask(() => {
+        if (!analyticsMounted.current) analytics.close()
+      })
+    }
+  }, [analytics])
   const walletType = useRef(runtime.safe.isSafe)
   walletType.current = runtime.safe.isSafe
   const [reviewed] = useState(() => ({
@@ -97,7 +113,7 @@ export function LifecycleTransactionOverlay(props: TransactionOverlayProps) {
       runtime.wallet.address?.toLowerCase() === reviewed.owner?.toLowerCase() &&
       service.claimEffect(flowId, 'complete')
     )
-      callbacks.current.onAllComplete?.()
+      callbacks.current.onAllComplete?.(analytics.summary())
   }
   const { reward } = useReward(confettiId, 'confetti', {
     elementCount: 80,
@@ -126,7 +142,46 @@ export function LifecycleTransactionOverlay(props: TransactionOverlayProps) {
         : undefined,
       describeStep: bridge ? (id) => bridge.prepared.get(id)?.notification : undefined,
       prepareStep: bridge?.prepareStep,
-      afterStep: bridge?.afterStep,
+      afterStep: async (step, outcome) => {
+        analytics.result(analytics.active(), step.kind === 'permit' ? 'signed' : 'confirmed')
+        await bridge?.afterStep(step, outcome)
+      },
+      onExecutionState: (progress) => {
+        if (
+          progress.status === 'confirming' &&
+          progress.step.kind !== 'prepare' &&
+          progress.step.kind !== 'switch-chain'
+        ) {
+          const step = progress.step
+          const isBatch = step.kind === 'safe-proposal' || step.kind === 'atomic-batch'
+          analytics.start(step.id, {
+            ...analyticsProps.current.context,
+            execution_mode: isBatch
+              ? step.kind === 'safe-proposal'
+                ? 'safe_batch'
+                : 'atomic_batch'
+              : step.kind === 'permit'
+                ? 'permit'
+                : reviewed.plan.walletType === 'safe'
+                  ? 'safe_transaction'
+                  : 'transaction',
+            call_count: isBatch ? step.requests.length : 1,
+            completes_flow: step.id === finalStepId
+          })
+        } else if (progress.status === 'pending' || progress.status === 'submitted') {
+          analytics.result(analytics.active(), 'submitted')
+          if (progress.status === 'submitted' && progress.step.kind === 'safe-proposal')
+            analytics.result(analytics.active(), 'awaiting_execution')
+        } else if (progress.status === 'error') {
+          const category = widgetErrorCategory(progress.error)
+          const submitted = progress.outcome.submissions.some((submission) => submission.stepId === progress.step.id)
+          analytics.result(
+            analytics.active(),
+            submitted ? 'unknown' : category === 'rejected' || category === 'upgrade_rejected' ? 'rejected' : 'error',
+            category
+          )
+        }
+      },
       authorize: () => {
         if (walletType.current !== (reviewed.plan.walletType === 'safe'))
           throw new Error('Wallet type changed. Close and review again.')
@@ -166,12 +221,19 @@ export function LifecycleTransactionOverlay(props: TransactionOverlayProps) {
       runtime.wallet.address?.toLowerCase() !== reviewed.owner?.toLowerCase()
     )
       return
+    analytics.result(analytics.active(), 'confirmed')
+    analytics.complete(
+      analytics.active(),
+      'success',
+      record?.settlement === 'same-chain' ? 'execution' : 'destination_settlement'
+    )
     if (service.claimEffect(flowId, 'step'))
       void callbacks.current.onStepSuccess?.(finalStep?.id ?? '', record?.source?.receipt)
     if (finalStep?.showConfetti && service.claimEffect(flowId, 'confetti')) reward()
     if (!props.deferOnAllCompleteUntilClose && (!props.deferOnAllCompleteUntilConfettiEnd || !finalStep?.showConfetti))
       complete()
   }, [
+    analytics,
     success,
     refreshing,
     props.isOpen,
@@ -196,6 +258,7 @@ export function LifecycleTransactionOverlay(props: TransactionOverlayProps) {
   const close = (): void => {
     if (success) complete()
     service.pause(flowId)
+    analytics.close()
     props.onClose()
   }
   const unresolved = view?.outcome === 'unknown' || flow?.phase === 'unknown'
@@ -324,7 +387,7 @@ export function LifecycleTransactionOverlay(props: TransactionOverlayProps) {
         unresolved ||
         isPaused ||
         needsReview ||
-        (record?.safe && !record.source) ? (
+        ((record?.safe || record?.walletBatch) && !record.source) ? (
           <Button className="w-full max-w-xs" classNameOverride="yearn--button--nextgen w-full" onClick={close}>
             {success ? 'Done' : 'Close'}
           </Button>

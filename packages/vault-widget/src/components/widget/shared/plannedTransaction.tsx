@@ -4,7 +4,7 @@ import {
   type VaultWidgetTransactionPlan,
   type VaultWidgetTransactionRequest
 } from '@yearn/vault-widget/headless'
-import { buildSafeDepositBatch } from '@yearn/vault-widget/internal/components/widget/deposit/safeDepositBatch'
+import { buildDepositBatch } from '@yearn/vault-widget/internal/components/widget/deposit/depositBatch'
 import {
   type AppUseSimulateContractReturnType,
   isRawTransactionPreparation,
@@ -141,7 +141,7 @@ export function buildEligibleStyledWidgetPlan({
 
 /** Freeze direct call inputs now; the adapter simulates each call only when its turn arrives. */
 export function buildDirectApprovalPlan(
-  params: Parameters<typeof buildSafeDepositBatch>[0] & {
+  params: Parameters<typeof buildDepositBatch>[0] & {
     id: string
     label: string
     tokenSymbol: string
@@ -163,7 +163,7 @@ export function buildDirectApprovalPlan(
     !['DIRECT_DEPOSIT', 'DIRECT_STAKE'].includes(params.routeType)
   )
     return undefined
-  const batch = buildSafeDepositBatch({ ...params, currentAllowance: 0n })
+  const batch = buildDepositBatch({ ...params, currentAllowance: 0n })
   const action = batch?.calls.at(-1)
   if (!action || !params.approvalSpenderAddress) return undefined
   return buildTransactionPlan({

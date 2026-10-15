@@ -37,6 +37,10 @@
 
 ### Install and run
 
+Use Node.js 22.22.1+ (22.x), as required by lint-staged 17, and Bun 1.4.2 or newer.
+
+The type-check and watch scripts invoke TypeScript 7 directly because the TypeScript 6 compatibility package used by boundary checks can also provide the `tsc` command.
+
 1. Run `bun install` from the repository root.
 2. Run `bun run dev` (or `bun run dev:yearn`) for Yearn at `http://localhost:3000`.
 3. Run `bun run dev:ybold` for yBOLD at `http://localhost:3002`.

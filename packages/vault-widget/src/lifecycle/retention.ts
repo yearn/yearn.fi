@@ -24,7 +24,7 @@ function resolvedAt(record: TTransactionRecord): number | undefined {
   const timestamps = [
     record.source?.observedAt,
     record.destination?.observedAt,
-    record.safe?.execution?.observedAt
+    (record.safe ?? record.walletBatch)?.execution?.observedAt
   ].filter((value): value is number => value !== undefined)
   return timestamps.length && timestamps.every((value) => Number.isFinite(value) && value > 0)
     ? Math.max(...timestamps)

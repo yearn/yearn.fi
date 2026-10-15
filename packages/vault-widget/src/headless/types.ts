@@ -60,6 +60,8 @@ export type VaultWidgetSafeProposalStep = {
   requests: readonly VaultWidgetTransactionRequest[]
 }
 
+export type TAtomicBatchStep = Omit<VaultWidgetSafeProposalStep, 'kind'> & { kind: 'atomic-batch' }
+
 export type TPermitStep = {
   id: string
   kind: 'permit'
@@ -68,7 +70,7 @@ export type TPermitStep = {
   data: TypedDataDefinition
 }
 export type TDeferredStep = { id: string; kind: 'prepare'; label: string; chainId: number }
-export type TPreparedStep = VaultWidgetRequestStep | VaultWidgetSafeProposalStep | TPermitStep
+export type TPreparedStep = VaultWidgetRequestStep | VaultWidgetSafeProposalStep | TAtomicBatchStep | TPermitStep
 export type TSafeExecution = { status: 'pending' | 'success' | 'failed' | 'cancelled'; hash?: Hash }
 
 export type VaultWidgetRefreshStep = {
@@ -81,6 +83,7 @@ export type VaultWidgetExecutionStep =
   | VaultWidgetSwitchChainStep
   | VaultWidgetRequestStep
   | VaultWidgetSafeProposalStep
+  | TAtomicBatchStep
   | VaultWidgetRefreshStep
   | TPermitStep
   | TDeferredStep
@@ -96,6 +99,7 @@ export type VaultWidgetPlanSubmission = {
   stepId: string
   chainId: number
   proposalId?: Hex
+  bundleId?: Hex
   hash?: Hash
   receipt?: TransactionReceipt
   replacement?: VaultWidgetTransactionReplacement
@@ -147,6 +151,13 @@ export type VaultWidgetExecutionAdapter = {
     beforeSubmit?: () => void
   }) => Promise<Hex>
   waitForSafeExecution?: (params: { chainId: number; proposalId: Hex }) => Promise<Hash>
+  submitAtomicBatch?: VaultWidgetExecutionAdapter['proposeSafeBatch']
+  observeAtomicExecution?: (params: {
+    chainId: number
+    executionChainId: number
+    bundleId: Hex
+  }) => Promise<TSafeExecution>
+  waitForAtomicExecution?: (params: { chainId: number; bundleId: Hex }) => Promise<Hash>
 }
 
 type VaultWidgetPlanExecutionProgress = {
@@ -162,11 +173,11 @@ export type VaultWidgetPlanExecutionState =
     })
   | (VaultWidgetPlanExecutionProgress & {
       status: 'pending'
-      step: VaultWidgetRequestStep | VaultWidgetSafeProposalStep
+      step: VaultWidgetRequestStep | VaultWidgetSafeProposalStep | TAtomicBatchStep
     })
   | (VaultWidgetPlanExecutionProgress & {
       status: 'submitted'
-      step: VaultWidgetSafeProposalStep
+      step: VaultWidgetSafeProposalStep | TAtomicBatchStep
     })
   | (VaultWidgetPlanExecutionProgress & {
       status: 'refreshing'

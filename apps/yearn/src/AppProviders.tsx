@@ -1,6 +1,8 @@
 'use client'
 
 import { IframeAutoConnect } from '@components/IframeAutoConnect'
+import { usePlausible } from '@hooks/usePlausible'
+import { useThemePreference } from '@hooks/useThemePreference'
 import { AppSettingsContextApp } from '@pages/vaults/contexts/useAppSettings'
 import { EnsoStatusProvider } from '@pages/vaults/contexts/useEnsoStatus'
 import { RainbowKitProvider } from '@rainbow-me/rainbowkit'
@@ -8,6 +10,7 @@ import { ChartStyleContextApp } from '@shared/contexts/useChartStyle'
 import { WithNotifications } from '@shared/contexts/useNotifications'
 import { TenderlyPanelProvider } from '@shared/contexts/useTenderlyPanel'
 import { WalletContextApp } from '@shared/contexts/useWallet'
+import { WalletVaultTotalsProvider } from '@shared/contexts/useWalletVaultTotals'
 import { Web3ContextApp } from '@shared/contexts/useWeb3'
 import { YearnContextApp } from '@shared/contexts/useYearn'
 import { WithTokenList } from '@shared/contexts/WithTokenList'
@@ -17,14 +20,16 @@ import { IconAlertError } from '@shared/icons/IconAlertError'
 import { IconCheckmark } from '@shared/icons/IconCheckmark'
 import { isIframe } from '@shared/utils/helpers'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { getYearnRainbowTheme, WalletDrawerProvider, WalletProvider } from '@yearn/wallet-ui'
+import type { TWalletAnalytics } from '@yearn/wallet-ui/analytics'
 import { usePathname } from 'next/navigation'
 import type { ReactElement, ReactNode } from 'react'
-import { useState } from 'react'
+import { useCallback, useState } from 'react'
 import { Toaster } from 'react-hot-toast'
-import { WagmiProvider } from 'wagmi'
 import { AppClientEffects } from '@/AppClientEffects'
 import { shouldLoadAppTokenLists } from '@/appRouteDataLoading'
 import { TenderlyControlPanel } from '@/components/shared/components/TenderlyControlPanel'
+import { AGENT_WALLET_ID } from '@/config/agentWallet'
 import { wagmiConfig } from '@/config/wagmi'
 import { ChainsProvider } from '@/context/ChainsProvider'
 
@@ -34,6 +39,8 @@ if (!bigintPrototype.toJSON) {
     return this.toString()
   }
 }
+
+const additionalConnectorIds = [AGENT_WALLET_ID]
 
 const appTokenLists = [
   'https://cdn.jsdelivr.net/gh/yearn/tokenLists@main/lists/yearn.json',
@@ -53,37 +60,54 @@ function TokenListGate({ children }: { children: ReactElement }): ReactElement {
 
 export function AppProviders({ children }: { children: ReactNode }): ReactElement {
   const [queryClient] = useState(() => new QueryClient())
+  const themePreference = useThemePreference()
+  const track = usePlausible()
+  const onWalletAnalytics = useCallback<TWalletAnalytics>(
+    (event, props) => {
+      track(event, { props: { ...props, app: 'yearn' } })
+    },
+    [track]
+  )
 
   return (
-    <WagmiProvider config={wagmiConfig} reconnectOnMount={!isIframe()}>
+    <WalletProvider config={wagmiConfig} reconnectOnMount={!isIframe()}>
       <QueryClientProvider client={queryClient}>
         <ChainsProvider>
-          <RainbowKitProvider>
-            <IframeAutoConnect>
-              <Web3ContextApp>
-                <TokenListGate>
-                  <AppSettingsContextApp>
-                    <EnsoStatusProvider>
-                      <ChartStyleContextApp>
-                        <YearnContextApp>
-                          <WalletContextApp>
-                            <YearnTransactionLifecycleProvider>
-                              <WithNotifications>
-                                <TenderlyPanelProvider>
-                                  <AppClientEffects />
-                                  {children}
-                                  <TenderlyControlPanel />
-                                </TenderlyPanelProvider>
-                              </WithNotifications>
-                            </YearnTransactionLifecycleProvider>
-                          </WalletContextApp>
-                        </YearnContextApp>
-                      </ChartStyleContextApp>
-                    </EnsoStatusProvider>
-                  </AppSettingsContextApp>
-                </TokenListGate>
-              </Web3ContextApp>
-            </IframeAutoConnect>
+          <RainbowKitProvider theme={getYearnRainbowTheme(themePreference === 'light' ? 'light' : 'dark')}>
+            <WalletDrawerProvider
+              onAnalytics={onWalletAnalytics}
+              additionalConnectorIds={additionalConnectorIds}
+              desktopTop="calc(var(--header-height) + 0.5rem)"
+              desktopRight="max(1rem,calc((100vw - 1232px)/2 + 1rem))"
+            >
+              <IframeAutoConnect>
+                <Web3ContextApp>
+                  <TokenListGate>
+                    <AppSettingsContextApp>
+                      <EnsoStatusProvider>
+                        <ChartStyleContextApp>
+                          <YearnContextApp>
+                            <WalletContextApp>
+                              <WalletVaultTotalsProvider>
+                                <YearnTransactionLifecycleProvider>
+                                  <WithNotifications>
+                                    <TenderlyPanelProvider>
+                                      <AppClientEffects />
+                                      {children}
+                                      <TenderlyControlPanel />
+                                    </TenderlyPanelProvider>
+                                  </WithNotifications>
+                                </YearnTransactionLifecycleProvider>
+                              </WalletVaultTotalsProvider>
+                            </WalletContextApp>
+                          </YearnContextApp>
+                        </ChartStyleContextApp>
+                      </EnsoStatusProvider>
+                    </AppSettingsContextApp>
+                  </TokenListGate>
+                </Web3ContextApp>
+              </IframeAutoConnect>
+            </WalletDrawerProvider>
           </RainbowKitProvider>
         </ChainsProvider>
       </QueryClientProvider>
@@ -114,6 +138,6 @@ export function AppProviders({ children }: { children: ReactNode }): ReactElemen
         position={'bottom-right'}
         containerStyle={{ maxWidth: 'calc(100vw - 32px)', width: '100%' }}
       />
-    </WagmiProvider>
+    </WalletProvider>
   )
 }
