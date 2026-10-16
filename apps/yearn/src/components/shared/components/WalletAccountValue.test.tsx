@@ -77,11 +77,11 @@ it('allows disconnect while values are loading and resets settings when reopened
   expect(wallet.disconnect).toHaveBeenCalledTimes(1)
   expect(onClose).toHaveBeenCalledTimes(1)
   fireEvent.click(screen.getByRole('button', { name: 'Wallet settings' }))
-  expect(screen.getByRole('button', { name: 'Back to account' })).toBeDefined()
+  expect(screen.getByRole('button', { name: 'Back to wallet' })).toBeDefined()
   view.rerender(<AccountDropdown isOpen={false} onClose={onClose} />)
   view.rerender(<AccountDropdown isOpen onClose={onClose} />)
   expect(screen.getByRole('button', { name: 'View portfolio' })).toBeDefined()
-  expect(screen.queryByRole('button', { name: 'Back to account' })).toBeNull()
+  expect(screen.queryByRole('button', { name: 'Back to wallet' })).toBeNull()
 })
 
 it('rounds the whole wallet amount before separating cents', () => {

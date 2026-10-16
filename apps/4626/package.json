@@ -23,7 +23,8 @@
     "viem": "2.56.9",
     "wagmi": "2.18.2",
     "@safe-global/safe-apps-sdk": "9.1.0",
-    "@yearn/site-header": "workspace:*"
+    "@yearn/site-header": "workspace:*",
+    "@yearn/wallet-ui": "workspace:*"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.14",

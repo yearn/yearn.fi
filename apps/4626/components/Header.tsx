@@ -1,7 +1,6 @@
 'use client'
 
-import { WalletAccountContent, WalletAccountDropdown } from '@erc4626/components/WalletAccount'
-import { ConnectButton } from '@rainbow-me/rainbowkit'
+import { WalletAccountDropdown } from '@erc4626/components/WalletAccount'
 import { SiteHeader } from '@yearn/site-header'
 import { IconBurgerPlain } from '@yearn/site-header/icons/IconBurgerPlain'
 import { IconMoon } from '@yearn/site-header/icons/IconMoon'
@@ -9,37 +8,51 @@ import { IconSun } from '@yearn/site-header/icons/IconSun'
 import { IconWallet } from '@yearn/site-header/icons/IconWallet'
 import { HeaderNavMenu } from '@yearn/site-header/navigation'
 import { setThemePreference, useThemePreference } from '@yearn/site-header/theme'
+import { formatWalletAddress, useWalletDrawer } from '@yearn/wallet-ui'
 import { useRef, useState } from 'react'
 import { useAccount } from 'wagmi'
 
 const siteBaseUrl = 'https://yearn.fi'
 const linkClass = 'text-base font-medium text-text-secondary transition-colors hover:text-text-primary'
 
-function WalletButton({ onOpen, onAccountOpen }: { onOpen?: () => void; onAccountOpen: () => void }) {
+function WalletButton({
+  onOpen,
+  onAccountOpen,
+  isAccountOpen
+}: {
+  onOpen?: () => void
+  onAccountOpen: () => void
+  isAccountOpen: boolean
+}) {
+  const { address, isConnected } = useAccount()
+  const { openWalletDrawer, dialogId, isOpen } = useWalletDrawer()
+  const identity = isConnected && address ? formatWalletAddress(address) : undefined
   return (
-    <ConnectButton.Custom>
-      {({ account, mounted, openConnectModal }) => (
-        <button
-          type="button"
-          disabled={!mounted}
-          onClick={() => {
-            if (account) onAccountOpen()
-            else {
-              onOpen?.()
-              openConnectModal()
-            }
-          }}
-          className={
-            account
-              ? 'inline-flex items-center gap-2 rounded-lg bg-surface-secondary px-3 py-1.5 text-sm text-text-secondary'
-              : 'inline-flex h-8 items-center justify-center gap-2 rounded-lg bg-text-primary px-3 text-xs text-surface transition-opacity hover:opacity-90'
-          }
-        >
-          <IconWallet className="size-4" />
-          {mounted && account ? account.displayName : 'Connect wallet'}
-        </button>
-      )}
-    </ConnectButton.Custom>
+    <button
+      type="button"
+      data-wallet-entry="header"
+      data-wallet-drawer-trigger={!isConnected || undefined}
+      data-wallet-account-trigger={isConnected || undefined}
+      aria-controls={isConnected ? 'erc4626-wallet-account' : dialogId}
+      aria-expanded={isConnected ? isAccountOpen : isOpen}
+      aria-haspopup="dialog"
+      aria-label={identity ? `Open wallet account ${identity}` : 'Connect wallet'}
+      onClick={() => {
+        if (isConnected) onAccountOpen()
+        else {
+          onOpen?.()
+          openWalletDrawer()
+        }
+      }}
+      className={
+        identity
+          ? 'inline-flex items-center gap-2 rounded-lg bg-surface-secondary px-3 py-1.5 text-sm text-text-secondary'
+          : 'inline-flex h-8 items-center justify-center gap-2 rounded-lg bg-text-primary px-3 text-xs text-surface transition-opacity hover:opacity-90'
+      }
+    >
+      <IconWallet className="size-4" />
+      {identity ?? 'Connect wallet'}
+    </button>
   )
 }
 
@@ -50,10 +63,8 @@ export function Header() {
 
 function HeaderContent() {
   const isDarkTheme = useThemePreference() !== 'light'
-  const accountTrigger = useRef<HTMLDivElement>(null)
   const mobileMenu = useRef<HTMLDialogElement>(null)
   const [isAccountOpen, setIsAccountOpen] = useState(false)
-  const [mobileWallet, setMobileWallet] = useState(false)
   const themeButton = (
     <button
       type="button"
@@ -85,19 +96,13 @@ function HeaderContent() {
               {links}
             </nav>
             {themeButton}
-            <div ref={accountTrigger} className="relative" onMouseDown={(event) => event.stopPropagation()}>
-              <WalletButton onAccountOpen={() => setIsAccountOpen((open) => !open)} />
-              <WalletAccountDropdown
-                triggerRef={accountTrigger}
-                isOpen={isAccountOpen}
-                onClose={() => setIsAccountOpen(false)}
-              />
-            </div>
+            <WalletButton isAccountOpen={isAccountOpen} onAccountOpen={() => setIsAccountOpen((open) => !open)} />
           </div>
           <button
             type="button"
             className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2.5 text-text-primary hover:bg-surface-secondary md:hidden"
             onClick={() => mobileMenu.current?.showModal()}
+            data-mobile-nav-trigger
             aria-label="Open navigation menu"
           >
             <IconBurgerPlain className="size-6" />
@@ -105,14 +110,14 @@ function HeaderContent() {
         </>
       }
     >
+      <WalletAccountDropdown isOpen={isAccountOpen} onClose={() => setIsAccountOpen(false)} />
       <dialog
         ref={mobileMenu}
-        aria-label={mobileWallet ? 'Wallet account' : 'Navigation menu'}
-        onClose={() => setMobileWallet(false)}
+        aria-label="Navigation menu"
         className="fixed inset-x-0 top-0 m-0 max-h-dvh w-full max-w-none overflow-y-auto border-b border-border bg-app p-5 text-text-primary backdrop:bg-black/40"
       >
         <div className="sticky -top-5 z-10 -mx-5 -mt-5 mb-5 flex items-center justify-between bg-app px-5 pt-5">
-          <span className="text-lg font-semibold">{mobileWallet ? 'Wallet' : 'Menu'}</span>
+          <span className="text-lg font-semibold">Menu</span>
           <button
             type="button"
             onClick={() => mobileMenu.current?.close()}
@@ -122,20 +127,21 @@ function HeaderContent() {
             ×
           </button>
         </div>
-        {mobileWallet ? (
-          <WalletAccountContent onClose={() => mobileMenu.current?.close()} />
-        ) : (
-          <>
-            <nav aria-label="Yearn mobile" className="flex flex-col gap-5">
-              {links}
-              <HeaderNavMenu inline isHomePage={false} isDarkTheme={isDarkTheme} siteBaseUrl={siteBaseUrl} />
-            </nav>
-            <div className="mt-6 flex items-center justify-between border-t border-border pt-4">
-              <WalletButton onOpen={() => mobileMenu.current?.close()} onAccountOpen={() => setMobileWallet(true)} />
-              {themeButton}
-            </div>
-          </>
-        )}
+        <nav aria-label="Yearn mobile" className="flex flex-col gap-5">
+          {links}
+          <HeaderNavMenu inline isHomePage={false} isDarkTheme={isDarkTheme} siteBaseUrl={siteBaseUrl} />
+        </nav>
+        <div className="mt-6 flex items-center justify-between border-t border-border pt-4">
+          <WalletButton
+            isAccountOpen={isAccountOpen}
+            onOpen={() => mobileMenu.current?.close()}
+            onAccountOpen={() => {
+              mobileMenu.current?.close()
+              setIsAccountOpen(true)
+            }}
+          />
+          {themeButton}
+        </div>
       </dialog>
     </SiteHeader>
   )

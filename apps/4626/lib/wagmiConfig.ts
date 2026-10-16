@@ -1,7 +1,11 @@
 import { SUPPORTED_CHAINS } from '@erc4626/lib/chains'
 import { connectorsForWallets, getDefaultConfig } from '@rainbow-me/rainbowkit'
 import { injectedWallet, safeWallet } from '@rainbow-me/rainbowkit/wallets'
+import { deduplicateWalletAnnouncements } from '@yearn/wallet-ui/discovery'
+import { getYearnWallets } from '@yearn/wallet-ui/rainbowkit'
 import { type Config, createConfig, http } from 'wagmi'
+
+deduplicateWalletAnnouncements()
 
 const transports = {
   1: http(process.env.NEXT_PUBLIC_RPC_ETHEREUM || 'https://ethereum-rpc.publicnode.com'),
@@ -16,6 +20,7 @@ export const wagmiConfig: Config = projectId
   ? getDefaultConfig({
       appName: 'Yearn ERC-4626',
       projectId,
+      wallets: getYearnWallets(),
       chains: SUPPORTED_CHAINS,
       transports,
       ssr: true

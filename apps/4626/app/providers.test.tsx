@@ -15,13 +15,15 @@ vi.mock('@yearn/vault-widget', async () => {
 })
 vi.mock('@yearn/site-header/theme', () => ({ useThemePreference: () => 'light' }))
 vi.mock('@rainbow-me/rainbowkit', () => ({
-  RainbowKitProvider: ({ children }: { children: ReactNode }) => children,
-  useConnectModal: () => ({}),
-  darkTheme: () => ({}),
-  lightTheme: () => ({})
+  RainbowKitProvider: ({ children }: { children: ReactNode }) => children
 }))
+vi.mock('@yearn/wallet-ui', () => ({
+  WalletProvider: ({ children }: { children: ReactNode }) => children,
+  WalletDrawerProvider: ({ children }: { children: ReactNode }) => children,
+  useWalletDrawer: () => ({ openWalletDrawer: vi.fn(), isConnecting: false })
+}))
+vi.mock('@yearn/wallet-ui/rainbowkit', () => ({ getYearnRainbowTheme: () => ({}) }))
 vi.mock('wagmi', () => ({
-  WagmiProvider: ({ children }: { children: ReactNode }) => children,
   useAccount: () => ({ address: '0x1111111111111111111111111111111111111111', isConnected: true, chainId: 1 }),
   usePublicClient: () => ({ waitForTransactionReceipt: mocks.waitForReceipt }),
   useWaitForTransactionReceipt: () => ({})

@@ -2,13 +2,13 @@
 
 import { useWalletActivity } from '@erc4626/components/WalletActivity'
 import { useChainModal } from '@rainbow-me/rainbowkit'
-import { AccountDropdown, AccountMenu, type TAccountMenuData } from '@yearn/site-header/account'
-import type { RefObject } from 'react'
-import { useAccount, useDisconnect } from 'wagmi'
+import { AccountMenu, type TAccountMenuData } from '@yearn/site-header/account'
+import { useWalletDisconnect, WalletSurface } from '@yearn/wallet-ui'
+import { useAccount } from 'wagmi'
 
 function useWalletAccount(onClose: () => void): TAccountMenuData {
   const { address, chain } = useAccount()
-  const { disconnect } = useDisconnect()
+  const { disconnect } = useWalletDisconnect()
   const { openChainModal } = useChainModal()
   const activity = useWalletActivity()
   return {
@@ -43,17 +43,21 @@ function useWalletAccount(onClose: () => void): TAccountMenuData {
   }
 }
 
-export function WalletAccountDropdown({
-  isOpen,
-  onClose,
-  triggerRef
-}: {
-  isOpen: boolean
-  onClose: () => void
-  triggerRef?: RefObject<HTMLElement | null>
-}) {
-  const account = useWalletAccount(onClose)
-  return <AccountDropdown isOpen={isOpen} onClose={onClose} triggerRef={triggerRef} account={account} />
+export function WalletAccountDropdown({ isOpen, onClose }: { isOpen: boolean; onClose: () => void }) {
+  const { address, isConnected } = useAccount()
+  return (
+    <WalletSurface
+      isOpen={isOpen && isConnected}
+      onClose={onClose}
+      dialogId="erc4626-wallet-account"
+      title="Wallet"
+      triggerSelector="[data-wallet-account-trigger], [data-mobile-nav-trigger]"
+      desktopTop="calc(var(--header-height) + 0.5rem)"
+      desktopRight="max(1rem, calc((100vw - 1232px) / 2 + 1rem))"
+    >
+      {isOpen && isConnected && <WalletAccountContent key={address} onClose={onClose} />}
+    </WalletSurface>
+  )
 }
 
 export function WalletAccountContent({ onClose }: { onClose: () => void }) {
