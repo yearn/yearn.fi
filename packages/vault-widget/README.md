@@ -42,6 +42,13 @@ The yBOLD preset pins the reviewed Ethereum contracts, forces staked deposits an
 
 When `prices.spotPriceEndpoint` is supplied, the package requests Yearn-compatible spot-price data for the currently selected deposit and withdrawal tokens. It retains `prices.getUsdPrice` as a synchronous fallback.
 
+For a custom vault, use the public `useVaultUserData` hook with its vault and
+asset addresses and pass the result to `VaultWidget`. Hosts can set
+`VaultWidgetVault.withdrawMaxLossBps` (0–10,000) to request the explicit
+four-argument direct ERC-4626 withdraw/redeem overload. A value of `0n` rejects
+withdrawal execution losses; omitting it preserves the standard three-argument
+overload. This policy applies to direct withdrawals, not external zap routes.
+
 ## Ownership boundary
 
 The package owns the reusable UI, deposit/withdraw transaction flows, reusable hooks, contract definitions, types, presets, and CSS. It may depend on other packages, but it must not import `apps/yearn`, `apps/ybold`, host aliases, or any file outside `packages/vault-widget`.

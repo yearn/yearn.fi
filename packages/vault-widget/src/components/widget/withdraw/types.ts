@@ -19,6 +19,7 @@ export interface WithdrawWidgetProps {
   vaultSymbol: string
   stakingSource?: string
   vaultVersion?: string
+  maxLossBps?: bigint
   isVaultRetired?: boolean
   vaultUserData: VaultUserData
   inputBalanceOverride?: bigint

@@ -103,3 +103,5 @@ export function YBoldVaultWidget({ apy = 0, className, onSuccess }: YBoldVaultWi
     </VaultWidgetRuntimeProvider>
   )
 }
+
+export { useVaultUserData } from '@yearn/vault-widget/internal/hooks/useVaultUserData'

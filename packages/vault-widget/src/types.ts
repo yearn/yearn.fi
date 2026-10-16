@@ -83,6 +83,8 @@ export type VaultWidgetVault = {
   name: string
   asset: VaultWidgetAsset
   forwardAPR: number
+  /** Explicit loss limit for direct ERC-4626 withdrawals, in basis points (0–10,000). */
+  withdrawMaxLossBps?: bigint
   staking?: VaultWidgetStaking
   migration?: VaultWidgetMigration
   isRetired: boolean

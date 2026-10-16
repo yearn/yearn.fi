@@ -110,6 +110,7 @@ export function WidgetWithdraw({
   vaultSymbol,
   stakingSource,
   vaultVersion,
+  maxLossBps,
   vaultUserData,
   inputBalanceOverride,
   inputDisplayBalanceOverride,
@@ -397,7 +398,8 @@ export function WidgetWithdraw({
     withdrawalSource,
     isUnstake,
     isDebouncing: disableFlow ? false : withdrawAmount.isDebouncing,
-    useErc4626: usesErc4626
+    useErc4626: usesErc4626,
+    maxLossBps
   })
   const effectiveDirectWithdrawPrepare = blockDirectWithdrawStep
     ? undefined

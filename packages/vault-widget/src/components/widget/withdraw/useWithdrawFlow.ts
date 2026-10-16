@@ -54,6 +54,7 @@ interface UseWithdrawFlowProps {
   isUnstake: boolean
   isDebouncing: boolean
   useErc4626: boolean
+  maxLossBps?: bigint
 }
 
 export interface WithdrawFlowResult {
@@ -92,7 +93,8 @@ export function useWithdrawFlow({
   withdrawalSource,
   isUnstake,
   isDebouncing,
-  useErc4626
+  useErc4626,
+  maxLossBps
 }: UseWithdrawFlowProps): WithdrawFlowResult {
   const routeType = useWithdrawRoute({
     vaultAddress,
@@ -188,7 +190,8 @@ export function useWithdrawFlow({
     chainId,
     vaultDecimals,
     enabled: directWithdrawEnabled,
-    useErc4626
+    useErc4626,
+    maxLossBps
   })
 
   const yvUsdLockedZapWithdraw = useYvUsdLockedZapWithdraw({
