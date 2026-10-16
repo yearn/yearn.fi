@@ -20,6 +20,7 @@ export interface WithdrawWidgetProps {
   stakingSource?: string
   vaultVersion?: string
   maxLossBps?: bigint
+  contractKind?: 'erc4626' | 'yearn-v2'
   isVaultRetired?: boolean
   vaultUserData: VaultUserData
   inputBalanceOverride?: bigint

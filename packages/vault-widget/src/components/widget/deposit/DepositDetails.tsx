@@ -3,6 +3,8 @@ import { formatWidgetAllowance, formatWidgetValue } from '../shared/valueDisplay
 import type { DepositRouteType } from './types'
 
 interface DepositDetailsProps {
+  showAnnualReturn?: boolean
+  showShareValue?: boolean
   // Deposit amount info
   depositAmountBn: bigint
   inputTokenSymbol?: string
@@ -47,6 +49,9 @@ interface DepositDetailsProps {
 }
 
 export const DepositDetails: FC<DepositDetailsProps> = ({
+  showAnnualReturn = true,
+  showShareValue = true,
+  assetUsdPrice,
   depositAmountBn,
   inputTokenSymbol,
   inputTokenDecimals,
@@ -175,30 +180,31 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
         </div>
 
         {/* Vault share value in underlying asset */}
-        <div className="flex items-center justify-between h-5">
-          <button
-            type="button"
-            onClick={onShowVaultShareValueModal}
-            className="text-sm text-text-secondary hover:text-text-primary transition-colors yearn--link-dots"
-          >
-            Vault share value
-          </button>
-          <p className={`text-sm ${shouldUseHighlight ? 'text-red-500' : 'text-text-primary'}`}>
-            {isLoadingQuote ? (
-              <span className="inline-block h-4 w-24 bg-surface-secondary rounded animate-pulse" />
-            ) : (
-              <>
-                <span className="font-semibold">{vaultShareValueDisplay}</span>{' '}
-                <span className="font-normal">{`${assetTokenSymbol || ''} (`}</span>
-                <span className="font-normal">{`$${vaultShareValueUsd}`}</span>
-                <span className="font-normal">{')'}</span>
-                {shouldUseHighlight && (
-                  <span className="font-semibold">{` (-${priceImpactPercentage.toFixed(2)}%)`}</span>
-                )}
-              </>
-            )}
-          </p>
-        </div>
+        {showShareValue && (
+          <div className="flex items-center justify-between h-5">
+            <button
+              type="button"
+              onClick={onShowVaultShareValueModal}
+              className="text-sm text-text-secondary hover:text-text-primary transition-colors yearn--link-dots"
+            >
+              Vault share value
+            </button>
+            <p className={`text-sm ${shouldUseHighlight ? 'text-red-500' : 'text-text-primary'}`}>
+              {isLoadingQuote ? (
+                <span className="inline-block h-4 w-24 bg-surface-secondary rounded animate-pulse" />
+              ) : (
+                <>
+                  <span className="font-semibold">{vaultShareValueDisplay}</span>{' '}
+                  <span className="font-normal">{assetTokenSymbol || ''}</span>
+                  {assetUsdPrice > 0 && <span className="font-normal">{` ($${vaultShareValueUsd})`}</span>}
+                  {shouldUseHighlight && (
+                    <span className="font-semibold">{` (-${priceImpactPercentage.toFixed(2)}%)`}</span>
+                  )}
+                </>
+              )}
+            </p>
+          </div>
+        )}
 
         {shouldShowWorstCasePriceImpact && (
           <div className="flex items-center justify-between h-5">
@@ -218,21 +224,23 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
         )}
 
         {/* Est. Annual Return */}
-        <div className="flex items-center justify-between h-5">
-          <button
-            type="button"
-            onClick={onShowAnnualReturnModal}
-            className="text-sm text-text-secondary hover:text-text-primary transition-colors yearn--link-dots"
-          >
-            Est. Annual Return
-          </button>
-          <p className="text-sm text-text-primary">
-            <span className="font-semibold">
-              {depositAmountBn > 0n ? formatWidgetValue(estimatedAnnualReturn) : '0'}
-            </span>{' '}
-            <span className="font-normal">{inputTokenSymbol}</span>
-          </p>
-        </div>
+        {showAnnualReturn && (
+          <div className="flex items-center justify-between h-5">
+            <button
+              type="button"
+              onClick={onShowAnnualReturnModal}
+              className="text-sm text-text-secondary hover:text-text-primary transition-colors yearn--link-dots"
+            >
+              Est. Annual Return
+            </button>
+            <p className="text-sm text-text-primary">
+              <span className="font-semibold">
+                {depositAmountBn > 0n ? formatWidgetValue(estimatedAnnualReturn) : '0'}
+              </span>{' '}
+              <span className="font-normal">{inputTokenSymbol}</span>
+            </p>
+          </div>
+        )}
 
         {/* Approved allowance */}
         {shouldShowAllowanceRow && (

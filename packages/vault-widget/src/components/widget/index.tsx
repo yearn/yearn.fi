@@ -111,6 +111,7 @@ export const Widget = forwardRef<VaultWidgetRef, VaultWidgetProps>(function Widg
             stakingSource={currentVault.staking?.source}
             vaultVersion={currentVault.version}
             maxLossBps={currentVault.withdrawMaxLossBps}
+            contractKind={currentVault.contractKind}
             isVaultRetired={currentVault.isRetired}
             vaultUserData={vaultUserData}
             handleWithdrawSuccess={handleSuccess}

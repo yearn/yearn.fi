@@ -1,6 +1,5 @@
 {
   "lockfileVersion": 1,
-  "configVersion": 1,
   "workspaces": {
     "": {
       "name": "yearn-workspace",
@@ -12,6 +11,37 @@
         "husky": "9.1.7",
         "lint-staged": "17.6.0",
         "next": "16.4.1",
+        "typescript": "7.0.2",
+        "vitest": "4.1.11",
+      },
+    },
+    "apps/4626": {
+      "name": "@yearn/4626",
+      "version": "0.1.0",
+      "dependencies": {
+        "@rainbow-me/rainbowkit": "2.2.11",
+        "@safe-global/safe-apps-sdk": "9.1.0",
+        "@tanstack/react-query": "5.103.2",
+        "@wagmi/core": "2.22.1",
+        "@yearn/site-header": "workspace:*",
+        "@yearn/vault-widget": "workspace:*",
+        "next": "16.4.1",
+        "react": "19.3.0",
+        "react-dom": "19.3.0",
+        "react-rewards": "2.1.0",
+        "viem": "2.56.9",
+        "wagmi": "2.18.2",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "2.5.14",
+        "@tailwindcss/postcss": "4.3.3",
+        "@testing-library/react": "16.3.3",
+        "@types/node": "26.6.3",
+        "@types/react": "19.3.0",
+        "@types/react-dom": "19.3.0",
+        "jsdom": "29.1.1",
+        "postcss": "8.5.28",
+        "tailwindcss": "4.3.3",
         "typescript": "7.0.2",
         "vitest": "4.1.11",
       },
@@ -62,6 +92,7 @@
         "@tanstack/react-virtual": "3.14.13",
         "@upstash/redis": "1.39.0",
         "@wagmi/core": "2.22.1",
+        "@yearn/site-header": "workspace:*",
         "@yearn/vault-widget": "workspace:*",
         "@yearn/wallet-ui": "workspace:*",
         "dayjs": "1.11.23",
@@ -116,6 +147,18 @@
         "postcss": "8.5.28",
         "tailwindcss": "4.3.3",
         "typescript": "7.0.2",
+      },
+    },
+    "packages/site-header": {
+      "name": "@yearn/site-header",
+      "version": "0.0.0",
+      "devDependencies": {
+        "@types/react": "19.3.0",
+        "typescript": "7.0.2",
+      },
+      "peerDependencies": {
+        "next": "16.4.1",
+        "react": "19.3.0",
       },
     },
     "packages/vault-widget": {
@@ -676,6 +719,10 @@
     "@walletconnect/window-getters": ["@walletconnect/window-getters@1.0.1", "", { "dependencies": { "tslib": "1.14.1" } }, "sha512-vHp+HqzGxORPAN8gY03qnbTMnhqIwjeRJNOMOAzePRg4xVEEE2WvYsI9G2NMjOknA8hnuYbU3/hwLcKbjhc8+Q=="],
 
     "@walletconnect/window-metadata": ["@walletconnect/window-metadata@1.0.1", "", { "dependencies": { "@walletconnect/window-getters": "^1.0.1", "tslib": "1.14.1" } }, "sha512-9koTqyGrM2cqFRW517BPY/iEtUDx2r1+Pwwu5m7sJ7ka79wi3EyqhqcICk/yDmv6jAS1rjKgTKXlEhanYjijcA=="],
+
+    "@yearn/4626": ["@yearn/4626@workspace:apps/4626"],
+
+    "@yearn/site-header": ["@yearn/site-header@workspace:packages/site-header"],
 
     "@yearn/vault-widget": ["@yearn/vault-widget@workspace:packages/vault-widget"],
 
