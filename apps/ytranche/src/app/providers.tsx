@@ -1,9 +1,13 @@
 'use client'
 
 import '@rainbow-me/rainbowkit/styles.css'
-import { RainbowKitProvider, useAccountModal } from '@rainbow-me/rainbowkit'
+import { RainbowKitProvider } from '@rainbow-me/rainbowkit'
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query'
-import { type VaultWidgetRuntimeOverrides, VaultWidgetRuntimeProvider } from '@yearn/vault-widget'
+import {
+  DEFAULT_YEARN_ASSETS_BASE_URI,
+  type VaultWidgetRuntimeOverrides,
+  VaultWidgetRuntimeProvider
+} from '@yearn/vault-widget'
 import { createWagmiVaultWidgetExecutionAdapter } from '@yearn/vault-widget/wagmi'
 import { useWalletDrawer, WalletDrawerProvider, WalletProvider } from '@yearn/wallet-ui'
 import { getYearnRainbowTheme } from '@yearn/wallet-ui/rainbowkit'
@@ -12,17 +16,21 @@ import { useAccount } from 'wagmi'
 import { useThemePreference } from '@/lib/theme'
 import { wagmiConfig } from '@/lib/wagmi'
 
+const YEARN_ASSETS_BASE_URI = process.env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI || DEFAULT_YEARN_ASSETS_BASE_URI
 const resolveExecutionChainId = (chainId: number | undefined) => (chainId === 1 ? 1 : undefined)
 const execution = createWagmiVaultWidgetExecutionAdapter({ config: wagmiConfig, resolveExecutionChainId })
 
 function WidgetHostProvider({ children }: { children: ReactNode }) {
-  const { address, chainId, connector, status } = useAccount()
+  const { address, chainId, connector, isConnected } = useAccount()
   const { openWalletDrawer, isConnecting } = useWalletDrawer()
-  const { openAccountModal } = useAccountModal()
   const queryClient = useQueryClient()
   const [slippagePercent, setSlippagePercent] = useState(0)
   const runtime = useMemo<VaultWidgetRuntimeOverrides>(
     () => ({
+      assets: {
+        baseUri: YEARN_ASSETS_BASE_URI,
+        isDevelopment: process.env.NODE_ENV === 'development'
+      },
       chains: {
         getChain: (id) =>
           id === 1 ? { id: 1, name: 'Ethereum', blockExplorerUrl: 'https://etherscan.io' } : undefined,
@@ -37,23 +45,13 @@ function WidgetHostProvider({ children }: { children: ReactNode }) {
       wallet: {
         address,
         chainId,
-        connected: status === 'connected',
+        connected: isConnected,
         connecting: isConnecting,
-        open: status === 'connected' ? (openAccountModal ?? openWalletDrawer) : openWalletDrawer,
+        open: openWalletDrawer,
         refresh: () => queryClient.invalidateQueries()
       }
     }),
-    [
-      address,
-      chainId,
-      connector,
-      isConnecting,
-      openAccountModal,
-      openWalletDrawer,
-      queryClient,
-      slippagePercent,
-      status
-    ]
+    [address, chainId, connector, isConnecting, isConnected, openWalletDrawer, queryClient, slippagePercent]
   )
   return <VaultWidgetRuntimeProvider value={runtime}>{children}</VaultWidgetRuntimeProvider>
 }

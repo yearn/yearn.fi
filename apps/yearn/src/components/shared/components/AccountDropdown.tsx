@@ -8,15 +8,12 @@ import { useYearn } from '@shared/contexts/useYearn'
 import { IconArrowLeft } from '@shared/icons/IconArrowLeft'
 import { IconArrowRight } from '@shared/icons/IconArrowRight'
 import { IconChevron } from '@shared/icons/IconChevron'
-import { IconCopy } from '@shared/icons/IconCopy'
 import { IconMoon } from '@shared/icons/IconMoon'
-import { IconPower } from '@shared/icons/IconPower'
-import { IconSettings } from '@shared/icons/IconSettings'
 import { IconSun } from '@shared/icons/IconSun'
 import { LogoYearn } from '@shared/icons/LogoYearn'
 import { cl } from '@shared/utils'
 import { truncateHex } from '@shared/utils/tools.address'
-import { WalletSurface } from '@yearn/wallet-ui'
+import { WalletAccountPanel, WalletSurface } from '@yearn/wallet-ui'
 import { useRouter } from 'next/navigation'
 import type { ReactElement } from 'react'
 import { useCallback, useMemo, useState } from 'react'
@@ -91,47 +88,17 @@ function AccountView({ onSettingsClick, onClose }: { onSettingsClick: () => void
     }
   }
 
-  const iconButtonClass = cl(
-    'flex size-7 items-center justify-center rounded-full transition-colors',
-    isDarkTheme
-      ? 'text-text-secondary hover:bg-surface-tertiary hover:text-text-primary'
-      : 'text-neutral-500 hover:bg-neutral-200 hover:text-neutral-700'
-  )
-
   return (
-    <div className={'flex flex-col'}>
-      <div className={cl('rounded-2xl p-4', isDarkTheme ? 'bg-surface-secondary' : 'bg-neutral-100')}>
-        <div className={'mb-4 flex items-start justify-between'}>
-          <div className={'flex flex-col'}>
-            <button
-              aria-label="Copy wallet address"
-              title={address}
-              onClick={handleCopyAddress}
-              disabled={!address}
-              className={
-                'group flex items-center gap-1.5 text-sm font-medium text-text-primary hover:text-primary transition-colors disabled:cursor-default disabled:hover:text-text-primary'
-              }
-            >
-              <span>{displayName}</span>
-              {address && <IconCopy className={'size-3.5 opacity-50 group-hover:opacity-100 transition-opacity'} />}
-            </button>
-            <WalletAccountValue />
-          </div>
-          <div className={'flex items-center gap-1'}>
-            <button
-              id="yearn-wallet-settings"
-              aria-label="Wallet settings"
-              onClick={onSettingsClick}
-              className={iconButtonClass}
-            >
-              <IconSettings className={'size-4'} />
-            </button>
-            <button onClick={handleDisconnect} aria-label="Disconnect wallet" className={iconButtonClass}>
-              <IconPower className={'size-4'} />
-            </button>
-          </div>
-        </div>
-
+    <WalletAccountPanel
+      address={address}
+      displayName={displayName}
+      isDarkTheme={isDarkTheme}
+      onCopyAddress={() => void handleCopyAddress()}
+      onDisconnect={handleDisconnect}
+      onSettingsClick={onSettingsClick}
+      settingsButtonId="yearn-wallet-settings"
+      value={<WalletAccountValue />}
+      portfolio={
         <button
           onClick={handleViewPortfolio}
           className={cl(
@@ -144,56 +111,53 @@ function AccountView({ onSettingsClick, onClose }: { onSettingsClick: () => void
           {'View portfolio'}
           <IconArrowRight className={'size-4'} />
         </button>
-      </div>
-
-      <div className={'mt-4'}>
-        <h3 className={'mb-3 text-sm font-semibold text-text-primary'}>{'Recent activity'}</h3>
-        {recentActivity.length > 0 ? (
-          <div className={'flex flex-col gap-3'}>
-            {recentActivity.map((activity) => (
-              <div key={activity.id} className={'flex items-center justify-between'}>
-                <div className={'flex items-center gap-3'}>
-                  <div
-                    className={cl(
-                      'flex size-9 items-center justify-center rounded-full',
-                      isDarkTheme ? 'bg-surface-secondary' : 'bg-neutral-100'
-                    )}
-                  >
-                    <LogoYearn className={'size-5'} front={'text-white'} back={'text-primary'} />
-                  </div>
-                  <div>
-                    <p className={cl('text-sm font-medium capitalize', getStatusColor(activity.status))}>
-                      {activity.type}
-                    </p>
-                    <p className={'text-xs text-text-secondary'}>
-                      {activity.amount} {activity.fromTokenName ?? ''}
-                    </p>
-                  </div>
+      }
+    >
+      {recentActivity.length > 0 ? (
+        <div className={'flex flex-col gap-3'}>
+          {recentActivity.map((activity) => (
+            <div key={activity.id} className={'flex items-center justify-between'}>
+              <div className={'flex items-center gap-3'}>
+                <div
+                  className={cl(
+                    'flex size-9 items-center justify-center rounded-full',
+                    isDarkTheme ? 'bg-surface-secondary' : 'bg-neutral-100'
+                  )}
+                >
+                  <LogoYearn className={'size-5'} front={'text-white'} back={'text-primary'} />
                 </div>
-                <span className={'text-xs text-text-secondary'}>{formatDate(activity.timeFinished)}</span>
+                <div>
+                  <p className={cl('text-sm font-medium capitalize', getStatusColor(activity.status))}>
+                    {activity.type}
+                  </p>
+                  <p className={'text-xs text-text-secondary'}>
+                    {activity.amount} {activity.fromTokenName ?? ''}
+                  </p>
+                </div>
               </div>
-            ))}
-          </div>
-        ) : (
-          <p className={'text-sm text-text-secondary'}>{'No recent activity'}</p>
-        )}
+              <span className={'text-xs text-text-secondary'}>{formatDate(activity.timeFinished)}</span>
+            </div>
+          ))}
+        </div>
+      ) : (
+        <p className={'text-sm text-text-secondary'}>{'No recent activity'}</p>
+      )}
 
-        {recentActivity.length > 0 && (
-          <button
-            onClick={handleViewAllActivity}
-            className={cl(
-              'mt-3 flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-              isDarkTheme
-                ? 'text-text-secondary hover:bg-surface-secondary hover:text-text-primary'
-                : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
-            )}
-          >
-            {'More transactions'}
-            <IconArrowRight className={'size-4'} />
-          </button>
-        )}
-      </div>
-    </div>
+      {recentActivity.length > 0 && (
+        <button
+          onClick={handleViewAllActivity}
+          className={cl(
+            'mt-3 flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
+            isDarkTheme
+              ? 'text-text-secondary hover:bg-surface-secondary hover:text-text-primary'
+              : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
+          )}
+        >
+          {'More transactions'}
+          <IconArrowRight className={'size-4'} />
+        </button>
+      )}
+    </WalletAccountPanel>
   )
 }
 

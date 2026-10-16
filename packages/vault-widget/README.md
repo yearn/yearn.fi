@@ -8,6 +8,7 @@ Render the widget inside the host's Wagmi and TanStack Query providers, then sup
 
 ```tsx
 import {
+  DEFAULT_YEARN_ASSETS_BASE_URI,
   type VaultWidgetRuntimeOverrides,
   VaultWidgetRuntimeProvider,
   YBoldVaultWidget
@@ -15,6 +16,7 @@ import {
 import '@yearn/vault-widget/styles.css'
 
 const runtime: VaultWidgetRuntimeOverrides = {
+  assets: { baseUri: DEFAULT_YEARN_ASSETS_BASE_URI },
   wallet: {
     address,
     chainId,

@@ -6,7 +6,11 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useWalletActivity, WalletActivityProvider } from '@ybold/components/WalletActivityProvider'
 import { initializeAnalytics, trackAnalytics } from '@ybold/lib/analytics'
 import { wagmiConfig } from '@ybold/lib/wagmi'
-import { type VaultWidgetRuntimeOverrides, VaultWidgetRuntimeProvider } from '@yearn/vault-widget'
+import {
+  DEFAULT_YEARN_ASSETS_BASE_URI,
+  type VaultWidgetRuntimeOverrides,
+  VaultWidgetRuntimeProvider
+} from '@yearn/vault-widget'
 import { createWagmiVaultWidgetExecutionAdapter } from '@yearn/vault-widget/wagmi'
 import { useWalletDrawer, WalletDrawerProvider, WalletProvider } from '@yearn/wallet-ui'
 import { getWalletAnalyticsProperties } from '@yearn/wallet-ui/analytics'
@@ -17,8 +21,7 @@ import { useAccount } from 'wagmi'
 const theme = getYearnRainbowTheme('light')
 
 const queryClient = new QueryClient()
-const YEARN_ASSETS_BASE_URI =
-  process.env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI ?? 'https://cdn.jsdelivr.net/gh/yearn/tokenassets@main'
+const YEARN_ASSETS_BASE_URI = process.env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI || DEFAULT_YEARN_ASSETS_BASE_URI
 const resolveExecutionChainId = (requestedChainId: number | undefined): number | undefined =>
   requestedChainId === 1 ? 1 : undefined
 const VAULT_WIDGET_EXECUTION = createWagmiVaultWidgetExecutionAdapter({

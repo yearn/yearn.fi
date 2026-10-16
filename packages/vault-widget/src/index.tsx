@@ -15,7 +15,11 @@ import { useMemo } from 'react'
 import { useAccount } from 'wagmi'
 
 export type { VaultWidgetRuntime, VaultWidgetRuntimeOverrides } from '@yearn/vault-widget/runtime'
-export { useVaultWidgetRuntime, VaultWidgetRuntimeProvider } from '@yearn/vault-widget/runtime'
+export {
+  DEFAULT_YEARN_ASSETS_BASE_URI,
+  useVaultWidgetRuntime,
+  VaultWidgetRuntimeProvider
+} from '@yearn/vault-widget/runtime'
 export type {
   NormalizedBalance,
   Token,

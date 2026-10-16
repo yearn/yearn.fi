@@ -2,6 +2,7 @@
 
 import { useVaultWidgetRuntime } from '@yearn/vault-widget'
 import type { ReactNode } from 'react'
+import { WalletAccountMenu } from '@/components/ytranche/WalletAccountMenu'
 import type { TTheme } from '@/lib/theme'
 
 export { DepositWidget } from '@/components/ytranche/DepositWidget'
@@ -11,23 +12,17 @@ export { useThemePreference } from '@/lib/theme'
 export function WalletButton({ inverse = false }: { inverse?: boolean }) {
   const { wallet } = useVaultWidgetRuntime()
   const account = wallet.address
+  if (account) return <WalletAccountMenu key={account} address={account} inverse={inverse} />
   return (
     <button
       data-wallet-entry="header"
       data-wallet-drawer-trigger
       aria-haspopup="dialog"
-      className={`wallet-control${account ? ' wallet-control--connected' : ''}${inverse ? ' wallet-control--inverse' : ''}`}
+      className={`wallet-control${inverse ? ' wallet-control--inverse' : ''}`}
       onClick={() => void wallet.open()}
       type="button"
     >
-      {account ? (
-        <>
-          <span className="wallet-control__dot" aria-hidden="true" />
-          {account.slice(0, 6)}…{account.slice(-4)}
-        </>
-      ) : (
-        'Connect wallet'
-      )}
+      Connect wallet
     </button>
   )
 }
