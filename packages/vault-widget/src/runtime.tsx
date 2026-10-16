@@ -6,6 +6,8 @@ import type { VaultWidgetExecutionAdapter } from './headless/types'
 
 export type { VaultWidgetExecutionAdapter } from './headless/types'
 
+export const DEFAULT_YEARN_ASSETS_BASE_URI = 'https://cdn.jsdelivr.net/gh/yearn/tokenassets@main'
+
 export type VaultWidgetTokenReference = {
   address: Address
   chainId: number

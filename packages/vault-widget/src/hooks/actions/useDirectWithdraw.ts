@@ -23,6 +23,7 @@ interface UseDirectWithdrawParams {
   vaultDecimals: number // vault decimals
   enabled: boolean
   useErc4626: boolean
+  maxLossBps?: bigint
   standardQuote?: TErc4626WithdrawQuote
 }
 
@@ -80,11 +81,15 @@ export function useDirectWithdraw(params: UseDirectWithdrawParams): UseWidgetWit
   const prepareWithdrawEnabled = isValidInput && !!params.account && params.enabled
   const accountAddress = prepareWithdrawEnabled && params.account ? toAddress(params.account) : undefined
   const erc4626FunctionName = redeemShares > 0n ? 'redeem' : 'withdraw'
-  const erc4626Args: readonly [bigint, Address, Address] | undefined = accountAddress
-    ? redeemShares > 0n
-      ? [redeemShares, accountAddress, accountAddress]
-      : [params.amount, accountAddress, accountAddress]
-    : undefined
+  if (params.maxLossBps !== undefined && (params.maxLossBps < 0n || params.maxLossBps > 10_000n)) {
+    throw new Error('Withdrawal max loss must be between 0 and 10,000 basis points')
+  }
+  const erc4626Args: readonly [bigint, Address, Address] | readonly [bigint, Address, Address, bigint] | undefined =
+    accountAddress
+      ? params.maxLossBps === undefined
+        ? [redeemShares > 0n ? redeemShares : params.amount, accountAddress, accountAddress]
+        : [redeemShares > 0n ? redeemShares : params.amount, accountAddress, accountAddress, params.maxLossBps]
+      : undefined
   const withdrawV2Args: readonly [bigint, Address] | undefined = accountAddress
     ? [redeemShares > 0n ? redeemShares : requiredShares, accountAddress]
     : undefined

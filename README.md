@@ -45,7 +45,9 @@ The type-check and watch scripts invoke TypeScript 7 directly because the TypeSc
 2. Run `bun run dev` (or `bun run dev:yearn`) for Yearn at `http://localhost:3000`.
 3. Run `bun run dev:ybold` for yBOLD at `http://localhost:3002`.
 
-Both apps consume the private `@yearn/vault-widget` source package from this
+4. Run `bun run dev:ytranche` for Yearn Earn / yTranche at `http://localhost:3003`.
+
+All three apps consume the private `@yearn/vault-widget` source package from this
 workspace. No registry publish is required.
 
 ### Per-vault Enso denylist (disable zaps)

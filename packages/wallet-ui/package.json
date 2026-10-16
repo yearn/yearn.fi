@@ -13,6 +13,7 @@
     "./connectionCleanup": "./src/connectionCleanup.ts",
     "./context": "./src/context.tsx",
     "./discovery": "./src/discovery.ts",
+    "./WalletAccountPanel": "./src/WalletAccountPanel.tsx",
     "./WalletDrawer": "./src/WalletDrawer.tsx",
     "./WalletProvider": "./src/WalletProvider.tsx",
     "./WalletSurface": "./src/WalletSurface.tsx",

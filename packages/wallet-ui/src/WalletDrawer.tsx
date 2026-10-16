@@ -25,6 +25,8 @@ import { type Connector, ConnectorAlreadyConnectedError, useAccount, useConfig, 
 import { getAccount, watchAccount } from 'wagmi/actions'
 
 export type TWalletDrawerProviderProps = {
+  /** Anchor desktop pickers to the control that opened them; phones keep the bottom sheet. */
+  anchorToTrigger?: boolean
   onAnalytics?: TWalletAnalytics
   additionalConnectorIds?: readonly string[]
   children: ReactNode
@@ -35,6 +37,7 @@ export type TWalletDrawerProviderProps = {
 }
 
 const EMPTY_CONNECTOR_IDS: readonly string[] = []
+const WALLET_TRIGGER_SELECTOR = '[data-wallet-entry], [data-wallet-drawer-trigger]'
 
 type TConnectionAttempt = {
   connector: Connector
@@ -139,10 +142,11 @@ function WalletMethodButton({
 }
 
 export function WalletDrawerProvider({
+  anchorToTrigger = false,
   onAnalytics,
   additionalConnectorIds = EMPTY_CONNECTOR_IDS,
   children,
-  desktopRight = 'max(1.5rem,calc((100vw-72rem)/2+1.5rem))',
+  desktopRight = 'max(1.5rem, calc((100vw - 72rem) / 2 + 1.5rem))',
   desktopTop = '6rem',
   dialogId = DEFAULT_WALLET_DRAWER_ID,
   themeClassName = ''
@@ -161,6 +165,8 @@ export function WalletDrawerProvider({
   const inFlightAttemptsRef = useRef(new Set<TConnectionAttempt>())
   const restoreFocusRef = useRef(true)
   const triggerRef = useRef<HTMLElement | null>(null)
+  const pressedTriggerRef = useRef<HTMLElement | null>(null)
+  const [anchorElement, setAnchorElement] = useState<HTMLElement | null>(null)
   const wasRainbowModalOpen = useRef(false)
   const handedOff = useRef(false)
   const analyticsCallback = useRef(onAnalytics)
@@ -238,11 +244,31 @@ export function WalletDrawerProvider({
     [analytics, closeWalletDrawer, config]
   )
 
+  // Pointer capture identifies the clicked control even in browsers that do not focus buttons on click.
+  useEffect(() => {
+    if (!anchorToTrigger) return
+    const rememberTrigger = (event: PointerEvent) => {
+      pressedTriggerRef.current =
+        event.target instanceof Element ? event.target.closest<HTMLElement>(WALLET_TRIGGER_SELECTOR) : null
+    }
+    document.addEventListener('pointerdown', rememberTrigger, true)
+    return () => document.removeEventListener('pointerdown', rememberTrigger, true)
+  }, [anchorToTrigger])
+
   const openWalletDrawer = useCallback(() => {
     attemptRef.current = undefined
     handedOff.current = false
     restoreFocusRef.current = true
-    triggerRef.current = document.activeElement instanceof HTMLElement ? document.activeElement : null
+    const activeElement =
+      document.activeElement instanceof HTMLElement && document.activeElement !== document.body
+        ? document.activeElement
+        : null
+    triggerRef.current =
+      pressedTriggerRef.current ??
+      activeElement?.closest<HTMLElement>(WALLET_TRIGGER_SELECTOR) ??
+      (activeElement?.closest('[data-wallet-drawer]') ? triggerRef.current : activeElement)
+    pressedTriggerRef.current = null
+    setAnchorElement(anchorToTrigger ? triggerRef.current : null)
     const entry = triggerRef.current?.closest('[data-wallet-entry]')?.getAttribute('data-wallet-entry')
     analytics.open({
       entry_point: entry === 'header' || entry === 'widget' || entry === 'portfolio' ? entry : 'other',
@@ -251,7 +277,7 @@ export function WalletDrawerProvider({
     setPendingConnector(undefined)
     setErrorMessage(undefined)
     setIsOpen(true)
-  }, [analytics])
+  }, [analytics, anchorToTrigger])
 
   const toggleWalletDrawer = useCallback(() => {
     if (isOpen) {
@@ -389,6 +415,12 @@ export function WalletDrawerProvider({
     walletConnectUid?: string
   ) => (
     <WalletSurface
+      anchorElement={anchorElement}
+      triggerSelector={
+        anchorToTrigger
+          ? `${WALLET_TRIGGER_SELECTOR}, [data-wallet-account-trigger], [data-mobile-nav-trigger]`
+          : undefined
+      }
       isOpen={isOpen}
       onClose={closeWalletDrawer}
       restoreFocus={restoreFocusRef}
