@@ -12,7 +12,7 @@ import { IconSun } from '@yearn/site-header/icons/IconSun'
 import { LogoYearn } from '@yearn/site-header/icons/LogoYearn'
 import { setThemePreference, useThemePreference } from '@yearn/site-header/theme'
 import { cl } from '@yearn/site-header/utils'
-import { type ReactElement, type ReactNode, type RefObject, useState } from 'react'
+import { type ReactElement, type ReactNode, type RefObject, useRef, useState } from 'react'
 
 export type TAccountActivity = {
   id: string | number
@@ -122,12 +122,7 @@ function AccountView({
             <button aria-label="Wallet settings" onClick={onSettingsClick} className={iconButtonClass}>
               <IconSettings className={'size-4'} />
             </button>
-            <button
-              onClick={handleDisconnect}
-              aria-label="Disconnect wallet"
-              disabled={isWalletLoading}
-              className={cl(iconButtonClass, isWalletLoading && 'opacity-50 cursor-not-allowed')}
-            >
+            <button onClick={handleDisconnect} aria-label="Disconnect wallet" className={iconButtonClass}>
               <IconPower className={'size-4'} />
             </button>
           </div>
@@ -302,10 +297,25 @@ export function AccountMenu({
   advancedSettings?: ReactNode
 }) {
   const [view, setView] = useState<'account' | 'settings'>('account')
-  return view === 'account' ? (
-    <AccountView account={account} onSettingsClick={() => setView('settings')} />
-  ) : (
-    <SettingsView onBack={() => setView('account')} advancedSettings={advancedSettings} />
+  const menuRef = useRef<HTMLDivElement>(null)
+  const showView = (nextView: 'account' | 'settings') => {
+    setView(nextView)
+    requestAnimationFrame(() =>
+      menuRef.current
+        ?.querySelector<HTMLButtonElement>(
+          nextView === 'settings' ? '[aria-label="Back to wallet"]' : '[aria-label="Wallet settings"]'
+        )
+        ?.focus()
+    )
+  }
+  return (
+    <div ref={menuRef}>
+      {view === 'account' ? (
+        <AccountView account={account} onSettingsClick={() => showView('settings')} />
+      ) : (
+        <SettingsView onBack={() => showView('account')} advancedSettings={advancedSettings} />
+      )}
+    </div>
   )
 }
 

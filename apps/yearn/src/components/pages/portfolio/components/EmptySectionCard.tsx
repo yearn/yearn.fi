@@ -29,7 +29,12 @@ export function EmptySectionCard({
       {ctaLabel}
     </Link>
   ) : (
-    <Button onClick={onClick} variant="filled" className={ctaClassName ?? 'min-h-[44px] px-6'}>
+    <Button
+      data-wallet-entry="portfolio"
+      onClick={onClick}
+      variant="filled"
+      className={ctaClassName ?? 'min-h-[44px] px-6'}
+    >
       {ctaLabel}
     </Button>
   )

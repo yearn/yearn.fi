@@ -16,7 +16,7 @@ export function initializePlausible(): void {
   initializationPromise = import('@plausible-analytics/tracker').then(({ init, track }) => {
     trackEvent = track
     init({
-      domain: 'yearn.fi',
+      domain: env.NEXT_PUBLIC_PLAUSIBLE_DOMAIN?.trim() || 'yearn.fi',
       endpoint: '/proxy/plausible/api/event',
       captureOnLocalhost: env.NEXT_PUBLIC_PLAUSIBLE_TRACK_LOCALHOST === 'true',
       autoCapturePageviews: true

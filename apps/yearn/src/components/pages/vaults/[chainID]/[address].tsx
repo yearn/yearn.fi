@@ -544,6 +544,8 @@ function Index(): ReactElement | null {
   })
   const isDualVariantVault = isYvUsd || isYvBtc
   const isDesktopViewport = useMediaQuery('(min-width: 768px)', { initializeWithValue: false })
+  const isBelowDesktopWidgetBreakpoint = useMediaQuery('(max-width: 1100px)', { initializeWithValue: false }) ?? false
+  const shouldRenderCompactHeaderBanner = isYvUsd && isBelowDesktopWidgetBreakpoint
   const shouldRenderDesktopCharts = isDesktopViewport === true
   const shouldRenderMobileCharts = isDesktopViewport === false
   const isLockedYvUsdRoute =
@@ -559,6 +561,7 @@ function Index(): ReactElement | null {
   const mobileDrawerPanelRef = useRef<HTMLDivElement>(null)
   const detailsRef = useRef<HTMLDivElement>(null)
   const headerRef = useRef<HTMLElement | null>(null)
+  const vaultHeaderStackRef = useRef<HTMLDivElement>(null)
   const compressedHeaderMeasureRef = useRef<HTMLDivElement>(null)
   const sectionSelectorRef = useRef<HTMLDivElement>(null)
   const widgetRef = useRef<TWidgetRef>(null)
@@ -605,7 +608,10 @@ function Index(): ReactElement | null {
   const updateSectionScrollOffset = useCallback((): number => {
     if (typeof window === 'undefined') return 0
     const baseOffset = resolveHeaderOffset()
-    const headerHeight = headerRef.current?.getBoundingClientRect().height ?? 0
+    const headerHeight =
+      vaultHeaderStackRef.current?.getBoundingClientRect().height ??
+      headerRef.current?.getBoundingClientRect().height ??
+      0
     const nextOffset = Math.round(baseOffset + headerHeight)
     document.documentElement.style.setProperty('--vault-header-height', `${nextOffset}px`)
     setSectionScrollOffset((prev) => (Math.abs(prev - nextOffset) > 1 ? nextOffset : prev))
@@ -1365,7 +1371,7 @@ function Index(): ReactElement | null {
   }, [isHeaderCompressed, updateSectionScrollOffset])
 
   useEffect(() => {
-    const element = headerRef.current
+    const element = vaultHeaderStackRef.current ?? headerRef.current
     if (!element || typeof ResizeObserver === 'undefined') return
 
     let frame = 0
@@ -1778,6 +1784,32 @@ function Index(): ReactElement | null {
     )
   }
 
+  function renderDrawerActionButtons({ isCompactHeader }: { isCompactHeader: boolean }): ReactElement {
+    return (
+      <div className={'flex w-full gap-3'}>
+        <button
+          type={'button'}
+          onClick={() => handleFloatingButtonClick(widgetActions[0])}
+          className={'yearn--button--nextgen flex-1'}
+          data-variant={'filled'}
+        >
+          {widgetActions[0] === WidgetActionType.Migrate ? 'Migrate' : 'Deposit'}
+        </button>
+        <button
+          type={'button'}
+          onClick={() => handleFloatingButtonClick(widgetActions[1])}
+          className={cl(
+            'yearn--button flex-1',
+            isCompactHeader ? 'border-border! bg-surface! hover:border-border-hover! hover:bg-surface-tertiary!' : ''
+          )}
+          data-variant={'light'}
+        >
+          {'Withdraw'}
+        </button>
+      </div>
+    )
+  }
+
   return (
     <div
       className={
@@ -1816,39 +1848,67 @@ function Index(): ReactElement | null {
           </div>
         ) : null}
 
-        <header
-          className={cl(
-            'h-full rounded-3xl',
-            'relative flex-col items-center justify-center',
-            'hidden md:flex',
-            'md:sticky md:z-30'
-          )}
+        {shouldRenderCompactHeaderBanner ? (
+          <div className={'hidden md:block'}>
+            <Breadcrumbs
+              className={'mb-3'}
+              items={[
+                { label: 'Home', href: '/' },
+                { label: 'Vaults', href: '/vaults' },
+                { label: `${getVaultName(currentVault)}`, isCurrent: true }
+              ]}
+            />
+          </div>
+        ) : null}
+
+        <div
+          ref={vaultHeaderStackRef}
+          className={'relative md:sticky md:z-30 md:bg-app'}
           style={{ top: headerStickyTop }}
-          ref={headerRef}
         >
-          <VaultDetailsHeader
-            currentVault={currentVault}
-            depositedValue={vaultUserData.depositedValue}
-            yvUsdApyVariant={yvUsdApyVariant}
-            isCollapsibleMode={isCollapsibleMode}
-            sectionTabs={sectionTabs}
-            activeSectionKey={activeSection}
-            onSelectSection={(key): void => handleSelectSection(key as SectionKey)}
-            sectionSelectorRef={sectionSelectorRef}
-            widgetActions={widgetActions}
-            widgetMode={resolvedWidgetMode}
-            onWidgetModeChange={handleWidgetModeChange}
-            onYvUsdApyVariantChange={setYvUsdApyVariant}
-            isWidgetWalletOpen={isWidgetWalletOpen}
-            onWidgetWalletOpen={openWidgetWallet}
-            onWidgetCloseOverlays={closeWidgetOverlays}
-            onCompressionChange={setIsHeaderCompressed}
-            onCompressionStateChange={({ isCompressed, isForceCompressed }): void => {
-              setIsHeaderCompressed(isCompressed)
-              setIsHeaderAutoCompressed(isForceCompressed)
-            }}
-          />
-        </header>
+          <header
+            className={cl('h-full rounded-3xl', 'relative flex-col items-center justify-center', 'hidden md:flex')}
+            ref={headerRef}
+          >
+            <VaultDetailsHeader
+              currentVault={currentVault}
+              depositedValue={vaultUserData.depositedValue}
+              yvUsdApyVariant={yvUsdApyVariant}
+              isCollapsibleMode={isCollapsibleMode}
+              sectionTabs={sectionTabs}
+              activeSectionKey={activeSection}
+              onSelectSection={(key): void => handleSelectSection(key as SectionKey)}
+              sectionSelectorRef={sectionSelectorRef}
+              widgetActions={widgetActions}
+              widgetMode={resolvedWidgetMode}
+              onWidgetModeChange={handleWidgetModeChange}
+              onYvUsdApyVariantChange={setYvUsdApyVariant}
+              isWidgetWalletOpen={isWidgetWalletOpen}
+              onWidgetWalletOpen={openWidgetWallet}
+              onWidgetCloseOverlays={closeWidgetOverlays}
+              forceCompressed={isBelowDesktopWidgetBreakpoint}
+              hideBreadcrumbs={shouldRenderCompactHeaderBanner}
+              hasActionFooter={isBelowDesktopWidgetBreakpoint}
+              onCompressionChange={setIsHeaderCompressed}
+              onCompressionStateChange={({ isCompressed, isForceCompressed }): void => {
+                setIsHeaderCompressed(isCompressed)
+                setIsHeaderAutoCompressed(isForceCompressed)
+              }}
+            />
+
+            {isBelowDesktopWidgetBreakpoint ? (
+              <div
+                className={
+                  'hidden w-full rounded-b-lg border border-t-0 border-border bg-surface-secondary p-2 md:block'
+                }
+              >
+                {renderDrawerActionButtons({ isCompactHeader: true })}
+              </div>
+            ) : null}
+          </header>
+        </div>
+
+        {shouldRenderCompactHeaderBanner ? <YvUsdHeaderBanner className={'mt-3 hidden min-h-26 md:flex'} /> : null}
 
         <div className="md:hidden md:mt-4 mb-4">
           <Breadcrumbs
@@ -1971,13 +2031,16 @@ function Index(): ReactElement | null {
           </section>
         </div>
 
-        <section className={'grid grid-cols-1 gap-4 md:gap-6 md:grid-cols-20 md:items-start bg-app'}>
+        <section
+          className={
+            'grid grid-cols-1 gap-4 bg-app md:items-start md:gap-6 min-[1101px]:grid-cols-[minmax(0,1fr)_408px]'
+          }
+        >
           <div
             ref={widgetContainerRef}
             className={cl(
-              'hidden md:block',
-              'order-1 md:order-2',
-              'md:col-span-7 md:col-start-14 md:sticky pt-4',
+              'hidden min-[1101px]:block',
+              'min-[1101px]:col-start-2 min-[1101px]:row-start-1 min-[1101px]:sticky pt-4',
               'flex flex-col overflow-hidden',
               desktopWidgetHeightClassNames.container
             )}
@@ -2042,7 +2105,7 @@ function Index(): ReactElement | null {
             </div>
           </div>
 
-          <div className={'hidden md:block space-y-4 md:col-span-13 order-2 md:order-1 py-4'}>
+          <div className={'hidden space-y-4 py-4 md:block min-[1101px]:col-start-1 min-[1101px]:row-start-1'}>
             {isRetired && retiredVaultAlertMessage ? (
               <VaultWarningAlert message={retiredVaultAlertMessage} className="px-6 py-4" />
             ) : null}
@@ -2066,7 +2129,8 @@ function Index(): ReactElement | null {
                 section.key === 'risk' ||
                 section.key === 'strategies' ||
                 section.key === 'info'
-              const needsScaledYvUsdBanner = isYvUsd && isHeaderAutoCompressed && section.key === 'charts'
+              const needsScaledYvUsdBanner =
+                isYvUsd && isHeaderAutoCompressed && !isBelowDesktopWidgetBreakpoint && section.key === 'charts'
 
               const sectionNode = (() => {
                 if (isCollapsible) {
@@ -2136,7 +2200,7 @@ function Index(): ReactElement | null {
         </section>
       </div>
 
-      {/* Mobile Floating Action Buttons - visible until desktop widget appears (md:), hidden when drawer is open */}
+      {/* Phones retain the fixed action bar; compact desktop layouts render these actions inline above. */}
       {!isMobileDrawerOpen && (
         <div
           className={cl(
@@ -2145,24 +2209,7 @@ function Index(): ReactElement | null {
             'pb-[calc(1rem+env(safe-area-inset-bottom,0px))]'
           )}
         >
-          <div className="flex gap-3 max-w-[1232px] mx-auto">
-            <button
-              type="button"
-              onClick={() => handleFloatingButtonClick(widgetActions[0])}
-              className="yearn--button--nextgen flex-1"
-              data-variant="filled"
-            >
-              {widgetActions[0] === WidgetActionType.Migrate ? 'Migrate' : 'Deposit'}
-            </button>
-            <button
-              type="button"
-              onClick={() => handleFloatingButtonClick(widgetActions[1])}
-              className="yearn--button flex-1"
-              data-variant="light"
-            >
-              Withdraw
-            </button>
-          </div>
+          <div className={'mx-auto max-w-[1232px]'}>{renderDrawerActionButtons({ isCompactHeader: false })}</div>
         </div>
       )}
 

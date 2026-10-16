@@ -4,7 +4,7 @@ import {
   BASE_WETH_TOKEN_ADDRESS,
   ETH_TOKEN_ADDRESS,
   OPT_WETH_TOKEN_ADDRESS,
-  ROBINHOOD_ETH_TOKEN_ADDRESS,
+  ROBINHOOD_WETH_TOKEN_ADDRESS,
   WETH_TOKEN_ADDRESS,
   WFTM_TOKEN_ADDRESS
 } from './constants'
@@ -43,7 +43,7 @@ const NATIVE_WRAPPER_BY_CHAIN_ID: Partial<Record<number, TAddress>> = {
   250: WFTM_TOKEN_ADDRESS,
   8453: BASE_WETH_TOKEN_ADDRESS,
   42161: ARB_WETH_TOKEN_ADDRESS,
-  4663: ROBINHOOD_ETH_TOKEN_ADDRESS
+  4663: ROBINHOOD_WETH_TOKEN_ADDRESS
 }
 
 export function resolveYearnPricesSpotAddress(address: string | null | undefined, chainID: number): TAddress | null {

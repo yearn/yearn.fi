@@ -2,13 +2,18 @@ import { useErc4626WithdrawQuote } from '@yearn/vault-widget/erc4626/useErc4626W
 import type { VaultWidgetTransactionPlan } from '@yearn/vault-widget/headless'
 import { Button } from '@yearn/vault-widget/internal/components/shared/Button'
 import { buildEligibleStyledWidgetPlan } from '@yearn/vault-widget/internal/components/widget/shared/plannedTransaction'
+import { buildWithdrawBatch } from '@yearn/vault-widget/internal/components/widget/withdraw/withdrawBatch'
+import { useAtomicBatchCapability } from '@yearn/vault-widget/internal/hooks/useAtomicBatchCapability'
 import { useDebouncedInput } from '@yearn/vault-widget/internal/hooks/useDebouncedInput'
 import { useVaultWidgetSpotPrices } from '@yearn/vault-widget/internal/hooks/useVaultWidgetSpotPrices'
 import { IconChevron } from '@yearn/vault-widget/internal/icons/IconChevron'
 import { IconCross } from '@yearn/vault-widget/internal/icons/IconCross'
 import { IconSettings } from '@yearn/vault-widget/internal/icons/IconSettings'
 import { cl, formatTAmount, toAddress, toNormalizedBN } from '@yearn/vault-widget/internal/utils'
+import { getBatchReason, type TWidgetAnalyticsContext } from '@yearn/vault-widget/internal/utils/analytics'
 import { toBasisPoints } from '@yearn/vault-widget/internal/utils/slippage'
+import { YVUSD_LOCKED_ZAP_ADDRESS } from '@yearn/vault-widget/internal/utils/yvUsd'
+import type { VaultWidgetAnalyticsProperties } from '@yearn/vault-widget/runtime'
 import { isVaultWidgetExecutionConfigured, useVaultWidgetRuntime } from '@yearn/vault-widget/runtime'
 import type { ReactElement, ReactNode } from 'react'
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react'
@@ -33,7 +38,6 @@ import { WidgetHeader } from '../shared/WidgetHeader'
 import { WidgetLoadingSkeleton } from '../shared/WidgetLoadingSkeleton'
 import { getPriorityTokens } from './constants'
 import { SourceSelector } from './SourceSelector'
-import { buildSafeWithdrawBatch } from './safeWithdrawBatch'
 import type { WithdrawalSource, WithdrawWidgetProps } from './types'
 import { useWithdrawError } from './useWithdrawError'
 import { useWithdrawFlow } from './useWithdrawFlow'
@@ -151,6 +155,11 @@ export function WidgetWithdraw({
     isWalletSafe
   } = useWidgetContext({ chainId, vaultAddress })
   const runtime = useVaultWidgetRuntime()
+  const { supported: supportsAtomicBatch, status: batchCapability } = useAtomicBatchCapability({
+    account,
+    chainId,
+    enabled: !isWalletSafe
+  })
   const enableTokenListFetch = runtime.catalog.enableTokenList
 
   const resolvedDisplayAssetAddress = displayAssetAddress ?? assetAddress
@@ -813,12 +822,12 @@ export function WidgetWithdraw({
   })
   const formattedRequiredShares = formatTAmount({ value: effectiveRequiredShares, decimals: sharesDecimals })
   const formattedApprovalAmount = formatTAmount({ value: effectiveSourceShares, decimals: sharesDecimals })
-  const safeWithdrawBatch = useMemo(() => {
-    if (!isWalletSafe || !approvalState.needsApproval) {
+  const withdrawBatch = useMemo(() => {
+    if ((!isWalletSafe && !supportsAtomicBatch) || !approvalState.needsApproval) {
       return undefined
     }
 
-    return buildSafeWithdrawBatch({
+    return buildWithdrawBatch({
       routeType,
       account,
       sourceToken: toAddress(sourceToken),
@@ -848,6 +857,7 @@ export function WidgetWithdraw({
     isWalletSafe,
     routeType,
     sourceToken,
+    supportsAtomicBatch,
     zapSlippage
   ])
 
@@ -872,7 +882,7 @@ export function WidgetWithdraw({
         approveNotificationParams,
         unstakeNotificationParams,
         withdrawNotificationParams,
-        safeWithdrawBatch,
+        withdrawBatch,
         prepareApproveEnabled: !isWaitingForProtectedEnsoQuote && Boolean(activeFlow.periphery.prepareApproveEnabled),
         prepareWithdrawEnabled: isProtectedEnsoTransactionStepEnabled({
           canExecute: canExecuteProtectedEnsoQuote,
@@ -902,7 +912,7 @@ export function WidgetWithdraw({
       approveNotificationParams,
       unstakeNotificationParams,
       withdrawNotificationParams,
-      safeWithdrawBatch,
+      withdrawBatch,
       activeFlow.periphery.prepareApproveEnabled,
       activeFlow.periphery.prepareWithdrawEnabled,
       isWaitingForProtectedEnsoQuote,
@@ -992,6 +1002,28 @@ export function WidgetWithdraw({
     ]
   )
 
+  const analyticsContext: TWidgetAnalyticsContext = {
+    action: routeType === 'DIRECT_UNSTAKE' ? 'unstake' : 'withdraw',
+    route:
+      routeType === 'ENSO'
+        ? 'enso_zap_out'
+        : routeType === 'YBOLD_ZAPPER_WITHDRAW'
+          ? 'ybold_zap_out'
+          : activeFlow.periphery.routerAddress?.toLowerCase() === YVUSD_LOCKED_ZAP_ADDRESS.toLowerCase()
+            ? 'yvusd_locked_zap_out'
+            : routeType.toLowerCase(),
+    source_chain: chainId,
+    destination_chain: outputToken?.chainId ?? chainId,
+    withdrawal_source: withdrawalSource ?? 'unknown',
+    approval_required: approvalState.needsApproval,
+    batch_capability: isWalletSafe ? 'safe' : batchCapability,
+    batch_reason: getBatchReason({
+      approvalRequired: approvalState.needsApproval,
+      capability: isWalletSafe ? 'safe' : batchCapability,
+      hasBatch: Boolean(withdrawBatch)
+    })
+  }
+
   const handleOpenTransactionOverlay = useCallback(() => {
     if (routeType === 'DIRECT_UNSTAKE_WITHDRAW' && fallbackStep === 'unstake' && isMaxWithdraw) {
       setVaultSharesBeforeUnstake(vault?.balance.raw ?? 0n)
@@ -1033,42 +1065,48 @@ export function WidgetWithdraw({
     ]
   )
 
-  const handleWithdrawSuccess = useCallback(() => {
-    const sharesToWithdraw = formatUnits(effectiveWithdrawAmountRaw, assetToken?.decimals ?? 18)
-    const priceUsd = assetTokenPrice
-    const valueUsd = Number(sharesToWithdraw) * assetTokenPrice
+  const handleWithdrawSuccess = useCallback(
+    (analytics?: VaultWidgetAnalyticsProperties) => {
+      const sharesToWithdraw = formatUnits(effectiveWithdrawAmountRaw, assetToken?.decimals ?? 18)
+      const priceUsd = assetTokenPrice
+      const valueUsd = Number(sharesToWithdraw) * assetTokenPrice
 
-    trackEvent('withdraw', {
-      props: {
-        chainID: String(chainId),
-        vaultAddress,
-        vaultSymbol,
-        sharesToWithdraw,
-        tokenAddress: toAddress(withdrawToken),
-        tokenSymbol: outputToken?.symbol || '',
-        priceUsd: String(priceUsd),
-        valueUsd: String(valueUsd),
-        isZap: String(routeType === 'ENSO'),
-        action: 'withdraw'
-      }
-    })
+      trackEvent('withdraw', {
+        props: {
+          chainID: String(chainId),
+          vaultAddress,
+          vaultSymbol,
+          sharesToWithdraw,
+          tokenAddress: toAddress(withdrawToken),
+          tokenSymbol: outputToken?.symbol || '',
+          priceUsd: String(priceUsd),
+          valueUsd: String(valueUsd),
+          isZap: String(
+            routeType === 'ENSO' || routeType.startsWith('YBOLD_ZAPPER') || analytics?.route === 'yvusd_locked_zap_out'
+          ),
+          ...analytics,
+          action: 'withdraw'
+        }
+      })
 
-    setWithdrawInput('')
-    onWithdrawSuccess?.()
-  }, [
-    effectiveWithdrawAmountRaw,
-    assetToken?.decimals,
-    outputToken?.symbol,
-    assetTokenPrice,
-    trackEvent,
-    chainId,
-    vaultAddress,
-    vaultSymbol,
-    withdrawToken,
-    routeType,
-    setWithdrawInput,
-    onWithdrawSuccess
-  ])
+      setWithdrawInput('')
+      onWithdrawSuccess?.()
+    },
+    [
+      effectiveWithdrawAmountRaw,
+      assetToken?.decimals,
+      outputToken?.symbol,
+      assetTokenPrice,
+      trackEvent,
+      chainId,
+      vaultAddress,
+      vaultSymbol,
+      withdrawToken,
+      routeType,
+      setWithdrawInput,
+      onWithdrawSuccess
+    ]
+  )
 
   if (isLoadingVaultData && !showTransactionOverlay) {
     return <WidgetLoadingSkeleton title="Withdraw" actions={headerActions} disableBorderRadius={disableBorderRadius} />
@@ -1167,6 +1205,7 @@ export function WidgetWithdraw({
         <div className="flex-1">
           {!account ? (
             <Button
+              data-wallet-entry="widget"
               onClick={openLoginModal}
               variant="filled"
               className="w-full"
@@ -1308,6 +1347,7 @@ export function WidgetWithdraw({
 
       {/* Transaction Overlay */}
       <TransactionOverlay
+        analyticsContext={analyticsContext}
         isOpen={showTransactionOverlay}
         onClose={handleCloseTransactionOverlay}
         plan={activeTransactionPlan}

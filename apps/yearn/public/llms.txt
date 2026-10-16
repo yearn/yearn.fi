@@ -11,6 +11,7 @@ Yearn vaults accept ERC-20 token deposits and automatically route funds to the h
 - [Home](https://yearn.fi/): Landing page and product overview
 - [Vaults](https://yearn.fi/vaults): Browse all available yield vaults across supported chains
 - [Portfolio](https://yearn.fi/portfolio): View deposited assets and accumulated earnings
+- [System Status](https://yearn.fi/status): Server-rendered availability for Yearn data, prices, portfolio indexing, transaction routing, CMS, token assets, and supported networks
 
 ## Primary Machine-Readable Vault Data
 
@@ -18,6 +19,7 @@ Yearn vaults accept ERC-20 token deposits and automatically route funds to the h
 - `https://kong.yearn.fi/api/rest/snapshot/{chainId}/{address}`: Canonical vault detail snapshot; replace `chainId` with the numeric chain ID and `address` with the vault contract address
 - `https://yearn.fi/vaults/{chainId}/{address}`: Public vault page URL; maps to the Kong snapshot endpoint above for live vault detail data
 - [Sitemap](https://yearn.fi/sitemap.xml): XML sitemap listing canonical public vault page URLs
+- [System Status (JSON)](https://yearn.fi/api/status): Service and network availability, response latency, check time, and Kong's last successful cache refresh when reported
 
 ## Derived Convenience Markdown
 
@@ -29,6 +31,7 @@ These markdown endpoints are generated live from Kong REST for agent and crawler
 
 ## Vault Data Semantics
 
+- `cache_refreshed_at` in Markdown and `services.kong.cacheRefreshedAt` in status JSON come from Kong's `x-last-refresh` header. They describe a successful cache refresh, not every vault's on-chain update time; CDN caching can delay the reported timestamp. They are omitted when the header is missing or invalid, and are separate from `generated_at`, `source_updated_at`, and sitemap `lastmod`.
 - Public active vaults exclude non-Yearn entries, entries where `inclusion.isYearn` is false, hidden vaults, retired vaults, legacy vaults, and underlying single-strategy entries.
 - `/api/vaults/markdown` does not apply a TVL minimum.
 - Use numeric `chainId` values in URLs and API requests.

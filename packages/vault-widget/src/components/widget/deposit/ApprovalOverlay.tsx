@@ -5,6 +5,7 @@ import {
   useWaitForTransactionReceipt
 } from '@yearn/vault-widget/internal/hooks/useAppWagmi'
 import { useSafeTransactionDetails } from '@yearn/vault-widget/internal/hooks/useSafeTransactionDetails'
+import { isSafeConnectorId } from '@yearn/vault-widget/internal/utils'
 import { getApproveAbi } from '@yearn/vault-widget/internal/utils/approve'
 import { useVaultWidgetRuntime } from '@yearn/vault-widget/runtime'
 import { type FC, useCallback, useEffect, useState } from 'react'
@@ -56,7 +57,7 @@ export const ApprovalOverlay: FC<ApprovalOverlayProps> = ({
   const { address: account, chain, connector } = useAccount()
   const runtime = useVaultWidgetRuntime()
   const currentChainId = useChainId()
-  const isWalletSafe = runtime.safe.isSafe || connector?.id.toLowerCase().includes('safe') === true
+  const isWalletSafe = runtime.safe.isSafe || isSafeConnectorId(connector?.id)
   const connectedChainId = resolveApprovalOverlayConnectedChainId({
     accountChainId: chain?.id,
     currentChainId,

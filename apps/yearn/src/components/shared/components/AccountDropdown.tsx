@@ -2,16 +2,16 @@ import { useThemePreference } from '@hooks/useThemePreference'
 import { useAppSettings } from '@pages/vaults/contexts/useAppSettings'
 import { yToast } from '@shared/components/yToast'
 import { useNotifications } from '@shared/contexts/useNotifications'
-import { useWalletStatus } from '@shared/contexts/useWallet'
 import { useWalletVaultTotals } from '@shared/contexts/useWalletVaultTotals'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import { IconChevron } from '@shared/icons/IconChevron'
-import { cl, formatUSD } from '@shared/utils'
+import { cl } from '@shared/utils'
 import { truncateHex } from '@shared/utils/tools.address'
-import { AccountDropdown as SharedAccountDropdown } from '@yearn/site-header/account'
+import { AccountMenu } from '@yearn/site-header/account'
+import { WalletSurface } from '@yearn/wallet-ui'
 import { useRouter } from 'next/navigation'
-import { type RefObject, useCallback, useState } from 'react'
+import { useCallback, useState } from 'react'
 
 function AdvancedSettings() {
   const isDarkTheme = useThemePreference() !== 'light'
@@ -98,16 +98,34 @@ function AdvancedSettings() {
   )
 }
 
-type TDropdownProps = { isOpen: boolean; onClose: () => void; triggerRef?: RefObject<HTMLElement | null> }
+type TDropdownProps = { isOpen: boolean; onClose: () => void }
 
-export function AccountDropdown({ isOpen, onClose, triggerRef }: TDropdownProps) {
-  return isOpen ? <ConnectedAccountDropdown onClose={onClose} triggerRef={triggerRef} /> : null
+export function AccountDropdown({ isOpen, onClose }: TDropdownProps) {
+  const { address, isActive } = useWeb3()
+  return (
+    <WalletSurface
+      isOpen={isOpen && isActive}
+      onClose={onClose}
+      dialogId="yearn-wallet-account"
+      title="Wallet"
+      triggerSelector="[data-wallet-account-trigger], [data-mobile-nav-trigger]"
+      desktopTop="calc(var(--header-height) + 0.5rem)"
+      desktopRight="max(1rem, calc((100vw - 1232px) / 2 + 1rem))"
+    >
+      {isOpen && isActive && <ConnectedAccountContent key={address} onClose={onClose} />}
+    </WalletSurface>
+  )
 }
 
-function ConnectedAccountDropdown({ onClose, triggerRef }: Omit<TDropdownProps, 'isOpen'>) {
+function ConnectedAccountContent({ onClose }: { onClose: () => void }) {
   const { address, ens, clusters, onDesactivate } = useWeb3()
-  const { isLoading: isWalletLoading } = useWalletStatus()
-  const { totalValue } = useWalletVaultTotals()
+  const { totalValue, isLoading: isWalletLoading } = useWalletVaultTotals()
+  const [whole, fraction] = totalValue
+    .toLocaleString('en-US', {
+      minimumFractionDigits: 2,
+      maximumFractionDigits: 2
+    })
+    .split('.')
   const { cachedEntries } = useNotifications()
   const { toast } = yToast()
   const router = useRouter()
@@ -116,20 +134,15 @@ function ConnectedAccountDropdown({ onClose, triggerRef }: Omit<TDropdownProps, 
     onClose()
   }
   return (
-    <SharedAccountDropdown
-      isOpen
-      triggerRef={triggerRef}
-      onClose={onClose}
+    <AccountMenu
       account={{
         address,
         displayName: ens || clusters?.name || (address ? truncateHex(address, 4) : 'Not connected'),
         isWalletLoading,
         portfolioValue: (
           <>
-            <span>{formatUSD(Math.floor(totalValue), 0, 0)}</span>
-            <span className="text-text-secondary">
-              {totalValue > 0 ? `.${(totalValue % 1).toFixed(2).substring(2)}` : ''}
-            </span>
+            <span>${whole}</span>
+            <span className="text-text-secondary">{totalValue > 0 ? `.${fraction}` : ''}</span>
           </>
         ),
         recentActivity: cachedEntries

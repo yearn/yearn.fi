@@ -42,6 +42,7 @@ jobs:
               - 'tsconfig.base.json'
               - 'vercel.json'
               - 'packages/vault-widget/**'
+              - 'packages/wallet-ui/**'
             yearn:
               - *shared
               - 'packages/site-header/**'
@@ -57,7 +58,7 @@ jobs:
   yearn:
     needs: changes
     if: needs.changes.outputs.yearn == 'true'
-    uses: yearn/yearn-gha/.github/workflows/vercel-deploy.yml@17446bfb9e9c7911367379222fa5b7e3fff52fa3
+    uses: yearn/yearn-gha/.github/workflows/vercel-deploy.yml@e6b4d914d9256b6becdf7c30605238894fa54638
     with:
       project: yearn-fi
       identity-id: ${{ github.event_name == 'pull_request' && vars.DOPPLER_PREVIEW_IDENTITY_ID || vars.DOPPLER_PRODUCTION_IDENTITY_ID }}
@@ -65,7 +66,7 @@ jobs:
   ybold:
     needs: changes
     if: needs.changes.outputs.ybold == 'true'
-    uses: yearn/yearn-gha/.github/workflows/vercel-deploy.yml@17446bfb9e9c7911367379222fa5b7e3fff52fa3
+    uses: yearn/yearn-gha/.github/workflows/vercel-deploy.yml@e6b4d914d9256b6becdf7c30605238894fa54638
     with:
       project: yearn-bold
       identity-id: ${{ github.event_name == 'pull_request' && vars.DOPPLER_PREVIEW_IDENTITY_ID || vars.DOPPLER_PRODUCTION_IDENTITY_ID }}
@@ -73,7 +74,7 @@ jobs:
   erc4626:
     needs: changes
     if: needs.changes.outputs.erc4626 == 'true'
-    uses: yearn/yearn-gha/.github/workflows/vercel-deploy.yml@17446bfb9e9c7911367379222fa5b7e3fff52fa3
+    uses: yearn/yearn-gha/.github/workflows/vercel-deploy.yml@e6b4d914d9256b6becdf7c30605238894fa54638
     with:
       project: yearn-4626
       identity-id: ${{ github.event_name == 'pull_request' && vars.DOPPLER_PREVIEW_IDENTITY_ID || vars.DOPPLER_PRODUCTION_IDENTITY_ID }}
