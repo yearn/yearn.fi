@@ -1,8 +1,10 @@
 @import "tailwindcss";
 @import "@yearn/vault-widget/styles.css";
 @import "@yearn/site-header/themes.css";
+@import "@yearn/wallet-ui/styles.css";
 @source "../../../packages/vault-widget/src";
 @source "../../../packages/site-header/src";
+@source "../../../packages/wallet-ui/src";
 
 :root {
   --header-height: 4.25rem;

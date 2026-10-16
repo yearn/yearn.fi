@@ -5,7 +5,6 @@ import { useWalletVaults, useYearnAllocators } from '@erc4626/lib/useVaultDiscov
 import type { TVaultChoice } from '@erc4626/lib/vaultDiscovery'
 import { parseVaultSelection } from '@erc4626/lib/vaultSelection'
 import { wagmiConfig } from '@erc4626/lib/wagmiConfig'
-import { useConnectModal } from '@rainbow-me/rainbowkit'
 import { useMutation, useQueryClient } from '@tanstack/react-query'
 import { getPublicClient } from '@wagmi/core'
 import { getErc4626ReadMessage, readErc4626Vault } from '@yearn/vault-widget/erc4626/reader'
@@ -14,6 +13,7 @@ import { ImageWithFallback } from '@yearn/vault-widget/internal/components/share
 import { TokenLogoV2 } from '@yearn/vault-widget/internal/components/shared/TokenLogoV2'
 import { cl, formatTAmount } from '@yearn/vault-widget/internal/utils'
 import { useVaultWidgetRuntime } from '@yearn/vault-widget/runtime'
+import { useWalletDrawer } from '@yearn/wallet-ui'
 import { useEffect, useRef, useState } from 'react'
 import { type Address, formatUnits } from 'viem'
 import { useAccount } from 'wagmi'
@@ -33,7 +33,7 @@ export function VaultPicker({
   const { assets } = useVaultWidgetRuntime()
   const dialog = useRef<HTMLDialogElement>(null)
   const { address: owner } = useAccount()
-  const { openConnectModal } = useConnectModal()
+  const { openWalletDrawer, dialogId, isOpen } = useWalletDrawer()
   const queryClient = useQueryClient()
   const [tab, setTab] = useState<'wallet' | 'yearn'>('wallet')
   const [search, setSearch] = useState('')
@@ -220,9 +220,14 @@ export function VaultPicker({
               <p className="mb-4 text-sm text-text-secondary">Connect your wallet to find vaults you hold.</p>
               <button
                 type="button"
+                data-wallet-entry="widget"
+                data-wallet-drawer-trigger
+                aria-controls={dialogId}
+                aria-expanded={isOpen}
+                aria-haspopup="dialog"
                 onClick={() => {
                   onClose()
-                  openConnectModal?.()
+                  openWalletDrawer()
                 }}
                 className="rounded-lg bg-text-primary px-4 py-3 text-surface"
               >

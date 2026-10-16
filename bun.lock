@@ -25,6 +25,7 @@
         "@wagmi/core": "2.22.1",
         "@yearn/site-header": "workspace:*",
         "@yearn/vault-widget": "workspace:*",
+        "@yearn/wallet-ui": "workspace:*",
         "next": "16.4.1",
         "react": "19.3.0",
         "react-dom": "19.3.0",

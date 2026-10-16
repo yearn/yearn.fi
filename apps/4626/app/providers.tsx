@@ -5,7 +5,7 @@ import { WalletActivityContext } from '@erc4626/components/WalletActivity'
 import { getChain, resolveChainId } from '@erc4626/lib/chains'
 import { getSafeTransactionDetails } from '@erc4626/lib/safe'
 import { wagmiConfig } from '@erc4626/lib/wagmiConfig'
-import { darkTheme, lightTheme, RainbowKitProvider, useConnectModal } from '@rainbow-me/rainbowkit'
+import { RainbowKitProvider } from '@rainbow-me/rainbowkit'
 import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from '@tanstack/react-query'
 import { useThemePreference } from '@yearn/site-header/theme'
 import { type VaultWidgetRuntimeOverrides, VaultWidgetRuntimeProvider } from '@yearn/vault-widget'
@@ -15,9 +15,11 @@ import type {
   VaultWidgetNotificationUpdate
 } from '@yearn/vault-widget/runtime'
 import { createWagmiVaultWidgetExecutionAdapter } from '@yearn/vault-widget/wagmi'
+import { useWalletDrawer, WalletDrawerProvider, WalletProvider } from '@yearn/wallet-ui'
+import { getYearnRainbowTheme } from '@yearn/wallet-ui/rainbowkit'
 import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
 import type { Hash } from 'viem'
-import { useAccount, usePublicClient, WagmiProvider } from 'wagmi'
+import { useAccount, usePublicClient } from 'wagmi'
 
 type TNotice = VaultWidgetNotificationInput & {
   id: string
@@ -40,8 +42,8 @@ const execution = createWagmiVaultWidgetExecutionAdapter({
 })
 
 function WidgetHost({ children }: { children: ReactNode }) {
-  const { address, chainId, connector, isConnecting, isConnected } = useAccount()
-  const { openConnectModal } = useConnectModal()
+  const { address, chainId, connector, isConnected } = useAccount()
+  const { openWalletDrawer, isConnecting } = useWalletDrawer()
   const queryClient = useQueryClient()
   const [notices, setNotices] = useState<TNotice[]>([])
   const create = useCallback(
@@ -91,7 +93,7 @@ function WidgetHost({ children }: { children: ReactNode }) {
         chainId,
         connected: isConnected,
         connecting: isConnecting,
-        open: () => openConnectModal?.(),
+        open: openWalletDrawer,
         refresh: () => refreshVaultReads(queryClient)
       },
       chains: {
@@ -117,7 +119,7 @@ function WidgetHost({ children }: { children: ReactNode }) {
       assets: { baseUri: 'https://cdn.jsdelivr.net/gh/yearn/tokenassets@main' },
       routing: { isEnsoEnabled: () => false }
     }),
-    [address, chainId, connector?.id, create, isConnected, isConnecting, notices, openConnectModal, queryClient, update]
+    [address, chainId, connector?.id, create, isConnected, isConnecting, notices, openWalletDrawer, queryClient, update]
   )
   return (
     <VaultWidgetRuntimeProvider value={runtime}>
@@ -207,14 +209,19 @@ function Notice({
 
 export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => new QueryClient())
-  const theme = useThemePreference() === 'light' ? lightTheme : darkTheme
+  const theme = getYearnRainbowTheme(useThemePreference() === 'light' ? 'light' : 'dark')
   return (
-    <WagmiProvider config={wagmiConfig}>
+    <WalletProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider theme={theme({ accentColor: '#0657f9', borderRadius: 'medium' })}>
-          <WidgetHost>{children}</WidgetHost>
+        <RainbowKitProvider theme={theme}>
+          <WalletDrawerProvider
+            desktopTop="calc(var(--header-height) + 0.5rem)"
+            desktopRight="max(1rem, calc((100vw - 1232px) / 2 + 1rem))"
+          >
+            <WidgetHost>{children}</WidgetHost>
+          </WalletDrawerProvider>
         </RainbowKitProvider>
       </QueryClientProvider>
-    </WagmiProvider>
+    </WalletProvider>
   )
 }
