@@ -1,4 +1,12 @@
-import { type Hash, type TransactionReceipt, TransactionReceiptNotFoundError } from 'viem'
+import {
+  AtomicityNotSupportedError,
+  type Hash,
+  MethodNotFoundRpcError,
+  MethodNotSupportedRpcError,
+  type TransactionReceipt,
+  TransactionReceiptNotFoundError,
+  UnsupportedChainIdError
+} from 'viem'
 
 export const TRANSACTION_REFRESH_TIMEOUT_MS = 10_000
 
@@ -42,6 +50,18 @@ export async function awaitTransactionRefresh(refresh: () => Promise<void>): Pro
   } finally {
     clearTimeout(timer.id)
   }
+}
+
+/** Only an explicit rejection before a batch identifier is returned permits a separate-transaction fallback. */
+export function isUnsupportedAtomicBatchError(error: unknown, depth = 0): boolean {
+  if (!(error instanceof Error) || depth > 5) return false
+  return (
+    error instanceof AtomicityNotSupportedError ||
+    error instanceof UnsupportedChainIdError ||
+    error instanceof MethodNotFoundRpcError ||
+    error instanceof MethodNotSupportedRpcError ||
+    isUnsupportedAtomicBatchError(error.cause, depth + 1)
+  )
 }
 
 export class VaultWidgetPreparationError extends Error {

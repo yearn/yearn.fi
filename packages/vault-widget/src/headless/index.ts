@@ -2,6 +2,7 @@ export {
   awaitTransactionRefresh,
   getConfirmedTransactionReceipt,
   getTransactionConfirmations,
+  isUnsupportedAtomicBatchError,
   TRANSACTION_REFRESH_TIMEOUT_MS,
   VaultWidgetPreparationError
 } from '@yearn/vault-widget/internal/utils/transactionLifecycle'

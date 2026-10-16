@@ -12,6 +12,7 @@ import {
 } from '@wagmi/core/actions'
 import {
   getConfirmedTransactionReceipt,
+  isUnsupportedAtomicBatchError,
   type TSafeExecution,
   type VaultWidgetExecutionAdapter,
   VaultWidgetPreparationError,
@@ -511,6 +512,9 @@ export function createWagmiVaultWidgetExecutionAdapter(
         calls: requests.map(({ data, to, value }) => ({ data, to, value })),
         chainId: executionChainId,
         forceAtomic: true
+      }).catch((error: unknown) => {
+        if (isUnsupportedAtomicBatchError(error)) throw new VaultWidgetPreparationError(error)
+        throw error
       })
       // EIP-5792 identifiers are opaque strings, not transaction hashes. Preserve the wallet's value exactly.
       if (typeof result.id !== 'string' || result.id.trim().length === 0) {

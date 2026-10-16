@@ -405,7 +405,11 @@ export function WidgetWithdraw({
   ])
 
   const isCrossChain = destinationChainId !== chainId
-  const { supported: supportsAtomicBatch, status: batchCapability } = useAtomicBatchCapability({
+  const {
+    supported: supportsAtomicBatch,
+    status: batchCapability,
+    disableBatch
+  } = useAtomicBatchCapability({
     account,
     chainId,
     enabled: !isWalletSafe && !isCrossChain
@@ -1307,6 +1311,7 @@ export function WidgetWithdraw({
         analyticsContext={analyticsContext}
         isOpen={showTransactionOverlay}
         onClose={handleCloseTransactionOverlay}
+        onBatchUnsupported={disableBatch}
         plan={activeTransactionPlan}
         lifecycleRecipe={{
           id: withdrawalIntentKey,

@@ -247,7 +247,11 @@ export function WidgetDeposit({
   const depositToken = selectedToken || assetAddress
   const sourceChainId = selectedChainId || chainId
   const isCrossChain = sourceChainId !== chainId
-  const { supported: supportsAtomicBatch, status: batchCapability } = useAtomicBatchCapability({
+  const {
+    supported: supportsAtomicBatch,
+    status: batchCapability,
+    disableBatch
+  } = useAtomicBatchCapability({
     account,
     chainId: sourceChainId,
     enabled: !isWalletSafe && !isCrossChain
@@ -1476,6 +1480,7 @@ export function WidgetDeposit({
         analyticsContext={analyticsContext}
         isOpen={showTransactionOverlay}
         onClose={handleCloseTransactionOverlay}
+        onBatchUnsupported={disableBatch}
         plan={activeTransactionPlan}
         lifecycleRecipe={{
           id: depositIntentKey,

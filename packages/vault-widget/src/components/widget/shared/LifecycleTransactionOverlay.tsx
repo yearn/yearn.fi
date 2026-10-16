@@ -1,3 +1,4 @@
+import { isUnsupportedAtomicBatchError } from '@yearn/vault-widget/headless'
 import { Button } from '@yearn/vault-widget/internal/components/shared/Button'
 import { getPreparationBridge } from '@yearn/vault-widget/internal/components/widget/shared/lifecyclePreparation'
 import type { TransactionOverlayProps } from '@yearn/vault-widget/internal/components/widget/shared/TransactionOverlay'
@@ -16,6 +17,7 @@ import { useReward } from 'react-rewards'
 export function LifecycleTransactionOverlay(props: TransactionOverlayProps) {
   const runtime = useVaultWidgetRuntime()
   const service = runtime.lifecycle!
+  const [batchFallback, setBatchFallback] = useState<TransactionOverlayProps['onBatchUnsupported']>()
   const analyticsProps = useRef({ track: runtime.analytics.track, context: props.analyticsContext })
   analyticsProps.current = { track: runtime.analytics.track, context: props.analyticsContext }
   const [analytics] = useState(() => createWidgetAnalytics(() => analyticsProps.current.track))
@@ -47,6 +49,7 @@ export function LifecycleTransactionOverlay(props: TransactionOverlayProps) {
           }))
         },
     settlement: props.lifecycleRecipe?.settlement,
+    onBatchUnsupported: props.onBatchUnsupported,
     step: props.step,
     steps: props.planSteps,
     owner: props.reviewedOwner ?? runtime.wallet.address,
@@ -175,6 +178,13 @@ export function LifecycleTransactionOverlay(props: TransactionOverlayProps) {
         } else if (progress.status === 'error') {
           const category = widgetErrorCategory(progress.error)
           const submitted = progress.outcome.submissions.some((submission) => submission.stepId === progress.step.id)
+          if (
+            progress.step.kind === 'atomic-batch' &&
+            !submitted &&
+            reviewed.onBatchUnsupported &&
+            isUnsupportedAtomicBatchError(progress.error)
+          )
+            setBatchFallback(() => reviewed.onBatchUnsupported)
           analytics.result(
             analytics.active(),
             submitted ? 'unknown' : category === 'rejected' || category === 'upgrade_rejected' ? 'rejected' : 'error',
@@ -265,6 +275,11 @@ export function LifecycleTransactionOverlay(props: TransactionOverlayProps) {
   const failed = view?.outcome === 'error' || flow?.phase === 'blocked' || flow?.phase === 'rejected'
   const recovering = !record && (!flow || flow.phase === 'confirming') && state.history !== 'ready'
   const { title, detail } = (() => {
+    if (batchFallback)
+      return {
+        title: 'Batching unavailable',
+        detail: 'Your wallet cannot batch on this network. Use separate approval and zap transactions instead.'
+      }
     if (isPaused || needsReview)
       return {
         title: 'Ready for the next step',
@@ -332,6 +347,17 @@ export function LifecycleTransactionOverlay(props: TransactionOverlayProps) {
           </p>
         ))}
         {record?.refreshError ? <p className="mb-4 text-sm text-text-secondary">{record.refreshError}</p> : null}
+        {batchFallback ? (
+          <Button
+            className="mb-3 w-full"
+            onClick={async () => {
+              await batchFallback()
+              close()
+            }}
+          >
+            Use separate transactions
+          </Button>
+        ) : null}
         {recovering && state.history === 'unavailable' ? (
           <Button className="mb-3 w-full" onClick={() => service.recheckHistory()}>
             Retry history
