@@ -4,6 +4,7 @@ import { BottomDrawer } from '@pages/vaults/components/detail/BottomDrawer'
 import { useAppSettings } from '@pages/vaults/contexts/useAppSettings'
 import { AccountDropdown } from '@shared/components/AccountDropdown'
 import { MobileSiteStatus } from '@shared/components/SiteStatus'
+import { useNotifications } from '@shared/contexts/useNotifications'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconClose } from '@shared/icons/IconClose'
@@ -312,7 +313,10 @@ export function MobileNavMenu({
     { name: 'APR Oracle', href: 'https://oracle.yearn.fi', description: 'Projected Vault APY Tool' }
   ]
 
+  const { acknowledge } = useNotifications()
+
   const handleWalletClick = (): void => {
+    acknowledge()
     onClose()
     if (isActive) {
       setIsWalletDrawerOpen(true)
@@ -425,7 +429,11 @@ export function MobileNavMenu({
                         <IconWallet className={'size-5'} />
                         <span>{walletIdentity || 'Wallet'}</span>
                         {notificationStatus && (
-                          <div className={cl('absolute right-4 size-2.5 rounded-full', notificationDotColor)} />
+                          <span
+                            role="img"
+                            aria-label="Unread transaction activity"
+                            className={cl('absolute right-4 size-2.5 rounded-full', notificationDotColor)}
+                          />
                         )}
                       </button>
 

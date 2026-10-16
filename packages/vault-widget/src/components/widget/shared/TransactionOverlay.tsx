@@ -1,18 +1,47 @@
 import { useQuery } from '@tanstack/react-query'
 import { getCallsStatus, getPublicClient } from '@wagmi/core'
-import type { VaultWidgetTransactionPlan } from '@yearn/vault-widget/headless'
-import { Button } from '@yearn/vault-widget/internal/components/shared/Button'
 import {
-  executePlannedStyledWidgetTransaction,
-  getPlannedTransactionErrorPresentation,
-  type TPlannedTransactionFailureKind
-} from '@yearn/vault-widget/internal/components/widget/shared/plannedTransactionController'
+  awaitTransactionRefresh,
+  getConfirmedTransactionReceipt,
+  getTransactionConfirmations,
+  isUnsupportedAtomicBatchError,
+  type VaultWidgetTransactionPlan
+} from '@yearn/vault-widget/headless'
+import { Button } from '@yearn/vault-widget/internal/components/shared/Button'
+import { LifecycleTransactionOverlay } from '@yearn/vault-widget/internal/components/widget/shared/LifecycleTransactionOverlay'
+import type { TOverlayRecipe } from '@yearn/vault-widget/internal/components/widget/shared/lifecyclePreparation'
+import { TransactionMessage } from '@yearn/vault-widget/internal/components/widget/shared/TransactionMessage'
+import {
+  AUTO_CONTINUE_SUCCESS_DELAY_MS,
+  type CompletionDeferral,
+  getAutoContinueConfirmDelayMs,
+  getBridgeTrackerLink,
+  getInitialOverlayState,
+  getLegacyTransactionErrorPresentation,
+  getPendingTransactionTitle,
+  getSubmittedTransactionCopy,
+  hasExecutableWalletConnector,
+  isConfirmedSafeTransactionFailure,
+  type OverlayState,
+  resolveCompletionDeferral,
+  resolveCrossChainSourceCompletion,
+  resolveExecutionTrackingHash,
+  resolveOverlayConnectedChainId,
+  resolvePendingBatchOverlayTransition,
+  resolveTransactionReceiptOutcome,
+  shouldAutoContinueFromSuccessState,
+  shouldAutoContinuePermitSuccess,
+  shouldRefetchNextStepAfterReceipt,
+  shouldRunDeferredCompletion,
+  shouldStartStepOnOpen
+} from '@yearn/vault-widget/internal/components/widget/shared/transactionOverlay.helpers'
 import {
   createWidgetAnalytics,
   type TWidgetAnalyticsContext,
   widgetErrorCategory
 } from '@yearn/vault-widget/internal/utils/analytics'
 import { cl } from '@yearn/vault-widget/internal/utils/index'
+import type { TSettlementRequirement } from '@yearn/vault-widget/lifecycle/settlement'
 import type { VaultWidgetAnalyticsProperties } from '@yearn/vault-widget/runtime'
 import {
   useVaultWidgetRuntime,
@@ -40,31 +69,7 @@ import {
   useSwitchChain,
   useWriteContract
 } from 'wagmi'
-import { getConfirmedTransactionReceipt } from './submittedTransactionReceipt'
 import { AnimatedCheckmark, ErrorIcon, Spinner } from './TransactionStateIndicators'
-import {
-  AUTO_CONTINUE_SUCCESS_DELAY_MS,
-  type CompletionDeferral,
-  getAutoContinueConfirmDelayMs,
-  getBridgeTrackerLink,
-  getInitialOverlayState,
-  getPendingTransactionTitle,
-  getSubmittedTransactionCopy,
-  hasExecutableWalletConnector,
-  isConfirmedSafeTransactionFailure,
-  type OverlayState,
-  resolveCompletionDeferral,
-  resolveCrossChainSourceCompletion,
-  resolveExecutionTrackingHash,
-  resolveOverlayConnectedChainId,
-  resolvePendingBatchOverlayTransition,
-  resolveTransactionReceiptOutcome,
-  shouldAutoContinueFromSuccessState,
-  shouldAutoContinuePermitSuccess,
-  shouldRefetchNextStepAfterReceipt,
-  shouldRunDeferredCompletion,
-  shouldStartStepOnOpen
-} from './transactionOverlay.helpers'
 
 export type PermitDataDirect = {
   domain: TypedDataDomain
@@ -86,6 +91,7 @@ export type TransactionBatchCall = {
 }
 
 export type TransactionStep = {
+  settlement?: TSettlementRequirement
   id: string
   prepare: TTransactionPreparation
   label: string
@@ -207,21 +213,24 @@ function isUserRejectionError(error: any): boolean {
 }
 
 function getTransactionErrorMessage(error: any): string {
-  const errorMsg = error?.shortMessage || error?.message || 'Transaction failed. Please try again.'
-  return errorMsg.length > 100 ? 'Transaction failed. Please try again.' : errorMsg
+  return error?.message || error?.shortMessage || 'Transaction failed. Please try again.'
 }
 
-type TransactionOverlayProps = {
+export type TransactionOverlayProps = {
   isOpen: boolean
+  reviewedOwner?: Address
   onClose: () => void
+  onBatchUnsupported?: () => Promise<void>
   plan?: VaultWidgetTransactionPlan
+  lifecycleRecipe?: TOverlayRecipe
+  planSteps?: Readonly<Record<string, TransactionStep>>
   step?: TransactionStep
   isLastStep?: boolean
   onAllComplete?: (analytics?: VaultWidgetAnalyticsProperties) => void
   analyticsContext?: TWidgetAnalyticsContext
   deferOnAllCompleteUntilClose?: boolean
   deferOnAllCompleteUntilConfettiEnd?: boolean
-  onStepSuccess?: (stepId: string) => void | Promise<void>
+  onStepSuccess?: (stepId: string, receipt?: TransactionReceipt) => void | Promise<void>
   /**
    * Called after the final transaction is confirmed, before the success screen
    * is shown. The overlay stays in a "refreshing" state while this resolves.
@@ -235,10 +244,63 @@ type TransactionOverlayProps = {
   autoContinueStepIds?: string[]
 }
 
-export const TransactionOverlay: FC<TransactionOverlayProps> = ({
+export const TransactionOverlay: FC<TransactionOverlayProps> = (props) => {
+  const runtime = useVaultWidgetRuntime()
+  const step = props.step
+  const chainId =
+    step?.batch?.chainId ??
+    step?.notification?.fromChainId ??
+    runtime.chains.resolveCanonicalChainId(getTransactionPreparationChainId(step?.prepare))
+  const request = getContractTransactionRequest(step?.prepare) as
+    | { address?: string; to?: string; data?: string; functionName?: string; args?: readonly unknown[]; value?: bigint }
+    | undefined
+  const identity = JSON.stringify(
+    [
+      step?.id,
+      chainId,
+      step?.batch?.calls ??
+        (isRawTransactionPreparation(step?.prepare)
+          ? step.prepare.transaction
+          : request
+            ? [request.address ?? request.to, request.data, request.functionName, request.args, request.value]
+            : undefined)
+    ],
+    (_key, value) => (typeof value === 'bigint' ? value.toString() : value)
+  )
+  const recipe =
+    props.lifecycleRecipe ??
+    (step && chainId && (step.completesFlow ?? props.isLastStep ?? true) && !isCrossChainNotification(step.notification)
+      ? {
+          id: identity,
+          chainId,
+          steps: [{ id: step.id, label: step.label }]
+        }
+      : undefined)
+  if (
+    runtime.lifecycle &&
+    (props.plan || recipe) &&
+    (!recipe?.settlement || runtime.lifecycle.supportsDestinationSettlement)
+  )
+    return props.isOpen ? (
+      <LifecycleTransactionOverlay {...props} lifecycleRecipe={props.plan ? props.lifecycleRecipe : recipe} />
+    ) : null
+  // A host that owns destination settlement must never submit via the legacy writer.
+  if (runtime.lifecycle?.supportsDestinationSettlement)
+    return props.isOpen ? (
+      <div className="p-6 text-center" role="status">
+        <p>Preparing transaction. If this does not finish, close and review the route again.</p>
+        <button type="button" onClick={props.onClose}>
+          Close
+        </button>
+      </div>
+    ) : null
+  return <LegacyTransactionOverlay {...props} />
+}
+
+const LegacyTransactionOverlay: FC<TransactionOverlayProps> = ({
   isOpen,
   onClose,
-  plan,
+  onBatchUnsupported,
   step,
   isLastStep = true,
   onAllComplete,
@@ -255,8 +317,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   const [errorMessage, setErrorMessage] = useState<string>('')
   const [hasCompletedFlow, setHasCompletedFlow] = useState(false)
   const [completedStepSnapshot, setCompletedStepSnapshot] = useState<TransactionStep | null>(null)
-  const [plannedTxHash, setPlannedTxHash] = useState<`0x${string}` | undefined>()
-  const [plannedFailureKind, setPlannedFailureKind] = useState<TPlannedTransactionFailureKind>('pre-submission')
+  const [hasRefreshFailed, setHasRefreshFailed] = useState(false)
 
   const runtime = useVaultWidgetRuntime()
   const analyticsRuntimeRef = useRef(runtime.analytics.track)
@@ -329,13 +390,12 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     submittedExecutionChainId
   )
   // Fast chains like Base need extra confirmations.
-  const confirmations = submittedCanonicalChainId === 8453 ? 2 : 1
+  const confirmations = getTransactionConfirmations(submittedCanonicalChainId)
 
   // Track the step that was just executed (for showing success messages)
   const executedStepRef = useRef<TransactionStep | null>(null)
 
   const explorerChainId =
-    plan?.intent.calls[0]?.request.chainId ??
     executedStepRef.current?.batch?.chainId ??
     getTransactionPreparationChainId(executedStepRef.current?.prepare) ??
     undefined
@@ -401,7 +461,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     status: receipt.data?.status
   })
   const blockExplorer = runtime.chains.getChain(canonicalExplorerChainId ?? currentChainId)?.blockExplorerUrl
-  const explorerDisplayHash = plannedTxHash ?? executionTrackingHash
+  const explorerDisplayHash = executionTrackingHash
   const explorerTxUrl = explorerDisplayHash && blockExplorer ? `${blockExplorer}/tx/${explorerDisplayHash}` : ''
 
   // Track if the executed step was the last step (captured at execution time)
@@ -655,8 +715,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       setErrorMessage('')
       setHasCompletedFlow(false)
       setCompletedStepSnapshot(null)
-      setPlannedTxHash(undefined)
-      setPlannedFailureKind('pre-submission')
+      setHasRefreshFailed(false)
       resetTxState(true)
       hasStartedRef.current = false
       hasAutoContinuedFromStepRef.current = null
@@ -827,110 +886,6 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     void ensureSubmittedNotification(callsReceiptTxHash, executedStepRef.current, submittedExecutionChainId)
   }, [callsReceiptTxHash, ensureSubmittedNotification, isWalletSafe, submittedCallsId, submittedExecutionChainId])
 
-  const executePlannedStep = useCallback(async () => {
-    if (!plan || !step || !account) {
-      setOverlayState('error')
-      setErrorMessage('Transaction not ready. Please try again.')
-      return
-    }
-
-    const analyticsAttempt = setStepExecutionContext(step, isLastStep)
-    setOverlayState('confirming')
-    setErrorMessage('')
-    setPlannedTxHash(undefined)
-    setPlannedFailureKind('pre-submission')
-    const canonicalExecutionChainId = plan.intent.calls[0]?.request.chainId
-    const notificationExecutionChainId = runtime.chains.resolveExecutionChainId(canonicalExecutionChainId)
-    const result = await executePlannedStyledWidgetTransaction({
-      account,
-      adapter: runtime.execution,
-      notification: step.notification,
-      notificationExecutionChainId,
-      notifications: {
-        createSubmitted: createSubmittedNotification,
-        update: updateNotification
-      },
-      onNotificationError: (error) => console.error('Failed to update transaction notification:', error),
-      onState: (state) => {
-        if (state.status === 'confirming') {
-          setOverlayState('confirming')
-          return
-        }
-        if (state.status === 'pending') {
-          analytics.result(analyticsAttempt, 'submitted')
-          setPlannedTxHash(state.hash)
-          setOverlayState('pending')
-          return
-        }
-        if (state.status === 'refreshing') {
-          setPlannedTxHash(state.hash)
-          setOverlayState('refreshing')
-        }
-      },
-      onTransactionConfirmed: () => {
-        analytics.result(analyticsAttempt, 'confirmed')
-        if (step.completesFlow ?? isLastStep) analytics.complete(analyticsAttempt, 'success')
-        if (hasReportedStepSuccessRef.current || !step.id) return
-        hasReportedStepSuccessRef.current = true
-        void reportStepSuccess(step.id)
-      },
-      plan,
-      refresh: async () => {
-        if (!onBeforeSuccess) return
-        await onBeforeSuccess(step.id)
-        await new Promise((resolve) => setTimeout(resolve, 500))
-      }
-    })
-
-    if (result.status === 'error') {
-      const category = widgetErrorCategory(result.error)
-      analytics.result(
-        analyticsAttempt,
-        result.failureKind === 'submitted-unconfirmed' || result.failureKind === 'replaced'
-          ? 'unknown'
-          : category === 'rejected' || category === 'upgrade_rejected'
-            ? 'rejected'
-            : 'error',
-        category
-      )
-      if (isUserRejectionError(result.error) || isUserRejectionError(result.error.cause)) {
-        onClose()
-        return
-      }
-
-      const presentation = getPlannedTransactionErrorPresentation(
-        result.failureKind,
-        getTransactionErrorMessage(result.error)
-      )
-      if (result.hash) setPlannedTxHash(result.hash)
-      setPlannedFailureKind(result.failureKind)
-      setErrorMessage(presentation.message)
-      setOverlayState('error')
-      return
-    }
-
-    if (result.hash) setPlannedTxHash(result.hash)
-    const completedAllSteps = step.completesFlow ?? isLastStep
-    finalizeSuccessState(completedAllSteps, step)
-    if (step.showConfetti) requestConfetti()
-  }, [
-    account,
-    analytics,
-    createSubmittedNotification,
-    finalizeSuccessState,
-    isLastStep,
-    onBeforeSuccess,
-    onClose,
-    reportStepSuccess,
-    plan,
-    requestConfetti,
-    runtime.chains,
-    runtime.execution,
-    setStepExecutionContext,
-    step,
-    updateNotification
-  ])
-
   const executePermitStep = useCallback(
     async (currentStep: TransactionStep) => {
       const analyticsAttempt = setStepExecutionContext(currentStep, isLastStep)
@@ -1045,6 +1000,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
           }
         }
 
+        const submission = { accepted: false }
         try {
           analytics.phase(analyticsAttempt, 'wallet_request')
           const result = await sendCalls.sendCallsAsync({
@@ -1054,6 +1010,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
             forceAtomic: true,
             calls: currentStep.batch.calls
           })
+          submission.accepted = true
           analytics.result(analyticsAttempt, 'submitted')
           await beginSubmittedCallBundle(result.id, currentStep, executionTxChainId)
         } catch (error: any) {
@@ -1065,6 +1022,13 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
           )
           if (isUserRejectionError(error)) {
             onClose()
+            return
+          }
+          if (!submission.accepted && !isWalletSafe && onBatchUnsupported && isUnsupportedAtomicBatchError(error)) {
+            await onBatchUnsupported().catch((fallbackError: unknown) => {
+              setOverlayState('error')
+              setErrorMessage(getTransactionErrorMessage(fallbackError))
+            })
             return
           }
           console.error('Batch transaction failed:', error)
@@ -1187,7 +1151,9 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       beginSubmittedTransaction,
       account,
       isLastStep,
+      isWalletSafe,
       onClose,
+      onBatchUnsupported,
       sendCalls,
       setStepExecutionContext,
       switchChainAsync,
@@ -1377,13 +1343,8 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     }
 
     resetTxState()
-    if (plan) {
-      hasStartedRef.current = true
-      void executePlannedStep()
-      return
-    }
     executeStep()
-  }, [executePlannedStep, failedStepSuccessId, plan, reportStepSuccess, resetTxState, executeStep])
+  }, [failedStepSuccessId, reportStepSuccess, resetTxState, executeStep])
 
   const handleClose = useCallback(() => {
     onClose()
@@ -1391,15 +1352,6 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
 
   // Start step when overlay opens
   useEffect(() => {
-    // A frozen plan is an imperative wallet operation; there is no declarative
-    // React primitive that can start it while retaining the existing overlay.
-    if (plan) {
-      if (!isOpen || !step || hasStartedRef.current || !isWalletConnectionReady || !account) return
-      hasStartedRef.current = true
-      void executePlannedStep()
-      return
-    }
-
     if (
       shouldStartStepOnOpen({
         isOpen,
@@ -1414,7 +1366,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       hasStartedRef.current = true
       executeStep()
     }
-  }, [account, executePlannedStep, executeStep, isOpen, isStepReady, isWalletConnectionReady, overlayState, plan, step])
+  }, [executeStep, isOpen, isStepReady, isWalletConnectionReady, overlayState, step])
 
   useEffect(() => {
     if (!isOpen || !isWaitingForNextStep || !step) return
@@ -1609,7 +1561,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
 
           if (completedAllSteps && onBeforeSuccess) {
             try {
-              await onBeforeSuccess(capturedStep?.id ?? '')
+              await awaitTransactionRefresh(() => onBeforeSuccess(capturedStep?.id ?? ''))
             } catch (error) {
               console.warn('[TransactionOverlay] Failed to refresh source-chain balances after confirmation', error)
             }
@@ -1654,7 +1606,14 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
 
         if (completedAllSteps && onBeforeSuccess) {
           setOverlayState('refreshing')
-          await onBeforeSuccess(capturedStep?.id ?? '')
+          try {
+            await awaitTransactionRefresh(() => onBeforeSuccess(capturedStep?.id ?? ''))
+          } catch (error) {
+            setHasRefreshFailed(true)
+            setErrorMessage(error instanceof Error ? error.message : 'Balance refresh failed')
+            setOverlayState('error')
+            return
+          }
           await new Promise((resolve) => setTimeout(resolve, 500))
           finalizeSuccessState(completedAllSteps, capturedStep)
           if (capturedStep?.showConfetti) {
@@ -1789,10 +1748,7 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     }
   }, [isOpen, overlayState, receipt.data?.transactionHash, step?.id, step?.prepare.refetch, isStepReady])
 
-  const transactionErrorPresentation = getPlannedTransactionErrorPresentation(
-    plan ? plannedFailureKind : 'pre-submission',
-    errorMessage
-  )
+  const transactionErrorPresentation = getLegacyTransactionErrorPresentation(hasRefreshFailed, errorMessage)
   const displayedErrorPresentation = failedStepSuccessId
     ? {
         title: 'Next step unavailable',
@@ -1965,9 +1921,10 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
             <>
               <ErrorIcon />
               <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">{displayedErrorPresentation.title}</h3>
-              <p className={cl('text-sm text-text-secondary', explorerTxUrl ? 'mb-3' : 'mb-6')}>
-                {displayedErrorPresentation.message}
-              </p>
+              <TransactionMessage
+                message={displayedErrorPresentation.message}
+                className={explorerTxUrl ? 'mb-3' : 'mb-6'}
+              />
               {explorerTxUrl ? (
                 <a
                   href={explorerTxUrl}

@@ -13,7 +13,7 @@ type TRewardRowProps = {
   amount: string
   usdValue: number
   onClaim: () => void
-  isClaimPending: boolean
+  isClaimPending?: boolean
   isClaimReady: boolean
   isFirst?: boolean
   isAllChainsView?: boolean
@@ -34,7 +34,7 @@ export function RewardRow(props: TRewardRowProps): ReactElement {
     amount,
     usdValue,
     onClaim,
-    isClaimPending,
+    isClaimPending = false,
     isClaimReady,
     isFirst,
     isAllChainsView,

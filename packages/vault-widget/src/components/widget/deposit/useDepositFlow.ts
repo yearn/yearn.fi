@@ -8,6 +8,7 @@ import type { EnsoQuotePurpose } from '@yearn/vault-widget/internal/hooks/solver
 import { toAddress } from '@yearn/vault-widget/internal/utils'
 import { toBasisPoints } from '@yearn/vault-widget/internal/utils/slippage'
 import { YVUSD_LOCKED_ADDRESS } from '@yearn/vault-widget/internal/utils/yvUsd'
+import type { TSettlementRequirement } from '@yearn/vault-widget/lifecycle/settlement'
 import { useMemo } from 'react'
 import { type Address, type Hex, isAddressEqual } from 'viem'
 import { useReadContract } from 'wagmi'
@@ -60,7 +61,8 @@ export interface DepositFlowResult {
       normalizedExpectedOut: bigint
       normalizedMinExpectedOut: bigint
       routeHasSwap?: boolean
-      bridgeProtocol?: 'stargate' | 'ccip' | 'relay'
+      bridgeSettlement?: TSettlementRequirement
+      bridgeProtocol?: string
       isLoadingRoute: boolean
       isLoadingExpectedOutNormalization: boolean
       isCrossChain: boolean

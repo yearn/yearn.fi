@@ -1,8 +1,8 @@
 import { setThemePreference, useThemePreference } from '@hooks/useThemePreference'
 import { useAppSettings } from '@pages/vaults/contexts/useAppSettings'
+import { RecentActivity } from '@shared/components/RecentActivity'
 import { WalletAccountValue } from '@shared/components/WalletAccountValue'
 import { yToast } from '@shared/components/yToast'
-import { useNotifications } from '@shared/contexts/useNotifications'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
 import { IconArrowLeft } from '@shared/icons/IconArrowLeft'
@@ -13,7 +13,6 @@ import { IconMoon } from '@shared/icons/IconMoon'
 import { IconPower } from '@shared/icons/IconPower'
 import { IconSettings } from '@shared/icons/IconSettings'
 import { IconSun } from '@shared/icons/IconSun'
-import { LogoYearn } from '@shared/icons/LogoYearn'
 import { cl } from '@shared/utils'
 import { truncateHex } from '@shared/utils/tools.address'
 import { WalletSurface } from '@yearn/wallet-ui'
@@ -30,7 +29,6 @@ type TView = 'account' | 'settings'
 
 function AccountView({ onSettingsClick, onClose }: { onSettingsClick: () => void; onClose: () => void }): ReactElement {
   const { address, ens, clusters, onDesactivate } = useWeb3()
-  const { cachedEntries } = useNotifications()
   const router = useRouter()
   const themePreference = useThemePreference()
   const isDarkTheme = themePreference !== 'light'
@@ -53,10 +51,6 @@ function AccountView({ onSettingsClick, onClose }: { onSettingsClick: () => void
     }
   }, [address, toast])
 
-  const recentActivity = useMemo(() => {
-    return cachedEntries.toSorted((a, b) => (b.timeFinished ?? 0) - (a.timeFinished ?? 0)).slice(0, 3)
-  }, [cachedEntries])
-
   const handleViewPortfolio = useCallback(() => {
     router.push('/portfolio')
     onClose()
@@ -71,25 +65,6 @@ function AccountView({ onSettingsClick, onClose }: { onSettingsClick: () => void
     router.push('/portfolio?tab=activity')
     onClose()
   }, [router, onClose])
-
-  function formatDate(timestamp?: number): string {
-    if (!timestamp) return ''
-    const date = new Date(timestamp * 1000)
-    return date.toLocaleDateString('en-US', { month: 'short', day: 'numeric' })
-  }
-
-  function getStatusColor(status: string): string {
-    switch (status) {
-      case 'success':
-        return 'text-[#0C9000]'
-      case 'error':
-        return 'text-red'
-      case 'pending':
-        return 'text-primary'
-      default:
-        return 'text-text-secondary'
-    }
-  }
 
   const iconButtonClass = cl(
     'flex size-7 items-center justify-center rounded-full transition-colors',
@@ -146,53 +121,7 @@ function AccountView({ onSettingsClick, onClose }: { onSettingsClick: () => void
         </button>
       </div>
 
-      <div className={'mt-4'}>
-        <h3 className={'mb-3 text-sm font-semibold text-text-primary'}>{'Recent activity'}</h3>
-        {recentActivity.length > 0 ? (
-          <div className={'flex flex-col gap-3'}>
-            {recentActivity.map((activity) => (
-              <div key={activity.id} className={'flex items-center justify-between'}>
-                <div className={'flex items-center gap-3'}>
-                  <div
-                    className={cl(
-                      'flex size-9 items-center justify-center rounded-full',
-                      isDarkTheme ? 'bg-surface-secondary' : 'bg-neutral-100'
-                    )}
-                  >
-                    <LogoYearn className={'size-5'} front={'text-white'} back={'text-primary'} />
-                  </div>
-                  <div>
-                    <p className={cl('text-sm font-medium capitalize', getStatusColor(activity.status))}>
-                      {activity.type}
-                    </p>
-                    <p className={'text-xs text-text-secondary'}>
-                      {activity.amount} {activity.fromTokenName ?? ''}
-                    </p>
-                  </div>
-                </div>
-                <span className={'text-xs text-text-secondary'}>{formatDate(activity.timeFinished)}</span>
-              </div>
-            ))}
-          </div>
-        ) : (
-          <p className={'text-sm text-text-secondary'}>{'No recent activity'}</p>
-        )}
-
-        {recentActivity.length > 0 && (
-          <button
-            onClick={handleViewAllActivity}
-            className={cl(
-              'mt-3 flex items-center gap-2 rounded-lg px-3 py-2 text-sm font-medium transition-colors',
-              isDarkTheme
-                ? 'text-text-secondary hover:bg-surface-secondary hover:text-text-primary'
-                : 'text-neutral-600 hover:bg-neutral-100 hover:text-neutral-900'
-            )}
-          >
-            {'More transactions'}
-            <IconArrowRight className={'size-4'} />
-          </button>
-        )}
-      </div>
+      <RecentActivity onViewAll={handleViewAllActivity} />
     </div>
   )
 }
