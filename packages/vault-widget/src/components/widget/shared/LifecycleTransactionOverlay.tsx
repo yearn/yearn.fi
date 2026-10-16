@@ -333,7 +333,7 @@ export function LifecycleTransactionOverlay(props: TransactionOverlayProps) {
         ))}
         {record?.refreshError ? <p className="mb-4 text-sm text-text-secondary">{record.refreshError}</p> : null}
         {recovering && state.history === 'unavailable' ? (
-          <Button className="mb-3 w-full max-w-xs" onClick={() => service.recheckHistory()}>
+          <Button className="mb-3 w-full" onClick={() => service.recheckHistory()}>
             Retry history
           </Button>
         ) : null}
@@ -363,22 +363,22 @@ export function LifecycleTransactionOverlay(props: TransactionOverlayProps) {
           </a>
         ) : null}
         {record?.settlement !== 'same-chain' && record?.source && !success ? (
-          <Button className="mb-3 w-full max-w-xs" onClick={() => service.recheck(record.id)}>
+          <Button className="mb-3 w-full" onClick={() => service.recheck(record.id)}>
             Recheck bridge
           </Button>
         ) : null}
         {isPaused ? (
-          <Button className="mb-3 w-full max-w-xs" onClick={() => service.continue(flowId)}>
+          <Button className="mb-3 w-full" onClick={() => service.continue(flowId)}>
             Continue
           </Button>
         ) : null}
         {record && (record.refresh === 'error' || milestoneErrors.length > 0) ? (
-          <Button className="mb-3 w-full max-w-xs" onClick={() => service.refresh(record.id)}>
+          <Button className="mb-3 w-full" onClick={() => service.refresh(record.id)}>
             Refresh balances
           </Button>
         ) : null}
         {unresolved && record && !record.source ? (
-          <Button className="mb-3 w-full max-w-xs" onClick={() => service.recheck(record.id)}>
+          <Button className="mb-3 w-full" onClick={() => service.recheck(record.id)}>
             Recheck confirmation
           </Button>
         ) : null}
@@ -388,7 +388,7 @@ export function LifecycleTransactionOverlay(props: TransactionOverlayProps) {
         isPaused ||
         needsReview ||
         ((record?.safe || record?.walletBatch) && !record.source) ? (
-          <Button className="w-full max-w-xs" classNameOverride="yearn--button--nextgen w-full" onClick={close}>
+          <Button classNameOverride="yearn--button--nextgen w-full" onClick={close}>
             {success ? 'Done' : 'Close'}
           </Button>
         ) : null}

@@ -246,10 +246,11 @@ export function WidgetDeposit({
   // Derived token values
   const depositToken = selectedToken || assetAddress
   const sourceChainId = selectedChainId || chainId
+  const isCrossChain = sourceChainId !== chainId
   const { supported: supportsAtomicBatch, status: batchCapability } = useAtomicBatchCapability({
     account,
     chainId: sourceChainId,
-    enabled: !isWalletSafe
+    enabled: !isWalletSafe && !isCrossChain
   })
   const isNativeToken = toAddress(depositToken) === toAddress(ETH_TOKEN_ADDRESS)
   const selectedExtraToken = useMemo(
@@ -401,7 +402,6 @@ export function WidgetDeposit({
     stakingSource
   })
 
-  const isCrossChain = sourceChainId !== chainId
   const isEnsoRoute = routeType === 'ENSO'
   const ensoRouteHasSwap = isEnsoRoute && Boolean(activeFlow.periphery.routeHasSwap)
   const { approveNotificationParams, depositNotificationParams } = useDepositNotifications({
@@ -748,7 +748,7 @@ export function WidgetDeposit({
   const hasCompletedApprovalInActiveFlow = completedApprovalFlowKey === approvalFlowKey
   const effectiveNeedsApproval = needsApproval && !hasCompletedApprovalInActiveFlow
   const depositBatch = useMemo(() => {
-    if ((!isWalletSafe && !supportsAtomicBatch) || !effectiveNeedsApproval) {
+    if (isCrossChain || (!isWalletSafe && !supportsAtomicBatch) || !effectiveNeedsApproval) {
       return undefined
     }
 
@@ -781,6 +781,7 @@ export function WidgetDeposit({
     chainId,
     depositAmount.debouncedBn,
     depositToken,
+    isCrossChain,
     isWalletSafe,
     effectiveNeedsApproval,
     executableEnsoTx,

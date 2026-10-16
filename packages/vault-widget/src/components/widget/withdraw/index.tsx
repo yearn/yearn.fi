@@ -155,11 +155,6 @@ export function WidgetWithdraw({
     isWalletSafe
   } = useWidgetContext({ chainId, vaultAddress })
   const runtime = useVaultWidgetRuntime()
-  const { supported: supportsAtomicBatch, status: batchCapability } = useAtomicBatchCapability({
-    account,
-    chainId,
-    enabled: !isWalletSafe
-  })
   const enableTokenListFetch = runtime.catalog.enableTokenList
 
   const resolvedDisplayAssetAddress = displayAssetAddress ?? assetAddress
@@ -410,6 +405,11 @@ export function WidgetWithdraw({
   ])
 
   const isCrossChain = destinationChainId !== chainId
+  const { supported: supportsAtomicBatch, status: batchCapability } = useAtomicBatchCapability({
+    account,
+    chainId,
+    enabled: !isWalletSafe && !isCrossChain
+  })
   const isEnsoRoute = routeType === 'ENSO'
   const ensoRouteHasSwap = isEnsoRoute && Boolean(activeFlow.periphery.routeHasSwap)
   const effectiveSourceShares = activeFlow.periphery.shareAmount ?? effectiveRequiredShares
@@ -766,7 +766,7 @@ export function WidgetWithdraw({
   const formattedRequiredShares = formatTAmount({ value: effectiveRequiredShares, decimals: sharesDecimals })
   const formattedApprovalAmount = formatTAmount({ value: effectiveSourceShares, decimals: sharesDecimals })
   const withdrawBatch = useMemo(() => {
-    if ((!isWalletSafe && !supportsAtomicBatch) || !approvalState.needsApproval) {
+    if (isCrossChain || (!isWalletSafe && !supportsAtomicBatch) || !approvalState.needsApproval) {
       return undefined
     }
 
@@ -797,6 +797,7 @@ export function WidgetWithdraw({
     chainId,
     effectiveSourceShares,
     executableEnsoTx,
+    isCrossChain,
     isWalletSafe,
     routeType,
     sourceToken,

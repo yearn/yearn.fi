@@ -11,6 +11,7 @@ import {
   waitForCallsStatus
 } from '@wagmi/core/actions'
 import {
+  getConfirmedTransactionReceipt,
   type TSafeExecution,
   type VaultWidgetExecutionAdapter,
   VaultWidgetPreparationError,
@@ -25,7 +26,6 @@ import {
   type Hex,
   isAddress,
   isHash,
-  isHex,
   MethodNotFoundRpcError,
   MethodNotSupportedRpcError,
   parseAbi,
@@ -255,6 +255,41 @@ export function createWagmiVaultWidgetExecutionAdapter(
     }
   }
 
+  async function resolveWalletBatchExecution(
+    status: Awaited<ReturnType<typeof getCallsStatus>>,
+    canonicalChainId: number,
+    executionChainId: number
+  ): Promise<TSafeExecution> {
+    if (status.chainId !== undefined && status.chainId !== executionChainId)
+      throw new Error('Wallet batch execution network changed')
+    if (status.status === 'failure') return { status: status.statusCode === 400 ? 'cancelled' : 'failed' }
+    if (status.status !== 'success') return { status: 'pending' }
+    const receipts = status.receipts ?? []
+    // Some wallets report confirmation before supplying receipts. Keep tracking without claiming success.
+    if (receipts.length === 0) return { status: 'pending', receiptUnavailable: true }
+    if (receipts.some((receipt) => receipt.status !== 'success')) return { status: 'failed' }
+    const hash = receipts.at(-1)?.transactionHash
+    if (!isTransactionHash(hash) || receipts.some((receipt) => !isTransactionHash(receipt.transactionHash)))
+      throw new Error('Wallet batch execution is missing its transaction receipts')
+
+    // EIP-5792 permits multiple on-chain transactions even for an atomic batch.
+    // The final receipt identifies the route call; verify earlier transactions before admitting it.
+    const precedingHashes = [...new Set(receipts.map((receipt) => receipt.transactionHash))].filter(
+      (candidate) => candidate.toLowerCase() !== hash.toLowerCase()
+    )
+    if (precedingHashes.length) {
+      const client = getPublicClient(options.config, { chainId: executionChainId })
+      if (!client) throw new Error(`No receipt client available for chain ${executionChainId}`)
+      const confirmations = requireConfirmations(canonicalChainId)
+      const precedingReceipts = await Promise.all(
+        precedingHashes.map((hash) => getConfirmedTransactionReceipt(client, hash, confirmations))
+      )
+      if (precedingReceipts.some((receipt) => receipt && receipt.status !== 'success')) return { status: 'failed' }
+      if (precedingReceipts.some((receipt) => !receipt)) return { status: 'pending' }
+    }
+    return { status: 'success', hash }
+  }
+
   const adapter: VaultWidgetExecutionAdapter = {
     async switchChain({ chainId }) {
       await wagmiSwitchChain(options.config, { chainId: requireExecutionChainId(chainId) })
@@ -477,8 +512,9 @@ export function createWagmiVaultWidgetExecutionAdapter(
         chainId: executionChainId,
         forceAtomic: true
       })
-      if (!isHex(result.id) || result.id === '0x') {
-        throw new Error('Safe returned an invalid proposal identifier')
+      // EIP-5792 identifiers are opaque strings, not transaction hashes. Preserve the wallet's value exactly.
+      if (typeof result.id !== 'string' || result.id.trim().length === 0) {
+        throw new Error('Wallet returned an invalid batch identifier')
       }
       return result.id
     },
@@ -511,9 +547,20 @@ export function createWagmiVaultWidgetExecutionAdapter(
   return {
     ...adapter,
     submitAtomicBatch: adapter.proposeSafeBatch,
-    observeAtomicExecution: ({ bundleId, ...parameters }) =>
-      adapter.observeSafeExecution!({ ...parameters, proposalId: bundleId }),
-    waitForAtomicExecution: ({ bundleId, ...parameters }) =>
-      adapter.waitForSafeExecution!({ ...parameters, proposalId: bundleId })
+    async observeAtomicExecution({ bundleId, chainId, executionChainId }) {
+      const status = await getCallsStatus(options.config, { id: bundleId })
+      return resolveWalletBatchExecution(status, chainId, executionChainId)
+    },
+    async waitForAtomicExecution({ bundleId, chainId }) {
+      const status = await waitForCallsStatus(options.config, {
+        id: bundleId,
+        pollingInterval: safePollingIntervalMs,
+        timeout: safeTimeoutMs
+      })
+      const execution = await resolveWalletBatchExecution(status, chainId, requireExecutionChainId(chainId))
+      if (execution.status !== 'success' || !execution.hash)
+        throw new Error('Wallet batch confirmation could not be verified')
+      return execution.hash
+    }
   }
 }

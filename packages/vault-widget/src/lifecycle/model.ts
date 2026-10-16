@@ -11,14 +11,14 @@ import {
   type TSettlementTracking
 } from '@yearn/vault-widget/lifecycle/settlement'
 import type { VaultWidgetNotificationInput } from '@yearn/vault-widget/runtime'
-import { type Address, type Hash, type Hex, isHash } from 'viem'
+import { type Address, type Hash, isHash } from 'viem'
 
 export type TTransactionReference = {
   canonicalChainId: number
   executionChainId: number
   hash?: Hash
-  proposalId?: Hex
-  bundleId?: Hex
+  proposalId?: string
+  bundleId?: string
 }
 export type TTransactionRecord = {
   version: 1
@@ -37,12 +37,12 @@ export type TTransactionRecord = {
   original: TTransactionReference
   effective: TTransactionReference
   safe?: {
-    proposalId: Hex
+    proposalId: string
     requests: readonly (Omit<VaultWidgetTransactionRequest, 'value'> & { value: string })[]
     execution?: TSafeExecution & { observedAt: number }
   }
   walletBatch?: {
-    id: Hex
+    id: string
     requests: readonly (Omit<VaultWidgetTransactionRequest, 'value'> & { value: string })[]
     execution?: TSafeExecution & { observedAt: number }
   }
@@ -108,9 +108,15 @@ export function selectTransaction(record: TTransactionRecord): TTransactionPrese
   if (batch && batch.execution?.status !== 'success')
     return {
       ...common,
-      outcome: record.trackingError ? 'unknown' : 'pending',
-      label: record.safe ? 'Awaiting Safe execution' : 'Awaiting wallet batch execution',
-      detail: record.trackingError
+      outcome: record.trackingError || batch.execution?.receiptUnavailable ? 'unknown' : 'pending',
+      label: batch.execution?.receiptUnavailable
+        ? 'Wallet receipt unavailable'
+        : record.safe
+          ? 'Awaiting Safe execution'
+          : 'Awaiting wallet batch execution',
+      detail: batch.execution?.receiptUnavailable
+        ? 'Your wallet reports this batch as confirmed, but has not provided its transaction hash. Tracking will resume when the wallet provides it. Do not submit this transaction again.'
+        : record.trackingError
     }
   if (record.source) {
     const reason = record.source.replacement?.reason
@@ -389,5 +395,6 @@ export type TTransactionPersistence = {
   subscribe?: (listener: () => void) => () => void
 }
 
+// Wallet batch identifiers are opaque and may be case-sensitive; normalize only EVM hashes.
 export const transactionIdentity = (record: TTransactionRecord): string =>
-  `${record.original.executionChainId}:${record.safe ? `safe:${record.safe.proposalId}` : record.walletBatch ? `batch:${record.walletBatch.id}` : record.original.hash}`.toLowerCase()
+  `${record.original.executionChainId}:${record.safe ? `safe:${record.safe.proposalId}` : record.walletBatch ? `batch:${record.walletBatch.id}` : record.original.hash?.toLowerCase()}`

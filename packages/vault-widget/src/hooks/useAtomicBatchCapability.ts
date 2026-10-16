@@ -41,7 +41,7 @@ export function useAtomicBatchCapability({
   )
   const capabilities = useQuery({
     queryKey: ['vault-widget', 'atomic-capabilities', account, executionChainId, connector?.uid],
-    queryFn: () => getCapabilities(config, { account, chainId: executionChainId, connector }),
+    queryFn: async () => (await getCapabilities(config, { account, chainId: executionChainId, connector })) ?? null,
     enabled: canQuery,
     retry: false,
     staleTime: 30_000

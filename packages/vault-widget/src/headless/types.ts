@@ -71,7 +71,11 @@ export type TPermitStep = {
 }
 export type TDeferredStep = { id: string; kind: 'prepare'; label: string; chainId: number }
 export type TPreparedStep = VaultWidgetRequestStep | VaultWidgetSafeProposalStep | TAtomicBatchStep | TPermitStep
-export type TSafeExecution = { status: 'pending' | 'success' | 'failed' | 'cancelled'; hash?: Hash }
+export type TSafeExecution = {
+  status: 'pending' | 'success' | 'failed' | 'cancelled'
+  hash?: Hash
+  receiptUnavailable?: boolean
+}
 
 export type VaultWidgetRefreshStep = {
   id: string
@@ -98,8 +102,8 @@ export type VaultWidgetTransactionPlan = {
 export type VaultWidgetPlanSubmission = {
   stepId: string
   chainId: number
-  proposalId?: Hex
-  bundleId?: Hex
+  proposalId?: string
+  bundleId?: string
   hash?: Hash
   receipt?: TransactionReceipt
   replacement?: VaultWidgetTransactionReplacement
@@ -142,22 +146,22 @@ export type VaultWidgetExecutionAdapter = {
   observeSafeExecution?: (params: {
     chainId: number
     executionChainId: number
-    proposalId: Hex
+    proposalId: string
   }) => Promise<TSafeExecution>
   proposeSafeBatch?: (params: {
     account: Address
     chainId: number
     requests: readonly VaultWidgetTransactionRequest[]
     beforeSubmit?: () => void
-  }) => Promise<Hex>
-  waitForSafeExecution?: (params: { chainId: number; proposalId: Hex }) => Promise<Hash>
+  }) => Promise<string>
+  waitForSafeExecution?: (params: { chainId: number; proposalId: string }) => Promise<Hash>
   submitAtomicBatch?: VaultWidgetExecutionAdapter['proposeSafeBatch']
   observeAtomicExecution?: (params: {
     chainId: number
     executionChainId: number
-    bundleId: Hex
+    bundleId: string
   }) => Promise<TSafeExecution>
-  waitForAtomicExecution?: (params: { chainId: number; bundleId: Hex }) => Promise<Hash>
+  waitForAtomicExecution?: (params: { chainId: number; bundleId: string }) => Promise<Hash>
 }
 
 type VaultWidgetPlanExecutionProgress = {

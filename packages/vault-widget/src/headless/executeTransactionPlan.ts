@@ -215,7 +215,7 @@ async function executeBatchStep(
   const isAtomicBatch = step.kind === 'atomic-batch'
   const proposeSafeBatch = isAtomicBatch ? params.adapter.submitAtomicBatch : params.adapter.proposeSafeBatch
   const waitForSafeExecution = isAtomicBatch
-    ? (parameters: { chainId: number; proposalId: `0x${string}` }) => {
+    ? (parameters: { chainId: number; proposalId: string }) => {
         if (!params.adapter.waitForAtomicExecution) throw new Error('Wallet batch tracking is unavailable')
         return params.adapter.waitForAtomicExecution({ chainId: parameters.chainId, bundleId: parameters.proposalId })
       }
