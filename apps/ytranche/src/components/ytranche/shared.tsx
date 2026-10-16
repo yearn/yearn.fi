@@ -1,25 +1,26 @@
 'use client'
 
+import { useVaultWidgetRuntime } from '@yearn/vault-widget'
 import type { ReactNode } from 'react'
-import type { TYTrancheModel } from '@/components/ytranche/model'
-import { shortAddress } from '@/components/ytranche/model'
 import type { TTheme } from '@/lib/theme'
 
 export { DepositWidget } from '@/components/ytranche/DepositWidget'
 export type { TTheme } from '@/lib/theme'
 export { useThemePreference } from '@/lib/theme'
 
-export function WalletButton({ model, inverse = false }: { model: TYTrancheModel; inverse?: boolean }) {
+export function WalletButton({ inverse = false }: { inverse?: boolean }) {
+  const { wallet } = useVaultWidgetRuntime()
+  const account = wallet.address
   return (
     <button
-      className={`wallet-control${model.account ? ' wallet-control--connected' : ''}${inverse ? ' wallet-control--inverse' : ''}`}
-      onClick={() => void model.connectWallet()}
+      className={`wallet-control${account ? ' wallet-control--connected' : ''}${inverse ? ' wallet-control--inverse' : ''}`}
+      onClick={() => void wallet.open()}
       type="button"
     >
-      {model.account ? (
+      {account ? (
         <>
           <span className="wallet-control__dot" aria-hidden="true" />
-          {shortAddress(model.account)}
+          {account.slice(0, 6)}…{account.slice(-4)}
         </>
       ) : (
         'Connect wallet'

@@ -2,7 +2,6 @@
 
 import Image from 'next/image'
 import Link from 'next/link'
-import type { TYTrancheModel } from '@/components/ytranche/model'
 import { ThemeSwitcher, type TTheme, WalletButton } from '@/components/ytranche/shared'
 
 export function EarnBrand({ inverse = false }: { inverse?: boolean }) {
@@ -17,64 +16,39 @@ export function EarnBrand({ inverse = false }: { inverse?: boolean }) {
 }
 
 export function EarnHeader({
-  model,
   theme,
   onThemeChange,
-  page,
   layout
 }: {
-  model: TYTrancheModel
   theme: TTheme
   onThemeChange: (theme: TTheme) => void
-  page: 'retail' | 'institutions'
-  layout?: 'fixed' | 'centered'
+  layout: 'fixed' | 'centered'
 }) {
   return (
     <header className="earn-header">
       <div className="earn-header__inner">
         <EarnBrand inverse={theme === 'dark'} />
-
         <div className="earn-header__navigation">
-          <nav className="earn-header__nav" aria-label="Product navigation">
+          <nav className="earn-header__nav earn-header__layout-nav" aria-label="Earn layout">
             <Link
-              className={page === 'retail' ? 'is-active' : undefined}
+              className={layout === 'fixed' ? 'is-active' : undefined}
               href="/"
-              aria-current={page === 'retail' ? 'page' : undefined}
+              aria-current={layout === 'fixed' ? 'page' : undefined}
             >
-              Earn
+              Fixed
             </Link>
             <Link
-              className={page === 'institutions' ? 'is-active' : undefined}
-              href="/institutions"
-              aria-current={page === 'institutions' ? 'page' : undefined}
+              className={layout === 'centered' ? 'is-active' : undefined}
+              href="/earn-centered"
+              aria-current={layout === 'centered' ? 'page' : undefined}
             >
-              Institutions
+              Centered
             </Link>
           </nav>
-
-          {page === 'retail' && layout ? (
-            <nav className="earn-header__nav earn-header__layout-nav" aria-label="Earn layout">
-              <Link
-                className={layout === 'fixed' ? 'is-active' : undefined}
-                href="/"
-                aria-current={layout === 'fixed' ? 'page' : undefined}
-              >
-                Fixed
-              </Link>
-              <Link
-                className={layout === 'centered' ? 'is-active' : undefined}
-                href="/earn-centered"
-                aria-current={layout === 'centered' ? 'page' : undefined}
-              >
-                Centered
-              </Link>
-            </nav>
-          ) : null}
         </div>
-
         <div className="earn-header__actions">
           <ThemeSwitcher theme={theme} onChange={onThemeChange} />
-          <WalletButton model={model} inverse={theme === 'dark'} />
+          <WalletButton inverse={theme === 'dark'} />
         </div>
       </div>
     </header>

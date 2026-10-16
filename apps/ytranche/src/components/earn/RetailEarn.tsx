@@ -1,14 +1,14 @@
 'use client'
 
-import Link from 'next/link'
 import { useEffect, useRef, useState } from 'react'
 import { EarnBrand, EarnHeader } from '@/components/earn/EarnHeader'
-import { AUDIT_URL, GOVERNANCE_URL, useYTrancheModel } from '@/components/ytranche/model'
 import { ContractLink, DepositWidget, useThemePreference } from '@/components/ytranche/shared'
 import { CONTRACTS } from '@/lib/ethereum'
 
+const GOVERNANCE_URL = 'https://gov.yearn.fi/t/yip-91-ytranche/14659'
+const AUDIT_URL = 'https://www.chainsecurity.com/security-audit/yearn-ytranche'
+
 export function RetailEarn({ layout = 'split' }: { layout?: 'split' | 'centered' }) {
-  const model = useYTrancheModel()
   const [theme, changeTheme] = useThemePreference()
   const widgetRef = useRef<HTMLElement>(null)
   const [showDepositShortcut, setShowDepositShortcut] = useState(false)
@@ -51,13 +51,7 @@ export function RetailEarn({ layout = 'split' }: { layout?: 'split' | 'centered'
 
   return (
     <div className={`earn-retail${isCentered ? ' earn-retail--centered' : ''}`}>
-      <EarnHeader
-        model={model}
-        theme={theme}
-        onThemeChange={changeTheme}
-        page="retail"
-        layout={isCentered ? 'centered' : 'fixed'}
-      />
+      <EarnHeader theme={theme} onThemeChange={changeTheme} layout={isCentered ? 'centered' : 'fixed'} />
 
       <main className="earn-retail__layout">
         <section className="earn-retail__hero" aria-labelledby="earn-retail-title">
@@ -186,7 +180,6 @@ export function RetailEarn({ layout = 'split' }: { layout?: 'split' | 'centered'
             <a href={AUDIT_URL} target="_blank" rel="noreferrer">
               Read the assessment ↗
             </a>
-            <Link href="/institutions">Learn deeper →</Link>
           </div>
         </section>
 
@@ -222,7 +215,6 @@ export function RetailEarn({ layout = 'split' }: { layout?: 'split' | 'centered'
           <a href={AUDIT_URL} target="_blank" rel="noreferrer">
             Audit ↗
           </a>
-          <Link href="/institutions">Learn deeper</Link>
         </nav>
         <p>
           Onchain products involve risk. Review the product, its contracts, and available liquidity before depositing.

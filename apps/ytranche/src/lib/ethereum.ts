@@ -30,7 +30,6 @@ const WAD = 10n ** 18n
 const SECONDS_PER_YEAR = 31_556_952n
 
 export const TOKEN_DECIMALS = 6
-export const ONE_USDC = 10n ** BigInt(TOKEN_DECIMALS)
 export const WITHDRAW_MAX_LOSS_BPS = 0n
 
 export interface TProtocolData {
