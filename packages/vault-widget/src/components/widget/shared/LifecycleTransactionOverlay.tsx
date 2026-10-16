@@ -1,6 +1,7 @@
 import { isUnsupportedAtomicBatchError } from '@yearn/vault-widget/headless'
 import { Button } from '@yearn/vault-widget/internal/components/shared/Button'
 import { getPreparationBridge } from '@yearn/vault-widget/internal/components/widget/shared/lifecyclePreparation'
+import { TransactionMessage } from '@yearn/vault-widget/internal/components/widget/shared/TransactionMessage'
 import type { TransactionOverlayProps } from '@yearn/vault-widget/internal/components/widget/shared/TransactionOverlay'
 import {
   AnimatedCheckmark,
@@ -339,14 +340,15 @@ export function LifecycleTransactionOverlay(props: TransactionOverlayProps) {
           </p>
         ) : null}
         <h3 className="mb-2 mt-6 text-lg font-semibold text-text-primary">{title}</h3>
-        <p className="mb-4 whitespace-pre-line text-sm text-text-secondary">{detail}</p>
-        {record?.storageError ? <p className="mb-4 text-sm text-text-secondary">{record.storageError}</p> : null}
+        <TransactionMessage message={detail} isError={failed || unresolved || Boolean(flow?.error)} />
+        <TransactionMessage message={record?.storageError} />
         {milestoneErrors.map((error) => (
-          <p key={error} className="mb-4 text-sm text-text-secondary">
-            {error}
-          </p>
+          <TransactionMessage key={error} message={error} fallback="Balances could not be refreshed." />
         ))}
-        {record?.refreshError ? <p className="mb-4 text-sm text-text-secondary">{record.refreshError}</p> : null}
+        <TransactionMessage
+          message={record?.refreshError}
+          fallback="Your transaction confirmed, but balances could not be refreshed."
+        />
         {batchFallback ? (
           <Button
             className="mb-3 w-full"

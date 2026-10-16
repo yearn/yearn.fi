@@ -10,6 +10,7 @@ import {
 import { Button } from '@yearn/vault-widget/internal/components/shared/Button'
 import { LifecycleTransactionOverlay } from '@yearn/vault-widget/internal/components/widget/shared/LifecycleTransactionOverlay'
 import type { TOverlayRecipe } from '@yearn/vault-widget/internal/components/widget/shared/lifecyclePreparation'
+import { TransactionMessage } from '@yearn/vault-widget/internal/components/widget/shared/TransactionMessage'
 import {
   AUTO_CONTINUE_SUCCESS_DELAY_MS,
   type CompletionDeferral,
@@ -212,8 +213,7 @@ function isUserRejectionError(error: any): boolean {
 }
 
 function getTransactionErrorMessage(error: any): string {
-  const errorMsg = error?.shortMessage || error?.message || 'Transaction failed. Please try again.'
-  return errorMsg.length > 100 ? 'Transaction failed. Please try again.' : errorMsg
+  return error?.message || error?.shortMessage || 'Transaction failed. Please try again.'
 }
 
 export type TransactionOverlayProps = {
@@ -1926,9 +1926,10 @@ const LegacyTransactionOverlay: FC<TransactionOverlayProps> = ({
               <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">
                 {batchFallback ? 'Batching unavailable' : displayedErrorPresentation.title}
               </h3>
-              <p className={cl('text-sm text-text-secondary', explorerTxUrl ? 'mb-3' : 'mb-6')}>
-                {displayedErrorPresentation.message}
-              </p>
+              <TransactionMessage
+                message={displayedErrorPresentation.message}
+                className={explorerTxUrl ? 'mb-3' : 'mb-6'}
+              />
               {explorerTxUrl ? (
                 <a
                   href={explorerTxUrl}
