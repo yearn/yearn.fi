@@ -21,7 +21,8 @@
     "react-rewards": "2.1.0",
     "viem": "2.56.9",
     "wagmi": "2.18.2",
-    "@yearn/wallet-ui": "workspace:*"
+    "@yearn/wallet-ui": "workspace:*",
+    "@yearn/site-header": "workspace:*"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.14",

@@ -4,8 +4,10 @@ The Earn and centered Earn UI from
 [w84april/yTranche `separate-ui`](https://github.com/w84april/yTranche/pull/1),
 imported from commit `738fdccc1727ead380ada7f000f0f9f7c6cbf579`.
 
-This app consumes the same private `@yearn/vault-widget` and `@yearn/wallet-ui`
-packages as Yearn and yBOLD. It has its own Wagmi and TanStack Query providers;
+This app consumes the private `@yearn/vault-widget`, `@yearn/wallet-ui`, and
+`@yearn/site-header` packages. Both Earn layouts reuse the shared Yearn masthead
+and navigation, with app-specific layout links, theme controls, and wallet actions.
+It has its own Wagmi and TanStack Query providers;
 Reown AppKit, Ethers, and the prototype transaction implementation are not used.
 
 From the workspace root:

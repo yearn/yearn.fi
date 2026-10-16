@@ -3,6 +3,7 @@
 @import "@yearn/wallet-ui/styles.css";
 @source "../../../../packages/vault-widget/src";
 @source "../../../../packages/wallet-ui/src";
+@source "../../../../packages/site-header/src";
 
 @font-face {
   font-family: "Aeonik";
@@ -29,6 +30,7 @@
 }
 
 :root {
+  --header-height: 4.25rem;
   --yearn-blue: #0657f9;
   --yearn-blue-hover: #0548d8;
   --success: #16a34a;
@@ -5305,6 +5307,13 @@ html[data-ytranche-theme="dark"] .terminal-page .capital-stack > p {
   --earn-blue: #0657f9;
   --earn-blue-deep: #043fb9;
   --earn-success: #188657;
+  --color-app: var(--earn-bg);
+  --color-surface: var(--earn-surface);
+  --color-surface-secondary: var(--earn-surface-soft);
+  --color-text-primary: var(--earn-ink);
+  --color-text-secondary: var(--earn-muted);
+  --color-border: var(--earn-line);
+  --color-primary: var(--earn-blue);
   min-height: 100vh;
   color: var(--earn-ink);
   background: var(--earn-bg);
@@ -5312,26 +5321,6 @@ html[data-ytranche-theme="dark"] .terminal-page .capital-stack > p {
 
 .earn-retail {
   background: radial-gradient(circle at 73% 7%, rgba(6, 87, 249, 0.12), transparent 26rem), var(--earn-bg);
-}
-
-.earn-header {
-  position: sticky;
-  z-index: 20;
-  top: 0;
-  border-bottom: 1px solid color-mix(in srgb, var(--earn-line) 82%, transparent);
-  background: color-mix(in srgb, var(--earn-bg) 84%, transparent);
-  backdrop-filter: blur(18px) saturate(150%);
-}
-
-.earn-header__inner {
-  display: grid;
-  width: min(100%, 1344px);
-  min-height: 74px;
-  grid-template-columns: 1fr auto 1fr;
-  align-items: center;
-  gap: 28px;
-  margin: 0 auto;
-  padding: 0 32px;
 }
 
 .earn-brand {
@@ -5367,67 +5356,6 @@ html[data-ytranche-theme="dark"] .terminal-page .capital-stack > p {
 .earn-brand span {
   color: var(--earn-muted);
   font-size: 16px;
-}
-
-.earn-header__navigation {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  gap: 8px;
-}
-
-.earn-header__nav {
-  display: inline-flex;
-  align-items: center;
-  justify-content: center;
-  gap: 4px;
-  padding: 4px;
-  border: 1px solid var(--earn-line);
-  border-radius: 999px;
-  background: color-mix(in srgb, var(--earn-surface) 70%, transparent);
-}
-
-.earn-header__nav a {
-  display: inline-flex;
-  min-height: 34px;
-  align-items: center;
-  justify-content: center;
-  padding: 0 15px;
-  border-radius: 999px;
-  color: var(--earn-muted);
-  font-size: 11px;
-  font-weight: 700;
-  line-height: 1;
-  text-decoration: none;
-  transition:
-    color 160ms ease,
-    background-color 160ms ease;
-}
-
-.earn-header__nav a:hover,
-.earn-header__nav a.is-active {
-  color: var(--earn-ink);
-  background: var(--earn-surface);
-}
-
-.earn-header__layout-nav {
-  padding: 3px;
-  background: transparent;
-}
-
-.earn-header__layout-nav a {
-  min-height: 30px;
-  padding: 0 12px;
-  font-size: 10px;
-}
-
-.earn-header__actions {
-  display: flex;
-  min-width: 0;
-  grid-column: 3;
-  align-items: center;
-  justify-content: flex-end;
-  gap: 10px;
 }
 
 .earn-retail__layout {
@@ -6210,7 +6138,7 @@ html[data-ytranche-theme="dark"] .earn-retail {
   background: radial-gradient(circle at 73% 7%, rgba(50, 105, 240, 0.18), transparent 28rem), var(--earn-bg);
 }
 
-html[data-ytranche-theme="dark"] .earn-header .wallet-control {
+html[data-ytranche-theme="dark"] .earn-retail #head .wallet-control {
   border-color: var(--earn-line);
   color: var(--earn-ink);
   background: var(--earn-surface);
@@ -6261,11 +6189,6 @@ html[data-ytranche-theme="dark"] .deposit-widget--friendly {
 }
 
 @media (max-width: 900px) {
-  .earn-header__inner {
-    grid-template-columns: 1fr auto auto;
-    gap: 16px;
-  }
-
   .earn-scroll-cue {
     display: none;
   }
@@ -6409,31 +6332,7 @@ html[data-ytranche-theme="dark"] .deposit-widget--friendly {
   }
 }
 
-@media (max-width: 820px) {
-  .earn-header__layout-nav {
-    display: none;
-  }
-}
-
 @media (max-width: 680px) {
-  .earn-header__inner {
-    min-height: 66px;
-    grid-template-columns: auto 1fr;
-    padding: 0 20px;
-  }
-
-  .earn-header__nav {
-    display: none;
-  }
-
-  .earn-header__navigation {
-    display: none;
-  }
-
-  .earn-header__actions {
-    grid-column: 2;
-  }
-
   .earn-retail__layout {
     padding-right: 20px;
     padding-left: 20px;
@@ -6512,11 +6411,6 @@ html[data-ytranche-theme="dark"] .deposit-widget--friendly {
 }
 
 @media (max-width: 520px) {
-  .earn-header__inner {
-    gap: 7px;
-    padding: 0 12px;
-  }
-
   .earn-brand {
     gap: 6px;
   }
@@ -6538,18 +6432,7 @@ html[data-ytranche-theme="dark"] .deposit-widget--friendly {
     font-size: 13px;
   }
 
-  .earn-header__actions {
-    gap: 6px;
-  }
-
-  .earn-header .theme-switcher button {
-    min-width: 30px;
-    min-height: 31px;
-    padding: 0 5px;
-    font-size: 8px;
-  }
-
-  .earn-header .wallet-control {
+  .earn-retail #head .wallet-control {
     width: 91px;
     min-width: 91px;
     max-width: 91px;

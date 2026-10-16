@@ -65,8 +65,8 @@ export function Providers({ children }: { children: ReactNode }) {
         <RainbowKitProvider theme={getYearnRainbowTheme(theme)}>
           <WalletDrawerProvider
             anchorToTrigger
-            desktopTop="calc(74px + 0.5rem)"
-            desktopRight="max(2rem, calc((100% - 1344px) / 2 + 2rem))"
+            desktopTop="calc(var(--header-height) + 0.5rem)"
+            desktopRight="max(1rem, calc((100vw - 1232px) / 2 + 1rem))"
             themeClassName="ytranche-wallet-ui"
           >
             <WidgetHostProvider>{children}</WidgetHostProvider>

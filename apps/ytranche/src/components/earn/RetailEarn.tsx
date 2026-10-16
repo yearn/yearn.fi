@@ -23,8 +23,9 @@ export function RetailEarn({ layout = 'split' }: { layout?: 'split' | 'centered'
       window.cancelAnimationFrame(animationFrame.current)
       animationFrame.current = window.requestAnimationFrame(() => {
         const widgetBounds = widgetRef.current?.getBoundingClientRect()
+        const headerBottom = document.getElementById('head')?.getBoundingClientRect().bottom ?? 0
         setShowDepositShortcut(
-          (isCentered || mobileQuery.matches) && Boolean(widgetBounds && widgetBounds.bottom <= 74)
+          (isCentered || mobileQuery.matches) && Boolean(widgetBounds && widgetBounds.bottom <= headerBottom)
         )
       })
     }

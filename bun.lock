@@ -130,6 +130,7 @@
         "@rainbow-me/rainbowkit": "2.2.11",
         "@tanstack/react-query": "5.103.2",
         "@wagmi/core": "2.22.1",
+        "@yearn/site-header": "workspace:*",
         "@yearn/vault-widget": "workspace:*",
         "@yearn/wallet-ui": "workspace:*",
         "next": "16.4.1",
