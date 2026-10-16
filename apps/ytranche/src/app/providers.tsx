@@ -65,7 +65,12 @@ export function Providers({ children }: { children: ReactNode }) {
     <WalletProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
         <RainbowKitProvider theme={getYearnRainbowTheme(theme)}>
-          <WalletDrawerProvider themeClassName="ytranche-wallet-ui">
+          <WalletDrawerProvider
+            anchorToTrigger
+            desktopTop="calc(74px + 0.5rem)"
+            desktopRight="max(2rem, calc((100% - 1344px) / 2 + 2rem))"
+            themeClassName="ytranche-wallet-ui"
+          >
             <WidgetHostProvider>{children}</WidgetHostProvider>
           </WalletDrawerProvider>
         </RainbowKitProvider>

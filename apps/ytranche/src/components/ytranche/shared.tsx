@@ -13,6 +13,9 @@ export function WalletButton({ inverse = false }: { inverse?: boolean }) {
   const account = wallet.address
   return (
     <button
+      data-wallet-entry="header"
+      data-wallet-drawer-trigger
+      aria-haspopup="dialog"
       className={`wallet-control${account ? ' wallet-control--connected' : ''}${inverse ? ' wallet-control--inverse' : ''}`}
       onClick={() => void wallet.open()}
       type="button"
