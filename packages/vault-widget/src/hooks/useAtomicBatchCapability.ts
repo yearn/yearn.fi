@@ -28,7 +28,7 @@ export function useAtomicBatchCapability({
   account?: Address
   chainId: number
   enabled?: boolean
-}): { supported: boolean; status: string; disableBatch: () => Promise<void> } {
+}): { supported: boolean; status: string; capabilityKey: string; disableBatch: () => Promise<void> } {
   const { address: connectedAccount, connector, status: accountStatus } = useAccount()
   const config = useConfig()
   const queryClient = useQueryClient()
@@ -63,6 +63,7 @@ export function useAtomicBatchCapability({
   return {
     supported: canQuery && !capabilities.isError && supportsAtomicBatch(capabilities.data),
     status,
+    capabilityKey: JSON.stringify(queryKey),
     disableBatch: async () => {
       await queryClient.cancelQueries({ queryKey, exact: true })
       queryClient.setQueryData<TAtomicCapability>(queryKey, { atomic: { status: 'unsupported' }, rejected: true })

@@ -1023,6 +1023,8 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
     }
     void coordinatedRun()
       .catch((error: unknown) => {
+        // Release a failed command before its terminal state can trigger a sequential fallback.
+        runningFlows.delete(flow.id)
         const latest = state.snapshot.flows.find((item) => item.id === flow.id)
         if (latest?.recordId || latest?.phase === 'blocked') return
         putFlow({

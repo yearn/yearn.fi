@@ -181,7 +181,7 @@ export function LifecycleTransactionOverlay(props: TransactionOverlayProps) {
           const submitted = progress.outcome.submissions.some((submission) => submission.stepId === progress.step.id)
           if (
             progress.step.kind === 'atomic-batch' &&
-            !submitted &&
+            progress.outcome.submissions.length === 0 &&
             reviewed.onBatchUnsupported &&
             isUnsupportedAtomicBatchError(progress.error)
           )
@@ -257,6 +257,14 @@ export function LifecycleTransactionOverlay(props: TransactionOverlayProps) {
     props.deferOnAllCompleteUntilConfettiEnd
   ])
 
+  // Wait for the provider to finish the rejected batch before starting a new sequential command.
+  useEffect(() => {
+    if (!batchFallback || flow?.phase !== 'blocked' || !props.isOpen) return
+    void batchFallback()
+      .catch((error) => console.error('Unable to prepare separate transactions:', error))
+      .finally(() => setBatchFallback(undefined))
+  }, [batchFallback, flow?.phase, props.isOpen])
+
   if (!props.isOpen) return null
   const chain = view ? runtime.chains.getChain(view.reference.executionChainId) : undefined
   const explorer =
@@ -278,8 +286,8 @@ export function LifecycleTransactionOverlay(props: TransactionOverlayProps) {
   const { title, detail } = (() => {
     if (batchFallback)
       return {
-        title: 'Batching unavailable',
-        detail: 'Your wallet cannot batch on this network. Use separate approval and zap transactions instead.'
+        title: 'Preparing transaction',
+        detail: 'Preparing separate transactions...'
       }
     if (isPaused || needsReview)
       return {
@@ -333,7 +341,13 @@ export function LifecycleTransactionOverlay(props: TransactionOverlayProps) {
         className={`flex flex-1 flex-col items-center ${props.contentAlign === 'start' ? 'pt-8' : 'justify-center'}`}
       >
         <span id={confettiId} />
-        {success && !refreshing ? <AnimatedCheckmark isVisible /> : failed ? <ErrorIcon /> : <Spinner />}
+        {success && !refreshing ? (
+          <AnimatedCheckmark isVisible />
+        ) : failed && !batchFallback ? (
+          <ErrorIcon />
+        ) : (
+          <Spinner />
+        )}
         {(flow?.stepCount ?? 1) > 1 ? (
           <p className="mt-4 text-sm text-text-secondary">
             Step {(flow?.stepIndex ?? 0) + 1} of {flow?.stepCount}: {flow?.stepLabel}
@@ -349,17 +363,6 @@ export function LifecycleTransactionOverlay(props: TransactionOverlayProps) {
           message={record?.refreshError}
           fallback="Your transaction confirmed, but balances could not be refreshed."
         />
-        {batchFallback ? (
-          <Button
-            className="mb-3 w-full"
-            onClick={async () => {
-              await batchFallback()
-              close()
-            }}
-          >
-            Use separate transactions
-          </Button>
-        ) : null}
         {recovering && state.history === 'unavailable' ? (
           <Button className="mb-3 w-full" onClick={() => service.recheckHistory()}>
             Retry history

@@ -218,6 +218,7 @@ export function WidgetDeposit({
   const [showApprovalOverlay, setShowApprovalOverlay] = useState(false)
   const [disableApprovalOverlaySetUnlimited, setDisableApprovalOverlaySetUnlimited] = useState(false)
   const [showTransactionOverlay, setShowTransactionOverlay] = useState(false)
+  const [batchFallbackKey, setBatchFallbackKey] = useState<string>()
   const [activeTransactionPlan, setActiveTransactionPlan] = useState<VaultWidgetTransactionPlan | undefined>()
   const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false)
   const [isYBoldAutoStakeWarningDismissing, setIsYBoldAutoStakeWarningDismissing] = useState(false)
@@ -250,6 +251,7 @@ export function WidgetDeposit({
   const {
     supported: supportsAtomicBatch,
     status: batchCapability,
+    capabilityKey,
     disableBatch
   } = useAtomicBatchCapability({
     account,
@@ -751,8 +753,23 @@ export function WidgetDeposit({
   const [completedApprovalFlowKey, setCompletedApprovalFlowKey] = useState<string | null>(null)
   const hasCompletedApprovalInActiveFlow = completedApprovalFlowKey === approvalFlowKey
   const effectiveNeedsApproval = needsApproval && !hasCompletedApprovalInActiveFlow
+  const currentBatchKey = `${depositIntentKey}:${capabilityKey}`
+  const batchFallbackContext = useRef({ key: currentBatchKey, ready: false })
+  batchFallbackContext.current = {
+    key: currentBatchKey,
+    ready:
+      showTransactionOverlay &&
+      runtime.wallet.connected &&
+      !isWalletSafe &&
+      runtime.chains.isConnectedToExecutionChain(runtime.wallet.chainId, sourceChainId)
+  }
   const depositBatch = useMemo(() => {
-    if (isCrossChain || (!isWalletSafe && !supportsAtomicBatch) || !effectiveNeedsApproval) {
+    if (
+      isCrossChain ||
+      batchFallbackKey === currentBatchKey ||
+      (!isWalletSafe && !supportsAtomicBatch) ||
+      !effectiveNeedsApproval
+    ) {
       return undefined
     }
 
@@ -777,6 +794,8 @@ export function WidgetDeposit({
         : undefined
     })
   }, [
+    batchFallbackKey,
+    currentBatchKey,
     account,
     activeFlow.periphery.allowance,
     activeFlow.periphery.routerAddress,
@@ -1477,10 +1496,17 @@ export function WidgetDeposit({
 
       {/* Transaction Overlay */}
       <TransactionOverlay
+        key={batchFallbackKey ?? 'default'}
         analyticsContext={analyticsContext}
         isOpen={showTransactionOverlay}
         onClose={handleCloseTransactionOverlay}
-        onBatchUnsupported={disableBatch}
+        onBatchUnsupported={async () => {
+          await disableBatch()
+          if (batchFallbackContext.current.key !== currentBatchKey || !batchFallbackContext.current.ready)
+            throw new Error('Your wallet or transaction changed. Close and review again.')
+          setActiveTransactionPlan(undefined)
+          setBatchFallbackKey(currentBatchKey)
+        }}
         plan={activeTransactionPlan}
         lifecycleRecipe={{
           id: depositIntentKey,

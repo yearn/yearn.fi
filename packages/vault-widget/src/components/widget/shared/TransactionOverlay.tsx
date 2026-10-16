@@ -315,7 +315,6 @@ const LegacyTransactionOverlay: FC<TransactionOverlayProps> = ({
 }) => {
   const [overlayState, setOverlayState] = useState<OverlayState>(getInitialOverlayState())
   const [errorMessage, setErrorMessage] = useState<string>('')
-  const [batchFallback, setBatchFallback] = useState<TransactionOverlayProps['onBatchUnsupported']>()
   const [hasCompletedFlow, setHasCompletedFlow] = useState(false)
   const [completedStepSnapshot, setCompletedStepSnapshot] = useState<TransactionStep | null>(null)
   const [hasRefreshFailed, setHasRefreshFailed] = useState(false)
@@ -715,7 +714,6 @@ const LegacyTransactionOverlay: FC<TransactionOverlayProps> = ({
       setOverlayState('idle')
       setErrorMessage('')
       setHasCompletedFlow(false)
-      setBatchFallback(undefined)
       setCompletedStepSnapshot(null)
       setHasRefreshFailed(false)
       resetTxState(true)
@@ -1027,11 +1025,10 @@ const LegacyTransactionOverlay: FC<TransactionOverlayProps> = ({
             return
           }
           if (!submission.accepted && !isWalletSafe && onBatchUnsupported && isUnsupportedAtomicBatchError(error)) {
-            setBatchFallback(() => onBatchUnsupported)
-            setOverlayState('error')
-            setErrorMessage(
-              'Your wallet cannot batch on this network. Use separate approval and zap transactions instead.'
-            )
+            await onBatchUnsupported().catch((fallbackError: unknown) => {
+              setOverlayState('error')
+              setErrorMessage(getTransactionErrorMessage(fallbackError))
+            })
             return
           }
           console.error('Batch transaction failed:', error)
@@ -1923,9 +1920,7 @@ const LegacyTransactionOverlay: FC<TransactionOverlayProps> = ({
           {overlayState === 'error' && (
             <>
               <ErrorIcon />
-              <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">
-                {batchFallback ? 'Batching unavailable' : displayedErrorPresentation.title}
-              </h3>
+              <h3 className="text-lg font-semibold text-text-primary mt-6 mb-2">{displayedErrorPresentation.title}</h3>
               <TransactionMessage
                 message={displayedErrorPresentation.message}
                 className={explorerTxUrl ? 'mb-3' : 'mb-6'}
@@ -1940,24 +1935,13 @@ const LegacyTransactionOverlay: FC<TransactionOverlayProps> = ({
                   View on block explorer
                 </a>
               ) : null}
-              {batchFallback ? (
-                <Button
-                  classNameOverride="yearn--button--nextgen mb-3 w-full"
-                  onClick={async () => {
-                    await batchFallback()
-                    handleClose()
-                  }}
-                >
-                  Use separate transactions
-                </Button>
-              ) : null}
               <Button
-                onClick={!batchFallback && displayedErrorPresentation.canRetry ? handleRetry : handleClose}
+                onClick={displayedErrorPresentation.canRetry ? handleRetry : handleClose}
                 variant="filled"
                 className="w-full max-w-xs"
                 classNameOverride="yearn--button--nextgen w-full"
               >
-                {batchFallback ? 'Close' : displayedErrorPresentation.actionLabel}
+                {displayedErrorPresentation.actionLabel}
               </Button>
             </>
           )}

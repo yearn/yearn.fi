@@ -162,6 +162,7 @@ export function WidgetWithdraw({
   const [showWithdrawDetailsModal, setShowWithdrawDetailsModal] = useState(false)
   const [showApprovalOverlay, setShowApprovalOverlay] = useState(false)
   const [showTransactionOverlay, setShowTransactionOverlay] = useState(false)
+  const [batchFallbackKey, setBatchFallbackKey] = useState<string>()
   const [activeTransactionPlan, setActiveTransactionPlan] = useState<VaultWidgetTransactionPlan | undefined>()
   const [internalWithdrawalSource, setWithdrawalSource] = useState<WithdrawalSource>(stakingAddress ? null : 'vault')
   const withdrawalSource = forcedWithdrawalSource ?? internalWithdrawalSource
@@ -408,12 +409,24 @@ export function WidgetWithdraw({
   const {
     supported: supportsAtomicBatch,
     status: batchCapability,
+    capabilityKey,
     disableBatch
   } = useAtomicBatchCapability({
     account,
     chainId,
     enabled: !isWalletSafe && !isCrossChain
   })
+  const currentBatchKey = `${withdrawalIntentKey}:${capabilityKey}`
+  const batchFallbackContext = useRef({ key: currentBatchKey, ready: false })
+  batchFallbackContext.current = {
+    key: currentBatchKey,
+    ready:
+      showTransactionOverlay &&
+      runtime.wallet.connected &&
+      !isWalletSafe &&
+      runtime.chains.isConnectedToExecutionChain(runtime.wallet.chainId, chainId)
+  }
+
   const isEnsoRoute = routeType === 'ENSO'
   const ensoRouteHasSwap = isEnsoRoute && Boolean(activeFlow.periphery.routeHasSwap)
   const effectiveSourceShares = activeFlow.periphery.shareAmount ?? effectiveRequiredShares
@@ -770,7 +783,12 @@ export function WidgetWithdraw({
   const formattedRequiredShares = formatTAmount({ value: effectiveRequiredShares, decimals: sharesDecimals })
   const formattedApprovalAmount = formatTAmount({ value: effectiveSourceShares, decimals: sharesDecimals })
   const withdrawBatch = useMemo(() => {
-    if (isCrossChain || (!isWalletSafe && !supportsAtomicBatch) || !approvalState.needsApproval) {
+    if (
+      isCrossChain ||
+      batchFallbackKey === currentBatchKey ||
+      (!isWalletSafe && !supportsAtomicBatch) ||
+      !approvalState.needsApproval
+    ) {
       return undefined
     }
 
@@ -793,6 +811,8 @@ export function WidgetWithdraw({
         : undefined
     })
   }, [
+    batchFallbackKey,
+    currentBatchKey,
     account,
     activeFlow.periphery.allowance,
     activeFlow.periphery.routerAddress,
@@ -1308,10 +1328,17 @@ export function WidgetWithdraw({
 
       {/* Transaction Overlay */}
       <TransactionOverlay
+        key={batchFallbackKey ?? 'default'}
         analyticsContext={analyticsContext}
         isOpen={showTransactionOverlay}
         onClose={handleCloseTransactionOverlay}
-        onBatchUnsupported={disableBatch}
+        onBatchUnsupported={async () => {
+          await disableBatch()
+          if (batchFallbackContext.current.key !== currentBatchKey || !batchFallbackContext.current.ready)
+            throw new Error('Your wallet or transaction changed. Close and review again.')
+          setActiveTransactionPlan(undefined)
+          setBatchFallbackKey(currentBatchKey)
+        }}
         plan={activeTransactionPlan}
         lifecycleRecipe={{
           id: withdrawalIntentKey,
