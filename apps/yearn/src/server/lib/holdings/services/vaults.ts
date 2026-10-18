@@ -15,11 +15,11 @@ interface KongVault {
   v3?: boolean
   category?: string | null
   isHidden?: boolean
-  asset: {
+  asset?: {
     address: string
     symbol: string
     decimals: TKongDecimals
-  }
+  } | null
   staking?: {
     address: string | null
     available: boolean
@@ -194,6 +194,10 @@ function buildMetadataMaps(vaults: KongVault[]): {
     stakingToVaultMap: Map<string, VaultMetadata>
   }>(
     (maps, vault) => {
+      if (!vault.asset) {
+        return maps
+      }
+
       const version = inferVaultVersion(vault)
       const vaultDecimals = normalizeTokenDecimals(vault.decimals)
       const metadata: VaultMetadata = {
