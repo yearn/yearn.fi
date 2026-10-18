@@ -5,9 +5,7 @@ import {
   YCRV_BOOSTED_STAKER_UTILITIES_ADDRESS,
   YCRV_CHAIN_ID,
   YCRV_REWARDS_DISTRIBUTOR_ABI,
-  YCRV_REWARDS_DISTRIBUTOR_ADDRESS,
-  YCRV_TOKEN_ADDRESS,
-  YVCRVUSD_REWARD_ADDRESS
+  YCRV_REWARDS_DISTRIBUTOR_ADDRESS
 } from '@pages/portfolio/ycrv/constants'
 import { deriveYcrvPosition, deriveYcrvReward } from '@pages/portfolio/ycrv/deriveYcrvPosition'
 import type { TYcrvPosition, TYcrvRawAccount, TYcrvReward } from '@pages/portfolio/ycrv/types'

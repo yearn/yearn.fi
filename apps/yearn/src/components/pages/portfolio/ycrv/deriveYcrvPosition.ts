@@ -53,7 +53,10 @@ export function deriveYcrvPosition(
   }
 }
 
-export function deriveYcrvReward(raw: TYcrvRawAccount | null | undefined, rewardPrice: number | null): TYcrvReward | null {
+export function deriveYcrvReward(
+  raw: TYcrvRawAccount | null | undefined,
+  rewardPrice: number | null
+): TYcrvReward | null {
   if (!raw || raw.claimableRewardRaw <= 0n) {
     return null
   }

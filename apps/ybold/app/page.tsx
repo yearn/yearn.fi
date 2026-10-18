@@ -7,7 +7,11 @@ import Image from 'next/image'
 const pct = (value: number | null, decimalPlaces = 2) =>
   value === null ? '—' : `${(value * 100).toFixed(decimalPlaces)}%`
 const usd = (value: number | null) =>
-  value === null ? '—' : value >= 1_000_000 ? `$${(value / 1_000_000).toFixed(2)}M` : `$${Math.round(value).toLocaleString('en-US')}`
+  value === null
+    ? '—'
+    : value >= 1_000_000
+      ? `$${(value / 1_000_000).toFixed(2)}M`
+      : `$${Math.round(value).toLocaleString('en-US')}`
 
 export default async function Home() {
   const stats = await getVaultStats()

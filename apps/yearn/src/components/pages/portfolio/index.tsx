@@ -2618,7 +2618,7 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
   const totalUsdUnavailable =
     selectedChainId === null
       ? chainRewardsData.some((chainData) => chainData.totalUsdUnavailable)
-      : selectedChainData?.totalUsdUnavailable ?? false
+      : (selectedChainData?.totalUsdUnavailable ?? false)
 
   const displayedRewards = useMemo(() => {
     if (selectedChainId === null) {

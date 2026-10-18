@@ -1,10 +1,6 @@
-import {
-  YCRV_CHAIN_ID,
-  YCRV_TOKEN_ADDRESS,
-  YVCRVUSD_REWARD_ADDRESS
-} from '@pages/portfolio/ycrv/constants'
-import { buildYearnPricesSpotKey } from '@shared/utils/yearnPrices'
+import { YCRV_CHAIN_ID, YCRV_TOKEN_ADDRESS, YVCRVUSD_REWARD_ADDRESS } from '@pages/portfolio/ycrv/constants'
 import type { TYearnPricesSpotResponse } from '@shared/utils/schemas/yearnPricesSpotSchema'
+import { buildYearnPricesSpotKey } from '@shared/utils/yearnPrices'
 
 export type TYcrvPrices = {
   rewardPrice: number | null
@@ -25,10 +21,7 @@ function getPositivePrice(value: unknown): number | null {
   return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : null
 }
 
-function resolveSpotPrice(
-  response: TYearnPricesSpotResponse | undefined,
-  key: string | null
-): number | null {
+function resolveSpotPrice(response: TYearnPricesSpotResponse | undefined, key: string | null): number | null {
   if (!response || !key) return null
 
   const coin = response.coins[key]
