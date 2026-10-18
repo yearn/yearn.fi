@@ -110,7 +110,7 @@ export function useYcrvPosition(enabled: boolean): TUseYcrvPositionReturn {
       refetchOnWindowFocus: false
     }
   })
-  const { rewardPrice, ycrvPrice } = resolveYcrvPrices(spotPricesQuery.data)
+  const { rewardPrice, ycrvPrice } = resolveYcrvPrices(spotPricesQuery.error ? undefined : spotPricesQuery.data)
   const rawQuery = useQuery({
     queryKey: ['portfolio-ycrv-position', account, ycrvPrice, rewardPrice],
     queryFn: () =>

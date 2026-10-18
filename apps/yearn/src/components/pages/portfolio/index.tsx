@@ -2343,6 +2343,7 @@ type TChainRewardData = {
   chainName: string
   rewardCount: number
   totalUsd: number
+  totalUsdUnavailable: boolean
   isLoading: boolean
   stakingRewards: Array<{
     vault: TKongVault
@@ -2569,6 +2570,7 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
       const merkleUsd = merkle?.rewards.reduce((sum, r) => sum + r.totalUsdValue, 0) ?? 0
       const governanceUsd = chainGovernanceRewards.reduce((sum, reward) => sum + reward.usdValue, 0)
       const ycrvUsd = chainYcrvRewards.reduce((sum, reward) => sum + reward.usdValue, 0)
+      const ycrvUsdUnavailable = chainYcrvRewards.some((reward) => reward.usdValueUnavailable)
 
       const hasStakingVaultsOnChain = stakingVaults.some((v) => getVaultChainID(v) === chainId)
       const stakingIsLoading = hasStakingVaultsOnChain ? (staking?.isLoading ?? false) : false
@@ -2581,6 +2583,7 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
         chainName,
         rewardCount: stakingRewardCount + merkleRewardCount + chainGovernanceRewards.length + chainYcrvRewards.length,
         totalUsd: stakingUsd + merkleUsd + governanceUsd + ycrvUsd,
+        totalUsdUnavailable: ycrvUsdUnavailable,
         isLoading: stakingIsLoading || merkleIsLoading || governanceIsLoading || ycrvIsLoading,
         stakingRewards: staking?.rewards ?? [],
         governanceRewards: chainGovernanceRewards,
@@ -2612,6 +2615,10 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
     if (selectedChainId === null) return null
     return chainRewardsData.find((c) => c.chainId === selectedChainId) ?? null
   }, [selectedChainId, chainRewardsData])
+  const totalUsdUnavailable =
+    selectedChainId === null
+      ? chainRewardsData.some((chainData) => chainData.totalUsdUnavailable)
+      : selectedChainData?.totalUsdUnavailable ?? false
 
   const displayedRewards = useMemo(() => {
     if (selectedChainId === null) {
@@ -2887,7 +2894,9 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
             <div className="flex min-h-[64px] flex-col items-center justify-center gap-1 border-b border-border px-6 py-4 md:flex-row md:justify-between md:gap-0 md:py-0">
               <h3 className="text-lg font-semibold text-text-primary">Claimable Rewards</h3>
               <span className="text-2xl font-bold text-text-primary md:text-xl">
-                {formatUSD(selectedChainId === null ? totalUsd : (selectedChainData?.totalUsd ?? 0), 2, 2)}
+                {totalUsdUnavailable
+                  ? '—'
+                  : formatUSD(selectedChainId === null ? totalUsd : (selectedChainData?.totalUsd ?? 0), 2, 2)}
               </span>
             </div>
 
