@@ -12,6 +12,7 @@ export type TPortfolioProtocolPosition = {
   withdrawableRaw: bigint
   walletRaw: bigint
   valueUsd: number
+  valueUsdUnavailable?: boolean
   tvlUsd: number
   apy: number | null
   unlockTime?: number
