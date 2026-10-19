@@ -41,7 +41,7 @@ function HeaderContent() {
               type="button"
               data-wallet-entry="header"
               data-wallet-drawer-trigger
-              aria-label="Connect wallet"
+              aria-label="Connect Wallet"
               aria-controls={dialogId}
               aria-expanded={isWalletDrawerOpen}
               aria-haspopup="dialog"
