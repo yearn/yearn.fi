@@ -11,6 +11,11 @@ import { useState } from 'react'
 import { useAccount } from 'wagmi'
 
 export function Header() {
+  const { address } = useAccount()
+  return <HeaderContent key={address ?? 'disconnected'} />
+}
+
+function HeaderContent() {
   const { address, isConnected } = useAccount()
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
   const [isAccountOpen, setIsAccountOpen] = useState(false)
