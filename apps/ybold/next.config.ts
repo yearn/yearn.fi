@@ -22,7 +22,7 @@ const securityHeaders = [
 const nextConfig: NextConfig = {
   agentRules: false,
   poweredByHeader: false,
-  transpilePackages: ['@yearn/vault-widget', '@yearn/wallet-ui'],
+  transpilePackages: ['@yearn/vault-widget', '@yearn/wallet-ui', '@yearn/site-header'],
   async rewrites() {
     return [{ source: '/proxy/plausible/:path*', destination: 'https://plausible.io/:path*' }]
   },
