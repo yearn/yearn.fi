@@ -1,12 +1,20 @@
 'use client'
 
 import { SiteHeader } from '@yearn/site-header'
+import { ThemeSettings } from '@yearn/site-header/account'
 import { IconBurgerPlain } from '@yearn/site-header/icons/IconBurgerPlain'
+import { IconMoon } from '@yearn/site-header/icons/IconMoon'
+import { IconSun } from '@yearn/site-header/icons/IconSun'
+import { IconWallet } from '@yearn/site-header/icons/IconWallet'
+import { MobileNavMenu } from '@yearn/site-header/mobile'
 import { HeaderNavMenu } from '@yearn/site-header/navigation'
+import { formatWalletAddress, useWalletDrawer, WalletSurface } from '@yearn/wallet-ui'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useRef, useState } from 'react'
-import { ThemeSwitcher, type TTheme, WalletButton } from '@/components/ytranche/shared'
+import { useState } from 'react'
+import { useAccount } from 'wagmi'
+import { WalletAccountDropdown } from '@/components/ytranche/WalletAccountMenu'
+import type { TTheme } from '@/lib/theme'
 
 const SITE_BASE_URL = 'https://yearn.fi'
 
@@ -21,16 +29,22 @@ export function EarnBrand({ inverse = false }: { inverse?: boolean }) {
   )
 }
 
-export function EarnHeader({
-  theme,
-  onThemeChange,
-  layout
-}: {
+type TEarnHeaderProps = {
   theme: TTheme
   onThemeChange: (theme: TTheme) => void
   layout: 'fixed' | 'centered'
-}) {
-  const mobileMenu = useRef<HTMLDialogElement>(null)
+}
+
+export function EarnHeader(props: TEarnHeaderProps) {
+  const { address } = useAccount()
+  return <EarnHeaderContent key={address ?? 'disconnected'} {...props} />
+}
+
+function EarnHeaderContent({ theme, onThemeChange, layout }: TEarnHeaderProps) {
+  const { address, isConnected } = useAccount()
+  const { openWalletDrawer, dialogId, isOpen: isWalletPickerOpen } = useWalletDrawer()
+  const [isAccountOpen, setIsAccountOpen] = useState(false)
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const isDarkTheme = theme === 'dark'
   const layoutLinks = (
@@ -63,50 +77,87 @@ export function EarnHeader({
       actions={
         <>
           <div className="hidden md:block">
-            <ThemeSwitcher theme={theme} onChange={onThemeChange} />
+            <button
+              type="button"
+              className="min-h-[44px] min-w-[44px] rounded-full p-2.5 text-text-secondary transition-colors hover:text-text-primary"
+              onClick={() => onThemeChange(isDarkTheme ? 'light' : 'dark')}
+              aria-label={isDarkTheme ? 'Switch to light mode' : 'Switch to dark mode'}
+            >
+              {isDarkTheme ? <IconSun className="size-5" /> : <IconMoon className="size-5" />}
+            </button>
           </div>
-          <WalletButton inverse={isDarkTheme} />
+          <button
+            type="button"
+            data-wallet-entry="header"
+            data-wallet-drawer-trigger={!isConnected || undefined}
+            data-wallet-account-trigger={isConnected || undefined}
+            aria-label={
+              isConnected && address ? `Open wallet account ${formatWalletAddress(address)}` : 'Connect wallet'
+            }
+            aria-controls={isConnected ? 'ytranche-wallet-account' : dialogId}
+            aria-expanded={isConnected ? isAccountOpen : isWalletPickerOpen}
+            aria-haspopup="dialog"
+            className={
+              isConnected
+                ? 'inline-flex items-center gap-2 rounded-lg bg-surface-secondary px-3 py-1.5 text-sm text-text-secondary'
+                : 'inline-flex h-8 items-center justify-center gap-2 rounded-lg bg-text-primary px-3 text-xs text-surface transition-opacity hover:opacity-90'
+            }
+            onClick={() => {
+              if (isConnected) setIsAccountOpen((open) => !open)
+              else openWalletDrawer()
+            }}
+          >
+            <IconWallet className="size-4" />
+            <span className="hidden sm:inline">
+              {isConnected && address ? formatWalletAddress(address) : 'Connect wallet'}
+            </span>
+          </button>
           <button
             type="button"
             data-mobile-nav-trigger
             aria-label="Open navigation menu"
-            aria-controls="ytranche-navigation"
             aria-expanded={isMenuOpen}
             className="flex min-h-11 min-w-11 items-center justify-center rounded-lg text-text-primary hover:bg-surface-secondary md:hidden"
-            onClick={() => {
-              mobileMenu.current?.showModal()
-              setIsMenuOpen(true)
-            }}
+            onClick={() => setIsMenuOpen(true)}
           >
             <IconBurgerPlain className="size-6" />
           </button>
         </>
       }
     >
-      <dialog
-        ref={mobileMenu}
-        id="ytranche-navigation"
-        aria-label="Navigation menu"
+      <WalletAccountDropdown address={address} isOpen={isAccountOpen} onClose={() => setIsAccountOpen(false)} />
+      <MobileNavMenu
+        isOpen={isMenuOpen && !isAccountOpen && !isWalletPickerOpen && !isSettingsOpen}
         onClose={() => setIsMenuOpen(false)}
-        className="fixed inset-x-0 top-0 m-0 max-h-dvh w-full max-w-none overflow-y-auto border-b border-border bg-app p-5 text-text-primary backdrop:bg-black/40"
+        isDarkTheme={isDarkTheme}
+        siteBaseUrl={SITE_BASE_URL}
+        walletIdentity={address ? formatWalletAddress(address) : undefined}
+        navigation={
+          <div onClick={() => setIsMenuOpen(false)} className="px-4 py-2">
+            {layoutLinks}
+          </div>
+        }
+        onThemeToggle={() => onThemeChange(isDarkTheme ? 'light' : 'dark')}
+        onWalletClick={() => {
+          setIsMenuOpen(false)
+          if (isConnected) setIsAccountOpen(true)
+          else openWalletDrawer()
+        }}
+        onSettingsClick={() => {
+          setIsMenuOpen(false)
+          setIsSettingsOpen(true)
+        }}
+      />
+      <WalletSurface
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        dialogId="ytranche-settings"
+        title="Settings"
+        desktopTop="calc(var(--header-height) + 0.5rem)"
+        desktopRight="max(1rem, calc((100vw - 1232px) / 2 + 1rem))"
       >
-        <div className="mb-5 flex items-center justify-between">
-          <span className="text-lg font-semibold">Yearn Earn</span>
-          <button
-            type="button"
-            aria-label="Close navigation menu"
-            onClick={() => mobileMenu.current?.close()}
-            className="flex size-11 items-center justify-center rounded-lg text-2xl hover:bg-surface-secondary"
-          >
-            ×
-          </button>
-        </div>
-        <HeaderNavMenu inline isHomePage={false} isDarkTheme={isDarkTheme} siteBaseUrl={SITE_BASE_URL} />
-        <div className="mt-6 flex flex-wrap items-center justify-between gap-4 border-t border-border pt-4">
-          <div onClick={() => mobileMenu.current?.close()}>{layoutLinks}</div>
-          <ThemeSwitcher theme={theme} onChange={onThemeChange} />
-        </div>
-      </dialog>
+        <ThemeSettings />
+      </WalletSurface>
     </SiteHeader>
   )
 }

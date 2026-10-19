@@ -6,16 +6,28 @@ import '@/app/globals.css'
 const themeInitializationScript = `
   (() => {
     const root = document.documentElement;
-    const theme = (() => {
+    const preference = (() => {
       try {
-        return window.localStorage.getItem("ytranche-theme") === "dark" ? "dark" : "light";
+        const stored = window.localStorage.getItem("yearn-theme");
+        const legacy = window.localStorage.getItem("ytranche-theme");
+        if (!stored && (legacy === "light" || legacy === "dark")) {
+          const migrated = legacy === "dark" ? "soft-dark" : "light";
+          window.localStorage.setItem("yearn-theme", migrated);
+          return migrated;
+        }
+        if (["light", "soft-dark", "blue-dark", "midnight"].includes(stored)) return stored;
+        if (stored === "dark") return "midnight";
+        const oldPreference = window.localStorage.getItem("isDarkMode");
+        if (oldPreference === "true") return "soft-dark";
+        if (oldPreference === "false") return "light";
+        return window.matchMedia("(prefers-color-scheme: dark)").matches ? "soft-dark" : "light";
       } catch {
         return "light";
       }
     })();
-
+    const theme = preference === "light" ? "light" : "dark";
+    root.dataset.theme = preference;
     root.dataset.ytrancheTheme = theme;
-    root.style.colorScheme = theme;
   })();
 `
 

@@ -11,7 +11,7 @@ import {
 import { createWagmiVaultWidgetExecutionAdapter } from '@yearn/vault-widget/wagmi'
 import { useWalletDrawer, WalletDrawerProvider, WalletProvider } from '@yearn/wallet-ui'
 import { getYearnRainbowTheme } from '@yearn/wallet-ui/rainbowkit'
-import { type ReactNode, useMemo, useState } from 'react'
+import { type ReactNode, useEffect, useMemo, useState } from 'react'
 import { useAccount } from 'wagmi'
 import { useThemePreference } from '@/lib/theme'
 import { wagmiConfig } from '@/lib/wagmi'
@@ -59,6 +59,10 @@ function WidgetHostProvider({ children }: { children: ReactNode }) {
 export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => new QueryClient())
   const [theme] = useThemePreference()
+  // The product stylesheet uses a binary DOM theme; wallet surfaces use the shared theme variants.
+  useEffect(() => {
+    document.documentElement.dataset.ytrancheTheme = theme
+  }, [theme])
   return (
     <WalletProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
@@ -67,7 +71,6 @@ export function Providers({ children }: { children: ReactNode }) {
             anchorToTrigger
             desktopTop="calc(var(--header-height) + 0.5rem)"
             desktopRight="max(1rem, calc((100vw - 1232px) / 2 + 1rem))"
-            themeClassName="ytranche-wallet-ui"
           >
             <WidgetHostProvider>{children}</WidgetHostProvider>
           </WalletDrawerProvider>

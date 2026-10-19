@@ -1,6 +1,7 @@
 @import "tailwindcss";
 @import "@yearn/vault-widget/styles.css";
 @import "@yearn/wallet-ui/styles.css";
+@import "@yearn/site-header/themes.css";
 @source "../../../../packages/vault-widget/src";
 @source "../../../../packages/wallet-ui/src";
 @source "../../../../packages/site-header/src";
@@ -63,11 +64,6 @@ body {
 }
 
 button,
-input {
-  font: inherit;
-}
-
-button,
 a {
   -webkit-tap-highlight-color: transparent;
 }
@@ -78,10 +74,6 @@ button {
 
 button:disabled {
   cursor: not-allowed;
-}
-
-a {
-  color: inherit;
 }
 
 button:focus-visible,
@@ -6481,8 +6473,7 @@ html[data-ytranche-theme="dark"] .deposit-widget--friendly {
   min-width: 0;
   scroll-margin-top: 6rem;
 }
-:root[data-ytranche-theme="dark"] .ytranche-widget,
-:root[data-ytranche-theme="dark"] .ytranche-wallet-ui {
+:root[data-ytranche-theme="dark"] .ytranche-widget {
   --color-app: #0b1220;
   --color-surface: #111c30;
   --color-surface-secondary: #18263e;
