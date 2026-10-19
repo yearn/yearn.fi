@@ -200,11 +200,11 @@ const DARK_VARIANT_LABELS: Record<string, string> = {
   midnight: 'Midnight'
 }
 
-function SettingsView({
+export function ThemeSettings({
   onBack,
   advancedSettings
 }: {
-  onBack: () => void
+  onBack?: () => void
   advancedSettings?: ReactNode
 }): ReactElement {
   const themePreference = useThemePreference()
@@ -232,13 +232,15 @@ function SettingsView({
 
   return (
     <div className={'flex flex-col'}>
-      <div className={'mb-4 flex items-center'}>
-        <button aria-label="Back to wallet" onClick={onBack} className={backButtonClass}>
-          <IconArrowLeft className={'size-4'} />
-        </button>
-        <h2 className={'flex-1 text-center text-base font-semibold text-text-primary'}>{'Settings'}</h2>
-        <div className={'w-7'} />
-      </div>
+      {onBack && (
+        <div className={'mb-4 flex items-center'}>
+          <button aria-label="Back to wallet" onClick={onBack} className={backButtonClass}>
+            <IconArrowLeft className={'size-4'} />
+          </button>
+          <h2 className={'flex-1 text-center text-base font-semibold text-text-primary'}>{'Settings'}</h2>
+          <div className={'w-7'} />
+        </div>
+      )}
 
       <div className={'mb-4 flex items-center justify-between'}>
         <span className={'text-sm font-medium text-text-primary'}>{'Theme'}</span>
@@ -313,7 +315,7 @@ export function AccountMenu({
       {view === 'account' ? (
         <AccountView account={account} onSettingsClick={() => showView('settings')} />
       ) : (
-        <SettingsView onBack={() => showView('account')} advancedSettings={advancedSettings} />
+        <ThemeSettings onBack={() => showView('account')} advancedSettings={advancedSettings} />
       )}
     </div>
   )

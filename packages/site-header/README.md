@@ -1,6 +1,6 @@
 # Shared Yearn header
 
-`SiteHeader` and `HeaderNavMenu` are the standard Yearn masthead and desktop navigation, extracted from `apps/yearn`. Both the main Yearn app and the ERC-4626 utility consume them. Wallet state, account menus and mobile wallet actions remain owned by each app.
+`SiteHeader` and `HeaderNavMenu` are the standard Yearn masthead and desktop navigation, extracted from `apps/yearn`. The main Yearn app, ERC-4626 utility, and yBOLD consume them. `MobileNavMenu` from `@yearn/site-header/mobile` shares the production mobile navigation. Hosts supply wallet and settings callbacks, optional navigation links, and a status footer. Wallet state remains owned by each app.
 
 Provide `actions` and, optionally, a `navigation` slot to `SiteHeader`. Set `siteBaseUrl="https://yearn.fi"` in standalone apps so Yearn navigation and image URLs resolve to the main site. The main Yearn app leaves it empty for local routing.
 

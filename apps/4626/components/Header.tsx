@@ -2,14 +2,15 @@
 
 import { WalletAccountDropdown } from '@erc4626/components/WalletAccount'
 import { SiteHeader } from '@yearn/site-header'
+import { ThemeSettings } from '@yearn/site-header/account'
 import { IconBurgerPlain } from '@yearn/site-header/icons/IconBurgerPlain'
 import { IconMoon } from '@yearn/site-header/icons/IconMoon'
 import { IconSun } from '@yearn/site-header/icons/IconSun'
 import { IconWallet } from '@yearn/site-header/icons/IconWallet'
-import { HeaderNavMenu } from '@yearn/site-header/navigation'
+import { MobileNavMenu } from '@yearn/site-header/mobile'
 import { setThemePreference, useThemePreference } from '@yearn/site-header/theme'
-import { formatWalletAddress, useWalletDrawer } from '@yearn/wallet-ui'
-import { useRef, useState } from 'react'
+import { formatWalletAddress, useWalletDrawer, WalletSurface } from '@yearn/wallet-ui'
+import { useState } from 'react'
 import { useAccount } from 'wagmi'
 
 const siteBaseUrl = 'https://yearn.fi'
@@ -51,7 +52,7 @@ function WalletButton({
       }
     >
       <IconWallet className="size-4" />
-      {identity ?? 'Connect wallet'}
+      <span className="hidden sm:inline">{identity ?? 'Connect wallet'}</span>
     </button>
   )
 }
@@ -63,7 +64,10 @@ export function Header() {
 
 function HeaderContent() {
   const isDarkTheme = useThemePreference() !== 'light'
-  const mobileMenu = useRef<HTMLDialogElement>(null)
+  const { address, isConnected } = useAccount()
+  const { openWalletDrawer, isOpen: isWalletPickerOpen } = useWalletDrawer()
+  const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
+  const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isAccountOpen, setIsAccountOpen] = useState(false)
   const themeButton = (
     <button
@@ -91,17 +95,17 @@ function HeaderContent() {
       isDarkTheme={isDarkTheme}
       actions={
         <>
-          <div className="hidden items-center gap-2 md:flex">
-            <nav aria-label="Yearn" className="flex gap-4">
+          <div className="flex items-center gap-2">
+            <nav aria-label="Yearn" className="hidden gap-4 md:flex">
               {links}
             </nav>
-            {themeButton}
+            <div className="hidden md:block">{themeButton}</div>
             <WalletButton isAccountOpen={isAccountOpen} onAccountOpen={() => setIsAccountOpen((open) => !open)} />
           </div>
           <button
             type="button"
             className="flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg p-2.5 text-text-primary hover:bg-surface-secondary md:hidden"
-            onClick={() => mobileMenu.current?.showModal()}
+            onClick={() => setIsMobileMenuOpen(true)}
             data-mobile-nav-trigger
             aria-label="Open navigation menu"
           >
@@ -111,38 +115,33 @@ function HeaderContent() {
       }
     >
       <WalletAccountDropdown isOpen={isAccountOpen} onClose={() => setIsAccountOpen(false)} />
-      <dialog
-        ref={mobileMenu}
-        aria-label="Navigation menu"
-        className="fixed inset-x-0 top-0 m-0 max-h-dvh w-full max-w-none overflow-y-auto border-b border-border bg-app p-5 text-text-primary backdrop:bg-black/40"
+      <MobileNavMenu
+        isOpen={isMobileMenuOpen && !isWalletPickerOpen && !isAccountOpen && !isSettingsOpen}
+        onClose={() => setIsMobileMenuOpen(false)}
+        isDarkTheme={isDarkTheme}
+        siteBaseUrl={siteBaseUrl}
+        walletIdentity={address ? formatWalletAddress(address) : undefined}
+        onThemeToggle={() => setThemePreference(isDarkTheme ? 'light' : 'soft-dark')}
+        onWalletClick={() => {
+          setIsMobileMenuOpen(false)
+          if (isConnected) setIsAccountOpen(true)
+          else openWalletDrawer()
+        }}
+        onSettingsClick={() => {
+          setIsMobileMenuOpen(false)
+          setIsSettingsOpen(true)
+        }}
+      />
+      <WalletSurface
+        isOpen={isSettingsOpen}
+        onClose={() => setIsSettingsOpen(false)}
+        dialogId="erc4626-settings"
+        title="Settings"
+        desktopTop="calc(var(--header-height) + 0.5rem)"
+        desktopRight="max(1rem, calc((100vw - 1232px) / 2 + 1rem))"
       >
-        <div className="sticky -top-5 z-10 -mx-5 -mt-5 mb-5 flex items-center justify-between bg-app px-5 pt-5">
-          <span className="text-lg font-semibold">Menu</span>
-          <button
-            type="button"
-            onClick={() => mobileMenu.current?.close()}
-            aria-label="Close navigation menu"
-            className="size-11 text-2xl"
-          >
-            ×
-          </button>
-        </div>
-        <nav aria-label="Yearn mobile" className="flex flex-col gap-5">
-          {links}
-          <HeaderNavMenu inline isHomePage={false} isDarkTheme={isDarkTheme} siteBaseUrl={siteBaseUrl} />
-        </nav>
-        <div className="mt-6 flex items-center justify-between border-t border-border pt-4">
-          <WalletButton
-            isAccountOpen={isAccountOpen}
-            onOpen={() => mobileMenu.current?.close()}
-            onAccountOpen={() => {
-              mobileMenu.current?.close()
-              setIsAccountOpen(true)
-            }}
-          />
-          {themeButton}
-        </div>
-      </dialog>
+        <ThemeSettings />
+      </WalletSurface>
     </SiteHeader>
   )
 }
