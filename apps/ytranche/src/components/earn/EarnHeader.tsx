@@ -7,7 +7,6 @@ import { IconMoon } from '@yearn/site-header/icons/IconMoon'
 import { IconSun } from '@yearn/site-header/icons/IconSun'
 import { IconWallet } from '@yearn/site-header/icons/IconWallet'
 import { MobileNavMenu } from '@yearn/site-header/mobile'
-import { HeaderNavMenu } from '@yearn/site-header/navigation'
 import { formatWalletAddress, useWalletDrawer, WalletSurface } from '@yearn/wallet-ui'
 import Image from 'next/image'
 import Link from 'next/link'
@@ -32,7 +31,6 @@ export function EarnBrand({ inverse = false }: { inverse?: boolean }) {
 type TEarnHeaderProps = {
   theme: TTheme
   onThemeChange: (theme: TTheme) => void
-  layout: 'fixed' | 'centered'
 }
 
 export function EarnHeader(props: TEarnHeaderProps) {
@@ -40,40 +38,17 @@ export function EarnHeader(props: TEarnHeaderProps) {
   return <EarnHeaderContent key={address ?? 'disconnected'} {...props} />
 }
 
-function EarnHeaderContent({ theme, onThemeChange, layout }: TEarnHeaderProps) {
+function EarnHeaderContent({ theme, onThemeChange }: TEarnHeaderProps) {
   const { address, isConnected } = useAccount()
   const { openWalletDrawer, dialogId, isOpen: isWalletPickerOpen } = useWalletDrawer()
   const [isAccountOpen, setIsAccountOpen] = useState(false)
   const [isSettingsOpen, setIsSettingsOpen] = useState(false)
   const [isMenuOpen, setIsMenuOpen] = useState(false)
   const isDarkTheme = theme === 'dark'
-  const layoutLinks = (
-    <nav className="flex items-center gap-3 text-sm text-text-secondary" aria-label="Earn layout">
-      {[
-        { name: 'Fixed', href: '/', value: 'fixed' },
-        { name: 'Centered', href: '/earn-centered', value: 'centered' }
-      ].map((item) => (
-        <Link
-          key={item.value}
-          href={item.href}
-          aria-current={layout === item.value ? 'page' : undefined}
-          className={layout === item.value ? 'font-semibold text-text-primary' : 'hover:text-text-primary'}
-        >
-          {item.name}
-        </Link>
-      ))}
-    </nav>
-  )
   return (
     <SiteHeader
       siteBaseUrl={SITE_BASE_URL}
       isDarkTheme={isDarkTheme}
-      navigation={
-        <>
-          <HeaderNavMenu isHomePage={false} isDarkTheme={isDarkTheme} siteBaseUrl={SITE_BASE_URL} />
-          <div className="hidden border-l border-border pl-4 lg:block">{layoutLinks}</div>
-        </>
-      }
       actions={
         <>
           <div className="hidden md:block">
@@ -132,11 +107,6 @@ function EarnHeaderContent({ theme, onThemeChange, layout }: TEarnHeaderProps) {
         isDarkTheme={isDarkTheme}
         siteBaseUrl={SITE_BASE_URL}
         walletIdentity={address ? formatWalletAddress(address) : undefined}
-        navigation={
-          <div onClick={() => setIsMenuOpen(false)} className="px-4 py-2">
-            {layoutLinks}
-          </div>
-        }
         onThemeToggle={() => onThemeChange(isDarkTheme ? 'light' : 'dark')}
         onWalletClick={() => {
           setIsMenuOpen(false)
@@ -151,6 +121,7 @@ function EarnHeaderContent({ theme, onThemeChange, layout }: TEarnHeaderProps) {
       <WalletSurface
         isOpen={isSettingsOpen}
         onClose={() => setIsSettingsOpen(false)}
+        themeClassName="ytranche-wallet-ui"
         dialogId="ytranche-settings"
         title="Settings"
         desktopTop="calc(var(--header-height) + 0.5rem)"

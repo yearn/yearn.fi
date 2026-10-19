@@ -6,6 +6,10 @@
 @source "../../../../packages/wallet-ui/src";
 @source "../../../../packages/site-header/src";
 
+@theme {
+  --color-modal-overlay: rgb(11 16 32 / 60%);
+}
+
 @font-face {
   font-family: "Aeonik";
   src: url("https://yearn.fi/fonts/Aeonik-Regular.woff2") format("woff2");
@@ -5288,8 +5292,8 @@ html[data-ytranche-theme="dark"] .terminal-page .capital-stack > p {
   }
 }
 
-/* Earn: a plain-language retail surface. */
-.earn-retail {
+/* Shared palette for the page and portaled wallet surfaces. */
+:root {
   --earn-bg: #f4f7ff;
   --earn-surface: #ffffff;
   --earn-surface-soft: #eaf0ff;
@@ -5299,13 +5303,24 @@ html[data-ytranche-theme="dark"] .terminal-page .capital-stack > p {
   --earn-blue: #0657f9;
   --earn-blue-deep: #043fb9;
   --earn-success: #188657;
+}
+
+.earn-retail,
+.ytranche-wallet-ui {
   --color-app: var(--earn-bg);
   --color-surface: var(--earn-surface);
   --color-surface-secondary: var(--earn-surface-soft);
+  --color-surface-tertiary: var(--earn-line);
   --color-text-primary: var(--earn-ink);
   --color-text-secondary: var(--earn-muted);
+  --color-text-tertiary: var(--earn-muted);
   --color-border: var(--earn-line);
   --color-primary: var(--earn-blue);
+  --color-primary-hover: var(--earn-blue-deep);
+  --color-modal-overlay: rgb(11 16 32 / 60%);
+}
+
+.earn-retail {
   min-height: 100vh;
   color: var(--earn-ink);
   background: var(--earn-bg);
@@ -6114,7 +6129,7 @@ html[data-ytranche-theme="dark"] .terminal-page .capital-stack > p {
   }
 }
 
-html[data-ytranche-theme="dark"] .earn-retail {
+:root[data-ytranche-theme="dark"] {
   --earn-bg: #0b1020;
   --earn-surface: #131a2c;
   --earn-surface-soft: #171f35;
@@ -6482,4 +6497,23 @@ html[data-ytranche-theme="dark"] .deposit-widget--friendly {
   --color-text-secondary: #b8c4d8;
   --color-text-tertiary: #94a3ba;
   --color-border: #2d3e5c;
+}
+
+/* Match yBOLD: the tabs and action panel share one continuous outer edge. */
+.ytranche-widget [data-widget-part="action-shell"] {
+  border-radius: 0.5rem;
+}
+
+.ytranche-widget [data-widget-part="action-tabs"] {
+  border-radius: 0.5rem 0.5rem 0 0;
+}
+
+.ytranche-widget [data-widget-part="action-panel"],
+.ytranche-widget [data-widget-part="action-panel"] > div {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.ytranche-widget [data-widget-part="action-panel"] > div {
+  border-top-width: 0;
 }

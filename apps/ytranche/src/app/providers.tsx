@@ -59,6 +59,23 @@ function WidgetHostProvider({ children }: { children: ReactNode }) {
 export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => new QueryClient())
   const [theme] = useThemePreference()
+  const rainbowTheme = getYearnRainbowTheme(theme)
+  const walletTheme = {
+    ...rainbowTheme,
+    colors: {
+      ...rainbowTheme.colors,
+      accentColor: 'var(--earn-blue)',
+      modalBackground: 'var(--earn-surface)',
+      modalText: 'var(--earn-ink)',
+      modalTextSecondary: 'var(--earn-muted)',
+      modalBorder: 'var(--earn-line)',
+      generalBorder: 'var(--earn-line)',
+      menuItemBackground: 'var(--earn-surface-soft)',
+      closeButton: 'var(--earn-muted)',
+      closeButtonBackground: 'var(--earn-surface-soft)',
+      modalBackdrop: 'rgba(11, 16, 32, 0.6)'
+    }
+  }
   // The product stylesheet uses a binary DOM theme; wallet surfaces use the shared theme variants.
   useEffect(() => {
     document.documentElement.dataset.ytrancheTheme = theme
@@ -66,9 +83,10 @@ export function Providers({ children }: { children: ReactNode }) {
   return (
     <WalletProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider theme={getYearnRainbowTheme(theme)}>
+        <RainbowKitProvider theme={walletTheme}>
           <WalletDrawerProvider
             anchorToTrigger
+            themeClassName="ytranche-wallet-ui"
             desktopTop="calc(var(--header-height) + 0.5rem)"
             desktopRight="max(1rem, calc((100vw - 1232px) / 2 + 1rem))"
           >

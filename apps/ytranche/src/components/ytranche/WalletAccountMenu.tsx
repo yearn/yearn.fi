@@ -77,6 +77,7 @@ export function WalletAccountDropdown({
     <WalletSurface
       isOpen={isOpen && Boolean(address)}
       onClose={onClose}
+      themeClassName="ytranche-wallet-ui"
       dialogId="ytranche-wallet-account"
       title="Wallet"
       desktopTop="calc(var(--header-height) + 0.5rem)"

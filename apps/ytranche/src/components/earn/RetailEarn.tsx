@@ -52,7 +52,7 @@ export function RetailEarn({ layout = 'split' }: { layout?: 'split' | 'centered'
 
   return (
     <div className={`earn-retail${isCentered ? ' earn-retail--centered' : ''}`}>
-      <EarnHeader theme={theme} onThemeChange={changeTheme} layout={isCentered ? 'centered' : 'fixed'} />
+      <EarnHeader theme={theme} onThemeChange={changeTheme} />
 
       <main className="earn-retail__layout">
         <section className="earn-retail__hero" aria-labelledby="earn-retail-title">
