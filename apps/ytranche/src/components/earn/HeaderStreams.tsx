@@ -6,8 +6,8 @@ const LANES = [0, 1, 2]
 function streamPath(lane: number): string {
   return Array.from({ length: 101 }, (_, index) => {
     const x = index * 10
-    const progress = Math.min(1, Math.max(0, (x - 140) / 90))
-    const split = progress * progress * (3 - 2 * progress)
+    const progress = Math.min(1, Math.max(0, (x - 115) / 150))
+    const split = progress ** 3 * (progress * (6 * progress - 15) + 10)
     const y = 34 + (lane - 1) * 20 * split
     return `${index === 0 ? 'M' : 'L'}${x},${y}`
   }).join(' ')

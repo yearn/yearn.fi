@@ -40,6 +40,7 @@ export function DepositWidget() {
           void queryClient.invalidateQueries()
         }}
         depositTitleOverride=""
+        annualReturnNote="A 10% performance fee applies to earned yield."
         withdrawTitleOverride=""
         disableDepositStaking
         disableTokenSelector

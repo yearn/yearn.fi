@@ -5722,8 +5722,9 @@ html[data-ytranche-theme="dark"] .terminal-page .capital-stack > p {
 }
 
 .earn-retail__steps {
+  min-height: calc(100svh - var(--header-height));
+  scroll-margin-top: var(--header-height);
   padding: 116px 0 122px;
-  border-top: 1px solid var(--earn-line);
 }
 
 .earn-retail__steps h2,
@@ -5744,14 +5745,11 @@ html[data-ytranche-theme="dark"] .terminal-page .capital-stack > p {
 }
 
 .earn-retail__steps li {
-  display: grid;
-  grid-template-columns: 58px 1fr;
-  gap: 18px;
+  display: block;
   padding: 25px 0;
   border-bottom: 1px solid var(--earn-line);
 }
 
-.earn-retail__steps li > span,
 .earn-retail__trust article > span {
   color: var(--earn-blue);
   font-family: var(--font-mono);
@@ -5771,10 +5769,6 @@ html[data-ytranche-theme="dark"] .terminal-page .capital-stack > p {
   color: var(--earn-muted);
   font-size: 14px;
   line-height: 1.55;
-}
-
-.earn-retail__steps li p.earn-step-fee {
-  margin-top: 8px;
 }
 
 .earn-step-link {
@@ -6069,12 +6063,9 @@ html[data-ytranche-theme="dark"] .terminal-page .capital-stack > p {
 }
 
 .earn-retail--centered .earn-retail__steps li {
-  grid-template-columns: 76px 1fr;
-  gap: 28px;
   padding: 34px 0;
 }
 
-.earn-retail--centered .earn-retail__steps li > span,
 .earn-retail--centered .earn-retail__trust article > span {
   font-size: 12px;
 }

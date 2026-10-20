@@ -47,6 +47,7 @@ export const Widget = forwardRef<VaultWidgetRef, VaultWidgetProps>(function Widg
     onDepositPrefillConsumed,
     forceDepositStake,
     depositTitleOverride,
+    annualReturnNote,
     withdrawTitleOverride,
     onDepositUserTokenSelectionChange,
     hideTabSelector,
@@ -92,6 +93,7 @@ export const Widget = forwardRef<VaultWidgetRef, VaultWidgetProps>(function Widg
             onPrefillApplied={onDepositPrefillConsumed}
             forceStake={forceDepositStake}
             titleOverride={depositTitleOverride}
+            annualReturnNote={annualReturnNote}
             onUserTokenSelectionChange={onDepositUserTokenSelectionChange}
             onOpenSettings={onOpenSettings}
             isSettingsOpen={isSettingsOpen}

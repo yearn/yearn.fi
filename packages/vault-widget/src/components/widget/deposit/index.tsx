@@ -91,6 +91,7 @@ interface Props {
   contentAboveButton?: ReactNode
   actionLabelOverride?: string
   titleOverride?: string
+  annualReturnNote?: string
   vaultSharesLabel?: string
   hideDetails?: boolean
   hideActionButton?: boolean
@@ -180,6 +181,7 @@ export function WidgetDeposit({
   contentAboveButton,
   actionLabelOverride,
   titleOverride,
+  annualReturnNote,
   vaultSharesLabel,
   hideDetails = false,
   hideActionButton = false,
@@ -1539,6 +1541,7 @@ export function WidgetDeposit({
 
       {vaultAPR !== undefined && (
         <AnnualReturnOverlay
+          note={annualReturnNote}
           isOpen={showAnnualReturnModal}
           onClose={() => setShowAnnualReturnModal(false)}
           depositAmount={formatWidgetValue(depositAmount.debouncedBn, inputToken?.decimals ?? 18)}

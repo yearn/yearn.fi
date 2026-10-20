@@ -9,6 +9,7 @@ interface AnnualReturnOverlayProps {
   tokenSymbol?: string
   estimatedReturn: string
   currentAPR: number
+  note?: string
 }
 
 export const AnnualReturnOverlay: FC<AnnualReturnOverlayProps> = ({
@@ -17,7 +18,8 @@ export const AnnualReturnOverlay: FC<AnnualReturnOverlayProps> = ({
   depositAmount,
   tokenSymbol,
   estimatedReturn,
-  currentAPR
+  currentAPR,
+  note
 }) => {
   return (
     <InfoOverlay isOpen={isOpen} onClose={onClose} title="Estimated Annual Return">
@@ -38,6 +40,7 @@ export const AnnualReturnOverlay: FC<AnnualReturnOverlayProps> = ({
             </li>
           </ul>
         </div>
+        {note && <p className="text-sm text-text-secondary">{note}</p>}
         <p className="text-xxs text-text-secondary mt-4">
           Please note that past performance does not guarantee future results. Actual returns may vary based on market
           volatility and vault strategy adjustments.

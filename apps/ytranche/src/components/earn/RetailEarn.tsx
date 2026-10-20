@@ -65,14 +65,14 @@ export function RetailEarn({ layout = 'split' }: { layout?: 'split' | 'centered'
           <div className="earn-retail__headline-support">
             <p>Withdraw whenever you want.</p>
             <p>
-              Protected from drawdowns through{' '}
+              Protected from drawdowns by Yearn's{' '}
               <a href={GOVERNANCE_URL} target="_blank" rel="noreferrer">
                 yTranche
               </a>
               <sup></sup> system.
             </p>
             <p>
-              <strong>$20M</strong> currently deposited.
+              <strong>$20M</strong> already earning.
             </p>
           </div>
 
@@ -93,21 +93,15 @@ export function RetailEarn({ layout = 'split' }: { layout?: 'split' | 'centered'
           <h2 id="earn-steps-title">It's easy.</h2>
           <ol>
             <li>
-              <span>01</span>
               <div>
                 <h3>Deposit USDC</h3>
-                <p>Choose an amount and confirm the transaction from your wallet.</p>
+                <p>Or zap in with another stablecoin.</p>
               </div>
             </li>
             <li>
-              <span>02</span>
               <div>
                 <h3>Yearn puts your funds to work</h3>
-                <p>
-                  Deposits are made on Ethereum. The Yearn V3 vault allocates funds across Ethereum and Layer 2
-                  strategies.
-                </p>
-                <p className="earn-step-fee">A 10% performance fee applies to earned yield.</p>
+                <p>The Yearn V3 vault allocates funds across Ethereum and Layer 2 strategies.</p>
                 <a
                   className="earn-step-link"
                   href={`https://yearn.fi/vaults/1/${CONTRACTS.vault}`}
@@ -119,12 +113,9 @@ export function RetailEarn({ layout = 'split' }: { layout?: 'split' | 'centered'
               </div>
             </li>
             <li>
-              <span>03</span>
               <div>
                 <h3>Withdraw anytime</h3>
-                <p>
-                  No lockups or cooldowns. Withdraw anytime, subject to available vault liquidity and protocol controls.
-                </p>
+                <p>No lockups or cooldowns. Withdraw anytime.</p>
               </div>
             </li>
           </ol>
@@ -183,16 +174,6 @@ export function RetailEarn({ layout = 'split' }: { layout?: 'split' | 'centered'
             </a>
           </div>
         </section>
-
-        <section className="earn-retail__details" id="important-details" aria-labelledby="earn-details-title">
-          <h2 id="earn-details-title">Important details</h2>
-          <ul>
-            <li>
-              Yearn has a mandate to maintain vault liquidity, but unforeseen market conditions may lead to temporary
-              periods of illiquidity.
-            </li>
-          </ul>
-        </section>
       </main>
 
       {showDepositShortcut ? (
@@ -217,6 +198,10 @@ export function RetailEarn({ layout = 'split' }: { layout?: 'split' | 'centered'
             Audit ↗
           </a>
         </nav>
+        <p>
+          Yearn has a mandate to maintain vault liquidity, but unforeseen market conditions may lead to temporary
+          periods of illiquidity. Withdrawals are subject to available vault liquidity and protocol controls.
+        </p>
         <p>
           Onchain products involve risk. Review the product, its contracts, and available liquidity before depositing.
         </p>
