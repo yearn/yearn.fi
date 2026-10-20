@@ -39,6 +39,8 @@ export function DepositWidget() {
         handleSuccess={() => {
           void queryClient.invalidateQueries()
         }}
+        depositTitleOverride=""
+        withdrawTitleOverride=""
         disableDepositStaking
         disableTokenSelector
       />

@@ -1372,7 +1372,7 @@ export function WidgetDeposit({
     (isEnsoRoute && (priceImpactInfo.isBlocking || priceImpactInfo.isAboveTolerance))
 
   const actionRow = showActionRow ? (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3" data-widget-part="deposit-actions">
       {approvalResetWarning}
       {priceImpactWarning}
       {contentAboveButton}

@@ -55,6 +55,7 @@ import {
 
 type WidgetWithdrawProps = WithdrawWidgetProps & {
   hideSettings?: boolean
+  titleOverride?: string
   disableBorderRadius?: boolean
   collapseDetails?: boolean
   contentBelowInput?: ReactNode
@@ -132,6 +133,7 @@ export function WidgetWithdraw({
   prefillRequestKey,
   onPrefillApplied,
   headerActions,
+  titleOverride,
   onAmountChange,
   onTokenSelectionChange,
   handleWithdrawSuccess: onWithdrawSuccess,
@@ -1111,7 +1113,13 @@ export function WidgetWithdraw({
   )
 
   if (isLoadingVaultData && !showTransactionOverlay) {
-    return <WidgetLoadingSkeleton title="Withdraw" actions={headerActions} disableBorderRadius={disableBorderRadius} />
+    return (
+      <WidgetLoadingSkeleton
+        title={titleOverride ?? 'Withdraw'}
+        actions={headerActions}
+        disableBorderRadius={disableBorderRadius}
+      />
+    )
   }
 
   // ============================================================================
@@ -1201,7 +1209,7 @@ export function WidgetWithdraw({
     (isEnsoRoute && (priceImpactInfo.isBlocking || priceImpactInfo.isAboveTolerance))
 
   const actionRow = (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3" data-widget-part="withdraw-actions">
       {priceImpactWarning}
       <div className="flex items-center gap-2">
         <div className="flex-1">
@@ -1257,7 +1265,7 @@ export function WidgetWithdraw({
       })}
       data-tour="vault-detail-withdraw-widget"
     >
-      <WidgetHeader title="Withdraw" actions={headerActions} />
+      <WidgetHeader title={titleOverride ?? 'Withdraw'} actions={headerActions} />
       <div className="flex flex-col flex-1 p-6 pt-2 gap-3">
         <div>
           {/* Withdraw From Selector */}
