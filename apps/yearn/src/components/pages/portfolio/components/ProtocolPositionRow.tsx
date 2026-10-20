@@ -77,7 +77,7 @@ export function ProtocolPositionRow({ position }: TProtocolPositionRowProps): Re
   const cooldownEndsAt = formatDate(position.cooldown?.endsAt)
   const statusItems = getStatusItems(position)
   const apyDisplay = position.apy === null ? '-' : formatApyDisplay(position.apy)
-  const tvlDisplay = position.tvlUsd > 0 ? formatTvlDisplay(position.tvlUsd) : '-'
+  const tvlDisplay = position.valueUsdUnavailable ? '—' : position.tvlUsd > 0 ? formatTvlDisplay(position.tvlUsd) : '-'
   return (
     <div className="w-full overflow-hidden bg-surface transition-colors max-md:border-b-1 max-md:border-border">
       <a
@@ -138,7 +138,9 @@ export function ProtocolPositionRow({ position }: TProtocolPositionRowProps): Re
               </div>
               <div className="flex items-center justify-center gap-2 whitespace-nowrap">
                 <span className="text-text-primary/60">{'Holdings:'}</span>
-                <span className="text-lg font-semibold text-text-primary">{formatTvlDisplay(position.valueUsd)}</span>
+                <span className="text-lg font-semibold text-text-primary">
+                  {position.valueUsdUnavailable ? '—' : formatTvlDisplay(position.valueUsd)}
+                </span>
               </div>
             </div>
           </div>
@@ -158,7 +160,7 @@ export function ProtocolPositionRow({ position }: TProtocolPositionRowProps): Re
           <div className="yearn--table-data-section-item col-span-4" datatype="number">
             <div className="flex justify-end text-right">
               <span className="yearn--table-data-section-item-value font-semibold text-text-primary">
-                {formatTvlDisplay(position.valueUsd)}
+                {position.valueUsdUnavailable ? '—' : formatTvlDisplay(position.valueUsd)}
               </span>
             </div>
           </div>
