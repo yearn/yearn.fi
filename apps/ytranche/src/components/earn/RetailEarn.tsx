@@ -1,7 +1,8 @@
 'use client'
 
+import { TypeMarkYearn } from '@yearn/site-header/icons/TypeMarkYearn'
 import { useEffect, useRef, useState } from 'react'
-import { EarnBrand, EarnHeader } from '@/components/earn/EarnHeader'
+import { EarnHeader } from '@/components/earn/EarnHeader'
 import { ContractLink, DepositWidget, useThemePreference } from '@/components/ytranche/shared'
 import { CONTRACTS } from '@/lib/ethereum'
 
@@ -121,57 +122,53 @@ export function RetailEarn({ layout = 'split' }: { layout?: 'split' | 'centered'
           </ol>
         </section>
 
-        <section className="earn-retail__mechanics" aria-labelledby="earn-mechanics-title">
-          <h2 id="earn-mechanics-title">It's consistent.</h2>
-          <p>
-            Fixed is one of three positions in Yearn's{' '}
-            <a href={GOVERNANCE_URL} target="_blank" rel="noreferrer">
-              yTranche
-            </a>{' '}
-            system. <br />
-            Yearn V3 vault earns yield through strategies on Ethereum and Layer 2 networks. yTranche directs that yield
-            to Fixed first, up to its 5% target. Levered follows, then remaining yield goes to Equity.
-          </p>
-          <div className="earn-retail__flow">
-            <span>Yearn V3 vault yield</span>
-            <i aria-hidden="true">→</i>
-            <strong>Funds the 5% Fixed target</strong>
-            <i aria-hidden="true">→</i>
-            <span className="earn-retail__flow-destinations">
-              <a href={`https://yearn.fi/vaults/1/${CONTRACTS.levered}`} target="_blank" rel="noreferrer">
-                Levered ↗
-              </a>
-              <a href={`https://yearn.fi/vaults/1/${CONTRACTS.equity}`} target="_blank" rel="noreferrer">
-                Equity ↗
-              </a>
-            </span>
-          </div>
-          <small>5% APY is a target rate. Yearn governance may change it with at least seven days’ prior notice.</small>
-        </section>
+        <div className="earn-retail__mechanics-stage">
+          <section className="earn-retail__mechanics" aria-labelledby="earn-mechanics-title">
+            <h2 id="earn-mechanics-title">It's consistent.</h2>
+            <p>
+              yTranche USD Fixed earns a consistent, targeted rate of return made possible by Yearn's{' '}
+              <a href={GOVERNANCE_URL} target="_blank" rel="noreferrer">
+                yTranche
+              </a>{' '}
+              system.
+            </p>
+            <div className="earn-retail__flow">
+              <span>Yearn V3 vault yield</span>
+              <i aria-hidden="true">→</i>
+              <strong>Funds the 5% Fixed target</strong>
+              <i aria-hidden="true">→</i>
+              <span className="earn-retail__flow-destinations">
+                <a href={`https://yearn.fi/vaults/1/${CONTRACTS.levered}`} target="_blank" rel="noreferrer">
+                  Levered ↗
+                </a>
+                <a href={`https://yearn.fi/vaults/1/${CONTRACTS.equity}`} target="_blank" rel="noreferrer">
+                  Equity ↗
+                </a>
+              </span>
+            </div>
+          </section>
+        </div>
 
         <section className="earn-retail__trust" id="safety" aria-labelledby="earn-trust-title">
-          <h2 id="earn-trust-title">It's secure.</h2>
+          <h2 id="earn-trust-title">It's resilient.</h2>
           <div className="earn-retail__trust-grid">
             <article>
-              <span>01</span>
-              <h3>First in the waterfall</h3>
-              <p>Fixed receives available vault yield before the other positions, up to target.</p>
+              <h3>Dependable infrastructure</h3>
+              <p>Built on battle-tested Yearn V3 Vaults.</p>
             </article>
             <article>
-              <span>02</span>
-              <h3>Supporting capital</h3>
-              <p>Levered and Equity capital sit beneath Fixed in the onchain structure.</p>
+              <h3>Loss Remote</h3>
+              <p>Protected from vault strategy drawdowns by other yTranche capital.</p>
             </article>
             <article>
-              <span>03</span>
-              <h3>Independently reviewed</h3>
-              <p>ChainSecurity reviewed the yTranche core contracts and published its scope.</p>
+              <h3>Independently Audited</h3>
+              <p>
+                <a href={AUDIT_URL} target="_blank" rel="noreferrer">
+                  3rd party audits
+                </a>{' '}
+                done by top security firms.
+              </p>
             </article>
-          </div>
-          <div className="earn-retail__trust-links">
-            <a href={AUDIT_URL} target="_blank" rel="noreferrer">
-              Read the assessment ↗
-            </a>
           </div>
         </section>
       </main>
@@ -188,22 +185,38 @@ export function RetailEarn({ layout = 'split' }: { layout?: 'split' | 'centered'
       ) : null}
 
       <footer className="earn-footer">
-        <EarnBrand inverse={theme === 'dark'} />
-        <nav aria-label="Retail product sources">
-          <a href={GOVERNANCE_URL} target="_blank" rel="noreferrer">
-            YIP-91 ↗
-          </a>
-          <ContractLink address={CONTRACTS.fixed}>Contract</ContractLink>
-          <a href={AUDIT_URL} target="_blank" rel="noreferrer">
-            Audit ↗
-          </a>
-        </nav>
-        <p>
+        <div className="earn-footer__main">
+          <div className="earn-footer__brand">
+            <a href="https://yearn.fi" aria-label="Yearn home">
+              <TypeMarkYearn width={110} height={30} color={theme === 'dark' ? '#FFFFFF' : '#0657F9'} />
+            </a>
+            <p>
+              Onchain products involve risk. Review the product, its contracts, and available liquidity before
+              depositing.
+            </p>
+          </div>
+          <nav aria-label="Retail product sources">
+            <a href={`https://yearn.fi/vaults/1/${CONTRACTS.fixed}`} target="_blank" rel="noreferrer">
+              yTranche on yearn.fi ↗
+            </a>
+            <a href="https://docs.yearn.fi" target="_blank" rel="noreferrer">
+              Yearn docs ↗
+            </a>
+            <ContractLink address={CONTRACTS.fixed}>Fixed contract</ContractLink>
+            <a href={`https://yearn.fi/vaults/1/${CONTRACTS.vault}`} target="_blank" rel="noreferrer">
+              Underlying vault ↗
+            </a>
+            <a href={GOVERNANCE_URL} target="_blank" rel="noreferrer">
+              YIP-91 ↗
+            </a>
+            <a href={AUDIT_URL} target="_blank" rel="noreferrer">
+              Audit ↗
+            </a>
+          </nav>
+        </div>
+        <p className="earn-footer__footnote">
           Yearn has a mandate to maintain vault liquidity, but unforeseen market conditions may lead to temporary
           periods of illiquidity. Withdrawals are subject to available vault liquidity and protocol controls.
-        </p>
-        <p>
-          Onchain products involve risk. Review the product, its contracts, and available liquidity before depositing.
         </p>
       </footer>
     </div>

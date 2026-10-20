@@ -40,7 +40,7 @@ export function DepositWidget() {
           void queryClient.invalidateQueries()
         }}
         depositTitleOverride=""
-        annualReturnNote="A 10% performance fee applies to earned yield."
+        annualReturnNote="A 10% performance fee applies to earned yield and is already included in the displayed APR."
         withdrawTitleOverride=""
         disableDepositStaking
         disableTokenSelector
