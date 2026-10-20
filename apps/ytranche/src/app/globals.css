@@ -5339,15 +5339,25 @@ html[data-ytranche-theme="dark"] .terminal-page .capital-stack > p {
   backdrop-filter: none;
 }
 
-/* Fade the glass layer without fading the navigation or its dropdowns. */
+/* Fade the glass and blur together so there is no seam below the navigation. */
 .earn-retail #head::before {
   position: absolute;
   z-index: -1;
-  inset: 0;
-  background: color-mix(in srgb, var(--earn-bg) 45%, transparent);
-  -webkit-backdrop-filter: blur(16px) saturate(130%);
-  backdrop-filter: blur(16px) saturate(130%);
-  mask-image: linear-gradient(to bottom, #000 40%, transparent);
+  inset: 0 auto -32px 0;
+  width: 70%;
+  background: color-mix(in srgb, var(--earn-bg) 92%, transparent);
+  -webkit-backdrop-filter: blur(20px) saturate(110%);
+  backdrop-filter: blur(20px) saturate(110%);
+  mask-image:
+    linear-gradient(to right, #000 80%, transparent),
+    linear-gradient(
+      to bottom,
+      #000 calc(100% - 48px),
+      rgb(0 0 0 / 85%) calc(100% - 32px),
+      rgb(0 0 0 / 40%) calc(100% - 16px),
+      transparent
+    );
+  mask-composite: intersect;
   pointer-events: none;
   content: "";
 }
