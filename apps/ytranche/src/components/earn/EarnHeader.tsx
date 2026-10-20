@@ -12,10 +12,12 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useState } from 'react'
 import { useAccount } from 'wagmi'
+import { HeaderStreams } from '@/components/earn/HeaderStreams'
 import { WalletAccountDropdown } from '@/components/ytranche/WalletAccountMenu'
 import type { TTheme } from '@/lib/theme'
 
 const SITE_BASE_URL = 'https://yearn.fi'
+const SHOW_THEME_SWITCH = false
 
 export function EarnBrand({ inverse = false }: { inverse?: boolean }) {
   return (
@@ -51,16 +53,18 @@ function EarnHeaderContent({ theme, onThemeChange }: TEarnHeaderProps) {
       isDarkTheme={isDarkTheme}
       actions={
         <>
-          <div className="hidden md:block">
-            <button
-              type="button"
-              className="min-h-[44px] min-w-[44px] rounded-full p-2.5 text-text-secondary transition-colors hover:text-text-primary"
-              onClick={() => onThemeChange(isDarkTheme ? 'light' : 'dark')}
-              aria-label={isDarkTheme ? 'Switch to light mode' : 'Switch to dark mode'}
-            >
-              {isDarkTheme ? <IconSun className="size-5" /> : <IconMoon className="size-5" />}
-            </button>
-          </div>
+          {SHOW_THEME_SWITCH && (
+            <div className="hidden md:block">
+              <button
+                type="button"
+                className="min-h-[44px] min-w-[44px] rounded-full p-2.5 text-text-secondary transition-colors hover:text-text-primary"
+                onClick={() => onThemeChange(isDarkTheme ? 'light' : 'dark')}
+                aria-label={isDarkTheme ? 'Switch to light mode' : 'Switch to dark mode'}
+              >
+                {isDarkTheme ? <IconSun className="size-5" /> : <IconMoon className="size-5" />}
+              </button>
+            </div>
+          )}
           <button
             type="button"
             data-wallet-entry="header"
@@ -100,6 +104,7 @@ function EarnHeaderContent({ theme, onThemeChange }: TEarnHeaderProps) {
         </>
       }
     >
+      <HeaderStreams />
       <WalletAccountDropdown address={address} isOpen={isAccountOpen} onClose={() => setIsAccountOpen(false)} />
       <MobileNavMenu
         isOpen={isMenuOpen && !isAccountOpen && !isWalletPickerOpen && !isSettingsOpen}
@@ -107,7 +112,7 @@ function EarnHeaderContent({ theme, onThemeChange }: TEarnHeaderProps) {
         isDarkTheme={isDarkTheme}
         siteBaseUrl={SITE_BASE_URL}
         walletIdentity={address ? formatWalletAddress(address) : undefined}
-        onThemeToggle={() => onThemeChange(isDarkTheme ? 'light' : 'dark')}
+        onThemeToggle={SHOW_THEME_SWITCH ? () => onThemeChange(isDarkTheme ? 'light' : 'dark') : undefined}
         onWalletClick={() => {
           setIsMenuOpen(false)
           if (isConnected) setIsAccountOpen(true)

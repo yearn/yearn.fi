@@ -5330,6 +5330,72 @@ html[data-ytranche-theme="dark"] .terminal-page .capital-stack > p {
   background: radial-gradient(circle at 73% 7%, rgba(6, 87, 249, 0.12), transparent 26rem), var(--earn-bg);
 }
 
+.earn-retail #head {
+  isolation: isolate;
+  background: transparent;
+  -webkit-backdrop-filter: none;
+  backdrop-filter: none;
+}
+
+/* Fade the glass layer without fading the navigation or its dropdowns. */
+.earn-retail #head::before {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  background: color-mix(in srgb, var(--earn-bg) 45%, transparent);
+  -webkit-backdrop-filter: blur(16px) saturate(130%);
+  backdrop-filter: blur(16px) saturate(130%);
+  mask-image: linear-gradient(to bottom, #000 40%, transparent);
+  pointer-events: none;
+  content: "";
+}
+
+.earn-header-streams {
+  position: absolute;
+  z-index: -1;
+  inset: 0;
+  width: 100%;
+  height: var(--header-height);
+  overflow: hidden;
+  color: var(--earn-blue);
+  transform: scaleX(-1);
+  opacity: 0.2;
+  pointer-events: none;
+  mask-image: linear-gradient(to right, transparent, #000 20%, #000 80%, transparent);
+}
+
+.earn-header-streams path {
+  fill: none;
+  stroke: currentColor;
+  stroke-width: 2;
+  stroke-linecap: round;
+  stroke-dasharray: 1 15;
+  vector-effect: non-scaling-stroke;
+}
+
+@media (hover: hover) and (pointer: fine) and (prefers-reduced-motion: no-preference) {
+  .earn-header-streams path {
+    animation: earn-header-flow 3s linear infinite;
+    animation-play-state: paused;
+  }
+
+  .earn-retail #head:hover .earn-header-streams path {
+    animation-play-state: running;
+  }
+}
+
+@keyframes earn-header-flow {
+  to {
+    stroke-dashoffset: 32;
+  }
+}
+
+@media (max-width: 767px) {
+  .earn-header-streams {
+    display: none;
+  }
+}
+
 .earn-brand {
   display: inline-flex;
   width: max-content;
