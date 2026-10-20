@@ -184,7 +184,7 @@ export const InputTokenAmount: FC<Props> = ({
               )}
               disabled={disabled}
             >
-              25%
+              <span data-widget-part="numeric-value">25%</span>
             </button>
             <button
               type="button"
@@ -196,7 +196,7 @@ export const InputTokenAmount: FC<Props> = ({
               )}
               disabled={disabled}
             >
-              50%
+              <span data-widget-part="numeric-value">50%</span>
             </button>
             <button
               type="button"
@@ -208,7 +208,7 @@ export const InputTokenAmount: FC<Props> = ({
               )}
               disabled={disabled}
             >
-              75%
+              <span data-widget-part="numeric-value">75%</span>
             </button>
             <button
               type="button"
@@ -234,6 +234,7 @@ export const InputTokenAmount: FC<Props> = ({
         {/* Middle row - Input and token selector */}
         <div className="flex items-center gap-2 relative">
           <input
+            data-widget-part="numeric-value"
             disabled={disabled}
             placeholder={placeholder ?? '0.00'}
             value={formValue}
@@ -297,7 +298,9 @@ export const InputTokenAmount: FC<Props> = ({
           {errorMessage ? (
             <div className="text-sm text-red-500">{errorMessage}</div>
           ) : (
-            <div className="text-sm text-text-secondary">{inputTokenUsdPrice > 0 ? `$${inputUsdValue}` : null}</div>
+            <div data-widget-part="numeric-value" className="text-sm text-text-secondary">
+              {inputTokenUsdPrice > 0 ? `$${inputUsdValue}` : null}
+            </div>
           )}
           {!accountAddress ? (
             <button
@@ -318,7 +321,11 @@ export const InputTokenAmount: FC<Props> = ({
                 disabled={disabled || isMaxButtonLoading}
                 className="text-sm text-text-secondary hover:text-blue-500 transition-colors disabled:cursor-not-allowed"
               >
-                Balance: {formatTAmount({ value: renderedBalance, decimals: decimals ?? input[0].decimals })} {symbol}
+                Balance:{' '}
+                <span data-widget-part="numeric-value">
+                  {formatTAmount({ value: renderedBalance, decimals: decimals ?? input[0].decimals })}
+                </span>{' '}
+                {symbol}
               </button>
             )
           )}
@@ -344,7 +351,10 @@ export const InputTokenAmount: FC<Props> = ({
                 {zapToken.isLoading ? (
                   <div className="h-8 w-24 bg-surface-secondary rounded animate-pulse" />
                 ) : (
-                  <div className="text-text-secondary text-[16px] md:text-2xl font-medium">
+                  <div
+                    data-widget-part="numeric-value"
+                    className="text-text-secondary text-[16px] md:text-2xl font-medium"
+                  >
                     {zapToken.expectedAmount || '0'}
                   </div>
                 )}
@@ -380,7 +390,9 @@ export const InputTokenAmount: FC<Props> = ({
               </button>
             </div>
             <div className="flex items-center justify-between">
-              <div className="text-sm text-text-secondary">${outputUsdValue}</div>
+              <div data-widget-part="numeric-value" className="text-sm text-text-secondary">
+                ${outputUsdValue}
+              </div>
               {/* Remove Zap button - appears on hover */}
               {onRemoveZap && (
                 <button

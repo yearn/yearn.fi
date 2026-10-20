@@ -122,7 +122,7 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
             )}
           </p>
           <p className="text-sm text-text-primary">
-            <span className="font-semibold">
+            <span data-widget-part="numeric-value" className="font-semibold">
               {depositAmountBn > 0n ? formatWidgetValue(depositAmountBn, inputTokenDecimals) : '0'}
             </span>{' '}
             <span className="font-normal">{inputTokenSymbol}</span>
@@ -138,15 +138,24 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
                 <span className="inline-block h-4 w-36 bg-surface-secondary rounded animate-pulse" />
               ) : expectedOutInAsset > 0n || minExpectedOutInAsset > 0n ? (
                 <>
-                  <span className="font-semibold">{formatWidgetValue(expectedOutInAsset, assetTokenDecimals)}</span>{' '}
+                  <span data-widget-part="numeric-value" className="font-semibold">
+                    {formatWidgetValue(expectedOutInAsset, assetTokenDecimals)}
+                  </span>{' '}
                   <span className="font-normal">{'| '}</span>
-                  <span className="font-semibold">{formatWidgetValue(minExpectedOutInAsset, assetTokenDecimals)}</span>{' '}
+                  <span data-widget-part="numeric-value" className="font-semibold">
+                    {formatWidgetValue(minExpectedOutInAsset, assetTokenDecimals)}
+                  </span>{' '}
                   <span className="font-normal">{assetTokenSymbol || 'tokens'}</span>
                 </>
               ) : (
                 <>
-                  <span className="font-semibold">{'0'}</span> <span className="font-normal">{'| '}</span>
-                  <span className="font-semibold">{'0'}</span>{' '}
+                  <span data-widget-part="numeric-value" className="font-semibold">
+                    {'0'}
+                  </span>{' '}
+                  <span className="font-normal">{'| '}</span>
+                  <span data-widget-part="numeric-value" className="font-semibold">
+                    {'0'}
+                  </span>{' '}
                   <span className="font-normal">{assetTokenSymbol || 'tokens'}</span>
                 </>
               )}
@@ -168,7 +177,7 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
               <span className="inline-block h-4 w-20 bg-surface-secondary rounded animate-pulse" />
             ) : (
               <>
-                <span className="font-semibold">
+                <span data-widget-part="numeric-value" className="font-semibold">
                   {depositAmountBn > 0n && expectedVaultShares > 0n
                     ? formatWidgetValue(expectedVaultShares, sharesDisplayDecimals)
                     : '0'}
@@ -194,11 +203,18 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
                 <span className="inline-block h-4 w-24 bg-surface-secondary rounded animate-pulse" />
               ) : (
                 <>
-                  <span className="font-semibold">{vaultShareValueDisplay}</span>{' '}
+                  <span data-widget-part="numeric-value" className="font-semibold">
+                    {vaultShareValueDisplay}
+                  </span>{' '}
                   <span className="font-normal">{assetTokenSymbol || ''}</span>
-                  {assetUsdPrice > 0 && <span className="font-normal">{` ($${vaultShareValueUsd})`}</span>}
+                  {assetUsdPrice > 0 && (
+                    <span data-widget-part="numeric-value" className="font-normal">{` ($${vaultShareValueUsd})`}</span>
+                  )}
                   {shouldUseHighlight && (
-                    <span className="font-semibold">{` (-${priceImpactPercentage.toFixed(2)}%)`}</span>
+                    <span
+                      data-widget-part="numeric-value"
+                      className="font-semibold"
+                    >{` (-${priceImpactPercentage.toFixed(2)}%)`}</span>
                   )}
                 </>
               )}
@@ -214,9 +230,13 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
                 <span className="inline-block h-4 w-28 bg-surface-secondary rounded animate-pulse" />
               ) : (
                 <>
-                  <span className="font-semibold">{formatSignedSlippage(expectedPriceImpactPercentage)}</span>
+                  <span data-widget-part="numeric-value" className="font-semibold">
+                    {formatSignedSlippage(expectedPriceImpactPercentage)}
+                  </span>
                   <span className="font-normal">{' | '}</span>
-                  <span className="font-semibold">{formatSignedSlippage(priceImpactPercentage)}</span>
+                  <span data-widget-part="numeric-value" className="font-semibold">
+                    {formatSignedSlippage(priceImpactPercentage)}
+                  </span>
                 </>
               )}
             </p>
@@ -234,7 +254,7 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
               Est. Annual Return
             </button>
             <p className="text-sm text-text-primary">
-              <span className="font-semibold">
+              <span data-widget-part="numeric-value" className="font-semibold">
                 {depositAmountBn > 0n ? formatWidgetValue(estimatedAnnualReturn) : '0'}
               </span>{' '}
               <span className="font-normal">{inputTokenSymbol}</span>
@@ -271,14 +291,18 @@ export const DepositDetails: FC<DepositDetailsProps> = ({
                 className="text-sm text-text-primary hover:text-blue-500 transition-colors cursor-pointer"
               >
                 <span className="font-normal">
-                  <span className={'font-semibold'}>{renderedAllowanceDisplay} </span>{' '}
+                  <span data-widget-part="numeric-value" className="font-semibold">
+                    {renderedAllowanceDisplay}{' '}
+                  </span>{' '}
                   <span> {allowanceTokenSymbol || ''}</span>
                 </span>
               </button>
             ) : (
               <p className="text-sm text-text-primary">
                 <span className="font-normal">
-                  <span className={'font-semibold'}>{renderedAllowanceDisplay} </span>{' '}
+                  <span data-widget-part="numeric-value" className="font-semibold">
+                    {renderedAllowanceDisplay}{' '}
+                  </span>{' '}
                   <span> {allowanceTokenSymbol || ''}</span>
                 </span>
               </p>

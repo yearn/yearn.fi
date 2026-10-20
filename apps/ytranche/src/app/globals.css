@@ -5353,6 +5353,8 @@ html[data-ytranche-theme="dark"] .terminal-page .capital-stack > p {
 }
 
 .earn-header-streams {
+  --earn-header-logo-width: calc(32px * 929.7 / 256.1);
+  --earn-stream-clearance: calc(max(0px, (100vw - 1232px) / 2) + 20px + var(--earn-header-logo-width) + 32px);
   position: absolute;
   z-index: -1;
   inset: 0;
@@ -5363,7 +5365,37 @@ html[data-ytranche-theme="dark"] .terminal-page .capital-stack > p {
   transform: scaleX(-1);
   opacity: 0.2;
   pointer-events: none;
-  mask-image: linear-gradient(to right, transparent, #000 20%, #000 80%, transparent);
+  /* The mirrored SVG fades in after the logo’s clear space. */
+  mask-image: linear-gradient(
+    to left,
+    transparent var(--earn-stream-clearance),
+    #000 calc(var(--earn-stream-clearance) + 64px),
+    #000 80%,
+    transparent
+  );
+}
+
+@media (min-width: 768px) {
+  .earn-retail #head [data-tour="vaults-header-nav"] {
+    position: relative;
+    isolation: isolate;
+  }
+
+  .earn-retail #head [data-tour="vaults-header-nav"]::before {
+    position: absolute;
+    z-index: -1;
+    inset: -10px -28px;
+    background: linear-gradient(
+      to right,
+      transparent,
+      var(--earn-bg) 28px,
+      var(--earn-bg) calc(100% - 28px),
+      transparent
+    );
+    mask-image: linear-gradient(to bottom, transparent, #000 25%, #000 75%, transparent);
+    pointer-events: none;
+    content: "";
+  }
 }
 
 .earn-header-streams path {
@@ -5489,6 +5521,17 @@ html[data-ytranche-theme="dark"] .terminal-page .capital-stack > p {
 
 .earn-retail__hero h1 span {
   color: var(--earn-blue);
+}
+
+.earn-numeric,
+.ytranche-widget [data-widget-part="numeric-value"] {
+  font-family: var(--font-mono);
+  font-weight: 400;
+  font-variant-numeric: tabular-nums;
+}
+
+.earn-retail__headline-support strong.earn-numeric {
+  font-weight: 400;
 }
 
 .earn-retail__headline-support {

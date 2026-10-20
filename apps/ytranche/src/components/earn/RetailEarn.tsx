@@ -58,7 +58,10 @@ export function RetailEarn({ layout = 'split' }: { layout?: 'split' | 'centered'
       <main className="earn-retail__layout">
         <section className="earn-retail__hero" aria-labelledby="earn-retail-title">
           <h1 id="earn-retail-title">
-            Earn <span>5% APY</span>
+            Earn{' '}
+            <span>
+              <span className="earn-numeric">5%</span> APY
+            </span>
             <br />
             on USDC
           </h1>
@@ -73,7 +76,7 @@ export function RetailEarn({ layout = 'split' }: { layout?: 'split' | 'centered'
               <sup></sup> system.
             </p>
             <p>
-              <strong>$20M</strong> already earning.
+              <strong className="earn-numeric">$20M</strong> already earning.
             </p>
           </div>
 
