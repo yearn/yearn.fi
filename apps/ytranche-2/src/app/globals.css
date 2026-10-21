@@ -1,0 +1,168 @@
+@import "tailwindcss";
+@import "@yearn/vault-widget/styles.css";
+@import "@yearn/wallet-ui/styles.css";
+@import "@yearn/site-header/themes.css";
+
+@source "../../../../packages/vault-widget/src";
+@source "../../../../packages/wallet-ui/src";
+@source "../../../../packages/site-header/src";
+
+@font-face {
+  font-family: "Aeonik";
+  src: url("/fonts/Aeonik-Regular.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Aeonik";
+  src: url("/fonts/Aeonik-Bold.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+}
+
+@font-face {
+  font-family: "Aeonik Mono";
+  src: url("/fonts/AeonikMono-Regular.woff2") format("woff2");
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+}
+
+@theme {
+  --font-sans: "Aeonik", "Helvetica Neue", Arial, system-ui, sans-serif;
+  --font-mono: "Aeonik Mono", Menlo, Consolas, monospace;
+  --color-modal-overlay: rgb(11 16 32 / 60%);
+}
+
+:root {
+  --header-height: 4.25rem;
+  --earn-blue: var(--color-primary);
+  --earn-surface: var(--color-surface);
+  --earn-surface-soft: var(--color-surface-secondary);
+  --earn-ink: var(--color-text-primary);
+  --earn-muted: var(--color-text-secondary);
+  --earn-line: var(--color-border);
+  font-family: var(--font-sans);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  background: #fff;
+}
+
+body {
+  min-width: 320px;
+  margin: 0;
+  background: #fff;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+button:enabled {
+  cursor: pointer;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
+
+:focus-visible {
+  outline: 2px solid var(--color-primary);
+  outline-offset: 3px;
+}
+
+/* Keep the page light; wallet dialogs retain the shared Yearn theme settings. */
+.ytranche-app {
+  --color-app: #fff;
+  --color-surface: #fff;
+  --color-surface-secondary: #f5f5f5;
+  --color-surface-tertiary: #e5e5e5;
+  --color-text-primary: #171717;
+  --color-text-secondary: #525252;
+  --color-text-tertiary: #a3a3a3;
+  --color-border: #e5e5e5;
+  --color-border-hover: #d4d4d4;
+  --color-border-focus: #171717;
+  --color-input-bg: #fff;
+  display: flex;
+  min-height: 100svh;
+  flex-direction: column;
+  color: var(--color-text-primary);
+  color-scheme: light;
+  background: #fff;
+}
+
+.ytranche-main {
+  display: grid;
+  flex: 1;
+  place-items: center;
+  padding: 2rem 1rem;
+}
+
+.ytranche-widget {
+  width: 100%;
+  max-width: 28rem;
+  min-width: 0;
+  scroll-margin-top: calc(var(--header-height) + 2rem);
+}
+
+.ytranche-widget [data-widget-part="numeric-value"] {
+  font-family: var(--font-mono);
+  font-variant-numeric: tabular-nums;
+}
+
+/* Join the selected tab to its action panel. */
+.ytranche-widget [data-widget-part="action-shell"] {
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+}
+
+.ytranche-widget [data-widget-part="action-tabs"] {
+  gap: 0;
+  border: 0;
+  border-radius: 0;
+  padding: 0;
+}
+
+.ytranche-widget [data-widget-part="action-tab"] {
+  min-height: 48px;
+  border-width: 0;
+  border-radius: 0;
+}
+
+.ytranche-widget [data-widget-part="action-tab"] + [data-widget-part="action-tab"] {
+  border-left: 1px solid var(--color-border);
+}
+
+.ytranche-widget [data-widget-part="action-tab"][data-state="inactive"] {
+  border-bottom: 1px solid var(--color-border);
+}
+
+.ytranche-widget [data-widget-part="action-tab"]:focus-visible {
+  outline-offset: -3px;
+}
+
+.ytranche-widget [data-widget-part="action-panel"],
+.ytranche-widget [data-widget-part="action-panel"] > div {
+  border-top-left-radius: 0;
+  border-top-right-radius: 0;
+}
+
+.ytranche-widget [data-widget-part="action-panel"] > div {
+  border-width: 0;
+}
+
+.ytranche-widget [data-tour="vault-detail-deposit-widget"] > div:first-child,
+.ytranche-widget [data-tour="vault-detail-withdraw-widget"] > div:first-child {
+  padding-top: 1.5rem;
+}
+
+.ytranche-widget [data-widget-part="deposit-actions"],
+.ytranche-widget [data-widget-part="withdraw-actions"] {
+  margin-top: auto;
+}

@@ -33,7 +33,7 @@
     "tslint:yearn": "bun run --cwd apps/yearn tslint",
     "tslint:ybold": "bun run --cwd apps/ybold tslint",
     "tslint:widget": "bun run --cwd packages/vault-widget typecheck",
-    "tslint:all": "bun run tslint:wallet-ui && bun run tslint:widget && bun run tslint:ybold && bun run tslint:yearn && bun run tslint:4626 && bun run tslint:ytranche",
+    "tslint:all": "bun run tslint:wallet-ui && bun run tslint:widget && bun run tslint:ybold && bun run tslint:yearn && bun run tslint:4626 && bun run tslint:ytranche && bun run tslint:ytranche-2",
     "test": "bun run test:yearn",
     "test:yearn": "bun run --cwd apps/yearn test",
     "test:ybold": "bun run --cwd apps/ybold test",
@@ -42,7 +42,7 @@
     "check:yearn": "bun run tslint:yearn && bun run test:yearn && bun run build:yearn",
     "check:ybold": "bun run tslint:ybold && bun run test:ybold && bun run build:ybold",
     "check:widget": "bun run check:vault-widget-boundary && bun run tslint:widget && bun run test:widget",
-    "check:workspaces": "bun run check:wallet-ui && bun run check:widget && bun run check:ybold && bun run check:yearn && bun run check:4626 && bun run check:ytranche",
+    "check:workspaces": "bun run check:wallet-ui && bun run check:widget && bun run check:ybold && bun run check:yearn && bun run check:4626 && bun run check:ytranche && bun run check:ytranche-2",
     "bump": "bump",
     "clean": "bash clean.sh",
     "prepare": "husky",
@@ -59,7 +59,12 @@
     "build:ytranche": "bun run --cwd apps/ytranche build",
     "preview:ytranche": "bun run --cwd apps/ytranche start",
     "tslint:ytranche": "bun run --cwd apps/ytranche tslint",
-    "check:ytranche": "bun run tslint:ytranche && bun run build:ytranche"
+    "check:ytranche": "bun run tslint:ytranche && bun run build:ytranche",
+    "dev:ytranche-2": "bun run --cwd apps/ytranche-2 dev",
+    "build:ytranche-2": "bun run --cwd apps/ytranche-2 build",
+    "preview:ytranche-2": "bun run --cwd apps/ytranche-2 start",
+    "tslint:ytranche-2": "bun run --cwd apps/ytranche-2 tslint",
+    "check:ytranche-2": "bun run tslint:ytranche-2 && bun run build:ytranche-2"
   },
   "overrides": {
     "qr": "0.5.5"
