@@ -24,6 +24,13 @@ Without a WalletConnect project ID, local development falls back to injected bro
 The shared widget reads spot prices from the host's `/api/prices/spot` endpoint. This app exposes a thin adapter
 at that path which forwards to Yearn's public price API.
 
+The yBOLD metrics card reads vault snapshots and st-yBOLD price-per-share history from Kong REST. Kong responses are
+cached for five minutes. The actual 7-day return is shown only when the latest PPS point is at most two days old and a
+baseline point is within one day of the seven-day target; otherwise it is unavailable. Performance fees are reported
+by Kong in basis points and converted to a fraction before display.
+
+New environment variables: none.
+
 ## Deploy on Vercel
 
 Create a separate Vercel project for this app and set its Root Directory to
