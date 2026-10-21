@@ -1,48 +1,38 @@
-import { YCRV_TOKEN_ADDRESS, YVCRVUSD_REWARD_ADDRESS } from '@pages/portfolio/ycrv/constants'
+import { YCRV_CHAIN_ID, YCRV_TOKEN_ADDRESS, YVCRVUSD_REWARD_ADDRESS } from '@pages/portfolio/ycrv/constants'
+import type { TYearnPricesSpotResponse } from '@shared/utils/schemas/yearnPricesSpotSchema'
+import { buildYearnPricesSpotKey } from '@shared/utils/yearnPrices'
 
 export type TYcrvPrices = {
-  rewardPrice: number
-  ycrvPrice: number
+  rewardPrice: number | null
+  ycrvPrice: number | null
 }
 
-function getPositivePrice(value: unknown): number {
-  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : 0
+const YCRV_SPOT_KEY = buildYearnPricesSpotKey({ address: YCRV_TOKEN_ADDRESS, chainID: YCRV_CHAIN_ID })
+const YVCRVUSD_SPOT_KEY = buildYearnPricesSpotKey({
+  address: YVCRVUSD_REWARD_ADDRESS,
+  chainID: YCRV_CHAIN_ID
+})
+
+const YCRV_SPOT_KEYS = [YCRV_SPOT_KEY, YVCRVUSD_SPOT_KEY].filter((key): key is string => Boolean(key))
+
+export const YCRV_SPOT_ENDPOINT = `/api/prices/spot?coins=${encodeURIComponent(JSON.stringify(YCRV_SPOT_KEYS))}`
+
+function getPositivePrice(value: unknown): number | null {
+  return typeof value === 'number' && Number.isFinite(value) && value > 0 ? value : null
 }
 
-export function resolveYcrvPrices({
-  fallbackPrices,
-  spotRewardPrice,
-  spotYcrvPrice
-}: {
-  fallbackPrices: TYcrvPrices | null | undefined
-  spotRewardPrice: number
-  spotYcrvPrice: number
-}): TYcrvPrices {
-  const normalizedSpotYcrvPrice = getPositivePrice(spotYcrvPrice)
-  const normalizedSpotRewardPrice = getPositivePrice(spotRewardPrice)
+function resolveSpotPrice(response: TYearnPricesSpotResponse | undefined, key: string | null): number | null {
+  if (!response || !key) return null
 
+  const coin = response.coins[key]
+  if (!coin || coin.error) return null
+
+  return getPositivePrice(coin.prices[0]?.price)
+}
+
+export function resolveYcrvPrices(response: TYearnPricesSpotResponse | undefined): TYcrvPrices {
   return {
-    ycrvPrice: normalizedSpotYcrvPrice || getPositivePrice(fallbackPrices?.ycrvPrice),
-    rewardPrice: normalizedSpotRewardPrice || getPositivePrice(fallbackPrices?.rewardPrice)
-  }
-}
-
-export async function fetchYDaemonYcrvPrices(yDaemonBaseUri: string): Promise<TYcrvPrices> {
-  const tokenAddresses = [YCRV_TOKEN_ADDRESS, YVCRVUSD_REWARD_ADDRESS]
-  const endpoint = `${yDaemonBaseUri}/prices/some/${tokenAddresses.join(',')}?humanized=true`
-  const response = await fetch(endpoint)
-  if (!response.ok) {
-    throw new Error(`Unable to fetch yCRV prices (${response.status})`)
-  }
-
-  const payload = (await response.json()) as Record<string, unknown>
-  const normalizedPrices = Object.entries(payload).reduce<Record<string, number>>((prices, [address, value]) => {
-    prices[address.toLowerCase()] = getPositivePrice(value)
-    return prices
-  }, {})
-
-  return {
-    ycrvPrice: normalizedPrices[YCRV_TOKEN_ADDRESS.toLowerCase()] ?? 0,
-    rewardPrice: normalizedPrices[YVCRVUSD_REWARD_ADDRESS.toLowerCase()] ?? 0
+    ycrvPrice: resolveSpotPrice(response, YCRV_SPOT_KEY),
+    rewardPrice: resolveSpotPrice(response, YVCRVUSD_SPOT_KEY)
   }
 }
