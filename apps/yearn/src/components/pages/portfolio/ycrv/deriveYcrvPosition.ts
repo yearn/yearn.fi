@@ -15,12 +15,17 @@ function getWadValue(value: bigint): number {
   return Number.isFinite(normalized) && normalized > 0 ? normalized : 0
 }
 
-export function deriveYcrvPosition(raw: TYcrvRawAccount | null | undefined, ycrvPrice: number): TYcrvPosition | null {
+export function deriveYcrvPosition(
+  raw: TYcrvRawAccount | null | undefined,
+  ycrvPrice: number | null,
+  rewardPriceAvailable = true
+): TYcrvPosition | null {
   if (!raw || raw.balanceRaw <= 0n) {
     return null
   }
 
-  const normalizedPrice = getFinitePositiveValue(ycrvPrice)
+  const normalizedPrice = getFinitePositiveValue(ycrvPrice ?? 0)
+  const priceUnavailable = normalizedPrice <= 0
   const amountNormalized = toNormalizedValue(raw.balanceRaw, YCRV_DECIMALS)
   const totalSupplyNormalized = toNormalizedValue(raw.totalSupplyRaw, YCRV_DECIMALS)
   const activeApr = getWadValue(raw.userActiveAprRaw)
@@ -36,28 +41,34 @@ export function deriveYcrvPosition(raw: TYcrvRawAccount | null | undefined, ycrv
     decimals: YCRV_DECIMALS,
     amountRaw: raw.balanceRaw,
     amountNormalized,
+    valueUsdUnavailable: priceUnavailable,
     activeRaw: raw.balanceRaw,
     cooldownRaw: 0n,
     withdrawableRaw: 0n,
     walletRaw: 0n,
     valueUsd: amountNormalized * normalizedPrice,
     tvlUsd: totalSupplyNormalized * normalizedPrice,
-    apy: activeApr > 0 ? activeApr : null,
+    apy: activeApr > 0 && !priceUnavailable && rewardPriceAvailable ? activeApr : null,
     boostMultiplier: boostMultiplier > 0 ? boostMultiplier : undefined
   }
 }
 
-export function deriveYcrvReward(raw: TYcrvRawAccount | null | undefined, rewardPrice: number): TYcrvReward | null {
+export function deriveYcrvReward(
+  raw: TYcrvRawAccount | null | undefined,
+  rewardPrice: number | null
+): TYcrvReward | null {
   if (!raw || raw.claimableRewardRaw <= 0n) {
     return null
   }
 
   const amountNormalized = toNormalizedValue(raw.claimableRewardRaw, REWARD_DECIMALS)
+  const normalizedPrice = getFinitePositiveValue(rewardPrice ?? 0)
   return {
     tokenAddress: YVCRVUSD_REWARD_ADDRESS,
     symbol: 'yvcrvUSD-2',
     amountRaw: raw.claimableRewardRaw,
     amountNormalized,
-    usdValue: amountNormalized * getFinitePositiveValue(rewardPrice)
+    usdValue: amountNormalized * normalizedPrice,
+    usdValueUnavailable: normalizedPrice <= 0
   }
 }

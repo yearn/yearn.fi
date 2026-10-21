@@ -5,19 +5,17 @@ import {
   YCRV_BOOSTED_STAKER_UTILITIES_ADDRESS,
   YCRV_CHAIN_ID,
   YCRV_REWARDS_DISTRIBUTOR_ABI,
-  YCRV_REWARDS_DISTRIBUTOR_ADDRESS,
-  YCRV_TOKEN_ADDRESS,
-  YVCRVUSD_REWARD_ADDRESS
+  YCRV_REWARDS_DISTRIBUTOR_ADDRESS
 } from '@pages/portfolio/ycrv/constants'
 import { deriveYcrvPosition, deriveYcrvReward } from '@pages/portfolio/ycrv/deriveYcrvPosition'
 import type { TYcrvPosition, TYcrvRawAccount, TYcrvReward } from '@pages/portfolio/ycrv/types'
-import { fetchYDaemonYcrvPrices, resolveYcrvPrices } from '@pages/portfolio/ycrv/ycrvPrices'
+import { resolveYcrvPrices, YCRV_SPOT_ENDPOINT } from '@pages/portfolio/ycrv/ycrvPrices'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { usePublicClient } from '@shared/hooks/useAppWagmi'
-import { useYDaemonBaseURI } from '@shared/hooks/useYDaemonBaseURI'
-import { useYearnSpotPrices } from '@shared/hooks/useYearnSpotPrices'
+import { useFetch } from '@shared/hooks/useFetch'
 import type { TAddress } from '@shared/types'
 import { toAddress } from '@shared/utils'
+import { yearnPricesSpotResponseSchema } from '@shared/utils/schemas/yearnPricesSpotSchema'
 import { useQuery } from '@tanstack/react-query'
 import { useCallback, useMemo } from 'react'
 import { type ContractFunctionParameters, type PublicClient, parseUnits } from 'viem'
@@ -39,8 +37,8 @@ function getMulticallValue<T>(
   return result?.status === 'success' ? result.result : null
 }
 
-function toPriceWad(price: number): bigint {
-  return Number.isFinite(price) && price > 0 ? parseUnits(price.toFixed(18), 18) : 0n
+function toPriceWad(price: number | null): bigint {
+  return price !== null && Number.isFinite(price) && price > 0 ? parseUnits(price.toFixed(18), 18) : 0n
 }
 
 async function fetchYcrvRawAccount({
@@ -51,8 +49,8 @@ async function fetchYcrvRawAccount({
 }: {
   account: TAddress
   publicClient: PublicClient
-  rewardPrice: number
-  ycrvPrice: number
+  rewardPrice: number | null
+  ycrvPrice: number | null
 }): Promise<TYcrvRawAccount> {
   const contracts = [
     {
@@ -101,25 +99,16 @@ export function useYcrvPosition(enabled: boolean): TUseYcrvPositionReturn {
   const { address } = useWeb3()
   const account = address ? toAddress(address) : undefined
   const publicClient = usePublicClient({ chainId: YCRV_CHAIN_ID })
-  const { yDaemonBaseUri } = useYDaemonBaseURI({ chainID: YCRV_CHAIN_ID })
-  const { getPrice } = useYearnSpotPrices([
-    { address: YCRV_TOKEN_ADDRESS, chainID: YCRV_CHAIN_ID },
-    { address: YVCRVUSD_REWARD_ADDRESS, chainID: YCRV_CHAIN_ID }
-  ])
-  const spotYcrvPrice = getPrice({ address: YCRV_TOKEN_ADDRESS, chainID: YCRV_CHAIN_ID }).normalized
-  const spotRewardPrice = getPrice({ address: YVCRVUSD_REWARD_ADDRESS, chainID: YCRV_CHAIN_ID }).normalized
-  const fallbackPricesQuery = useQuery({
-    queryKey: ['ycrv-ydaemon-prices', yDaemonBaseUri],
-    queryFn: () => fetchYDaemonYcrvPrices(yDaemonBaseUri),
-    enabled: enabled && (spotYcrvPrice <= 0 || spotRewardPrice <= 0),
-    staleTime: 120_000,
-    refetchOnWindowFocus: false
+  const spotPricesQuery = useFetch({
+    endpoint: YCRV_SPOT_ENDPOINT,
+    schema: yearnPricesSpotResponseSchema,
+    config: {
+      enabled,
+      cacheDuration: 120_000,
+      refetchOnWindowFocus: false
+    }
   })
-  const { rewardPrice, ycrvPrice } = resolveYcrvPrices({
-    fallbackPrices: fallbackPricesQuery.data,
-    spotRewardPrice,
-    spotYcrvPrice
-  })
+  const { rewardPrice, ycrvPrice } = resolveYcrvPrices(spotPricesQuery.error ? undefined : spotPricesQuery.data)
   const rawQuery = useQuery({
     queryKey: ['portfolio-ycrv-position', account, ycrvPrice, rewardPrice],
     queryFn: () =>
@@ -133,7 +122,10 @@ export function useYcrvPosition(enabled: boolean): TUseYcrvPositionReturn {
     staleTime: 30_000,
     refetchOnWindowFocus: true
   })
-  const position = useMemo(() => deriveYcrvPosition(rawQuery.data, ycrvPrice), [rawQuery.data, ycrvPrice])
+  const position = useMemo(
+    () => deriveYcrvPosition(rawQuery.data, ycrvPrice, rewardPrice !== null),
+    [rawQuery.data, rewardPrice, ycrvPrice]
+  )
   const reward = useMemo(() => deriveYcrvReward(rawQuery.data, rewardPrice), [rawQuery.data, rewardPrice])
   const refetch = useCallback(async () => {
     await rawQuery.refetch()
@@ -142,7 +134,7 @@ export function useYcrvPosition(enabled: boolean): TUseYcrvPositionReturn {
   return {
     position,
     reward,
-    isLoading: enabled && rawQuery.isLoading,
+    isLoading: enabled && (spotPricesQuery.isLoading || rawQuery.isLoading),
     refetch
   }
 }
