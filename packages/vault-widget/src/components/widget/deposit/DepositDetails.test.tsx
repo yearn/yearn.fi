@@ -41,7 +41,7 @@ describe('DepositDetails', () => {
 
     expect(html).toContain('For expected / at least')
     expect(html).toContain('10.0')
-    expect(html).toContain('| </span><span class="font-semibold">9.00')
+    expect(html.replace(/<[^>]*>/g, '')).toContain('10.0 | 9.00 yvUSDC')
     expect(html).toContain('Est. / Worst price impact')
     expect(html).toContain('0.00%')
     expect(html).toContain('-10.00%')

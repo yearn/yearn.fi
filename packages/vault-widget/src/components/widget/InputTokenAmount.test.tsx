@@ -71,8 +71,9 @@ describe('InputTokenAmount', () => {
       />
     )
 
-    expect(html).toContain('Balance: 4.00 yvUSD')
-    expect(html).not.toContain('Balance: 1.00 yvUSD')
+    const text = html.replace(/<[^>]*>/g, '')
+    expect(text).toContain('Balance: 4.00 yvUSD')
+    expect(text).not.toContain('Balance: 1.00 yvUSD')
   })
 
   it('renders zap output USD from raw quote amounts instead of compact display text', () => {
