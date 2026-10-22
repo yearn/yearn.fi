@@ -1,0 +1,276 @@
+{
+  "capturedAt": "2026-10-22",
+  "source": "https://curation.yearn.fi/reports/",
+  "reports": [
+    {
+      "url": "https://curation.yearn.fi/report/yearn-yvusdt/",
+      "name": "Yearn \u2014 yvUSDT-1",
+      "score": "1.2",
+      "tier": "Minimal Risk"
+    },
+    {
+      "url": "https://curation.yearn.fi/report/sky-usds/",
+      "name": "Sky \u2014 USDS & sUSDS",
+      "score": "1.3",
+      "tier": "Minimal Risk"
+    },
+    {
+      "url": "https://curation.yearn.fi/report/yearn-yvusds/",
+      "name": "Yearn \u2014 yvUSDS-1",
+      "score": "1.3",
+      "tier": "Minimal Risk"
+    },
+    {
+      "url": "https://curation.yearn.fi/report/yearn-yvwbtc/",
+      "name": "Yearn \u2014 yvWBTC-1",
+      "score": "1.3",
+      "tier": "Minimal Risk"
+    },
+    {
+      "url": "https://curation.yearn.fi/report/yearn-yvdai/",
+      "name": "Yearn \u2014 yvDAI-1",
+      "score": "1.4",
+      "tier": "Minimal Risk"
+    },
+    {
+      "url": "https://curation.yearn.fi/report/yearn-yvusdc/",
+      "name": "Yearn \u2014 yvUSDC-1",
+      "score": "1.4",
+      "tier": "Minimal Risk"
+    },
+    {
+      "url": "https://curation.yearn.fi/report/origin-arm/",
+      "name": "Origin ARM",
+      "score": "1.4",
+      "tier": "Minimal Risk"
+    },
+    {
+      "url": "https://curation.yearn.fi/report/yearn-yvweth/",
+      "name": "Yearn \u2014 yvWETH-1",
+      "score": "1.4",
+      "tier": "Minimal Risk"
+    },
+    {
+      "url": "https://curation.yearn.fi/report/reserve-ethplus/",
+      "name": "Reserve Protocol",
+      "score": "1.7",
+      "tier": "Low Risk"
+    },
+    {
+      "url": "https://curation.yearn.fi/report/origin-ousd/",
+      "name": "Origin OUSD",
+      "score": "2.0",
+      "tier": "Low Risk"
+    },
+    {
+      "url": "https://curation.yearn.fi/report/strata-srusde/",
+      "name": "Strata",
+      "score": "2.1",
+      "tier": "Low Risk"
+    },
+    {
+      "url": "https://curation.yearn.fi/report/superstate-ustb/",
+      "name": "Superstate USTB",
+      "score": "2.1",
+      "tier": "Low Risk"
+    },
+    {
+      "url": "https://curation.yearn.fi/report/fx-fxusd/",
+      "name": "f(x) Protocol \u2014 fxUSD",
+      "score": "2.1",
+      "tier": "Low Risk"
+    },
+    {
+      "url": "https://curation.yearn.fi/report/paxos-usdg/",
+      "name": "Paxos USDG (Global Dollar)",
+      "score": "2.1",
+      "tier": "Low Risk"
+    },
+    {
+      "url": "https://curation.yearn.fi/report/kinetiq-khype/",
+      "name": "Kinetiq kHYPE",
+      "score": "2.3",
+      "tier": "Low Risk"
+    },
+    {
+      "url": "https://curation.yearn.fi/report/maple-syrupusdc/",
+      "name": "Maple Finance",
+      "score": "2.3",
+      "tier": "Low Risk"
+    },
+    {
+      "url": "https://curation.yearn.fi/report/spectra-finance/",
+      "name": "Spectra Finance",
+      "score": "2.3",
+      "tier": "Low Risk"
+    },
+    {
+      "url": "https://curation.yearn.fi/report/cap-stcusd/",
+      "name": "Cap \u2014 stcUSD",
+      "score": "2.4",
+      "tier": "Low Risk"
+    },
+    {
+      "url": "https://curation.yearn.fi/report/ondo-usdy/",
+      "name": "Ondo USDY",
+      "score": "2.4",
+      "tier": "Low Risk"
+    },
+    {
+      "url": "https://curation.yearn.fi/report/superstate-uscc/",
+      "name": "Superstate USCC",
+      "score": "2.4",
+      "tier": "Low Risk"
+    },
+    {
+      "url": "https://curation.yearn.fi/report/yearn-yvusd/",
+      "name": "Yearn \u2014 yvUSD",
+      "score": "2.4",
+      "tier": "Low Risk"
+    },
+    {
+      "url": "https://curation.yearn.fi/report/aave-sgho/",
+      "name": "Aave \u2014 sGHO",
+      "score": "2.5",
+      "tier": "Medium Risk"
+    },
+    {
+      "url": "https://curation.yearn.fi/report/sky-stusds/",
+      "name": "Sky \u2014 stUSDS (Staked USDS)",
+      "score": "2.5",
+      "tier": "Medium Risk"
+    },
+    {
+      "url": "https://curation.yearn.fi/report/centrifuge-jaaa/",
+      "name": "Centrifuge JAAA",
+      "score": "2.6",
+      "tier": "Medium Risk"
+    },
+    {
+      "url": "https://curation.yearn.fi/report/fluid/",
+      "name": "Fluid Lending Protocol",
+      "score": "2.6",
+      "tier": "Medium Risk"
+    },
+    {
+      "url": "https://curation.yearn.fi/report/flex/",
+      "name": "Flex",
+      "score": "2.6",
+      "tier": "Medium Risk"
+    },
+    {
+      "url": "https://curation.yearn.fi/report/stakedhype-sthype/",
+      "name": "StakedHYPE",
+      "score": "2.8",
+      "tier": "Medium Risk"
+    },
+    {
+      "url": "https://curation.yearn.fi/report/midas-mhyper/",
+      "name": "Midas mHYPER",
+      "score": "2.9",
+      "tier": "Medium Risk"
+    },
+    {
+      "url": "https://curation.yearn.fi/report/flying-tulip/",
+      "name": "Flying Tulip \u2014 FT Lend (ftDNMM)",
+      "score": "3.0",
+      "tier": "Medium Risk"
+    },
+    {
+      "url": "https://curation.yearn.fi/report/curvance-hyausd/",
+      "name": "Curvance High Yield AUSD (hyAUSD)",
+      "score": "3.0",
+      "tier": "Medium Risk"
+    },
+    {
+      "url": "https://curation.yearn.fi/report/mezo-musd/",
+      "name": "Mezo MUSD",
+      "score": "3.1",
+      "tier": "Medium Risk"
+    },
+    {
+      "url": "https://curation.yearn.fi/report/saturn-usdat/",
+      "name": "Saturn (USDat)",
+      "score": "3.1",
+      "tier": "Medium Risk"
+    },
+    {
+      "url": "https://curation.yearn.fi/report/infinifi/",
+      "name": "InfiniFi",
+      "score": "3.1",
+      "tier": "Medium Risk"
+    },
+    {
+      "url": "https://curation.yearn.fi/report/flying-tulip-ftusd/",
+      "name": "Flying Tulip \u2014 ftUSD & Staked ftUSD (sftUSD)",
+      "score": "3.4",
+      "tier": "Medium Risk"
+    },
+    {
+      "url": "https://curation.yearn.fi/report/midas-mglobal/",
+      "name": "Midas mGLOBAL",
+      "score": "3.4",
+      "tier": "Medium Risk"
+    },
+    {
+      "url": "https://curation.yearn.fi/report/re-reusd/",
+      "name": "Re Protocol reUSD",
+      "score": "3.4",
+      "tier": "Medium Risk"
+    },
+    {
+      "url": "https://curation.yearn.fi/report/3jane-usd3/",
+      "name": "3Jane \u2014 USD3",
+      "score": "3.4",
+      "tier": "Medium Risk"
+    },
+    {
+      "url": "https://curation.yearn.fi/report/across-protocol/",
+      "name": "Across Protocol",
+      "score": "3.5",
+      "tier": "Elevated Risk"
+    },
+    {
+      "url": "https://curation.yearn.fi/report/apyx-apxusd/",
+      "name": "Apyx",
+      "score": "3.5",
+      "tier": "Elevated Risk"
+    },
+    {
+      "url": "https://curation.yearn.fi/report/kerneldao-hgeth/",
+      "name": "KernelDAO (Kelp Gain)",
+      "score": "3.8",
+      "tier": "Elevated Risk"
+    },
+    {
+      "url": "https://curation.yearn.fi/report/d2-hypeplus/",
+      "name": "D2 Finance HYPE++",
+      "score": "4.1",
+      "tier": "Elevated Risk"
+    },
+    {
+      "url": "https://curation.yearn.fi/report/unit-ubtc/",
+      "name": "Unit Bitcoin (UBTC)",
+      "score": "5.0",
+      "tier": "High Risk"
+    },
+    {
+      "url": "https://curation.yearn.fi/report/buck/",
+      "name": "BUCK (Bitcoin Dollar SavingsCoin)",
+      "score": "Not scored",
+      "tier": "Danger Zone"
+    },
+    {
+      "url": "https://curation.yearn.fi/report/resolv-rlp/",
+      "name": "Resolv RLP",
+      "score": "Not scored",
+      "tier": "Danger Zone"
+    },
+    {
+      "url": "https://curation.yearn.fi/report/resolv-wstusr/",
+      "name": "Resolv wstUSR",
+      "score": "Not scored",
+      "tier": "Danger Zone"
+    }
+  ]
+}
