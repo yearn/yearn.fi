@@ -55,6 +55,7 @@ interface UseWithdrawFlowProps {
   isUnstake: boolean
   isDebouncing: boolean
   useErc4626: boolean
+  maxLossBps?: bigint
   standardQuote?: TErc4626WithdrawQuote
 }
 
@@ -95,6 +96,7 @@ export function useWithdrawFlow({
   isUnstake,
   isDebouncing,
   useErc4626,
+  maxLossBps,
   standardQuote
 }: UseWithdrawFlowProps): WithdrawFlowResult {
   const routeType = useWithdrawRoute({
@@ -192,6 +194,7 @@ export function useWithdrawFlow({
     vaultDecimals,
     enabled: directWithdrawEnabled,
     useErc4626,
+    maxLossBps,
     standardQuote
   })
 

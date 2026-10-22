@@ -27,6 +27,7 @@ import type { TChainTokens, TToken } from '@shared/types'
 import type { TNotificationType } from '@shared/types/notifications'
 import { isZeroAddress } from '@shared/utils'
 import {
+  DEFAULT_YEARN_ASSETS_BASE_URI,
   type VaultWidgetAnalyticsProperties,
   type VaultWidgetCatalogVault,
   type VaultWidgetNotificationInput,
@@ -52,7 +53,6 @@ import {
 } from '@/config/tenderly'
 import { env } from '@/env'
 
-const DEFAULT_YEARN_ASSETS_BASE_URI = 'https://cdn.jsdelivr.net/gh/yearn/tokenassets@main'
 const YEARN_ASSETS_BASE_URI = env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI || DEFAULT_YEARN_ASSETS_BASE_URI
 
 const SAFE_STATUS_BY_HOST_STATUS: Record<SafeTransactionStatus, VaultWidgetSafeTransactionDetails['status']> = {

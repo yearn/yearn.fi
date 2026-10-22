@@ -5,7 +5,9 @@ type WidgetHeaderProps = {
   actions?: ReactNode
 }
 
-export function WidgetHeader({ title, actions }: WidgetHeaderProps): ReactElement {
+export function WidgetHeader({ title, actions }: WidgetHeaderProps): ReactElement | null {
+  if (!title && !actions) return null
+
   return (
     <div className="flex items-center justify-between gap-3 px-6 pt-3 min-h-12">
       <h3 className="text-base font-semibold text-text-primary">{title}</h3>

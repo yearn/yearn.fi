@@ -91,6 +91,7 @@ interface Props {
   contentAboveButton?: ReactNode
   actionLabelOverride?: string
   titleOverride?: string
+  annualReturnNote?: string
   vaultSharesLabel?: string
   hideDetails?: boolean
   hideActionButton?: boolean
@@ -180,6 +181,7 @@ export function WidgetDeposit({
   contentAboveButton,
   actionLabelOverride,
   titleOverride,
+  annualReturnNote,
   vaultSharesLabel,
   hideDetails = false,
   hideActionButton = false,
@@ -1372,7 +1374,7 @@ export function WidgetDeposit({
     (isEnsoRoute && (priceImpactInfo.isBlocking || priceImpactInfo.isAboveTolerance))
 
   const actionRow = showActionRow ? (
-    <div className="flex flex-col gap-3">
+    <div className="flex flex-col gap-3" data-widget-part="deposit-actions">
       {approvalResetWarning}
       {priceImpactWarning}
       {contentAboveButton}
@@ -1539,6 +1541,7 @@ export function WidgetDeposit({
 
       {vaultAPR !== undefined && (
         <AnnualReturnOverlay
+          note={annualReturnNote}
           isOpen={showAnnualReturnModal}
           onClose={() => setShowAnnualReturnModal(false)}
           depositAmount={formatWidgetValue(depositAmount.debouncedBn, inputToken?.decimals ?? 18)}

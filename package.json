@@ -33,7 +33,7 @@
     "tslint:yearn": "bun run --cwd apps/yearn tslint",
     "tslint:ybold": "bun run --cwd apps/ybold tslint",
     "tslint:widget": "bun run --cwd packages/vault-widget typecheck",
-    "tslint:all": "bun run tslint:wallet-ui && bun run tslint:widget && bun run tslint:ybold && bun run tslint:yearn && bun run tslint:4626",
+    "tslint:all": "bun run tslint:wallet-ui && bun run tslint:widget && bun run tslint:ybold && bun run tslint:yearn && bun run tslint:4626 && bun run tslint:ytranche",
     "test": "bun run test:yearn",
     "test:yearn": "bun run --cwd apps/yearn test",
     "test:ybold": "bun run --cwd apps/ybold test",
@@ -42,7 +42,7 @@
     "check:yearn": "bun run tslint:yearn && bun run test:yearn && bun run build:yearn",
     "check:ybold": "bun run tslint:ybold && bun run test:ybold && bun run build:ybold",
     "check:widget": "bun run check:vault-widget-boundary && bun run tslint:widget && bun run test:widget",
-    "check:workspaces": "bun run check:wallet-ui && bun run check:widget && bun run check:ybold && bun run check:yearn && bun run check:4626",
+    "check:workspaces": "bun run check:wallet-ui && bun run check:widget && bun run check:ybold && bun run check:yearn && bun run check:4626 && bun run check:ytranche",
     "bump": "bump",
     "clean": "bash clean.sh",
     "prepare": "husky",
@@ -54,7 +54,12 @@
     "check:4626": "bun run tslint:4626 && bun run test:4626 && bun run build:4626",
     "test:wallet-ui": "bun run --cwd packages/wallet-ui test",
     "tslint:wallet-ui": "bun run --cwd packages/wallet-ui typecheck",
-    "check:wallet-ui": "bun run tslint:wallet-ui && bun run test:wallet-ui"
+    "check:wallet-ui": "bun run tslint:wallet-ui && bun run test:wallet-ui",
+    "dev:ytranche": "bun run --cwd apps/ytranche dev",
+    "build:ytranche": "bun run --cwd apps/ytranche build",
+    "preview:ytranche": "bun run --cwd apps/ytranche start",
+    "tslint:ytranche": "bun run --cwd apps/ytranche tslint",
+    "check:ytranche": "bun run tslint:ytranche && bun run build:ytranche"
   },
   "overrides": {
     "qr": "0.5.5"

@@ -8,6 +8,7 @@ Render the widget inside the host's Wagmi and TanStack Query providers, then sup
 
 ```tsx
 import {
+  DEFAULT_YEARN_ASSETS_BASE_URI,
   type VaultWidgetRuntimeOverrides,
   VaultWidgetRuntimeProvider,
   YBoldVaultWidget
@@ -15,6 +16,7 @@ import {
 import '@yearn/vault-widget/styles.css'
 
 const runtime: VaultWidgetRuntimeOverrides = {
+  assets: { baseUri: DEFAULT_YEARN_ASSETS_BASE_URI },
   wallet: {
     address,
     chainId,
@@ -41,6 +43,13 @@ const runtime: VaultWidgetRuntimeOverrides = {
 The yBOLD preset pins the reviewed Ethereum contracts, forces staked deposits and withdrawals, disables token and chain zaps, and uses a 0.5% (50 bps) loss limit.
 
 When `prices.spotPriceEndpoint` is supplied, the package requests Yearn-compatible spot-price data for the currently selected deposit and withdrawal tokens. It retains `prices.getUsdPrice` as a synchronous fallback.
+
+For a custom vault, use the public `useVaultUserData` hook with its vault and
+asset addresses and pass the result to `VaultWidget`. Hosts can set
+`VaultWidgetVault.withdrawMaxLossBps` (0–10,000) to request the explicit
+four-argument direct ERC-4626 withdraw/redeem overload. A value of `0n` rejects
+withdrawal execution losses; omitting it preserves the standard three-argument
+overload. This policy applies to direct withdrawals, not external zap routes.
 
 ## Ownership boundary
 

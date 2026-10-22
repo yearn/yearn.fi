@@ -2,6 +2,7 @@ export { formatWalletAddress, getBrowserWalletLabel, selectBrowserWalletConnecto
 export { DEFAULT_WALLET_DRAWER_ID, type TWalletDrawerContext, useWalletDrawer } from '@yearn/wallet-ui/context'
 export { getYearnRainbowTheme, getYearnWallets } from '@yearn/wallet-ui/rainbowkit'
 export { useWalletDisconnect } from '@yearn/wallet-ui/useWalletDisconnect'
+export { WalletAccountPanel } from '@yearn/wallet-ui/WalletAccountPanel'
 export { type TWalletDrawerProviderProps, WalletDrawerProvider } from '@yearn/wallet-ui/WalletDrawer'
 export { WalletProvider } from '@yearn/wallet-ui/WalletProvider'
 export { type TWalletSurfaceProps, WalletSurface } from '@yearn/wallet-ui/WalletSurface'

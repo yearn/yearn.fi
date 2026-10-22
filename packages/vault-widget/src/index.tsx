@@ -15,7 +15,11 @@ import { useMemo } from 'react'
 import { useAccount } from 'wagmi'
 
 export type { VaultWidgetRuntime, VaultWidgetRuntimeOverrides } from '@yearn/vault-widget/runtime'
-export { useVaultWidgetRuntime, VaultWidgetRuntimeProvider } from '@yearn/vault-widget/runtime'
+export {
+  DEFAULT_YEARN_ASSETS_BASE_URI,
+  useVaultWidgetRuntime,
+  VaultWidgetRuntimeProvider
+} from '@yearn/vault-widget/runtime'
 export type {
   NormalizedBalance,
   Token,
@@ -106,3 +110,4 @@ export function YBoldVaultWidget({ apy = 0, className, onSuccess }: YBoldVaultWi
 
 export { Erc4626VaultWidget, type Erc4626VaultWidgetProps } from '@yearn/vault-widget/erc4626'
 export { useErc4626Vault } from '@yearn/vault-widget/erc4626/useErc4626Vault'
+export { useVaultUserData } from '@yearn/vault-widget/internal/hooks/useVaultUserData'

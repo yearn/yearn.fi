@@ -1,9 +1,19 @@
 'use client'
 
-import { type CSSProperties, type ReactNode, type RefObject, useEffect, useId, useRef, useState } from 'react'
+import {
+  type CSSProperties,
+  type ReactNode,
+  type RefObject,
+  useEffect,
+  useId,
+  useLayoutEffect,
+  useRef,
+  useState
+} from 'react'
 import { createPortal } from 'react-dom'
 
 export type TWalletSurfaceProps = {
+  anchorElement?: HTMLElement | null
   children: ReactNode
   desktopRight?: string
   desktopTop?: string
@@ -25,6 +35,7 @@ function isVisible(element: HTMLElement): boolean {
 }
 
 function OpenWalletSurface({
+  anchorElement,
   children,
   desktopRight = '1rem',
   desktopTop = '6rem',
@@ -40,14 +51,53 @@ function OpenWalletSurface({
   const closeRef = useRef(onClose)
   const restoreFocusRef = useRef(restoreFocus)
   const previousFocusRef = useRef(
-    document.activeElement instanceof HTMLElement && document.activeElement !== document.body
-      ? document.activeElement
-      : Array.from(document.querySelectorAll<HTMLElement>(triggerSelector)).find(isVisible)
+    anchorElement ??
+      (document.activeElement instanceof HTMLElement && document.activeElement !== document.body
+        ? document.activeElement
+        : Array.from(document.querySelectorAll<HTMLElement>(triggerSelector)).find(isVisible))
   )
   const titleId = useId()
   const [mobileViewport, setMobileViewport] = useState(() => window.matchMedia(MOBILE_QUERY).matches)
+  const [anchorPosition, setAnchorPosition] = useState<{ top: number; right: number }>()
   closeRef.current = onClose
   restoreFocusRef.current = restoreFocus
+
+  // Positioning needs live DOM geometry and observers so it follows the clicked control before paint.
+  useLayoutEffect(() => {
+    if (anchorElement) previousFocusRef.current = anchorElement
+    const dialog = dialogRef.current
+    if (!anchorElement || !dialog || mobileViewport) return
+
+    const updatePosition = () => {
+      if (!anchorElement.isConnected) {
+        closeRef.current()
+        return
+      }
+      const trigger = anchorElement.getBoundingClientRect()
+      const width = dialog.offsetWidth
+      const height = dialog.offsetHeight
+      const viewportWidth = document.documentElement.clientWidth
+      const gap = 8
+      const left = Math.max(gap, Math.min(trigger.right - width, viewportWidth - width - gap))
+      const below = trigger.bottom + gap
+      const preferredTop = below + height <= window.innerHeight - gap ? below : trigger.top - height - gap
+      const top = Math.max(gap, Math.min(preferredTop, window.innerHeight - height - gap))
+      const right = viewportWidth - left - width
+      setAnchorPosition((current) => (current?.top === top && current.right === right ? current : { top, right }))
+    }
+
+    updatePosition()
+    const observer = new ResizeObserver(updatePosition)
+    observer.observe(anchorElement)
+    observer.observe(dialog)
+    window.addEventListener('resize', updatePosition)
+    window.addEventListener('scroll', updatePosition, true)
+    return () => {
+      observer.disconnect()
+      window.removeEventListener('resize', updatePosition)
+      window.removeEventListener('scroll', updatePosition, true)
+    }
+  }, [anchorElement, mobileViewport])
 
   // Viewport changes and focus/scroll ownership are browser lifecycles, outside React state.
   useEffect(() => {
@@ -144,7 +194,7 @@ function OpenWalletSurface({
         trigger?.focus()
       }
     }
-  }, [mobileViewport, triggerSelector])
+  }, [anchorElement, mobileViewport, triggerSelector])
 
   return createPortal(
     <div ref={rootRef} className={themeClassName}>
@@ -157,7 +207,14 @@ function OpenWalletSurface({
         tabIndex={-1}
         aria-modal={mobileViewport || undefined}
         aria-labelledby={titleId}
-        style={{ '--wallet-ui-desktop-right': desktopRight, '--wallet-ui-desktop-top': desktopTop } as CSSProperties}
+        style={
+          {
+            '--wallet-ui-desktop-right':
+              anchorElement && !mobileViewport && anchorPosition ? `${anchorPosition.right}px` : desktopRight,
+            '--wallet-ui-desktop-top':
+              anchorElement && !mobileViewport && anchorPosition ? `${anchorPosition.top}px` : desktopTop
+          } as CSSProperties
+        }
         className="wallet-ui-panel fixed inset-x-0 bottom-0 z-[10000] flex max-h-[calc(100svh-0.75rem)] flex-col overflow-hidden rounded-t-2xl border border-b-0 border-border bg-surface text-text-primary shadow-lg focus:outline-none sm:inset-x-auto sm:top-[var(--wallet-ui-desktop-top)] sm:right-[var(--wallet-ui-desktop-right)] sm:bottom-auto sm:w-[23rem] sm:rounded-2xl sm:border"
       >
         <div aria-hidden className="flex justify-center pt-2 sm:hidden">

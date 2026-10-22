@@ -27,6 +27,7 @@ jobs:
       yearn: ${{ steps.filter.outputs.yearn }}
       ybold: ${{ steps.filter.outputs.ybold }}
       erc4626: ${{ steps.filter.outputs.erc4626 }}
+      ytranche: ${{ steps.filter.outputs.ytranche }}
     steps:
       - uses: actions/checkout@v4
       - uses: dorny/paths-filter@v3
@@ -54,6 +55,9 @@ jobs:
               - *shared
               - 'packages/site-header/**'
               - 'apps/4626/**'
+            ytranche:
+              - *shared
+              - 'apps/ytranche/**'
 
   yearn:
     needs: changes
@@ -77,4 +81,12 @@ jobs:
     uses: yearn/yearn-gha/.github/workflows/vercel-deploy.yml@e6b4d914d9256b6becdf7c30605238894fa54638
     with:
       project: yearn-4626
+      identity-id: ${{ github.event_name == 'pull_request' && vars.DOPPLER_PREVIEW_IDENTITY_ID || vars.DOPPLER_PRODUCTION_IDENTITY_ID }}
+
+  ytranche:
+    needs: changes
+    if: needs.changes.outputs.ytranche == 'true'
+    uses: yearn/yearn-gha/.github/workflows/vercel-deploy.yml@e6b4d914d9256b6becdf7c30605238894fa54638
+    with:
+      project: yearn-ytranche
       identity-id: ${{ github.event_name == 'pull_request' && vars.DOPPLER_PREVIEW_IDENTITY_ID || vars.DOPPLER_PRODUCTION_IDENTITY_ID }}
