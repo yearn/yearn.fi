@@ -38,6 +38,14 @@ function buildInput(formValue: string) {
 }
 
 describe('InputTokenAmount', () => {
+  it('keeps an unpriced asset input usable without a fabricated dollar value', () => {
+    const html = renderInputTokenAmount(
+      <InputTokenAmount input={buildInput('2')} symbol="TOKEN" inputTokenUsdPrice={0} />
+    )
+    expect(html).toContain('value="2"')
+    expect(html).not.toContain('$0')
+  })
+
   it('uses the explicit token logo URI for the selected input token', () => {
     const html = renderInputTokenAmount(
       <InputTokenAmount
