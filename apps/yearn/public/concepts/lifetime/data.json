@@ -48,7 +48,7 @@
     "earnings": "Incident-adjusted reported P&L. Includes active and retired reports; not consolidated depositor profit. Missing historical prices are not zero.",
     "fees": "Known gross contract fees across V2 vaults, V3 allocators and Tokenized Strategies; not Yearn treasury revenue.",
     "tvl": "Uses the same /api/tvl totalTvl field as Powerglove. This is the current value of deposited assets at the recorded snapshot, not cumulative lifetime deposits. Retains the source category scope, retired holdings, overlap deductions and bridge exclusions; no separate endorsed-only filter is applied.",
-    "animation": "Bounded visual replay approaching the latest snapshot at the measured Oct 5\u201312 weekly earnings rate; stops at the recorded total. No forward extrapolation.",
+    "animation": "Timestamp-based estimate extrapolated from the Oct 12 weekly point at the measured Oct 5–12 rate. Uses the current device clock; not live reported earnings.",
     "vaults": "Known deployed V2 and V3 vaults in the Yearn-managed inventory, counted once per chain and address. Includes active and retired vaults. This is indexed coverage, not proof of exhaustive historical discovery. Standalone Tokenized Strategies are excluded.",
     "harvests": "Recorded V2 and V3 StrategyReported events before the earnings publication cutoff, counted once per chain, transaction hash and log index. Includes gain, loss and zero-gain reports regardless of price availability. Counts reporting events, not distinct transactions; indexed coverage is not a claim of complete historical ingestion."
   },

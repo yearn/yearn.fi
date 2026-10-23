@@ -13,9 +13,11 @@ An isolated, buildless concept served at `/concepts/lifetime/`. The existing hom
 
 Earnings use `netLifetimeEarningsUsd`: incident-adjusted reported P&L, including active and retired history, not consolidated economic yield or depositor net profit. Fees use `totalFeesPaidUsd`: known gross contract fees, not treasury receipts. TVL uses the published `totalTvl`, retaining its source exclusions. The data notes explain these scopes. Missing data is unavailable, never a synthetic zero.
 
-The two cumulative earnings points span October 5–12. Their difference divided by elapsed seconds determines the displayed pace. This review version replays the final two minutes approaching the latest captured total and stops there. It does not extrapolate a stale snapshot into present-day earnings. Reduced motion displays the final total immediately; assistive technology receives the stable final value.
+The two cumulative earnings points span October 5–12. Their difference divided by elapsed seconds determines the estimated pace. The counter uses `current.earningsUsd + rate * max(0, Date.now() / 1000 - current.timestamp)`, anchored to the timestamped October 12 point rather than the later untimestamped headline total. It extrapolates beyond recorded observations and is visibly labeled as estimated. The headline snapshot remains in the data notes.
 
-A production integration should supply refreshed timestamped cumulative points and publication metadata from a server-side data adapter. Smooth interpolation should remain between known observations, handle negative deltas, stop at the latest known amount, and distinguish any optional extrapolation explicitly. Historical yield consolidation remains a separate data-accounting decision.
+Reloads and windows with the same source data and device clock calculate the same value; animation frames only determine when it is painted. Hidden pages cancel their frame loop. Visibility, focus and page restoration repaint from the current timestamp and start a single loop. Invalid or nonpositive rates fall back to the recorded headline total. The counter alone overrides reduced motion; assistive technology receives an estimate refreshed on lifecycle events instead of per frame.
+
+This mockup assumes the historical rate continues indefinitely. Before production, confirm and refresh source points, define an estimate horizon and stale-data behavior, and use server clock calibration if consistency across devices with incorrect clocks is required. Historical yield consolidation remains a separate data-accounting decision.
 
 ## Preview
 
@@ -35,7 +37,7 @@ The October 21 read-only Neon capture records 732 Yearn-managed vaults (639 V2, 
 
 The deposited-value snapshot was refreshed from `https://yearn-data-api-preview.vercel.app/api/tvl`, the default hosted data target in Powerglove. Its TVL overview renders `totalTvl` directly; the concept now captures the same $208,172,781.1714352 response. Source URL, field, capture time and observation boundary are stored in `tvlSource`. This remains a captured snapshot rather than a live feed. The requested “in Yearn Endorsed vaults” display copy does not introduce an endorsed-only filter: the API aggregate retains its existing categories, retired holdings, overlap and bridge accounting.
 
-Hero and statistics earnings are painted from the same value on every animation frame, with two decimal places in the hero and whole dollars in the statistics, including replay completion and reduced motion.
+Hero and statistics earnings are painted from the same value on every animation frame, with two decimal places in the hero and whole dollars in the statistics, including tab restoration and reduced motion.
 
 ## Integrations strip
 

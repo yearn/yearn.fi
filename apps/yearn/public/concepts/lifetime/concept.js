@@ -28,34 +28,53 @@ notes.addEventListener('click', (event) => {
   )
     notes.close()
 })
-const renderCounter = (data) => {
+const stopCounter = () => {
   cancelAnimationFrame(state.frame)
+  state.frame = null
+}
+const renderCounter = (data) => {
+  stopCounter()
   const latest = Number(data.earningsUsd)
-  const [previous, current] = data.weeklyPoints
-  const rate = (Number(current.earningsUsd) - Number(previous.earningsUsd)) / (current.timestamp - previous.timestamp)
-  const duration = 120
-  const startValue = latest - rate * duration
-  const started = performance.now()
+  const [previous, current] = data.weeklyPoints ?? []
+  const validPoint = (point) =>
+    point && Number.isFinite(point.timestamp) && point.earningsUsd != null && Number.isFinite(Number(point.earningsUsd))
+  const rate =
+    validPoint(previous) && validPoint(current) && current.timestamp > previous.timestamp
+      ? (Number(current.earningsUsd) - Number(previous.earningsUsd)) / (current.timestamp - previous.timestamp)
+      : NaN
+  const canEstimate = Number.isFinite(rate) && rate > 0
+  // The same source points and wall-clock time always produce the same value.
+  // No session start, accumulated frame time, or replay duration affects it.
+  const valueAt = (timestamp) =>
+    canEstimate ? Number(current.earningsUsd) + rate * Math.max(0, timestamp - current.timestamp) : latest
   const paint = (value) => {
     select('#earnings').textContent = earningsMoney.format(value)
     select('#yield-earned').textContent = usd(value)
   }
-  // Keep the accessible value stable; only the visual number replays toward the recorded snapshot.
+  // Keep screen-reader output stable between lifecycle events, not a live frame feed.
   select('.counter').setAttribute(
     'aria-label',
-    `${earningsUsd(latest)} in reported lifetime earnings at the captured snapshot`
+    canEstimate
+      ? `${earningsUsd(valueAt(Date.now() / 1000))} estimated lifetime earnings, extrapolated from recorded weekly points`
+      : `${earningsUsd(latest)} in reported lifetime earnings at the captured snapshot`
   )
-  const tick = (now) => {
-    const elapsed = Math.min(duration, (now - started) / 1000)
-    paint(startValue + rate * elapsed)
-    if (elapsed < duration) state.frame = requestAnimationFrame(tick)
+  const tick = () => {
+    state.frame = null
+    paint(valueAt(Date.now() / 1000))
+    if (canEstimate && !document.hidden) state.frame = requestAnimationFrame(tick)
   }
-  if (!Number.isFinite(rate) || rate <= 0) {
-    paint(latest)
-    return
-  }
-  tick(performance.now())
+  tick()
 }
+const resumeCounter = () => {
+  if (state.data && !document.hidden) renderCounter(state.data)
+}
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) stopCounter()
+  else resumeCounter()
+})
+window.addEventListener('pagehide', stopCounter)
+window.addEventListener('pageshow', resumeCounter)
+window.addEventListener('focus', resumeCounter)
 const load = async () => {
   try {
     const response = await fetch(new URL('./data.json', import.meta.url), { cache: 'no-store' })
@@ -80,7 +99,7 @@ const load = async () => {
     select('#fees-value').textContent = usd(Number(data.feesUsd))
     select('#earnings-note').textContent = `${earningsUsd(Number(data.earningsUsd))}. ${data.methodology.earnings}`
     select('#animation-note').textContent =
-      'The counter replays the final two minutes approaching the recorded total, using the measured Oct 5–12 weekly rate. It stops at that total. It is an illustration of pace, not live earnings or a forecast. The counter updates smoothly regardless of reduced-motion preferences; other site animations still respect them.'
+      'The counter estimates earnings from the Oct 12 recorded point at the measured Oct 5–12 weekly rate, using the current device timestamp. It is an extrapolation, not live reported earnings. Windows using the same source data and clock calculate the same value, including after reload or tab restoration. Device clock differences can affect the estimate. The counter animates regardless of reduced-motion preferences; other animations still respect them.'
     select('#tvl-note').textContent = `${data.methodology.tvl} Snapshot: ${date(data.tvlAsOf)}.`
     select('#fees-note').textContent = data.methodology.fees
     select('#vaults-note').textContent =
@@ -92,7 +111,7 @@ const load = async () => {
       `Captured ${new Date(data.capturedAt).toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}. Each metric retains its own source reporting boundary.`
   } catch (error) {
     console.error('Unable to load the landing statistics snapshot:', error)
-    cancelAnimationFrame(state.frame)
+    stopCounter()
     state.data = null
     select('#earnings').textContent = 'Unavailable'
     select('.counter').style.fontSize = 'clamp(36px, 9vw, 120px)'
