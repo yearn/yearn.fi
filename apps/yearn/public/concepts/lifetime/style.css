@@ -108,7 +108,7 @@ h3 {
 .header .header-actions {
   display: flex;
   align-items: center;
-  gap: 34px;
+  gap: 12px;
   font-size: 14px;
 }
 .header-actions > a:not(.launch) {
@@ -1485,6 +1485,8 @@ dialog .source-date {
   color: var(--ink);
   border: 1px solid var(--ink);
   padding-block: 12px;
+  padding-inline: 14px;
+  gap: 12px;
 }
 .bounty-item img {
   width: 155px;
