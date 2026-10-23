@@ -1727,3 +1727,49 @@ body.mobile-nav-open {
     gap: 4px 20px;
   }
 }
+
+/* Share the header's 1232px container and 16px inner gutters. */
+.hero,
+.paths-section,
+.feature-section,
+footer {
+  width: 100%;
+  max-width: 1232px;
+  margin-inline: auto;
+  padding-inline: 16px;
+}
+.statistics-section {
+  padding-inline: 16px;
+}
+.statistics-grid {
+  width: 100%;
+  max-width: 1200px;
+}
+.integrations {
+  width: calc(100% + 32px);
+}
+.integrations-heading {
+  width: calc(100% - 32px);
+  max-width: 1200px;
+}
+footer .brand img {
+  width: 116px;
+  height: 32px;
+}
+@media (min-width: 761px) {
+  .counter {
+    font-size: min(11.4vw, 148px);
+  }
+  .security-section {
+    column-gap: 70px;
+  }
+  .path {
+    padding-right: 48px;
+  }
+  .path + .path {
+    padding-left: 48px;
+  }
+  .benefits-grid {
+    gap: 48px;
+  }
+}
