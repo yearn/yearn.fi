@@ -28,8 +28,8 @@
   "peerDependencies": {
     "@wagmi/core": "2.22.1",
     "@rainbow-me/rainbowkit": "2.2.11",
-    "react": "19.3.0",
-    "react-dom": "19.3.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
     "wagmi": "2.18.2"
   },
   "devDependencies": {
@@ -40,8 +40,8 @@
     "@types/react": "19.3.0",
     "@types/react-dom": "19.3.0",
     "jsdom": "29.1.1",
-    "react": "19.3.0",
-    "react-dom": "19.3.0",
+    "react": "19.3.1",
+    "react-dom": "19.3.1",
     "typescript": "7.0.2",
     "vitest": "4.1.11",
     "wagmi": "2.18.2"
