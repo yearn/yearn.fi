@@ -68,6 +68,9 @@ const load = async () => {
     state.data = data
     renderCounter(data)
     select('#tvl').textContent = usd(Number(data.tvlUsd))
+    select('#assets-secured-value').textContent = Number.isFinite(data.assetsSecured?.usd)
+      ? usd(data.assetsSecured.usd)
+      : 'Unavailable'
     select('#vaults-deployed').textContent = Number.isInteger(data.vaultsDeployed)
       ? money.format(data.vaultsDeployed)
       : 'Unavailable'
@@ -101,9 +104,11 @@ const load = async () => {
     select('#fees-note').textContent = 'Unavailable. No zero value has been substituted.'
     select('#vaults-note').textContent = 'Unavailable. No zero value has been substituted.'
     select('#harvests-note').textContent = 'Unavailable. No zero value has been substituted.'
-    ;['#yield-earned', '#tvl', '#fees-value', '#vaults-deployed', '#harvest-count'].forEach((selector) => {
-      select(selector).textContent = 'Unavailable'
-    })
+    ;['#yield-earned', '#tvl', '#assets-secured-value', '#fees-value', '#vaults-deployed', '#harvest-count'].forEach(
+      (selector) => {
+        select(selector).textContent = 'Unavailable'
+      }
+    )
     select('#replay').disabled = true
   }
 }
@@ -374,4 +379,23 @@ mobileNavigation.addEventListener('close', () => {
 })
 matchMedia('(max-width: 900px)').addEventListener('change', (event) => {
   if (!event.matches && mobileNavigation.open) closeMobileNavigation()
+})
+
+const setStatsVersion = (version) => {
+  document.querySelectorAll('[data-stats-only]').forEach((row) => {
+    row.hidden = row.dataset.statsOnly !== version
+  })
+  document.querySelectorAll('[data-stats-option]').forEach((button) => {
+    button.setAttribute('aria-pressed', String(button.dataset.statsOption === version))
+  })
+}
+setStatsVersion(new URL(window.location.href).searchParams.get('stats') === 'old' ? 'old' : 'new')
+document.querySelectorAll('[data-stats-option]').forEach((button) => {
+  button.addEventListener('click', () => {
+    const version = button.dataset.statsOption
+    setStatsVersion(version)
+    const url = new URL(window.location.href)
+    url.searchParams.set('stats', version)
+    window.history.replaceState(null, '', url)
+  })
 })

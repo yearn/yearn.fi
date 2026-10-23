@@ -1,0 +1,1752 @@
+{
+  "blockNumber": "26244424",
+  "records": [
+    {
+      "holder": "0x7B5A0182E400b241b317e781a4e9dEdFc1429822",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "totalAssets": "70387003627447",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": [
+        {
+          "target": "0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204",
+          "shares": "1",
+          "supply": "16481649193010",
+          "ownedUsd": 0.000001121894768714718
+        }
+      ]
+    },
+    {
+      "holder": "0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "totalAssets": "18495287936959",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": []
+    },
+    {
+      "holder": "0x63a028963907F5a0c1cEb7e47100f52DfC611117",
+      "getters": {
+        "strategyState": null,
+        "vault": "0x53E82ABbb12638F09d9e624578ccB666217a765e",
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "totalAssets": "70387003627446",
+        "valueOfVault": "0",
+        "balanceOfAsset": "0"
+      },
+      "positions": []
+    },
+    {
+      "holder": "0xcc6a16Be713f6a714f68b0E1f4914fD3db15fBeF",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        "totalAssets": "18861218641101260273088",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": [
+        {
+          "target": "0xc56413869c6CDf96496f2b1eF801fEDBdFA7dDB0",
+          "shares": "1",
+          "supply": "6417482431030924167195",
+          "ownedUsd": 2.6090255425440343e-15
+        }
+      ]
+    },
+    {
+      "holder": "0xc56413869c6CDf96496f2b1eF801fEDBdFA7dDB0",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        "totalAssets": "6777981331684099320899",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": []
+    },
+    {
+      "holder": "0x30EAaCaD508BA57B30edafa1aD6bD337B211A9DE",
+      "getters": {
+        "strategyState": null,
+        "vault": "0x2DC70fb75b88d2eB4715bc06E1595E6D97c34DFF",
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        "totalAssets": "18861218641101260273087",
+        "valueOfVault": "0",
+        "balanceOfAsset": "0"
+      },
+      "positions": []
+    },
+    {
+      "holder": "0x3Ed6aa32c930253fc990dE58fF882B9186cd0072",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "totalAssets": "26217918584191",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": []
+    },
+    {
+      "holder": "0x7D7F72d393F242DA6e22D3b970491C06742984Ff",
+      "getters": {
+        "strategyState": null,
+        "vault": "0x3Ed6aa32c930253fc990dE58fF882B9186cd0072",
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "totalAssets": "26117736862218",
+        "valueOfVault": null,
+        "balanceOfAsset": "0"
+      },
+      "positions": [
+        {
+          "target": "0x3Ed6aa32c930253fc990dE58fF882B9186cd0072",
+          "shares": "0",
+          "supply": "25036825912154",
+          "ownedUsd": 0
+        }
+      ]
+    },
+    {
+      "holder": "0x9939009295eAD3c67259aF3b93C284079ffE931e",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "totalAssets": "100181721973",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": []
+    },
+    {
+      "holder": "0x48c03B6FfD0008460F8657Db1037C7e09dEedfcb",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+        "totalAssets": "18061039851207",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": [
+        {
+          "target": "0x310B7Ea7475A0B449Cfd73bE81522F1B88eFAFaa",
+          "shares": "1",
+          "supply": "5208095898756",
+          "ownedUsd": 0.0000010953038069724717
+        }
+      ]
+    },
+    {
+      "holder": "0x310B7Ea7475A0B449Cfd73bE81522F1B88eFAFaa",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+        "totalAssets": "5707750727457",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": []
+    },
+    {
+      "holder": "0xBC64210D565aabca8eb6Eb795833Cc505ac3647F",
+      "getters": {
+        "strategyState": null,
+        "vault": "0x6d4f9f9f8f0155509ecd6Ac6c544fF27999845CC",
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+        "totalAssets": "18061039851206",
+        "valueOfVault": "0",
+        "balanceOfAsset": "0"
+      },
+      "positions": []
+    },
+    {
+      "holder": "0x92C82f5F771F6A44CfA09357DD0575B81BF5F728",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+        "totalAssets": "18192326705",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": [
+        {
+          "target": "0x751F0cC6115410A3eE9eC92d08f46Ff6Da98b708",
+          "shares": "0",
+          "supply": "4749453683",
+          "ownedUsd": 0
+        }
+      ]
+    },
+    {
+      "holder": "0x751F0cC6115410A3eE9eC92d08f46Ff6Da98b708",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+        "totalAssets": "4751593759",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": []
+    },
+    {
+      "holder": "0xb3760eD42E9e87497A371697fF4F08b510C93Df1",
+      "getters": {
+        "strategyState": null,
+        "vault": "0x2C24B57e2CCd1f273045Af6A5f632504C432374F",
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+        "totalAssets": "18192326705",
+        "valueOfVault": "0",
+        "balanceOfAsset": "0"
+      },
+      "positions": []
+    },
+    {
+      "holder": "0x0655977FEb2f289A4aB78af67BAB0d17aAb84367",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E",
+        "totalAssets": "14504089691982430031550847",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": []
+    },
+    {
+      "holder": "0xF470EB50B4a60c9b069F7Fd6032532B8F5cC014d",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "totalAssets": "7712626710787",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": [
+        {
+          "target": "0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204",
+          "shares": "0",
+          "supply": "16481649193010",
+          "ownedUsd": 0
+        }
+      ]
+    },
+    {
+      "holder": "0xFDAdC09f678755A84DfD01eEAf4A1709F224F5C3",
+      "getters": {
+        "strategyState": null,
+        "vault": "0x53E82ABbb12638F09d9e624578ccB666217a765e",
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "totalAssets": "7712626710787",
+        "valueOfVault": "0",
+        "balanceOfAsset": "0"
+      },
+      "positions": []
+    },
+    {
+      "holder": "0xd7a540ba3626c0aa66e7DB4088971d0CD64695B6",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        "totalAssets": "2437650242100626264968",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": [
+        {
+          "target": "0xc56413869c6CDf96496f2b1eF801fEDBdFA7dDB0",
+          "shares": "1560303866958988399636",
+          "supply": "6417482431030924167195",
+          "ownedUsd": 4070872.6430262295
+        },
+        {
+          "target": "0xAc37729B76db6438CE62042AE1270ee574CA7571",
+          "shares": "448970740390687805686",
+          "supply": "1406556127686219202910",
+          "ownedUsd": 1210272.1321180698
+        }
+      ]
+    },
+    {
+      "holder": "0xAc37729B76db6438CE62042AE1270ee574CA7571",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        "totalAssets": "1534897612823925370209",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": []
+    },
+    {
+      "holder": "0xA5DaB32DbE68E6fa784e1e50e4f620a0477D3896",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+        "totalAssets": "5669774354547",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": [
+        {
+          "target": "0x310B7Ea7475A0B449Cfd73bE81522F1B88eFAFaa",
+          "shares": "0",
+          "supply": "5208095898756",
+          "ownedUsd": 0
+        }
+      ]
+    },
+    {
+      "holder": "0x37F490F02cd2EBb55c27796802943Bd080e0cc56",
+      "getters": {
+        "strategyState": null,
+        "vault": "0x6d4f9f9f8f0155509ecd6Ac6c544fF27999845CC",
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+        "totalAssets": "5669774354547",
+        "valueOfVault": "0",
+        "balanceOfAsset": "0"
+      },
+      "positions": []
+    },
+    {
+      "holder": "0x697c54a84D83F37380d034e2BfC6F7cE8d89F4Ee",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "totalAssets": "3856990572069",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": []
+    },
+    {
+      "holder": "0x2cdaeebe9607ee7579bbD69AF44f44553fDA764F",
+      "getters": {
+        "strategyState": "0x73edDFa87C71ADdC275c2b9890f5c3a8480bC9E6",
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "totalAssets": "922681778",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": []
+    },
+    {
+      "holder": "0xB4e41E6eeF1A77e700B46aBAcdF6d426Fd256791",
+      "getters": {
+        "strategyState": "0x73edDFa87C71ADdC275c2b9890f5c3a8480bC9E6",
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "totalAssets": "3185396324",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": []
+    },
+    {
+      "holder": "0x047CFddd06018f53F54262fe64f2744ecd463FeA",
+      "getters": {
+        "strategyState": "0x10Becd2559671b36E9D43C8cE6c0B86E16C59420",
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "totalAssets": "9213628689",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": []
+    },
+    {
+      "holder": "0x369d94320d06492DE265C025bFaa4Cf513A1845f",
+      "getters": {
+        "strategyState": "0xF1CfaA17d21B399F122B8615FAc12F95766eBed3",
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "totalAssets": "3260420896064",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": []
+    },
+    {
+      "holder": "0x533BCB3aBe63C0b876d97B34184765B186A22E10",
+      "getters": {
+        "strategyState": "0xF1CfaA17d21B399F122B8615FAc12F95766eBed3",
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "totalAssets": "533454452791",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": []
+    },
+    {
+      "holder": "0x000ecFD73e2E523767E161a99690e6ef8c1B8029",
+      "getters": {
+        "strategyState": "0x10Becd2559671b36E9D43C8cE6c0B86E16C59420",
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "totalAssets": "47642409727",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": []
+    },
+    {
+      "holder": "0x1B1177276CD9B630ec53C912EB6A8CF5A29AE6eB",
+      "getters": {
+        "strategyState": "0x10Becd2559671b36E9D43C8cE6c0B86E16C59420",
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "totalAssets": "14169486829",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": []
+    },
+    {
+      "holder": "0xe1Ac97e2616Ad80f69f705ff007A4bbb3655544a",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+        "totalAssets": "3368629176",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": [
+        {
+          "target": "0x751F0cC6115410A3eE9eC92d08f46Ff6Da98b708",
+          "shares": "0",
+          "supply": "4749453683",
+          "ownedUsd": 0
+        }
+      ]
+    },
+    {
+      "holder": "0xc97781bA49a90c68d63F4D235d35cdbe029149D2",
+      "getters": {
+        "strategyState": null,
+        "vault": "0x2C24B57e2CCd1f273045Af6A5f632504C432374F",
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+        "totalAssets": "3368629176",
+        "valueOfVault": "0",
+        "balanceOfAsset": "0"
+      },
+      "positions": []
+    },
+    {
+      "holder": "0x77570CfEcf83bc6bB08E2cD9e8537aeA9F97eA2F",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        "totalAssets": "968418680516950167320",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": [
+        {
+          "target": "0xc56413869c6CDf96496f2b1eF801fEDBdFA7dDB0",
+          "shares": "0",
+          "supply": "6417482431030924167195",
+          "ownedUsd": 0
+        }
+      ]
+    },
+    {
+      "holder": "0x20e76ea28E13867C008d319ba4eDE86f6C1fed73",
+      "getters": {
+        "strategyState": null,
+        "vault": "0x2DC70fb75b88d2eB4715bc06E1595E6D97c34DFF",
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        "totalAssets": "968418680516950167320",
+        "valueOfVault": "0",
+        "balanceOfAsset": "0"
+      },
+      "positions": []
+    },
+    {
+      "holder": "0x26fCb50eEC367ddAB060ccf5E7394Cecd95F7Db2",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        "totalAssets": "84441270714441903129",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": []
+    },
+    {
+      "holder": "0x9F1c3173581CED1204136cBc628d2fb2407d7AC4",
+      "getters": {
+        "strategyState": "0xB7fC92B6ddc6612623812106e5B7532D3a48420B",
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        "totalAssets": "75915637155247331569",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": []
+    },
+    {
+      "holder": "0x76dD96710A73675d9cf9523A046f1587cA9031d4",
+      "getters": {
+        "strategyState": "0xB7fC92B6ddc6612623812106e5B7532D3a48420B",
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        "totalAssets": "10440331621629678717",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": []
+    },
+    {
+      "holder": "0x330732581D30076137a1159B3aE8780158D902bE",
+      "getters": {
+        "strategyState": "0x252231882FB38481497f3C767469106297c8d93b",
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        "totalAssets": "7294329517417896017",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": []
+    },
+    {
+      "holder": "0xfC36C2EdB18829308Fa9eE9500e8be6520A47Caf",
+      "getters": {
+        "strategyState": "0x252231882FB38481497f3C767469106297c8d93b",
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        "totalAssets": "565462971260453859",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": []
+    },
+    {
+      "holder": "0x254bd33E2f62713F893F0842C99E68f855cDa315",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+        "totalAssets": "166480644905972472913732",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": []
+    },
+    {
+      "holder": "0xAa45993D82C72E8EB3574C55773226E7C54Ee863",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+        "totalAssets": "166480644905972472913732",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": []
+    },
+    {
+      "holder": "0x9cFb40acedaC259B1d23e790f6c6D0C3898361Ad",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "totalAssets": "13204114216",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": [
+        {
+          "target": "0xbDb97eC319c41c6FA383E94eCE6Bdf383dFC7BE4",
+          "shares": "604661",
+          "supply": "1184277",
+          "ownedUsd": 0.6721469565550229
+        },
+        {
+          "target": "0x7eE351aA702C8fC735D77Fb229b7676AC15D7c79",
+          "shares": "11866413645",
+          "supply": "11952186034",
+          "ownedUsd": 15434.322015479574
+        }
+      ]
+    },
+    {
+      "holder": "0xbDb97eC319c41c6FA383E94eCE6Bdf383dFC7BE4",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "totalAssets": "1316782",
+        "valueOfVault": null,
+        "balanceOfAsset": "0"
+      },
+      "positions": []
+    },
+    {
+      "holder": "0x7eE351aA702C8fC735D77Fb229b7676AC15D7c79",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "totalAssets": "15549761273",
+        "valueOfVault": null,
+        "balanceOfAsset": "15561793341"
+      },
+      "positions": []
+    },
+    {
+      "holder": "0x46e9893422B9aE9246793489433F72c548CB2455",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "totalAssets": "2912102670",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": []
+    },
+    {
+      "holder": "0x381E0BE61b3AEB1F321C4775046e6F57BC84c804",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0x4c9EDD5852cd905f086C759E8383e09bff1E68B3",
+        "totalAssets": "1799423435378397568448",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": []
+    },
+    {
+      "holder": "0x4424D0c829316dcEc5701A4E2b30B368721e0A10",
+      "getters": {
+        "strategyState": null,
+        "vault": "0x9D39A5DE30e57443BfF2A8307A4256c8797A3497",
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0x4c9EDD5852cd905f086C759E8383e09bff1E68B3",
+        "totalAssets": "802289828753380249817",
+        "valueOfVault": "954985763601435682922",
+        "balanceOfAsset": "0"
+      },
+      "positions": []
+    },
+    {
+      "holder": "0x482Cce30Cde09292279371956a3C7c57bbe125A9",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xc522A6606BBA746d7960404F22a3DB936B6F4F50",
+        "totalAssets": "1379058207022602906233",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": []
+    },
+    {
+      "holder": "0xc6E53d7C2453163f9B708393086237b0EE0fD9B3",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xc522A6606BBA746d7960404F22a3DB936B6F4F50",
+        "totalAssets": "1379058207022602906232",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": []
+    },
+    {
+      "holder": "0xD91B6DeD55C0fba2c1E88F2cDF6e051ECD788952",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "totalAssets": "1054095543",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": [
+        {
+          "target": "0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204",
+          "shares": "884770235",
+          "supply": "16481649193010",
+          "ownedUsd": 992.6190981609916
+        }
+      ]
+    },
+    {
+      "holder": "0x59f6E998A78AA074F67b2e2Cd1DC1774214c7547",
+      "getters": {
+        "strategyState": null,
+        "vault": "0xAe7d8Db82480E6d8e3873ecbF22cf17b3D8A7308",
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "totalAssets": "99999900",
+        "valueOfVault": "0",
+        "balanceOfAsset": "0"
+      },
+      "positions": [
+        {
+          "target": "0xAe7d8Db82480E6d8e3873ecbF22cf17b3D8A7308",
+          "shares": "0",
+          "supply": "250473344442",
+          "ownedUsd": 0
+        }
+      ]
+    },
+    {
+      "holder": "0xEadc18ca9363565E1c8BC5415Db0110d7c91cDE5",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0x4628f13651eaD6793F8d838B34B8f8522Fb0cc52",
+        "totalAssets": "11455542821549386645638",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": []
+    },
+    {
+      "holder": "0x88ac6A2A55ce6ADb53A38e8Be85e179A188Dd7B1",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0x4628f13651eaD6793F8d838B34B8f8522Fb0cc52",
+        "totalAssets": "11455542821549386645638",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": []
+    },
+    {
+      "holder": "0xFFcaF6549a229D63351B71313559EDbe0C467B78",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xed785Af60bEd688baa8990cD5c4166221599A441",
+        "totalAssets": "552934942124214822146",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": []
+    },
+    {
+      "holder": "0xf1Fe340a013023733baf7Db8cADd08edCF0D6A0E",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xed785Af60bEd688baa8990cD5c4166221599A441",
+        "totalAssets": "552934942124214822146",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": []
+    },
+    {
+      "holder": "0x610E01895cB39078890e3Fe5239b78A51c07892F",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+        "totalAssets": "288749409780748938260",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": [
+        {
+          "target": "0xEed00e00236cD7F36F2558D8b5fD05046449599D",
+          "shares": "10715624816495088546",
+          "supply": "10715624816495088546",
+          "ownedUsd": 82.16467205322805
+        },
+        {
+          "target": "0x1fd862499e9b9402DE6c599b6C391f83981180Ab",
+          "shares": "344905546564944999183",
+          "supply": "344960822863146704437",
+          "ownedUsd": 405.11339128209596
+        }
+      ]
+    },
+    {
+      "holder": "0x83F20F44975D03b1b09e64809B757c47f942BEeA",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+        "totalAssets": "164471549897373827481630658",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": []
+    },
+    {
+      "holder": "0xEed00e00236cD7F36F2558D8b5fD05046449599D",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+        "totalAssets": "82188210466065570342",
+        "valueOfVault": null,
+        "balanceOfAsset": "0"
+      },
+      "positions": []
+    },
+    {
+      "holder": "0x1fd862499e9b9402DE6c599b6C391f83981180Ab",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+        "totalAssets": "405294391672956822422",
+        "valueOfVault": null,
+        "balanceOfAsset": "0"
+      },
+      "positions": []
+    },
+    {
+      "holder": "0x620082F33D442E5806122f71a72b12134f75fF2d",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0x1220868672D5B10F3E1cB9Ab519E4d0B08545ea4",
+        "totalAssets": "171445912980767914783",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": []
+    },
+    {
+      "holder": "0x4D298a6659A4c24d79D6F4281bDe2BeA24EeC3D5",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0x1220868672D5B10F3E1cB9Ab519E4d0B08545ea4",
+        "totalAssets": "171445912980767914783",
+        "valueOfVault": "171445912980767914784",
+        "balanceOfAsset": "0"
+      },
+      "positions": []
+    },
+    {
+      "holder": "0xf20b02131C45b22E147c98e30Cc889a20dc8a00d",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "totalAssets": "104560000",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": [
+        {
+          "target": "0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204",
+          "shares": "0",
+          "supply": "16481649193010",
+          "ownedUsd": 0
+        }
+      ]
+    },
+    {
+      "holder": "0xB6830484c8Dfb9BA7d95820858324c5c05eFA0e5",
+      "getters": {
+        "strategyState": null,
+        "vault": "0xAe7d8Db82480E6d8e3873ecbF22cf17b3D8A7308",
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "totalAssets": "0",
+        "valueOfVault": "0",
+        "balanceOfAsset": "0"
+      },
+      "positions": [
+        {
+          "target": "0xAe7d8Db82480E6d8e3873ecbF22cf17b3D8A7308",
+          "shares": "0",
+          "supply": "250473344442",
+          "ownedUsd": 0
+        }
+      ]
+    },
+    {
+      "holder": "0x48C05c25FB0C92152B57aa057e121CB2E5da81e4",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        "totalAssets": "13739868720437168",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": [
+        {
+          "target": "0x90759801579208B28D2D36D13b1ED7443D1b717F",
+          "shares": "915149651727765",
+          "supply": "1291183747648648",
+          "ownedUsd": 315.12581839528127
+        }
+      ]
+    },
+    {
+      "holder": "0x90759801579208B28D2D36D13b1ED7443D1b717F",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        "totalAssets": "179985395923020937",
+        "valueOfVault": null,
+        "balanceOfAsset": "0"
+      },
+      "positions": []
+    },
+    {
+      "holder": "0x140D0d77EeC240F9D3A07c92dF37E257Cf506081",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "totalAssets": "15752114",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": [
+        {
+          "target": "0x074134A2784F4F66b6ceD6f68849382990Ff3215",
+          "shares": "0",
+          "supply": "2121440789390",
+          "ownedUsd": 0
+        }
+      ]
+    },
+    {
+      "holder": "0x9Fb7b4477576Fe5B32be4C1843aFB1e55F251B33",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "totalAssets": "134652780679977",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": []
+    },
+    {
+      "holder": "0xF7DE3c70F2db39a188A81052d2f3C8e3e217822a",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "totalAssets": "274796363798",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": []
+    },
+    {
+      "holder": "0x797DD80692c3b2dAdabCe8e30C07fDE5307D48a9",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "totalAssets": "2074739789274",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": []
+    },
+    {
+      "holder": "0x074134A2784F4F66b6ceD6f68849382990Ff3215",
+      "getters": {
+        "strategyState": null,
+        "vault": "0xBEEF01735c132Ada46AA9aA4c54623cAA92A64CB",
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "totalAssets": "2397431578475",
+        "valueOfVault": "2397890849554",
+        "balanceOfAsset": "0"
+      },
+      "positions": []
+    },
+    {
+      "holder": "0x76cf74ebA6413Fd290f5599a2eC412882119aF32",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+        "totalAssets": "15141284",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": [
+        {
+          "target": "0xe5baF8b6Be442811211e9339d9fbC1B8fb7D66dF",
+          "shares": "1663",
+          "supply": "1685",
+          "ownedUsd": 1435.3085751387605
+        },
+        {
+          "target": "0x6D2981FF9b8d7edbb7604de7A65BAC8694ac849F",
+          "shares": "11158938",
+          "supply": "2662138421",
+          "ownedUsd": 32.843384179656596
+        }
+      ]
+    },
+    {
+      "holder": "0xe5baF8b6Be442811211e9339d9fbC1B8fb7D66dF",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+        "totalAssets": "1455138609",
+        "valueOfVault": null,
+        "balanceOfAsset": "0"
+      },
+      "positions": []
+    },
+    {
+      "holder": "0x6D2981FF9b8d7edbb7604de7A65BAC8694ac849F",
+      "getters": {
+        "strategyState": null,
+        "vault": "0x8CB3649114051cA5119141a34C200D65dc0Faa73",
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+        "totalAssets": "7839838162",
+        "valueOfVault": "7841551178",
+        "balanceOfAsset": "0"
+      },
+      "positions": []
+    },
+    {
+      "holder": "0xFcC0dD0AeBF4ea4b751799169e45F014bA2e02dd",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        "totalAssets": "5753773884757757",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": [
+        {
+          "target": "0xd2eFB90C569eBD5b83D5cFB8632322edFAc203A5",
+          "shares": "11162810769389",
+          "supply": "29274727697921067",
+          "ownedUsd": 0.04020852740349528
+        },
+        {
+          "target": "0x23eE3D14F09946A084350CC6A7153fc6eb918817",
+          "shares": "4004746150334982",
+          "supply": "4365183375800371",
+          "ownedUsd": 203.32686102893481
+        }
+      ]
+    },
+    {
+      "holder": "0xd2eFB90C569eBD5b83D5cFB8632322edFAc203A5",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        "totalAssets": "42686919814505593",
+        "valueOfVault": null,
+        "balanceOfAsset": "0"
+      },
+      "positions": []
+    },
+    {
+      "holder": "0x23eE3D14F09946A084350CC6A7153fc6eb918817",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        "totalAssets": "89718004422919842",
+        "valueOfVault": null,
+        "balanceOfAsset": "0"
+      },
+      "positions": []
+    },
+    {
+      "holder": "0x8b98165bC61841f1df64e1509a450E11e25181Cc",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+        "totalAssets": "10297630",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": [
+        {
+          "target": "0x6D2981FF9b8d7edbb7604de7A65BAC8694ac849F",
+          "shares": "7998464",
+          "supply": "2662138421",
+          "ownedUsd": 23.54136442008664
+        }
+      ]
+    },
+    {
+      "holder": "0x661077153a02628786D180DbDf633F790774df10",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        "totalAssets": "3971999999996028",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": [
+        {
+          "target": "0x90759801579208B28D2D36D13b1ED7443D1b717F",
+          "shares": "364890360837638",
+          "supply": "1291183747648648",
+          "ownedUsd": 125.64761770538908
+        }
+      ]
+    },
+    {
+      "holder": "0x8BDB719c46E010C6A0701195e8Ee7f9712f24588",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E",
+        "totalAssets": "9000000000000000000",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": []
+    },
+    {
+      "holder": "0x91aA3d2400655afea2Fb148C5B484812B74A303D",
+      "getters": {
+        "strategyState": null,
+        "vault": "0x14361C243174794E2207296a6AD59bb0Dec1d388",
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E",
+        "totalAssets": "4000000000000000000",
+        "valueOfVault": "4205359302690702247",
+        "balanceOfAsset": "0"
+      },
+      "positions": []
+    },
+    {
+      "holder": "0x408Bce2FEe41D0285E3b4c9d869F8D70995161bc",
+      "getters": {
+        "strategyState": null,
+        "vault": "0x21CF1c5Dc48C603b89907FE6a7AE83EA5e3709aF",
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E",
+        "totalAssets": "2000000000000000000",
+        "valueOfVault": "2106720776227862242",
+        "balanceOfAsset": "0"
+      },
+      "positions": []
+    },
+    {
+      "holder": "0x134bE1a7ec921fe38Ead8052f2B8e0949eB86a75",
+      "getters": {
+        "strategyState": null,
+        "vault": "0x4a7999c55d3a93dAf72EA112985e57c2E3b9e95D",
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E",
+        "totalAssets": "3000000000000000000",
+        "valueOfVault": "3147284059156335068",
+        "balanceOfAsset": "0"
+      },
+      "positions": []
+    },
+    {
+      "holder": "0xCF3005699a305Ad1BA800C00fdDAD8d7e905ec49",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+        "totalAssets": "10525",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": []
+    },
+    {
+      "holder": "0xEF0FacE04f2D9CC4dC47f560B0DBFc5dd6b56CBb",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+        "totalAssets": "0",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": []
+    },
+    {
+      "holder": "0xE92D07f6454D3107326A5058e589Ae53934CEF01",
+      "getters": {
+        "strategyState": null,
+        "vault": "0x4968236bf362F1c6080CE04fD95231335614162C",
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+        "totalAssets": "0",
+        "valueOfVault": "0",
+        "balanceOfAsset": "0"
+      },
+      "positions": []
+    },
+    {
+      "holder": "0xe7c4bD9ae62B96bF1B77ac5eDB7cCdEb662b479C",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+        "totalAssets": "5000000000000002832",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": []
+    },
+    {
+      "holder": "0xfc1aDcb2c25FF45CF26870852071D9daB337d707",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xc522A6606BBA746d7960404F22a3DB936B6F4F50",
+        "totalAssets": "3580281482395450458",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": [
+        {
+          "target": "0x482Cce30Cde09292279371956a3C7c57bbe125A9",
+          "shares": "3570645241295804495",
+          "supply": "1220557904974977908170",
+          "ownedUsd": 4.104818938840439
+        }
+      ]
+    },
+    {
+      "holder": "0xe3faeD70Ccaf49C9BAA95ca8d41b1777d7ae440f",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "totalAssets": "1000000",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": [
+        {
+          "target": "0x7eE351aA702C8fC735D77Fb229b7676AC15D7c79",
+          "shares": "0",
+          "supply": "11952186034",
+          "ownedUsd": 0
+        }
+      ]
+    },
+    {
+      "holder": "0xAC64c681102E23f4114bC6fC873499267aeb9eA8",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "totalAssets": "508677",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": [
+        {
+          "target": "0x694E47AFD14A64661a04eee674FB331bCDEF3737",
+          "shares": "484054",
+          "supply": "88245955255",
+          "ownedUsd": 0.5908090239486192
+        }
+      ]
+    },
+    {
+      "holder": "0x694E47AFD14A64661a04eee674FB331bCDEF3737",
+      "getters": {
+        "strategyState": null,
+        "vault": "0xdd0f28e19C1780eb6396170735D45153D261490d",
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "totalAssets": "107734902576",
+        "valueOfVault": "107754984514",
+        "balanceOfAsset": "0"
+      },
+      "positions": []
+    },
+    {
+      "holder": "0x8db2350d78abc13f5673a411d4700bcf87864dde",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+        "totalAssets": "580102791",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": []
+    },
+    {
+      "holder": "0x8041bA598f0E656EBe80c67289efb42C09E86aE3",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+        "totalAssets": "580102791",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": []
+    },
+    {
+      "holder": "0x763CB5712796E5650E2A249861e9c57449364686",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xdC035D45d973E3EC169d2276DDab16f1e407384F",
+        "totalAssets": "11160118749169913048208",
+        "valueOfVault": null,
+        "balanceOfAsset": "0"
+      },
+      "positions": []
+    },
+    {
+      "holder": "0x6a72f92B4A84C4970A183Ec3e3296800F06b1C9B",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": null,
+        "yearnVault": null,
+        "asset": "0xdC035D45d973E3EC169d2276DDab16f1e407384F",
+        "totalAssets": "505982797459265778844",
+        "valueOfVault": null,
+        "balanceOfAsset": "0"
+      },
+      "positions": []
+    },
+    {
+      "holder": "0xb21FbD35AC45caC1D5011b74Ce06b31f8EB2C377",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": "0x074134A2784F4F66b6ceD6f68849382990Ff3215",
+        "yearnVault": null,
+        "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "totalAssets": "1204295214287",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": [
+        {
+          "target": "0x074134A2784F4F66b6ceD6f68849382990Ff3215",
+          "shares": "1076263523616",
+          "supply": "2121440789390",
+          "ownedUsd": 1215977.7277447302
+        }
+      ]
+    },
+    {
+      "holder": "0x1346FC14262928Bc3C180484e013CFe402f09C38",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": "0x074134A2784F4F66b6ceD6f68849382990Ff3215",
+        "yearnVault": null,
+        "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "totalAssets": "505954396",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": [
+        {
+          "target": "0x074134A2784F4F66b6ceD6f68849382990Ff3215",
+          "shares": "458002236",
+          "supply": "2121440789390",
+          "ownedUsd": 517.457394042455
+        }
+      ]
+    },
+    {
+      "holder": "0x04a8B8A80E3354f8f20FEe097D875e287C319dc5",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": "0x074134A2784F4F66b6ceD6f68849382990Ff3215",
+        "yearnVault": null,
+        "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "totalAssets": "20180696",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": [
+        {
+          "target": "0x074134A2784F4F66b6ceD6f68849382990Ff3215",
+          "shares": "18949613",
+          "supply": "2121440789390",
+          "ownedUsd": 21.409540369783326
+        }
+      ]
+    },
+    {
+      "holder": "0x09b45BE25Fa18bdF5B60c18aEa4688D2B0Ac3930",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": "0x074134A2784F4F66b6ceD6f68849382990Ff3215",
+        "yearnVault": null,
+        "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "totalAssets": "100702640",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": [
+        {
+          "target": "0x074134A2784F4F66b6ceD6f68849382990Ff3215",
+          "shares": "92688662",
+          "supply": "2121440789390",
+          "ownedUsd": 104.72095925706776
+        }
+      ]
+    },
+    {
+      "holder": "0x214cC9861E6956bFC706dBB3855C5b2fD33fF000",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": "0x074134A2784F4F66b6ceD6f68849382990Ff3215",
+        "yearnVault": null,
+        "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "totalAssets": "331323989",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": [
+        {
+          "target": "0x074134A2784F4F66b6ceD6f68849382990Ff3215",
+          "shares": "301336974",
+          "supply": "2121440789390",
+          "ownedUsd": 340.45476864152045
+        }
+      ]
+    },
+    {
+      "holder": "0xBe5123054CBaC2Cb1CE75b19913324B3468Ac9b5",
+      "getters": {
+        "strategyState": null,
+        "vault": null,
+        "yVault": null,
+        "compounderVault": "0x074134A2784F4F66b6ceD6f68849382990Ff3215",
+        "yearnVault": null,
+        "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "totalAssets": "14000000",
+        "valueOfVault": null,
+        "balanceOfAsset": null
+      },
+      "positions": [
+        {
+          "target": "0x074134A2784F4F66b6ceD6f68849382990Ff3215",
+          "shares": "12930905",
+          "supply": "2121440789390",
+          "ownedUsd": 14.609519076475758
+        }
+      ]
+    }
+  ]
+}

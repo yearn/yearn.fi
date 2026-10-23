@@ -1,0 +1,828 @@
+{
+  "blockNumber": "26257292",
+  "rows": [
+    {
+      "chainId": 1,
+      "address": "0x7B5A0182E400b241b317e781a4e9dEdFc1429822",
+      "name": "Katana Pre-Deposit USDC",
+      "grossUsd": 70358527.32938166,
+      "yearn": true,
+      "apiVersion": "3.0.4",
+      "origin": "yearn",
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": true,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779335",
+      "debts": [
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1747148987",
+          "lastReport": "1756354031",
+          "maxDebtUsd": 1.1574524351479133e71,
+          "currentDebt": "1",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0x63a028963907F5a0c1cEb7e47100f52DfC611117",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1748644787",
+          "lastReport": "1756354031",
+          "maxDebtUsd": 1.1574524351479133e71,
+          "currentDebt": "70387003627446",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 70358527.32938166,
+          "performanceFee": "1000"
+        }
+      ],
+      "asset": {
+        "name": "USD Coin",
+        "symbol": "USDC",
+        "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "chainId": 1,
+        "decimals": "6"
+      },
+      "totalAssets": "70387003627447",
+      "strategies": [
+        {
+          "address": "0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204",
+          "values": {
+            "balanceOfAsset": null,
+            "balanceOfVault": null,
+            "valueOfVault": null,
+            "vault": null,
+            "katanaReceiver": null,
+            "totalAssets": "18496043534472"
+          }
+        },
+        {
+          "address": "0x63a028963907F5a0c1cEb7e47100f52DfC611117",
+          "values": {
+            "balanceOfAsset": "0",
+            "balanceOfVault": "0",
+            "valueOfVault": "0",
+            "vault": "0x53E82ABbb12638F09d9e624578ccB666217a765e",
+            "katanaReceiver": "0x5480F3152748809495Bd56C14eaB4A622aA3A19b",
+            "totalAssets": "70387003627446"
+          }
+        }
+      ]
+    },
+    {
+      "chainId": 1,
+      "address": "0xcc6a16Be713f6a714f68b0E1f4914fD3db15fBeF",
+      "name": "Katana Pre-Deposit WETH",
+      "grossUsd": 45307775.36485807,
+      "yearn": true,
+      "apiVersion": "3.0.4",
+      "origin": "yearn",
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": true,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779335",
+      "debts": [
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0xc56413869c6CDf96496f2b1eF801fEDBdFA7dDB0",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1747148987",
+          "lastReport": "1756355783",
+          "maxDebtUsd": 2.781518034148611e62,
+          "currentDebt": "1",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0x30EAaCaD508BA57B30edafa1aD6bD337B211A9DE",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1748644787",
+          "lastReport": "1756354031",
+          "maxDebtUsd": 2.781518034148611e62,
+          "currentDebt": "18861218641101260273087",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 45307775.36485807,
+          "performanceFee": "1000"
+        }
+      ],
+      "asset": {
+        "name": "Wrapped Ether",
+        "symbol": "WETH",
+        "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        "chainId": 1,
+        "decimals": "18"
+      },
+      "totalAssets": "18861218641101260273088",
+      "strategies": [
+        {
+          "address": "0xc56413869c6CDf96496f2b1eF801fEDBdFA7dDB0",
+          "values": {
+            "balanceOfAsset": null,
+            "balanceOfVault": null,
+            "valueOfVault": null,
+            "vault": null,
+            "katanaReceiver": null,
+            "totalAssets": "7423977230629869448396"
+          }
+        },
+        {
+          "address": "0x30EAaCaD508BA57B30edafa1aD6bD337B211A9DE",
+          "values": {
+            "balanceOfAsset": "0",
+            "balanceOfVault": "0",
+            "valueOfVault": "0",
+            "vault": "0x2DC70fb75b88d2eB4715bc06E1595E6D97c34DFF",
+            "katanaReceiver": "0x5480F3152748809495Bd56C14eaB4A622aA3A19b",
+            "totalAssets": "18861218641101260273087"
+          }
+        }
+      ]
+    },
+    {
+      "chainId": 1,
+      "address": "0x48c03B6FfD0008460F8657Db1037C7e09dEedfcb",
+      "name": "Katana Pre-Deposit USDT",
+      "grossUsd": 18044379.212463357,
+      "yearn": true,
+      "apiVersion": "3.0.4",
+      "origin": "yearn",
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": true,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779335",
+      "debts": [
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0x310B7Ea7475A0B449Cfd73bE81522F1B88eFAFaa",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1747148987",
+          "lastReport": "1756355783",
+          "maxDebtUsd": 1.156852753338401e71,
+          "currentDebt": "1",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0xBC64210D565aabca8eb6Eb795833Cc505ac3647F",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1748644787",
+          "lastReport": "1756354619",
+          "maxDebtUsd": 1.156852753338401e71,
+          "currentDebt": "18061039851206",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 18044379.212463357,
+          "performanceFee": "1000"
+        }
+      ],
+      "asset": {
+        "name": "Tether USD",
+        "symbol": "USDT",
+        "address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+        "chainId": 1,
+        "decimals": "6"
+      },
+      "totalAssets": "18061039851207",
+      "strategies": [
+        {
+          "address": "0x310B7Ea7475A0B449Cfd73bE81522F1B88eFAFaa",
+          "values": {
+            "balanceOfAsset": null,
+            "balanceOfVault": null,
+            "valueOfVault": null,
+            "vault": null,
+            "katanaReceiver": null,
+            "totalAssets": "5699062090747"
+          }
+        },
+        {
+          "address": "0xBC64210D565aabca8eb6Eb795833Cc505ac3647F",
+          "values": {
+            "balanceOfAsset": "0",
+            "balanceOfVault": "0",
+            "valueOfVault": "0",
+            "vault": "0x6d4f9f9f8f0155509ecd6Ac6c544fF27999845CC",
+            "katanaReceiver": "0x5480F3152748809495Bd56C14eaB4A622aA3A19b",
+            "totalAssets": "18061039851206"
+          }
+        }
+      ]
+    },
+    {
+      "chainId": 1,
+      "address": "0x92C82f5F771F6A44CfA09357DD0575B81BF5F728",
+      "name": "Katana Pre-Deposit WBTC",
+      "grossUsd": 14792261.323162332,
+      "yearn": true,
+      "apiVersion": "3.0.4",
+      "origin": "yearn",
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": true,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779335",
+      "debts": [
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0x751F0cC6115410A3eE9eC92d08f46Ff6Da98b708",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1747148987",
+          "lastReport": "1748750723",
+          "maxDebtUsd": 9.415109470113288e73,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0xb3760eD42E9e87497A371697fF4F08b510C93Df1",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1748644787",
+          "lastReport": "1756354031",
+          "maxDebtUsd": 9.415109470113288e73,
+          "currentDebt": "18192326705",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 14792261.323162332,
+          "performanceFee": "1000"
+        }
+      ],
+      "asset": {
+        "name": "Wrapped BTC",
+        "symbol": "WBTC",
+        "address": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+        "chainId": 1,
+        "decimals": "8"
+      },
+      "totalAssets": "18192326705",
+      "strategies": [
+        {
+          "address": "0xb3760eD42E9e87497A371697fF4F08b510C93Df1",
+          "values": {
+            "balanceOfAsset": "0",
+            "balanceOfVault": "0",
+            "valueOfVault": "0",
+            "vault": "0x2C24B57e2CCd1f273045Af6A5f632504C432374F",
+            "katanaReceiver": "0x5480F3152748809495Bd56C14eaB4A622aA3A19b",
+            "totalAssets": "18192326705"
+          }
+        }
+      ]
+    },
+    {
+      "chainId": 1,
+      "address": "0xF470EB50B4a60c9b069F7Fd6032532B8F5cC014d",
+      "name": "Katana Pre-Deposit USDC",
+      "grossUsd": 7709506.432162777,
+      "yearn": true,
+      "apiVersion": "3.0.4",
+      "origin": "yearn",
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779335",
+      "debts": [
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1751251679",
+          "lastReport": "1751251679",
+          "maxDebtUsd": 1.1574524351479133e71,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0xFDAdC09f678755A84DfD01eEAf4A1709F224F5C3",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1751251679",
+          "lastReport": "1756354031",
+          "maxDebtUsd": 1.1574524351479133e71,
+          "currentDebt": "7712626710787",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 7709506.432162777,
+          "performanceFee": "1000"
+        }
+      ],
+      "asset": {
+        "name": "USD Coin",
+        "symbol": "USDC",
+        "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "chainId": 1,
+        "decimals": "6"
+      },
+      "totalAssets": "7712626710787",
+      "strategies": [
+        {
+          "address": "0xFDAdC09f678755A84DfD01eEAf4A1709F224F5C3",
+          "values": {
+            "balanceOfAsset": "0",
+            "balanceOfVault": "0",
+            "valueOfVault": "0",
+            "vault": "0x53E82ABbb12638F09d9e624578ccB666217a765e",
+            "katanaReceiver": "0x5480F3152748809495Bd56C14eaB4A622aA3A19b",
+            "totalAssets": "7712626710787"
+          }
+        }
+      ]
+    },
+    {
+      "chainId": 1,
+      "address": "0xA5DaB32DbE68E6fa784e1e50e4f620a0477D3896",
+      "name": "Katana Pre-Deposit USDT",
+      "grossUsd": 5664544.19815148,
+      "yearn": true,
+      "apiVersion": "3.0.4",
+      "origin": "yearn",
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779335",
+      "debts": [
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0x310B7Ea7475A0B449Cfd73bE81522F1B88eFAFaa",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1751251679",
+          "lastReport": "1751251679",
+          "maxDebtUsd": 1.156852753338401e71,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0x37F490F02cd2EBb55c27796802943Bd080e0cc56",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1751251679",
+          "lastReport": "1756354031",
+          "maxDebtUsd": 1.156852753338401e71,
+          "currentDebt": "5669774354547",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 5664544.19815148,
+          "performanceFee": "1000"
+        }
+      ],
+      "asset": {
+        "name": "Tether USD",
+        "symbol": "USDT",
+        "address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+        "chainId": 1,
+        "decimals": "6"
+      },
+      "totalAssets": "5669774354547",
+      "strategies": [
+        {
+          "address": "0x37F490F02cd2EBb55c27796802943Bd080e0cc56",
+          "values": {
+            "balanceOfAsset": "0",
+            "balanceOfVault": "0",
+            "valueOfVault": "0",
+            "vault": "0x6d4f9f9f8f0155509ecd6Ac6c544fF27999845CC",
+            "katanaReceiver": "0x5480F3152748809495Bd56C14eaB4A622aA3A19b",
+            "totalAssets": "5669774354547"
+          }
+        }
+      ]
+    },
+    {
+      "chainId": 1,
+      "address": "0xe1Ac97e2616Ad80f69f705ff007A4bbb3655544a",
+      "name": "Katana Pre-Deposit WBTC",
+      "grossUsd": 2739040.833628207,
+      "yearn": true,
+      "apiVersion": "3.0.4",
+      "origin": "yearn",
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779335",
+      "debts": [
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0x751F0cC6115410A3eE9eC92d08f46Ff6Da98b708",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1751251691",
+          "lastReport": "1751251691",
+          "maxDebtUsd": 9.415109470113288e73,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0xc97781bA49a90c68d63F4D235d35cdbe029149D2",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1751251691",
+          "lastReport": "1756354031",
+          "maxDebtUsd": 9.415109470113288e73,
+          "currentDebt": "3368629176",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 2739040.833628207,
+          "performanceFee": "1000"
+        }
+      ],
+      "asset": {
+        "name": "Wrapped BTC",
+        "symbol": "WBTC",
+        "address": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+        "chainId": 1,
+        "decimals": "8"
+      },
+      "totalAssets": "3368629176",
+      "strategies": [
+        {
+          "address": "0xc97781bA49a90c68d63F4D235d35cdbe029149D2",
+          "values": {
+            "balanceOfAsset": "0",
+            "balanceOfVault": "0",
+            "valueOfVault": "0",
+            "vault": "0x2C24B57e2CCd1f273045Af6A5f632504C432374F",
+            "katanaReceiver": "0x5480F3152748809495Bd56C14eaB4A622aA3A19b",
+            "totalAssets": "3368629176"
+          }
+        }
+      ]
+    },
+    {
+      "chainId": 1,
+      "address": "0x77570CfEcf83bc6bB08E2cD9e8537aeA9F97eA2F",
+      "name": "Katana Pre-Deposit WETH",
+      "grossUsd": 2326302.09736026,
+      "yearn": true,
+      "apiVersion": "3.0.4",
+      "origin": "yearn",
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779335",
+      "debts": [
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0xc56413869c6CDf96496f2b1eF801fEDBdFA7dDB0",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1751251691",
+          "lastReport": "1751251691",
+          "maxDebtUsd": 2.781518034148611e62,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0x20e76ea28E13867C008d319ba4eDE86f6C1fed73",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1751251691",
+          "lastReport": "1756354031",
+          "maxDebtUsd": 2.781518034148611e62,
+          "currentDebt": "968418680516950167320",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 2326302.09736026,
+          "performanceFee": "1000"
+        }
+      ],
+      "asset": {
+        "name": "Wrapped Ether",
+        "symbol": "WETH",
+        "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        "chainId": 1,
+        "decimals": "18"
+      },
+      "totalAssets": "968418680516950167320",
+      "strategies": [
+        {
+          "address": "0x20e76ea28E13867C008d319ba4eDE86f6C1fed73",
+          "values": {
+            "balanceOfAsset": "0",
+            "balanceOfVault": "0",
+            "valueOfVault": "0",
+            "vault": "0x2DC70fb75b88d2eB4715bc06E1595E6D97c34DFF",
+            "katanaReceiver": "0x5480F3152748809495Bd56C14eaB4A622aA3A19b",
+            "totalAssets": "968418680516950167320"
+          }
+        }
+      ]
+    },
+    {
+      "chainId": 1,
+      "address": "0xD91B6DeD55C0fba2c1E88F2cDF6e051ECD788952",
+      "name": "Katana Pre-DepositUSDC",
+      "grossUsd": 1053.6690471599748,
+      "yearn": null,
+      "apiVersion": "3.0.4",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": true
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779335",
+      "debts": [
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1743790331",
+          "lastReport": "1743791483",
+          "maxDebtUsd": 1.1574524351479133e71,
+          "currentDebt": "935003868",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 934.6255277979609,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0x59f6E998A78AA074F67b2e2Cd1DC1774214c7547",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1743790331",
+          "lastReport": "1743790331",
+          "maxDebtUsd": 1.1574524351479133e71,
+          "currentDebt": "99999900",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 99.95944328487575,
+          "performanceFee": "1000"
+        }
+      ],
+      "asset": {
+        "name": "USD Coin",
+        "symbol": "USDC",
+        "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "chainId": 1,
+        "decimals": "6"
+      },
+      "totalAssets": "1054095543",
+      "strategies": [
+        {
+          "address": "0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204",
+          "values": {
+            "balanceOfAsset": null,
+            "balanceOfVault": null,
+            "valueOfVault": null,
+            "vault": null,
+            "katanaReceiver": null,
+            "totalAssets": "18496043534472"
+          }
+        },
+        {
+          "address": "0x59f6E998A78AA074F67b2e2Cd1DC1774214c7547",
+          "values": {
+            "balanceOfAsset": "0",
+            "balanceOfVault": "0",
+            "valueOfVault": "0",
+            "vault": "0xAe7d8Db82480E6d8e3873ecbF22cf17b3D8A7308",
+            "katanaReceiver": "0x1b5f15DCb82d25f91c65b53CEe151E8b9fBdD271",
+            "totalAssets": "99999900"
+          }
+        }
+      ]
+    },
+    {
+      "chainId": 1,
+      "address": "0xf20b02131C45b22E147c98e30Cc889a20dc8a00d",
+      "name": "Katana Pre-DepositUSDC",
+      "grossUsd": 104.5176984163645,
+      "yearn": null,
+      "apiVersion": "3.0.4",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779335",
+      "debts": [
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1745852231",
+          "lastReport": "1745852231",
+          "maxDebtUsd": 1.1574524351479133e71,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0xB6830484c8Dfb9BA7d95820858324c5c05eFA0e5",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1745852231",
+          "lastReport": "1745852231",
+          "maxDebtUsd": 1.1574524351479133e71,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "1000"
+        }
+      ],
+      "asset": {
+        "name": "USD Coin",
+        "symbol": "USDC",
+        "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "chainId": 1,
+        "decimals": "6"
+      },
+      "totalAssets": "104560000",
+      "strategies": []
+    },
+    {
+      "chainId": 1,
+      "address": "0xCF3005699a305Ad1BA800C00fdDAD8d7e905ec49",
+      "name": "Katana Pre-DepositWBTC",
+      "grossUsd": 8.13104723485643,
+      "yearn": null,
+      "apiVersion": "3.0.4",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": true
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779335",
+      "debts": [
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0xEF0FacE04f2D9CC4dC47f560B0DBFc5dd6b56CBb",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1745852231",
+          "lastReport": "1745852231",
+          "maxDebtUsd": 9.415109470113288e73,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0xE92D07f6454D3107326A5058e589Ae53934CEF01",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1745852231",
+          "lastReport": "1745852231",
+          "maxDebtUsd": 9.415109470113288e73,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "1000"
+        }
+      ],
+      "asset": {
+        "name": "Wrapped BTC",
+        "symbol": "WBTC",
+        "address": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+        "chainId": 1,
+        "decimals": "8"
+      },
+      "totalAssets": "10525",
+      "strategies": []
+    }
+  ]
+}

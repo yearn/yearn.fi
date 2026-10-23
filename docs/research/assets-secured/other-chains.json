@@ -1,0 +1,1142 @@
+{
+  "asOfTimestamp": "1792627199",
+  "rows": [
+    {
+      "chainId": 100,
+      "address": "0xa21Cc1a4a239708690134bAeD3a1B93cAD55F625",
+      "name": "Curve EURe yVault",
+      "grossUsd": 448.01547012722625,
+      "yearn": false,
+      "apiVersion": "3.0.2",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": true
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779395",
+      "debts": [
+        {
+          "maxDebt": "999999999999999983222784",
+          "strategy": "0x1b66B4a3a80eBCFA3eCaBf5580cD9929ABa57bb1",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1710789665",
+          "lastReport": "1737951975",
+          "maxDebtUsd": 2254831.5554252854,
+          "currentDebt": "198701086670948433033",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 448.0372849393633,
+          "performanceFee": "1000"
+        }
+      ],
+      "asset": {
+        "name": "Curve EURe-3Crv",
+        "symbol": "crvEUReUSD",
+        "address": "0x0CA1C1eC4EBf3CC67a9f545fF90a3795b318cA4a",
+        "chainId": 100,
+        "decimals": "18"
+      },
+      "totalAssets": "198701086670948433034",
+      "blockNumber": "48875539",
+      "assetAddress": "0x0CA1C1eC4EBf3CC67a9f545fF90a3795b318cA4a",
+      "decimals": 18,
+      "price": {
+        "decimals": 18,
+        "symbol": "crvEUReUSD",
+        "price": 2.2547207850410285,
+        "timestamp": 1792626681,
+        "confidence": 0.99
+      }
+    },
+    {
+      "chainId": 100,
+      "address": "0x39B68451F05Aaa020611CF887a7338f0991fFd60",
+      "name": "AJNA EURe yVault",
+      "grossUsd": 381.1495735212645,
+      "yearn": false,
+      "apiVersion": "3.0.2",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": true,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": true
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792778495",
+      "debts": [
+        {
+          "maxDebt": "100000000000000000000000",
+          "strategy": "0xA48359e7E970BE9f38fB6D183C57c8d0b28268B9",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1712407830",
+          "lastReport": "1712407830",
+          "maxDebtUsd": 112139.43032848027,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "500"
+        },
+        {
+          "maxDebt": "1000000000000000000000000",
+          "strategy": "0x5012C6bf79b3047ECFFf2F212DfFDA4d2128188f",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1712865435",
+          "lastReport": "1727129950",
+          "maxDebtUsd": 1121394.3032848027,
+          "currentDebt": "1",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "1000000000000000000000000",
+          "strategy": "0x94c5786393Ab223e0fC111D7463405F165CE86e3",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1712865435",
+          "lastReport": "1712865435",
+          "maxDebtUsd": 1121394.3032848027,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "500"
+        }
+      ],
+      "asset": {
+        "name": "Monerium EUR emoney",
+        "symbol": "EURe",
+        "address": "0xcB444e90D8198415266c6a2724b7900fb12FC56E",
+        "chainId": 100,
+        "decimals": "18"
+      },
+      "totalAssets": "339989468997221510117",
+      "blockNumber": "48875539",
+      "assetAddress": "0xcB444e90D8198415266c6a2724b7900fb12FC56E",
+      "decimals": 18,
+      "price": {
+        "decimals": 18,
+        "symbol": "EURe",
+        "price": 1.121062880698753,
+        "timestamp": 1792626785,
+        "confidence": 0.99
+      }
+    },
+    {
+      "chainId": 100,
+      "address": "0x5012C6bf79b3047ECFFf2F212DfFDA4d2128188f",
+      "name": "EURe yVault",
+      "grossUsd": 2.0614906139251956,
+      "yearn": false,
+      "apiVersion": "3.0.2",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": true
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792778495",
+      "debts": [
+        {
+          "maxDebt": "1000000000000000000000000",
+          "strategy": "0x99474363F03D21375dA1aF4C9694cabCF995e02a",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1710279985",
+          "lastReport": "1746017060",
+          "maxDebtUsd": 1121394.3032848027,
+          "currentDebt": "1838871529347469574",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 2.062019844880095,
+          "performanceFee": "1000"
+        },
+        {
+          "maxDebt": "1000000000000000000000000",
+          "strategy": "0x4B40C9FF9D654Fd7f1E24eD66d8f0f260b199b43",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1710527085",
+          "lastReport": "1727126295",
+          "maxDebtUsd": 1121394.3032848027,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "1000"
+        }
+      ],
+      "asset": {
+        "name": "Monerium EUR emoney",
+        "symbol": "EURe",
+        "address": "0xcB444e90D8198415266c6a2724b7900fb12FC56E",
+        "chainId": 100,
+        "decimals": "18"
+      },
+      "totalAssets": "1838871529347469574",
+      "blockNumber": "48875539",
+      "assetAddress": "0xcB444e90D8198415266c6a2724b7900fb12FC56E",
+      "decimals": 18,
+      "price": {
+        "decimals": 18,
+        "symbol": "EURe",
+        "price": 1.121062880698753,
+        "timestamp": 1792626785,
+        "confidence": 0.99
+      }
+    },
+    {
+      "chainId": 146,
+      "address": "0x2F7397FD2D49E5b636eF44503771B17EDEd67620",
+      "name": "basic USD strategy",
+      "grossUsd": 9.997446375117297,
+      "yearn": null,
+      "apiVersion": "3.0.4",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792778504",
+      "debts": [],
+      "asset": {
+        "name": "Bridged USDC (Sonic Labs)",
+        "symbol": "USDC.e",
+        "address": "0x29219dd400f2Bf60E5a23d13Be72B486D4038894",
+        "chainId": 146,
+        "decimals": "6"
+      },
+      "totalAssets": "10000000",
+      "blockNumber": "81431375",
+      "assetAddress": "0x29219dd400f2Bf60E5a23d13Be72B486D4038894",
+      "decimals": 6,
+      "price": {
+        "decimals": 6,
+        "symbol": "USDC",
+        "price": 0.9997446375117297,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      }
+    },
+    {
+      "chainId": 146,
+      "address": "0x8dB97437F8E28A11019128D7B2604A42e333025E",
+      "name": "USDC.e-1 RarityFinance",
+      "grossUsd": 0.9997446375117297,
+      "yearn": null,
+      "apiVersion": "3.0.4",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792778504",
+      "debts": [
+        {
+          "maxDebt": "0",
+          "strategy": "0xBe3E3Ca48525406063CB2CE9c7c848BCf24DC9fc",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1737865794",
+          "lastReport": "1737908508",
+          "maxDebtUsd": 0,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "0"
+        }
+      ],
+      "asset": {
+        "name": "Bridged USDC (Sonic Labs)",
+        "symbol": "USDC.e",
+        "address": "0x29219dd400f2Bf60E5a23d13Be72B486D4038894",
+        "chainId": 146,
+        "decimals": "6"
+      },
+      "totalAssets": "1000000",
+      "blockNumber": "81431375",
+      "assetAddress": "0x29219dd400f2Bf60E5a23d13Be72B486D4038894",
+      "decimals": 6,
+      "price": {
+        "decimals": 6,
+        "symbol": "USDC",
+        "price": 0.9997446375117297,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      }
+    },
+    {
+      "chainId": 146,
+      "address": "0xBe3E3Ca48525406063CB2CE9c7c848BCf24DC9fc",
+      "name": "USDC Test",
+      "grossUsd": 0.49987231875586485,
+      "yearn": true,
+      "apiVersion": "3.0.4",
+      "origin": "yearn",
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": true,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792778504",
+      "debts": [],
+      "asset": {
+        "name": "Bridged USDC (Sonic Labs)",
+        "symbol": "USDC.e",
+        "address": "0x29219dd400f2Bf60E5a23d13Be72B486D4038894",
+        "chainId": 146,
+        "decimals": "6"
+      },
+      "totalAssets": "500000",
+      "blockNumber": "81431375",
+      "assetAddress": "0x29219dd400f2Bf60E5a23d13Be72B486D4038894",
+      "decimals": 6,
+      "price": {
+        "decimals": 6,
+        "symbol": "USDC",
+        "price": 0.9997446375117297,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      }
+    },
+    {
+      "chainId": 8453,
+      "address": "0xD1468AF648565f11393e4033cb0Cd270b62495c9",
+      "name": "USDC BaseInvaders",
+      "grossUsd": 10894.585289974302,
+      "yearn": null,
+      "apiVersion": "3.0.4",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779339",
+      "debts": [
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0xe9F2a5F9f3c846f29066d7fB3564F8E6B6b2D65b",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1743191861",
+          "lastReport": "1777412429",
+          "maxDebtUsd": 1.1574734948636557e71,
+          "currentDebt": "1069005550",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 1068.5924576224952,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "0",
+          "strategy": "0xd5428B889621Eee8060fc105AA0AB0Fa2e344468",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "0",
+          "lastReport": "0",
+          "maxDebtUsd": 0,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "0",
+          "strategy": "0x4B5c90DC6Bc08A10a24487726e614e9d148362E1",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1760285685",
+          "lastReport": "1764173137",
+          "maxDebtUsd": 0,
+          "currentDebt": "9828362519",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 9824.56501699923,
+          "performanceFee": "0"
+        }
+      ],
+      "asset": {
+        "name": "USD Coin",
+        "symbol": "USDC",
+        "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "chainId": 8453,
+        "decimals": "6"
+      },
+      "totalAssets": "10897368069",
+      "blockNumber": "52918926",
+      "assetAddress": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      "decimals": 6,
+      "price": {
+        "decimals": 6,
+        "symbol": "USDC",
+        "price": 0.9997446375117297,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      }
+    },
+    {
+      "chainId": 8453,
+      "address": "0x3Fa853290B0A21396F2e7bF0d4A372927D6Eb5b4",
+      "name": "cbBTC BaseInvaders",
+      "grossUsd": 100.10551061750375,
+      "yearn": null,
+      "apiVersion": "3.0.4",
+      "origin": null,
+      "inclusion": {
+        "isSet": false,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779339",
+      "debts": [
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0x25f32eC89ce7732A4E9f8F3340a09259F823b7d3",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1752280785",
+          "lastReport": "1764265745",
+          "maxDebtUsd": 9.427377121842302e73,
+          "currentDebt": "58635",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 40.70820892833563,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0xBb808A822dD7aEd1635956b85ca5e55478cCa957",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1752280799",
+          "lastReport": "1764265757",
+          "maxDebtUsd": 9.427377121842302e73,
+          "currentDebt": "60498",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 48.84985071400275,
+          "performanceFee": "500"
+        }
+      ],
+      "asset": {
+        "name": "Coinbase Wrapped BTC",
+        "symbol": "cbBTC",
+        "address": "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",
+        "chainId": 8453,
+        "decimals": "8"
+      },
+      "totalAssets": "119151",
+      "blockNumber": "52918926",
+      "assetAddress": "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",
+      "decimals": 8,
+      "price": {
+        "decimals": 8,
+        "symbol": "cbBTC",
+        "price": 84015.66971112601,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      }
+    },
+    {
+      "chainId": 8453,
+      "address": "0x0Dcb575fd705f1352b0c0F8fA6A64A0561Ce8C3c",
+      "name": "ROOM USDC VAULT",
+      "grossUsd": 41.250224549403114,
+      "yearn": null,
+      "apiVersion": "3.0.4",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779339",
+      "debts": [
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0xe9F2a5F9f3c846f29066d7fB3564F8E6B6b2D65b",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1742476331",
+          "lastReport": "1744466131",
+          "maxDebtUsd": 1.1574734948636557e71,
+          "currentDebt": "20632954",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 20.62492785947236,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0xfdB431E661372fA1146efB70bf120ECDed944a78",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1743516417",
+          "lastReport": "1744466147",
+          "maxDebtUsd": 1.1574734948636557e71,
+          "currentDebt": "8254886",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 8.251610510125694,
+          "performanceFee": "1000"
+        },
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0xc3BD0A2193c8F027B82ddE3611D18589ef3f62a9",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1742422679",
+          "lastReport": "1744466121",
+          "maxDebtUsd": 1.1574734948636557e71,
+          "currentDebt": "12372921",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 12.368119358522824,
+          "performanceFee": "0"
+        }
+      ],
+      "asset": {
+        "name": "USD Coin",
+        "symbol": "USDC",
+        "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "chainId": 8453,
+        "decimals": "6"
+      },
+      "totalAssets": "41260761",
+      "blockNumber": "52918926",
+      "assetAddress": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      "decimals": 6,
+      "price": {
+        "decimals": 6,
+        "symbol": "USDC",
+        "price": 0.9997446375117297,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      }
+    },
+    {
+      "chainId": 8453,
+      "address": "0xa7A8eB9F200dDD4137F71b92d3d44B403AF20E44",
+      "name": "USDC-1 Gimme",
+      "grossUsd": 19.766725030593843,
+      "yearn": null,
+      "apiVersion": "3.0.4",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779339",
+      "debts": [
+        {
+          "maxDebt": "0",
+          "strategy": "0xe9F2a5F9f3c846f29066d7fB3564F8E6B6b2D65b",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1737956019",
+          "lastReport": "1741311539",
+          "maxDebtUsd": 0,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "0"
+        }
+      ],
+      "asset": {
+        "name": "USD Coin",
+        "symbol": "USDC",
+        "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "chainId": 8453,
+        "decimals": "6"
+      },
+      "totalAssets": "19771774",
+      "blockNumber": "52918926",
+      "assetAddress": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      "decimals": 6,
+      "price": {
+        "decimals": 6,
+        "symbol": "USDC",
+        "price": 0.9997446375117297,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      }
+    },
+    {
+      "chainId": 8453,
+      "address": "0x50fd1E6E0E2153C2B26eBBcD9bCdeD4639A1AAE3",
+      "name": "MUV002 - Flagship USDC",
+      "grossUsd": 3.5639746620960024,
+      "yearn": false,
+      "apiVersion": "3.0.2",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779339",
+      "debts": [
+        {
+          "maxDebt": "1000000000000",
+          "strategy": "0x59acb98B9E7b015457559F76A10a432D48AAEe4a",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1728980997",
+          "lastReport": "1733010121",
+          "maxDebtUsd": 999613.6199696775,
+          "currentDebt": "3564885",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 3.563422632467907,
+          "performanceFee": "1000"
+        }
+      ],
+      "asset": {
+        "name": "USD Coin",
+        "symbol": "USDC",
+        "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "chainId": 8453,
+        "decimals": "6"
+      },
+      "totalAssets": "3564885",
+      "blockNumber": "52918926",
+      "assetAddress": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      "decimals": 6,
+      "price": {
+        "decimals": 6,
+        "symbol": "USDC",
+        "price": 0.9997446375117297,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      }
+    },
+    {
+      "chainId": 8453,
+      "address": "0x338Dfa34F66B6922B9Edec82DA86519CE7938184",
+      "name": "USDC-2 Base USDC Vault",
+      "grossUsd": 2.9992459094708392,
+      "yearn": null,
+      "apiVersion": "3.0.4",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": true
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779339",
+      "debts": [
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0x616a4E1db48e22028f6bbf20444Cd3b8e3273738",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1749199899",
+          "lastReport": "1749210267",
+          "maxDebtUsd": 1.1574734948636557e71,
+          "currentDebt": "1800007",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 1.7993045159454195,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0xc0c5689e6f4D256E861F65465b691aeEcC0dEb12",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1749199905",
+          "lastReport": "1749210277",
+          "maxDebtUsd": 1.1574734948636557e71,
+          "currentDebt": "1200005",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 1.199536343963613,
+          "performanceFee": "0"
+        }
+      ],
+      "asset": {
+        "name": "USD Coin",
+        "symbol": "USDC",
+        "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "chainId": 8453,
+        "decimals": "6"
+      },
+      "totalAssets": "3000012",
+      "blockNumber": "52918926",
+      "assetAddress": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      "decimals": 6,
+      "price": {
+        "decimals": 6,
+        "symbol": "USDC",
+        "price": 0.9997446375117297,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      }
+    },
+    {
+      "chainId": 8453,
+      "address": "0x5B6c2b7Ac69AD287c7C9Eb85E725f3799695DF09",
+      "name": "Yield Chasing pfUSDC1",
+      "grossUsd": 0.7018897179132226,
+      "yearn": null,
+      "apiVersion": "3.0.4",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": true
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779339",
+      "debts": [
+        {
+          "maxDebt": "10000000000",
+          "strategy": "0x6ea0BFFf586F2F226c80cc98275b810D2Cd95771",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1744148003",
+          "lastReport": "1744235307",
+          "maxDebtUsd": 9996.136199696777,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "10000000000",
+          "strategy": "0x5f6511489c9e770a07fB1aE2969ABe350a3d2Cf4",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1744148133",
+          "lastReport": "1744235331",
+          "maxDebtUsd": 9996.136199696777,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "10000000000",
+          "strategy": "0x4B5c90DC6Bc08A10a24487726e614e9d148362E1",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1744148145",
+          "lastReport": "1744235319",
+          "maxDebtUsd": 9996.136199696777,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "0"
+        }
+      ],
+      "asset": {
+        "name": "USD Coin",
+        "symbol": "USDC",
+        "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "chainId": 8453,
+        "decimals": "6"
+      },
+      "totalAssets": "702069",
+      "blockNumber": "52918926",
+      "assetAddress": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+      "decimals": 6,
+      "price": {
+        "decimals": 6,
+        "symbol": "USDC",
+        "price": 0.9997446375117297,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      }
+    },
+    {
+      "chainId": 8453,
+      "address": "0xfF3035968A44Df696297d710cB7c0D7f807bF641",
+      "name": "MUV003 - Flagship EURC",
+      "grossUsd": 0.007490204213279572,
+      "yearn": false,
+      "apiVersion": "3.0.2",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779339",
+      "debts": [
+        {
+          "maxDebt": "1000000000000",
+          "strategy": "0xF3100B8cE14B4bd5BB369105Ab6527011aF384eb",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1728982031",
+          "lastReport": "1733010061",
+          "maxDebtUsd": 1119536.0788226721,
+          "currentDebt": "6669",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0.007388938120229635,
+          "performanceFee": "1000"
+        }
+      ],
+      "asset": {
+        "name": "EURC",
+        "symbol": "EURC",
+        "address": "0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42",
+        "chainId": 8453,
+        "decimals": "6"
+      },
+      "totalAssets": "6669",
+      "blockNumber": "52918926",
+      "assetAddress": "0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42",
+      "decimals": 6,
+      "price": {
+        "decimals": 6,
+        "symbol": "EURC",
+        "price": 1.1231375338550866,
+        "timestamp": 1792627024,
+        "confidence": 0.99
+      }
+    },
+    {
+      "chainId": 42161,
+      "address": "0x2e48847FE29C3883c98125Cb2C44244d6602d549",
+      "name": "Yearn-Silo USDC.e Vault",
+      "grossUsd": 999.7506441070303,
+      "yearn": false,
+      "apiVersion": "3.0.2",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": true
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792778457",
+      "debts": [
+        {
+          "maxDebt": "100000000000",
+          "strategy": "0x3FfA0C3fba4Adfe2b6e4D7E2f8E6e6324bE5305B",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1712255558",
+          "lastReport": "1712781436",
+          "maxDebtUsd": 99957.34862318024,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "1000"
+        },
+        {
+          "maxDebt": "100000000000",
+          "strategy": "0x9a5eca1b228e47a15BD9fab07716a9FcE9Eebfb5",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1712781436",
+          "lastReport": "1712781436",
+          "maxDebtUsd": 99957.34862318024,
+          "currentDebt": "199283585",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 199.19850284347535,
+          "performanceFee": "1000"
+        },
+        {
+          "maxDebt": "10000000000",
+          "strategy": "0x034f12A217405D54bf2654b66A96fa74aD715951",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1713823070",
+          "lastReport": "1713823070",
+          "maxDebtUsd": 9995.734862318022,
+          "currentDebt": "800716416",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 800.3748834309782,
+          "performanceFee": "1000"
+        }
+      ],
+      "asset": {
+        "name": "USD Coin (Arb1)",
+        "symbol": "USDC",
+        "address": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+        "chainId": 42161,
+        "decimals": "6"
+      },
+      "totalAssets": "1000000001",
+      "blockNumber": "517064901",
+      "assetAddress": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+      "decimals": 6,
+      "price": {
+        "decimals": 6,
+        "symbol": "USDC",
+        "price": 0.9997506431072797,
+        "timestamp": 1792626785,
+        "confidence": 0.99
+      }
+    },
+    {
+      "address": "0x630c9050E6b0014C6Fe4C214D4840909345aDB7D",
+      "chainId": 42161,
+      "status": "read-unavailable"
+    },
+    {
+      "chainId": 42161,
+      "address": "0xa7FEa37aE7eb3fE0b26AB454399cf42Fe5E308A3",
+      "name": "Asset Super Stakehouse",
+      "grossUsd": 9.997446375117297,
+      "yearn": null,
+      "apiVersion": "3.0.4",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792778457",
+      "debts": [
+        {
+          "maxDebt": "8000000",
+          "strategy": "0xe060f2200627dDdcEAfae1266385183681600A9e",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1737502639",
+          "lastReport": "1737508657",
+          "maxDebtUsd": 7.9969089597574206,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "1000"
+        },
+        {
+          "maxDebt": "1000000000000000000",
+          "strategy": "0xcdEB47b7795AE74A0F5A190c52447ef7AAA55b81",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1737755272",
+          "lastReport": "1737756416",
+          "maxDebtUsd": 999613619969.6776,
+          "currentDebt": "10000000",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 9.996136199696775,
+          "performanceFee": "1000"
+        }
+      ],
+      "asset": {
+        "name": "USD Coin",
+        "symbol": "USDC",
+        "address": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "chainId": 42161,
+        "decimals": "6"
+      },
+      "totalAssets": "10000000",
+      "blockNumber": "517064901",
+      "assetAddress": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+      "decimals": 6,
+      "price": {
+        "decimals": 6,
+        "symbol": "USDC",
+        "price": 0.9997446375117297,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      }
+    },
+    {
+      "chainId": 42161,
+      "address": "0x12bF88C63bF060355A8d2E4C6eE960365a5E8335",
+      "name": "usdc-vault",
+      "grossUsd": 0.049987231875586485,
+      "yearn": false,
+      "apiVersion": "3.0.2",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792778457",
+      "debts": [
+        {
+          "maxDebt": "1000000000000000000000000",
+          "strategy": "0xd89ee1E95f7728f6964CF321E2648cCd29a881f1",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1715035044",
+          "lastReport": "1715035044",
+          "maxDebtUsd": 999613619969677600,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "500"
+        },
+        {
+          "maxDebt": "1000000000000000000000000",
+          "strategy": "0xCACc53bAcCe744ac7b5C1eC7eb7e3Ab01330733b",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1715035095",
+          "lastReport": "1715035095",
+          "maxDebtUsd": 999613619969677600,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "500"
+        }
+      ],
+      "asset": {
+        "name": "USD Coin",
+        "symbol": "USDC",
+        "address": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "chainId": 42161,
+        "decimals": "6"
+      },
+      "totalAssets": "50000",
+      "blockNumber": "517064901",
+      "assetAddress": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+      "decimals": 6,
+      "price": {
+        "decimals": 6,
+        "symbol": "USDC",
+        "price": 0.9997446375117297,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      }
+    }
+  ]
+}

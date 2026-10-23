@@ -144,7 +144,7 @@ h3 {
   margin-top: -25px;
 }
 .eyebrow {
-  text-transform: uppercase;
+  text-transform: none;
   font-size: 11px;
   letter-spacing: 1.5px;
   font-weight: 400;
@@ -182,22 +182,14 @@ h3 {
   align-items: center;
   gap: 14px;
   margin-top: 53px;
-  transition:
-    color 180ms ease,
-    transform 180ms ease;
+  transition: color 180ms ease;
 }
 .tagline-arrow {
   display: inline-block;
-  transition: transform 180ms ease;
 }
 .tagline:hover,
 .tagline:focus-visible {
   color: var(--blue);
-  transform: scale(1.025);
-}
-.tagline:hover .tagline-arrow,
-.tagline:focus-visible .tagline-arrow {
-  transform: translateX(6px);
 }
 .hero-bottom {
   position: absolute;
@@ -306,6 +298,9 @@ a:not(.path-cta):hover {
   min-height: 60px;
 }
 .path-cta {
+  width: min(100%, 360px);
+  justify-self: center;
+  align-self: center;
   display: flex;
   justify-content: center;
   gap: 12px;
@@ -316,9 +311,7 @@ a:not(.path-cta):hover {
   margin-top: 42px;
   font-size: 15px;
   border: 1px solid var(--ink);
-  transition:
-    background 0.2s,
-    transform 0.2s;
+  transition: background 0.2s;
 }
 .path + .path .path-cta {
   background: transparent;
@@ -329,9 +322,11 @@ a:not(.path-cta):hover {
   background: var(--blue);
   border-color: var(--blue);
   color: #fff;
-  transform: translateY(-2px);
 }
-.path-cta span {
+.path-cta > span {
+  font-size: inherit;
+}
+.path-cta > span[aria-hidden] {
   font-size: 21px;
 }
 footer {
@@ -703,7 +698,7 @@ dialog .source-date {
   opacity: 1;
 }
 .integrations-window:hover .integrations-track,
-.integrations-window:focus-within .integrations-track {
+.integrations-window:focus-visible .integrations-track {
   animation-play-state: paused;
 }
 @keyframes partners-scroll {
@@ -958,12 +953,6 @@ dialog .source-date {
   gap: 16px;
   margin-top: 32px;
   font-size: 15px;
-}
-.feature-link span {
-  transition: transform 0.2s;
-}
-.feature-link:hover span {
-  transform: translate(3px, -3px);
 }
 .security-layers {
   display: grid;
@@ -1772,4 +1761,127 @@ footer .brand img {
   .benefits-grid {
     gap: 48px;
   }
+}
+
+.secondary-button {
+  border: 1px solid var(--ink);
+  border-radius: 0;
+  padding: 19px 22px;
+  background: transparent;
+  color: var(--ink);
+}
+a.secondary-button:hover {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: white;
+}
+
+.integrator-actions {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin-top: 60px;
+}
+.integrator-actions .feature-link {
+  margin-top: 0;
+}
+.primary-button {
+  border: 1px solid var(--ink);
+  padding: 19px 22px;
+  background: var(--ink);
+  color: white;
+}
+a.primary-button:hover {
+  background: var(--blue);
+  border-color: var(--blue);
+  color: white;
+}
+@media (max-width: 560px) {
+  .integrator-actions {
+    flex-direction: column;
+  }
+  .integrator-actions .feature-link {
+    justify-content: center;
+  }
+}
+
+.yearn-word {
+  color: #0657f9;
+}
+
+.yearn-word,
+.path-cta .yearn-word {
+  font-size: inherit;
+}
+.yearn-word img {
+  display: inline-block;
+  height: 0.8em;
+  width: 2.8em;
+  max-width: none;
+  vertical-align: -0.22em;
+}
+
+:is(.launch, .path-cta, .primary-button, .secondary-button):hover .yearn-word img {
+  filter: brightness(0) invert(1);
+}
+
+/* Keep the two audience paths grouped beneath their shared introduction. */
+@media (min-width: 761px) {
+  .paths {
+    max-width: 960px;
+    margin-inline: auto;
+    column-gap: 48px;
+  }
+  .path,
+  .path + .path {
+    padding-inline: 0;
+  }
+}
+
+.stat dd.metric-pending {
+  font-size: clamp(22px, 3vw, 36px);
+  color: var(--muted);
+}
+
+.stat[hidden] {
+  display: none;
+}
+.stats-options {
+  position: fixed;
+  bottom: calc(16px + env(safe-area-inset-bottom));
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 40;
+  width: max-content;
+  max-width: calc(100% - 24px);
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  padding: 8px 12px;
+  background: white;
+  box-shadow: 0 4px 24px rgb(0 0 0 / 8%);
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  margin: 0;
+  font-size: 12px;
+}
+.stats-options > span {
+  color: var(--muted);
+  margin-right: 8px;
+}
+.stats-options button {
+  font: inherit;
+  padding: 8px 12px;
+  border: 1px solid var(--ink);
+  background: transparent;
+  color: var(--ink);
+  cursor: pointer;
+}
+.stats-options button[aria-pressed="true"] {
+  background: var(--ink);
+  color: white;
 }

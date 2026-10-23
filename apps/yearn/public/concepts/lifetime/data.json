@@ -88,5 +88,12 @@
     "capturedAt": "2026-10-21T13:33:31.026279+00:00",
     "consumer": "Powerglove TvlOverview.tsx renders data.totalTvl",
     "scope": "Published aggregate, with source overlap and bridge exclusions; no additional endorsed-only filter applied."
+  },
+  "assetsSecured": {
+    "usd": 369349928.7401376,
+    "status": "preliminary-placeholder",
+    "asOfTimestamp": 1792627199,
+    "methodology": "Mockup only. Recorded-value scenario including mainnet Katana pre-deposit balances alongside L2 exposure. Current backing attribution, coverage and overlaps require verification before production.",
+    "calculationArtifact": "docs/research/assets-secured/calculation.json"
   }
 }
