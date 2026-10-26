@@ -35,7 +35,7 @@ describe('yBOLD Next configuration', () => {
       }
     ])
     expect(nextConfig.poweredByHeader).toBe(false)
-    expect(nextConfig.transpilePackages).toEqual(['@yearn/vault-widget', '@yearn/wallet-ui'])
+    expect(nextConfig.transpilePackages).toEqual(['@yearn/vault-widget', '@yearn/wallet-ui', '@yearn/site-header'])
     expect(nextConfig.turbopack?.resolveAlias?.['@safe-global/safe-apps-sdk']).toBe(
       '../../node_modules/@safe-global/safe-apps-sdk/dist/esm'
     )
