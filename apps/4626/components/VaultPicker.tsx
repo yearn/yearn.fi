@@ -205,11 +205,6 @@ export function VaultPicker({
               </button>
             </form>
           )}
-          {validation.isPending && (
-            <p role="status" className="mb-3 text-sm">
-              Checking vault on-chain…
-            </p>
-          )}
           {validation.error && (
             <p role="alert" className="mb-3 text-sm text-red-700">
               {getErc4626ReadMessage(validation.error)}
