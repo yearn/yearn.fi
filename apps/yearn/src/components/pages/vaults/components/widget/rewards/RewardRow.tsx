@@ -12,6 +12,7 @@ type TRewardRowProps = {
   symbol: string
   amount: string
   usdValue: number
+  usdValueUnavailable?: boolean
   onClaim: () => void
   isClaimPending?: boolean
   isClaimReady: boolean
@@ -33,6 +34,7 @@ export function RewardRow(props: TRewardRowProps): ReactElement {
     symbol,
     amount,
     usdValue,
+    usdValueUnavailable,
     onClaim,
     isClaimPending = false,
     isClaimReady,
@@ -55,7 +57,9 @@ export function RewardRow(props: TRewardRowProps): ReactElement {
         <div className="flex w-full items-center justify-between gap-3 md:w-auto md:flex-1 md:justify-start">
           <div className="flex items-center gap-1.5">
             <span className="text-base font-bold text-text-primary">{formatAmount(amount, 2, 6)}</span>
-            <span className="text-base text-text-secondary">({formatUSD(usdValue, 2, 2)})</span>
+            <span className="text-base text-text-secondary">
+              ({usdValueUnavailable ? '—' : formatUSD(usdValue, 2, 2)})
+            </span>
           </div>
           <div className="flex items-center gap-1.5 md:hidden">
             <span className="text-base text-text-secondary">{symbol}</span>

@@ -1,4 +1,3 @@
-import { Dialog, Transition, TransitionChild } from '@headlessui/react'
 import { setThemePreference, useThemePreference } from '@hooks/useThemePreference'
 import { BottomDrawer } from '@pages/vaults/components/detail/BottomDrawer'
 import { useAppSettings } from '@pages/vaults/contexts/useAppSettings'
@@ -7,112 +6,19 @@ import { MobileSiteStatus } from '@shared/components/SiteStatus'
 import { useNotifications } from '@shared/contexts/useNotifications'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { IconChevron } from '@shared/icons/IconChevron'
-import { IconClose } from '@shared/icons/IconClose'
-import { IconDiscord } from '@shared/icons/IconDiscord'
-import { IconLinkOut } from '@shared/icons/IconLinkOut'
 import { IconMoon } from '@shared/icons/IconMoon'
-import { IconSettings } from '@shared/icons/IconSettings'
-import { IconStack } from '@shared/icons/IconStack'
 import { IconSun } from '@shared/icons/IconSun'
-import { IconTwitter } from '@shared/icons/IconTwitter'
-import { IconWallet } from '@shared/icons/IconWallet'
-import { LogoCuration } from '@shared/icons/LogoCuration'
-import { LogoGithub } from '@shared/icons/LogoGithub'
-import { LogoYearn } from '@shared/icons/LogoYearn'
-import { LogoYearnMark } from '@shared/icons/LogoYearnMark'
-import { TypeMarkYearn } from '@shared/icons/TypeMarkYearn'
 import { cl } from '@shared/utils'
+import { MobileNavMenu as SharedMobileNavMenu, type TMobileNavMenuProps } from '@yearn/site-header/mobile'
 import { useWalletDrawer } from '@yearn/wallet-ui'
-import Link from 'next/link'
 import type { ReactElement } from 'react'
-import { useEffect, useState } from 'react'
+import { useState } from 'react'
 import { env } from '@/env'
-import Image from '/src/components/Image'
-import { IconTelegram } from '../icons/IconTelegram'
 
-type TNavItem = {
-  name: string
-  href: string
-}
-
-type TNavTile = TNavItem & {
-  description?: string
-  icon?: ReactElement
-  iconWrapperClass?: string
-}
-
-const BASE_YEARN_ASSET_URI = env?.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI ?? ''
-
-function isExternalHref(href: string): boolean {
-  return /^https?:\/\//i.test(href)
-}
-
-type TSectionKey = 'products' | 'info' | 'community' | 'tools'
-
-type TMobileNavMenuProps = {
-  isOpen: boolean
-  onClose: () => void
-  pathname: string
-  isDarkTheme: boolean
-  onThemeToggle: () => void
-  notificationStatus: 'pending' | 'submitted' | 'success' | 'error' | null
-  walletIdentity?: string
-}
-
-function MobileNavTile({
-  item,
-  isDark,
-  onClick
-}: {
-  item: TNavTile
-  isDark: boolean
-  onClick: () => void
-}): ReactElement {
-  const hasIcon = Boolean(item.icon)
-  const iconWrapperClass =
-    item.iconWrapperClass ?? cl(isDark ? 'bg-[#0a0a0a] text-neutral-200' : 'bg-white text-neutral-700')
-
-  return (
-    <Link
-      href={item.href}
-      prefetch={isExternalHref(item.href) ? undefined : false}
-      onClick={onClick}
-      target={isExternalHref(item.href) ? '_blank' : undefined}
-      rel={isExternalHref(item.href) ? 'noopener noreferrer' : undefined}
-      className={'w-full'}
-    >
-      <div
-        className={cl(
-          'group/nav-item flex items-center rounded-lg p-2 transition-colors',
-          hasIcon ? 'gap-3' : 'gap-0',
-          isDark ? 'hover:bg-white/10' : 'hover:bg-neutral-100'
-        )}
-      >
-        {hasIcon && (
-          <div className={cl('flex size-8 items-center justify-center rounded-lg', iconWrapperClass)}>{item.icon}</div>
-        )}
-        <div className={cl('flex-1', hasIcon ? '' : 'pl-1')}>
-          <div className={'flex w-full items-center justify-between gap-2'}>
-            <span className={cl('truncate text-sm font-semibold', isDark ? 'text-white' : 'text-neutral-900')}>
-              {item.name}
-            </span>
-            {isExternalHref(item.href) && (
-              <IconLinkOut
-                className={cl(
-                  'size-3 opacity-0 transition-opacity group-hover/nav-item:opacity-100',
-                  isDark ? 'text-neutral-400' : 'text-neutral-500'
-                )}
-              />
-            )}
-          </div>
-          {item.description && (
-            <p className={cl('text-xs', isDark ? 'text-neutral-400' : 'text-neutral-500')}>{item.description}</p>
-          )}
-        </div>
-      </div>
-    </Link>
-  )
-}
+type TYearnMobileNavMenuProps = Pick<
+  TMobileNavMenuProps,
+  'isOpen' | 'onClose' | 'pathname' | 'isDarkTheme' | 'onThemeToggle' | 'notificationStatus' | 'walletIdentity'
+>
 
 export function MobileNavMenu({
   isOpen,
@@ -122,198 +28,15 @@ export function MobileNavMenu({
   onThemeToggle,
   notificationStatus,
   walletIdentity
-}: TMobileNavMenuProps): ReactElement {
-  const [expandedSections, setExpandedSections] = useState<Record<TSectionKey, boolean>>({
-    products: false,
-    info: false,
-    community: false,
-    tools: false
-  })
+}: TYearnMobileNavMenuProps): ReactElement {
   const [isWalletDrawerOpen, setIsWalletDrawerOpen] = useState(false)
   const [isSettingsDrawerOpen, setIsSettingsDrawerOpen] = useState(false)
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false)
   const { isActive, openLoginModal } = useWeb3()
+  const { acknowledge } = useNotifications()
   const { isOpen: isWalletPickerOpen } = useWalletDrawer()
   const { shouldHideDust, onSwitchHideDust } = useAppSettings()
   const themePreference = useThemePreference()
-
-  useEffect(() => {
-    if (!isOpen) {
-      setExpandedSections({
-        products: false,
-        info: false,
-        community: false,
-        tools: false
-      })
-      setIsAdvancedOpen(false)
-    }
-  }, [isOpen])
-
-  function navItemClass(isActive: boolean, isExternal: boolean): string {
-    return cl(
-      'flex min-h-[44px] w-full items-center rounded-lg px-4 text-lg font-medium transition-colors',
-      isExternal ? 'justify-between' : '',
-      isActive ? 'bg-primary/10 text-text-primary' : 'text-text-primary hover:bg-surface-tertiary'
-    )
-  }
-
-  const navSectionClass = cl(
-    'flex min-h-[44px] w-full items-center justify-between rounded-lg px-4 text-lg font-medium transition-colors',
-    'text-text-primary hover:bg-surface-tertiary'
-  )
-
-  const notificationDotColor = (() => {
-    switch (notificationStatus) {
-      case 'error':
-        return 'bg-red'
-      case 'success':
-        return 'bg-[#0C9000]'
-      case 'pending':
-      case 'submitted':
-        return 'bg-primary animate-pulse'
-      default:
-        return ''
-    }
-  })()
-
-  const neutralImageClass = cl('size-5 grayscale', isDarkTheme ? 'invert brightness-125' : 'opacity-90')
-  const neutralIconForeground = isDarkTheme ? 'text-white' : 'text-neutral-700'
-  const products: TNavTile[] = [
-    {
-      name: 'yVaults',
-      href: '/vaults',
-      description: 'Yield-Generating Vaults',
-      icon: <LogoYearnMark className={'size-6 text-primary'} />
-    },
-    {
-      name: 'Curation',
-      href: 'https://curation.yearn.fi',
-      description: 'Lending Market Curation',
-      icon: <LogoCuration className={'size-11'} back={'text-transparent'} front={'text-primary'} />
-    },
-    {
-      name: 'yCRV',
-      href: 'https://ycrv.yearn.fi',
-      description: 'veCRV Liquid Locker',
-      icon: (
-        <Image
-          alt={'yCRV'}
-          className={'size-6'}
-          src={`${BASE_YEARN_ASSET_URI}/tokens/1/0xfcc5c47be19d06bf83eb04298b026f81069ff65b/logo-128.png`}
-          loading={'eager'}
-          decoding={'async'}
-        />
-      )
-    },
-    {
-      name: 'yYB',
-      href: 'https://yyb.yearn.fi',
-      description: 'veYB Liquid Locker',
-      icon: <Image alt={'yYB'} className={'size-6'} src={'/yYB-logo.svg'} loading={'eager'} decoding={'async'} />
-    },
-    {
-      name: 'stYFI',
-      href: 'https://styfi.yearn.fi',
-      description: 'YFI Staking',
-      icon: <Image alt={'stYFI'} className={'size-6'} src={'/stYFI-logo.svg'} loading={'eager'} decoding={'async'} />
-    }
-  ]
-
-  const resourceInfoItems: TNavTile[] = [
-    {
-      name: 'Docs',
-      href: 'https://docs.yearn.fi/',
-      description: 'Yearn Knowledge Base',
-      icon: (
-        <Image
-          alt={'GitBook'}
-          className={neutralImageClass}
-          src={'/GitBook%20-%20Icon%20-%20Dark.svg'}
-          loading={'eager'}
-          decoding={'async'}
-        />
-      )
-    },
-    {
-      name: 'X (Twitter)',
-      href: 'https://x.com/yearnfi',
-      description: 'Official Yearn News Feed',
-      icon: <IconTwitter className={cl('size-5', neutralIconForeground)} />
-    },
-    {
-      name: 'Github',
-      href: 'https://github.com/yearn',
-      description: 'Yearn Codebase',
-      icon: <LogoGithub className={cl('size-5', neutralIconForeground)} />
-    },
-    {
-      name: 'Blog',
-      href: 'https://blog.yearn.fi/',
-      description: 'Articles about Yearn',
-      icon: (
-        <Image alt={'Blog'} className={neutralImageClass} src={'/paragraph.svg'} loading={'eager'} decoding={'async'} />
-      )
-    },
-    {
-      name: 'Brand Assets',
-      href: 'https://brand.yearn.fi',
-      description: 'Yearn Brand Resources',
-      icon: (
-        <LogoYearn
-          width={20}
-          height={20}
-          className={'size-5'}
-          back={isDarkTheme ? 'text-neutral-200' : 'text-neutral-700'}
-          front={'text-white'}
-        />
-      )
-    }
-  ]
-
-  const resourceCommunityItems: TNavTile[] = [
-    {
-      name: 'Partners',
-      href: 'https://partners.yearn.fi/',
-      description: 'Build on Yearn',
-      icon: <IconStack className={cl('size-5', neutralIconForeground)} />
-    },
-    {
-      name: 'Support',
-      href: 'https://discord.gg/yearn',
-      description: 'Get help on the Yearn Discord Server',
-      icon: <IconDiscord className={cl('size-5', neutralIconForeground)} />
-    },
-    {
-      name: 'Telegram Chat',
-      href: 'https://t.me/yearnfinance',
-      description: 'Discuss Yearn on Telegram',
-      icon: <IconTelegram className={cl('size-5', neutralIconForeground)} />
-    },
-    {
-      name: 'Governance',
-      href: 'https://gov.yearn.fi/',
-      description: 'Yearn Discussion Forum',
-      icon: (
-        <Image
-          alt={'Discourse'}
-          className={neutralImageClass}
-          src={'/discourse-icon.svg'}
-          loading={'eager'}
-          decoding={'async'}
-        />
-      )
-    }
-  ]
-
-  const resourceToolItems: TNavTile[] = [
-    { name: 'PowerGlove', href: 'https://powerglove.yearn.fi', description: 'Vault Analytics' },
-    { name: 'Kong', href: 'https://kong.yearn.fi', description: 'Vault Data' },
-    { name: 'Kalani', href: 'https://kalani.yearn.fi', description: 'Vault Management Interface' },
-    { name: 'yFactory', href: 'https://factory.yearn.fi', description: 'LP token Vault Creation' },
-    { name: 'APR Oracle', href: 'https://oracle.yearn.fi', description: 'Projected Vault APY Tool' }
-  ]
-
-  const { acknowledge } = useNotifications()
 
   const handleWalletClick = (): void => {
     acknowledge()
@@ -330,10 +53,6 @@ export function MobileNavMenu({
     setIsSettingsDrawerOpen(true)
   }
 
-  const handleToggleSection = (key: TSectionKey): void => {
-    setExpandedSections((prev) => ({ ...prev, [key]: !prev[key] }))
-  }
-
   function getVariantButtonClass(variant: string): string {
     if (themePreference === variant) {
       return 'flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors bg-primary/10 text-primary'
@@ -348,240 +67,28 @@ export function MobileNavMenu({
 
   return (
     <>
-      {/* Release the navigation modal immediately when handing focus to a wallet surface. */}
-      {!isWalletDrawerOpen && !isWalletPickerOpen && (
-        <Transition show={isOpen} as={'div'}>
-          <Dialog as={'div'} className={'fixed inset-0 z-[100] overflow-y-auto'} onClose={onClose}>
-            <TransitionChild
-              as={'div'}
-              enter={'ease-out duration-300'}
-              enterFrom={'opacity-0'}
-              enterTo={'opacity-100'}
-              leave={'ease-in duration-200'}
-              leaveFrom={'opacity-100'}
-              leaveTo={'opacity-0'}
-            >
-              <div className={'fixed inset-0 bg-modal-overlay backdrop-blur-sm'} />
-            </TransitionChild>
-
-            <TransitionChild
-              as={'div'}
-              enter={'ease-out duration-300'}
-              enterFrom={'opacity-0 translate-y-4'}
-              enterTo={'opacity-100 translate-y-0'}
-              leave={'ease-in duration-200'}
-              leaveFrom={'opacity-100 translate-y-0'}
-              leaveTo={'opacity-0 translate-y-4'}
-            >
-              <div
-                className={cl(
-                  'relative flex min-h-screen w-full flex-col',
-                  isDarkTheme ? 'bg-[#0a0a0a]' : 'bg-surface'
-                )}
-              >
-                <div
-                  className={'flex h-[var(--header-height)] items-center justify-between border-b border-border px-4'}
-                >
-                  <a href={'/'} onClick={onClose} className={'flex items-center'}>
-                    <TypeMarkYearn className={'h-8 w-auto'} color={isDarkTheme ? '#FFFFFF' : '#0657F9'} />
-                  </a>
-                  <button
-                    onClick={onClose}
-                    className={
-                      'flex min-h-[44px] min-w-[44px] items-center justify-center rounded-lg text-text-primary transition-colors hover:bg-surface-secondary'
-                    }
-                    aria-label={'Close navigation menu'}
-                  >
-                    <IconClose className={'size-6'} />
-                  </button>
-                </div>
-
-                <div className={'flex flex-1 flex-col px-4 py-6'}>
-                  <nav className={'flex flex-col gap-4'}>
-                    <div className={'flex flex-col gap-1'}>
-                      <Link
-                        href={'/vaults'}
-                        prefetch={false}
-                        onClick={onClose}
-                        className={navItemClass(pathname.startsWith('/vaults'), false)}
-                      >
-                        <span>{'Vaults'}</span>
-                      </Link>
-                      <Link
-                        href={'/portfolio'}
-                        prefetch={false}
-                        onClick={onClose}
-                        className={navItemClass(pathname.startsWith('/portfolio'), false)}
-                      >
-                        <span>{'Portfolio'}</span>
-                      </Link>
-                    </div>
-
-                    <div className={'h-px w-full bg-border'} />
-
-                    <div className={'flex flex-col gap-1'}>
-                      <button
-                        onClick={handleWalletClick}
-                        className={
-                          'relative flex min-h-[44px] w-full items-center gap-3 rounded-lg px-4 text-lg font-medium text-text-primary transition-colors hover:bg-surface-tertiary'
-                        }
-                      >
-                        <IconWallet className={'size-5'} />
-                        <span>{walletIdentity || 'Wallet'}</span>
-                        {notificationStatus && (
-                          <span
-                            role="img"
-                            aria-label="Unread transaction activity"
-                            className={cl('absolute right-4 size-2.5 rounded-full', notificationDotColor)}
-                          />
-                        )}
-                      </button>
-
-                      <button
-                        onClick={() => {
-                          onThemeToggle()
-                        }}
-                        className={
-                          'flex min-h-[44px] w-full items-center gap-3 rounded-lg px-4 text-lg font-medium text-text-primary transition-colors hover:bg-surface-tertiary'
-                        }
-                      >
-                        {isDarkTheme ? <IconSun className={'size-5'} /> : <IconMoon className={'size-5'} />}
-                        <span>{isDarkTheme ? 'Light mode' : 'Dark mode'}</span>
-                      </button>
-
-                      <button
-                        onClick={handleSettingsClick}
-                        className={
-                          'flex min-h-[44px] w-full items-center gap-3 rounded-lg px-4 text-lg font-medium text-text-primary transition-colors hover:bg-surface-tertiary'
-                        }
-                      >
-                        <IconSettings className={'size-5'} />
-                        <span>{'Settings'}</span>
-                      </button>
-                    </div>
-
-                    <div className={'h-px w-full bg-border'} />
-
-                    <div className={'flex flex-col gap-1'}>
-                      <div className={'flex flex-col gap-1'}>
-                        <button
-                          type={'button'}
-                          onClick={() => handleToggleSection('products')}
-                          className={navSectionClass}
-                        >
-                          <span>{'Products'}</span>
-                          <IconChevron
-                            className={cl('size-4 transition-transform', expandedSections.products ? 'rotate-180' : '')}
-                          />
-                        </button>
-                        {expandedSections.products &&
-                          products.map((item) => (
-                            <MobileNavTile key={item.href} item={item} isDark={isDarkTheme} onClick={onClose} />
-                          ))}
-                      </div>
-
-                      <div className={'flex flex-col gap-1'}>
-                        <button type={'button'} onClick={() => handleToggleSection('info')} className={navSectionClass}>
-                          <span>{'Information'}</span>
-                          <IconChevron
-                            className={cl('size-4 transition-transform', expandedSections.info ? 'rotate-180' : '')}
-                          />
-                        </button>
-                        {expandedSections.info &&
-                          resourceInfoItems.map((item) => (
-                            <MobileNavTile key={item.href} item={item} isDark={isDarkTheme} onClick={onClose} />
-                          ))}
-                      </div>
-
-                      <div className={'flex flex-col gap-1'}>
-                        <button
-                          type={'button'}
-                          onClick={() => handleToggleSection('community')}
-                          className={navSectionClass}
-                        >
-                          <span>{'Community'}</span>
-                          <IconChevron
-                            className={cl(
-                              'size-4 transition-transform',
-                              expandedSections.community ? 'rotate-180' : ''
-                            )}
-                          />
-                        </button>
-                        {expandedSections.community &&
-                          resourceCommunityItems.map((item) => (
-                            <MobileNavTile key={item.href} item={item} isDark={isDarkTheme} onClick={onClose} />
-                          ))}
-                      </div>
-
-                      <div className={'flex flex-col gap-1'}>
-                        <button
-                          type={'button'}
-                          onClick={() => handleToggleSection('tools')}
-                          className={navSectionClass}
-                        >
-                          <span>{'Tools'}</span>
-                          <IconChevron
-                            className={cl('size-4 transition-transform', expandedSections.tools ? 'rotate-180' : '')}
-                          />
-                        </button>
-                        {expandedSections.tools &&
-                          resourceToolItems.map((item) => (
-                            <MobileNavTile key={item.href} item={item} isDark={isDarkTheme} onClick={onClose} />
-                          ))}
-                      </div>
-                    </div>
-                  </nav>
-
-                  <div className={'my-6 h-px bg-border'} />
-
-                  <div className={'mt-auto pt-6'}>
-                    <div className={'flex items-center justify-center gap-4'}>
-                      <Link
-                        href={'https://discord.com/invite/yearn'}
-                        target={'_blank'}
-                        rel={'noopener noreferrer'}
-                        className={
-                          'flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full bg-surface-secondary p-2.5 transition-colors hover:bg-surface-tertiary'
-                        }
-                        aria-label={'Discord'}
-                      >
-                        <IconDiscord className={cl('size-6', isDarkTheme ? 'text-white' : 'text-text-primary')} />
-                      </Link>
-                      <Link
-                        href={'https://github.com/yearn'}
-                        target={'_blank'}
-                        rel={'noopener noreferrer'}
-                        className={
-                          'flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full bg-surface-secondary p-2.5 transition-colors hover:bg-surface-tertiary'
-                        }
-                        aria-label={'GitHub'}
-                      >
-                        <LogoGithub className={cl('size-6', isDarkTheme ? 'text-white' : 'text-text-primary')} />
-                      </Link>
-                      <Link
-                        href={'https://x.com/yearnfi'}
-                        target={'_blank'}
-                        rel={'noopener noreferrer'}
-                        className={
-                          'flex min-h-[44px] min-w-[44px] items-center justify-center rounded-full bg-surface-secondary p-2.5 transition-colors hover:bg-surface-tertiary'
-                        }
-                        aria-label={'Twitter'}
-                      >
-                        <IconTwitter className={cl('size-6', isDarkTheme ? 'text-white' : 'text-text-primary')} />
-                      </Link>
-                    </div>
-                  </div>
-                  <div className={'mt-1.5'}>
-                    <MobileSiteStatus onNavigate={onClose} />
-                  </div>
-                </div>
-              </div>
-            </TransitionChild>
-          </Dialog>
-        </Transition>
-      )}
+      <SharedMobileNavMenu
+        isOpen={isOpen && !isWalletDrawerOpen && !isWalletPickerOpen && !isSettingsDrawerOpen}
+        onClose={onClose}
+        pathname={pathname}
+        isDarkTheme={isDarkTheme}
+        onThemeToggle={onThemeToggle}
+        notificationStatus={notificationStatus}
+        walletIdentity={walletIdentity}
+        onWalletClick={handleWalletClick}
+        onSettingsClick={handleSettingsClick}
+        assetBaseUrl={env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}
+        footer={<MobileSiteStatus onNavigate={onClose} />}
+      />
       <AccountDropdown isOpen={isWalletDrawerOpen} onClose={() => setIsWalletDrawerOpen(false)} />
-      <BottomDrawer isOpen={isSettingsDrawerOpen} onClose={() => setIsSettingsDrawerOpen(false)} title={'Settings'}>
+      <BottomDrawer
+        isOpen={isSettingsDrawerOpen}
+        onClose={() => {
+          setIsSettingsDrawerOpen(false)
+          setIsAdvancedOpen(false)
+        }}
+        title={'Settings'}
+      >
         <div className={'px-4 py-4'}>
           <div className={'mb-4 flex items-center justify-between'}>
             <span className={'text-sm font-medium text-text-primary'}>{'Theme'}</span>

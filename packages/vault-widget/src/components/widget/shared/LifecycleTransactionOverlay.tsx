@@ -1,4 +1,4 @@
-import { isUnsupportedAtomicBatchError } from '@yearn/vault-widget/headless'
+import { isUnsupportedAtomicBatchError, VaultWidgetPreparationError } from '@yearn/vault-widget/headless'
 import { Button } from '@yearn/vault-widget/internal/components/shared/Button'
 import { getPreparationBridge } from '@yearn/vault-widget/internal/components/widget/shared/lifecyclePreparation'
 import { TransactionMessage } from '@yearn/vault-widget/internal/components/widget/shared/TransactionMessage'
@@ -194,6 +194,8 @@ export function LifecycleTransactionOverlay(props: TransactionOverlayProps) {
         }
       },
       authorize: () => {
+        if (callbacks.current.step?.isEnabled === false)
+          throw new VaultWidgetPreparationError(new Error('Transaction is no longer ready. Close and review again.'))
         if (walletType.current !== (reviewed.plan.walletType === 'safe'))
           throw new Error('Wallet type changed. Close and review again.')
         bridge?.authorize()

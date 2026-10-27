@@ -3,6 +3,7 @@
 import { useWalletActivity } from '@ybold/components/WalletActivityProvider'
 import { BOLD, ST_YBOLD, YBOLD } from '@ybold/lib/contracts'
 import { selectRecentYboldWalletActivities, type TYboldWalletActivity } from '@ybold/lib/walletActivity'
+import { IconWallet } from '@yearn/site-header/icons/IconWallet'
 import { useVaultUserData } from '@yearn/vault-widget/internal/hooks/useVaultUserData'
 import { useVaultWidgetSpotPrices } from '@yearn/vault-widget/internal/hooks/useVaultWidgetSpotPrices'
 import { useVaultWidgetRuntime } from '@yearn/vault-widget/runtime'
@@ -324,10 +325,18 @@ function SettingsView({ onBack }: { onBack: () => void }) {
   )
 }
 
-export function WalletAccountMenu() {
+export function WalletAccountMenu({
+  isOpen: controlledIsOpen,
+  setIsOpen: onOpenChange
+}: {
+  isOpen?: boolean
+  setIsOpen?: (open: boolean) => void
+} = {}) {
+  const [localIsOpen, setLocalIsOpen] = useState(false)
+  const isOpen = controlledIsOpen ?? localIsOpen
+  const setIsOpen = onOpenChange ?? setLocalIsOpen
   const { address } = useAccount()
   const { activities } = useWalletActivity()
-  const [isOpen, setIsOpen] = useState(false)
   const { disconnectAsync, isPending: isDisconnecting } = useWalletDisconnect()
   const [disconnectError, setDisconnectError] = useState('')
   const [view, setView] = useState<TAccountView>('account')
@@ -351,7 +360,7 @@ export function WalletAccountMenu() {
     setView('account')
     setWasCopied(false)
     setDisconnectError('')
-  }, [])
+  }, [setIsOpen])
 
   const showView = (nextView: TAccountView) => {
     setView(nextView)
@@ -398,9 +407,10 @@ export function WalletAccountMenu() {
         aria-expanded={isOpen}
         aria-haspopup="dialog"
         onClick={() => (isOpen ? closeMenu() : setIsOpen(true))}
-        className="h-10 w-36 shrink-0 rounded-full border border-navy px-4 py-2 font-mono text-sm font-medium text-navy transition-colors duration-150 hover:bg-navy hover:text-white focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yearn motion-reduce:transition-none"
+        className="inline-flex shrink-0 items-center gap-2 rounded-lg bg-surface-secondary px-3 py-1.5 text-sm text-text-secondary"
       >
-        {formatWalletAddress(address)}
+        <IconWallet className="size-4" />
+        <span className="hidden sm:inline">{formatWalletAddress(address)}</span>
       </button>
 
       <WalletSurface
@@ -408,8 +418,8 @@ export function WalletAccountMenu() {
         onClose={closeMenu}
         title={view === 'settings' ? 'Wallet settings' : 'Wallet account'}
         dialogId="ybold-wallet-account-menu"
-        desktopTop="5rem"
-        desktopRight="max(1.5rem, calc((100vw - 72rem) / 2 + 1.5rem))"
+        desktopTop="calc(var(--header-height) + 0.5rem)"
+        desktopRight="max(1rem, calc((100vw - 1232px) / 2 + 1rem))"
         themeClassName="ybold-wallet-ui"
       >
         {disconnectError && (

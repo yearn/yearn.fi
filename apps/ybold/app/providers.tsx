@@ -110,8 +110,8 @@ export function Providers({ children }: { children: React.ReactNode }) {
         <RainbowKitProvider theme={theme}>
           <WalletDrawerProvider
             onAnalytics={trackAnalytics}
-            desktopTop="5rem"
-            desktopRight="max(1.5rem, calc((100vw - 72rem) / 2 + 1.5rem))"
+            desktopTop="calc(var(--header-height) + 0.5rem)"
+            desktopRight="max(1rem, calc((100vw - 1232px) / 2 + 1rem))"
             themeClassName="ybold-wallet-ui"
           >
             <WalletActivityProvider>

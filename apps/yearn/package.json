@@ -25,7 +25,7 @@
     "@yearn/vault-widget": "workspace:*",
     "dayjs": "1.11.23",
     "framer-motion": "12.42.2",
-    "next": "16.3.8",
+    "next": "16.4.1",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "react-hot-toast": "2.6.1",
@@ -35,7 +35,8 @@
     "viem": "2.56.9",
     "wagmi": "2.18.2",
     "zod": "4.6.5",
-    "@yearn/wallet-ui": "workspace:*"
+    "@yearn/wallet-ui": "workspace:*",
+    "@yearn/site-header": "workspace:*"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "4.3.3",
