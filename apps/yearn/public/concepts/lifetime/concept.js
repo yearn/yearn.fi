@@ -48,8 +48,9 @@ const renderCounter = (data) => {
   const valueAt = (timestamp) =>
     canEstimate ? Number(current.earningsUsd) + rate * Math.max(0, timestamp - current.timestamp) : latest
   const paint = (value) => {
-    select('#earnings').textContent = earningsMoney.format(value)
-    select('#yield-earned').textContent = usd(value)
+    const [whole, fraction] = earningsMoney.format(value).split('.')
+    select('#earnings-whole').textContent = whole
+    select('#earnings-decimals').textContent = `.${fraction}`
   }
   // Keep screen-reader output stable between lifecycle events, not a live frame feed.
   select('.counter').setAttribute(
@@ -96,7 +97,6 @@ const load = async () => {
     select('#harvest-count').textContent = Number.isInteger(data.harvestCount)
       ? money.format(data.harvestCount)
       : 'Unavailable'
-    select('#fees-value').textContent = usd(Number(data.feesUsd))
     select('#earnings-note').textContent = `${earningsUsd(Number(data.earningsUsd))}. ${data.methodology.earnings}`
     select('#animation-note').textContent =
       'The counter estimates earnings from the Oct 12 recorded point at the measured Oct 5–12 weekly rate, using the current device timestamp. It is an extrapolation, not live reported earnings. Windows using the same source data and clock calculate the same value, including after reload or tab restoration. Device clock differences can affect the estimate. The counter animates regardless of reduced-motion preferences; other animations still respect them.'
@@ -123,11 +123,9 @@ const load = async () => {
     select('#fees-note').textContent = 'Unavailable. No zero value has been substituted.'
     select('#vaults-note').textContent = 'Unavailable. No zero value has been substituted.'
     select('#harvests-note').textContent = 'Unavailable. No zero value has been substituted.'
-    ;['#yield-earned', '#tvl', '#assets-secured-value', '#fees-value', '#vaults-deployed', '#harvest-count'].forEach(
-      (selector) => {
-        select(selector).textContent = 'Unavailable'
-      }
-    )
+    ;['#tvl', '#assets-secured-value', '#vaults-deployed', '#harvest-count'].forEach((selector) => {
+      select(selector).textContent = 'Unavailable'
+    })
     select('#replay').disabled = true
   }
 }
@@ -244,6 +242,49 @@ securityChoices.forEach((choice) => {
     if (mobileSecurity.matches && !collapse) choice.scrollIntoView({ block: 'start', behavior: 'instant' })
   })
 })
+// Rotate desktop panels only; mobile keeps its user-controlled accordion.
+const securitySection = document.getElementById('security')
+const securityRotation = { timer: null, hovered: false }
+const stopSecurityRotation = () => {
+  clearTimeout(securityRotation.timer)
+  securityRotation.timer = null
+}
+const scheduleSecurityRotation = () => {
+  stopSecurityRotation()
+  securityRotation.timer = setTimeout(() => {
+    const bounds = securitySection.getBoundingClientRect()
+    if (
+      !mobileSecurity.matches &&
+      !motion.matches &&
+      !document.hidden &&
+      !securityRotation.hovered &&
+      !securitySection.contains(document.activeElement) &&
+      bounds.top < window.innerHeight &&
+      bounds.bottom > 0
+    ) {
+      const index = securityChoices.findIndex((choice) => choice.getAttribute('aria-pressed') === 'true')
+      selectSecurity(securityChoices[(index + 1) % securityChoices.length])
+    }
+    scheduleSecurityRotation()
+  }, 4000)
+}
+securitySection.addEventListener('pointerenter', (event) => {
+  if (event.pointerType !== 'mouse') return
+  securityRotation.hovered = true
+  stopSecurityRotation()
+})
+securitySection.addEventListener('pointerleave', () => {
+  securityRotation.hovered = false
+  scheduleSecurityRotation()
+})
+securitySection.addEventListener('focusin', stopSecurityRotation)
+securitySection.addEventListener('focusout', scheduleSecurityRotation)
+document.addEventListener('visibilitychange', () => {
+  if (document.hidden) stopSecurityRotation()
+  else scheduleSecurityRotation()
+})
+scheduleSecurityRotation()
+
 const alertContainer = document.getElementById('security-alerts')
 const alertStatus = document.getElementById('alert-status')
 const renderSecurityAlerts = (data, status) => {
@@ -398,23 +439,4 @@ mobileNavigation.addEventListener('close', () => {
 })
 matchMedia('(max-width: 900px)').addEventListener('change', (event) => {
   if (!event.matches && mobileNavigation.open) closeMobileNavigation()
-})
-
-const setStatsVersion = (version) => {
-  document.querySelectorAll('[data-stats-only]').forEach((row) => {
-    row.hidden = row.dataset.statsOnly !== version
-  })
-  document.querySelectorAll('[data-stats-option]').forEach((button) => {
-    button.setAttribute('aria-pressed', String(button.dataset.statsOption === version))
-  })
-}
-setStatsVersion(new URL(window.location.href).searchParams.get('stats') === 'old' ? 'old' : 'new')
-document.querySelectorAll('[data-stats-option]').forEach((button) => {
-  button.addEventListener('click', () => {
-    const version = button.dataset.statsOption
-    setStatsVersion(version)
-    const url = new URL(window.location.href)
-    url.searchParams.set('stats', version)
-    window.history.replaceState(null, '', url)
-  })
 })

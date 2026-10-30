@@ -160,6 +160,9 @@ h3 {
   align-items: baseline;
   justify-content: center;
 }
+.counter-decimals {
+  color: var(--muted);
+}
 .currency {
   font-size: 0.64em;
   letter-spacing: -0.03em;
@@ -1034,7 +1037,7 @@ dialog .source-date {
 }
 
 .security-section {
-  grid-template-columns: minmax(0, 1.1fr) minmax(0, 1fr);
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1.1fr);
   gap: 44px 7vw;
 }
 .security-heading {
@@ -1083,7 +1086,7 @@ dialog .source-date {
 }
 .security-choice {
   display: grid;
-  grid-template-columns: 22px 1fr 16px;
+  grid-template-columns: 22px 1fr;
   gap: 14px;
   width: 100%;
   padding: 17px 12px;
@@ -1114,11 +1117,8 @@ dialog .source-date {
   color: var(--muted);
 }
 .choice-arrow {
+  display: none;
   align-self: center;
-  opacity: 0;
-}
-.security-choice[aria-pressed="true"] .choice-arrow {
-  opacity: 1;
 }
 .audit-item {
   display: flex;
@@ -1669,7 +1669,11 @@ body.mobile-nav-open {
 }
 
 @media (max-width: 760px) {
+  .security-choice {
+    grid-template-columns: 22px 1fr 16px;
+  }
   .security-choice .choice-arrow {
+    display: block;
     font-size: 0;
     opacity: 1;
   }
@@ -1842,46 +1846,4 @@ a.primary-button:hover {
 .stat dd.metric-pending {
   font-size: clamp(22px, 3vw, 36px);
   color: var(--muted);
-}
-
-.stat[hidden] {
-  display: none;
-}
-.stats-options {
-  position: fixed;
-  bottom: calc(16px + env(safe-area-inset-bottom));
-  left: 50%;
-  transform: translateX(-50%);
-  z-index: 40;
-  width: max-content;
-  max-width: calc(100% - 24px);
-  border: 1px solid var(--line);
-  border-radius: 24px;
-  padding: 8px 12px;
-  background: white;
-  box-shadow: 0 4px 24px rgb(0 0 0 / 8%);
-  min-width: 0;
-  display: flex;
-  align-items: center;
-  justify-content: center;
-  flex-wrap: wrap;
-  gap: 8px;
-  margin: 0;
-  font-size: 12px;
-}
-.stats-options > span {
-  color: var(--muted);
-  margin-right: 8px;
-}
-.stats-options button {
-  font: inherit;
-  padding: 8px 12px;
-  border: 1px solid var(--ink);
-  background: transparent;
-  color: var(--ink);
-  cursor: pointer;
-}
-.stats-options button[aria-pressed="true"] {
-  background: var(--ink);
-  color: white;
 }
