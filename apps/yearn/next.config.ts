@@ -139,12 +139,11 @@ const nextConfig: NextConfig = {
     ]
   },
   async rewrites() {
-    return [
-      {
-        source: '/proxy/plausible/:path*',
-        destination: 'https://plausible.io/:path*'
-      }
-    ]
+    return {
+      beforeFiles: [{ source: '/', destination: '/concepts/lifetime/index.html' }],
+      afterFiles: [{ source: '/proxy/plausible/:path*', destination: 'https://plausible.io/:path*' }],
+      fallback: []
+    }
   }
 }
 

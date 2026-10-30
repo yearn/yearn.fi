@@ -1,0 +1,2431 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="robots" content="noindex, nofollow" />
+    <meta name="theme-color" content="#ffffff" />
+    <title>Yearn | Curating Vaults since 2020</title>
+    <meta name="description" content="A new Yearn landing concept. Years of yield. One simple idea." />
+    <link rel="icon" href="/favicons/favicon-32x32.png" />
+    <link rel="stylesheet" href="/concepts/lifetime/style.css?v=statistics-56" />
+    <script src="/concepts/lifetime/concept.js?v=statistics-56" type="module"></script>
+  </head>
+  <body>
+    <a class="skip" href="#main">Skip to content</a>
+    <header class="header">
+      <div class="header-inner">
+        <div class="header-left">
+          <a class="header-brand" href="#main" aria-label="Yearn home"><img src="/concepts/lifetime/navigation/TypeMarkYearn.svg?v=37" alt="Yearn" width="116" height="32" /></a>
+          <nav class="header-menus" aria-label="Yearn navigation">
+<details class="header-menu" name="yearn-navigation"><summary aria-controls="ecosystem-panel">Ecosystem<svg class="nav-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" focusable="false"><path d="M4 6L8 10L12 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg></summary><div class="nav-panel" id="ecosystem-panel"><div class="nav-column"><h2>Products</h2><a href="https://yearn.fi/vaults" class="nav-tile"><img src="/concepts/lifetime/navigation/LogoYearnMark.svg" alt="" width="24" height="24" /><span><strong>yVaults</strong><small>Yield-Generating Vaults</small></span><span class="nav-external" aria-hidden="true">↗</span></a><a href="https://curation.yearn.fi" class="nav-tile" target="_blank" rel="noopener noreferrer"><img src="/concepts/lifetime/navigation/LogoCuration.svg" alt="" width="24" height="24" /><span><strong>Curation</strong><small>Lending Market Curation</small></span><span class="nav-external" aria-hidden="true">↗</span></a><a href="https://ycrv.yearn.fi" class="nav-tile" target="_blank" rel="noopener noreferrer"><img src="/landing/apps/ycrv.png" alt="" width="24" height="24" /><span><strong>yCRV</strong><small>veCRV Liquid Locker</small></span><span class="nav-external" aria-hidden="true">↗</span></a><a href="https://yyb.yearn.fi" class="nav-tile" target="_blank" rel="noopener noreferrer"><img src="/yYB-logo.svg" alt="" width="24" height="24" /><span><strong>yYB</strong><small>veYB Liquid Locker</small></span><span class="nav-external" aria-hidden="true">↗</span></a><a href="https://styfi.yearn.fi" class="nav-tile" target="_blank" rel="noopener noreferrer"><img src="/stYFI-logo.svg" alt="" width="24" height="24" /><span><strong>stYFI</strong><small>YFI Staking</small></span><span class="nav-external" aria-hidden="true">↗</span></a></div><div class="nav-column"><h2>Tools</h2><a href="https://powerglove.yearn.fi" class="nav-tile" target="_blank" rel="noopener noreferrer"><span><strong>PowerGlove</strong><small>Vault Analytics</small></span><span class="nav-external" aria-hidden="true">↗</span></a><a href="https://kong.yearn.fi" class="nav-tile" target="_blank" rel="noopener noreferrer"><span><strong>Kong</strong><small>Vault Data</small></span><span class="nav-external" aria-hidden="true">↗</span></a><a href="https://kalani.yearn.fi" class="nav-tile" target="_blank" rel="noopener noreferrer"><span><strong>Kalani</strong><small>Vault Management Interface</small></span><span class="nav-external" aria-hidden="true">↗</span></a><a href="https://factory.yearn.fi" class="nav-tile" target="_blank" rel="noopener noreferrer"><span><strong>yFactory</strong><small>LP token Vault Creation</small></span><span class="nav-external" aria-hidden="true">↗</span></a><a href="https://oracle.yearn.fi" class="nav-tile" target="_blank" rel="noopener noreferrer"><span><strong>APR Oracle</strong><small>Projected Vault APY Tool</small></span><span class="nav-external" aria-hidden="true">↗</span></a></div></div></details>
+<details class="header-menu" name="yearn-navigation"><summary aria-controls="resources-panel">Resources<svg class="nav-chevron" width="16" height="16" viewBox="0 0 16 16" fill="none" aria-hidden="true" focusable="false"><path d="M4 6L8 10L12 6" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" /></svg></summary><div class="nav-panel" id="resources-panel"><div class="nav-column"><h2>Information</h2><a href="https://docs.yearn.fi/" class="nav-tile" target="_blank" rel="noopener noreferrer"><img src="/GitBook%20-%20Icon%20-%20Dark.svg" alt="" width="24" height="24" /><span><strong>Docs</strong><small>Yearn Knowledge Base</small></span><span class="nav-external" aria-hidden="true">↗</span></a><a href="https://x.com/yearnfi" class="nav-tile" target="_blank" rel="noopener noreferrer"><img src="/concepts/lifetime/navigation/IconTwitter.svg" alt="" width="24" height="24" /><span><strong>X (Twitter)</strong><small>Official Yearn News Feed</small></span><span class="nav-external" aria-hidden="true">↗</span></a><a href="https://github.com/yearn" class="nav-tile" target="_blank" rel="noopener noreferrer"><img src="/concepts/lifetime/navigation/LogoGithub.svg" alt="" width="24" height="24" /><span><strong>Github</strong><small>Yearn Codebase</small></span><span class="nav-external" aria-hidden="true">↗</span></a><a href="https://blog.yearn.fi/" class="nav-tile" target="_blank" rel="noopener noreferrer"><img src="/paragraph.svg" alt="" width="24" height="24" /><span><strong>Blog</strong><small>Articles about Yearn</small></span><span class="nav-external" aria-hidden="true">↗</span></a><a href="https://brand.yearn.fi" class="nav-tile" target="_blank" rel="noopener noreferrer"><img src="/concepts/lifetime/navigation/LogoYearnMark.svg" alt="" width="24" height="24" /><span><strong>Brand Assets</strong><small>Yearn Brand Resources</small></span><span class="nav-external" aria-hidden="true">↗</span></a></div><div class="nav-column"><h2>Community</h2><a href="https://partners.yearn.fi/" class="nav-tile" target="_blank" rel="noopener noreferrer"><img src="/concepts/lifetime/navigation/IconStack.svg" alt="" width="24" height="24" /><span><strong>Partners</strong><small>Build on Yearn</small></span><span class="nav-external" aria-hidden="true">↗</span></a><a href="https://discord.gg/yearn" class="nav-tile" target="_blank" rel="noopener noreferrer"><img src="/concepts/lifetime/navigation/IconDiscord.svg" alt="" width="24" height="24" /><span><strong>Support</strong><small>Yearn Discord Server</small></span><span class="nav-external" aria-hidden="true">↗</span></a><a href="https://t.me/yearnfinance" class="nav-tile" target="_blank" rel="noopener noreferrer"><img src="/concepts/lifetime/navigation/IconTelegram.svg" alt="" width="24" height="24" /><span><strong>Telegram Chat</strong><small>Discuss Yearn on Telegram</small></span><span class="nav-external" aria-hidden="true">↗</span></a><a href="https://gov.yearn.fi/" class="nav-tile" target="_blank" rel="noopener noreferrer"><img src="/discourse-icon.svg" alt="" width="24" height="24" /><span><strong>Governance</strong><small>Yearn Discussion Forum</small></span><span class="nav-external" aria-hidden="true">↗</span></a></div></div></details>
+          </nav>
+        </div>
+        <nav class="header-actions" aria-label="Main navigation"><a class="launch build-launch" href="https://partners.yearn.fi"><span>Build with Yearn </span><span aria-hidden="true">↗</span></a><a class="launch" href="https://yearn.fi/vaults">Launch app <span aria-hidden="true">↗</span></a></nav>
+        <button class="mobile-menu-toggle" type="button" aria-label="Open navigation menu" aria-controls="mobile-navigation" aria-expanded="false"><svg width="24" height="24" viewBox="0 0 24 24" fill="none" aria-hidden="true"><rect x="2" y="18" width="20" height="2" fill="currentColor" /><rect x="2" y="11" width="20" height="2" fill="currentColor" /><rect x="2" y="4" width="20" height="2" fill="currentColor" /></svg></button>
+      </div>
+    </header>
+    <dialog id="mobile-navigation" aria-label="Yearn navigation">
+      <div class="mobile-nav-top"><a href="#main" aria-label="Yearn home"><img src="/concepts/lifetime/navigation/TypeMarkYearn.svg?v=37" alt="Yearn" width="116" height="32" /></a><button class="mobile-menu-close" type="button" aria-label="Close navigation menu" autofocus><svg width="24" height="24" viewBox="0 0 24 24" aria-hidden="true"><path d="m6 6 12 12M6 18 18 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" /></svg></button></div>
+      <nav class="mobile-nav-content" aria-label="Mobile navigation"><div class="mobile-nav-actions"><a class="launch" href="https://yearn.fi/vaults">Launch app <span aria-hidden="true">↗</span></a><a class="launch build-launch" href="https://partners.yearn.fi"><span>Build with Yearn </span><span aria-hidden="true">↗</span></a></div><div id="mobile-nav-sections"></div></nav>
+    </dialog>
+    <main id="main">
+      <section class="hero" aria-labelledby="earnings-label">
+        <div class="hero-main">
+          <div class="counter" role="img" aria-label="Loading lifetime earnings"><span class="currency" aria-hidden="true">$</span><span id="earnings" aria-hidden="true">—</span></div>
+          <h1 id="earnings-label" class="counter-caption">Earned by <span class="yearn-word"><img src="/concepts/lifetime/navigation/YearnWordmark.svg" alt="Yearn" /></span> vaults, and counting</h1>
+          <a class="tagline" id="tagline" href="https://yearn.fi/vaults"><span>Deposit once. Earn forever.</span><span class="tagline-arrow" aria-hidden="true">→</span></a>
+        </div>
+        <div class="hero-bottom"><a class="scroll-link" href="#capital" aria-label="Scroll to Yearn statistics"><span aria-hidden="true">↓</span><span class="sr-only">Scroll to <span class="yearn-word"><img src="/concepts/lifetime/navigation/YearnWordmark.svg" alt="Yearn" /></span> statistics</span></a></div>
+      </section>
+      <section class="statistics-section" id="capital" aria-label="Yearn statistics">
+        <dl class="statistics-grid reveal">
+          <div class="stat" id="assets-secured" data-stats-only="new"><dt>Total assets secured</dt><dd id="assets-secured-value">—</dd><dd class="stat-detail">Across Yearn vaults and partner contracts</dd></div>
+          <div class="stat" data-stats-only="old" hidden><dt>Yield earned</dt><dd id="yield-earned">—</dd><dd class="stat-detail">Estimated lifetime earnings</dd></div>
+          <div class="stat"><dt>Total value deposited</dt><dd id="tvl">—</dd><dd class="stat-detail">in Yearn Endorsed vaults</dd></div>
+          <div class="stat" id="fees" data-stats-only="old" hidden><dt>Fees earned</dt><dd id="fees-value">—</dd><dd class="stat-detail">Lifetime gross contract fees</dd></div>
+          <div class="stat"><dt>Vaults deployed</dt><dd id="vaults-deployed">—</dd><dd class="stat-detail">Indexed V2 + V3 vaults</dd></div>
+          <div class="stat"><dt>Harvests</dt><dd id="harvest-count">—</dd><dd class="stat-detail">Recorded across V2 + V3 vaults</dd></div>
+        </dl>
+        <section class="integrations" aria-labelledby="integrations-title">
+          <div class="integrations-heading"><h2 id="integrations-title">Teams building with <span class="yearn-word"><img src="/concepts/lifetime/navigation/YearnWordmark.svg" alt="Yearn" /></span></h2></div>
+          <!-- biome-ignore lint/a11y/noNoninteractiveTabindex: The horizontal logo strip must support keyboard scrolling. -->
+          <section class="integrations-window" tabindex="0" aria-label="Yearn integrations. Scroll to explore.">
+            <div class="integrations-track" id="integrations-track">
+              <ul class="integrations-group">
+                <li><img src="/concepts/lifetime/partners/Asymmetry_Finance_Logo_Light.svg" alt="Asymmetry" width="160" height="40" /></li>
+                <li><img src="/concepts/lifetime/partners/cap.svg" alt="Cap" width="160" height="40" /></li>
+                <li><img src="/concepts/lifetime/partners/Curve.svg" alt="Curve Finance" width="160" height="40" /></li>
+                <li><img src="/concepts/lifetime/partners/katana_logo_primary_lockup_spark.svg" alt="Katana" width="160" height="40" /></li>
+                <li><img src="/concepts/lifetime/partners/Origin.svg" alt="Origin Protocol" width="160" height="40" /></li>
+                <li><img src="/concepts/lifetime/partners/Superform.svg" alt="Superform" width="160" height="40" /></li>
+                <li><img src="/concepts/lifetime/partners/teller-logo.svg" alt="Teller" width="160" height="40" /></li>
+                <li><img src="/concepts/lifetime/partners/Alchemix_Black.svg" alt="Alchemix" width="160" height="40" /></li>
+                <li><img src="/concepts/lifetime/partners/Inverse_Finance_Logo_05.svg" alt="Inverse" width="160" height="40" /></li>
+                <li><img src="/concepts/lifetime/partners/birch-hill-logo.svg" alt="Birch Hill" width="160" height="40" /></li>
+                <li><img src="/concepts/lifetime/partners/Octant-logo.svg" alt="Octant" width="160" height="40" /></li>
+                <li><img src="/concepts/lifetime/partners/Term.svg" alt="Term" width="160" height="40" /></li>
+                <li><img src="/concepts/lifetime/partners/trueo-logo.svg" alt="Trueo" width="160" height="40" /></li>
+                <li><img src="/concepts/lifetime/partners/swell-light.svg" alt="Swell" width="160" height="40" /></li>
+                <li><img src="/concepts/lifetime/partners/robin.svg" alt="Robin" width="160" height="40" /></li>
+              </ul>
+              <ul class="integrations-group" aria-hidden="true" inert>
+                <li><img src="/concepts/lifetime/partners/Asymmetry_Finance_Logo_Light.svg" alt="Asymmetry" width="160" height="40" /></li>
+                <li><img src="/concepts/lifetime/partners/cap.svg" alt="Cap" width="160" height="40" /></li>
+                <li><img src="/concepts/lifetime/partners/Curve.svg" alt="Curve Finance" width="160" height="40" /></li>
+                <li><img src="/concepts/lifetime/partners/katana_logo_primary_lockup_spark.svg" alt="Katana" width="160" height="40" /></li>
+                <li><img src="/concepts/lifetime/partners/Origin.svg" alt="Origin Protocol" width="160" height="40" /></li>
+                <li><img src="/concepts/lifetime/partners/Superform.svg" alt="Superform" width="160" height="40" /></li>
+                <li><img src="/concepts/lifetime/partners/teller-logo.svg" alt="Teller" width="160" height="40" /></li>
+                <li><img src="/concepts/lifetime/partners/Alchemix_Black.svg" alt="Alchemix" width="160" height="40" /></li>
+                <li><img src="/concepts/lifetime/partners/Inverse_Finance_Logo_05.svg" alt="Inverse" width="160" height="40" /></li>
+                <li><img src="/concepts/lifetime/partners/birch-hill-logo.svg" alt="Birch Hill" width="160" height="40" /></li>
+                <li><img src="/concepts/lifetime/partners/Octant-logo.svg" alt="Octant" width="160" height="40" /></li>
+                <li><img src="/concepts/lifetime/partners/Term.svg" alt="Term" width="160" height="40" /></li>
+                <li><img src="/concepts/lifetime/partners/trueo-logo.svg" alt="Trueo" width="160" height="40" /></li>
+                <li><img src="/concepts/lifetime/partners/swell-light.svg" alt="Swell" width="160" height="40" /></li>
+                <li><img src="/concepts/lifetime/partners/robin.svg" alt="Robin" width="160" height="40" /></li>
+              </ul>
+            </div>
+          </section>
+        </section>
+      </section>
+      <section class="paths-section" id="your-way" aria-labelledby="paths-title">
+        <div class="paths-heading reveal"><h2 id="paths-title"><span class="yearn-word"><img src="/concepts/lifetime/navigation/YearnWordmark.svg" alt="Yearn" /></span> builds vault infrastructure to last.</h2><p>Whether you are looking to deposit your onchain assets and earn or are building a protocol that needs flexible yield generation infrastructure, Yearn is engineered for you.</p></div>
+        <div class="paths">
+          <article class="path reveal" aria-labelledby="earn-title"><span class="eyebrow">For Depositors</span><h3 id="earn-title">Yield made easy.</h3><p>Find a vault for the assets you hold.<br />Deposit. Let the strategy take it from there.</p><a class="path-cta" href="https://yearn.fi/vaults">Explore vaults <span aria-hidden="true">↗</span></a></article>
+          <article class="path reveal" id="build" aria-labelledby="build-title"><span class="eyebrow">For Builders</span><h3 id="build-title">Make it part of yours.</h3><p>Bring Yearn vaults into your app, wallet or protocol.<br />Your experience. Yearn under the hood.</p><a class="path-cta" href="https://partners.yearn.fi"><span>Build with Yearn </span><span aria-hidden="true">↗</span></a></article>
+        </div>
+      </section>
+      <section class="security-section feature-section" id="security" aria-labelledby="security-title">
+        <div class="security-heading"><h2 id="security-title">Security is built in at every layer.</h2></div>
+        <div class="security-display">
+          <section class="security-panel" id="security-code"  aria-labelledby="security-choice-code">
+            <div class="panel-caption"><span>VaultV3.vy</span><span>Vyper · ERC-4626</span></div>
+            <!-- biome-ignore lint/a11y/noNoninteractiveTabindex: Scrollable code must support keyboard scrolling. -->
+<pre class="vault-code" tabindex="0" aria-label="Complete VaultV3 source code"><code><span class="syntax-comment"># @version 0.3.10</span>
+<span class="syntax-comment">#pragma evm-version paris</span>
+<span class="syntax-comment">#pragma optimize codesize</span>
+
+<span class="syntax-comment">&quot;&quot;&quot;
+@title Yearn V3 Vault
+@license GNU AGPLv3
+@author yearn.finance
+@notice
+    The Yearn VaultV3 is designed as a non-opinionated system to distribute funds of 
+    depositors for a specific `asset` into different opportunities (aka Strategies)
+    and manage accounting in a robust way.
+
+    Depositors receive shares (aka vaults tokens) proportional to their deposit amount. 
+    Vault tokens are yield-bearing and can be redeemed at any time to get back deposit 
+    plus any yield generated.
+
+    Addresses that are given different permissioned roles by the `role_manager` 
+    are then able to allocate funds as they best see fit to different strategies 
+    and adjust the strategies and allocations as needed, as well as reporting realized
+    profits or losses.
+
+    Strategies are any ERC-4626 compliant contracts that use the same underlying `asset` 
+    as the vault. The vault provides no assurances as to the safety of any strategy
+    and it is the responsibility of those that hold the corresponding roles to choose
+    and fund strategies that best fit their desired specifications.
+
+    Those holding vault tokens are able to redeem the tokens for the corresponding
+    amount of underlying asset based on any reported profits or losses since their
+    initial deposit.
+
+    The vault is built to be customized by the management to be able to fit their
+    specific desired needs. Including the customization of strategies, accountants, 
+    ownership etc.
+&quot;&quot;&quot;</span>
+
+<span class="syntax-comment"># INTERFACES #</span>
+
+<span class="syntax-keyword">from</span> vyper.interfaces <span class="syntax-keyword">import</span> ERC20
+<span class="syntax-keyword">from</span> vyper.interfaces <span class="syntax-keyword">import</span> ERC20Detailed
+
+<span class="syntax-keyword">interface</span> IStrategy:
+    <span class="syntax-keyword">def</span> asset() -&gt; address: view
+    <span class="syntax-keyword">def</span> balanceOf(owner: address) -&gt; uint256: view
+    <span class="syntax-keyword">def</span> convertToAssets(shares: uint256) -&gt; uint256: view
+    <span class="syntax-keyword">def</span> convertToShares(assets: uint256) -&gt; uint256: view
+    <span class="syntax-keyword">def</span> previewWithdraw(assets: uint256) -&gt; uint256: view
+    <span class="syntax-keyword">def</span> maxDeposit(receiver: address) -&gt; uint256: view
+    <span class="syntax-keyword">def</span> deposit(assets: uint256, receiver: address) -&gt; uint256: nonpayable
+    <span class="syntax-keyword">def</span> maxRedeem(owner: address) -&gt; uint256: view
+    <span class="syntax-keyword">def</span> redeem(shares: uint256, receiver: address, owner: address) -&gt; uint256: nonpayable
+    
+<span class="syntax-keyword">interface</span> IAccountant:
+    <span class="syntax-keyword">def</span> report(strategy: address, gain: uint256, loss: uint256) -&gt; (uint256, uint256): nonpayable
+
+<span class="syntax-keyword">interface</span> IDepositHook:
+    <span class="syntax-keyword">def</span> available_deposit_limit(receiver: address) -&gt; uint256: view
+    <span class="syntax-keyword">def</span> post_deposit(sender: address, receiver: address, assets: uint256, shares: uint256): nonpayable
+    
+<span class="syntax-keyword">interface</span> IWithdrawHook:
+    <span class="syntax-keyword">def</span> available_withdraw_limit(owner: address, max_loss: uint256, strategies: DynArray[address, MAX_QUEUE]) -&gt; uint256: view
+    <span class="syntax-keyword">def</span> post_withdraw(sender: address, receiver: address, owner: address, assets: uint256, shares: uint256): nonpayable
+
+<span class="syntax-keyword">interface</span> ITransferHook:
+    <span class="syntax-keyword">def</span> post_transfer(caller: address, sender: address, receiver: address, shares: uint256): nonpayable
+
+<span class="syntax-keyword">interface</span> IFactory:
+    <span class="syntax-keyword">def</span> protocol_fee_config() -&gt; (uint16, address): view
+
+<span class="syntax-comment"># EVENTS #</span>
+<span class="syntax-comment"># ERC4626 EVENTS</span>
+<span class="syntax-keyword">event</span> Deposit:
+    sender: indexed(address)
+    owner: indexed(address)
+    assets: uint256
+    shares: uint256
+
+<span class="syntax-keyword">event</span> Withdraw:
+    sender: indexed(address)
+    receiver: indexed(address)
+    owner: indexed(address)
+    assets: uint256
+    shares: uint256
+
+<span class="syntax-comment"># ERC20 EVENTS</span>
+<span class="syntax-keyword">event</span> Transfer:
+    sender: indexed(address)
+    receiver: indexed(address)
+    value: uint256
+
+<span class="syntax-keyword">event</span> Approval:
+    owner: indexed(address)
+    spender: indexed(address)
+    value: uint256
+
+<span class="syntax-comment"># STRATEGY EVENTS</span>
+<span class="syntax-keyword">event</span> StrategyChanged:
+    strategy: indexed(address)
+    change_type: indexed(StrategyChangeType)
+    
+<span class="syntax-keyword">event</span> StrategyReported:
+    strategy: indexed(address)
+    gain: uint256
+    loss: uint256
+    current_debt: uint256
+    protocol_fees: uint256
+    total_fees: uint256
+    total_refunds: uint256
+
+<span class="syntax-comment"># DEBT MANAGEMENT EVENTS</span>
+<span class="syntax-keyword">event</span> DebtUpdated:
+    strategy: indexed(address)
+    current_debt: uint256
+    new_debt: uint256
+
+<span class="syntax-comment"># ROLE UPDATES</span>
+<span class="syntax-keyword">event</span> RoleSet:
+    account: indexed(address)
+    role: indexed(Roles)
+
+<span class="syntax-comment"># STORAGE MANAGEMENT EVENTS</span>
+<span class="syntax-keyword">event</span> UpdateFutureRoleManager:
+    future_role_manager: indexed(address)
+
+<span class="syntax-keyword">event</span> UpdateRoleManager:
+    role_manager: indexed(address)
+
+<span class="syntax-keyword">event</span> UpdateAccountant:
+    accountant: indexed(address)
+
+<span class="syntax-keyword">event</span> UpdateDepositHook:
+    deposit_hook: indexed(address)
+
+<span class="syntax-keyword">event</span> UpdateWithdrawHook:
+    withdraw_hook: indexed(address)
+
+<span class="syntax-keyword">event</span> UpdateTransferHook:
+    transfer_hook: indexed(address)
+
+<span class="syntax-keyword">event</span> UpdateDefaultQueue:
+    new_default_queue: DynArray[address, MAX_QUEUE]
+
+<span class="syntax-keyword">event</span> UpdateUseDefaultQueue:
+    use_default_queue: bool
+
+<span class="syntax-keyword">event</span> UpdateAutoAllocate:
+    auto_allocate: bool
+
+<span class="syntax-keyword">event</span> UpdatePaused:
+    paused: bool
+
+<span class="syntax-keyword">event</span> UpdatedMaxDebtForStrategy:
+    sender: indexed(address)
+    strategy: indexed(address)
+    new_debt: uint256
+
+<span class="syntax-keyword">event</span> UpdateDepositLimit:
+    deposit_limit: uint256
+
+<span class="syntax-keyword">event</span> UpdateMinimumTotalIdle:
+    minimum_total_idle: uint256
+
+<span class="syntax-keyword">event</span> UpdateProfitMaxUnlockTime:
+    profit_max_unlock_time: uint256
+
+<span class="syntax-keyword">event</span> DebtPurchased:
+    strategy: indexed(address)
+    amount: uint256
+
+<span class="syntax-keyword">event</span> Shutdown:
+    pass
+
+<span class="syntax-comment"># STRUCTS #</span>
+<span class="syntax-keyword">struct</span> StrategyParams:
+    <span class="syntax-comment"># Timestamp when the strategy was added.</span>
+    activation: uint256 
+    <span class="syntax-comment"># Timestamp of the strategies last report.</span>
+    last_report: uint256
+    <span class="syntax-comment"># The current assets the strategy holds.</span>
+    current_debt: uint256
+    <span class="syntax-comment"># The max assets the strategy can hold. </span>
+    max_debt: uint256
+
+<span class="syntax-comment"># CONSTANTS #</span>
+<span class="syntax-comment"># The max length the withdrawal queue can be.</span>
+MAX_QUEUE: constant(uint256) = 10
+<span class="syntax-comment"># 100% in Basis Points.</span>
+MAX_BPS: constant(uint256) = 10_000
+<span class="syntax-comment"># Extended for profit locking calculations.</span>
+MAX_BPS_EXTENDED: constant(uint256) = 1_000_000_000_000
+<span class="syntax-comment"># The version of this vault.</span>
+API_VERSION: constant(String[28]) = <span class="syntax-string">&quot;3.1.1&quot;</span>
+
+<span class="syntax-comment"># ENUMS #</span>
+<span class="syntax-comment"># Permissioned functions are assigned a Role.</span>
+<span class="syntax-comment"># Roles can govern closely related functions and be combined in any combination.</span>
+<span class="syntax-comment"># Follows python Enum patterns so the first Enum == 1 and doubles each time.</span>
+<span class="syntax-keyword">enum</span> Roles:
+    ADD_STRATEGY_MANAGER <span class="syntax-comment"># Can add strategies to the vault.</span>
+    REVOKE_STRATEGY_MANAGER <span class="syntax-comment"># Can remove strategies from the vault.</span>
+    FORCE_REVOKE_MANAGER <span class="syntax-comment"># Can force remove a strategy causing a loss.</span>
+    ACCOUNTANT_MANAGER <span class="syntax-comment"># Can set the accountant that assess fees.</span>
+    QUEUE_MANAGER <span class="syntax-comment"># Can set the default withdrawal queue.</span>
+    REPORTING_MANAGER <span class="syntax-comment"># Calls report for strategies.</span>
+    DEBT_MANAGER <span class="syntax-comment"># Adds and removes debt from strategies.</span>
+    MAX_DEBT_MANAGER <span class="syntax-comment"># Can set the max debt for a strategy.</span>
+    DEPOSIT_LIMIT_MANAGER <span class="syntax-comment"># Sets deposit limit and deposit hook for the vault.</span>
+    WITHDRAW_LIMIT_MANAGER <span class="syntax-comment"># Sets the withdraw and transfer hooks.</span>
+    MINIMUM_IDLE_MANAGER <span class="syntax-comment"># Sets the minimum total idle the vault should keep.</span>
+    PROFIT_UNLOCK_MANAGER <span class="syntax-comment"># Sets the profit_max_unlock_time.</span>
+    DEBT_PURCHASER <span class="syntax-comment"># Can purchase bad debt from the vault.</span>
+    EMERGENCY_MANAGER <span class="syntax-comment"># Can shutdown or pause vault in an emergency.</span>
+
+<span class="syntax-keyword">enum</span> StrategyChangeType:
+    ADDED
+    REVOKED
+
+<span class="syntax-keyword">enum</span> Rounding:
+    ROUND_DOWN
+    ROUND_UP
+
+<span class="syntax-comment"># STORAGE #</span>
+<span class="syntax-comment"># Underlying token used by the vault.</span>
+asset: public(address)
+<span class="syntax-comment"># Based off the `asset` decimals.</span>
+decimals: public(uint8)
+<span class="syntax-comment"># Deployer contract used to retrieve the protocol fee config.</span>
+factory: address
+
+<span class="syntax-comment"># HashMap that records all the strategies that are allowed to receive assets from the vault.</span>
+strategies: public(HashMap[address, StrategyParams])
+<span class="syntax-comment"># The current default withdrawal queue.</span>
+default_queue: public(DynArray[address, MAX_QUEUE])
+<span class="syntax-comment"># Should the vault use the default_queue regardless whats passed in.</span>
+use_default_queue: public(bool)
+<span class="syntax-comment"># Should the vault automatically allocate funds to the first strategy in queue.</span>
+auto_allocate: public(bool)
+
+<span class="syntax-comment">### ACCOUNTING ###</span>
+<span class="syntax-comment"># ERC20 - amount of shares per account</span>
+balance_of: HashMap[address, uint256]
+<span class="syntax-comment"># ERC20 - owner -&gt; (spender -&gt; amount)</span>
+allowance: public(HashMap[address, HashMap[address, uint256]])
+<span class="syntax-comment"># Total amount of shares that are currently minted including those locked.</span>
+total_supply: uint256
+<span class="syntax-comment"># Total amount of assets that has been deposited in strategies.</span>
+total_debt: uint256
+<span class="syntax-comment"># Current assets held in the vault contract. Replacing balanceOf(this) to avoid price_per_share manipulation.</span>
+total_idle: uint256
+<span class="syntax-comment"># Minimum amount of assets that should be kept in the vault contract to allow for fast, cheap redeems.</span>
+minimum_total_idle: public(uint256)
+<span class="syntax-comment"># Maximum amount of tokens that the vault can accept. If totalAssets &gt; deposit_limit, deposits will revert.</span>
+deposit_limit: public(uint256)
+
+<span class="syntax-comment">### PERIPHERY ###</span>
+<span class="syntax-comment"># Contract that charges fees and can give refunds.</span>
+accountant: public(address)
+<span class="syntax-comment"># Contract to control the deposit limit and receive post-deposit callbacks.</span>
+deposit_hook: public(address)
+<span class="syntax-comment"># Contract to control the withdraw limit and receive post-withdraw callbacks.</span>
+withdraw_hook: public(address)
+<span class="syntax-comment"># Contract to receive post-transfer callbacks.</span>
+transfer_hook: public(address)
+
+<span class="syntax-comment">### ROLES ###</span>
+<span class="syntax-comment"># HashMap mapping addresses to their roles</span>
+roles: public(HashMap[address, Roles])
+<span class="syntax-comment"># Address that can add and remove roles to addresses.</span>
+role_manager: public(address)
+<span class="syntax-comment"># Temporary variable to store the address of the next role_manager until the role is accepted.</span>
+future_role_manager: public(address)
+
+<span class="syntax-comment"># ERC20 - name of the vaults token.</span>
+name: public(String[64])
+<span class="syntax-comment"># ERC20 - symbol of the vaults token.</span>
+symbol: public(String[32])
+
+<span class="syntax-comment"># State of the vault - if set to true, only withdrawals will be available. It can&#x27;t be reverted.</span>
+shutdown: bool
+<span class="syntax-comment"># Reversible state that pauses ERC4626 user flows.</span>
+paused: bool
+<span class="syntax-comment"># The amount of time profits will unlock over.</span>
+profit_max_unlock_time: uint256
+<span class="syntax-comment"># The timestamp of when the current unlocking period ends.</span>
+full_profit_unlock_date: uint256
+<span class="syntax-comment"># The per second rate at which profit will unlock.</span>
+profit_unlocking_rate: uint256
+<span class="syntax-comment"># Last timestamp of the most recent profitable report.</span>
+last_profit_update: uint256
+
+<span class="syntax-comment"># `nonces` track `permit` approvals with signature.</span>
+nonces: public(HashMap[address, uint256])
+DOMAIN_TYPE_HASH: constant(bytes32) = keccak256(&#x27;EIP712Domain(string name,string version,uint256 chainId,address verifyingContract)&#x27;)
+PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quot;Permit(address owner,address spender,uint256 value,uint256 nonce,uint256 deadline)&quot;</span>)
+
+<span class="syntax-comment"># Constructor</span>
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> __init__():
+    <span class="syntax-comment"># Set `asset` so it cannot be re-initialized.</span>
+    self.asset = self
+    
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> initialize(
+    asset: address, 
+    name: String[64], 
+    symbol: String[32], 
+    role_manager: address, 
+    profit_max_unlock_time: uint256
+):
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice
+        Initialize a new vault. Sets the asset, name, symbol, and role manager.
+    @param asset
+        The address of the asset that the vault will accept.
+    @param name
+        The name of the vault token.
+    @param symbol
+        The symbol of the vault token.
+    @param role_manager 
+        The address that can add and remove roles to addresses
+    @param profit_max_unlock_time
+        The amount of time that the profit will be locked for
+    &quot;&quot;&quot;</span>
+    <span class="syntax-keyword">assert</span> self.asset == empty(address), <span class="syntax-string">&quot;initialized&quot;</span>
+    <span class="syntax-keyword">assert</span> asset != empty(address), <span class="syntax-string">&quot;ZERO ADDRESS&quot;</span>
+    <span class="syntax-keyword">assert</span> role_manager != empty(address), <span class="syntax-string">&quot;ZERO ADDRESS&quot;</span>
+
+    self.asset = asset
+    <span class="syntax-comment"># Get the decimals for the vault to use.</span>
+    self.decimals = ERC20Detailed(asset).decimals()
+    
+    <span class="syntax-comment"># Set the factory as the deployer address.</span>
+    self.factory = msg.sender
+
+    <span class="syntax-comment"># Must be less than one year for report cycles</span>
+    <span class="syntax-keyword">assert</span> profit_max_unlock_time &lt;= 31_556_952 <span class="syntax-comment"># dev: profit unlock time too long</span>
+    self.profit_max_unlock_time = profit_max_unlock_time
+
+    self.name = name
+    self.symbol = symbol
+    self.role_manager = role_manager
+
+<span class="syntax-comment">## SHARE MANAGEMENT ##</span>
+<span class="syntax-comment">## ERC20 ##</span>
+<span class="syntax-keyword">@internal</span>
+<span class="syntax-keyword">def</span> _spend_allowance(owner: address, spender: address, amount: uint256):
+    <span class="syntax-comment"># Unlimited approval does nothing (saves an SSTORE)</span>
+    current_allowance: uint256 = self.allowance[owner][spender]
+    <span class="syntax-keyword">if</span> (current_allowance &lt; max_value(uint256)):
+        <span class="syntax-keyword">assert</span> current_allowance &gt;= amount, <span class="syntax-string">&quot;insufficient allowance&quot;</span>
+        self._approve(owner, spender, unsafe_sub(current_allowance, amount))
+
+<span class="syntax-keyword">@internal</span>
+<span class="syntax-keyword">def</span> _transfer(sender: address, receiver: address, amount: uint256):
+    sender_balance: uint256 = self.balance_of[sender]
+    <span class="syntax-keyword">assert</span> sender_balance &gt;= amount, <span class="syntax-string">&quot;insufficient funds&quot;</span>
+    self.balance_of[sender] = unsafe_sub(sender_balance, amount)
+    self.balance_of[receiver] = unsafe_add(self.balance_of[receiver], amount)
+    <span class="syntax-keyword">log</span> Transfer(sender, receiver, amount)
+
+    transfer_hook: address = self.transfer_hook
+    <span class="syntax-keyword">if</span> transfer_hook != empty(address):
+        ITransferHook(transfer_hook).post_transfer(msg.sender, sender, receiver, amount)
+
+<span class="syntax-keyword">@internal</span>
+<span class="syntax-keyword">def</span> _transfer_from(sender: address, receiver: address, amount: uint256) -&gt; bool:
+    self._spend_allowance(sender, msg.sender, amount)
+    self._transfer(sender, receiver, amount)
+    <span class="syntax-keyword">return</span> <span class="syntax-keyword">True</span>
+
+<span class="syntax-keyword">@internal</span>
+<span class="syntax-keyword">def</span> _approve(owner: address, spender: address, amount: uint256) -&gt; bool:
+    self.allowance[owner][spender] = amount
+    <span class="syntax-keyword">log</span> Approval(owner, spender, amount)
+    <span class="syntax-keyword">return</span> <span class="syntax-keyword">True</span>
+
+<span class="syntax-keyword">@internal</span>
+<span class="syntax-keyword">def</span> _permit(
+    owner: address, 
+    spender: address, 
+    amount: uint256, 
+    deadline: uint256, 
+    v: uint8, 
+    r: bytes32, 
+    s: bytes32
+) -&gt; bool:
+    <span class="syntax-keyword">assert</span> owner != empty(address), <span class="syntax-string">&quot;invalid owner&quot;</span>
+    <span class="syntax-keyword">assert</span> deadline &gt;= block.timestamp, <span class="syntax-string">&quot;permit expired&quot;</span>
+    nonce: uint256 = self.nonces[owner]
+    digest: bytes32 = keccak256(
+        concat(
+            b&#x27;\x19\x01&#x27;,
+            self.domain_separator(),
+            keccak256(
+                concat(
+                    PERMIT_TYPE_HASH,
+                    convert(owner, bytes32),
+                    convert(spender, bytes32),
+                    convert(amount, bytes32),
+                    convert(nonce, bytes32),
+                    convert(deadline, bytes32),
+                )
+            )
+        )
+    )
+    <span class="syntax-keyword">assert</span> ecrecover(
+        digest, v, r, s
+    ) == owner, <span class="syntax-string">&quot;invalid signature&quot;</span>
+
+    self.allowance[owner][spender] = amount
+    self.nonces[owner] = nonce + 1
+    <span class="syntax-keyword">log</span> Approval(owner, spender, amount)
+    <span class="syntax-keyword">return</span> <span class="syntax-keyword">True</span>
+
+<span class="syntax-keyword">@internal</span>
+<span class="syntax-keyword">def</span> _burn_shares(shares: uint256, owner: address):
+    self.balance_of[owner] -= shares
+    self.total_supply = unsafe_sub(self.total_supply, shares)
+    <span class="syntax-keyword">log</span> Transfer(owner, empty(address), shares)
+
+<span class="syntax-keyword">@view</span>
+<span class="syntax-keyword">@internal</span>
+<span class="syntax-keyword">def</span> _unlocked_shares() -&gt; uint256:
+    <span class="syntax-comment">&quot;&quot;&quot;
+    Returns the amount of shares that have been unlocked.
+    To avoid sudden price_per_share spikes, profits can be processed 
+    through an unlocking period. The mechanism involves shares to be 
+    minted to the vault which are unlocked gradually over time. Shares 
+    that have been locked are gradually unlocked over profit_max_unlock_time.
+    &quot;&quot;&quot;</span>
+    _full_profit_unlock_date: uint256 = self.full_profit_unlock_date
+    unlocked_shares: uint256 = 0
+    <span class="syntax-keyword">if</span> _full_profit_unlock_date &gt; block.timestamp:
+        <span class="syntax-comment"># If we have not fully unlocked, we need to calculate how much has been.</span>
+        unlocked_shares = self.profit_unlocking_rate * (block.timestamp - self.last_profit_update) / MAX_BPS_EXTENDED
+
+    <span class="syntax-keyword">elif</span> _full_profit_unlock_date != 0:
+        <span class="syntax-comment"># All shares have been unlocked</span>
+        unlocked_shares = self.balance_of[self]
+
+    <span class="syntax-keyword">return</span> unlocked_shares
+
+
+<span class="syntax-keyword">@view</span>
+<span class="syntax-keyword">@internal</span>
+<span class="syntax-keyword">def</span> _total_supply() -&gt; uint256:
+    <span class="syntax-comment"># Need to account for the shares issued to the vault that have unlocked.</span>
+    <span class="syntax-keyword">return</span> self.total_supply - self._unlocked_shares()
+
+<span class="syntax-keyword">@view</span>
+<span class="syntax-keyword">@internal</span>
+<span class="syntax-keyword">def</span> _total_assets() -&gt; uint256:
+    <span class="syntax-comment">&quot;&quot;&quot;
+    Total amount of assets that are in the vault and in the strategies. 
+    &quot;&quot;&quot;</span>
+    <span class="syntax-keyword">return</span> self.total_idle + self.total_debt
+
+<span class="syntax-keyword">@view</span>
+<span class="syntax-keyword">@internal</span>
+<span class="syntax-keyword">def</span> _convert_to_assets(shares: uint256, rounding: Rounding) -&gt; uint256:
+    <span class="syntax-comment">&quot;&quot;&quot; 
+    assets = shares * (total_assets / total_supply) --- (== price_per_share * shares)
+    &quot;&quot;&quot;</span>
+    <span class="syntax-keyword">if</span> shares == max_value(uint256) <span class="syntax-keyword">or</span> shares == 0:
+        <span class="syntax-keyword">return</span> shares
+
+    total_supply: uint256 = self._total_supply()
+    <span class="syntax-comment"># if total_supply is 0, price_per_share is 1</span>
+    <span class="syntax-keyword">if</span> total_supply == 0: 
+        <span class="syntax-keyword">return</span> shares
+
+    numerator: uint256 = shares * self._total_assets()
+    amount: uint256 = numerator / total_supply
+    <span class="syntax-keyword">if</span> rounding == Rounding.ROUND_UP <span class="syntax-keyword">and</span> numerator % total_supply != 0:
+        amount += 1
+
+    <span class="syntax-keyword">return</span> amount
+
+<span class="syntax-keyword">@view</span>
+<span class="syntax-keyword">@internal</span>
+<span class="syntax-keyword">def</span> _convert_to_shares(assets: uint256, rounding: Rounding) -&gt; uint256:
+    <span class="syntax-comment">&quot;&quot;&quot;
+    shares = amount * (total_supply / total_assets) --- (== amount / price_per_share)
+    &quot;&quot;&quot;</span>
+    <span class="syntax-keyword">if</span> assets == max_value(uint256) <span class="syntax-keyword">or</span> assets == 0:
+        <span class="syntax-keyword">return</span> assets
+
+    total_supply: uint256 = self._total_supply()
+
+    <span class="syntax-comment"># if total_supply is 0, price_per_share is 1</span>
+    <span class="syntax-keyword">if</span> total_supply == 0:
+        <span class="syntax-keyword">return</span> assets
+
+    total_assets: uint256 = self._total_assets()
+
+    <span class="syntax-comment"># if total_Supply &gt; 0 but total_assets == 0, price_per_share = 0</span>
+    <span class="syntax-keyword">if</span> total_assets == 0:
+        <span class="syntax-keyword">return</span> 0
+    
+    numerator: uint256 = assets * total_supply
+    shares: uint256 = numerator / total_assets
+    <span class="syntax-keyword">if</span> rounding == Rounding.ROUND_UP <span class="syntax-keyword">and</span> numerator % total_assets != 0:
+        shares += 1
+
+    <span class="syntax-keyword">return</span> shares
+
+<span class="syntax-keyword">@internal</span>
+<span class="syntax-keyword">def</span> _erc20_safe_approve(token: address, spender: address, amount: uint256):
+    <span class="syntax-comment"># Used only to approve tokens that are not the type managed by this Vault.</span>
+    <span class="syntax-comment"># Used to handle non-compliant tokens like USDT</span>
+    <span class="syntax-keyword">assert</span> ERC20(token).approve(spender, amount, default_return_value=<span class="syntax-keyword">True</span>), <span class="syntax-string">&quot;approval failed&quot;</span>
+
+<span class="syntax-keyword">@internal</span>
+<span class="syntax-keyword">def</span> _erc20_safe_transfer_from(token: address, sender: address, receiver: address, amount: uint256):
+    <span class="syntax-comment"># Used only to transfer tokens that are not the type managed by this Vault.</span>
+    <span class="syntax-comment"># Used to handle non-compliant tokens like USDT</span>
+    <span class="syntax-keyword">assert</span> ERC20(token).transferFrom(sender, receiver, amount, default_return_value=<span class="syntax-keyword">True</span>), <span class="syntax-string">&quot;transfer failed&quot;</span>
+
+<span class="syntax-keyword">@internal</span>
+<span class="syntax-keyword">def</span> _erc20_safe_transfer(token: address, receiver: address, amount: uint256):
+    <span class="syntax-comment"># Used only to send tokens that are not the type managed by this Vault.</span>
+    <span class="syntax-comment"># Used to handle non-compliant tokens like USDT</span>
+    <span class="syntax-keyword">assert</span> ERC20(token).transfer(receiver, amount, default_return_value=<span class="syntax-keyword">True</span>), <span class="syntax-string">&quot;transfer failed&quot;</span>
+
+<span class="syntax-keyword">@internal</span>
+<span class="syntax-keyword">def</span> _issue_shares(shares: uint256, recipient: address):
+    self.balance_of[recipient] = unsafe_add(self.balance_of[recipient], shares)
+    self.total_supply += shares
+
+    <span class="syntax-keyword">log</span> Transfer(empty(address), recipient, shares)
+
+<span class="syntax-comment">## ERC4626 ##</span>
+<span class="syntax-keyword">@view</span>
+<span class="syntax-keyword">@internal</span>
+<span class="syntax-keyword">def</span> _max_deposit(receiver: address) -&gt; uint256: 
+    <span class="syntax-keyword">if</span> self.paused:
+        <span class="syntax-keyword">return</span> 0
+
+    <span class="syntax-keyword">if</span> receiver <span class="syntax-keyword">in</span> [empty(address), self]:
+        <span class="syntax-keyword">return</span> 0
+
+    <span class="syntax-comment"># If there is a deposit hook set use that.</span>
+    deposit_hook: address = self.deposit_hook
+    <span class="syntax-keyword">if</span> deposit_hook != empty(address):
+        <span class="syntax-keyword">return</span> IDepositHook(deposit_hook).available_deposit_limit(receiver)
+    
+    <span class="syntax-comment"># Else use the standard flow.</span>
+    _deposit_limit: uint256 = self.deposit_limit
+    <span class="syntax-keyword">if</span> (_deposit_limit == max_value(uint256)):
+        <span class="syntax-keyword">return</span> _deposit_limit
+
+    _total_assets: uint256 = self._total_assets()
+    <span class="syntax-keyword">if</span> (_total_assets &gt;= _deposit_limit):
+        <span class="syntax-keyword">return</span> 0
+
+    <span class="syntax-keyword">return</span> unsafe_sub(_deposit_limit, _total_assets)
+
+<span class="syntax-keyword">@view</span>
+<span class="syntax-keyword">@internal</span>
+<span class="syntax-keyword">def</span> _withdraw_queue(strategies: DynArray[address, MAX_QUEUE]) -&gt; DynArray[address, MAX_QUEUE]:
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @dev Returns the strategies queue that will be used for a withdrawal.
+    &quot;&quot;&quot;</span>
+    <span class="syntax-comment"># If a custom queue was passed, and we don&#x27;t force the default queue.</span>
+    <span class="syntax-keyword">if</span> len(strategies) != 0 <span class="syntax-keyword">and</span> <span class="syntax-keyword">not</span> self.use_default_queue:
+        <span class="syntax-keyword">return</span> strategies
+
+    <span class="syntax-keyword">return</span> self.default_queue
+
+<span class="syntax-keyword">@view</span>
+<span class="syntax-keyword">@internal</span>
+<span class="syntax-keyword">def</span> _max_withdraw(
+    owner: address,
+    max_loss: uint256,
+    strategies: DynArray[address, MAX_QUEUE]
+) -&gt; uint256:
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @dev Returns the max amount of `asset` an `owner` can withdraw.
+
+    This will do a full simulation of the withdraw in order to determine
+    how much is currently liquid and if the `max_loss` would allow for the 
+    tx to not revert.
+
+    This will track any expected loss to check if the tx will revert, but
+    not account for it in the amount returned since it is unrealised and 
+    therefore will not be accounted for in the conversion rates.
+
+    i.e. If we have 100 debt and 10 of unrealised loss, the max we can get
+    out is 90, but a user of the vault will need to call withdraw with 100
+    in order to get the full 90 out.
+    &quot;&quot;&quot;</span>
+    <span class="syntax-keyword">if</span> self.paused:
+        <span class="syntax-keyword">return</span> 0
+
+    <span class="syntax-comment"># Get the max amount for the owner if fully liquid.</span>
+    max_assets: uint256 = self._convert_to_assets(self.balance_of[owner], Rounding.ROUND_DOWN)
+
+    <span class="syntax-comment"># If there is a withdraw hook use that.</span>
+    withdraw_hook: address = self.withdraw_hook
+    <span class="syntax-comment"># Use the same queue that a redemption would use.</span>
+    _strategies: DynArray[address, MAX_QUEUE] = self._withdraw_queue(strategies)
+    <span class="syntax-keyword">if</span> withdraw_hook != empty(address):
+        <span class="syntax-keyword">return</span> min(
+            <span class="syntax-comment"># Use the min between the returned value and the max.</span>
+            <span class="syntax-comment"># Means the hook doesn&#x27;t need to account for balances or conversions.</span>
+            IWithdrawHook(withdraw_hook).available_withdraw_limit(owner, max_loss, _strategies),
+            max_assets
+        )
+    
+    <span class="syntax-comment"># See if we have enough idle to service the withdraw.</span>
+    current_idle: uint256 = self.total_idle
+    <span class="syntax-keyword">if</span> max_assets &gt; current_idle:
+        <span class="syntax-comment"># Track how much we can pull.</span>
+        have: uint256 = current_idle
+        loss: uint256 = 0
+
+        <span class="syntax-keyword">for</span> strategy <span class="syntax-keyword">in</span> _strategies:
+            <span class="syntax-comment"># Can&#x27;t use an invalid strategy.</span>
+            <span class="syntax-keyword">assert</span> self.strategies[strategy].activation != 0, <span class="syntax-string">&quot;inactive strategy&quot;</span>
+
+            current_debt: uint256 = self.strategies[strategy].current_debt
+            <span class="syntax-comment"># Get the maximum amount the vault would withdraw from the strategy.</span>
+            to_withdraw: uint256 = min(
+                <span class="syntax-comment"># What we still need for the full withdraw.</span>
+                max_assets - have, 
+                <span class="syntax-comment"># The current debt the strategy has.</span>
+                current_debt
+            )
+
+            <span class="syntax-comment"># Get any unrealised loss for the strategy.</span>
+            unrealised_loss: uint256 = self._assess_share_of_unrealised_losses(strategy, current_debt, to_withdraw)
+
+            <span class="syntax-comment"># See if any limit is enforced by the strategy.</span>
+            strategy_limit: uint256 = IStrategy(strategy).convertToAssets(
+                IStrategy(strategy).maxRedeem(self)
+            )
+
+            <span class="syntax-comment"># Adjust accordingly if there is a max withdraw limit.</span>
+            realizable_withdraw: uint256 = to_withdraw - unrealised_loss
+            <span class="syntax-keyword">if</span> strategy_limit &lt; realizable_withdraw:
+                <span class="syntax-keyword">if</span> unrealised_loss != 0:
+                    <span class="syntax-comment"># lower unrealised loss proportional to the limit.</span>
+                    unrealised_loss = unrealised_loss * strategy_limit / realizable_withdraw
+
+                <span class="syntax-comment"># Still count the unrealised loss as withdrawable.</span>
+                to_withdraw = strategy_limit + unrealised_loss
+                
+            <span class="syntax-comment"># If 0 move on to the next strategy.</span>
+            <span class="syntax-keyword">if</span> to_withdraw == 0:
+                continue
+
+            <span class="syntax-comment"># If there would be a loss with a non-maximum `max_loss` value.</span>
+            <span class="syntax-keyword">if</span> unrealised_loss &gt; 0 <span class="syntax-keyword">and</span> max_loss &lt; MAX_BPS:
+                <span class="syntax-comment"># Check if the loss is greater than the allowed range.</span>
+                <span class="syntax-keyword">if</span> loss + unrealised_loss &gt; (have + to_withdraw) * max_loss / MAX_BPS:
+                    <span class="syntax-comment"># If so use the amounts up till now.</span>
+                    break
+
+            <span class="syntax-comment"># Add to what we can pull.</span>
+            have += to_withdraw
+
+            <span class="syntax-comment"># If we have all we need break.</span>
+            <span class="syntax-keyword">if</span> have &gt;= max_assets:
+                break
+
+            <span class="syntax-comment"># Add any unrealised loss to the total</span>
+            loss += unrealised_loss
+
+        <span class="syntax-comment"># Update the max after going through the queue.</span>
+        <span class="syntax-comment"># In case we broke early or exhausted the queue.</span>
+        max_assets = have
+
+    <span class="syntax-keyword">return</span> max_assets
+
+<span class="syntax-keyword">@internal</span>
+<span class="syntax-keyword">def</span> _deposit(recipient: address, assets: uint256, shares: uint256):
+    <span class="syntax-comment">&quot;&quot;&quot;
+    Used for `deposit` and `mint` calls to transfer the amount of `asset` to the vault, 
+    issue the corresponding `shares` to the `recipient` and update all needed 
+    vault accounting.
+    &quot;&quot;&quot;</span>
+    <span class="syntax-keyword">assert</span> assets &lt;= self._max_deposit(recipient), <span class="syntax-string">&quot;exceed deposit limit&quot;</span>
+    <span class="syntax-keyword">assert</span> assets &gt; 0, <span class="syntax-string">&quot;cannot deposit zero&quot;</span>
+    <span class="syntax-keyword">assert</span> shares &gt; 0, <span class="syntax-string">&quot;cannot mint zero&quot;</span>
+ 
+    <span class="syntax-comment"># Transfer the tokens to the vault first.</span>
+    self._erc20_safe_transfer_from(self.asset, msg.sender, self, assets)
+    <span class="syntax-comment"># Record the change in total assets.</span>
+    self.total_idle += assets
+    
+    <span class="syntax-comment"># Issue the corresponding shares for assets.</span>
+    self._issue_shares(shares, recipient)
+
+    <span class="syntax-keyword">log</span> Deposit(msg.sender, recipient, assets, shares)
+
+    <span class="syntax-keyword">if</span> self.auto_allocate:
+        self._update_debt(self.default_queue[0], max_value(uint256), 0)
+
+    deposit_hook: address = self.deposit_hook
+    <span class="syntax-keyword">if</span> deposit_hook != empty(address):
+        IDepositHook(deposit_hook).post_deposit(msg.sender, recipient, assets, shares)
+
+<span class="syntax-keyword">@view</span>
+<span class="syntax-keyword">@internal</span>
+<span class="syntax-keyword">def</span> _assess_share_of_unrealised_losses(strategy: address, strategy_current_debt: uint256, assets_needed: uint256) -&gt; uint256:
+    <span class="syntax-comment">&quot;&quot;&quot;
+    Returns the share of losses that a user would take if withdrawing from this strategy
+    This accounts for losses that have been realized at the strategy level but not yet
+    realized at the vault level.
+
+    e.g. if the strategy has unrealised losses for 10% of its current debt and the user 
+    wants to withdraw 1_000 tokens, the losses that they will take is 100 token
+    &quot;&quot;&quot;</span>
+    <span class="syntax-comment"># The actual amount that the debt is currently worth.</span>
+    vault_shares: uint256 = IStrategy(strategy).balanceOf(self)
+    strategy_assets: uint256 = IStrategy(strategy).convertToAssets(vault_shares)
+    
+    <span class="syntax-comment"># If no losses, return 0</span>
+    <span class="syntax-keyword">if</span> strategy_assets &gt;= strategy_current_debt <span class="syntax-keyword">or</span> strategy_current_debt == 0:
+        <span class="syntax-keyword">return</span> 0
+
+    <span class="syntax-comment"># Users will withdraw assets_needed divided by loss ratio (strategy_assets / strategy_current_debt - 1).</span>
+    <span class="syntax-comment"># NOTE: If there are unrealised losses, the user will take his share.</span>
+    numerator: uint256 = assets_needed * strategy_assets
+    users_share_of_loss: uint256 = assets_needed - numerator / strategy_current_debt
+    <span class="syntax-comment"># Always round up.</span>
+    <span class="syntax-keyword">if</span> numerator % strategy_current_debt != 0 <span class="syntax-keyword">and</span> users_share_of_loss &lt; assets_needed:
+        users_share_of_loss += 1
+
+    <span class="syntax-keyword">return</span> users_share_of_loss
+
+<span class="syntax-keyword">@internal</span>
+<span class="syntax-keyword">def</span> _withdraw_from_strategy(strategy: address, assets_to_withdraw: uint256):
+    <span class="syntax-comment">&quot;&quot;&quot;
+    This takes the amount denominated in asset and performs a {redeem}
+    with the corresponding amount of shares.
+
+    We use {redeem} to natively take on losses without additional non-4626 standard parameters.
+    &quot;&quot;&quot;</span>
+    <span class="syntax-comment"># Need to get shares since we use redeem to be able to take on losses.</span>
+    shares_to_redeem: uint256 = min(
+        <span class="syntax-comment"># Use previewWithdraw since it should round up.</span>
+        IStrategy(strategy).previewWithdraw(assets_to_withdraw), 
+        <span class="syntax-comment"># And check against our actual balance.</span>
+        IStrategy(strategy).balanceOf(self)
+    )
+    <span class="syntax-comment"># Redeem the shares.</span>
+    IStrategy(strategy).redeem(shares_to_redeem, self, self)
+
+<span class="syntax-keyword">@internal</span>
+<span class="syntax-keyword">def</span> _redeem(
+    sender: address, 
+    receiver: address, 
+    owner: address,
+    assets: uint256,
+    shares: uint256, 
+    max_loss: uint256,
+    strategies: DynArray[address, MAX_QUEUE]
+) -&gt; uint256:
+    <span class="syntax-comment">&quot;&quot;&quot;
+    This will attempt to free up the full amount of assets equivalent to
+    `shares` and transfer them to the `receiver`. If the vault does
+    not have enough idle funds it will go through any strategies provided by
+    either the withdrawer or the default_queue to free up enough funds to 
+    service the request.
+
+    The vault will attempt to account for any unrealized losses taken on from
+    strategies since their respective last reports.
+
+    Any losses realized during the withdraw from a strategy will be passed on
+    to the user that is redeeming their vault shares unless it exceeds the given
+    `max_loss`.
+    &quot;&quot;&quot;</span>
+    <span class="syntax-keyword">assert</span> <span class="syntax-keyword">not</span> self.paused, <span class="syntax-string">&quot;paused&quot;</span>
+    <span class="syntax-keyword">assert</span> receiver != empty(address), <span class="syntax-string">&quot;ZERO ADDRESS&quot;</span>
+    <span class="syntax-keyword">assert</span> shares &gt; 0, <span class="syntax-string">&quot;no shares to redeem&quot;</span>
+    <span class="syntax-keyword">assert</span> assets &gt; 0, <span class="syntax-string">&quot;no assets to withdraw&quot;</span>
+    <span class="syntax-keyword">assert</span> max_loss &lt;= MAX_BPS, <span class="syntax-string">&quot;max loss&quot;</span>
+    
+    <span class="syntax-comment"># If there is a withdraw hook, check the max.</span>
+    withdraw_hook: address = self.withdraw_hook
+    _strategies: DynArray[address, MAX_QUEUE] = self._withdraw_queue(strategies)
+    
+    <span class="syntax-keyword">if</span> withdraw_hook != empty(address):
+        <span class="syntax-keyword">assert</span> assets &lt;= IWithdrawHook(withdraw_hook).available_withdraw_limit(owner, max_loss, _strategies), <span class="syntax-string">&quot;exceed withdraw limit&quot;</span>
+
+    <span class="syntax-keyword">assert</span> self.balance_of[owner] &gt;= shares, <span class="syntax-string">&quot;insufficient shares to redeem&quot;</span>
+    
+    <span class="syntax-keyword">if</span> sender != owner:
+        self._spend_allowance(owner, sender, shares)
+
+    <span class="syntax-comment"># The amount of the underlying token to withdraw.</span>
+    requested_assets: uint256 = assets
+
+    <span class="syntax-comment"># load to memory to save gas</span>
+    current_total_idle: uint256 = self.total_idle
+    _asset: address = self.asset
+
+    <span class="syntax-comment"># If there are not enough assets in the Vault contract, we try to free</span>
+    <span class="syntax-comment"># funds from strategies.</span>
+    <span class="syntax-keyword">if</span> requested_assets &gt; current_total_idle:
+        <span class="syntax-comment"># load to memory to save gas</span>
+        current_total_debt: uint256 = self.total_debt
+
+        <span class="syntax-comment"># Withdraw from strategies only what idle doesn&#x27;t cover.</span>
+        <span class="syntax-comment"># `assets_needed` is the total amount we need to fill the request.</span>
+        assets_needed: uint256 = unsafe_sub(requested_assets, current_total_idle)
+        <span class="syntax-comment"># `assets_to_withdraw` is the amount to request from the current strategy.</span>
+        assets_to_withdraw: uint256 = 0
+
+        <span class="syntax-comment"># To compare against real withdrawals from strategies</span>
+        previous_balance: uint256 = ERC20(_asset).balanceOf(self)
+
+        <span class="syntax-keyword">for</span> strategy <span class="syntax-keyword">in</span> _strategies:
+            <span class="syntax-comment"># Make sure we have a valid strategy.</span>
+            <span class="syntax-keyword">assert</span> self.strategies[strategy].activation != 0, <span class="syntax-string">&quot;inactive strategy&quot;</span>
+
+            <span class="syntax-comment"># How much should the strategy have.</span>
+            current_debt: uint256 = self.strategies[strategy].current_debt
+
+            <span class="syntax-comment"># What is the max amount to withdraw from this strategy.</span>
+            assets_to_withdraw = min(assets_needed, current_debt)
+
+            <span class="syntax-comment"># Cache max_withdraw now for use if unrealized loss &gt; 0</span>
+            <span class="syntax-comment"># Use maxRedeem and convert it since we use redeem.</span>
+            max_withdraw: uint256 = IStrategy(strategy).convertToAssets(
+                IStrategy(strategy).maxRedeem(self)
+            )
+
+            <span class="syntax-comment"># CHECK FOR UNREALISED LOSSES</span>
+            <span class="syntax-comment"># If unrealised losses &gt; 0, then the user will take the proportional share </span>
+            <span class="syntax-comment"># and realize it (required to avoid users withdrawing from lossy strategies).</span>
+            <span class="syntax-comment"># NOTE: strategies need to manage the fact that realising part of the loss can </span>
+            <span class="syntax-comment"># mean the realisation of 100% of the loss!! (i.e. if for withdrawing 10% of the</span>
+            <span class="syntax-comment"># strategy it needs to unwind the whole position, generated losses might be bigger)</span>
+            unrealised_losses_share: uint256 = self._assess_share_of_unrealised_losses(strategy, current_debt, assets_to_withdraw)
+            <span class="syntax-keyword">if</span> unrealised_losses_share &gt; 0:
+                <span class="syntax-comment"># If max withdraw is limiting the amount to pull, we need to adjust the portion of </span>
+                <span class="syntax-comment"># the unrealized loss the user should take.</span>
+                <span class="syntax-keyword">if</span> max_withdraw &lt; assets_to_withdraw - unrealised_losses_share:
+                    <span class="syntax-comment"># How much would we want to withdraw</span>
+                    wanted: uint256 = assets_to_withdraw - unrealised_losses_share
+                    <span class="syntax-comment"># Get the proportion of unrealised comparing what we want vs. what we can get</span>
+                    unrealised_losses_share = unrealised_losses_share * max_withdraw / wanted
+                    <span class="syntax-comment"># Adjust assets_to_withdraw so all future calculations work correctly</span>
+                    assets_to_withdraw = max_withdraw + unrealised_losses_share
+                
+                <span class="syntax-comment"># User now &quot;needs&quot; less assets to be unlocked (as he took some as losses)</span>
+                assets_to_withdraw -= unrealised_losses_share
+                requested_assets -= unrealised_losses_share
+                <span class="syntax-comment"># NOTE: done here instead of waiting for regular update of these values </span>
+                <span class="syntax-comment"># because it&#x27;s a rare case (so we can save minor amounts of gas)</span>
+                assets_needed -= unrealised_losses_share
+                current_total_debt -= unrealised_losses_share
+
+                <span class="syntax-comment"># If assets_to_withdraw is 0 and unrealised loss is still &gt; 0 then the strategy likely</span>
+                <span class="syntax-comment"># realized a 100% loss or the loss consumed the full withdrawal slice.</span>
+                <span class="syntax-comment"># Either way, we need to realize that loss before moving on.</span>
+                <span class="syntax-keyword">if</span> assets_to_withdraw == 0 <span class="syntax-keyword">and</span> unrealised_losses_share &gt; 0:
+                    <span class="syntax-comment"># Adjust the strategy debt accordingly.</span>
+                    new_debt: uint256 = current_debt - unrealised_losses_share
+        
+                    <span class="syntax-comment"># Update strategies storage</span>
+                    self.strategies[strategy].current_debt = new_debt
+                    <span class="syntax-comment"># Log the debt update</span>
+                    <span class="syntax-keyword">log</span> DebtUpdated(strategy, current_debt, new_debt)
+
+            <span class="syntax-comment"># Adjust based on the max withdraw of the strategy.</span>
+            assets_to_withdraw = min(assets_to_withdraw, max_withdraw)
+
+            <span class="syntax-comment"># Can&#x27;t withdraw 0.</span>
+            <span class="syntax-keyword">if</span> assets_to_withdraw == 0:
+                continue
+            
+            <span class="syntax-comment"># WITHDRAW FROM STRATEGY</span>
+            self._withdraw_from_strategy(strategy, assets_to_withdraw)
+            post_balance: uint256 = ERC20(_asset).balanceOf(self)
+            
+            <span class="syntax-comment"># Always check against the real amounts.</span>
+            withdrawn: uint256 = post_balance - previous_balance
+            loss: uint256 = 0
+            <span class="syntax-comment"># Check if we redeemed too much.</span>
+            <span class="syntax-keyword">if</span> withdrawn &gt; assets_to_withdraw:
+                <span class="syntax-comment"># Make sure we don&#x27;t underflow in debt updates.</span>
+                <span class="syntax-keyword">if</span> withdrawn &gt; current_debt:
+                    <span class="syntax-comment"># Can&#x27;t withdraw more than our debt.</span>
+                    assets_to_withdraw = current_debt
+                <span class="syntax-keyword">else</span>:
+                    <span class="syntax-comment"># Add the extra to how much we withdrew.</span>
+                    assets_to_withdraw += (unsafe_sub(withdrawn, assets_to_withdraw))
+
+            <span class="syntax-comment"># If we have not received what we expected, we consider the difference a loss.</span>
+            <span class="syntax-keyword">elif</span> withdrawn &lt; assets_to_withdraw:
+                loss = unsafe_sub(assets_to_withdraw, withdrawn)
+
+            <span class="syntax-comment"># NOTE: strategy&#x27;s debt decreases by the full amount but the total idle increases </span>
+            <span class="syntax-comment"># by the actual amount only (as the difference is considered lost).</span>
+            current_total_idle += (unsafe_sub(assets_to_withdraw, loss))
+            requested_assets -= loss
+            current_total_debt -= assets_to_withdraw
+
+            <span class="syntax-comment"># Vault will reduce debt because the unrealised loss has been taken by user</span>
+            new_debt: uint256 = current_debt - (assets_to_withdraw + unrealised_losses_share)
+        
+            <span class="syntax-comment"># Update strategies storage</span>
+            self.strategies[strategy].current_debt = new_debt
+            <span class="syntax-comment"># Log the debt update</span>
+            <span class="syntax-keyword">log</span> DebtUpdated(strategy, current_debt, new_debt)
+
+            <span class="syntax-comment"># Break if we have enough total idle to serve initial request.</span>
+            <span class="syntax-keyword">if</span> requested_assets &lt;= current_total_idle:
+                break
+
+            <span class="syntax-comment"># We update the previous_balance variable here to save gas in next iteration.</span>
+            previous_balance = post_balance
+
+            <span class="syntax-comment"># Reduce what we still need. Safe to use assets_to_withdraw </span>
+            <span class="syntax-comment"># here since it has been checked against requested_assets</span>
+            assets_needed -= assets_to_withdraw
+
+        <span class="syntax-comment"># If we exhaust the queue and still have insufficient total idle, revert.</span>
+        <span class="syntax-keyword">assert</span> current_total_idle &gt;= requested_assets, <span class="syntax-string">&quot;insufficient assets in vault&quot;</span>
+        <span class="syntax-comment"># Commit memory to storage.</span>
+        self.total_debt = current_total_debt
+
+    <span class="syntax-comment"># Check if there is a loss and a non-default value was set.</span>
+    <span class="syntax-keyword">if</span> assets &gt; requested_assets <span class="syntax-keyword">and</span> max_loss &lt; MAX_BPS:
+        <span class="syntax-comment"># Assure the loss is within the allowed range.</span>
+        <span class="syntax-keyword">assert</span> assets - requested_assets &lt;= assets * max_loss / MAX_BPS, <span class="syntax-string">&quot;too much loss&quot;</span>
+
+    <span class="syntax-comment"># First burn the corresponding shares from the redeemer.</span>
+    self._burn_shares(shares, owner)
+    <span class="syntax-comment"># Commit memory to storage.</span>
+    self.total_idle = current_total_idle - requested_assets
+    <span class="syntax-comment"># Transfer the requested amount to the receiver.</span>
+    self._erc20_safe_transfer(_asset, receiver, requested_assets)
+
+    <span class="syntax-keyword">log</span> Withdraw(sender, receiver, owner, requested_assets, shares)
+
+    <span class="syntax-keyword">if</span> withdraw_hook != empty(address):
+        IWithdrawHook(withdraw_hook).post_withdraw(sender, receiver, owner, requested_assets, shares)
+
+    <span class="syntax-keyword">return</span> requested_assets
+
+<span class="syntax-comment">## STRATEGY MANAGEMENT ##</span>
+<span class="syntax-keyword">@internal</span>
+<span class="syntax-keyword">def</span> _add_strategy(new_strategy: address, add_to_queue: bool):
+    <span class="syntax-keyword">assert</span> new_strategy <span class="syntax-keyword">not</span> <span class="syntax-keyword">in</span> [self, empty(address)], <span class="syntax-string">&quot;strategy cannot be zero address&quot;</span>
+    <span class="syntax-keyword">assert</span> IStrategy(new_strategy).asset() == self.asset, <span class="syntax-string">&quot;invalid asset&quot;</span>
+    <span class="syntax-keyword">assert</span> self.strategies[new_strategy].activation == 0, <span class="syntax-string">&quot;strategy already active&quot;</span>
+
+    <span class="syntax-comment"># Add the new strategy to the mapping.</span>
+    self.strategies[new_strategy] = StrategyParams({
+        activation: block.timestamp,
+        last_report: block.timestamp,
+        current_debt: 0,
+        max_debt: 0
+    })
+
+    <span class="syntax-comment"># If we are adding to the queue and the default queue has space, add the strategy.</span>
+    <span class="syntax-keyword">if</span> add_to_queue <span class="syntax-keyword">and</span> len(self.default_queue) &lt; MAX_QUEUE:
+        self.default_queue.append(new_strategy)        
+        
+    <span class="syntax-keyword">log</span> StrategyChanged(new_strategy, StrategyChangeType.ADDED)
+
+<span class="syntax-keyword">@internal</span>
+<span class="syntax-keyword">def</span> _revoke_strategy(strategy: address, force: bool=<span class="syntax-keyword">False</span>):
+    <span class="syntax-keyword">assert</span> self.strategies[strategy].activation != 0, <span class="syntax-string">&quot;strategy not active&quot;</span>
+    
+    <span class="syntax-keyword">if</span> self.strategies[strategy].current_debt != 0:
+        <span class="syntax-keyword">assert</span> force, <span class="syntax-string">&quot;strategy has debt&quot;</span>
+        <span class="syntax-comment"># Vault realizes the full loss of outstanding debt.</span>
+        loss: uint256 = self.strategies[strategy].current_debt
+        <span class="syntax-comment"># Adjust total vault debt.</span>
+        self.total_debt -= loss
+
+        <span class="syntax-keyword">log</span> StrategyReported(strategy, 0, loss, 0, 0, 0, 0)
+
+    <span class="syntax-comment"># Set strategy params all back to 0 (WARNING: it can be re-added).</span>
+    self.strategies[strategy] = StrategyParams({
+      activation: 0,
+      last_report: 0,
+      current_debt: 0,
+      max_debt: 0
+    })
+
+    <span class="syntax-comment"># Remove strategy if it is in the default queue.</span>
+    new_queue: DynArray[address, MAX_QUEUE] = []
+    <span class="syntax-keyword">for</span> _strategy <span class="syntax-keyword">in</span> self.default_queue:
+        <span class="syntax-comment"># Add all strategies to the new queue besides the one revoked.</span>
+        <span class="syntax-keyword">if</span> _strategy != strategy:
+            new_queue.append(_strategy)
+        
+    <span class="syntax-comment"># Set the default queue to our updated queue.</span>
+    self.default_queue = new_queue
+
+    <span class="syntax-keyword">log</span> StrategyChanged(strategy, StrategyChangeType.REVOKED)
+
+<span class="syntax-comment"># DEBT MANAGEMENT #</span>
+<span class="syntax-keyword">@internal</span>
+<span class="syntax-keyword">def</span> _update_debt(strategy: address, target_debt: uint256, max_loss: uint256) -&gt; uint256:
+    <span class="syntax-comment">&quot;&quot;&quot;
+    The vault will re-balance the debt vs target debt. Target debt must be
+    smaller or equal to strategy&#x27;s max_debt. This function will compare the 
+    current debt with the target debt and will take funds or deposit new 
+    funds to the strategy. 
+
+    The strategy can require a maximum amount of funds that it wants to receive
+    to invest. The strategy can also reject freeing funds if they are locked.
+    &quot;&quot;&quot;</span>
+    <span class="syntax-comment"># How much we want the strategy to have.</span>
+    new_debt: uint256 = target_debt
+    <span class="syntax-comment"># How much the strategy currently has.</span>
+    current_debt: uint256 = self.strategies[strategy].current_debt
+
+    <span class="syntax-comment"># If the vault is shutdown we can only pull funds.</span>
+    <span class="syntax-keyword">if</span> self.shutdown:
+        new_debt = 0
+
+    <span class="syntax-keyword">assert</span> new_debt != current_debt, <span class="syntax-string">&quot;new debt equals current debt&quot;</span>
+
+    <span class="syntax-keyword">if</span> current_debt &gt; new_debt:
+        <span class="syntax-comment"># Reduce debt.</span>
+        assets_to_withdraw: uint256 = unsafe_sub(current_debt, new_debt)
+
+        <span class="syntax-comment"># Ensure we always have minimum_total_idle when updating debt.</span>
+        minimum_total_idle: uint256 = self.minimum_total_idle
+        total_idle: uint256 = self.total_idle
+        
+        <span class="syntax-comment"># Respect minimum total idle in vault</span>
+        <span class="syntax-keyword">if</span> total_idle + assets_to_withdraw &lt; minimum_total_idle:
+            assets_to_withdraw = unsafe_sub(minimum_total_idle, total_idle)
+            <span class="syntax-comment"># Cant withdraw more than the strategy has.</span>
+            <span class="syntax-keyword">if</span> assets_to_withdraw &gt; current_debt:
+                assets_to_withdraw = current_debt
+
+        <span class="syntax-comment"># Check how much we are able to withdraw.</span>
+        <span class="syntax-comment"># Use maxRedeem and convert since we use redeem.</span>
+        withdrawable: uint256 = IStrategy(strategy).convertToAssets(
+            IStrategy(strategy).maxRedeem(self)
+        )
+
+        <span class="syntax-comment"># If insufficient withdrawable, withdraw what we can.</span>
+        <span class="syntax-keyword">if</span> withdrawable &lt; assets_to_withdraw:
+            assets_to_withdraw = withdrawable
+
+        <span class="syntax-keyword">if</span> assets_to_withdraw == 0:
+            <span class="syntax-keyword">return</span> current_debt
+
+        <span class="syntax-comment"># If there are unrealised losses we don&#x27;t let the vault reduce its debt until there is a new report</span>
+        unrealised_losses_share: uint256 = self._assess_share_of_unrealised_losses(strategy, current_debt, assets_to_withdraw)
+        <span class="syntax-keyword">assert</span> unrealised_losses_share == 0, <span class="syntax-string">&quot;strategy has unrealised losses&quot;</span>
+        
+        <span class="syntax-comment"># Cache for repeated use.</span>
+        _asset: address = self.asset
+
+        <span class="syntax-comment"># Always check the actual amount withdrawn.</span>
+        pre_balance: uint256 = ERC20(_asset).balanceOf(self)
+        self._withdraw_from_strategy(strategy, assets_to_withdraw)
+        post_balance: uint256 = ERC20(_asset).balanceOf(self)
+        
+        <span class="syntax-comment"># making sure we are changing idle according to the real result no matter what. </span>
+        <span class="syntax-comment"># We pull funds with {redeem} so there can be losses or rounding differences.</span>
+        withdrawn: uint256 = min(post_balance - pre_balance, current_debt)
+
+        <span class="syntax-comment"># If we didn&#x27;t get the amount we asked for and there is a max loss.</span>
+        <span class="syntax-keyword">if</span> withdrawn &lt; assets_to_withdraw <span class="syntax-keyword">and</span> max_loss &lt; MAX_BPS:
+            <span class="syntax-comment"># Make sure the loss is within the allowed range.</span>
+            <span class="syntax-keyword">assert</span> unsafe_sub(assets_to_withdraw, withdrawn) &lt;= assets_to_withdraw * max_loss / MAX_BPS, <span class="syntax-string">&quot;too much loss&quot;</span>
+
+        <span class="syntax-comment"># If we got too much make sure not to increase PPS.</span>
+        <span class="syntax-keyword">elif</span> withdrawn &gt; assets_to_withdraw:
+            assets_to_withdraw = withdrawn
+
+        <span class="syntax-comment"># Update storage.</span>
+        self.total_idle += withdrawn <span class="syntax-comment"># actual amount we got.</span>
+        <span class="syntax-comment"># Amount we tried to withdraw in case of losses</span>
+        self.total_debt -= assets_to_withdraw 
+
+        new_debt = current_debt - assets_to_withdraw
+    <span class="syntax-keyword">else</span>: 
+        <span class="syntax-comment"># We are increasing the strategies debt</span>
+
+        <span class="syntax-comment"># Respect the maximum amount allowed.</span>
+        max_debt: uint256 = self.strategies[strategy].max_debt
+        <span class="syntax-keyword">if</span> new_debt &gt; max_debt:
+            new_debt = max_debt
+            <span class="syntax-comment"># Possible for current to be greater than max from reports.</span>
+            <span class="syntax-keyword">if</span> new_debt &lt; current_debt:
+                <span class="syntax-keyword">return</span> current_debt
+
+        <span class="syntax-comment"># Vault is increasing debt with the strategy by sending more funds.</span>
+        max_deposit: uint256 = IStrategy(strategy).maxDeposit(self)
+        <span class="syntax-keyword">if</span> max_deposit == 0:
+            <span class="syntax-keyword">return</span> current_debt
+
+        <span class="syntax-comment"># Deposit the difference between desired and current.</span>
+        assets_to_deposit: uint256 = new_debt - current_debt
+        <span class="syntax-keyword">if</span> assets_to_deposit &gt; max_deposit:
+            <span class="syntax-comment"># Deposit as much as possible.</span>
+            assets_to_deposit = max_deposit
+        
+        <span class="syntax-comment"># Ensure we always have minimum_total_idle when updating debt.</span>
+        minimum_total_idle: uint256 = self.minimum_total_idle
+        total_idle: uint256 = self.total_idle
+
+        <span class="syntax-keyword">if</span> total_idle &lt;= minimum_total_idle:
+            <span class="syntax-keyword">return</span> current_debt
+        
+        available_idle: uint256 = unsafe_sub(total_idle, minimum_total_idle)
+
+        <span class="syntax-comment"># If insufficient funds to deposit, transfer only what is free.</span>
+        <span class="syntax-keyword">if</span> assets_to_deposit &gt; available_idle:
+            assets_to_deposit = available_idle
+
+        <span class="syntax-comment"># Can&#x27;t Deposit 0.</span>
+        <span class="syntax-keyword">if</span> assets_to_deposit &gt; 0:
+            <span class="syntax-comment"># Cache for repeated use.</span>
+            _asset: address = self.asset
+
+            <span class="syntax-comment"># Approve the strategy to pull only what we are giving it.</span>
+            self._erc20_safe_approve(_asset, strategy, assets_to_deposit)
+
+            <span class="syntax-comment"># Always update based on actual amounts deposited.</span>
+            pre_balance: uint256 = ERC20(_asset).balanceOf(self)
+            IStrategy(strategy).deposit(assets_to_deposit, self)
+            post_balance: uint256 = ERC20(_asset).balanceOf(self)
+
+            <span class="syntax-comment"># Make sure our approval is always back to 0.</span>
+            self._erc20_safe_approve(_asset, strategy, 0)
+
+            <span class="syntax-comment"># Making sure we are changing according to the real result no </span>
+            <span class="syntax-comment"># matter what. This will spend more gas but makes it more robust.</span>
+            assets_to_deposit = pre_balance - post_balance
+
+            <span class="syntax-comment"># Update storage.</span>
+            self.total_idle -= assets_to_deposit
+            self.total_debt += assets_to_deposit
+
+        new_debt = current_debt + assets_to_deposit
+
+    <span class="syntax-comment"># Commit memory to storage.</span>
+    self.strategies[strategy].current_debt = new_debt
+
+    <span class="syntax-keyword">log</span> DebtUpdated(strategy, current_debt, new_debt)
+    <span class="syntax-keyword">return</span> new_debt
+
+<span class="syntax-comment">## ACCOUNTING MANAGEMENT ##</span>
+<span class="syntax-keyword">@internal</span>
+<span class="syntax-keyword">def</span> _process_report(strategy: address) -&gt; (uint256, uint256):
+    <span class="syntax-comment">&quot;&quot;&quot;
+    Processing a report means comparing the debt that the strategy has taken 
+    with the current amount of funds it is reporting. If the strategy owes 
+    less than it currently has, it means it has had a profit, else (assets &lt; debt) 
+    it has had a loss.
+
+    Different strategies might choose different reporting strategies: pessimistic, 
+    only realised P&amp;L, ... The best way to report depends on the strategy.
+
+    The profit will be distributed following a smooth curve over the vaults 
+    profit_max_unlock_time seconds. Losses will be taken immediately, first from the 
+    profit buffer (avoiding an impact in pps), then will reduce pps.
+
+    Any applicable fees are charged and distributed during the report as well
+    to the specified recipients.
+
+    Can update the vaults `totalIdle` to account for any airdropped tokens by
+    passing the vaults address in as the parameter.
+    &quot;&quot;&quot;</span>
+    <span class="syntax-comment"># Cache `asset` for repeated use.</span>
+    _asset: address = self.asset
+
+    total_assets: uint256 = 0
+    current_debt: uint256 = 0
+    
+    <span class="syntax-keyword">if</span> strategy != self:
+        <span class="syntax-comment"># Make sure we have a valid strategy.</span>
+        <span class="syntax-keyword">assert</span> self.strategies[strategy].activation != 0, <span class="syntax-string">&quot;inactive strategy&quot;</span>
+
+        <span class="syntax-comment"># Vault assesses profits using 4626 compliant interface. </span>
+        <span class="syntax-comment"># NOTE: It is important that a strategies `convertToAssets` implementation</span>
+        <span class="syntax-comment"># cannot be manipulated or else the vault could report incorrect gains/losses.</span>
+        strategy_shares: uint256 = IStrategy(strategy).balanceOf(self)
+        <span class="syntax-comment"># How much the vaults position is worth.</span>
+        total_assets = IStrategy(strategy).convertToAssets(strategy_shares)
+        <span class="syntax-comment"># How much the vault had deposited to the strategy.</span>
+        current_debt = self.strategies[strategy].current_debt
+    <span class="syntax-keyword">else</span>:
+        <span class="syntax-comment"># Accrue any airdropped `asset` into `total_idle`</span>
+        total_assets = ERC20(_asset).balanceOf(self)
+        current_debt = self.total_idle
+    
+    gain: uint256 = 0
+    loss: uint256 = 0
+
+    <span class="syntax-comment">### Asses Gain or Loss ###</span>
+
+    <span class="syntax-comment"># Compare reported assets vs. the current debt.</span>
+    <span class="syntax-keyword">if</span> total_assets &gt; current_debt:
+        <span class="syntax-comment"># We have a gain.</span>
+        gain = unsafe_sub(total_assets, current_debt)
+    <span class="syntax-keyword">else</span>:
+        <span class="syntax-comment"># We have a loss.</span>
+        loss = unsafe_sub(current_debt, total_assets)
+
+    <span class="syntax-comment">### Asses Fees and Refunds ###</span>
+
+    <span class="syntax-comment"># For Accountant fee assessment.</span>
+    total_fees: uint256 = 0
+    total_refunds: uint256 = 0
+    <span class="syntax-comment"># If accountant is not set, fees and refunds remain unchanged.</span>
+    accountant: address = self.accountant
+    <span class="syntax-keyword">if</span> accountant != empty(address):
+        total_fees, total_refunds = IAccountant(accountant).report(strategy, gain, loss)
+
+        <span class="syntax-keyword">if</span> total_refunds &gt; 0:
+            <span class="syntax-comment"># Make sure we have enough approval and enough asset to pull.</span>
+            total_refunds = min(total_refunds, min(ERC20(_asset).balanceOf(accountant), ERC20(_asset).allowance(accountant, self)))
+
+    <span class="syntax-comment"># Total fees to charge in shares.</span>
+    total_fees_shares: uint256 = 0
+    <span class="syntax-comment"># For Protocol fee assessment.</span>
+    protocol_fee_bps: uint16 = 0
+    protocol_fees_shares: uint256 = 0
+    protocol_fee_recipient: address = empty(address)
+    <span class="syntax-comment"># `shares_to_burn` is derived from amounts that would reduce the vaults PPS.</span>
+    <span class="syntax-comment"># NOTE: this needs to be done before any pps changes</span>
+    shares_to_burn: uint256 = 0
+    <span class="syntax-comment"># Only need to burn shares if there is a loss or fees.</span>
+    <span class="syntax-keyword">if</span> loss + total_fees &gt; 0:
+        <span class="syntax-comment"># The amount of shares we will want to burn to offset losses and fees.</span>
+        shares_to_burn = self._convert_to_shares(loss + total_fees, Rounding.ROUND_UP)
+
+        <span class="syntax-comment"># If we have fees then get the proportional amount of shares to issue.</span>
+        <span class="syntax-keyword">if</span> total_fees &gt; 0:
+            <span class="syntax-comment"># Get the total amount shares to issue for the fees.</span>
+            total_fees_shares = shares_to_burn * total_fees / (loss + total_fees)
+
+            <span class="syntax-comment"># Get the protocol fee config for this vault.</span>
+            protocol_fee_bps, protocol_fee_recipient = IFactory(self.factory).protocol_fee_config()
+
+            <span class="syntax-comment"># If there is a protocol fee.</span>
+            <span class="syntax-keyword">if</span> protocol_fee_bps &gt; 0:
+                <span class="syntax-comment"># Get the percent of fees to go to protocol fees.</span>
+                protocol_fees_shares = total_fees_shares * convert(protocol_fee_bps, uint256) / MAX_BPS
+
+
+    <span class="syntax-comment"># Shares to lock is any amount that would otherwise increase the vaults PPS.</span>
+    shares_to_lock: uint256 = 0
+    profit_max_unlock_time: uint256 = self.profit_max_unlock_time
+    <span class="syntax-comment"># Get the amount we will lock to avoid a PPS increase.</span>
+    <span class="syntax-keyword">if</span> gain + total_refunds &gt; 0 <span class="syntax-keyword">and</span> profit_max_unlock_time != 0:
+        shares_to_lock = self._convert_to_shares(gain + total_refunds, Rounding.ROUND_DOWN)
+
+    <span class="syntax-comment"># The total current supply including locked shares.</span>
+    total_supply: uint256 = self.total_supply
+    <span class="syntax-comment"># The total shares the vault currently owns. Both locked and unlocked.</span>
+    total_locked_shares: uint256 = self.balance_of[self]
+    <span class="syntax-comment"># Get the desired end amount of shares after all accounting.</span>
+    ending_supply: uint256 = total_supply + shares_to_lock - shares_to_burn - self._unlocked_shares()
+    
+    <span class="syntax-comment"># If we will end with more shares than we have now.</span>
+    <span class="syntax-keyword">if</span> ending_supply &gt; total_supply:
+        <span class="syntax-comment"># Issue the difference.</span>
+        self._issue_shares(unsafe_sub(ending_supply, total_supply), self)
+
+    <span class="syntax-comment"># Else we need to burn shares.</span>
+    <span class="syntax-keyword">elif</span> total_supply &gt; ending_supply:
+        <span class="syntax-comment"># Can&#x27;t burn more than the vault owns.</span>
+        to_burn: uint256 = min(unsafe_sub(total_supply, ending_supply), total_locked_shares)
+        self._burn_shares(to_burn, self)
+
+    <span class="syntax-comment"># Adjust the amount to lock for this period.</span>
+    <span class="syntax-keyword">if</span> shares_to_lock &gt; shares_to_burn:
+        <span class="syntax-comment"># Don&#x27;t lock fees or losses.</span>
+        shares_to_lock = unsafe_sub(shares_to_lock, shares_to_burn)
+    <span class="syntax-keyword">else</span>:
+        shares_to_lock = 0
+
+    <span class="syntax-comment"># Pull refunds</span>
+    <span class="syntax-keyword">if</span> total_refunds &gt; 0:
+        <span class="syntax-comment"># Transfer the refunded amount of asset to the vault.</span>
+        self._erc20_safe_transfer_from(_asset, accountant, self, total_refunds)
+        <span class="syntax-comment"># Update storage to increase total assets.</span>
+        self.total_idle += total_refunds
+
+    <span class="syntax-comment"># Record any reported gains.</span>
+    <span class="syntax-keyword">if</span> gain &gt; 0:
+        <span class="syntax-comment"># NOTE: this will increase total_assets</span>
+        current_debt = unsafe_add(current_debt, gain)
+        <span class="syntax-keyword">if</span> strategy != self:
+            self.strategies[strategy].current_debt = current_debt
+            self.total_debt += gain
+        <span class="syntax-keyword">else</span>:
+            <span class="syntax-comment"># Add in any refunds since it is now idle.</span>
+            current_debt = unsafe_add(current_debt, total_refunds)
+            self.total_idle = current_debt
+            
+    <span class="syntax-comment"># Or record any reported loss</span>
+    <span class="syntax-keyword">elif</span> loss &gt; 0:
+        current_debt = unsafe_sub(current_debt, loss)
+        <span class="syntax-keyword">if</span> strategy != self:
+            self.strategies[strategy].current_debt = current_debt
+            self.total_debt -= loss
+        <span class="syntax-keyword">else</span>:
+            <span class="syntax-comment"># Add in any refunds since it is now idle.</span>
+            current_debt = unsafe_add(current_debt, total_refunds)
+            self.total_idle = current_debt
+        
+    <span class="syntax-comment"># Issue shares for fees that were calculated above if applicable.</span>
+    <span class="syntax-keyword">if</span> total_fees_shares &gt; 0:
+        <span class="syntax-comment"># Accountant fees are (total_fees - protocol_fees).</span>
+        self._issue_shares(total_fees_shares - protocol_fees_shares, accountant)
+
+        <span class="syntax-comment"># If we also have protocol fees.</span>
+        <span class="syntax-keyword">if</span> protocol_fees_shares &gt; 0:
+            self._issue_shares(protocol_fees_shares, protocol_fee_recipient)
+
+    <span class="syntax-comment"># Update unlocking rate and time to fully unlocked.</span>
+    total_locked_shares = self.balance_of[self]
+    <span class="syntax-keyword">if</span> total_locked_shares &gt; 0:
+        previously_locked_time: uint256 = 0
+        _full_profit_unlock_date: uint256 = self.full_profit_unlock_date
+        <span class="syntax-comment"># Check if we need to account for shares still unlocking.</span>
+        <span class="syntax-keyword">if</span> _full_profit_unlock_date &gt; block.timestamp: 
+            <span class="syntax-comment"># There will only be previously locked shares if time remains.</span>
+            <span class="syntax-comment"># We calculate this here since it will not occur every time we lock shares.</span>
+            previously_locked_time = (total_locked_shares - shares_to_lock) * (_full_profit_unlock_date - block.timestamp)
+
+        <span class="syntax-comment"># new_profit_locking_period is a weighted average between the remaining time of the previously locked shares and the profit_max_unlock_time</span>
+        new_profit_locking_period: uint256 = (previously_locked_time + shares_to_lock * profit_max_unlock_time) / total_locked_shares
+        <span class="syntax-comment"># Calculate how many shares unlock per second.</span>
+        self.profit_unlocking_rate = total_locked_shares * MAX_BPS_EXTENDED / new_profit_locking_period
+        <span class="syntax-comment"># Calculate how long until the full amount of shares is unlocked.</span>
+        self.full_profit_unlock_date = block.timestamp + new_profit_locking_period
+        <span class="syntax-comment"># Update the last profitable report timestamp.</span>
+        self.last_profit_update = block.timestamp
+    <span class="syntax-keyword">else</span>:
+        <span class="syntax-comment"># NOTE: only setting this to the 0 will turn in the desired effect, </span>
+        <span class="syntax-comment"># no need to update profit_unlocking_rate</span>
+        self.full_profit_unlock_date = 0
+    
+    <span class="syntax-comment"># Record the report of profit timestamp.</span>
+    self.strategies[strategy].last_report = block.timestamp
+
+    <span class="syntax-comment"># We have to recalculate the fees paid for cases with an overall loss or no profit locking</span>
+    <span class="syntax-keyword">if</span> loss + total_fees &gt; gain + total_refunds <span class="syntax-keyword">or</span> profit_max_unlock_time == 0:
+        total_fees = self._convert_to_assets(total_fees_shares, Rounding.ROUND_DOWN)
+
+    <span class="syntax-keyword">log</span> StrategyReported(
+        strategy,
+        gain,
+        loss,
+        current_debt,
+        total_fees * convert(protocol_fee_bps, uint256) / MAX_BPS, <span class="syntax-comment"># Protocol Fees</span>
+        total_fees,
+        total_refunds
+    )
+
+    <span class="syntax-keyword">return</span> (gain, loss)
+
+<span class="syntax-comment"># SETTERS #</span>
+
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> setName(name: String[64]):
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Change the vault name.
+    @dev Can only be called by the Role Manager.
+    @param name The new name for the vault.
+    &quot;&quot;&quot;</span>
+    <span class="syntax-keyword">assert</span> msg.sender == self.role_manager, <span class="syntax-string">&quot;not allowed&quot;</span>
+    self.name = name
+
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> setSymbol(symbol: String[32]):
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Change the vault symbol.
+    @dev Can only be called by the Role Manager.
+    @param symbol The new name for the vault.
+    &quot;&quot;&quot;</span>
+    <span class="syntax-keyword">assert</span> msg.sender == self.role_manager, <span class="syntax-string">&quot;not allowed&quot;</span>
+    self.symbol = symbol
+
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> set_accountant(new_accountant: address):
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Set the new accountant address.
+    @param new_accountant The new accountant address.
+    &quot;&quot;&quot;</span>
+    self._enforce_role(msg.sender, Roles.ACCOUNTANT_MANAGER)
+    self.accountant = new_accountant
+
+    <span class="syntax-keyword">log</span> UpdateAccountant(new_accountant)
+
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> set_default_queue(new_default_queue: DynArray[address, MAX_QUEUE]):
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Set the new default queue array.
+    @dev Will check each strategy to make sure it is active. But will not
+        check that the same strategy is not added twice. maxRedeem and maxWithdraw
+        return values may be inaccurate if a strategy is added twice.
+    @param new_default_queue The new default queue array.
+    &quot;&quot;&quot;</span>
+    self._enforce_role(msg.sender, Roles.QUEUE_MANAGER)
+
+    <span class="syntax-comment"># Make sure every strategy in the new queue is active.</span>
+    <span class="syntax-keyword">for</span> strategy <span class="syntax-keyword">in</span> new_default_queue:
+        <span class="syntax-keyword">assert</span> self.strategies[strategy].activation != 0, <span class="syntax-string">&quot;!inactive&quot;</span>
+
+    <span class="syntax-comment"># Save the new queue.</span>
+    self.default_queue = new_default_queue
+
+    <span class="syntax-keyword">log</span> UpdateDefaultQueue(new_default_queue)
+
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> set_use_default_queue(use_default_queue: bool):
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Set a new value for `use_default_queue`.
+    @dev If set `True` the default queue will always be
+        used no matter whats passed in.
+    @param use_default_queue new value.
+    &quot;&quot;&quot;</span>
+    self._enforce_role(msg.sender, Roles.QUEUE_MANAGER)
+    self.use_default_queue = use_default_queue
+
+    <span class="syntax-keyword">log</span> UpdateUseDefaultQueue(use_default_queue)
+
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> set_auto_allocate(auto_allocate: bool):
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Set new value for `auto_allocate`
+    @dev If `True` every {deposit} and {mint} call will
+        try and allocate the deposited amount to the strategy
+        at position 0 of the `default_queue` atomically.
+    NOTE: An empty `default_queue` will cause deposits to fail.
+    @param auto_allocate new value.
+    &quot;&quot;&quot;</span>
+    self._enforce_role(msg.sender, Roles.DEBT_MANAGER)
+    self.auto_allocate = auto_allocate
+
+    <span class="syntax-keyword">log</span> UpdateAutoAllocate(auto_allocate)
+    
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> set_deposit_limit(deposit_limit: uint256, override: bool = <span class="syntax-keyword">False</span>):
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Set the new deposit limit.
+    @dev Can not be changed if a deposit_hook
+    is set unless the override flag is true or if shutdown.
+    @param deposit_limit The new deposit limit.
+    @param override If a `deposit_hook` already set should be overridden.
+    &quot;&quot;&quot;</span>
+    <span class="syntax-keyword">assert</span> self.shutdown == <span class="syntax-keyword">False</span> <span class="syntax-comment"># Dev: shutdown</span>
+    self._enforce_role(msg.sender, Roles.DEPOSIT_LIMIT_MANAGER)
+
+    <span class="syntax-comment"># If we are overriding the deposit hook.</span>
+    <span class="syntax-keyword">if</span> override:
+        <span class="syntax-comment"># Make sure it is set to address 0 if not already.</span>
+        <span class="syntax-keyword">if</span> self.deposit_hook != empty(address):
+
+            self.deposit_hook = empty(address)
+            <span class="syntax-keyword">log</span> UpdateDepositHook(empty(address))
+    <span class="syntax-keyword">else</span>:  
+        <span class="syntax-comment"># Make sure the deposit_hook has been set to address(0).</span>
+        <span class="syntax-keyword">assert</span> self.deposit_hook == empty(address), <span class="syntax-string">&quot;using hook&quot;</span>
+
+    self.deposit_limit = deposit_limit
+
+    <span class="syntax-keyword">log</span> UpdateDepositLimit(deposit_limit)
+
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> set_deposit_hook(deposit_hook: address, override: bool = <span class="syntax-keyword">False</span>):
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Set a contract to handle the deposit limit and post-deposit hook.
+    @dev The default `deposit_limit` will need to be set to
+    max uint256 since the hook will override it or the override flag
+    must be set to true to set it to max in 1 tx..
+    @param deposit_hook Address of the hook.
+    @param override If a `deposit_limit` already set should be overridden.
+    &quot;&quot;&quot;</span>
+    <span class="syntax-keyword">assert</span> self.shutdown == <span class="syntax-keyword">False</span> <span class="syntax-comment"># Dev: shutdown</span>
+    self._enforce_role(msg.sender, Roles.DEPOSIT_LIMIT_MANAGER)
+
+    <span class="syntax-comment"># If we are overriding the deposit limit</span>
+    <span class="syntax-keyword">if</span> override:
+        <span class="syntax-comment"># Make sure it is max uint256 if not already.</span>
+        <span class="syntax-keyword">if</span> self.deposit_limit != max_value(uint256):
+
+            self.deposit_limit = max_value(uint256)
+            <span class="syntax-keyword">log</span> UpdateDepositLimit(max_value(uint256))
+    <span class="syntax-keyword">else</span>:
+        <span class="syntax-comment"># Make sure the deposit_limit has been set to uint max.</span>
+        <span class="syntax-keyword">assert</span> self.deposit_limit == max_value(uint256), <span class="syntax-string">&quot;using deposit limit&quot;</span>
+
+    self.deposit_hook = deposit_hook
+
+    <span class="syntax-keyword">log</span> UpdateDepositHook(deposit_hook)
+
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> set_withdraw_hook(withdraw_hook: address):
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Set a contract to handle the withdraw limit and post-withdraw hook.
+    @dev This will override the default `max_withdraw`.
+    @param withdraw_hook Address of the hook.
+    &quot;&quot;&quot;</span>
+    self._enforce_role(msg.sender, Roles.WITHDRAW_LIMIT_MANAGER)
+
+    self.withdraw_hook = withdraw_hook
+
+    <span class="syntax-keyword">log</span> UpdateWithdrawHook(withdraw_hook)
+
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> set_transfer_hook(transfer_hook: address):
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Set a contract to receive post-transfer callbacks.
+    @dev The callback executes while the vault&#x27;s shared nonreentrant lock is held.
+        Setting this to the zero address disables transfer callbacks.
+    @param transfer_hook Address of the hook.
+    &quot;&quot;&quot;</span>
+    self._enforce_role(msg.sender, Roles.WITHDRAW_LIMIT_MANAGER)
+
+    self.transfer_hook = transfer_hook
+
+    <span class="syntax-keyword">log</span> UpdateTransferHook(transfer_hook)
+
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> set_minimum_total_idle(minimum_total_idle: uint256):
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Set the new minimum total idle.
+    @param minimum_total_idle The new minimum total idle.
+    &quot;&quot;&quot;</span>
+    self._enforce_role(msg.sender, Roles.MINIMUM_IDLE_MANAGER)
+    self.minimum_total_idle = minimum_total_idle
+
+    <span class="syntax-keyword">log</span> UpdateMinimumTotalIdle(minimum_total_idle)
+
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> setProfitMaxUnlockTime(new_profit_max_unlock_time: uint256):
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Set the new profit max unlock time.
+    @dev The time is denominated in seconds and must be less than 1 year.
+        We only need to update locking period if setting to 0,
+        since the current period will use the old rate and on the next
+        report it will be reset with the new unlocking time.
+    
+        Setting to 0 will cause any currently locked profit to instantly
+        unlock and an immediate increase in the vaults Price Per Share.
+
+    @param new_profit_max_unlock_time The new profit max unlock time.
+    &quot;&quot;&quot;</span>
+    self._enforce_role(msg.sender, Roles.PROFIT_UNLOCK_MANAGER)
+    <span class="syntax-comment"># Must be less than one year for report cycles</span>
+    <span class="syntax-keyword">assert</span> new_profit_max_unlock_time &lt;= 31_556_952, <span class="syntax-string">&quot;profit unlock time too long&quot;</span>
+
+    <span class="syntax-comment"># If setting to 0 we need to reset any locked values.</span>
+    <span class="syntax-keyword">if</span> (new_profit_max_unlock_time == 0):
+
+        share_balance: uint256 = self.balance_of[self]
+        <span class="syntax-keyword">if</span> share_balance &gt; 0:
+            <span class="syntax-comment"># Burn any shares the vault still has.</span>
+            self._burn_shares(share_balance, self)
+
+        <span class="syntax-comment"># Reset unlocking variables to 0.</span>
+        self.profit_unlocking_rate = 0
+        self.full_profit_unlock_date = 0
+
+    self.profit_max_unlock_time = new_profit_max_unlock_time
+
+    <span class="syntax-keyword">log</span> UpdateProfitMaxUnlockTime(new_profit_max_unlock_time)
+
+<span class="syntax-comment"># ROLE MANAGEMENT #</span>
+<span class="syntax-keyword">@internal</span>
+<span class="syntax-keyword">def</span> _enforce_role(account: address, role: Roles):
+    <span class="syntax-comment"># Make sure the sender holds the role.</span>
+    <span class="syntax-keyword">assert</span> role <span class="syntax-keyword">in</span> self.roles[account], <span class="syntax-string">&quot;not allowed&quot;</span>
+
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> set_role(account: address, role: Roles):
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Set the roles for an account.
+    @dev This will fully override an accounts current roles
+     so it should include all roles the account should hold.
+    @param account The account to set the role for.
+    @param role The roles the account should hold.
+    &quot;&quot;&quot;</span>
+    <span class="syntax-keyword">assert</span> msg.sender == self.role_manager
+    self.roles[account] = role
+
+    <span class="syntax-keyword">log</span> RoleSet(account, role)
+
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> add_role(account: address, role: Roles):
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Add a new role/s to an address.
+    @dev This will add a new role/s to the account
+     without effecting any of the previously held roles.
+    @param account The account to add a role to.
+    @param role The new role/s to add to account.
+    &quot;&quot;&quot;</span>
+    <span class="syntax-keyword">assert</span> msg.sender == self.role_manager
+    new_roles: Roles = self.roles[account] | role
+    self.roles[account] = new_roles
+
+    <span class="syntax-keyword">log</span> RoleSet(account, new_roles)
+
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> remove_role(account: address, role: Roles):
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Remove a role/s from an account.
+    @dev This will leave all other roles for the 
+     account unchanged.
+    @param account The account to remove a Role/s from.
+    @param role The Role/s to remove.
+    &quot;&quot;&quot;</span>
+    <span class="syntax-keyword">assert</span> msg.sender == self.role_manager
+    new_roles: Roles = self.roles[account] &amp; ~role
+    self.roles[account] = new_roles
+
+    <span class="syntax-keyword">log</span> RoleSet(account, new_roles)
+    
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> transfer_role_manager(role_manager: address):
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Step 1 of 2 in order to transfer the 
+        role manager to a new address. This will set
+        the future_role_manager. Which will then need
+        to be accepted by the new manager.
+    @param role_manager The new role manager address.
+    &quot;&quot;&quot;</span>
+    <span class="syntax-keyword">assert</span> msg.sender == self.role_manager
+    self.future_role_manager = role_manager
+
+    <span class="syntax-keyword">log</span> UpdateFutureRoleManager(role_manager)
+
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> accept_role_manager():
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Accept the role manager transfer.
+    &quot;&quot;&quot;</span>
+    <span class="syntax-keyword">assert</span> msg.sender == self.future_role_manager
+    self.role_manager = msg.sender
+    self.future_role_manager = empty(address)
+
+    <span class="syntax-keyword">log</span> UpdateRoleManager(msg.sender)
+
+<span class="syntax-comment"># VAULT STATUS VIEWS</span>
+
+<span class="syntax-keyword">@view</span>
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> isShutdown() -&gt; bool:
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Get if the vault is shutdown.
+    @return Bool representing the shutdown status
+    &quot;&quot;&quot;</span>
+    <span class="syntax-keyword">return</span> self.shutdown
+
+<span class="syntax-keyword">@view</span>
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> isPaused() -&gt; bool:
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Get if the vault is paused.
+    @return Bool representing the paused status.
+    &quot;&quot;&quot;</span>
+    <span class="syntax-keyword">return</span> self.paused
+
+<span class="syntax-keyword">@view</span>
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> unlockedShares() -&gt; uint256:
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Get the amount of shares that have been unlocked.
+    @return The amount of shares that are have been unlocked.
+    &quot;&quot;&quot;</span>
+    <span class="syntax-keyword">return</span> self._unlocked_shares()
+
+<span class="syntax-keyword">@view</span>
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> pricePerShare() -&gt; uint256:
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Get the price per share (pps) of the vault.
+    @dev This value offers limited precision. Integrations that require 
+        exact precision should use convertToAssets or convertToShares instead.
+    @return The price per share.
+    &quot;&quot;&quot;</span>
+    <span class="syntax-keyword">return</span> self._convert_to_assets(10 ** convert(self.decimals, uint256), Rounding.ROUND_DOWN)
+
+<span class="syntax-keyword">@view</span>
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> get_default_queue() -&gt; DynArray[address, MAX_QUEUE]:
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Get the full default queue currently set.
+    @return The current default withdrawal queue.
+    &quot;&quot;&quot;</span>
+    <span class="syntax-keyword">return</span> self.default_queue
+
+<span class="syntax-comment">## REPORTING MANAGEMENT ##</span>
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">@nonreentrant</span>(<span class="syntax-string">&quot;lock&quot;</span>)
+<span class="syntax-keyword">def</span> process_report(strategy: address) -&gt; (uint256, uint256):
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Process the report of a strategy.
+    @param strategy The strategy to process the report for.
+    @return The gain and loss of the strategy.
+    &quot;&quot;&quot;</span>
+    self._enforce_role(msg.sender, Roles.REPORTING_MANAGER)
+    <span class="syntax-keyword">return</span> self._process_report(strategy)
+
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">@nonreentrant</span>(<span class="syntax-string">&quot;lock&quot;</span>)
+<span class="syntax-keyword">def</span> buy_debt(strategy: address, amount: uint256):
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Used for governance to buy bad debt from the vault.
+    @dev This should only ever be used in an emergency in place
+    of force revoking a strategy in order to not report a loss.
+    It allows the DEBT_PURCHASER role to buy the strategies debt
+    for an equal amount of `asset`. 
+
+    @param strategy The strategy to buy the debt for
+    @param amount The amount of debt to buy from the vault.
+    &quot;&quot;&quot;</span>
+    self._enforce_role(msg.sender, Roles.DEBT_PURCHASER)
+    <span class="syntax-keyword">assert</span> self.strategies[strategy].activation != 0, <span class="syntax-string">&quot;not active&quot;</span>
+    
+    <span class="syntax-comment"># Cache the current debt.</span>
+    current_debt: uint256 = self.strategies[strategy].current_debt
+    _amount: uint256 = amount
+
+    <span class="syntax-keyword">assert</span> current_debt &gt; 0, <span class="syntax-string">&quot;nothing to buy&quot;</span>
+    <span class="syntax-keyword">assert</span> _amount &gt; 0, <span class="syntax-string">&quot;nothing to buy with&quot;</span>
+    
+    <span class="syntax-keyword">if</span> _amount &gt; current_debt:
+        _amount = current_debt
+
+    <span class="syntax-comment"># We get the proportion of the debt that is being bought and</span>
+    <span class="syntax-comment"># transfer the equivalent shares. We assume this is being used</span>
+    <span class="syntax-comment"># due to strategy issues so won&#x27;t rely on its conversion rates.</span>
+    shares: uint256 = IStrategy(strategy).balanceOf(self) * _amount / current_debt
+
+    <span class="syntax-keyword">assert</span> shares &gt; 0, <span class="syntax-string">&quot;cannot buy zero&quot;</span>
+
+    self._erc20_safe_transfer_from(self.asset, msg.sender, self, _amount)
+
+    <span class="syntax-comment"># Lower strategy debt </span>
+    new_debt: uint256 = unsafe_sub(current_debt, _amount)
+    self.strategies[strategy].current_debt = new_debt
+    <span class="syntax-comment"># lower total debt</span>
+    self.total_debt -= _amount
+    <span class="syntax-comment"># Increase total idle</span>
+    self.total_idle += _amount
+
+    <span class="syntax-comment"># log debt change</span>
+    <span class="syntax-keyword">log</span> DebtUpdated(strategy, current_debt, new_debt)
+
+    <span class="syntax-comment"># Transfer the strategies shares out.</span>
+    self._erc20_safe_transfer(strategy, msg.sender, shares)
+
+    <span class="syntax-keyword">log</span> DebtPurchased(strategy, _amount)
+
+<span class="syntax-comment">## STRATEGY MANAGEMENT ##</span>
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> add_strategy(new_strategy: address, add_to_queue: bool=<span class="syntax-keyword">True</span>):
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Add a new strategy.
+    @param new_strategy The new strategy to add.
+    &quot;&quot;&quot;</span>
+    self._enforce_role(msg.sender, Roles.ADD_STRATEGY_MANAGER)
+    self._add_strategy(new_strategy, add_to_queue)
+
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> revoke_strategy(strategy: address):
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Revoke a strategy.
+    @param strategy The strategy to revoke.
+    &quot;&quot;&quot;</span>
+    self._enforce_role(msg.sender, Roles.REVOKE_STRATEGY_MANAGER)
+    self._revoke_strategy(strategy)
+
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> force_revoke_strategy(strategy: address):
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Force revoke a strategy.
+    @dev The vault will remove the strategy and write off any debt left 
+        in it as a loss. This function is a dangerous function as it can force a 
+        strategy to take a loss. All possible assets should be removed from the 
+        strategy first via update_debt. If a strategy is removed erroneously it 
+        can be re-added and the loss will be credited as profit. Fees will apply.
+    @param strategy The strategy to force revoke.
+    &quot;&quot;&quot;</span>
+    self._enforce_role(msg.sender, Roles.FORCE_REVOKE_MANAGER)
+    self._revoke_strategy(strategy, <span class="syntax-keyword">True</span>)
+
+<span class="syntax-comment">## DEBT MANAGEMENT ##</span>
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> update_max_debt_for_strategy(strategy: address, new_max_debt: uint256):
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Update the max debt for a strategy.
+    @param strategy The strategy to update the max debt for.
+    @param new_max_debt The new max debt for the strategy.
+    &quot;&quot;&quot;</span>
+    self._enforce_role(msg.sender, Roles.MAX_DEBT_MANAGER)
+    <span class="syntax-keyword">assert</span> self.strategies[strategy].activation != 0, <span class="syntax-string">&quot;inactive strategy&quot;</span>
+    self.strategies[strategy].max_debt = new_max_debt
+
+    <span class="syntax-keyword">log</span> UpdatedMaxDebtForStrategy(msg.sender, strategy, new_max_debt)
+
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">@nonreentrant</span>(<span class="syntax-string">&quot;lock&quot;</span>)
+<span class="syntax-keyword">def</span> update_debt(
+    strategy: address, 
+    target_debt: uint256, 
+    max_loss: uint256 = MAX_BPS
+) -&gt; uint256:
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Update the debt for a strategy.
+    @dev Pass max uint256 to allocate as much idle as possible.
+    @param strategy The strategy to update the debt for.
+    @param target_debt The target debt for the strategy.
+    @param max_loss Optional to check realized losses on debt decreases.
+    @return The new current debt of the strategy.
+    &quot;&quot;&quot;</span>
+    self._enforce_role(msg.sender, Roles.DEBT_MANAGER)
+    <span class="syntax-keyword">return</span> self._update_debt(strategy, target_debt, max_loss)
+
+<span class="syntax-comment">## EMERGENCY MANAGEMENT ##</span>
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> setPaused(paused: bool):
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Set the vault&#x27;s paused status.
+    &quot;&quot;&quot;</span>
+    self._enforce_role(msg.sender, Roles.EMERGENCY_MANAGER)
+    self.paused = paused
+
+    <span class="syntax-keyword">log</span> UpdatePaused(paused)
+
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> shutdown_vault():
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Shutdown the vault.
+    &quot;&quot;&quot;</span>
+    self._enforce_role(msg.sender, Roles.EMERGENCY_MANAGER)
+    <span class="syntax-keyword">assert</span> self.shutdown == <span class="syntax-keyword">False</span>
+    
+    <span class="syntax-comment"># Shutdown the vault.</span>
+    self.shutdown = <span class="syntax-keyword">True</span>
+
+    <span class="syntax-comment"># Set deposit limit to 0.</span>
+    <span class="syntax-keyword">if</span> self.deposit_hook != empty(address):
+        self.deposit_hook = empty(address)
+
+        <span class="syntax-keyword">log</span> UpdateDepositHook(empty(address))
+
+    self.deposit_limit = 0
+    <span class="syntax-keyword">log</span> UpdateDepositLimit(0)
+
+    new_roles: Roles = self.roles[msg.sender] | Roles.DEBT_MANAGER
+    self.roles[msg.sender] = new_roles
+    <span class="syntax-keyword">log</span> RoleSet(msg.sender, new_roles)
+
+    <span class="syntax-keyword">log</span> Shutdown()
+
+
+<span class="syntax-comment">## SHARE MANAGEMENT ##</span>
+<span class="syntax-comment">## ERC20 + ERC4626 ##</span>
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">@nonreentrant</span>(<span class="syntax-string">&quot;lock&quot;</span>)
+<span class="syntax-keyword">def</span> deposit(assets: uint256, receiver: address) -&gt; uint256:
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Deposit assets into the vault.
+    @dev Pass max uint256 to deposit full asset balance.
+    @param assets The amount of assets to deposit.
+    @param receiver The address to receive the shares.
+    @return The amount of shares minted.
+    &quot;&quot;&quot;</span>
+    amount: uint256 = assets
+    <span class="syntax-comment"># Deposit all if sent with max uint</span>
+    <span class="syntax-keyword">if</span> amount == max_value(uint256):
+        amount = ERC20(self.asset).balanceOf(msg.sender)
+
+    shares: uint256 = self._convert_to_shares(amount, Rounding.ROUND_DOWN)
+    self._deposit(receiver, amount, shares)
+    <span class="syntax-keyword">return</span> shares
+
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">@nonreentrant</span>(<span class="syntax-string">&quot;lock&quot;</span>)
+<span class="syntax-keyword">def</span> mint(shares: uint256, receiver: address) -&gt; uint256:
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Mint shares for the receiver.
+    @param shares The amount of shares to mint.
+    @param receiver The address to receive the shares.
+    @return The amount of assets deposited.
+    &quot;&quot;&quot;</span>
+    assets: uint256 = self._convert_to_assets(shares, Rounding.ROUND_UP)
+    self._deposit(receiver, assets, shares)
+    <span class="syntax-keyword">return</span> assets
+
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">@nonreentrant</span>(<span class="syntax-string">&quot;lock&quot;</span>)
+<span class="syntax-keyword">def</span> withdraw(
+    assets: uint256, 
+    receiver: address, 
+    owner: address, 
+    max_loss: uint256 = 0,
+    strategies: DynArray[address, MAX_QUEUE] = []
+) -&gt; uint256:
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Withdraw an amount of asset to `receiver` burning `owner`s shares.
+    @dev The default behavior is to not allow any loss.
+    @param assets The amount of asset to withdraw.
+    @param receiver The address to receive the assets.
+    @param owner The address who&#x27;s shares are being burnt.
+    @param max_loss Optional amount of acceptable loss in Basis Points.
+    @param strategies Optional array of strategies to withdraw from.
+    @return The amount of shares actually burnt.
+    &quot;&quot;&quot;</span>
+    shares: uint256 = self._convert_to_shares(assets, Rounding.ROUND_UP)
+    self._redeem(msg.sender, receiver, owner, assets, shares, max_loss, strategies)
+    <span class="syntax-keyword">return</span> shares
+
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">@nonreentrant</span>(<span class="syntax-string">&quot;lock&quot;</span>)
+<span class="syntax-keyword">def</span> redeem(
+    shares: uint256, 
+    receiver: address, 
+    owner: address, 
+    max_loss: uint256 = MAX_BPS,
+    strategies: DynArray[address, MAX_QUEUE] = []
+) -&gt; uint256:
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Redeems an amount of shares of `owners` shares sending funds to `receiver`.
+    @dev The default behavior is to allow losses to be realized.
+    @param shares The amount of shares to burn.
+    @param receiver The address to receive the assets.
+    @param owner The address who&#x27;s shares are being burnt.
+    @param max_loss Optional amount of acceptable loss in Basis Points.
+    @param strategies Optional array of strategies to withdraw from.
+    @return The amount of assets actually withdrawn.
+    &quot;&quot;&quot;</span>
+    assets: uint256 = self._convert_to_assets(shares, Rounding.ROUND_DOWN)
+    <span class="syntax-comment"># Always return the actual amount of assets withdrawn.</span>
+    <span class="syntax-keyword">return</span> self._redeem(msg.sender, receiver, owner, assets, shares, max_loss, strategies)
+
+
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> approve(spender: address, amount: uint256) -&gt; bool:
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Approve an address to spend the vault&#x27;s shares.
+    @param spender The address to approve.
+    @param amount The amount of shares to approve.
+    @return True if the approval was successful.
+    &quot;&quot;&quot;</span>
+    <span class="syntax-keyword">return</span> self._approve(msg.sender, spender, amount)
+
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">@nonreentrant</span>(<span class="syntax-string">&quot;lock&quot;</span>)
+<span class="syntax-keyword">def</span> transfer(receiver: address, amount: uint256) -&gt; bool:
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Transfer shares to a receiver.
+    @param receiver The address to transfer shares to.
+    @param amount The amount of shares to transfer.
+    @return True if the transfer was successful.
+    &quot;&quot;&quot;</span>
+    <span class="syntax-keyword">assert</span> receiver <span class="syntax-keyword">not</span> <span class="syntax-keyword">in</span> [self, empty(address)]
+    self._transfer(msg.sender, receiver, amount)
+    <span class="syntax-keyword">return</span> <span class="syntax-keyword">True</span>
+
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">@nonreentrant</span>(<span class="syntax-string">&quot;lock&quot;</span>)
+<span class="syntax-keyword">def</span> transferFrom(sender: address, receiver: address, amount: uint256) -&gt; bool:
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Transfer shares from a sender to a receiver.
+    @param sender The address to transfer shares from.
+    @param receiver The address to transfer shares to.
+    @param amount The amount of shares to transfer.
+    @return True if the transfer was successful.
+    &quot;&quot;&quot;</span>
+    <span class="syntax-keyword">assert</span> receiver <span class="syntax-keyword">not</span> <span class="syntax-keyword">in</span> [self, empty(address)]
+    <span class="syntax-keyword">return</span> self._transfer_from(sender, receiver, amount)
+
+<span class="syntax-comment">## ERC20+4626 compatibility</span>
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> permit(
+    owner: address, 
+    spender: address, 
+    amount: uint256, 
+    deadline: uint256, 
+    v: uint8, 
+    r: bytes32, 
+    s: bytes32
+) -&gt; bool:
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Approve an address to spend the vault&#x27;s shares.
+    @param owner The address to approve.
+    @param spender The address to approve.
+    @param amount The amount of shares to approve.
+    @param deadline The deadline for the permit.
+    @param v The v component of the signature.
+    @param r The r component of the signature.
+    @param s The s component of the signature.
+    @return True if the approval was successful.
+    &quot;&quot;&quot;</span>
+    <span class="syntax-keyword">return</span> self._permit(owner, spender, amount, deadline, v, r, s)
+
+<span class="syntax-keyword">@view</span>
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> balanceOf(addr: address) -&gt; uint256:
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Get the balance of a user.
+    @param addr The address to get the balance of.
+    @return The balance of the user.
+    &quot;&quot;&quot;</span>
+    <span class="syntax-keyword">if</span>(addr == self):
+        <span class="syntax-comment"># If the address is the vault, account for locked shares.</span>
+        <span class="syntax-keyword">return</span> self.balance_of[addr] - self._unlocked_shares()
+
+    <span class="syntax-keyword">return</span> self.balance_of[addr]
+
+<span class="syntax-keyword">@view</span>
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> totalSupply() -&gt; uint256:
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Get the total supply of shares.
+    @return The total supply of shares.
+    &quot;&quot;&quot;</span>
+    <span class="syntax-keyword">return</span> self._total_supply()
+
+<span class="syntax-keyword">@view</span>
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> totalAssets() -&gt; uint256:
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Get the total assets held by the vault.
+    @return The total assets held by the vault.
+    &quot;&quot;&quot;</span>
+    <span class="syntax-keyword">return</span> self._total_assets()
+
+<span class="syntax-keyword">@view</span>
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> totalIdle() -&gt; uint256:
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Get the amount of loose `asset` the vault holds.
+    @return The current total idle.
+    &quot;&quot;&quot;</span>
+    <span class="syntax-keyword">return</span> self.total_idle
+
+<span class="syntax-keyword">@view</span>
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> totalDebt() -&gt; uint256:
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Get the the total amount of funds invested
+    across all strategies.
+    @return The current total debt.
+    &quot;&quot;&quot;</span>
+    <span class="syntax-keyword">return</span> self.total_debt
+
+<span class="syntax-keyword">@view</span>
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> convertToShares(assets: uint256) -&gt; uint256:
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Convert an amount of assets to shares.
+    @param assets The amount of assets to convert.
+    @return The amount of shares.
+    &quot;&quot;&quot;</span>
+    <span class="syntax-keyword">return</span> self._convert_to_shares(assets, Rounding.ROUND_DOWN)
+
+<span class="syntax-keyword">@view</span>
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> previewDeposit(assets: uint256) -&gt; uint256:
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Preview the amount of shares that would be minted for a deposit.
+    @param assets The amount of assets to deposit.
+    @return The amount of shares that would be minted.
+    &quot;&quot;&quot;</span>
+    <span class="syntax-keyword">return</span> self._convert_to_shares(assets, Rounding.ROUND_DOWN)
+
+<span class="syntax-keyword">@view</span>
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> previewMint(shares: uint256) -&gt; uint256:
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Preview the amount of assets that would be deposited for a mint.
+    @param shares The amount of shares to mint.
+    @return The amount of assets that would be deposited.
+    &quot;&quot;&quot;</span>
+    <span class="syntax-keyword">return</span> self._convert_to_assets(shares, Rounding.ROUND_UP)
+
+<span class="syntax-keyword">@view</span>
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> convertToAssets(shares: uint256) -&gt; uint256:
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Convert an amount of shares to assets.
+    @param shares The amount of shares to convert.
+    @return The amount of assets.
+    &quot;&quot;&quot;</span>
+    <span class="syntax-keyword">return</span> self._convert_to_assets(shares, Rounding.ROUND_DOWN)
+
+<span class="syntax-keyword">@view</span>
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> maxDeposit(receiver: address) -&gt; uint256:
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Get the maximum amount of assets that can be deposited.
+    @param receiver The address that will receive the shares.
+    @return The maximum amount of assets that can be deposited.
+    &quot;&quot;&quot;</span>
+    <span class="syntax-keyword">return</span> self._max_deposit(receiver)
+
+<span class="syntax-keyword">@view</span>
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> maxMint(receiver: address) -&gt; uint256:
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Get the maximum amount of shares that can be minted.
+    @param receiver The address that will receive the shares.
+    @return The maximum amount of shares that can be minted.
+    &quot;&quot;&quot;</span>
+    max_deposit: uint256 = self._max_deposit(receiver)
+    <span class="syntax-keyword">return</span> self._convert_to_shares(max_deposit, Rounding.ROUND_DOWN)
+
+<span class="syntax-keyword">@view</span>
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> maxWithdraw(
+    owner: address,
+    max_loss: uint256 = 0,
+    strategies: DynArray[address, MAX_QUEUE] = []
+) -&gt; uint256:
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Get the maximum amount of assets that can be withdrawn.
+    @dev Complies to normal 4626 interface and takes custom params.
+    NOTE: Passing in a incorrectly ordered queue may result in
+     incorrect returns values.
+    @param owner The address that owns the shares.
+    @param max_loss Custom max_loss if any.
+    @param strategies Custom strategies queue if any.
+    @return The maximum amount of assets that can be withdrawn.
+    &quot;&quot;&quot;</span>
+    <span class="syntax-keyword">return</span> self._max_withdraw(owner, max_loss, strategies)
+
+<span class="syntax-keyword">@view</span>
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> maxRedeem(
+    owner: address,
+    max_loss: uint256 = MAX_BPS,
+    strategies: DynArray[address, MAX_QUEUE] = []
+) -&gt; uint256:
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Get the maximum amount of shares that can be redeemed.
+    @dev Complies to normal 4626 interface and takes custom params.
+    NOTE: Passing in a incorrectly ordered queue may result in
+     incorrect returns values.
+    @param owner The address that owns the shares.
+    @param max_loss Custom max_loss if any.
+    @param strategies Custom strategies queue if any.
+    @return The maximum amount of shares that can be redeemed.
+    &quot;&quot;&quot;</span>
+    <span class="syntax-keyword">return</span> min(
+        <span class="syntax-comment"># Min of the shares equivalent of max_withdraw or the full balance</span>
+        self._convert_to_shares(self._max_withdraw(owner, max_loss, strategies), Rounding.ROUND_DOWN),
+        self.balance_of[owner]
+    )
+
+<span class="syntax-keyword">@view</span>
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> previewWithdraw(assets: uint256) -&gt; uint256:
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Preview the amount of shares that would be redeemed for a withdraw.
+    @param assets The amount of assets to withdraw.
+    @return The amount of shares that would be redeemed.
+    &quot;&quot;&quot;</span>
+    <span class="syntax-keyword">return</span> self._convert_to_shares(assets, Rounding.ROUND_UP)
+
+<span class="syntax-keyword">@view</span>
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> previewRedeem(shares: uint256) -&gt; uint256:
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Preview the amount of assets that would be withdrawn for a redeem.
+    @param shares The amount of shares to redeem.
+    @return The amount of assets that would be withdrawn.
+    &quot;&quot;&quot;</span>
+    <span class="syntax-keyword">return</span> self._convert_to_assets(shares, Rounding.ROUND_DOWN)
+
+<span class="syntax-keyword">@view</span>
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> FACTORY() -&gt; address:
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Address of the factory that deployed the vault.
+    @dev Is used to retrieve the protocol fees.
+    @return Address of the vault factory.
+    &quot;&quot;&quot;</span>
+    <span class="syntax-keyword">return</span> self.factory
+
+<span class="syntax-keyword">@pure</span>
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> apiVersion() -&gt; String[28]:
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Get the API version of the vault.
+    @return The API version of the vault.
+    &quot;&quot;&quot;</span>
+    <span class="syntax-keyword">return</span> API_VERSION
+
+<span class="syntax-keyword">@view</span>
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> assess_share_of_unrealised_losses(strategy: address, assets_needed: uint256) -&gt; uint256:
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Assess the share of unrealised losses that a strategy has.
+    @param strategy The address of the strategy.
+    @param assets_needed The amount of assets needed to be withdrawn.
+    @return The share of unrealised losses that the strategy has.
+    &quot;&quot;&quot;</span>
+    current_debt: uint256 = self.strategies[strategy].current_debt
+    <span class="syntax-keyword">assert</span> current_debt &gt;= assets_needed
+
+    <span class="syntax-keyword">return</span> self._assess_share_of_unrealised_losses(strategy, current_debt, assets_needed)
+
+<span class="syntax-comment">## Profit locking getter functions ##</span>
+
+<span class="syntax-keyword">@view</span>
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> profitMaxUnlockTime() -&gt; uint256:
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Gets the current time profits are set to unlock over.
+    @return The current profit max unlock time.
+    &quot;&quot;&quot;</span>
+    <span class="syntax-keyword">return</span> self.profit_max_unlock_time
+
+<span class="syntax-keyword">@view</span>
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> fullProfitUnlockDate() -&gt; uint256:
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Gets the timestamp at which all profits will be unlocked.
+    @return The full profit unlocking timestamp
+    &quot;&quot;&quot;</span>
+    <span class="syntax-keyword">return</span> self.full_profit_unlock_date
+
+<span class="syntax-keyword">@view</span>
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> profitUnlockingRate() -&gt; uint256:
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice The per second rate at which profits are unlocking.
+    @dev This is denominated in EXTENDED_BPS decimals.
+    @return The current profit unlocking rate.
+    &quot;&quot;&quot;</span>
+    <span class="syntax-keyword">return</span> self.profit_unlocking_rate
+
+
+<span class="syntax-keyword">@view</span>
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> lastProfitUpdate() -&gt; uint256:
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice The timestamp of the last time shares were locked.
+    @return The last profit update.
+    &quot;&quot;&quot;</span>
+    <span class="syntax-keyword">return</span> self.last_profit_update
+
+<span class="syntax-comment"># eip-1344</span>
+<span class="syntax-keyword">@view</span>
+<span class="syntax-keyword">@internal</span>
+<span class="syntax-keyword">def</span> domain_separator() -&gt; bytes32:
+    <span class="syntax-keyword">return</span> keccak256(
+        concat(
+            DOMAIN_TYPE_HASH,
+            keccak256(convert(<span class="syntax-string">&quot;Yearn Vault&quot;</span>, Bytes[11])),
+            keccak256(convert(API_VERSION, Bytes[28])),
+            convert(chain.id, bytes32),
+            convert(self, bytes32)
+        )
+    )
+
+<span class="syntax-keyword">@view</span>
+<span class="syntax-keyword">@external</span>
+<span class="syntax-keyword">def</span> DOMAIN_SEPARATOR() -&gt; bytes32:
+    <span class="syntax-comment">&quot;&quot;&quot;
+    @notice Get the domain separator.
+    @return The domain separator.
+    &quot;&quot;&quot;</span>
+    <span class="syntax-keyword">return</span> self.domain_separator()
+</code></pre>
+            <a class="feature-link" href="https://github.com/yearn/yearn-vaults-v3/blob/89ab996bf94a16878e174e50e9862d69c6495875/contracts/VaultV3.vy" target="_blank" rel="noreferrer">Read the core vault code <span aria-hidden="true">↗</span></a>
+          </section>
+          <section class="security-panel" id="security-audits"  aria-labelledby="security-choice-audits" hidden>
+            <div class="panel-caption">Independent Audits</div>
+            <a class="audit-item" href="https://github.com/yearn/yearn-security/blob/master/audits/20230504_ChainSecurity_Yearn_V3/Yearn-Smart-Contract-Audit_V3_Vaults_-ChainSecurity.pdf" target="_blank" rel="noreferrer"><img src="/concepts/lifetime/security/chainsecurity.png" alt="ChainSecurity" /><span>V3 Vaults · 2023 <span aria-hidden="true">↗</span></span></a>
+            <a class="audit-item" href="https://github.com/yearn/yearn-security/blob/master/audits/20260601_yAudit_Yearn_V3.1.0/2026-06-Yearn-Vaults-v3.1.0-report.pdf" target="_blank" rel="noreferrer"><img src="/concepts/lifetime/security/yaudit.svg" alt="yAudit" /><span>V3.1.0 Vaults · 2026 <span aria-hidden="true">↗</span></span></a>
+            <a class="audit-item" href="https://github.com/yearn/yearn-security/blob/master/audits/20240301_Statemind_Yearn_V3.0.2/Yearn%20V3%20report.pdf" target="_blank" rel="noreferrer"><img src="/concepts/lifetime/security/statemind.svg" alt="Statemind" /><span>V3.0.2 Vaults · 2024 <span aria-hidden="true">↗</span></span></a>
+            <a class="audit-item" href="https://github.com/yearn/yearn-security/blob/master/audits/20210719_ToB_yearn_vaultsv2/ToB_-_Yearn_Vault_v_2_Smart_Contracts_Audit_Report.pdf" target="_blank" rel="noreferrer"><img src="/concepts/lifetime/security/trailofbits.svg" alt="Trail of Bits" /><span>V2 Vaults · 2021 <span aria-hidden="true">↗</span></span></a>
+            <div class="panel-caption bounty-heading">Bug Bounties</div><a class="bounty-item" href="https://immunefi.com/bug-bounty/yearnfinance/information/" target="_blank" rel="noreferrer"><img src="/concepts/lifetime/security/immunefi.svg" alt="Immunefi" /><span class="bounty-reward">Up to $200,000 <span aria-hidden="true">↗</span></span></a>
+            
+            <a class="feature-link" href="https://github.com/yearn/yearn-security/tree/master/audits" target="_blank" rel="noreferrer">All audit reports <span aria-hidden="true">↗</span></a>
+          </section>
+          <section class="security-panel" id="security-monitoring"  aria-labelledby="security-choice-monitoring" hidden>
+            <div class="panel-caption"><span>Yearn Curation alerts</span><span id="alert-status">Loading recent alerts</span></div>
+            <div class="feed-labels" aria-hidden="true"><span>Protocol</span><span>Action</span><span>Date</span></div><!-- biome-ignore lint/a11y/noNoninteractiveTabindex: Keyboard access to scrollable alerts. -->
+<div id="security-alerts" tabindex="0" aria-label="Recent alerts, pauses while focused" data-auto-scroll></div>
+            <a class="feature-link" href="https://curation.yearn.fi/monitoring/" target="_blank" rel="noreferrer">Open monitoring <span aria-hidden="true">↗</span></a>
+          </section>
+          <section class="security-panel" id="security-breakers"  aria-labelledby="security-choice-breakers" hidden>
+            <div class="panel-caption"><span>Circuit breakers</span><span>Demo · simulated status</span></div>
+            <div class="breaker-summary"><strong>3 armed</strong><span>1 triggered</span></div>
+            <div class="breaker-status"><span>Share price deviation<small>Observed 0.02% · limit 0.50%</small></span><span class="status-pill">Armed</span></div>
+            <div class="breaker-status"><span>Liquidity floor<small>Available 12.4% · floor 10%</small></span><span class="status-pill">Armed</span></div>
+            <div class="breaker-status"><span>Debt ceiling<small>Utilization 74% · limit 90%</small></span><span class="status-pill">Armed</span></div>
+            <div class="breaker-status"><span>Asset peg deviation<small>Observed 1.20% · limit 1% · deposits paused</small></span><span class="status-pill triggered">Triggered</span></div>
+            <p class="panel-note">Illustrative controls and values, not current vault status.</p>
+          </section>
+          <section class="security-panel" id="security-underwriting"  aria-labelledby="security-choice-underwriting" hidden>
+            <div class="panel-caption"><span>Risk assessments</span><span>Yearn Curation</span></div><div class="feed-labels report-labels" aria-hidden="true"><span>Reviewed item</span><span>Risk level</span><span>Score</span></div><div class="report-scroll" aria-label="Yearn Curation reports" data-auto-scroll><a class="report-item" href="https://curation.yearn.fi/report/yearn-yvusdt/" target="_blank" rel="noreferrer"><span>Yearn — yvUSDT-1</span><span class="report-risk">Minimal Risk</span><span class="report-score" aria-label="Risk score 1.2">1.2</span></a><a class="report-item" href="https://curation.yearn.fi/report/sky-usds/" target="_blank" rel="noreferrer"><span>Sky — USDS &amp; sUSDS</span><span class="report-risk">Minimal Risk</span><span class="report-score" aria-label="Risk score 1.3">1.3</span></a><a class="report-item" href="https://curation.yearn.fi/report/yearn-yvusds/" target="_blank" rel="noreferrer"><span>Yearn — yvUSDS-1</span><span class="report-risk">Minimal Risk</span><span class="report-score" aria-label="Risk score 1.3">1.3</span></a><a class="report-item" href="https://curation.yearn.fi/report/yearn-yvwbtc/" target="_blank" rel="noreferrer"><span>Yearn — yvWBTC-1</span><span class="report-risk">Minimal Risk</span><span class="report-score" aria-label="Risk score 1.3">1.3</span></a><a class="report-item" href="https://curation.yearn.fi/report/yearn-yvdai/" target="_blank" rel="noreferrer"><span>Yearn — yvDAI-1</span><span class="report-risk">Minimal Risk</span><span class="report-score" aria-label="Risk score 1.4">1.4</span></a><a class="report-item" href="https://curation.yearn.fi/report/yearn-yvusdc/" target="_blank" rel="noreferrer"><span>Yearn — yvUSDC-1</span><span class="report-risk">Minimal Risk</span><span class="report-score" aria-label="Risk score 1.4">1.4</span></a><a class="report-item" href="https://curation.yearn.fi/report/origin-arm/" target="_blank" rel="noreferrer"><span>Origin ARM</span><span class="report-risk">Minimal Risk</span><span class="report-score" aria-label="Risk score 1.4">1.4</span></a><a class="report-item" href="https://curation.yearn.fi/report/yearn-yvweth/" target="_blank" rel="noreferrer"><span>Yearn — yvWETH-1</span><span class="report-risk">Minimal Risk</span><span class="report-score" aria-label="Risk score 1.4">1.4</span></a><a class="report-item" href="https://curation.yearn.fi/report/reserve-ethplus/" target="_blank" rel="noreferrer"><span>Reserve Protocol</span><span class="report-risk">Low Risk</span><span class="report-score" aria-label="Risk score 1.7">1.7</span></a><a class="report-item" href="https://curation.yearn.fi/report/origin-ousd/" target="_blank" rel="noreferrer"><span>Origin OUSD</span><span class="report-risk">Low Risk</span><span class="report-score" aria-label="Risk score 2.0">2.0</span></a><a class="report-item" href="https://curation.yearn.fi/report/strata-srusde/" target="_blank" rel="noreferrer"><span>Strata</span><span class="report-risk">Low Risk</span><span class="report-score" aria-label="Risk score 2.1">2.1</span></a><a class="report-item" href="https://curation.yearn.fi/report/superstate-ustb/" target="_blank" rel="noreferrer"><span>Superstate USTB</span><span class="report-risk">Low Risk</span><span class="report-score" aria-label="Risk score 2.1">2.1</span></a><a class="report-item" href="https://curation.yearn.fi/report/fx-fxusd/" target="_blank" rel="noreferrer"><span>f(x) Protocol — fxUSD</span><span class="report-risk">Low Risk</span><span class="report-score" aria-label="Risk score 2.1">2.1</span></a><a class="report-item" href="https://curation.yearn.fi/report/paxos-usdg/" target="_blank" rel="noreferrer"><span>Paxos USDG (Global Dollar)</span><span class="report-risk">Low Risk</span><span class="report-score" aria-label="Risk score 2.1">2.1</span></a><a class="report-item" href="https://curation.yearn.fi/report/kinetiq-khype/" target="_blank" rel="noreferrer"><span>Kinetiq kHYPE</span><span class="report-risk">Low Risk</span><span class="report-score" aria-label="Risk score 2.3">2.3</span></a><a class="report-item" href="https://curation.yearn.fi/report/maple-syrupusdc/" target="_blank" rel="noreferrer"><span>Maple Finance</span><span class="report-risk">Low Risk</span><span class="report-score" aria-label="Risk score 2.3">2.3</span></a><a class="report-item" href="https://curation.yearn.fi/report/spectra-finance/" target="_blank" rel="noreferrer"><span>Spectra Finance</span><span class="report-risk">Low Risk</span><span class="report-score" aria-label="Risk score 2.3">2.3</span></a><a class="report-item" href="https://curation.yearn.fi/report/cap-stcusd/" target="_blank" rel="noreferrer"><span>Cap — stcUSD</span><span class="report-risk">Low Risk</span><span class="report-score" aria-label="Risk score 2.4">2.4</span></a><a class="report-item" href="https://curation.yearn.fi/report/ondo-usdy/" target="_blank" rel="noreferrer"><span>Ondo USDY</span><span class="report-risk">Low Risk</span><span class="report-score" aria-label="Risk score 2.4">2.4</span></a><a class="report-item" href="https://curation.yearn.fi/report/superstate-uscc/" target="_blank" rel="noreferrer"><span>Superstate USCC</span><span class="report-risk">Low Risk</span><span class="report-score" aria-label="Risk score 2.4">2.4</span></a><a class="report-item" href="https://curation.yearn.fi/report/yearn-yvusd/" target="_blank" rel="noreferrer"><span>Yearn — yvUSD</span><span class="report-risk">Low Risk</span><span class="report-score" aria-label="Risk score 2.4">2.4</span></a><a class="report-item" href="https://curation.yearn.fi/report/aave-sgho/" target="_blank" rel="noreferrer"><span>Aave — sGHO</span><span class="report-risk">Medium Risk</span><span class="report-score" aria-label="Risk score 2.5">2.5</span></a><a class="report-item" href="https://curation.yearn.fi/report/sky-stusds/" target="_blank" rel="noreferrer"><span>Sky — stUSDS (Staked USDS)</span><span class="report-risk">Medium Risk</span><span class="report-score" aria-label="Risk score 2.5">2.5</span></a><a class="report-item" href="https://curation.yearn.fi/report/centrifuge-jaaa/" target="_blank" rel="noreferrer"><span>Centrifuge JAAA</span><span class="report-risk">Medium Risk</span><span class="report-score" aria-label="Risk score 2.6">2.6</span></a><a class="report-item" href="https://curation.yearn.fi/report/fluid/" target="_blank" rel="noreferrer"><span>Fluid Lending Protocol</span><span class="report-risk">Medium Risk</span><span class="report-score" aria-label="Risk score 2.6">2.6</span></a><a class="report-item" href="https://curation.yearn.fi/report/flex/" target="_blank" rel="noreferrer"><span>Flex</span><span class="report-risk">Medium Risk</span><span class="report-score" aria-label="Risk score 2.6">2.6</span></a><a class="report-item" href="https://curation.yearn.fi/report/stakedhype-sthype/" target="_blank" rel="noreferrer"><span>StakedHYPE</span><span class="report-risk">Medium Risk</span><span class="report-score" aria-label="Risk score 2.8">2.8</span></a><a class="report-item" href="https://curation.yearn.fi/report/midas-mhyper/" target="_blank" rel="noreferrer"><span>Midas mHYPER</span><span class="report-risk">Medium Risk</span><span class="report-score" aria-label="Risk score 2.9">2.9</span></a><a class="report-item" href="https://curation.yearn.fi/report/flying-tulip/" target="_blank" rel="noreferrer"><span>Flying Tulip — FT Lend (ftDNMM)</span><span class="report-risk">Medium Risk</span><span class="report-score" aria-label="Risk score 3.0">3.0</span></a><a class="report-item" href="https://curation.yearn.fi/report/curvance-hyausd/" target="_blank" rel="noreferrer"><span>Curvance High Yield AUSD (hyAUSD)</span><span class="report-risk">Medium Risk</span><span class="report-score" aria-label="Risk score 3.0">3.0</span></a><a class="report-item" href="https://curation.yearn.fi/report/mezo-musd/" target="_blank" rel="noreferrer"><span>Mezo MUSD</span><span class="report-risk">Medium Risk</span><span class="report-score" aria-label="Risk score 3.1">3.1</span></a><a class="report-item" href="https://curation.yearn.fi/report/saturn-usdat/" target="_blank" rel="noreferrer"><span>Saturn (USDat)</span><span class="report-risk">Medium Risk</span><span class="report-score" aria-label="Risk score 3.1">3.1</span></a><a class="report-item" href="https://curation.yearn.fi/report/infinifi/" target="_blank" rel="noreferrer"><span>InfiniFi</span><span class="report-risk">Medium Risk</span><span class="report-score" aria-label="Risk score 3.1">3.1</span></a><a class="report-item" href="https://curation.yearn.fi/report/flying-tulip-ftusd/" target="_blank" rel="noreferrer"><span>Flying Tulip — ftUSD &amp; Staked ftUSD (sftUSD)</span><span class="report-risk">Medium Risk</span><span class="report-score" aria-label="Risk score 3.4">3.4</span></a><a class="report-item" href="https://curation.yearn.fi/report/midas-mglobal/" target="_blank" rel="noreferrer"><span>Midas mGLOBAL</span><span class="report-risk">Medium Risk</span><span class="report-score" aria-label="Risk score 3.4">3.4</span></a><a class="report-item" href="https://curation.yearn.fi/report/re-reusd/" target="_blank" rel="noreferrer"><span>Re Protocol reUSD</span><span class="report-risk">Medium Risk</span><span class="report-score" aria-label="Risk score 3.4">3.4</span></a><a class="report-item" href="https://curation.yearn.fi/report/3jane-usd3/" target="_blank" rel="noreferrer"><span>3Jane — USD3</span><span class="report-risk">Medium Risk</span><span class="report-score" aria-label="Risk score 3.4">3.4</span></a><a class="report-item" href="https://curation.yearn.fi/report/across-protocol/" target="_blank" rel="noreferrer"><span>Across Protocol</span><span class="report-risk">Elevated Risk</span><span class="report-score" aria-label="Risk score 3.5">3.5</span></a><a class="report-item" href="https://curation.yearn.fi/report/apyx-apxusd/" target="_blank" rel="noreferrer"><span>Apyx</span><span class="report-risk">Elevated Risk</span><span class="report-score" aria-label="Risk score 3.5">3.5</span></a><a class="report-item" href="https://curation.yearn.fi/report/kerneldao-hgeth/" target="_blank" rel="noreferrer"><span>KernelDAO (Kelp Gain)</span><span class="report-risk">Elevated Risk</span><span class="report-score" aria-label="Risk score 3.8">3.8</span></a><a class="report-item" href="https://curation.yearn.fi/report/d2-hypeplus/" target="_blank" rel="noreferrer"><span>D2 Finance HYPE++</span><span class="report-risk">Elevated Risk</span><span class="report-score" aria-label="Risk score 4.1">4.1</span></a><a class="report-item" href="https://curation.yearn.fi/report/unit-ubtc/" target="_blank" rel="noreferrer"><span>Unit Bitcoin (UBTC)</span><span class="report-risk">High Risk</span><span class="report-score" aria-label="Risk score 5.0">5.0</span></a><a class="report-item" href="https://curation.yearn.fi/report/buck/" target="_blank" rel="noreferrer"><span>BUCK (Bitcoin Dollar SavingsCoin)</span><span class="report-risk">Danger Zone</span><span class="report-score" aria-label="Risk score Not scored">Not scored</span></a><a class="report-item" href="https://curation.yearn.fi/report/resolv-rlp/" target="_blank" rel="noreferrer"><span>Resolv RLP</span><span class="report-risk">Danger Zone</span><span class="report-score" aria-label="Risk score Not scored">Not scored</span></a><a class="report-item" href="https://curation.yearn.fi/report/resolv-wstusr/" target="_blank" rel="noreferrer"><span>Resolv wstUSR</span><span class="report-risk">Danger Zone</span><span class="report-score" aria-label="Risk score Not scored">Not scored</span></a></div><p class="panel-note">Scores captured Oct 22, 2026 · lower indicates lower assessed risk.</p><a class="feature-link" href="https://curation.yearn.fi/reports/" target="_blank" rel="noreferrer">Explore all reports <span aria-hidden="true">↗</span></a>
+          </section>
+        </div>
+        <div class="security-layers" aria-label="Explore security features">
+<button class="security-choice" id="security-choice-code" type="button" aria-controls="security-code" aria-pressed="true" data-security="code"><span class="layer-number" aria-hidden="true">01</span><span><span class="security-choice-title">Open Source Code</span><span class="security-choice-description">Inspect the foundation your vaults are built on.</span></span><span class="choice-arrow" aria-hidden="true">↗</span></button>
+<button class="security-choice" id="security-choice-audits" type="button" aria-controls="security-audits" aria-pressed="false" data-security="audits"><span class="layer-number" aria-hidden="true">02</span><span><span class="security-choice-title">Extensively Audited</span><span class="security-choice-description">Independent reviews, with reports you can read.</span></span><span class="choice-arrow" aria-hidden="true">↗</span></button>
+<button class="security-choice" id="security-choice-monitoring" type="button" aria-controls="security-monitoring" aria-pressed="false" data-security="monitoring"><span class="layer-number" aria-hidden="true">03</span><span><span class="security-choice-title">Active Monitoring</span><span class="security-choice-description">Real alerts from Yearn Curation.</span></span><span class="choice-arrow" aria-hidden="true">↗</span></button>
+<button class="security-choice" id="security-choice-breakers" type="button" aria-controls="security-breakers" aria-pressed="false" data-security="breakers"><span class="layer-number" aria-hidden="true">04</span><span><span class="security-choice-title">Automated Circuit Breakers</span><span class="security-choice-description">Defined limits. Protective responses.</span></span><span class="choice-arrow" aria-hidden="true">↗</span></button>
+<button class="security-choice" id="security-choice-underwriting" type="button" aria-controls="security-underwriting" aria-pressed="false" data-security="underwriting"><span class="layer-number" aria-hidden="true">05</span><span><span class="security-choice-title">Defi-native Underwriting</span><span class="security-choice-description">Understand the risks behind the allocation.</span></span><span class="choice-arrow" aria-hidden="true">↗</span></button>
+        </div>
+      </section>
+      <section class="benefits-section feature-section" id="integrators" aria-labelledby="benefits-title">
+        <div class="benefits-intro reveal"><span class="eyebrow">For Integrators</span><h2 id="benefits-title">Your product.<br />Powered by <span class="yearn-word"><img src="/concepts/lifetime/navigation/YearnWordmark.svg" alt="Yearn" /></span>.</h2><p>Keep your focus on what you’re building.<br />Make vault infrastructure part of the foundation.</p></div>
+        <div class="benefits-grid">
+          <article class="reveal"><h3>Seamless Yield Automation</h3><p>Connect your product to vaults that put assets to work. Bring yield into your experience without building every strategy yourself.</p></article>
+          <article class="reveal"><h3>Institutional Curation and Risk controls</h3><p>Choose vault infrastructure with configurable allocations and risk parameters to suit your product’s requirements.</p></article>
+          <article class="reveal"><h3>Generous Fee Sharing agreements</h3><p>Build a business around the value you bring. Explore partner fee sharing arrangements for your integration.</p></article>
+        </div>
+        <div class="integrator-actions"><a class="feature-link secondary-button" href="https://partners.yearn.fi"><span>Start building with Yearn </span><span aria-hidden="true">↗</span></a><a class="feature-link primary-button" href="https://yearn.fi/vaults"><span>Browse Yearn Vaults </span><span aria-hidden="true">↗</span></a></div>
+      </section>
+    </main>
+<fieldset class="stats-options" aria-label="Stats version for review"><span>Stats version</span><button type="button" data-stats-option="old" aria-pressed="false">Original</button><button type="button" data-stats-option="new" aria-pressed="true">With assets secured</button></fieldset>
+    <footer><a class="brand" href="#main" aria-label="Back to top"><img src="/concepts/lifetime/navigation/TypeMarkYearn.svg?v=37" alt="Yearn" width="116" height="32" /></a><nav class="footer-links" aria-label="Footer navigation"><a href="https://docs.yearn.fi/" target="_blank" rel="noopener noreferrer">Docs <span aria-hidden="true">↗</span></a><a href="https://discord.gg/yearn" target="_blank" rel="noopener noreferrer">Support <span aria-hidden="true">↗</span></a><a href="https://blog.yearn.fi/" target="_blank" rel="noopener noreferrer">Blog <span aria-hidden="true">↗</span></a><a href="https://gov.yearn.fi/" target="_blank" rel="noopener noreferrer">Discourse <span aria-hidden="true">↗</span></a><a href="https://github.com/yearn" target="_blank" rel="noopener noreferrer">Github <span aria-hidden="true">↗</span></a><a href="https://x.com/yearnfi" target="_blank" rel="noopener noreferrer">X (Twitter) <span aria-hidden="true">↗</span></a></nav></footer>
+    <dialog id="notes" aria-labelledby="notes-title"><div class="dialog-top"><span class="eyebrow">Behind the Numbers</span><button class="close" type="button" aria-label="Close data notes">×</button></div><h2 id="notes-title">A moment in <span class="yearn-word"><img src="/concepts/lifetime/navigation/YearnWordmark.svg" alt="Yearn" /></span>.</h2><p>This concept uses a captured <span class="yearn-word"><img src="/concepts/lifetime/navigation/YearnWordmark.svg" alt="Yearn" /></span> Data publication, not a live feed.</p><dl><dt>Lifetime earnings</dt><dd id="earnings-note">Loading source details.</dd><dt>The moving number</dt><dd id="animation-note">Loading animation details.</dd><dt>Total value deposited</dt><dd id="tvl-note">Loading source details.</dd><dt>Lifetime fees</dt><dd id="fees-note">Loading source details.</dd><dt>Vaults deployed</dt><dd id="vaults-note">Loading source details.</dd><dt>Harvests</dt><dd id="harvests-note">Loading source details.</dd></dl><p class="source-date" id="capture-date"></p><a class="source-link" href="/concepts/lifetime/data.json" target="_blank" rel="noreferrer">View the source snapshot ↗</a><button class="replay-button" id="replay" type="button">Refresh the estimate</button></dialog>
+    <noscript><p class="noscript">Enable JavaScript to view the captured metrics. The vault and documentation links work without it.</p></noscript>
+  </body>
+</html>

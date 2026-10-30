@@ -1,0 +1,604 @@
+{
+  "status": "estimate-incomplete-coverage",
+  "asOfTimestamp": "1792627199",
+  "ethereumBlock": "26244424",
+  "baselineExcludingCurationUsd": 155372779.85059968,
+  "netCandidateAdditionUsd": 45071046.79077112,
+  "estimatedAssetsSecuredUsd": 200443826.6413708,
+  "ledger": [
+    {
+      "name": "Katana Pre-Deposit USDC",
+      "address": "0x7b5a0182e400b241b317e781a4e9dedfc1429822",
+      "grossUsd": 70369029.4270588,
+      "netAdditionUsd": 0,
+      "reason": "bridged out; depositor asset and vault-share balances zero; residual accounting excluded"
+    },
+    {
+      "name": "Katana Pre-Deposit WETH",
+      "address": "0xcc6a16be713f6a714f68b0e1f4914fd3db15fbef",
+      "grossUsd": 46618358.89839125,
+      "netAdditionUsd": 0,
+      "reason": "bridged out; depositor asset and vault-share balances zero; residual accounting excluded"
+    },
+    {
+      "name": "cap USDC",
+      "address": "0x3ed6aa32c930253fc990de58ff882b9186cd0072",
+      "grossUsd": 26211223.51126407,
+      "deductionUsd": 0,
+      "netAdditionUsd": 26211223.51126407,
+      "details": []
+    },
+    {
+      "name": "Katana Pre-Deposit USDT",
+      "address": "0x48c03b6ffd0008460f8657db1037c7e09deedfcb",
+      "grossUsd": 18050613.722208496,
+      "netAdditionUsd": 0,
+      "reason": "bridged out; depositor asset and vault-share balances zero; residual accounting excluded"
+    },
+    {
+      "name": "Katana Pre-Deposit WBTC",
+      "address": "0x92c82f5f771f6a44cfa09357dd0575b81bf5f728",
+      "grossUsd": 15269864.187378852,
+      "netAdditionUsd": 0,
+      "reason": "bridged out; depositor asset and vault-share balances zero; residual accounting excluded"
+    },
+    {
+      "name": "Savings crvUSD",
+      "address": "0x0655977feb2f289a4ab78af67bab0d17aab84367",
+      "grossUsd": 14497925.31947141,
+      "deductionUsd": 375839.7291456128,
+      "netAdditionUsd": 14122085.590325797,
+      "details": [
+        {
+          "kind": "incoming direct shares",
+          "holder": "0xbf319ddc2edc1eb6fdf9910e39b37be221c8805f",
+          "usd": 29.91241242296591
+        },
+        {
+          "kind": "incoming LP exposure",
+          "holder": "0xf165a634296800812b8b0607a75deddcd4d3cc88",
+          "usd": 373985.6872363372
+        },
+        {
+          "kind": "incoming LP exposure",
+          "holder": "0xe3bf2d04cd3b6e74613d36368c7d21b2d6c26d72",
+          "usd": 1716.2180530207427
+        },
+        {
+          "kind": "incoming LP exposure",
+          "holder": "0x08c0833af1331831759b8e0bfef1bc5738436325",
+          "usd": 107.86148280431468
+        },
+        {
+          "kind": "incoming LP exposure",
+          "holder": "0xbce40f1840a449caaaf374df0a1fee1e212784cb",
+          "usd": 0.04996102756158322
+        },
+        {
+          "kind": "incoming LP exposure",
+          "holder": "0x8257a895a1380f42c33ece9cd9e6bff35be69d55",
+          "usd": 0
+        },
+        {
+          "kind": "incoming LP exposure",
+          "holder": "0xd5497a68c3a77e7de0fa7fa0880387e6ec55d014",
+          "usd": 0
+        }
+      ]
+    },
+    {
+      "name": "Katana Pre-Deposit USDC",
+      "address": "0xf470eb50b4a60c9b069f7fd6032532b8f5cc014d",
+      "grossUsd": 7710657.195239034,
+      "netAdditionUsd": 0,
+      "reason": "bridged out; depositor asset and vault-share balances zero; residual accounting excluded"
+    },
+    {
+      "name": "Yearn yETH Recovery Vault",
+      "address": "0xd7a540ba3626c0aa66e7db4088971d0cd64695b6",
+      "grossUsd": 6025021.81950011,
+      "netAdditionUsd": 0,
+      "reason": "already in baseline"
+    },
+    {
+      "name": "Katana Pre-Deposit USDT",
+      "address": "0xa5dab32dbe68e6fa784e1e50e4f620a0477d3896",
+      "grossUsd": 5666501.3536954485,
+      "netAdditionUsd": 0,
+      "reason": "bridged out; depositor asset and vault-share balances zero; residual accounting excluded"
+    },
+    {
+      "name": "USDC Meta Vault",
+      "address": "0x697c54a84d83f37380d034e2bfc6f7ce8d89f4ee",
+      "grossUsd": 3856005.6413592813,
+      "deductionUsd": 0,
+      "netAdditionUsd": 3856005.6413592813,
+      "details": []
+    },
+    {
+      "name": "Katana Pre-Deposit WBTC",
+      "address": "0xe1ac97e2616ad80f69f705ff007a4bbb3655544a",
+      "grossUsd": 2827483.853454793,
+      "netAdditionUsd": 0,
+      "reason": "bridged out; depositor asset and vault-share balances zero; residual accounting excluded"
+    },
+    {
+      "name": "Katana Pre-Deposit WETH",
+      "address": "0x77570cfecf83bc6bb08e2cd9e8537aea9f97ea2f",
+      "grossUsd": 2393593.4613400837,
+      "netAdditionUsd": 0,
+      "reason": "bridged out; depositor asset and vault-share balances zero; residual accounting excluded"
+    },
+    {
+      "name": "ETH Meta Vault",
+      "address": "0x26fcb50eec367ddab060ccf5e7394cecd95f7db2",
+      "grossUsd": 208709.3914188476,
+      "deductionUsd": 0,
+      "netAdditionUsd": 208709.3914188476,
+      "details": []
+    },
+    {
+      "name": "Coinflakes Vault v2.0",
+      "address": "0x254bd33e2f62713f893f0842c99e68f855cda315",
+      "grossUsd": 166431.66620989333,
+      "deductionUsd": 0,
+      "netAdditionUsd": 166431.66620989333,
+      "details": []
+    },
+    {
+      "name": "usdc-vault",
+      "address": "0x9cfb40acedac259b1d23e790f6c6d0c3898361ad",
+      "grossUsd": 13200.742380538397,
+      "deductionUsd": 13200.742380538397,
+      "netAdditionUsd": 0,
+      "details": [
+        {
+          "kind": "outgoing shares",
+          "holder": "0x9cfb40acedac259b1d23e790f6c6d0c3898361ad",
+          "target": "0xbdb97ec319c41c6fa383e94ece6bdf383dfc7be4",
+          "usd": 0.6721469565550229
+        },
+        {
+          "kind": "outgoing shares",
+          "holder": "0x9cfb40acedac259b1d23e790f6c6d0c3898361ad",
+          "target": "0x7ee351aa702c8fc735d77fb229b7676ac15d7c79",
+          "usd": 13200.070233581842
+        }
+      ]
+    },
+    {
+      "name": "Sturdy USDC-taoUSD bridge vault",
+      "address": "0x46e9893422b9ae9246793489433f72c548cb2455",
+      "grossUsd": 2911.3590282160903,
+      "deductionUsd": 0,
+      "netAdditionUsd": 2911.3590282160903,
+      "details": []
+    },
+    {
+      "name": "USDe-2 yVault",
+      "address": "0x381e0be61b3aeb1f321c4775046e6f57bc84c804",
+      "grossUsd": 1798.7305468690504,
+      "deductionUsd": 0,
+      "netAdditionUsd": 1798.7305468690504,
+      "details": []
+    },
+    {
+      "name": "Curve reUSD-scrvUSD yVault",
+      "address": "0x482cce30cde09292279371956a3c7c57bbe125a9",
+      "grossUsd": 1403.1551346373697,
+      "deductionUsd": 0,
+      "netAdditionUsd": 1403.1551346373697,
+      "details": []
+    },
+    {
+      "name": "Katana Pre-DepositUSDC",
+      "address": "0xd91b6ded55c0fba2c1e88f2cdf6e051ecd788952",
+      "grossUsd": 1053.8263665392649,
+      "deductionUsd": 992.6190981609916,
+      "netAdditionUsd": 61.207268378273284,
+      "details": [
+        {
+          "kind": "outgoing shares",
+          "holder": "0xd91b6ded55c0fba2c1e88f2cdf6e051ecd788952",
+          "target": "0xbe53a109b494e5c9f97b9cd39fe969be68bf6204",
+          "usd": 992.6190981609916
+        }
+      ]
+    },
+    {
+      "name": "Curve GHO-USR yVault",
+      "address": "0xeadc18ca9363565e1c8bc5415db0110d7c91cde5",
+      "grossUsd": 918.273306423373,
+      "deductionUsd": 0,
+      "netAdditionUsd": 918.273306423373,
+      "details": []
+    },
+    {
+      "name": "Curve reUSD-sfrxUSD yVault",
+      "address": "0xffcaf6549a229d63351b71313559edbe0c467b78",
+      "grossUsd": 563.0660233918608,
+      "deductionUsd": 0,
+      "netAdditionUsd": 563.0660233918608,
+      "details": []
+    },
+    {
+      "name": "dai-vault",
+      "address": "0x610e01895cb39078890e3fe5239b78a51c07892f",
+      "grossUsd": 288.6644595476893,
+      "deductionUsd": 288.6644595476893,
+      "netAdditionUsd": 0,
+      "details": [
+        {
+          "kind": "outgoing shares",
+          "holder": "0x610e01895cb39078890e3fe5239b78a51c07892f",
+          "target": "0xeed00e00236cd7f36f2558d8b5fd05046449599d",
+          "usd": 82.16467205322805
+        },
+        {
+          "kind": "outgoing shares",
+          "holder": "0x610e01895cb39078890e3fe5239b78a51c07892f",
+          "target": "0x1fd862499e9b9402de6c599b6c391f83981180ab",
+          "usd": 206.49978749446126
+        }
+      ]
+    },
+    {
+      "name": "Curve lvlUSD-USDC yVault",
+      "address": "0x620082f33d442e5806122f71a72b12134f75ff2d",
+      "grossUsd": 211.45114467220287,
+      "deductionUsd": 0,
+      "netAdditionUsd": 211.45114467220287,
+      "details": []
+    },
+    {
+      "name": "Katana Pre-DepositUSDC",
+      "address": "0xf20b02131c45b22e147c98e30cc889a20dc8a00d",
+      "grossUsd": 104.53329929822647,
+      "deductionUsd": 0,
+      "netAdditionUsd": 104.53329929822647,
+      "details": []
+    },
+    {
+      "name": "WETH Dusfer",
+      "address": "0x48c05c25fb0c92152b57aa057e121cb2e5da81e4",
+      "grossUsd": 33.96016680652405,
+      "deductionUsd": 33.96016680652405,
+      "netAdditionUsd": 0,
+      "details": [
+        {
+          "kind": "outgoing shares",
+          "holder": "0x48c05c25fb0c92152b57aa057e121cb2e5da81e4",
+          "target": "0x90759801579208b28d2d36d13b1ed7443d1b717f",
+          "usd": 33.96016680652405
+        }
+      ]
+    },
+    {
+      "name": "USDC-1 2-test-project",
+      "address": "0x140d0d77eec240f9d3a07c92df37e257cf506081",
+      "grossUsd": 15.748091500973443,
+      "deductionUsd": 0,
+      "netAdditionUsd": 15.748091500973443,
+      "details": []
+    },
+    {
+      "name": "USDT-test",
+      "address": "0x76cf74eba6413fd290f5599a2ec412882119af32",
+      "grossUsd": 15.132543363719504,
+      "deductionUsd": 15.132543363719504,
+      "netAdditionUsd": 0,
+      "details": [
+        {
+          "kind": "outgoing shares",
+          "holder": "0x76cf74eba6413fd290f5599a2ec412882119af32",
+          "target": "0xe5baf8b6be442811211e9339d9fbc1b8fb7d66df",
+          "usd": 15.132543363719504
+        },
+        {
+          "kind": "outgoing shares",
+          "holder": "0x76cf74eba6413fd290f5599a2ec412882119af32",
+          "target": "0x6d2981ff9b8d7edbb7604de7a65bac8694ac849f",
+          "usd": 0
+        }
+      ]
+    },
+    {
+      "name": "weth-vault",
+      "address": "0xfcc0dd0aebf4ea4b751799169e45f014ba2e02dd",
+      "grossUsd": 14.221323716343209,
+      "deductionUsd": 14.221323716343209,
+      "netAdditionUsd": 0,
+      "details": [
+        {
+          "kind": "outgoing shares",
+          "holder": "0xfcc0dd0aebf4ea4b751799169e45f014ba2e02dd",
+          "target": "0xd2efb90c569ebd5b83d5cfb8632322edfac203a5",
+          "usd": 0.04020852740349528
+        },
+        {
+          "kind": "outgoing shares",
+          "holder": "0xfcc0dd0aebf4ea4b751799169e45f014ba2e02dd",
+          "target": "0x23ee3d14f09946a084350cc6a7153fc6eb918817",
+          "usd": 14.181115188939714
+        }
+      ]
+    },
+    {
+      "name": "Dusfer USDT",
+      "address": "0x8b98165bc61841f1df64e1509a450e11e25181cc",
+      "grossUsd": 10.29168546858634,
+      "deductionUsd": 10.29168546858634,
+      "netAdditionUsd": 0,
+      "details": [
+        {
+          "kind": "outgoing shares",
+          "holder": "0x8b98165bc61841f1df64e1509a450e11e25181cc",
+          "target": "0x6d2981ff9b8d7edbb7604de7a65bac8694ac849f",
+          "usd": 10.29168546858634
+        }
+      ]
+    },
+    {
+      "name": "WETH Grothex",
+      "address": "0x661077153a02628786d180dbdf633f790774df10",
+      "grossUsd": 9.817399663705578,
+      "deductionUsd": 9.817399663705578,
+      "netAdditionUsd": 0,
+      "details": [
+        {
+          "kind": "outgoing shares",
+          "holder": "0x661077153a02628786d180dbdf633f790774df10",
+          "target": "0x90759801579208b28d2d36d13b1ed7443d1b717f",
+          "usd": 9.817399663705578
+        }
+      ]
+    },
+    {
+      "name": "crvUSD Test Vault",
+      "address": "0x8bdb719c46e010c6a0701195e8ee7f9712f24588",
+      "grossUsd": 8.99617491660784,
+      "deductionUsd": 0,
+      "netAdditionUsd": 8.99617491660784,
+      "details": []
+    },
+    {
+      "name": "Katana Pre-DepositWBTC",
+      "address": "0xcf3005699a305ad1ba800c00fddad8d7e905ec49",
+      "grossUsd": 8.834236718494685,
+      "deductionUsd": 0,
+      "netAdditionUsd": 8.834236718494685,
+      "details": []
+    },
+    {
+      "name": "DAI-STB yVault",
+      "address": "0xe7c4bd9ae62b96bf1b77ac5edb7ccdeb662b479c",
+      "grossUsd": 4.99852899728654,
+      "deductionUsd": 0,
+      "netAdditionUsd": 4.99852899728654,
+      "details": []
+    },
+    {
+      "name": "Napier Curve reUSD-scrvUSD yVault",
+      "address": "0xfc1adcb2c25ff45cf26870852071d9dab337d707",
+      "grossUsd": 3.642841411543067,
+      "deductionUsd": 3.642841411543067,
+      "netAdditionUsd": 0,
+      "details": [
+        {
+          "kind": "outgoing shares",
+          "holder": "0xfc1adcb2c25ff45cf26870852071d9dab337d707",
+          "target": "0x482cce30cde09292279371956a3c7c57bbe125a9",
+          "usd": 3.642841411543067
+        }
+      ]
+    },
+    {
+      "name": "usdc-vaulty-moo",
+      "address": "0xe3faed70ccaf49c9baa95ca8d41b1777d7ae440f",
+      "grossUsd": 0.9997446375117297,
+      "deductionUsd": 0,
+      "netAdditionUsd": 0.9997446375117297,
+      "details": []
+    },
+    {
+      "name": "Dusfer USDC",
+      "address": "0xac64c681102e23f4114bc6fc873499267aeb9ea8",
+      "grossUsd": 0.5085471029755542,
+      "deductionUsd": 0.5085471029755542,
+      "netAdditionUsd": 0,
+      "details": [
+        {
+          "kind": "outgoing shares",
+          "holder": "0xac64c681102e23f4114bc6fc873499267aeb9ea8",
+          "target": "0x694e47afd14a64661a04eee674fb331bcdef3737",
+          "usd": 0.5085471029755542
+        }
+      ]
+    },
+    {
+      "name": "swBTC",
+      "address": "0x8db2350d78abc13f5673a411d4700bcf87864dde",
+      "grossUsd": 486913.57498845115,
+      "deductionUsd": 0,
+      "netAdditionUsd": 486913.57498845115,
+      "details": []
+    },
+    {
+      "name": "Strategy 1",
+      "address": "0x2f96cd32b8e84933929061f9e314e078f72c1f9b",
+      "grossUsd": 0,
+      "deductionUsd": 0,
+      "netAdditionUsd": 0,
+      "details": []
+    },
+    {
+      "name": "Sky-PTS-2",
+      "address": "0x96dce0fc1eba3a3e54327e8e8aca94a9bb2009a6",
+      "grossUsd": 0,
+      "deductionUsd": 0,
+      "netAdditionUsd": 0,
+      "details": []
+    },
+    {
+      "name": "Sky-USDS->Msig",
+      "address": "0x763cb5712796e5650e2a249861e9c57449364686",
+      "grossUsd": 11160.081564554459,
+      "deductionUsd": 0,
+      "netAdditionUsd": 11160.081564554459,
+      "details": []
+    },
+    {
+      "name": "MyStrategy1",
+      "address": "0x6a72f92b4a84c4970a183ec3e3296800f06b1c9b",
+      "grossUsd": 505.98111156539915,
+      "deductionUsd": 0,
+      "netAdditionUsd": 505.98111156539915,
+      "details": []
+    },
+    {
+      "name": "sky-protocol-team-mainnet",
+      "address": "0xded221e57be9e53a07f985f1ef6a21044610e546",
+      "grossUsd": 0,
+      "deductionUsd": 0,
+      "netAdditionUsd": 0,
+      "details": []
+    },
+    {
+      "name": "DVS 1",
+      "address": "0xc35ef942828997a4f8475adddef7853d071cda03",
+      "grossUsd": 0,
+      "deductionUsd": 0,
+      "netAdditionUsd": 0,
+      "details": []
+    },
+    {
+      "name": "SHUGrantPool",
+      "address": "0xb21fbd35ac45cac1d5011b74ce06b31f8eb2c377",
+      "grossUsd": 1203987.6824644676,
+      "deductionUsd": 1203987.6824644676,
+      "netAdditionUsd": 0,
+      "details": [
+        {
+          "kind": "outgoing shares",
+          "holder": "0xb21fbd35ac45cac1d5011b74ce06b31f8eb2c377",
+          "target": "0x074134a2784f4f66b6ced6f68849382990ff3215",
+          "usd": 1203987.6824644676
+        }
+      ]
+    },
+    {
+      "name": "Tutorial Test",
+      "address": "0x927d9abd1edcee7dbd9abf9fbea6dd9ce1d676de",
+      "grossUsd": 0,
+      "deductionUsd": 0,
+      "netAdditionUsd": 0,
+      "details": []
+    },
+    {
+      "name": "Morpho Test",
+      "address": "0x7291a96b261564f0da1d9d068c5883ff19e7062b",
+      "grossUsd": 0,
+      "deductionUsd": 0,
+      "netAdditionUsd": 0,
+      "details": []
+    },
+    {
+      "name": "SHUGrantPool",
+      "address": "0xc5b26f6a954cf7480c6992e5c3e0c92f38b5695c",
+      "grossUsd": 0,
+      "deductionUsd": 0,
+      "netAdditionUsd": 0,
+      "details": []
+    },
+    {
+      "name": "MyStrategy2",
+      "address": "0x1346fc14262928bc3c180484e013cfe402f09c38",
+      "grossUsd": 505.82519422648613,
+      "deductionUsd": 505.82519422648613,
+      "netAdditionUsd": 0,
+      "details": [
+        {
+          "kind": "outgoing shares",
+          "holder": "0x1346fc14262928bc3c180484e013cfe402f09c38",
+          "target": "0x074134a2784f4f66b6ced6f68849382990ff3215",
+          "usd": 505.82519422648613
+        }
+      ]
+    },
+    {
+      "name": "YEET #1",
+      "address": "0x04a8b8a80e3354f8f20fee097d875e287c319dc5",
+      "grossUsd": 20.175542607254414,
+      "deductionUsd": 20.175542607254414,
+      "netAdditionUsd": 0,
+      "details": [
+        {
+          "kind": "outgoing shares",
+          "holder": "0x04a8b8a80e3354f8f20fee097d875e287c319dc5",
+          "target": "0x074134a2784f4f66b6ced6f68849382990ff3215",
+          "usd": 20.175542607254414
+        }
+      ]
+    },
+    {
+      "name": "my_strategy",
+      "address": "0x09b45be25fa18bdf5b60c18aea4688d2b0ac3930",
+      "grossUsd": 100.67692432327422,
+      "deductionUsd": 100.67692432327422,
+      "netAdditionUsd": 0,
+      "details": [
+        {
+          "kind": "outgoing shares",
+          "holder": "0x09b45be25fa18bdf5b60c18aea4688d2b0ac3930",
+          "target": "0x074134a2784f4f66b6ced6f68849382990ff3215",
+          "usd": 100.67692432327422
+        }
+      ]
+    },
+    {
+      "name": "Morpho-USDC->PG",
+      "address": "0x214cc9861e6956bfc706dbb3855c5b2fd33ff000",
+      "grossUsd": 331.2393812817453,
+      "deductionUsd": 331.2393812817453,
+      "netAdditionUsd": 0,
+      "details": [
+        {
+          "kind": "outgoing shares",
+          "holder": "0x214cc9861e6956bfc706dbb3855c5b2fd33ff000",
+          "target": "0x074134a2784f4f66b6ced6f68849382990ff3215",
+          "usd": 331.2393812817453
+        }
+      ]
+    },
+    {
+      "name": "morpho-protocol-team-mainnet",
+      "address": "0xbe5123054cbac2cb1ce75b19913324b3468ac9b5",
+      "grossUsd": 13.996424925164217,
+      "deductionUsd": 13.996424925164217,
+      "netAdditionUsd": 0,
+      "details": [
+        {
+          "kind": "outgoing shares",
+          "holder": "0xbe5123054cbac2cb1ce75b19913324b3468ac9b5",
+          "target": "0x074134a2784f4f66b6ced6f68849382990ff3215",
+          "usd": 13.996424925164217
+        }
+      ]
+    }
+  ],
+  "limitations": [
+    "Baseline reports incomplete pricing and known-candidate mapping scope.",
+    "17 non-Ethereum hidden vaults were revalued at the same close ($12,915.50 gross); their overlaps remain unresolved so they are excluded here. One further vault is already in baseline.",
+    "Octant scope covers three official mainnet factories; independently deployed Solidity multi-strategy vault coverage is not certified.",
+    "Strategy getter discovery is bounded; collateral and indirect exposure beyond mapped direct and Curve LP holdings may remain.",
+    "Baseline prices and independently fetched candidate prices share a close but use different providers.",
+    "User permits mainnet backing and active L2 representations to both count. Pre-deposit attribution/current valuation remains unresolved; the old nominal balance is not verified current backing."
+  ],
+  "metricPolicy": "Contract-layer exposure: mainnet backing and active L2 representations may both count; ordinary vault/strategy duplicates still reconciled.",
+  "katanaRecordedBalanceScenario": {
+    "status": "unverified-not-for-publication",
+    "recordedPredepositUsd": 168906102.09876674,
+    "combinedRecordedValueUsd": 369349928.7401376,
+    "reason": "Scenario only: current backing attributable to pre-deposits has not been reconciled."
+  }
+}
