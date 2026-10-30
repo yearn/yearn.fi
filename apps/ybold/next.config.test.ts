@@ -30,6 +30,10 @@ describe('yBOLD Next configuration', () => {
           {
             key: 'Content-Security-Policy',
             value: "frame-ancestors 'self' https://app.safe.global"
+          },
+          {
+            key: 'Content-Security-Policy-Report-Only',
+            value: expect.stringContaining("script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; connect-src 'self' ")
           }
         ]
       }

@@ -1,4 +1,5 @@
 import { SUPPORTED_CHAINS } from '@erc4626/lib/chains'
+import { RPC_URLS } from '@erc4626/lib/rpc'
 import { connectorsForWallets, getDefaultConfig } from '@rainbow-me/rainbowkit'
 import { injectedWallet, safeWallet } from '@rainbow-me/rainbowkit/wallets'
 import { deduplicateWalletAnnouncements } from '@yearn/wallet-ui/discovery'
@@ -8,12 +9,12 @@ import { type Config, createConfig, http } from 'wagmi'
 deduplicateWalletAnnouncements()
 
 const transports = {
-  1: http(process.env.NEXT_PUBLIC_RPC_ETHEREUM || 'https://ethereum-rpc.publicnode.com'),
-  8453: http(process.env.NEXT_PUBLIC_RPC_BASE || 'https://base-rpc.publicnode.com'),
-  42161: http(process.env.NEXT_PUBLIC_RPC_ARBITRUM || 'https://arbitrum-one-rpc.publicnode.com'),
-  10: http(process.env.NEXT_PUBLIC_RPC_OPTIMISM || 'https://optimism-rpc.publicnode.com'),
-  137: http(process.env.NEXT_PUBLIC_RPC_POLYGON || 'https://polygon-bor-rpc.publicnode.com'),
-  4663: http(process.env.NEXT_PUBLIC_RPC_ROBINHOOD || 'https://rpc.mainnet.chain.robinhood.com')
+  1: http(RPC_URLS[1]),
+  8453: http(RPC_URLS[8453]),
+  42161: http(RPC_URLS[42161]),
+  10: http(RPC_URLS[10]),
+  137: http(RPC_URLS[137]),
+  4663: http(RPC_URLS[4663])
 }
 const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID?.trim()
 export const wagmiConfig: Config = projectId
