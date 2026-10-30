@@ -16,9 +16,10 @@ import {
   selectBrowserWalletConnectors
 } from '@yearn/wallet-ui/connectors'
 import { DEFAULT_WALLET_DRAWER_ID, WalletDrawerContext } from '@yearn/wallet-ui/context'
-import { WALLETCONNECT_QR_WALLET_ID } from '@yearn/wallet-ui/rainbowkit'
+import { isOathWalletUnavailable, OATH_WALLET_ID, WALLETCONNECT_QR_WALLET_ID } from '@yearn/wallet-ui/rainbowkit'
 import { cancelWalletReconnect } from '@yearn/wallet-ui/WalletProvider'
 import { WalletSurface } from '@yearn/wallet-ui/WalletSurface'
+import { OATH_WALLET_ICON } from '@yearn/wallet-ui/walletIcons'
 import { type ReactNode, Suspense, use, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { flushSync } from 'react-dom'
 import { type Connector, ConnectorAlreadyConnectedError, useAccount, useConfig, useConnect } from 'wagmi'
@@ -386,7 +387,8 @@ export function WalletDrawerProvider({
   const renderPicker = (
     connectWalletConnect?: () => void | Promise<void>,
     walletConnectMounted = false,
-    walletConnectUid?: string
+    walletConnectUid?: string,
+    oathButton?: ReactNode
   ) => (
     <WalletSurface
       isOpen={isOpen}
@@ -421,6 +423,7 @@ export function WalletDrawerProvider({
             onClick={() => undefined}
           />
         )}
+        {oathButton}
         {connectWalletConnect ? (
           <WalletMethodButton
             label="WalletConnect"
@@ -459,16 +462,40 @@ export function WalletDrawerProvider({
     </WalletSurface>
   )
 
+  const renderWithOath = (oathButton?: ReactNode) =>
+    hasWalletConnect && !isMobileBrowser ? (
+      // Keep RainbowKit's render components mounted while its secondary modal owns the connection.
+      <WalletButton.Custom wallet={WALLETCONNECT_QR_WALLET_ID}>
+        {({ connect, mounted, connector }) => renderPicker(connect, mounted, connector.uid, oathButton)}
+      </WalletButton.Custom>
+    ) : (
+      renderPicker(hasWalletConnect ? openConnectModal : undefined, Boolean(openConnectModal), undefined, oathButton)
+    )
+
   return (
     <WalletDrawerContext.Provider value={contextValue}>
       {children}
-      {hasWalletConnect && !isMobileBrowser ? (
-        // Keep RainbowKit's render component mounted while its secondary modal owns the connection.
-        <WalletButton.Custom wallet={WALLETCONNECT_QR_WALLET_ID}>
-          {({ connect, mounted, connector }) => renderPicker(connect, mounted, connector.uid)}
+      {hasWalletConnect && !isOathWalletUnavailable() ? (
+        <WalletButton.Custom wallet={OATH_WALLET_ID}>
+          {({ connect, mounted, connector }) =>
+            renderWithOath(
+              <WalletMethodButton
+                label="Oath Wallet"
+                icon={<MethodIcon icon={OATH_WALLET_ICON} />}
+                disabled={!mounted || !openConnectModal}
+                onClick={() =>
+                  openSecondaryScreen(
+                    connect,
+                    'walletconnect',
+                    connectors.find(({ uid }) => uid === connector.uid)
+                  )
+                }
+              />
+            )
+          }
         </WalletButton.Custom>
       ) : (
-        renderPicker(hasWalletConnect ? openConnectModal : undefined, Boolean(openConnectModal))
+        renderWithOath()
       )}
     </WalletDrawerContext.Provider>
   )

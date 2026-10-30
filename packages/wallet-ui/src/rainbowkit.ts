@@ -13,9 +13,25 @@ import {
   walletConnectWallet
 } from '@rainbow-me/rainbowkit/wallets'
 import { isMobileWalletBrowser } from '@yearn/wallet-ui/connectors'
-import { CUSTOM_WALLET_ICONS } from '@yearn/wallet-ui/walletIcons'
+import { CUSTOM_WALLET_ICONS, OATH_WALLET_ICON } from '@yearn/wallet-ui/walletIcons'
 
 type TCreateWallet = WalletList[number]['wallets'][number]
+
+export const OATH_WALLET_ID = 'oathWallet'
+export const isOathWalletUnavailable = () => typeof navigator !== 'undefined' && /Android/i.test(navigator.userAgent)
+
+// Oath is an iOS app. Keep the shared transport and let RainbowKit own QR and app handoff.
+export const oathWallet: TCreateWallet = (options) => ({
+  ...walletConnectWallet(options),
+  id: OATH_WALLET_ID,
+  name: 'Oath Wallet',
+  iconUrl: OATH_WALLET_ICON,
+  iconBackground: '#247BFF',
+  hidden: isOathWalletUnavailable,
+  downloadUrls: { ios: 'https://apps.apple.com/app/id6780187283' },
+  qrCode: { getUri: (uri) => uri },
+  mobile: { getUri: (uri) => `oathwallet://wc?uri=${encodeURIComponent(uri)}` }
+})
 
 export const WALLETCONNECT_QR_WALLET_ID = 'yearnWalletConnect'
 
@@ -70,7 +86,7 @@ const [fireblocksWallet, ironWallet, safeWalletConnect] = customWallets.map(
 
 export function getYearnWallets(): WalletList {
   const groups: WalletList = [
-    { groupName: 'Connect', wallets: [injectedWallet, yearnWalletConnect] },
+    { groupName: 'Connect', wallets: [injectedWallet, yearnWalletConnect, oathWallet] },
     {
       groupName: 'More wallets',
       wallets: [
