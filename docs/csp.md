@@ -41,6 +41,9 @@ bootstrap and the theme script in `app/layout.tsx`. Nonces are out of scope.
   appends a bare `http()` fallback. Set the env var for every chain in each deployment.
 - Kong, Clusters, DefiLlama, Curve, jsDelivr (token lists), and WalletConnect relay, pulse, verify, and rpc.
 
+`apps/ybold` and `apps/4626` serve the same report-only header. Their `connect-src` contains the RPC
+URLs from `lib/rpc.ts` and WalletConnect. 4626 also contains Kong and `yearn.fi` (Enso balances).
+
 Both directives are report-only. To enforce them, review the Sentry `yearnfi` CSP reports for one
 collection window, add the origins you verified, and then move the two directives into the
 `Content-Security-Policy` header.
