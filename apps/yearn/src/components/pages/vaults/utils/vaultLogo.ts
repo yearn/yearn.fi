@@ -1,4 +1,10 @@
-import { getVaultChainID, getVaultToken, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
+import { getTranchedVaultRowByAddress } from '@pages/vaults/constants/tranchedProducts'
+import {
+  getVaultAddress,
+  getVaultChainID,
+  getVaultToken,
+  type TKongVaultInput
+} from '@pages/vaults/domain/kongVaultSelectors'
 import { toAddress } from '@shared/utils'
 import { env } from '@/env'
 import { isYvBtcVault } from './yvBtc'
@@ -13,6 +19,11 @@ function getAssetsBaseUrl(): string {
 }
 
 export function getVaultPrimaryLogoSrc(vault: TKongVaultInput): string {
+  const tranche = getVaultChainID(vault) === 1 ? getTranchedVaultRowByAddress(getVaultAddress(vault)) : undefined
+  if (tranche) {
+    return tranche.logoSrc
+  }
+
   if (isYvUsdVault(vault)) {
     return `${getBaseUrl()}yvusd-128.png`
   }

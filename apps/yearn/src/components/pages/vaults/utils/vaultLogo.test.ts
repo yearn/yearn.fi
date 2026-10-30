@@ -1,3 +1,4 @@
+import { getTranchedVaultRowsByKind } from '@pages/vaults/constants/tranchedProducts'
 import type { TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { describe, expect, it } from 'vitest'
 import { getVaultPrimaryLogoSrc } from './vaultLogo'
@@ -16,6 +17,18 @@ const STANDARD_VAULT = {
 }
 
 describe('getVaultPrimaryLogoSrc', () => {
+  it.each([...getTranchedVaultRowsByKind('senior'), ...getTranchedVaultRowsByKind('junior')])(
+    'uses the product asset logo for $product.name',
+    ({ product, vault, logoSrc }) => {
+      if (product.asset === 'USD') {
+        expect(logoSrc).toMatch(/ytranche-logo\.png$/)
+      } else {
+        expect(logoSrc).toContain(`/tokens/1/${vault.token.address.toLowerCase()}/logo-128.png`)
+      }
+      expect(getVaultPrimaryLogoSrc(vault)).toBe(logoSrc)
+    }
+  )
+
   it('returns the yvUSD primary logo for the unlocked vault', () => {
     expect(
       getVaultPrimaryLogoSrc({

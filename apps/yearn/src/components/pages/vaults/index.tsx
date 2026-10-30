@@ -6,11 +6,13 @@ import { VaultVersionToggle } from '@pages/vaults/components/filters/VaultVersio
 import { VaultsAuxiliaryList } from '@pages/vaults/components/list/VaultsAuxiliaryList'
 import { VaultsListEmpty } from '@pages/vaults/components/list/VaultsListEmpty'
 import { VaultsListHead } from '@pages/vaults/components/list/VaultsListHead'
-import { VaultsListRowPresentation } from '@pages/vaults/components/list/VaultsListRow'
+import { type TVaultsListExtraChip, VaultsListRowPresentation } from '@pages/vaults/components/list/VaultsListRow'
 import { VaultsListRowSkeleton } from '@pages/vaults/components/list/VaultsListRowSkeleton'
 import { VaultsListSearchRecoveryRow } from '@pages/vaults/components/list/VaultsListSearchRecoveryRow'
 import { VirtualizedVaultsList } from '@pages/vaults/components/list/VirtualizedVaultsList'
 import { VaultsWelcomeTour } from '@pages/vaults/components/tour/VaultsWelcomeTour'
+import { TranchedProductsList } from '@pages/vaults/components/tranched/TranchedProductsList'
+import { getTranchedVaultRowByAddress } from '@pages/vaults/constants/tranchedProducts'
 import { getVaultAddress, getVaultChainID, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import type { TYvUsdListVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import { toggleInArray } from '@pages/vaults/utils/constants'
@@ -122,8 +124,9 @@ export default function Index({ initialQueryState, initialVaults }: TVaultsPageP
     hiddenByFiltersCount,
     blockingFilterActions
   } = data
-  const { activeChains, activeCategories, activeProductType, activeFeeStructureKey } = activeFilters
-  const { onToggleChain, onToggleCategory, onToggleType, onToggleVaultType, onToggleFeeStructure } = handlers
+  const { activeChains, activeCategories, activeProductType, activeYieldRate, activeFeeStructureKey } = activeFilters
+  const { onToggleChain, onToggleCategory, onToggleType, onToggleVaultType, onSelectYieldRate, onToggleFeeStructure } =
+    handlers
 
   const [compareVaultKeys, setCompareVaultKeys] = useState<string[]>([])
   const [isCompareOpen, setIsCompareOpen] = useState(false)
@@ -198,6 +201,57 @@ export default function Index({ initialQueryState, initialVaults }: TVaultsPageP
       delete updated[vaultKey]
       return updated
     })
+  }, [])
+
+  const resolveTranchedHrefOverride = useCallback((vault: TKongVaultInput): string | undefined => {
+    return getTranchedVaultRowByAddress(getVaultAddress(vault))?.href
+  }, [])
+
+  const resolveTranchedLogoSrcOverride = useCallback((vault: TKongVaultInput): string | undefined => {
+    return getTranchedVaultRowByAddress(getVaultAddress(vault))?.logoSrc
+  }, [])
+
+  const resolveTranchedExtraChips = useCallback(
+    (vault: TKongVaultInput): TVaultsListExtraChip[] => {
+      const row = getTranchedVaultRowByAddress(getVaultAddress(vault))
+      if (row?.product.kind === 'senior') {
+        return [
+          {
+            label: 'Fixed Rate',
+            tooltipDescription: 'Show Fixed Yield vaults with a predefined target rate.',
+            isActive: activeYieldRate === 'fixed',
+            onClick: (): void => onSelectYieldRate('fixed'),
+            ariaLabel: 'Show Fixed Yield vaults'
+          }
+        ]
+      }
+
+      const chips: TVaultsListExtraChip[] = [
+        {
+          label: 'Floating Rate',
+          tooltipDescription: 'Show all vaults whose rate floats with strategy performance.',
+          isActive: activeYieldRate === 'floating',
+          onClick: (): void => onSelectYieldRate('floating'),
+          ariaLabel: 'Show Floating Rate vaults'
+        }
+      ]
+
+      if (row?.product.kind === 'junior') {
+        chips.push({
+          label: 'Junior',
+          tooltipDescription:
+            'Junior products receive excess yield after senior obligations and sit below senior in the waterfall.'
+        })
+      }
+
+      return chips
+    },
+    [activeYieldRate, onSelectYieldRate]
+  )
+
+  const resolveTranchedProductTypeChipOverride = useCallback((vault: TKongVaultInput): boolean | undefined => {
+    const row = getTranchedVaultRowByAddress(getVaultAddress(vault))
+    return row?.product.kind === 'senior' ? false : undefined
   }, [])
 
   const visibleVaults = useMemo(() => [...pinnedVaults, ...mainVaults], [pinnedVaults, mainVaults])
@@ -382,6 +436,10 @@ export default function Index({ initialQueryState, initialVaults }: TVaultsPageP
             vaults={section.vaults}
             vaultFlags={vaultFlags}
             resolveApyDisplayVariant={resolveApyDisplayVariant}
+            resolveHrefOverride={resolveTranchedHrefOverride}
+            resolveLogoSrcOverride={resolveTranchedLogoSrcOverride}
+            resolveExtraChips={resolveTranchedExtraChips}
+            resolveShowProductTypeChipOverride={resolveTranchedProductTypeChipOverride}
             compareVaultKeys={isCompareMode ? compareVaultKeys : undefined}
             onToggleCompare={isCompareMode ? handleToggleCompare : undefined}
             activeChains={activeChains}
@@ -416,6 +474,10 @@ export default function Index({ initialQueryState, initialVaults }: TVaultsPageP
                 <VaultsListRowPresentation
                   currentVault={vault}
                   flags={vaultFlags[key]}
+                  hrefOverride={resolveTranchedHrefOverride(vault)}
+                  logoSrcOverride={resolveTranchedLogoSrcOverride(vault)}
+                  extraChips={resolveTranchedExtraChips(vault)}
+                  showProductTypeChipOverride={resolveTranchedProductTypeChipOverride(vault)}
                   hasWalletAddress={hasWalletAddress}
                   isWalletLoading={isWalletLoading}
                   holdingsValue={vaultHoldingsValues[key] ?? 0}
@@ -478,6 +540,10 @@ export default function Index({ initialQueryState, initialVaults }: TVaultsPageP
     pinnedSections,
     pinnedVaults.length,
     resolveApyDisplayVariant,
+    resolveTranchedExtraChips,
+    resolveTranchedHrefOverride,
+    resolveTranchedLogoSrcOverride,
+    resolveTranchedProductTypeChipOverride,
     search.value,
     shouldCollapseChips,
     vaultFlags,
@@ -575,7 +641,7 @@ export default function Index({ initialQueryState, initialVaults }: TVaultsPageP
                 isStackedLayout={shouldStackFilters}
               />
             </div>
-            <div data-tour="vaults-list">
+            <div data-tour="vaults-list" className={'flex flex-col gap-4'}>
               <VaultsListSection
                 isUpdatingProductType={isUpdatingProductType}
                 isUpdatingList={isUpdatingList}
@@ -583,6 +649,7 @@ export default function Index({ initialQueryState, initialVaults }: TVaultsPageP
               >
                 {vaultListContent}
               </VaultsListSection>
+              {activeVaultType === 'fixed' ? <TranchedProductsList kind={'senior'} /> : null}
             </div>
           </div>
         </div>

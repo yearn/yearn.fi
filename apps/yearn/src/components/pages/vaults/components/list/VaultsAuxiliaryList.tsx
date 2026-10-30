@@ -1,4 +1,4 @@
-import { VaultsListRowPresentation } from '@pages/vaults/components/list/VaultsListRow'
+import { type TVaultsListExtraChip, VaultsListRowPresentation } from '@pages/vaults/components/list/VaultsListRow'
 import { VirtualizedVaultsList } from '@pages/vaults/components/list/VirtualizedVaultsList'
 import type { TVaultForwardAPYVariant } from '@pages/vaults/components/table/VaultForwardAPY'
 import { getVaultAddress, getVaultChainID, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
@@ -23,11 +23,15 @@ type TVaultsAuxiliaryListProps = {
   vaultFlags: TVaultFlagsRecord
   apyDisplayVariant?: TVaultForwardAPYVariant
   resolveApyDisplayVariant?: (vault: TKongVaultInput) => TVaultForwardAPYVariant
+  resolveHrefOverride?: (vault: TKongVaultInput) => string | undefined
+  resolveLogoSrcOverride?: (vault: TKongVaultInput) => string | undefined
+  resolveExtraChips?: (vault: TKongVaultInput) => TVaultsListExtraChip[] | undefined
+  resolveShowProductTypeChipOverride?: (vault: TKongVaultInput) => boolean | undefined
   compareVaultKeys?: string[]
   onToggleCompare?: (vault: TKongVaultInput) => void
   activeChains?: number[]
   activeCategories?: string[]
-  activeProductType?: 'v3' | 'lp' | 'all'
+  activeProductType?: 'v3' | 'lp' | 'fixed' | 'all'
   activeFeeStructureKey?: string | null
   onToggleChain?: (chainId: number) => void
   onToggleCategory?: (category: string) => void
@@ -59,6 +63,10 @@ export function VaultsAuxiliaryList({
   vaultFlags,
   apyDisplayVariant,
   resolveApyDisplayVariant,
+  resolveHrefOverride,
+  resolveLogoSrcOverride,
+  resolveExtraChips,
+  resolveShowProductTypeChipOverride,
   compareVaultKeys,
   onToggleCompare,
   activeChains,
@@ -101,6 +109,10 @@ export function VaultsAuxiliaryList({
             <VaultsListRowPresentation
               currentVault={vault}
               flags={vaultFlags[key]}
+              hrefOverride={resolveHrefOverride?.(vault)}
+              logoSrcOverride={resolveLogoSrcOverride?.(vault)}
+              extraChips={resolveExtraChips?.(vault)}
+              showProductTypeChipOverride={resolveShowProductTypeChipOverride?.(vault)}
               hasWalletAddress={hasWalletAddress}
               isWalletLoading={isWalletLoading}
               holdingsValue={vaultHoldingsValues?.[key] ?? 0}
