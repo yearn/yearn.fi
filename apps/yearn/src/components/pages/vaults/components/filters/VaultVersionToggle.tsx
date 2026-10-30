@@ -19,7 +19,7 @@ type TButtonConfig = {
   type: TVaultType
 }
 
-const BUTTON_CONFIGS: TButtonConfig[] = [{ type: 'all' }, { type: 'fixed' }, { type: 'v3' }, { type: 'factory' }]
+const BUTTON_CONFIGS: TButtonConfig[] = [{ type: 'all' }, { type: 'v3' }, { type: 'factory' }]
 
 export function VaultVersionToggle({
   className,
@@ -29,24 +29,11 @@ export function VaultVersionToggle({
   isPending
 }: TVaultVersionToggleProps): ReactElement {
   const trackEvent = usePlausible()
-  const resolvedType = activeType ?? 'all'
+  const resolvedType = activeType === 'fixed' ? 'v3' : (activeType ?? 'all')
 
   function handleClick(config: TButtonConfig): void {
     trackEvent(PLAUSIBLE_EVENTS.FILTER_VAULT_TYPE, { props: { value: config.type } })
     onTypeChange?.(config.type)
-  }
-
-  function isActive(type: TVaultType): boolean {
-    switch (type) {
-      case 'all':
-        return resolvedType === 'all'
-      case 'factory':
-        return resolvedType === 'factory'
-      case 'fixed':
-        return resolvedType === 'fixed'
-      default:
-        return resolvedType !== 'all' && resolvedType !== 'factory' && resolvedType !== 'fixed'
-    }
   }
 
   return (
@@ -58,7 +45,7 @@ export function VaultVersionToggle({
       )}
     >
       {BUTTON_CONFIGS.map((config) => {
-        const active = isActive(config.type)
+        const active = resolvedType === config.type
         const description = getVaultTypeDescription(config.type)
         const button = (
           <button

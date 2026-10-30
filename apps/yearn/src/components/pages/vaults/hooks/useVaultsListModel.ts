@@ -1,4 +1,8 @@
-import { getTranchedVaultRowsByKind, type TTranchedVaultRow } from '@pages/vaults/constants/tranchedProducts'
+import {
+  getTranchedVaultRowsByKind,
+  type TTranchedVaultRow,
+  YVUSD_TRANCHE_DEPLOYMENT
+} from '@pages/vaults/constants/tranchedProducts'
 import {
   getVaultAddress,
   getVaultCategory,
@@ -36,7 +40,11 @@ import { useV3VaultFilter } from '@shared/hooks/useV3VaultFilter'
 import { getVaultKey } from '@shared/hooks/useVaultFilterUtils'
 import type { TDict, TSortDirection } from '@shared/types'
 import { useMemo } from 'react'
-import { getProductPinnedSections, type TVaultsPinnedSection } from './useVaultsListModel.helpers'
+
+type TVaultsPinnedSection = {
+  key: string
+  vaults: TKongVaultInput[]
+}
 
 type TVaultsListModelArgs = {
   enabled?: boolean
@@ -361,14 +369,11 @@ export function useVaultsListModel({
     const baseV3Vaults = shouldShowYvUsd
       ? appendUniqueVault(sanitizedV3FilteredVaults, yvUsdVault)
       : sanitizedV3FilteredVaults
-    const v3Vaults = isAllVaults
-      ? [...filteredSeniorTranchedVaults, ...filteredJuniorTranchedVaults, ...baseV3Vaults]
-      : [...filteredJuniorTranchedVaults, ...baseV3Vaults]
+    const v3Vaults = [...filteredSeniorTranchedVaults, ...filteredJuniorTranchedVaults, ...baseV3Vaults]
     return selectVaultsByType(listVaultType, v3Vaults, v2FilterResult.filteredVaults, true)
   }, [
     filteredJuniorTranchedVaults,
     filteredSeniorTranchedVaults,
-    isAllVaults,
     listVaultType,
     sanitizedV3FilteredVaults,
     shouldShowYvUsd,
@@ -401,14 +406,11 @@ export function useVaultsListModel({
     if (listVaultType === 'fixed') {
       return filteredSeniorTranchedVaults
     }
-    const v3Vaults = isAllVaults
-      ? [...filteredSeniorTranchedVaults, ...filteredJuniorTranchedVaults, ...sanitizedV3AvailableVaults]
-      : [...filteredJuniorTranchedVaults, ...sanitizedV3AvailableVaults]
+    const v3Vaults = [...filteredSeniorTranchedVaults, ...filteredJuniorTranchedVaults, ...sanitizedV3AvailableVaults]
     return selectVaultsByType(listVaultType, v3Vaults, v2FilterResult.availableVaults, true)
   }, [
     filteredJuniorTranchedVaults,
     filteredSeniorTranchedVaults,
-    isAllVaults,
     listVaultType,
     sanitizedV3AvailableVaults,
     v2FilterResult.availableVaults
@@ -464,7 +466,11 @@ export function useVaultsListModel({
     return holdingsVaults.length
   }, [holdingsVaults.length])
 
-  const sortedVaults = useSortVaults(filteredVaults, sortBy, sortDirection)
+  const sortedVaults = useSortVaults(
+    filteredVaults,
+    sortBy === 'none' ? 'tvl' : sortBy,
+    sortBy === 'none' ? 'desc' : sortDirection
+  )
 
   const availableKeySet = useMemo(() => new Set(availableVaults.map((vault) => getVaultKey(vault))), [availableVaults])
 
@@ -473,31 +479,23 @@ export function useVaultsListModel({
     [sortedVaults, availableKeySet]
   )
 
-  const pinnedSections = useMemo(() => {
-    const sections: TVaultsPinnedSection[] = [...getProductPinnedSections({ shouldShowYvUsd, sortBy, yvUsdVault })]
-    const seen = new Set(sections.flatMap((section) => section.vaults.map((vault) => getVaultKey(vault))))
-    const takeUnseenVaults = (vaults: TKongVaultInput[]): TKongVaultInput[] =>
-      vaults.filter((vault) => {
-        const key = getVaultKey(vault)
-        if (seen.has(key)) {
-          return false
-        }
-        seen.add(key)
-        return true
-      })
-
-    if (isAvailablePinned) {
-      const availableSectionVaults = takeUnseenVaults(sortedAvailableVaults)
-      if (availableSectionVaults.length > 0) {
-        sections.push({
-          key: AVAILABLE_TOGGLE_VALUE,
-          vaults: availableSectionVaults
-        })
-      }
+  const pinnedSections = useMemo<TVaultsPinnedSection[]>(() => {
+    const yvUsdTranche =
+      sortBy === 'none'
+        ? sortedVaults.find(
+            (vault) =>
+              getVaultChainID(vault) === YVUSD_TRANCHE_DEPLOYMENT.chainId &&
+              getVaultAddress(vault) === YVUSD_TRANCHE_DEPLOYMENT.tranches.fixed
+          )
+        : undefined
+    const sections: TVaultsPinnedSection[] = yvUsdTranche ? [{ key: 'yvUSD', vaults: [yvUsdTranche] }] : []
+    const productPinnedKey = yvUsdTranche ? getVaultKey(yvUsdTranche) : undefined
+    const availableSectionVaults = sortedAvailableVaults.filter((vault) => getVaultKey(vault) !== productPinnedKey)
+    if (isAvailablePinned && availableSectionVaults.length > 0) {
+      sections.push({ key: AVAILABLE_TOGGLE_VALUE, vaults: availableSectionVaults })
     }
-
     return sections
-  }, [isAvailablePinned, sortBy, sortedAvailableVaults, shouldShowYvUsd, yvUsdVault])
+  }, [isAvailablePinned, sortBy, sortedAvailableVaults, sortedVaults])
 
   const pinnedVaults = useMemo(() => pinnedSections.flatMap((section) => section.vaults), [pinnedSections])
 

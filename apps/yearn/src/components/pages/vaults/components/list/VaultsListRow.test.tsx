@@ -212,7 +212,7 @@ describe('VaultsListRow', () => {
       version: '3.0.0',
       chainID: 1,
       address: '0x0000000000000000000000000000000000000001',
-      name: 'yvUSD Fixed Yield',
+      name: 'yvUSD',
       category: 'Stablecoin',
       kind: 'Multi Strategy',
       token: {

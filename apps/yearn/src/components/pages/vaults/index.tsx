@@ -125,15 +125,8 @@ export default function Index({ initialQueryState, initialVaults }: TVaultsPageP
     blockingFilterActions
   } = data
   const { activeChains, activeCategories, activeProductType, activeYieldRate, activeFeeStructureKey } = activeFilters
-  const {
-    onToggleChain,
-    onToggleCategory,
-    onToggleType,
-    onToggleVaultType,
-    onSelectYieldRate,
-    onSelectSeniority,
-    onToggleFeeStructure
-  } = handlers
+  const { onToggleChain, onToggleCategory, onToggleType, onToggleVaultType, onSelectYieldRate, onToggleFeeStructure } =
+    handlers
 
   const [compareVaultKeys, setCompareVaultKeys] = useState<string[]>([])
   const [isCompareOpen, setIsCompareOpen] = useState(false)
@@ -229,13 +222,6 @@ export default function Index({ initialQueryState, initialVaults }: TVaultsPageP
             isActive: activeYieldRate === 'fixed',
             onClick: (): void => onSelectYieldRate('fixed'),
             ariaLabel: 'Show Fixed Yield vaults'
-          },
-          {
-            label: 'Senior',
-            tooltipDescription: 'Senior products are paid before junior products and sit last in the loss waterfall.',
-            isActive: activeYieldRate === 'fixed',
-            onClick: (): void => onSelectSeniority('senior'),
-            ariaLabel: 'Filter by senior products'
           }
         ]
       }
@@ -260,7 +246,7 @@ export default function Index({ initialQueryState, initialVaults }: TVaultsPageP
 
       return chips
     },
-    [activeYieldRate, onSelectSeniority, onSelectYieldRate]
+    [activeYieldRate, onSelectYieldRate]
   )
 
   const resolveTranchedProductTypeChipOverride = useCallback((vault: TKongVaultInput): boolean | undefined => {

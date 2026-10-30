@@ -48,9 +48,10 @@ type APYChartProps = {
   chartData: TAprApyChartData
   timeframe: string
   hideTooltip?: boolean
+  seriesLabel?: string
 }
 
-export function APYChart({ chartData, timeframe, hideTooltip }: APYChartProps) {
+export function APYChart({ chartData, timeframe, hideTooltip, seriesLabel }: APYChartProps) {
   const gradientId = useId().replace(/:/g, '')
   const { chartStyle } = useChartStyle()
   const isPowerglove = chartStyle === 'powerglove'
@@ -79,7 +80,7 @@ export function APYChart({ chartData, timeframe, hideTooltip }: APYChartProps) {
     }, {} as ChartConfig)
   }, [])
 
-  const formatSeriesLabel = (series: string) => SERIES_META[series as SeriesKey]?.legendLabel || series
+  const formatSeriesLabel = (series: string) => seriesLabel || SERIES_META[series as SeriesKey]?.legendLabel || series
 
   if (isPowerglove) {
     return (

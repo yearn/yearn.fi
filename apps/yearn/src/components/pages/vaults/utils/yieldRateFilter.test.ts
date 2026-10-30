@@ -11,6 +11,12 @@ describe('shouldIncludeFixedYieldVaults', () => {
     expect(shouldIncludeFixedYieldVaults('all', 'floating')).toBe(false)
   })
 
+  it('includes fixed products in Single Asset unless floating rates are selected', () => {
+    expect(shouldIncludeFixedYieldVaults('v3', 'all')).toBe(true)
+    expect(shouldIncludeFixedYieldVaults('v3', 'floating')).toBe(false)
+    expect(shouldIncludeFixedYieldVaults('factory', 'all')).toBe(false)
+  })
+
   it('always includes fixed products in Fixed Yield', () => {
     expect(shouldIncludeFixedYieldVaults('fixed', 'floating')).toBe(true)
   })
