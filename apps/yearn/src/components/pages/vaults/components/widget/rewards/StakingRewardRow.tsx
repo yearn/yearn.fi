@@ -4,7 +4,6 @@ import { toNormalizedValue } from '@shared/utils'
 import type { TransactionStep } from '@yearn/vault-widget/advanced'
 import type { ReactElement } from 'react'
 import { useCallback, useMemo } from 'react'
-import { useWriteContract } from 'wagmi'
 import { RewardRow } from './RewardRow'
 import type { TStakingReward } from './types'
 
@@ -34,7 +33,6 @@ export function StakingRewardRow(props: TStakingRewardRowProps): ReactElement {
   } = props
 
   const currentChainId = useChainId()
-  const { isPending } = useWriteContract()
 
   const { prepare } = useClaimStakingRewards({
     stakingAddress,
@@ -57,9 +55,16 @@ export function StakingRewardRow(props: TStakingRewardRowProps): ReactElement {
       confirmMessage: `Claim ${formattedAmount} ${reward.symbol}`,
       successTitle: 'Rewards Claimed',
       successMessage: `You claimed ${formattedAmount} ${reward.symbol}`,
+      notification: {
+        type: 'claim',
+        amount: formattedAmount,
+        fromChainId: chainId,
+        fromAddress: reward.tokenAddress,
+        fromSymbol: reward.symbol
+      },
       showConfetti: true
     }
-  }, [prepare, formattedAmount, reward.symbol])
+  }, [prepare, formattedAmount, reward.symbol, reward.tokenAddress, chainId])
 
   const handleClaim = useCallback(() => {
     if (!step) return
@@ -75,7 +80,6 @@ export function StakingRewardRow(props: TStakingRewardRowProps): ReactElement {
       amount={normalizedAmount.toString()}
       usdValue={reward.usdValue}
       onClaim={handleClaim}
-      isClaimPending={isPending}
       isClaimReady={prepare.isSuccess}
       isFirst={isFirst}
       isAllChainsView={isAllChainsView}

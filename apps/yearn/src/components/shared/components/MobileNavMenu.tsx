@@ -3,6 +3,7 @@ import { BottomDrawer } from '@pages/vaults/components/detail/BottomDrawer'
 import { useAppSettings } from '@pages/vaults/contexts/useAppSettings'
 import { AccountDropdown } from '@shared/components/AccountDropdown'
 import { MobileSiteStatus } from '@shared/components/SiteStatus'
+import { useNotifications } from '@shared/contexts/useNotifications'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconMoon } from '@shared/icons/IconMoon'
@@ -32,11 +33,13 @@ export function MobileNavMenu({
   const [isSettingsDrawerOpen, setIsSettingsDrawerOpen] = useState(false)
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false)
   const { isActive, openLoginModal } = useWeb3()
+  const { acknowledge } = useNotifications()
   const { isOpen: isWalletPickerOpen } = useWalletDrawer()
   const { shouldHideDust, onSwitchHideDust } = useAppSettings()
   const themePreference = useThemePreference()
 
   const handleWalletClick = (): void => {
+    acknowledge()
     onClose()
     if (isActive) {
       setIsWalletDrawerOpen(true)

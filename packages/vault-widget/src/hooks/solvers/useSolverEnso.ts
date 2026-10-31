@@ -20,6 +20,7 @@ import {
   type EnsoError,
   type EnsoRouteResponse,
   getEnsoBridgeProtocol,
+  getEnsoSettlement,
   normalizeEnsoRouteResponse,
   routeHasSwapStep
 } from './ensoRoute'
@@ -65,6 +66,7 @@ interface UseSolverEnsoReturn {
     route: EnsoRouteResponse | undefined
     routeHasSwap: boolean
     bridgeProtocol: ReturnType<typeof getEnsoBridgeProtocol>
+    bridgeSettlement: ReturnType<typeof getEnsoSettlement> | undefined
     error: EnsoError | undefined
     isLoadingRoute: boolean
     isLoadingAllowance: boolean
@@ -248,6 +250,8 @@ export const useSolverEnso = ({
       route: visibleRoute,
       routeHasSwap: visibleRouteHasSwap,
       bridgeProtocol: getEnsoBridgeProtocol(visibleRoute),
+      bridgeSettlement:
+        isCrossChain && destinationChainId ? getEnsoSettlement(visibleRoute, destinationChainId) : undefined,
       error: visibleError,
       isLoadingRoute: isLoadingCurrentRequest,
       isLoadingAllowance,

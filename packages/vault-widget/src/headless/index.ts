@@ -1,3 +1,11 @@
+export {
+  awaitTransactionRefresh,
+  getConfirmedTransactionReceipt,
+  getTransactionConfirmations,
+  isUnsupportedAtomicBatchError,
+  TRANSACTION_REFRESH_TIMEOUT_MS,
+  VaultWidgetPreparationError
+} from '@yearn/vault-widget/internal/utils/transactionLifecycle'
 export { type BuildTransactionPlanParams, buildTransactionPlan } from './buildTransactionPlan'
 export {
   type ExecuteTransactionPlanParams,
@@ -5,6 +13,11 @@ export {
   VaultWidgetPlanExecutionError
 } from './executeTransactionPlan'
 export type {
+  TAtomicBatchStep,
+  TDeferredStep,
+  TPermitStep,
+  TPreparedStep,
+  TSafeExecution,
   VaultWidgetApprovalRequirement,
   VaultWidgetApprovalToken,
   VaultWidgetExecutionAdapter,
