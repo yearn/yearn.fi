@@ -9,12 +9,19 @@
   }
 }
 
-.erc4626-layout [data-erc4626-card]:has(> [data-transaction-overlay]) > [data-erc4626-content] {
+.erc4626-layout
+  [data-erc4626-card]:has(
+    > [data-transaction-overlay],
+    > [data-vault-selector-overlay],
+    > [data-token-selector-overlay]
+  )
+  > [data-erc4626-content] {
   visibility: hidden;
 }
 
 .erc4626-layout [data-vault-selector-overlay],
 .erc4626-layout [data-token-selector-overlay] {
+  border: 1px solid var(--color-border);
   animation: erc4626-picker-open 160ms ease-out both;
 }
 
@@ -62,6 +69,11 @@
 }
 
 @media (min-width: 768px) {
+  .erc4626-layout:has([data-vault-selector-overlay], [data-token-selector-overlay]) > .erc4626-chart {
+    align-self: start;
+    height: var(--chart-resting-height, 460px);
+  }
+
   .erc4626-layout > [data-widget-column] {
     display: flex;
     flex-direction: column;

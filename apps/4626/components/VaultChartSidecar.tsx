@@ -53,10 +53,6 @@ function HistoryView({
   return (
     <>
       <div className="mb-3 mt-4 min-h-20">
-        <p className="text-xs text-text-secondary">
-          {HISTORY_METRICS[metric].label}
-          {metric === 'pps' ? ' · per vault share' : ''}
-        </p>
         <p className="mt-1 break-words text-3xl tabular-nums tracking-tight" data-chart-value>
           {formatHistoryValue(point.value!, metric, assetSymbol)}
         </p>
@@ -206,7 +202,7 @@ export function VaultChartSidecar({
       }}
       className="flex h-full max-h-[calc(100dvh-13rem)] flex-col overflow-y-auto rounded-2xl border border-border bg-surface p-4 text-text-primary sm:p-5 md:max-h-none md:min-w-72"
     >
-      <div className="mb-4 flex items-center justify-between gap-3">
+      <div data-widget-part="chart-header" className="mb-4 flex items-center justify-between gap-3">
         <fieldset
           aria-label="Chart metric"
           data-selector-toggle
@@ -249,57 +245,59 @@ export function VaultChartSidecar({
           </svg>
         </a>
       </div>
-      {!vault ? (
-        <div role="status" className="flex min-h-72 items-center justify-center text-sm text-text-secondary">
-          Select a vault to view its history.
-        </div>
-      ) : history.isPending ? (
-        <div role="status" className="flex min-h-72 items-center justify-center text-sm text-text-secondary">
-          <span className="mr-2 size-4 animate-spin rounded-full border-2 border-border border-t-primary motion-reduce:animate-none" />
-          Loading vault history…
-        </div>
-      ) : history.isError ? (
-        <div
-          role="alert"
-          className="flex min-h-72 flex-col items-center justify-center gap-3 text-center text-sm text-text-secondary"
-        >
-          <p>Vault history could not be loaded.</p>
-          <button
-            type="button"
-            onClick={() => void history.refetch()}
-            className="rounded-lg border border-border px-4 py-2 text-text-primary hover:bg-surface-secondary/30"
+      <div data-widget-part="chart-content" className="flex min-h-0 flex-1 flex-col">
+        {!vault ? (
+          <div role="status" className="flex min-h-72 items-center justify-center text-sm text-text-secondary">
+            Select a vault to view its history.
+          </div>
+        ) : history.isPending ? (
+          <div role="status" className="flex min-h-72 items-center justify-center text-sm text-text-secondary">
+            <span className="mr-2 size-4 animate-spin rounded-full border-2 border-border border-t-primary motion-reduce:animate-none" />
+            Loading vault history…
+          </div>
+        ) : history.isError ? (
+          <div
+            role="alert"
+            className="flex min-h-72 flex-col items-center justify-center gap-3 text-center text-sm text-text-secondary"
           >
-            Retry history
-          </button>
-        </div>
-      ) : history.data.length === 0 ? (
-        <div
-          role="status"
-          className="flex min-h-72 items-center justify-center px-4 text-center text-sm text-text-secondary"
-        >
-          No indexed history is available for this vault yet.
-        </div>
-      ) : (
-        <HistoryView
-          key={`${vault.chainId}:${vault.address}:${metric}:${period}`}
-          points={points}
-          metric={metric}
-          assetSymbol={vault.asset.symbol}
-        />
-      )}
-      <fieldset aria-label="Chart period" className="mt-auto flex shrink-0 gap-1 pt-4">
-        {HISTORY_PERIODS.map((option) => (
-          <button
-            key={option.id}
-            type="button"
-            aria-pressed={period === option.id}
-            onClick={() => setPeriod(option.id)}
-            className={`rounded-full px-3 py-1.5 text-xs transition-colors ${period === option.id ? 'bg-surface-secondary font-semibold text-text-primary' : 'text-text-secondary hover:bg-surface-secondary/30'}`}
+            <p>Vault history could not be loaded.</p>
+            <button
+              type="button"
+              onClick={() => void history.refetch()}
+              className="rounded-lg border border-border px-4 py-2 text-text-primary hover:bg-surface-secondary/30"
+            >
+              Retry history
+            </button>
+          </div>
+        ) : history.data.length === 0 ? (
+          <div
+            role="status"
+            className="flex min-h-72 items-center justify-center px-4 text-center text-sm text-text-secondary"
           >
-            {option.label}
-          </button>
-        ))}
-      </fieldset>
+            No indexed history is available for this vault yet.
+          </div>
+        ) : (
+          <HistoryView
+            key={`${vault.chainId}:${vault.address}:${metric}:${period}`}
+            points={points}
+            metric={metric}
+            assetSymbol={vault.asset.symbol}
+          />
+        )}
+        <fieldset aria-label="Chart period" className="mt-auto flex shrink-0 gap-1 pt-4">
+          {HISTORY_PERIODS.map((option) => (
+            <button
+              key={option.id}
+              type="button"
+              aria-pressed={period === option.id}
+              onClick={() => setPeriod(option.id)}
+              className={`rounded-full px-3 py-1.5 text-xs transition-colors ${period === option.id ? 'bg-surface-secondary font-semibold text-text-primary' : 'text-text-secondary hover:bg-surface-secondary/30'}`}
+            >
+              {option.label}
+            </button>
+          ))}
+        </fieldset>
+      </div>
     </section>
   )
 }

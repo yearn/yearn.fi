@@ -20,9 +20,32 @@ select {
   cursor: pointer;
 }
 
-[data-demo-style="main"] [data-erc4626-card] {
+[data-demo-style="main"] [data-erc4626-card],
+[data-demo-style="main"] [aria-label="Vault history"] {
   border: 0;
   background-color: var(--color-app);
+}
+
+[data-demo-style="main"] [aria-label="Vault history"] {
+  padding: 0;
+  border-radius: 0;
+}
+
+[data-demo-style="main"] [data-widget-part="chart-header"] {
+  min-height: 66px;
+  flex-shrink: 0;
+  margin-bottom: 0.75rem;
+}
+
+[data-demo-style="main"] [data-vault-selector-trigger] {
+  min-height: 66px;
+}
+
+[data-demo-style="main"] [data-widget-part="chart-content"] {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+  padding: 1.25rem;
 }
 
 [data-demo-style="main"] [data-widget-part="vault-selector"] {
@@ -96,6 +119,10 @@ select {
 
 [data-selector-style="segmented"] [data-erc4626-card] {
   overflow: hidden;
+}
+
+[data-selector-style="segmented"] [aria-label="Vault history"] {
+  padding: 1.5rem;
 }
 
 [data-selector-style="segmented"] [aria-label="Chart metric"] {

@@ -49,6 +49,18 @@ function Erc4626VaultContent({
   const [settingsOpen, setSettingsOpen] = useState(false)
   const [cardElement, setCardElement] = useState<HTMLDivElement | null>(null)
   const chartToggleRef = useRef<HTMLButtonElement>(null)
+  const chartRef = useRef<HTMLElement>(null)
+  // Observe the rendered chart size so full-card pickers can grow independently.
+  useEffect(() => {
+    const chart = chartRef.current
+    if (!chart || !chartOpen || typeof ResizeObserver === 'undefined') return
+    const observer = new ResizeObserver(() => {
+      if (chart.parentElement?.querySelector('[data-vault-selector-overlay], [data-token-selector-overlay]')) return
+      chart.style.setProperty('--chart-resting-height', `${chart.getBoundingClientRect().height}px`)
+    })
+    observer.observe(chart)
+    return () => observer.disconnect()
+  }, [chartOpen])
   const chartId = useId()
   const settingsId = useId()
   const activeMode = isCheckingRetirement || (isRetired && !depositAccepted) ? WidgetActionType.Withdraw : mode
@@ -158,6 +170,7 @@ function Erc4626VaultContent({
       data-header-inside-card={headerInsideCard || undefined}
     >
       <aside
+        ref={chartRef}
         id={chartId}
         aria-label="Vault chart"
         aria-hidden={!chartOpen}
