@@ -55,6 +55,7 @@ import {
 
 type WidgetWithdrawProps = WithdrawWidgetProps & {
   hideSettings?: boolean
+  hideHeader?: boolean
   disableBorderRadius?: boolean
   collapseDetails?: boolean
   contentBelowInput?: ReactNode
@@ -136,6 +137,7 @@ export function WidgetWithdraw({
   handleWithdrawSuccess: onWithdrawSuccess,
   onOpenSettings,
   isSettingsOpen,
+  hideHeader,
   disableBorderRadius,
   collapseDetails,
   contentBelowInput,
@@ -1109,7 +1111,14 @@ export function WidgetWithdraw({
   )
 
   if (isLoadingVaultData && !showTransactionOverlay) {
-    return <WidgetLoadingSkeleton title="Withdraw" actions={headerActions} disableBorderRadius={disableBorderRadius} />
+    return (
+      <WidgetLoadingSkeleton
+        title="Withdraw"
+        actions={headerActions}
+        hideHeader={hideHeader}
+        disableBorderRadius={disableBorderRadius}
+      />
+    )
   }
 
   // ============================================================================
@@ -1255,8 +1264,8 @@ export function WidgetWithdraw({
       })}
       data-tour="vault-detail-withdraw-widget"
     >
-      <WidgetHeader title="Withdraw" actions={headerActions} />
-      <div className="flex flex-col flex-1 p-6 pt-2 gap-3">
+      {!hideHeader && <WidgetHeader title="Withdraw" actions={headerActions} />}
+      <div data-widget-part="form-layout" className={cl('flex flex-col flex-1 p-6 gap-3', !hideHeader && 'pt-2')}>
         <div>
           {/* Withdraw From Selector */}
           {hasBothBalances && !forcedWithdrawalSource ? (
@@ -1298,28 +1307,30 @@ export function WidgetWithdraw({
         </div>
 
         {!hideActionButton ? (
-          collapseDetails ? (
-            <>
-              <button
-                type="button"
-                onClick={() => setIsDetailsPanelOpen(true)}
-                aria-expanded={isDetailsPanelOpen}
-                className="flex w-full items-center justify-between gap-3 rounded-lg border border-border bg-surface-secondary px-4 py-3 text-sm font-semibold text-text-primary transition-colors hover:bg-surface"
-              >
-                <span>Your Transaction Details</span>
-                <IconChevron className="size-4 text-text-secondary" direction="right" />
-              </button>
-              {!hideActionButton ? actionRow : null}
-            </>
-          ) : (
-            <>
-              {/* Details Section */}
-              {detailsSection}
+          <div data-widget-part="transaction-footer" className="flex flex-col gap-3">
+            {collapseDetails ? (
+              <>
+                <button
+                  type="button"
+                  onClick={() => setIsDetailsPanelOpen(true)}
+                  aria-expanded={isDetailsPanelOpen}
+                  className="flex w-full items-center justify-between gap-3 rounded-lg border border-border bg-surface-secondary px-4 py-3 text-sm font-semibold text-text-primary transition-colors hover:bg-surface"
+                >
+                  <span>Your Transaction Details</span>
+                  <IconChevron className="size-4 text-text-secondary" direction="right" />
+                </button>
+                {actionRow}
+              </>
+            ) : (
+              <>
+                {/* Details Section */}
+                {detailsSection}
 
-              {/* Action Button */}
-              {!hideActionButton ? actionRow : null}
-            </>
-          )
+                {/* Action Button */}
+                {actionRow}
+              </>
+            )}
+          </div>
         ) : null}
       </div>
 
@@ -1407,13 +1418,14 @@ export function WidgetWithdraw({
             setShowTokenSelector(false)
             activeFlow.periphery.resetQuote?.()
           }}
-          chainId={chainId}
+          chainId={destinationChainId}
           value={selectedToken}
           excludeTokens={stakingAddress ? [stakingAddress] : undefined}
           mode={'withdraw'}
           priorityTokens={priorityTokens}
           topTokens={priorityTokens}
           assetAddress={resolvedDisplayAssetAddress}
+          assetChainId={chainId}
           vaultAddress={vaultAddress}
           stakingAddress={stakingAddress}
           allowHiddenVaultTokenSelection={withdrawalSource === 'staking'}

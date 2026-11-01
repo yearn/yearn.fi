@@ -111,6 +111,8 @@ export type VaultUserData = {
     maxRedeem: bigint
     redeemableAssets: bigint
   }
+  /** Explicit Yearn V2 factory limits. Withdrawal values use PPS estimates. */
+  yearnV2?: { maxDeposit: bigint }
   /** A failed refresh must not silently authorize actions from an old snapshot. */
   error?: string
   refetch: () => void | Promise<void>
@@ -144,6 +146,8 @@ export type VaultWidgetProps = {
   mode?: WidgetActionType
   onModeChange?: (mode: WidgetActionType) => void
   showTabs?: boolean
+  hideActionHeader?: boolean
+  hideContainerBorder?: boolean
   onOpenSettings?: () => void
   isSettingsOpen?: boolean
   depositPrefill?: VaultWidgetPrefill | null

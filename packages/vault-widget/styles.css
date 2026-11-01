@@ -1,3 +1,111 @@
+@keyframes erc4626-picker-open {
+  from {
+    opacity: 0;
+    transform: translateY(6px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+.erc4626-layout [data-erc4626-card]:has(> [data-transaction-overlay]) > [data-erc4626-content] {
+  visibility: hidden;
+}
+
+.erc4626-layout [data-vault-selector-overlay],
+.erc4626-layout [data-token-selector-overlay] {
+  animation: erc4626-picker-open 160ms ease-out both;
+}
+
+.erc4626-layout {
+  position: relative;
+  display: grid;
+  align-items: start;
+  width: 100%;
+  max-width: 36rem;
+  margin-inline: auto;
+  transition:
+    max-width 300ms ease,
+    grid-template-columns 300ms ease,
+    column-gap 300ms ease;
+}
+
+.erc4626-chart {
+  position: absolute;
+  inset-inline: 0;
+  top: 3rem;
+  bottom: 0;
+  z-index: 20;
+  min-width: 0;
+  overflow: hidden;
+  opacity: 0;
+  transform: translateX(-2rem);
+  pointer-events: none;
+  transition:
+    opacity 300ms ease,
+    transform 300ms ease;
+}
+
+.erc4626-layout[data-chart-open="true"] > .erc4626-chart {
+  opacity: 1;
+  transform: translateX(0);
+  pointer-events: auto;
+}
+
+.erc4626-layout:not([data-chart-open="true"]) > .erc4626-chart {
+  height: 0;
+}
+
+.erc4626-layout[data-header-inside-card="true"] > .erc4626-chart {
+  top: 5.5rem;
+}
+
+@media (min-width: 768px) {
+  .erc4626-layout > [data-widget-column] {
+    display: flex;
+    flex-direction: column;
+    align-self: stretch;
+  }
+
+  .erc4626-layout [data-erc4626-card] {
+    flex: 1;
+  }
+  .erc4626-layout[data-header-inside-card="true"] > .erc4626-chart {
+    top: 0;
+    margin-top: 0;
+  }
+  .erc4626-layout {
+    grid-template-columns: minmax(0, 0fr) minmax(0, 1fr);
+    column-gap: 0;
+  }
+
+  .erc4626-layout[data-chart-open="true"] {
+    max-width: 70rem;
+    grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+    column-gap: 1.5rem;
+  }
+
+  .erc4626-chart {
+    position: relative;
+    inset: auto;
+    z-index: auto;
+    margin-top: 3rem;
+    align-self: stretch;
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  .erc4626-layout [data-vault-selector-overlay],
+  .erc4626-layout [data-token-selector-overlay] {
+    animation: none;
+  }
+  .erc4626-layout,
+  .erc4626-chart {
+    transition: none;
+  }
+}
+
 @theme {
   --color-app: hsl(0 0% 98%);
   --color-surface: hsl(0 0% 100%);
@@ -91,4 +199,11 @@
   50% {
     opacity: 0.78;
   }
+}
+.erc4626-layout [data-widget-part="transaction-footer"] {
+  margin-top: auto;
+  padding-top: 1rem;
+}
+[data-erc4626-card]:has([data-token-selector-overlay]) {
+  min-height: max(460px, calc(100dvh - 236px));
 }

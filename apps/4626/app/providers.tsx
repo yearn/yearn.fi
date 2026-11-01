@@ -33,6 +33,7 @@ const refreshVaultReads = (queryClient: QueryClient) =>
   Promise.all([
     queryClient.invalidateQueries({ queryKey: ['erc4626-vault'] }),
     queryClient.invalidateQueries({ queryKey: ['erc4626-wallet-vaults'] }),
+    queryClient.invalidateQueries({ queryKey: ['vault-picker-balances'] }),
     queryClient.invalidateQueries({ queryKey: ['readContract'] })
   ])
 
@@ -106,6 +107,7 @@ function WidgetHost({ children }: { children: ReactNode }) {
         }
       },
       execution,
+      prices: { spotPriceEndpoint: 'https://yearn.fi/api/prices/spot' },
       safe: {
         isSafe: connector?.id.toLowerCase().includes('safe') === true,
         getTransactionDetails: getSafeTransactionDetails

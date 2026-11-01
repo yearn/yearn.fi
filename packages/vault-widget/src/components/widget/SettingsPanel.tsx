@@ -13,9 +13,17 @@ type SettingsPanelProps = {
   isActive: boolean
   onClose?: () => void
   variant?: 'panel' | 'overlay'
+  showAutoStake?: boolean
+  description?: string
 }
 
-export const SettingsPanel: FC<SettingsPanelProps> = ({ isActive, onClose, variant = 'panel' }) => {
+export const SettingsPanel: FC<SettingsPanelProps> = ({
+  isActive,
+  onClose,
+  variant = 'panel',
+  showAutoStake = true,
+  description = 'Route impact consumes part of this tolerance; the remainder is used as execution buffer.'
+}) => {
   const { settings } = useVaultWidgetRuntime()
   const {
     autoStake: isAutoStakingEnabled,
@@ -82,9 +90,7 @@ export const SettingsPanel: FC<SettingsPanelProps> = ({ isActive, onClose, varia
         <div className="flex items-start justify-between gap-4 px-6 py-4 border-b border-border">
           <div className="flex flex-col gap-1">
             <h3 className="text-base font-semibold text-text-primary">Transaction Settings</h3>
-            <p className="text-xs text-text-secondary">
-              Route impact consumes part of this tolerance; the remainder is used as execution buffer.
-            </p>
+            <p className="text-xs text-text-secondary">{description}</p>
           </div>
           {onClose ? (
             <button
@@ -183,33 +189,35 @@ export const SettingsPanel: FC<SettingsPanelProps> = ({ isActive, onClose, varia
                 ) : null}
               </div>
 
-              <div className="flex items-center justify-between pt-2 border-t border-border">
-                <div className="space-y-0.5">
-                  <label htmlFor={maximizeYieldId} className="text-sm text-text-primary">
-                    Stake Automatically
-                  </label>
-                  <p className="text-xs text-text-secondary">Automatically stake to maximize APY.</p>
-                  <p className="text-xs text-text-secondary">No assets will be locked.</p>
-                </div>
-                <button
-                  type="button"
-                  id={maximizeYieldId}
-                  role="switch"
-                  aria-checked={isAutoStakingEnabled}
-                  onClick={() => setIsAutoStakingEnabled(!isAutoStakingEnabled)}
-                  className={cl(
-                    'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
-                    isAutoStakingEnabled ? 'bg-blue-600' : 'bg-surface-tertiary'
-                  )}
-                >
-                  <span
+              {showAutoStake && (
+                <div className="flex items-center justify-between pt-2 border-t border-border">
+                  <div className="space-y-0.5">
+                    <label htmlFor={maximizeYieldId} className="text-sm text-text-primary">
+                      Stake Automatically
+                    </label>
+                    <p className="text-xs text-text-secondary">Automatically stake to maximize APY.</p>
+                    <p className="text-xs text-text-secondary">No assets will be locked.</p>
+                  </div>
+                  <button
+                    type="button"
+                    id={maximizeYieldId}
+                    role="switch"
+                    aria-checked={isAutoStakingEnabled}
+                    onClick={() => setIsAutoStakingEnabled(!isAutoStakingEnabled)}
                     className={cl(
-                      'inline-block h-4 w-4 transform rounded-full bg-surface border border-border shadow-sm transition-transform',
-                      isAutoStakingEnabled ? 'translate-x-6' : 'translate-x-1'
+                      'relative inline-flex h-6 w-11 items-center rounded-full transition-colors',
+                      isAutoStakingEnabled ? 'bg-blue-600' : 'bg-surface-tertiary'
                     )}
-                  />
-                </button>
-              </div>
+                  >
+                    <span
+                      className={cl(
+                        'inline-block h-4 w-4 transform rounded-full bg-surface border border-border shadow-sm transition-transform',
+                        isAutoStakingEnabled ? 'translate-x-6' : 'translate-x-1'
+                      )}
+                    />
+                  </button>
+                </div>
+              )}
             </div>
           </div>
         </div>
