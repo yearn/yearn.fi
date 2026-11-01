@@ -7,6 +7,7 @@ import { createDemoWallet, DEMO_ACCOUNT } from '@erc4626/lib/demoWallet'
 import { QueryClient, QueryClientProvider, useQueryClient } from '@tanstack/react-query'
 import { connect, createConnector, mock } from '@wagmi/core'
 import { DEFAULT_VAULT_WIDGET_RUNTIME, VaultWidgetRuntimeProvider } from '@yearn/vault-widget/runtime'
+import { useSearchParams } from 'next/navigation'
 import { useEffect, useState } from 'react'
 import { custom, type Transport } from 'viem'
 import { createConfig, useAccount, WagmiProvider } from 'wagmi'
@@ -97,6 +98,7 @@ function DemoHost({
 }) {
   const { address, chainId, isConnected } = useAccount()
   const queryClient = useQueryClient()
+  const searchParams = useSearchParams()
   const [failure, setFailure] = useState(false)
   const [connectionError, setConnectionError] = useState(false)
   const connectDemo = () => connect(session.config, { connector: session.config.connectors[0] })
@@ -144,7 +146,7 @@ function DemoHost({
       )}
       <aside
         aria-label="Demo controls"
-        className="pointer-events-none fixed bottom-4 right-4 z-50 w-[calc(100%-2rem)] max-w-sm text-sm"
+        className="pointer-events-none fixed bottom-20 right-4 z-50 w-[calc(100%-2rem)] max-w-sm text-sm sm:bottom-4"
       >
         <details className="pointer-events-auto ml-auto w-fit rounded-lg border border-border bg-surface shadow-lg open:w-full">
           <summary className="cursor-pointer px-4 py-3 font-semibold">Demo mode</summary>
@@ -177,6 +179,24 @@ function DemoHost({
           </div>
         </details>
       </aside>
+      <nav
+        aria-label="Demo versions"
+        className="fixed bottom-4 left-4 z-50 flex items-center gap-1 rounded-lg border border-border bg-surface p-1 shadow-lg text-sm"
+      >
+        {[
+          { label: 'Main demo', path: '/demo', selected: !props.headerInsideCard },
+          { label: 'Segmented', path: '/demo/segmented', selected: !!props.headerInsideCard }
+        ].map((version) => (
+          <a
+            key={version.path}
+            href={`${version.path}${searchParams.size ? `?${searchParams.toString()}` : ''}`}
+            aria-current={version.selected ? 'page' : undefined}
+            className={`rounded-md px-3 py-2 transition-colors hover:bg-surface-secondary/30 ${version.selected ? 'font-semibold text-primary' : 'text-text-secondary'}`}
+          >
+            {version.label}
+          </a>
+        ))}
+      </nav>
     </VaultWidgetRuntimeProvider>
   )
 }
