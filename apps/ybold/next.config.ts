@@ -1,4 +1,20 @@
+import { RPC_URL } from '@ybold/lib/rpc'
 import type { NextConfig } from 'next'
+
+const CSP_REPORT_URI =
+  'https://o4510960324837376.ingest.us.sentry.io/api/4510960614375424/security/?sentry_key=6b1b2932f1532eff2227d01a122adbb4'
+
+const SCRIPT_SRC = ["'self'", "'unsafe-inline'", "'unsafe-eval'", 'blob:']
+
+const CONNECT_SRC = [
+  "'self'",
+  new URL(RPC_URL).origin,
+  'wss://relay.walletconnect.org',
+  'https://pulse.walletconnect.org',
+  'https://verify.walletconnect.org',
+  'https://verify.walletconnect.com',
+  'https://rpc.walletconnect.org'
+]
 
 const securityHeaders = [
   {
@@ -16,6 +32,14 @@ const securityHeaders = [
   {
     key: 'Content-Security-Policy',
     value: "frame-ancestors 'self' https://app.safe.global"
+  },
+  {
+    key: 'Content-Security-Policy-Report-Only',
+    value: [
+      `script-src ${SCRIPT_SRC.join(' ')}`,
+      `connect-src ${CONNECT_SRC.join(' ')}`,
+      `report-uri ${CSP_REPORT_URI}`
+    ].join('; ')
   }
 ]
 
