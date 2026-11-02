@@ -4,9 +4,11 @@
 
 @source "../../../packages/vault-widget/src";
 @source "../../../packages/wallet-ui/src";
+@source "../../../packages/site-header/src";
 
 /* Design tokens — see DESIGNSYSTEM.md. Flat, geometric; no gradients or shadows. */
 :root {
+  --header-height: 4.25rem;
   --background: #f2efe9;
   --surface: #ffffff;
   --navy: #111b4d;
@@ -34,6 +36,8 @@
   --color-bad: var(--bad-text);
   --color-app: var(--background);
   --color-surface-secondary: var(--background);
+  --color-surface-tertiary: #e5e5e5;
+  --color-text-tertiary: var(--muted-text);
   --color-text-primary: var(--navy);
   --color-text-secondary: var(--muted-text);
   --color-border: var(--border);

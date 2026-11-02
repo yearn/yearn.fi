@@ -134,3 +134,7 @@ unstake-then-withdraw flows intentionally retain the established production
 state machine until their confirmation and resume semantics are represented by
 the public plan contract. If no complete execution adapter is configured, all
 flows continue through that legacy path.
+
+## Generic ERC-4626 utility
+
+`Erc4626VaultWidget` accepts a vault address and chain ID and uses the host runtime for wallet and chain access. `useErc4626Vault` is also exported for consumers that need to compose the existing widget themselves. Neither requires a vault catalog, Yearn-specific reads, APR nor a USD price feed. See [the implementation contract](../../docs/erc4626-app.md) and [the app host](../../apps/4626/README.md).

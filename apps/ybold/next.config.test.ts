@@ -30,12 +30,16 @@ describe('yBOLD Next configuration', () => {
           {
             key: 'Content-Security-Policy',
             value: "frame-ancestors 'self' https://app.safe.global"
+          },
+          {
+            key: 'Content-Security-Policy-Report-Only',
+            value: expect.stringContaining("script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; connect-src 'self' ")
           }
         ]
       }
     ])
     expect(nextConfig.poweredByHeader).toBe(false)
-    expect(nextConfig.transpilePackages).toEqual(['@yearn/vault-widget', '@yearn/wallet-ui'])
+    expect(nextConfig.transpilePackages).toEqual(['@yearn/vault-widget', '@yearn/wallet-ui', '@yearn/site-header'])
     expect(nextConfig.turbopack?.resolveAlias?.['@safe-global/safe-apps-sdk']).toBe(
       '../../node_modules/@safe-global/safe-apps-sdk/dist/esm'
     )

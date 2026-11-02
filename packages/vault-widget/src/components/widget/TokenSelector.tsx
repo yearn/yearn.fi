@@ -28,7 +28,8 @@ const AVAILABLE_CHAINS = [
   { id: 137, name: 'Polygon' },
   { id: 42161, name: 'Arbitrum' },
   { id: 8453, name: 'Base' },
-  { id: 747474, name: 'Katana' }
+  { id: 747474, name: 'Katana' },
+  { id: 4663, name: 'Robinhood' }
 ] as const
 
 const LEGACY_SELECTOR_TOKEN_ADDRESSES_BY_CHAIN: Record<number, `0x${string}`[]> = {

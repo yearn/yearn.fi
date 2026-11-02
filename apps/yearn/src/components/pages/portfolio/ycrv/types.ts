@@ -13,6 +13,7 @@ export type TYcrvReward = {
   amountRaw: bigint
   amountNormalized: number
   usdValue: number
+  usdValueUnavailable?: boolean
 }
 
 export type TYcrvRawAccount = {

@@ -55,7 +55,8 @@ describe('deriveYcrvReward', () => {
       symbol: 'yvcrvUSD-2',
       amountRaw: 5n * ONE,
       amountNormalized: 5,
-      usdValue: 5.5
+      usdValue: 5.5,
+      usdValueUnavailable: false
     })
   })
 

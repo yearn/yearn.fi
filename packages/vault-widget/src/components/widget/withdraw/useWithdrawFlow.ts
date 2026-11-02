@@ -1,3 +1,4 @@
+import type { TErc4626WithdrawQuote } from '@yearn/vault-widget/erc4626/useErc4626WithdrawQuote'
 import {
   getWithdrawPreviewCall,
   normalizeStakingSource
@@ -54,6 +55,7 @@ interface UseWithdrawFlowProps {
   isUnstake: boolean
   isDebouncing: boolean
   useErc4626: boolean
+  standardQuote?: TErc4626WithdrawQuote
 }
 
 export interface WithdrawFlowResult {
@@ -92,7 +94,8 @@ export function useWithdrawFlow({
   withdrawalSource,
   isUnstake,
   isDebouncing,
-  useErc4626
+  useErc4626,
+  standardQuote
 }: UseWithdrawFlowProps): WithdrawFlowResult {
   const routeType = useWithdrawRoute({
     vaultAddress,
@@ -188,7 +191,8 @@ export function useWithdrawFlow({
     chainId,
     vaultDecimals,
     enabled: directWithdrawEnabled,
-    useErc4626
+    useErc4626,
+    standardQuote
   })
 
   const yvUsdLockedZapWithdraw = useYvUsdLockedZapWithdraw({

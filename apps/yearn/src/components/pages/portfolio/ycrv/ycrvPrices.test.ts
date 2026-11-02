@@ -1,51 +1,29 @@
 import { YCRV_TOKEN_ADDRESS, YVCRVUSD_REWARD_ADDRESS } from '@pages/portfolio/ycrv/constants'
-import { fetchYDaemonYcrvPrices, resolveYcrvPrices } from '@pages/portfolio/ycrv/ycrvPrices'
-import { afterEach, describe, expect, it, vi } from 'vitest'
-
-afterEach(() => {
-  vi.restoreAllMocks()
-  vi.unstubAllGlobals()
-})
+import { resolveYcrvPrices } from '@pages/portfolio/ycrv/ycrvPrices'
+import { describe, expect, it } from 'vitest'
 
 describe('resolveYcrvPrices', () => {
-  it('uses yDaemon prices when the authenticated spot endpoint is unavailable', () => {
+  it('reads both prices from the Price Service spot response envelope', () => {
     expect(
       resolveYcrvPrices({
-        fallbackPrices: { ycrvPrice: 0.14, rewardPrice: 1.15 },
-        spotYcrvPrice: 0,
-        spotRewardPrice: 0
+        coins: {
+          [`ethereum:${YCRV_TOKEN_ADDRESS.toLowerCase()}`]: { prices: [{ price: 0.14 }] },
+          [`ethereum:${YVCRVUSD_REWARD_ADDRESS.toLowerCase()}`]: { prices: [{ price: 1.15 }] }
+        }
       })
     ).toEqual({ ycrvPrice: 0.14, rewardPrice: 1.15 })
   })
 
-  it('prefers the standard portfolio spot prices when available', () => {
+  it('keeps missing or unavailable prices unknown', () => {
     expect(
       resolveYcrvPrices({
-        fallbackPrices: { ycrvPrice: 0.14, rewardPrice: 1.15 },
-        spotYcrvPrice: 0.16,
-        spotRewardPrice: 1.2
+        coins: {
+          [`ethereum:${YCRV_TOKEN_ADDRESS.toLowerCase()}`]: {
+            prices: [],
+            error: { code: 'NOT_FOUND', message: 'No price' }
+          }
+        }
       })
-    ).toEqual({ ycrvPrice: 0.16, rewardPrice: 1.2 })
-  })
-})
-
-describe('fetchYDaemonYcrvPrices', () => {
-  it('normalizes address casing in the yDaemon response', async () => {
-    vi.stubGlobal(
-      'fetch',
-      vi.fn().mockResolvedValue(
-        new Response(
-          JSON.stringify({
-            [YCRV_TOKEN_ADDRESS.toUpperCase()]: 0.14,
-            [YVCRVUSD_REWARD_ADDRESS]: 1.15
-          })
-        )
-      )
-    )
-
-    await expect(fetchYDaemonYcrvPrices('https://ydaemon.example/1')).resolves.toEqual({
-      ycrvPrice: 0.14,
-      rewardPrice: 1.15
-    })
+    ).toEqual({ ycrvPrice: null, rewardPrice: null })
   })
 })

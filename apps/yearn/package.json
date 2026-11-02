@@ -36,7 +36,8 @@
     "viem": "2.56.9",
     "wagmi": "2.18.2",
     "zod": "4.6.5",
-    "@yearn/wallet-ui": "workspace:*"
+    "@yearn/wallet-ui": "workspace:*",
+    "@yearn/site-header": "workspace:*"
   },
   "devDependencies": {
     "@tailwindcss/postcss": "4.3.3",

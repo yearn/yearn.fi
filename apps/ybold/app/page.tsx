@@ -1,12 +1,17 @@
 import { Header } from '@ybold/components/Header'
 import { BOLD, ST_YBOLD, YBOLD, YEARN_VAULT_URL } from '@ybold/lib/contracts'
-import { getVaultStats } from '@ybold/lib/ydaemon'
+import { getVaultStats } from '@ybold/lib/kong'
 import { YBoldVaultWidget } from '@yearn/vault-widget'
 import Image from 'next/image'
 
-const pct = (value: number, decimalPlaces = 2) => `${(value * 100).toFixed(decimalPlaces)}%`
-const usd = (value: number) =>
-  value >= 1_000_000 ? `$${(value / 1_000_000).toFixed(2)}M` : `$${Math.round(value).toLocaleString('en-US')}`
+const pct = (value: number | null, decimalPlaces = 2) =>
+  value === null ? '—' : `${(value * 100).toFixed(decimalPlaces)}%`
+const usd = (value: number | null) =>
+  value === null
+    ? '—'
+    : value >= 1_000_000
+      ? `$${(value / 1_000_000).toFixed(2)}M`
+      : `$${Math.round(value).toLocaleString('en-US')}`
 
 export default async function Home() {
   const stats = await getVaultStats()
@@ -71,7 +76,7 @@ export default async function Home() {
             </div>
           </div>
 
-          <YBoldVaultWidget apy={stats?.apy7d} className="min-w-0" />
+          <YBoldVaultWidget apy={stats?.apy7d ?? undefined} className="min-w-0" />
         </section>
 
         <div aria-hidden className="flex items-end gap-2 py-2">

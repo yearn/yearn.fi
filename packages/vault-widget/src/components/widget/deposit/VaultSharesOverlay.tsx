@@ -119,9 +119,8 @@ export const VaultSharesOverlay: FC<VaultSharesOverlayProps> = ({
               </>
             ) : (
               <>
-                Vault shares represent your deposit. Their value grows automatically as the vault earns yield — you
-                don't need to do anything. When you withdraw, your shares are exchanged back for the underlying asset
-                plus any earnings.
+                Vault shares represent your position in the vault. Their underlying asset value can rise or fall. When
+                you withdraw, shares are exchanged for the underlying asset, subject to fees and available liquidity.
               </>
             )}
           </p>
@@ -140,7 +139,7 @@ export const VaultSharesOverlay: FC<VaultSharesOverlayProps> = ({
             {willReceiveStakedShares ? (
               <li>Unstake anytime to receive your {vaultSymbol} vault shares</li>
             ) : (
-              <li>Redeemable for {vaultAssetSymbol} plus earnings anytime</li>
+              <li>Redeemable for {vaultAssetSymbol} subject to fees and available liquidity</li>
             )}
           </ul>
         </div>

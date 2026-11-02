@@ -78,6 +78,7 @@ export function YcrvRewardRow({
       symbol={reward.symbol}
       amount={reward.amountNormalized.toString()}
       usdValue={reward.usdValue}
+      usdValueUnavailable={reward.usdValueUnavailable}
       onClaim={handleClaim}
       isClaimPending={isPending}
       isClaimReady={prepare.isSuccess}
