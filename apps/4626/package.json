@@ -12,7 +12,6 @@
     "tslint": "node ../../node_modules/typescript/bin/tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@rainbow-me/rainbowkit": "2.2.11",
     "@tanstack/react-query": "5.103.2",
     "@wagmi/core": "2.22.1",
     "@yearn/vault-widget": "workspace:*",

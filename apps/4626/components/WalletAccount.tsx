@@ -1,15 +1,14 @@
 'use client'
 
 import { useWalletActivity } from '@erc4626/components/WalletActivity'
-import { useChainModal } from '@rainbow-me/rainbowkit'
 import { AccountMenu, type TAccountMenuData } from '@yearn/site-header/account'
 import { useWalletDisconnect, WalletSurface } from '@yearn/wallet-ui'
-import { useAccount } from 'wagmi'
+import { useAccount, useSwitchChain } from 'wagmi'
 
 function useWalletAccount(onClose: () => void): TAccountMenuData {
   const { address, chain } = useAccount()
   const { disconnect } = useWalletDisconnect()
-  const { openChainModal } = useChainModal()
+  const { chains, switchChain, isPending, error } = useSwitchChain()
   const activity = useWalletActivity()
   return {
     address,
@@ -27,19 +26,37 @@ function useWalletAccount(onClose: () => void): TAccountMenuData {
       onClose()
       document.getElementById('recent-transactions')?.scrollIntoView({ behavior: 'smooth' })
     },
-    networkAction: openChainModal ? (
-      <button
-        type="button"
-        onClick={() => {
-          onClose()
-          openChainModal()
-        }}
-        className="mt-3 flex w-full items-center justify-between rounded-lg px-3 py-2 text-sm text-text-secondary hover:bg-surface-secondary"
-      >
-        <span>{chain?.name ?? 'Unsupported network'}</span>
-        <span>Switch network</span>
-      </button>
-    ) : undefined
+    networkAction: (
+      <div className="mt-3 space-y-2">
+        <label className="flex items-center gap-3 text-sm text-text-secondary">
+          Network
+          <select
+            aria-label="Switch network"
+            aria-busy={isPending || undefined}
+            value={chain?.id ?? ''}
+            disabled={isPending}
+            onChange={(event) => switchChain({ chainId: Number(event.currentTarget.value) }, { onSuccess: onClose })}
+            className="min-w-0 flex-1 rounded-lg border border-border bg-surface px-3 py-2 text-text-primary"
+          >
+            {!chain && (
+              <option value="" disabled>
+                Unsupported network
+              </option>
+            )}
+            {chains.map((network) => (
+              <option key={network.id} value={network.id}>
+                {network.name}
+              </option>
+            ))}
+          </select>
+        </label>
+        {error && (
+          <p role="alert" className="text-sm text-error">
+            The network could not be switched. Please try again in your wallet.
+          </p>
+        )}
+      </div>
+    )
   }
 }
 

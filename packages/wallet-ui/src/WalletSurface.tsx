@@ -8,6 +8,7 @@ export type TWalletSurfaceProps = {
   desktopRight?: string
   desktopTop?: string
   dialogId: string
+  hideTitle?: boolean
   isOpen: boolean
   onClose: () => void
   restoreFocus?: boolean | RefObject<boolean>
@@ -29,6 +30,7 @@ function OpenWalletSurface({
   desktopRight = '1rem',
   desktopTop = '6rem',
   dialogId,
+  hideTitle = false,
   onClose,
   restoreFocus = true,
   themeClassName = '',
@@ -158,13 +160,13 @@ function OpenWalletSurface({
         aria-modal={mobileViewport || undefined}
         aria-labelledby={titleId}
         style={{ '--wallet-ui-desktop-right': desktopRight, '--wallet-ui-desktop-top': desktopTop } as CSSProperties}
-        className="wallet-ui-panel fixed inset-x-0 bottom-0 z-[10000] flex max-h-[calc(100svh-0.75rem)] flex-col overflow-hidden rounded-t-2xl border border-b-0 border-border bg-surface text-text-primary shadow-lg focus:outline-none sm:inset-x-auto sm:top-[var(--wallet-ui-desktop-top)] sm:right-[var(--wallet-ui-desktop-right)] sm:bottom-auto sm:w-[23rem] sm:rounded-2xl sm:border"
+        className="wallet-ui-panel fixed inset-x-0 bottom-0 z-[10000] flex max-h-[calc(100svh-0.75rem)] flex-col overflow-hidden rounded-t-2xl border border-b-0 border-border bg-surface text-text-primary shadow-lg focus:outline-none sm:inset-x-auto sm:top-[var(--wallet-ui-desktop-top)] sm:right-[var(--wallet-ui-desktop-right)] sm:bottom-auto sm:max-h-[calc(100svh-var(--wallet-ui-desktop-top)-1rem)] sm:w-[23rem] sm:rounded-2xl sm:border"
       >
         <div aria-hidden className="flex justify-center pt-2 sm:hidden">
           <span className="h-1 w-9 rounded-full bg-text-primary/15" />
         </div>
-        <header className="flex items-center justify-between px-4 pt-3 pb-3">
-          <h2 id={titleId} className="text-base font-medium tracking-tight">
+        <header className={`flex items-center px-4 pt-3 pb-3 ${hideTitle ? 'justify-end' : 'justify-between'}`}>
+          <h2 id={titleId} className={hideTitle ? 'sr-only' : 'text-base font-medium tracking-tight'}>
             {title}
           </h2>
           <button
@@ -178,7 +180,10 @@ function OpenWalletSurface({
             </svg>
           </button>
         </header>
-        <div className="overflow-y-auto overscroll-contain px-4 pb-[max(1rem,env(safe-area-inset-bottom))]">
+        <div
+          data-wallet-content
+          className="overflow-y-auto overscroll-contain px-4 pb-[max(1rem,env(safe-area-inset-bottom))]"
+        >
           {children}
         </div>
       </section>
