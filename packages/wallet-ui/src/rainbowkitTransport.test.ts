@@ -26,7 +26,7 @@ it('shares one WalletConnect provider across the QR choice and all curated walle
     storage: null
   })
   const transports = config.connectors.filter(({ type }) => type === 'walletConnect')
-  expect(transports).toHaveLength(12)
+  expect(transports).toHaveLength(13)
   const providers = await Promise.all(transports.map((connector) => connector.getProvider()))
   expect(new Set(providers).size).toBe(1)
 })

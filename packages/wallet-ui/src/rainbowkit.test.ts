@@ -1,6 +1,12 @@
 import { connectorsForWallets } from '@rainbow-me/rainbowkit'
 import { getBrowserWalletIcon, selectBrowserWalletConnectors } from '@yearn/wallet-ui/connectors'
-import { getYearnRainbowTheme, getYearnWallets, WALLETCONNECT_QR_WALLET_ID } from '@yearn/wallet-ui/rainbowkit'
+import {
+  getYearnRainbowTheme,
+  getYearnWallets,
+  OATH_WALLET_ID,
+  oathWallet,
+  WALLETCONNECT_QR_WALLET_ID
+} from '@yearn/wallet-ui/rainbowkit'
 import { afterEach, expect, it, vi } from 'vitest'
 import { createConfig, http } from 'wagmi'
 import { mainnet } from 'wagmi/chains'
@@ -102,4 +108,25 @@ it('uses Yearn accents and separate light/dark surfaces through RainbowKit theme
   expect(getYearnRainbowTheme('dark').colors.modalBackground).not.toBe(
     getYearnRainbowTheme('light').colors.modalBackground
   )
+})
+
+it('offers Oath directly with an unchanged QR URI and an encoded iOS link', () => {
+  const wallet = getYearnWallets()[0].wallets[2]({ projectId: 'test', appName: 'Yearn' })
+  const uri = 'wc:test@2?relay-protocol=irn&symKey=fixture'
+  expect(wallet.id).toBe(OATH_WALLET_ID)
+  expect(wallet.name).toBe('Oath Wallet')
+  expect(wallet.qrCode?.getUri(uri)).toBe(uri)
+  expect(wallet.mobile?.getUri?.(uri)).toBe(`oathwallet://wc?uri=${encodeURIComponent(uri)}`)
+  expect(wallet.downloadUrls).toEqual({ ios: 'https://apps.apple.com/app/id6780187283' })
+  expect(wallet.iconUrl).toMatch(/^data:image\/svg\+xml;base64,/)
+})
+
+it.each(['Mozilla/5.0 (iPhone)', 'Mozilla/5.0 (iPad)', 'Mozilla/5.0 (Macintosh)'])('offers Oath on %s', (userAgent) => {
+  vi.stubGlobal('navigator', { userAgent })
+  expect(oathWallet({ projectId: 'test', appName: 'Yearn' }).hidden?.()).toBe(false)
+})
+
+it('does not advertise an unavailable Android app', () => {
+  vi.stubGlobal('navigator', { userAgent: 'Mozilla/5.0 (Linux; Android 15)' })
+  expect(oathWallet({ projectId: 'test', appName: 'Yearn' }).hidden?.()).toBe(true)
 })

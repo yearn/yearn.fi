@@ -13,6 +13,7 @@ const mocks = vi.hoisted(() => ({
   connectAsync: vi.fn(),
   openConnectModal: vi.fn(),
   connectWalletConnect: vi.fn(),
+  connectOath: vi.fn(),
   restorePreviousAccount: vi.fn(),
   accountChange: undefined as ((account: TMockAccount, previousAccount: TMockAccount) => void) | undefined,
   config: {},
@@ -53,9 +54,9 @@ vi.mock('@yearn/wallet-ui/connectionCleanup', () => ({ restorePreviousAccount: m
 vi.mock('@rainbow-me/rainbowkit', () => ({
   useConnectModal: () => ({ openConnectModal: mocks.openConnectModal, connectModalOpen: mocks.connectModalOpen }),
   WalletButton: {
-    Custom: ({ children }: { children: (props: unknown) => ReactNode }) =>
+    Custom: ({ children, wallet }: { children: (props: unknown) => ReactNode; wallet: string }) =>
       children({
-        connect: mocks.connectWalletConnect,
+        connect: wallet === 'oathWallet' ? mocks.connectOath : mocks.connectWalletConnect,
         mounted: true,
         ready: false,
         connector: mocks.connectors.find(({ id }) => id === 'walletConnect')
@@ -105,6 +106,7 @@ beforeEach(() => {
   mocks.connectAsync.mockReset()
   mocks.openConnectModal.mockReset()
   mocks.connectWalletConnect.mockReset()
+  mocks.connectOath.mockReset()
   mocks.restorePreviousAccount.mockReset().mockResolvedValue(undefined)
   mocks.accountChange = undefined
   mocks.connectModalOpen = false
@@ -635,4 +637,41 @@ describe('adaptive wallet surface', () => {
     expect(screen.queryByRole('dialog')).toBeNull()
     expect(document.activeElement).toBe(screen.getByRole('button', { name: 'After wallet' }))
   })
+})
+
+it('opens the Oath-specific native flow directly and retains the generic option after dismissal', async () => {
+  const view = render(<App />)
+  const trigger = open()
+  const oathButton = screen.getByRole('button', { name: 'Oath Wallet' })
+  expect(oathButton.className).toBe(screen.getByRole('button', { name: 'WalletConnect' }).className)
+  fireEvent.click(oathButton)
+  await waitFor(() => expect(mocks.connectOath).toHaveBeenCalledOnce())
+  expect(mocks.connectWalletConnect).not.toHaveBeenCalled()
+  expect(mocks.openConnectModal).not.toHaveBeenCalled()
+  mocks.connectModalOpen = true
+  view.rerender(<App />)
+  mocks.connectModalOpen = false
+  view.rerender(<App />)
+  expect(document.activeElement).toBe(trigger)
+  open()
+  fireEvent.click(screen.getByRole('button', { name: 'WalletConnect' }))
+  await waitFor(() => expect(mocks.connectWalletConnect).toHaveBeenCalledOnce())
+})
+
+it('recovers the picker when the Oath flow cannot open', async () => {
+  mocks.connectOath.mockRejectedValueOnce(new Error('Cannot open'))
+  render(<App />)
+  open()
+  fireEvent.click(screen.getByRole('button', { name: 'Oath Wallet' }))
+  await waitFor(() => expect(screen.getByRole('alert').textContent).toContain('could not be opened'))
+  fireEvent.click(screen.getByRole('button', { name: 'Oath Wallet' }))
+  await waitFor(() => expect(mocks.connectOath).toHaveBeenCalledTimes(2))
+})
+
+it('hides the iOS-only Oath entry on Android', () => {
+  vi.stubGlobal('navigator', { userAgent: 'Mozilla/5.0 (Linux; Android 15)' })
+  render(<App />)
+  open()
+  expect(screen.queryByRole('button', { name: 'Oath Wallet' })).toBeNull()
+  expect(screen.getByRole('button', { name: 'WalletConnect' })).toBeTruthy()
 })
