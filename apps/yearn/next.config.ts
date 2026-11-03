@@ -29,7 +29,7 @@ const FRAME_ANCESTORS = [
 ]
 
 /**
- * Resource directives, served report-only. Promote to `Content-Security-Policy` once Sentry reports are clean.
+ * Script sources are enforced. Connection sources remain report-only while integrations are verified.
  *
  * RPC origins come from the build env plus viem's chain defaults, because `buildTransports` always appends a
  * bare `http()` fallback. Set `NEXT_PUBLIC_RPC_URI_FOR_<chainId>` per deployment so the list stays explicit.
@@ -79,15 +79,15 @@ const securityHeaders = [
     // X-Frame-Options is intentionally omitted: it cannot express a multi-origin allowlist and
     // would break the Safe App and Blockscout embeds.
     key: 'Content-Security-Policy',
-    value: [`frame-ancestors ${FRAME_ANCESTORS.join(' ')}`, `report-uri ${CSP_REPORT_URI}`].join('; ')
+    value: [
+      `frame-ancestors ${FRAME_ANCESTORS.join(' ')}`,
+      `script-src ${SCRIPT_SRC.join(' ')}`,
+      `report-uri ${CSP_REPORT_URI}`
+    ].join('; ')
   },
   {
     key: 'Content-Security-Policy-Report-Only',
-    value: [
-      `script-src ${SCRIPT_SRC.join(' ')}`,
-      `connect-src ${CONNECT_SRC.join(' ')}`,
-      `report-uri ${CSP_REPORT_URI}`
-    ].join('; ')
+    value: [`connect-src ${CONNECT_SRC.join(' ')}`, `report-uri ${CSP_REPORT_URI}`].join('; ')
   }
 ]
 

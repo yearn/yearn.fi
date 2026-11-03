@@ -31,15 +31,15 @@ const securityHeaders = [
   },
   {
     key: 'Content-Security-Policy',
-    value: "frame-ancestors 'self' https://app.safe.global"
+    value: [
+      "frame-ancestors 'self' https://app.safe.global",
+      `script-src ${SCRIPT_SRC.join(' ')}`,
+      `report-uri ${CSP_REPORT_URI}`
+    ].join('; ')
   },
   {
     key: 'Content-Security-Policy-Report-Only',
-    value: [
-      `script-src ${SCRIPT_SRC.join(' ')}`,
-      `connect-src ${CONNECT_SRC.join(' ')}`,
-      `report-uri ${CSP_REPORT_URI}`
-    ].join('; ')
+    value: [`connect-src ${CONNECT_SRC.join(' ')}`, `report-uri ${CSP_REPORT_URI}`].join('; ')
   }
 ]
 
