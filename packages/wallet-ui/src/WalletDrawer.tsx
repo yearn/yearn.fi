@@ -18,7 +18,13 @@ import { DEFAULT_WALLET_DRAWER_ID, WalletDrawerContext } from '@yearn/wallet-ui/
 import { cancelWalletReconnect } from '@yearn/wallet-ui/WalletProvider'
 import { WalletQr } from '@yearn/wallet-ui/WalletQr'
 import { WalletSurface } from '@yearn/wallet-ui/WalletSurface'
-import { CURATED_WALLETS, getWalletAppLink, rememberWalletApp, type TWalletOption } from '@yearn/wallet-ui/wallets'
+import {
+  CURATED_WALLETS,
+  getWalletAppLink,
+  getWalletQrUri,
+  rememberWalletApp,
+  type TWalletOption
+} from '@yearn/wallet-ui/wallets'
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { type Connector, ConnectorAlreadyConnectedError, useAccount, useConfig, useConnect } from 'wagmi'
 import { getAccount, watchAccount } from 'wagmi/actions'
@@ -357,6 +363,7 @@ export function WalletDrawerProvider({
     [dialogId, isConnected, pendingConnector, isOpen, closeWalletDrawer, openWalletDrawer, toggleWalletDrawer]
   )
   const appLink = uri && selectedWallet ? getWalletAppLink(selectedWallet, uri, isMobileWalletBrowser()) : undefined
+  const qrUri = uri ? getWalletQrUri(selectedWallet, uri, isMobileWalletBrowser()) : ''
   const linkClassName =
     'rounded-lg border border-border px-3 py-2 text-center text-sm font-medium text-primary hover:bg-app focus-visible:outline-2 focus-visible:outline-primary'
 
@@ -435,13 +442,6 @@ export function WalletDrawerProvider({
                 />
               )
             })}
-            {walletConnect && (
-              <WalletMethodButton
-                label="Use a QR code"
-                icon={<MethodIcon kind="walletConnect" />}
-                onClick={() => void connectWallet(walletConnect, analytics.active()?.path ?? 'walletconnect')}
-              />
-            )}
           </div>
         )}
         {screen === 'connect' && (
@@ -455,7 +455,11 @@ export function WalletDrawerProvider({
             </p>
             {uri ? (
               <>
-                <WalletQr key={uri} uri={uri} />
+                <WalletQr
+                  key={qrUri}
+                  uri={qrUri}
+                  icon={selectedWallet && qrUri !== uri ? <MethodIcon icon={selectedWallet.icon} /> : undefined}
+                />
                 <div className="flex flex-col gap-2">
                   {appLink && (
                     <a

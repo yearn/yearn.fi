@@ -7,6 +7,8 @@ export type TWalletOption = {
   icon: string
   rdns?: string
   mobileLink: string
+  qrLink?: string
+  mobileQrLink?: string
   downloadUrl: string
   androidDownloadUrl?: string
   desktopLink?: string
@@ -28,6 +30,7 @@ export const CURATED_WALLETS: readonly TWalletOption[] = [
     icon: WALLET_ICONS.metaMask,
     rdns: 'io.metamask',
     mobileLink: 'metamask://wc',
+    qrLink: 'https://metamask.app.link/wc',
     downloadUrl: 'https://metamask.io/download'
   },
   {
@@ -50,7 +53,8 @@ export const CURATED_WALLETS: readonly TWalletOption[] = [
     name: 'TokenPocket',
     icon: WALLET_ICONS.tokenPocket,
     rdns: 'pro.tokenpocket',
-    mobileLink: '',
+    mobileLink: 'tpoutside://wc',
+    mobileQrLink: 'tpoutside://wc',
     downloadUrl: 'https://tokenpocket.pro/en/download/app'
   },
   {
@@ -90,6 +94,7 @@ export const CURATED_WALLETS: readonly TWalletOption[] = [
     icon: WALLET_ICONS.ledger,
     mobileLink: 'ledgerlive://wc',
     desktopLink: 'ledgerlive://wc',
+    qrLink: 'ledgerlive://wc',
     downloadUrl: 'https://www.ledger.com/ledger-live'
   },
   {
@@ -105,6 +110,11 @@ export const CURATED_WALLETS: readonly TWalletOption[] = [
 export function getWalletAppLink(wallet: TWalletOption, uri: string, mobile: boolean): string | undefined {
   const link = mobile ? wallet.mobileLink : wallet.desktopLink
   return link === '' ? uri : link ? `${link}?uri=${encodeURIComponent(uri)}` : undefined
+}
+
+export function getWalletQrUri(wallet: TWalletOption | undefined, uri: string, mobile: boolean): string {
+  const link = (mobile ? wallet?.mobileQrLink : undefined) ?? wallet?.qrLink
+  return link ? `${link}?uri=${encodeURIComponent(uri)}` : uri
 }
 
 export function rememberWalletApp(wallet?: TWalletOption, mobile = true): void {

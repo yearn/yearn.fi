@@ -2,6 +2,8 @@ import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-libra
 import type { TWalletConnectorSummary } from '@yearn/wallet-ui/connectors'
 import { useWalletDrawer } from '@yearn/wallet-ui/context'
 import { WalletDrawerProvider } from '@yearn/wallet-ui/WalletDrawer'
+import { CURATED_WALLETS } from '@yearn/wallet-ui/wallets'
+import type { ReactNode } from 'react'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { ConnectorAlreadyConnectedError } from 'wagmi'
 
@@ -50,7 +52,14 @@ vi.mock('wagmi/actions', () => ({
 
 vi.mock('@yearn/wallet-ui/connectionCleanup', () => ({ restorePreviousAccount: mocks.restorePreviousAccount }))
 
-vi.mock('@yearn/wallet-ui/WalletQr', () => ({ WalletQr: () => <img alt="WalletConnect QR code" /> }))
+vi.mock('@yearn/wallet-ui/WalletQr', () => ({
+  WalletQr: ({ uri, icon }: { uri: string; icon?: ReactNode }) => (
+    <div data-testid="wallet-qr">
+      <img alt="WalletConnect QR code" data-uri={uri} />
+      {icon}
+    </div>
+  )
+}))
 
 function Trigger() {
   const { isConnecting, toggleWalletDrawer } = useWalletDrawer()
@@ -388,6 +397,7 @@ describe('connection attempt ownership', () => {
     fireEvent.click(screen.getByRole('button', { name: 'WalletConnect' }))
     act(() => mocks.message?.({ type: 'display_uri', data: 'wc:test@2?key=secret' }))
     expect(screen.getByAltText('WalletConnect QR code')).toBeTruthy()
+    expect(screen.getByTestId('wallet-qr').querySelector('[aria-hidden]')).toBeNull()
     fireEvent.keyDown(document, { key: 'Escape' })
     expect(document.activeElement).toBe(trigger)
     expect(screen.getByTestId('pending').textContent).toBe('false')
@@ -398,6 +408,42 @@ describe('connection attempt ownership', () => {
     await act(async () => request.resolve())
     expect(screen.queryByRole('dialog')).toBeNull()
     expect(mocks.connectors[2].emitter?.off).toHaveBeenCalledWith('message', expect.any(Function))
+  })
+
+  it('updates the selected QR link and logo while retaining one pairing and copying its raw URI', async () => {
+    const request = deferred()
+    const copy = vi.fn().mockResolvedValue(undefined)
+    const uri = 'wc:test@2?relay-protocol=irn&symKey=secret'
+    vi.stubGlobal('navigator', { clipboard: { writeText: copy }, userAgent: 'desktop' })
+    mocks.connectAsync.mockReturnValueOnce(request.promise)
+    render(<App />)
+    open()
+    fireEvent.click(screen.getByRole('button', { name: 'More wallets' }))
+    fireEvent.click(screen.getByRole('button', { name: 'MetaMask' }))
+    act(() => mocks.message?.({ type: 'display_uri', data: uri }))
+    expect(screen.getByAltText('WalletConnect QR code').getAttribute('data-uri')).toBe(
+      `https://metamask.app.link/wc?uri=${encodeURIComponent(uri)}`
+    )
+    expect(screen.getByTestId('wallet-qr').querySelector('img[aria-hidden]')?.getAttribute('src')).toBe(
+      CURATED_WALLETS.find(({ id }) => id === 'metaMask')?.icon
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Ledger' }))
+    expect(screen.getByAltText('WalletConnect QR code').getAttribute('data-uri')).toBe(
+      `ledgerlive://wc?uri=${encodeURIComponent(uri)}`
+    )
+    expect(screen.getByTestId('wallet-qr').querySelector('img[aria-hidden]')?.getAttribute('src')).toBe(
+      CURATED_WALLETS.find(({ id }) => id === 'ledger')?.icon
+    )
+    fireEvent.click(screen.getByRole('button', { name: 'Back' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Trust Wallet' }))
+    expect(screen.getByAltText('WalletConnect QR code').getAttribute('data-uri')).toBe(uri)
+    expect(screen.getByTestId('wallet-qr').querySelector('[aria-hidden]')).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: 'Copy connection link' }))
+    await screen.findByRole('button', { name: 'Copied' })
+    expect(copy).toHaveBeenCalledWith(uri)
+    expect(mocks.connectAsync).toHaveBeenCalledOnce()
+    await act(async () => request.resolve())
   })
 
   it('routes phone WalletConnect to the curated chooser and exposes a user-initiated app link', async () => {

@@ -1,4 +1,10 @@
-import { CURATED_WALLETS, getWalletAppLink, getYearnConnectors, rememberWalletApp } from '@yearn/wallet-ui/wallets'
+import {
+  CURATED_WALLETS,
+  getWalletAppLink,
+  getWalletQrUri,
+  getYearnConnectors,
+  rememberWalletApp
+} from '@yearn/wallet-ui/wallets'
 import { expect, it, vi } from 'vitest'
 import { createConfig, http } from 'wagmi'
 import { mainnet } from 'wagmi/chains'
@@ -72,6 +78,35 @@ it('encodes the full pairing URI for app handoffs and keeps desktop choices expl
     expect(getWalletAppLink(wallet, uri, false)).toBe(
       wallet.desktopLink ? `${wallet.desktopLink}?uri=${encodeURIComponent(uri)}` : undefined
     )
+  })
+})
+
+it.each([
+  ['metaMask', false, 'https://metamask.app.link/wc'],
+  ['metaMask', true, 'https://metamask.app.link/wc'],
+  ['ledger', false, 'ledgerlive://wc'],
+  ['ledger', true, 'ledgerlive://wc'],
+  ['tokenPocket', false, undefined],
+  ['tokenPocket', true, 'tpoutside://wc']
+] as const)('formats the %s QR on mobile=%s without changing the pairing', (id, mobile, prefix) => {
+  const uri = 'wc:topic@2?relay-protocol=irn&symKey=secret&expiryTimestamp=1234567890'
+  const wallet = CURATED_WALLETS.find((wallet) => wallet.id === id)!
+  const qrUri = getWalletQrUri(wallet, uri, mobile)
+  if (prefix) {
+    expect(qrUri.startsWith(`${prefix}?uri=`)).toBe(true)
+    expect(new URL(qrUri).searchParams.get('uri')).toBe(uri)
+  } else {
+    expect(qrUri).toBe(uri)
+  }
+})
+
+it('keeps the generic QR for every other curated wallet and the default WalletConnect choice', () => {
+  const uri = 'wc:topic@2?relay-protocol=irn&symKey=secret'
+  ;[false, true].forEach((mobile) => {
+    expect(getWalletQrUri(undefined, uri, mobile)).toBe(uri)
+    CURATED_WALLETS.filter(({ id }) => !['metaMask', 'ledger', 'tokenPocket'].includes(id)).forEach((wallet) => {
+      expect(getWalletQrUri(wallet, uri, mobile)).toBe(uri)
+    })
   })
 })
 

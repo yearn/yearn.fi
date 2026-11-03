@@ -9,13 +9,14 @@ it('renders an encoded QR locally and removes the pairing from the query cache o
   const client = new QueryClient()
   const view = render(
     <QueryClientProvider client={client}>
-      <WalletQr uri="wc:test@2?key=secret" />
+      <WalletQr uri="wc:test@2?key=secret" icon={<svg data-testid="wallet-logo" />} />
     </QueryClientProvider>
   )
   const image = await screen.findByAltText('WalletConnect QR code')
   const src = image.getAttribute('src')!
   expect(src).toMatch(/^data:image\/svg\+xml,/)
   expect(decodeURIComponent(src.slice(src.indexOf(',') + 1))).toContain('<svg')
+  expect(screen.getByTestId('wallet-logo')).toBeTruthy()
   view.unmount()
   await new Promise((resolve) => setTimeout(resolve, 5))
   expect(client.getQueryCache().getAll()).toHaveLength(0)
