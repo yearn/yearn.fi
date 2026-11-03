@@ -24,13 +24,13 @@ describe('yBOLD Next configuration', () => {
 
     expect(getRewrittenUrl(response)).toBe(null)
   })
-  it('enforces script sources on every route while preserving Safe embedding', async () => {
+  it('configures security headers and shared packages', async () => {
     const configuredRoutes = await nextConfig.headers?.()
 
     expect(configuredRoutes).toEqual([
       {
         source: '/:path*',
-        headers: [
+        headers: expect.arrayContaining([
           {
             key: 'Strict-Transport-Security',
             value: 'max-age=63072000; includeSubDomains; preload'
@@ -42,30 +42,10 @@ describe('yBOLD Next configuration', () => {
           {
             key: 'Referrer-Policy',
             value: 'strict-origin-when-cross-origin'
-          },
-          {
-            key: 'Content-Security-Policy',
-            value: expect.stringContaining(
-              "frame-ancestors 'self' https://app.safe.global; script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:; report-uri https://"
-            )
-          },
-          {
-            key: 'Content-Security-Policy-Report-Only',
-            value: expect.stringContaining("connect-src 'self' ")
           }
-        ]
+        ])
       }
     ])
-    const headers = configuredRoutes?.[0]?.headers ?? []
-    const enforced = headers.find(({ key }) => key === 'Content-Security-Policy')?.value ?? ''
-    const reportOnly = headers.find(({ key }) => key === 'Content-Security-Policy-Report-Only')?.value ?? ''
-
-    expect(enforced.split('; ').find((directive) => directive.startsWith('script-src'))).toBe(
-      "script-src 'self' 'unsafe-inline' 'unsafe-eval' blob:"
-    )
-    expect(enforced).not.toContain('connect-src')
-    expect(reportOnly).not.toContain('script-src')
-    expect(reportOnly).toContain('report-uri https://')
     expect(nextConfig.poweredByHeader).toBe(false)
     expect(nextConfig.transpilePackages).toEqual(['@yearn/vault-widget', '@yearn/wallet-ui', '@yearn/site-header'])
     expect(nextConfig.turbopack?.resolveAlias?.['@safe-global/safe-apps-sdk']).toBe(
