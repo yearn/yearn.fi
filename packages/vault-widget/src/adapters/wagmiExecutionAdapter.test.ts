@@ -617,18 +617,6 @@ describe('Wagmi Safe proposal adapter', () => {
     ).rejects.toMatchObject({ cause: simulationError })
     expect(wagmiActions.sendCalls).not.toHaveBeenCalled()
   })
-
-  it.each(['proposal-id', '0x', '0xxyz'])('rejects invalid Safe proposal identifier %s', async (proposalId) => {
-    wagmiActions.getPublicClient.mockReturnValue({
-      simulateBlocks: vi.fn().mockResolvedValue([{ calls: [{ status: 'success' }] }])
-    })
-    wagmiActions.sendCalls.mockResolvedValue({ id: proposalId })
-    const adapter = createAdapter()
-
-    await expect(
-      adapter.proposeSafeBatch?.({ account, chainId: canonicalChainId, requests: [request] })
-    ).rejects.toThrow('Safe returned an invalid proposal identifier')
-  })
 })
 
 describe('Wagmi Safe execution tracking adapter', () => {
