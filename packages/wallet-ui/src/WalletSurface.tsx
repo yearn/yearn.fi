@@ -8,8 +8,8 @@ export type TWalletSurfaceProps = {
   desktopRight?: string
   desktopTop?: string
   dialogId: string
-  hideTitle?: boolean
   isOpen: boolean
+  onBack?: () => void
   onClose: () => void
   restoreFocus?: boolean | RefObject<boolean>
   themeClassName?: string
@@ -30,7 +30,7 @@ function OpenWalletSurface({
   desktopRight = '1rem',
   desktopTop = '6rem',
   dialogId,
-  hideTitle = false,
+  onBack,
   onClose,
   restoreFocus = true,
   themeClassName = '',
@@ -165,8 +165,18 @@ function OpenWalletSurface({
         <div aria-hidden className="flex justify-center pt-2 sm:hidden">
           <span className="h-1 w-9 rounded-full bg-text-primary/15" />
         </div>
-        <header className={`flex items-center px-4 pt-3 pb-3 ${hideTitle ? 'justify-end' : 'justify-between'}`}>
-          <h2 id={titleId} className={hideTitle ? 'sr-only' : 'text-base font-medium tracking-tight'}>
+        <header className="flex items-center justify-between px-4 pt-3 pb-3">
+          {onBack && (
+            <button
+              type="button"
+              onClick={onBack}
+              className="-ml-2 flex h-8 items-center gap-2 rounded-full px-2 text-sm font-medium text-text-secondary transition hover:bg-app hover:text-text-primary focus-visible:bg-app focus-visible:text-text-primary focus-visible:outline-none"
+            >
+              <span aria-hidden>{'<'}</span>
+              Back
+            </button>
+          )}
+          <h2 id={titleId} className={onBack ? 'sr-only' : 'text-base font-medium tracking-tight'}>
             {title}
           </h2>
           <button

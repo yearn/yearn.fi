@@ -368,16 +368,11 @@ export function WalletDrawerProvider({
         onClose={closeWalletDrawer}
         dialogId={dialogId}
         title="Connect a wallet"
-        hideTitle
+        onBack={screen === 'picker' ? undefined : back}
         desktopRight={desktopRight}
         desktopTop={desktopTop}
         themeClassName={themeClassName}
       >
-        {screen !== 'picker' && (
-          <button type="button" onClick={back} className={`mb-3 ${linkClassName}`}>
-            ‹ Back
-          </button>
-        )}
         {screen === 'picker' && (
           <>
             <p className="sr-only">Choose an installed browser wallet, WalletConnect, or another supported wallet.</p>
