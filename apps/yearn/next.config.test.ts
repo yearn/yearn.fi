@@ -18,13 +18,13 @@ describe('Yearn CSP headers', () => {
 })
 
 describe('Yearn Plausible proxy', () => {
-  it('forwards analytics events and preserves query parameters', async () => {
+  it('keeps analytics event requests on the app origin', async () => {
     const response = await unstable_getResponseFromNextConfig({
       url: 'https://yearn.fi/proxy/plausible/api/event?probe=1',
       nextConfig
     })
 
-    expect(getRewrittenUrl(response)).toBe('https://plausible.io/api/event?probe=1')
+    expect(getRewrittenUrl(response)).toBe(null)
   })
 
   it.each([

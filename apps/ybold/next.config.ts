@@ -47,9 +47,6 @@ const nextConfig: NextConfig = {
   agentRules: false,
   poweredByHeader: false,
   transpilePackages: ['@yearn/vault-widget', '@yearn/wallet-ui', '@yearn/site-header'],
-  async rewrites() {
-    return [{ source: '/proxy/plausible/api/event', destination: 'https://plausible.io/api/event' }]
-  },
   turbopack: {
     resolveAlias: {
       '@safe-global/safe-apps-sdk': '../../node_modules/@safe-global/safe-apps-sdk/dist/esm'
