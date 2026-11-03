@@ -48,7 +48,7 @@ const nextConfig: NextConfig = {
   poweredByHeader: false,
   transpilePackages: ['@yearn/vault-widget', '@yearn/wallet-ui', '@yearn/site-header'],
   async rewrites() {
-    return [{ source: '/proxy/plausible/:path*', destination: 'https://plausible.io/:path*' }]
+    return [{ source: '/proxy/plausible/api/event', destination: 'https://plausible.io/api/event' }]
   },
   turbopack: {
     resolveAlias: {

@@ -141,8 +141,8 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return [
       {
-        source: '/proxy/plausible/:path*',
-        destination: 'https://plausible.io/:path*'
+        source: '/proxy/plausible/api/event',
+        destination: 'https://plausible.io/api/event'
       }
     ]
   }
