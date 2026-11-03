@@ -21,9 +21,9 @@ vi.mock('wagmi', () => ({
     address: '0x1111111111111111111111111111111111111111',
     chain: SUPPORTED_CHAINS.find(({ id }) => id === mocks.chainId)
   }),
+  useChains: () => SUPPORTED_CHAINS,
   useSwitchChain: () => ({
-    chains: SUPPORTED_CHAINS,
-    switchChain: mocks.switchChain,
+    mutate: mocks.switchChain,
     isPending: mocks.pending,
     error: mocks.error
   })

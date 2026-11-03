@@ -26,7 +26,7 @@ import {
   type TWalletOption
 } from '@yearn/wallet-ui/wallets'
 import { type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
-import { type Connector, ConnectorAlreadyConnectedError, useAccount, useConfig, useConnect } from 'wagmi'
+import { type Connector, ConnectorAlreadyConnectedError, useAccount, useConfig, useConnect, useConnectors } from 'wagmi'
 import { getAccount, watchAccount } from 'wagmi/actions'
 
 export type TWalletDrawerProviderProps = {
@@ -132,7 +132,8 @@ export function WalletDrawerProvider({
 }: TWalletDrawerProviderProps) {
   const config = useConfig()
   const { isConnected, connector: connectedConnector } = useAccount()
-  const { connectors, connectAsync } = useConnect()
+  const connectors = useConnectors()
+  const { mutateAsync: connectAsync } = useConnect()
   const walletConnect = connectors.find((connector) => connector.type === 'walletConnect')
   const [isOpen, setIsOpen] = useState(false)
   const [screen, setScreen] = useState<'picker' | 'wallets' | 'connect'>('picker')

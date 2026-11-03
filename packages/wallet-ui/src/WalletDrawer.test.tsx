@@ -33,7 +33,8 @@ vi.mock('wagmi', async (importOriginal) => ({
   ...(await importOriginal<typeof import('wagmi')>()),
   useConfig: () => mocks.config,
   useAccount: () => ({ isConnected: mocks.isConnected, connector: mocks.connector }),
-  useConnect: () => ({ connectors: mocks.connectors, connectAsync: mocks.connectAsync })
+  useConnectors: () => mocks.connectors,
+  useConnect: () => ({ mutateAsync: mocks.connectAsync })
 }))
 
 vi.mock('wagmi/actions', () => ({

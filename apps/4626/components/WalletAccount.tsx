@@ -3,12 +3,13 @@
 import { useWalletActivity } from '@erc4626/components/WalletActivity'
 import { AccountMenu, type TAccountMenuData } from '@yearn/site-header/account'
 import { useWalletDisconnect, WalletSurface } from '@yearn/wallet-ui'
-import { useAccount, useSwitchChain } from 'wagmi'
+import { useAccount, useChains, useSwitchChain } from 'wagmi'
 
 function useWalletAccount(onClose: () => void): TAccountMenuData {
   const { address, chain } = useAccount()
   const { disconnect } = useWalletDisconnect()
-  const { chains, switchChain, isPending, error } = useSwitchChain()
+  const chains = useChains()
+  const { mutate: switchChain, isPending, error } = useSwitchChain()
   const activity = useWalletActivity()
   return {
     address,

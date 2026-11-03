@@ -7,7 +7,7 @@ import { getConnections } from 'wagmi/actions'
 
 export function useWalletDisconnect() {
   const config = useConfig()
-  const { disconnectAsync: disconnectConnector, ...state } = useDisconnect()
+  const { mutateAsync: disconnectConnector, ...state } = useDisconnect()
   const disconnectAsync = useCallback(async () => {
     cancelWalletReconnect(config)
     const connections = getConnections(config)
@@ -27,5 +27,5 @@ export function useWalletDisconnect() {
     void disconnectAsync().catch(() => undefined)
   }, [disconnectAsync])
 
-  return { ...state, disconnect, disconnectAsync }
+  return { ...state, mutate: disconnect, mutateAsync: disconnectAsync, disconnect, disconnectAsync }
 }
