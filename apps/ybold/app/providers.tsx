@@ -3,7 +3,7 @@
 import '@rainbow-me/rainbowkit/styles.css'
 import { RainbowKitProvider } from '@rainbow-me/rainbowkit'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { useWalletActivity, WalletActivityProvider } from '@ybold/components/WalletActivityProvider'
+import { WalletActivityProvider } from '@ybold/components/WalletActivityProvider'
 import { initializeAnalytics, trackAnalytics } from '@ybold/lib/analytics'
 import { wagmiConfig } from '@ybold/lib/wagmi'
 import { type VaultWidgetRuntimeOverrides, VaultWidgetRuntimeProvider } from '@yearn/vault-widget'
@@ -28,7 +28,6 @@ const VAULT_WIDGET_EXECUTION = createWagmiVaultWidgetExecutionAdapter({
 })
 
 function WidgetHostProvider({ children }: { children: React.ReactNode }) {
-  const { notifications } = useWalletActivity()
   const { openWalletDrawer, isConnecting } = useWalletDrawer()
   const { address, chainId, connector, status } = useAccount()
   const [slippagePercent, setSlippagePercent] = useState(0.5)
@@ -69,7 +68,6 @@ function WidgetHostProvider({ children }: { children: React.ReactNode }) {
         resolveExecutionChainId
       },
       execution: VAULT_WIDGET_EXECUTION,
-      notifications,
       prices: {
         spotPriceEndpoint: '/api/prices/spot'
       },
@@ -86,6 +84,7 @@ function WidgetHostProvider({ children }: { children: React.ReactNode }) {
         slippagePercent
       },
       wallet: {
+        connectorId: connector?.id,
         address,
         chainId,
         connected: status === 'connected',
@@ -93,10 +92,14 @@ function WidgetHostProvider({ children }: { children: React.ReactNode }) {
         open: openWalletDrawer
       }
     }),
-    [address, autoStake, chainId, connector, isConnecting, notifications, openWalletDrawer, slippagePercent, status]
+    [address, autoStake, chainId, connector, isConnecting, openWalletDrawer, slippagePercent, status]
   )
 
-  return <VaultWidgetRuntimeProvider value={runtime}>{children}</VaultWidgetRuntimeProvider>
+  return (
+    <VaultWidgetRuntimeProvider value={runtime}>
+      <WalletActivityProvider>{children}</WalletActivityProvider>
+    </VaultWidgetRuntimeProvider>
+  )
 }
 
 export function Providers({ children }: { children: React.ReactNode }) {
@@ -114,9 +117,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
             desktopRight="max(1rem, calc((100vw - 1232px) / 2 + 1rem))"
             themeClassName="ybold-wallet-ui"
           >
-            <WalletActivityProvider>
-              <WidgetHostProvider>{children}</WidgetHostProvider>
-            </WalletActivityProvider>
+            <WidgetHostProvider>{children}</WidgetHostProvider>
           </WalletDrawerProvider>
         </RainbowKitProvider>
       </QueryClientProvider>

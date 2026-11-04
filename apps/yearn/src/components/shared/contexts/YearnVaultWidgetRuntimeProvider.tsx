@@ -312,6 +312,7 @@ export function YearnVaultWidgetRuntimeProvider({ children }: { children: ReactN
         slippagePercent: zapSlippage
       },
       wallet: {
+        connectorId: connector?.id,
         address,
         chainId: connectedExecutionChainId,
         connected: isActive,
@@ -327,6 +328,7 @@ export function YearnVaultWidgetRuntimeProvider({ children }: { children: ReactN
     [
       address,
       connectedExecutionChainId,
+      connector?.id,
       enableCatalog,
       execution,
       getChain,

@@ -69,7 +69,7 @@ export type TStartTransaction = {
 export type TLifecycleOptions = {
   execution: () => VaultWidgetExecutionAdapter
   executionChainId: (chainId: number) => number | undefined
-  wallet: () => { address?: Address; chainId?: number }
+  wallet: () => { address?: Address; chainId?: number; connectorId?: string }
   refresh?: (record: TTransactionRecord, milestone?: 'source' | 'destination' | 'refund') => Promise<void>
   beforeStart?: (input: TStartTransaction, signal: AbortSignal) => Promise<void>
   observeSettlement?: (record: TTransactionRecord, signal: AbortSignal) => Promise<TSettlementEvidence>
@@ -172,13 +172,15 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
     // Provider errors can increase a local revision while another tab confirms. Merge evidence,
     // rather than letting a larger local counter hide a durable receipt.
     const batch = record.safe ?? record.walletBatch
-    const withSafe = batch?.execution
-      ? reduceTransaction(local, {
-          kind: record.safe ? 'safe-execution' : 'wallet-batch-execution',
-          result: batch.execution,
-          observedAt: batch.execution.observedAt
-        })
-      : local
+    const withSafe =
+      batch?.execution &&
+      JSON.stringify(batch.execution) !== JSON.stringify((local.safe ?? local.walletBatch)?.execution)
+        ? reduceTransaction(local, {
+            kind: record.safe ? 'safe-execution' : 'wallet-batch-execution',
+            result: batch.execution,
+            observedAt: batch.execution.observedAt
+          })
+        : local
     if (withSafe !== local) putRecord(withSafe)
     if (record.source) {
       const withSource = reduceTransaction(withSafe, {
@@ -346,13 +348,7 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
           )
             return false
           const outcome = settlementOutcome(record.settlement, record.destination)
-          return (
-            outcome !== 'delivered' &&
-            (outcome !== 'failed' ||
-              (record.destination?.funds !== 'refunded' &&
-                (['refundable', 'refund-pending', 'recoverable'].includes(record.destination?.funds ?? '') ||
-                  Boolean(record.destination?.recovery))))
-          )
+          return outcome !== 'delivered' && (outcome !== 'failed' || record.destination?.funds !== 'refunded')
         })
         .toSorted(
           (a, b) =>
@@ -441,6 +437,11 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
       return
     observers.add(recordId)
     const generation = state.generation
+    const walletTrackingError = new Error(
+      record.walletConnectorId
+        ? 'Reconnect the wallet and network used to submit this transaction to check its status.'
+        : 'The submitting wallet was not recorded for this older batch. Check its status in your wallet.'
+    )
     try {
       const task = async (): Promise<void> => {
         if (options.coordinate && options.persistence) {
@@ -461,8 +462,20 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
         try {
           const batch = latest.safe ?? latest.walletBatch
           if (batch && batch.execution?.status !== 'success') {
+            const assertTrackingWallet = () => {
+              const wallet = options.wallet()
+              if (
+                wallet.address?.toLowerCase() !== latest.owner.toLowerCase() ||
+                wallet.chainId !== latest.original.executionChainId ||
+                wallet.connectorId !== latest.walletConnectorId
+              )
+                throw walletTrackingError
+            }
+            assertTrackingWallet()
             const adapter = options.execution()
             const parameters = {
+              account: latest.owner,
+              connectorId: latest.walletConnectorId,
               chainId: latest.original.canonicalChainId,
               executionChainId: latest.original.executionChainId
             }
@@ -474,6 +487,7 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
               throw new Error('Wallet batch execution observation is unavailable')
             })
             if (generation !== state.generation) return
+            assertTrackingWallet()
             await observe(recordId, {
               kind: latest.safe ? 'safe-execution' : 'wallet-batch-execution',
               result,
@@ -495,11 +509,14 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
           void refreshMilestone(recordId, 'source')
           schedule('settlement', () => void settleNext(), 0)
           await saved
-        } catch {
+        } catch (error) {
           if (generation === state.generation)
             await observe(recordId, {
               kind: 'tracking-error',
-              message: 'Confirmation could not be verified. Tracking will retry; do not submit this transaction again.'
+              message:
+                error === walletTrackingError
+                  ? errorMessage(error)
+                  : 'Confirmation could not be verified. Tracking will retry; do not submit this transaction again.'
             })
         }
       }
@@ -672,7 +689,7 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
       stepLabel: call.label
     }
     putFlow(flow)
-    const active = { recordId: id() }
+    const active: { recordId: string; walletConnectorId?: string } = { recordId: id() }
     const executionChainId = options.executionChainId(call.chainId)
     const preparedSettlements = new Map<string, TSettlementRequirement>()
     const prepared = new Map<string, TPreparedStep>()
@@ -815,9 +832,10 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
               throw new VaultWidgetPreparationError(new Error('Safe proposals are unavailable'))
             return adapter.proposeSafeBatch({
               ...parameters,
-              beforeSubmit: () => {
+              beforeSubmit: (wallet) => {
                 assertWallet()
                 assertPriorReceipts()
+                active.walletConnectorId = wallet?.connectorId ?? options.wallet().connectorId
               }
             })
           },
@@ -831,9 +849,10 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
               throw new VaultWidgetPreparationError(new Error('Wallet batches are unavailable'))
             return adapter.submitAtomicBatch({
               ...parameters,
-              beforeSubmit: () => {
+              beforeSubmit: (wallet) => {
                 assertWallet()
                 assertPriorReceipts()
+                active.walletConnectorId = wallet?.connectorId ?? options.wallet().connectorId
               }
             })
           },
@@ -938,6 +957,7 @@ export function createTransactionLifecycle(options: TLifecycleOptions) {
             sequence: { index: stepIndex, count: steps.length, label: step.label },
             intentKey: flow.intentKey,
             owner: flow.owner,
+            walletConnectorId: active.walletConnectorId,
             createdAt: now(),
             revision: 0,
             request: { ...request, value: (request.value ?? 0n).toString() },

@@ -1,5 +1,6 @@
 import { createHash } from 'node:crypto'
 import { Redis } from '@upstash/redis'
+import { isHash } from 'viem'
 
 // All deployments using the same Enso key must share this Redis database. Fail closed if it is unavailable.
 // Any caller can service the oldest queued route; an absent tab cannot block the queue.
@@ -93,8 +94,12 @@ export async function runBridgeGateway(
       : [observedAt + 30_000, 30_000]
   const headers = { 'Retry-After': String(Math.ceil(wait / 1000)) }
   const body = { ...(await response.json()), observedAt, nextCheckAt }
-  // Retain failed observations briefly as well: concurrent tabs must not amplify outages.
-  await store.set(`${prefix}:cache:${workKey}`, JSON.stringify({ body, status: response.status }), { px: 10_000 })
+  // Completed results must outlive queued callers' next turn. Unresolved routes remain fresh for refund tracking.
+  const completed =
+    response.ok && (body.status === 'delivered' || (typeof body.refundTxHash === 'string' && isHash(body.refundTxHash)))
+  await store.set(`${prefix}:cache:${workKey}`, JSON.stringify({ body, status: response.status }), {
+    px: completed ? 24 * 60 * 60 * 1000 : 10_000
+  })
   if (workKey !== key)
     return Response.json(
       { error: 'Bridge status check queued. Tracking will retry.', nextCheckAt },

@@ -291,6 +291,18 @@ export function createWagmiVaultWidgetExecutionAdapter(
     return { status: 'success', hash }
   }
 
+  function batchConnector(account?: Address, connectorId?: string, executionChainId?: number) {
+    const wallet = getAccount(options.config)
+    if (
+      account &&
+      (wallet.address?.toLowerCase() !== account.toLowerCase() ||
+        wallet.connector?.id !== connectorId ||
+        wallet.chainId !== executionChainId)
+    )
+      throw new Error('Reconnect the wallet and network used to submit this transaction to check its status.')
+    return wallet.connector
+  }
+
   const adapter: VaultWidgetExecutionAdapter = {
     async switchChain({ chainId }) {
       await wagmiSwitchChain(options.config, { chainId: requireExecutionChainId(chainId) })
@@ -481,8 +493,10 @@ export function createWagmiVaultWidgetExecutionAdapter(
         chainId: requireExecutionChainId(chainId)
       } as Parameters<typeof signTypedData>[1])
     },
-    async observeSafeExecution({ executionChainId, proposalId }): Promise<TSafeExecution> {
-      const status = await getCallsStatus(options.config, { id: proposalId })
+    async observeSafeExecution({ account, connectorId, executionChainId, proposalId }): Promise<TSafeExecution> {
+      const connector = batchConnector(account, connectorId, executionChainId)
+      const status = await getCallsStatus(options.config, { id: proposalId, connector })
+      batchConnector(account, connectorId, executionChainId)
       if (status.chainId !== undefined && status.chainId !== executionChainId)
         throw new Error('Safe execution network changed')
       if (status.status === 'failure') return { status: status.statusCode === 400 ? 'cancelled' : 'failed' }
@@ -506,9 +520,11 @@ export function createWagmiVaultWidgetExecutionAdapter(
       } catch (error) {
         throw new VaultWidgetPreparationError(error)
       }
-      beforeSubmit?.()
+      const connector = getAccount(options.config).connector
+      beforeSubmit?.({ connectorId: connector?.id })
       const result = await sendCalls(options.config, {
         account,
+        connector,
         calls: requests.map(({ data, to, value }) => ({ data, to, value })),
         chainId: executionChainId,
         forceAtomic: true
@@ -551,8 +567,10 @@ export function createWagmiVaultWidgetExecutionAdapter(
   return {
     ...adapter,
     submitAtomicBatch: adapter.proposeSafeBatch,
-    async observeAtomicExecution({ bundleId, chainId, executionChainId }) {
-      const status = await getCallsStatus(options.config, { id: bundleId })
+    async observeAtomicExecution({ account, connectorId, bundleId, chainId, executionChainId }) {
+      const connector = batchConnector(account, connectorId, executionChainId)
+      const status = await getCallsStatus(options.config, { id: bundleId, connector })
+      batchConnector(account, connectorId, executionChainId)
       return resolveWalletBatchExecution(status, chainId, executionChainId)
     },
     async waitForAtomicExecution({ bundleId, chainId }) {

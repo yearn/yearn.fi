@@ -514,6 +514,7 @@ describe('Wagmi Safe proposal adapter', () => {
     expect(simulateBlocks.mock.invocationCallOrder[0]).toBeLessThan(wagmiActions.sendCalls.mock.invocationCallOrder[0]!)
     expect(wagmiActions.sendCalls).toHaveBeenCalledWith(config, {
       account,
+      connector,
       calls: [
         { data: request.data, to: request.to, value: undefined },
         { data: request.data, to: request.to, value: 42n }

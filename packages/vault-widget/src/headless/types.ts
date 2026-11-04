@@ -144,6 +144,8 @@ export type VaultWidgetExecutionAdapter = {
     beforeSubmit?: () => void
   }) => Promise<Hex>
   observeSafeExecution?: (params: {
+    account?: Address
+    connectorId?: string
     chainId: number
     executionChainId: number
     proposalId: string
@@ -152,11 +154,13 @@ export type VaultWidgetExecutionAdapter = {
     account: Address
     chainId: number
     requests: readonly VaultWidgetTransactionRequest[]
-    beforeSubmit?: () => void
+    beforeSubmit?: (wallet?: { connectorId?: string }) => void
   }) => Promise<string>
   waitForSafeExecution?: (params: { chainId: number; proposalId: string }) => Promise<Hash>
   submitAtomicBatch?: VaultWidgetExecutionAdapter['proposeSafeBatch']
   observeAtomicExecution?: (params: {
+    account?: Address
+    connectorId?: string
     chainId: number
     executionChainId: number
     bundleId: string

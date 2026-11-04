@@ -29,6 +29,7 @@ export type TTransactionRecord = {
   sequence?: { index: number; count: number; label: string }
   intentKey: string
   owner: Address
+  walletConnectorId?: string
   createdAt: number // Unix milliseconds throughout the lifecycle API.
   revision: number
   acknowledged?: { status: string; observedAt: number }
@@ -397,4 +398,27 @@ export type TTransactionPersistence = {
 
 // Wallet batch identifiers are opaque and may be case-sensitive; normalize only EVM hashes.
 export const transactionIdentity = (record: TTransactionRecord): string =>
-  `${record.original.executionChainId}:${record.safe ? `safe:${record.safe.proposalId}` : record.walletBatch ? `batch:${record.walletBatch.id}` : record.original.hash?.toLowerCase()}`
+  `${record.original.executionChainId}:${record.walletConnectorId ?? ''}:${record.safe ? `safe:${record.safe.proposalId}` : record.walletBatch ? `batch:${record.walletBatch.id}` : record.original.hash?.toLowerCase()}`
+
+/** Activity is a view of lifecycle evidence, never a second transaction tracker. */
+export function selectTransactionActivity(record: TTransactionRecord) {
+  const view = selectTransaction(record)
+  const batch = record.safe ?? record.walletBatch
+  return {
+    id: record.id,
+    ownerAddress: record.owner,
+    chainId: record.effective.canonicalChainId,
+    amount: record.display?.amount ?? '',
+    type: record.display?.type ?? record.stepId,
+    fromSymbol: record.display?.fromSymbol ?? '',
+    fromTokenName: record.display?.fromSymbol,
+    createdAt: record.createdAt,
+    timestamp: record.createdAt / 1000,
+    finishedAt: ['success', 'error'].includes(view.outcome)
+      ? (record.destination?.observedAt ?? record.source?.observedAt ?? batch?.execution?.observedAt)
+      : undefined,
+    status: view.outcome === 'unknown' ? ('submitted' as const) : view.outcome,
+    txHash: record.effective.hash,
+    awaitingExecution: Boolean(batch && batch.execution?.status !== 'success')
+  }
+}

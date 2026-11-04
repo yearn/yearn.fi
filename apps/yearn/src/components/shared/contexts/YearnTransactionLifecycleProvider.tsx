@@ -17,7 +17,7 @@ import { resolveExecutionChainId } from '@/config/tenderly'
 
 export function YearnTransactionLifecycleProvider({ children }: { children: ReactNode }) {
   const config = useConfig()
-  const { address, chainId } = useAccount()
+  const { address, chainId, connector } = useAccount()
   const refresh = useNotificationAssetRefresh()
   const execution = useMemo(
     () =>
@@ -29,8 +29,8 @@ export function YearnTransactionLifecycleProvider({ children }: { children: Reac
       }),
     [config]
   )
-  const current = useRef({ address, chainId, execution, refresh })
-  current.current = { address, chainId, execution, refresh }
+  const current = useRef({ address, chainId, connectorId: connector?.id, execution, refresh })
+  current.current = { address, chainId, connectorId: connector?.id, execution, refresh }
   const [service] = useState(() =>
     createTransactionLifecycle({
       execution: () => current.current.execution,

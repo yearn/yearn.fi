@@ -1,6 +1,10 @@
 'use client'
 
-import { createTransactionLifecycle, type TTransactionLifecycle } from '@yearn/vault-widget/lifecycle'
+import {
+  createTransactionLifecycle,
+  selectTransactionActivity,
+  type TTransactionLifecycle
+} from '@yearn/vault-widget/lifecycle'
 import {
   createContext,
   type ReactElement,
@@ -9,7 +13,8 @@ import {
   useEffect,
   useMemo,
   useRef,
-  useState
+  useState,
+  useSyncExternalStore
 } from 'react'
 import type { Address, Hash, TransactionReceipt } from 'viem'
 import type { VaultWidgetExecutionAdapter } from './headless/types'
@@ -119,6 +124,7 @@ export type VaultWidgetTrackedNotification = {
 export type VaultWidgetAnalyticsProperties = Record<string, boolean | null | number | string | undefined>
 
 export type VaultWidgetWalletRuntime = {
+  connectorId?: string
   address?: Address
   chainId?: number
   connected: boolean
@@ -398,6 +404,7 @@ export function createVaultWidgetRuntime(overrides: VaultWidgetRuntimeOverrides 
       slippagePercent: overrides.settings?.slippagePercent ?? DEFAULT_VAULT_WIDGET_RUNTIME.settings.slippagePercent
     },
     wallet: {
+      connectorId: overrides.wallet?.connectorId ?? DEFAULT_VAULT_WIDGET_RUNTIME.wallet.connectorId,
       address: overrides.wallet?.address ?? DEFAULT_VAULT_WIDGET_RUNTIME.wallet.address,
       chainId: overrides.wallet?.chainId ?? DEFAULT_VAULT_WIDGET_RUNTIME.wallet.chainId,
       connected: overrides.wallet?.connected ?? DEFAULT_VAULT_WIDGET_RUNTIME.wallet.connected,
@@ -485,4 +492,26 @@ export function useVaultWidgetRuntime(): VaultWidgetRuntime {
  */
 export function useVaultWidgetRuntimeOverrides(): VaultWidgetRuntimeOverrides | undefined {
   return useContext(VaultWidgetRuntimeContext)?.overrides
+}
+
+const EMPTY_ACTIVITY_RECORDS = Object.freeze([])
+const noActivitySubscribe = () => () => undefined
+const emptyActivityRecords = () => EMPTY_ACTIVITY_RECORDS
+
+/** Account menus subscribe to the same records as the transaction overlay. */
+export function useVaultWidgetActivities({ allWallets = false }: { allWallets?: boolean } = {}) {
+  const { lifecycle, wallet } = useVaultWidgetRuntime()
+  const records = useSyncExternalStore(
+    lifecycle?.subscribe ?? noActivitySubscribe,
+    lifecycle ? () => lifecycle.getSnapshot().records : emptyActivityRecords,
+    emptyActivityRecords
+  )
+  return useMemo(
+    () =>
+      records
+        .filter((record) => allWallets || record.owner.toLowerCase() === wallet.address?.toLowerCase())
+        .map(selectTransactionActivity)
+        .toSorted((a, b) => b.createdAt - a.createdAt),
+    [records, wallet.address, allWallets]
+  )
 }
