@@ -36,32 +36,10 @@ describe('browser wallet choices', () => {
     ).toEqual(['io.rabby', 'agent'])
   })
 
-  it.each([false, true])('prefers discovered Trust regardless of connector order (reversed: %s)', (reversed) => {
-    const configured = {
-      ...wallet('trust'),
-      yearnWallet: { rdns: 'com.trustwallet.app', iconUrl: 'trust.svg' }
-    }
-    const discovered = { ...wallet('com.trustwallet.app'), name: 'Trust Wallet', icon: 'announced.svg' }
-    const pair = reversed ? [discovered, configured] : [configured, discovered]
-    const rabby = wallet('io.rabby')
-    const walletchan = wallet('com.walletchan')
-    const choices = selectBrowserWalletConnectors([wallet('injected'), ...pair, rabby, walletchan])
-    expect(choices).toEqual([discovered, rabby, walletchan])
-    expect(choices[0]).toBe(discovered)
-    expect(getBrowserWalletIcon(discovered, pair)).toBe('announced.svg')
-  })
-
-  it('keeps configured Trust without a matching announcement and does not merge display names', () => {
-    const configured = {
-      ...wallet('trust'),
-      name: 'Trust Wallet',
-      yearnWallet: { rdns: 'com.trustwallet.app', iconUrl: 'trust.svg' }
-    }
-    const unrelated = { ...wallet('another.wallet'), name: 'Trust Wallet' }
-    expect(selectBrowserWalletConnectors([wallet('injected'), configured, unrelated])).toEqual([configured, unrelated])
-    expect(getBrowserWalletIcon(configured, [configured])).toBe('trust.svg')
-    expect(getBrowserWalletIcon(unrelated, [configured, unrelated])).toBeUndefined()
-    expect(getBrowserWalletIcon(wallet('com.trustwallet.app'), [configured])).toBe('trust.svg')
+  it('uses announced icons and falls back to local brand assets by rdns', () => {
+    expect(getBrowserWalletIcon({ ...wallet('com.trustwallet.app'), icon: 'announced.svg' })).toBe('announced.svg')
+    expect(getBrowserWalletIcon(wallet('com.trustwallet.app'))).toMatch(/^data:image\//)
+    expect(getBrowserWalletIcon(wallet('another.wallet'))).toBeUndefined()
   })
 
   it('clears user cancellations and gives actionable provider errors', () => {

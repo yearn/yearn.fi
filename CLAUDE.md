@@ -62,7 +62,7 @@ When writing a new `useEffect`, add a brief comment explaining why an alternativ
 
 ## Architecture
 
-**Tech stack:** Next.js 16 App Router, React 19, Tailwind CSS 4, TanStack Query, Wagmi/Viem/RainbowKit
+**Tech stack:** Next.js 16 App Router, React 19, Tailwind CSS 4, TanStack Query, Wagmi/Viem
 
 The repository is a Bun workspace. The production application lives in
 `apps/yearn`; reusable packages live in `packages`.
@@ -76,6 +76,7 @@ The repository is a Bun workspace. The production application lives in
 **Key directories:**
 - `apps/yearn/app/` — Next App Router pages, route handlers, metadata, redirects, and root layout
 - `apps/ybold/` — standalone yBOLD app and second shared-widget consumer
+- `apps/4626/` — generic ERC-4626 app using the shared wallet, header and vault widget
 - `apps/yearn/src/components/shared/` — shared library (contexts, hooks, utils, types, contracts)
 - `apps/yearn/src/components/pages/` — route pages (landing, portfolio, vaults)
 - `apps/yearn/src/server/` — API implementations used by `apps/yearn/app/api/**/route.ts`
@@ -90,5 +91,5 @@ The repository is a Bun workspace. The production application lives in
 
 ## Multi-Chain
 
-Supported chains configured in `src/components/shared/utils/constants.tsx`:
-Ethereum (1), Optimism (10), Polygon (137), Fantom (250), Base (8453), Arbitrum (42161), Sonic (146), Katana (747474)
+Supported chains configured in `apps/yearn/src/config/chainDefinitions.ts`:
+Ethereum (1), Optimism (10), Polygon (137), Fantom (250), Base (8453), Arbitrum (42161), Sonic (146), Katana (747474), Robinhood (4663)

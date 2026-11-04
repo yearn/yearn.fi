@@ -33,7 +33,7 @@ const FRAME_ANCESTORS = [
  *
  * RPC origins come from the build env plus viem's chain defaults, because `buildTransports` always appends a
  * bare `http()` fallback. Set `NEXT_PUBLIC_RPC_URI_FOR_<chainId>` per deployment so the list stays explicit.
- * Owner: whoever bumps viem, wagmi, RainbowKit, or WalletConnect must re-check this list.
+ * Owner: whoever bumps viem, wagmi, or WalletConnect must re-check this list.
  */
 const SCRIPT_SRC = ["'self'", "'unsafe-inline'", "'unsafe-eval'", 'blob:']
 

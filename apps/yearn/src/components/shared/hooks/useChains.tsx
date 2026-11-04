@@ -3,12 +3,12 @@ import type { TMultiSelectOptionProps } from '@shared/components/MultiSelectDrop
 import { SUPPORTED_NETWORKS } from '@shared/utils/constants'
 import type { Chain } from 'viem'
 import type { Connector } from 'wagmi'
-import { useConnect } from 'wagmi'
+import { useConnectors } from 'wagmi'
 import { env } from '@/env'
 import Image from '/src/components/Image'
 
 export function useChainOptions(chains: number[] | null): TMultiSelectOptionProps[] {
-  const { connectors } = useConnect()
+  const connectors = useConnectors()
 
   const injectedChains = useCustomCompareMemo(
     (): Chain[] | undefined => {
