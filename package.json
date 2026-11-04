@@ -56,9 +56,6 @@
     "tslint:wallet-ui": "bun run --cwd packages/wallet-ui typecheck",
     "check:wallet-ui": "bun run tslint:wallet-ui && bun run test:wallet-ui"
   },
-  "overrides": {
-    "qr": "0.5.5"
-  },
   "devDependencies": {
     "@biomejs/biome": "2.5.14",
     "@types/node": "26.6.3",
