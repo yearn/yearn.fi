@@ -12,21 +12,21 @@
     "tslint": "node ../../node_modules/typescript/bin/tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@tanstack/react-query": "5.103.2",
+    "@tanstack/react-query": "5.105.0",
     "@wagmi/core": "3.6.7",
     "@yearn/vault-widget": "workspace:*",
     "next": "16.4.1",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "react-rewards": "2.1.0",
-    "viem": "2.56.9",
+    "viem": "2.57.13",
     "wagmi": "3.7.9",
     "@safe-global/safe-apps-sdk": "9.1.0",
     "@yearn/site-header": "workspace:*",
     "@yearn/wallet-ui": "workspace:*"
   },
   "devDependencies": {
-    "@biomejs/biome": "2.5.14",
+    "@biomejs/biome": "2.6.3",
     "@tailwindcss/postcss": "4.3.3",
     "@testing-library/react": "16.3.3",
     "@types/node": "26.6.3",
