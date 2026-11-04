@@ -12,16 +12,15 @@
     "tslint": "node ../../node_modules/typescript/bin/tsc -p tsconfig.json --noEmit"
   },
   "dependencies": {
-    "@rainbow-me/rainbowkit": "2.2.11",
     "@tanstack/react-query": "5.103.2",
-    "@wagmi/core": "2.22.1",
+    "@wagmi/core": "3.6.7",
     "@yearn/vault-widget": "workspace:*",
     "next": "16.4.1",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "react-rewards": "2.1.0",
     "viem": "2.56.9",
-    "wagmi": "2.18.2",
+    "wagmi": "3.7.9",
     "@safe-global/safe-apps-sdk": "9.1.0",
     "@yearn/site-header": "workspace:*",
     "@yearn/wallet-ui": "workspace:*"

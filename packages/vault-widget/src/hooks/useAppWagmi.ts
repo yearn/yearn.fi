@@ -54,29 +54,35 @@ export function useSwitchChain(): UseSwitchChainReturnType {
   const wagmiSwitchChain = useWagmiSwitchChain()
   const { chains } = useVaultWidgetRuntime()
 
-  const switchChain = useCallback<UseSwitchChainReturnType['switchChain']>(
-    (parameters) => {
+  const switchChain = useCallback<UseSwitchChainReturnType['mutate']>(
+    (parameters, options) => {
       const chainId = chains.resolveExecutionChainId(parameters.chainId)
       if (chainId === undefined) {
         throw new Error(`Chain ${parameters.chainId} is not enabled for execution`)
       }
-      return wagmiSwitchChain.switchChain?.({ ...parameters, chainId })
+      return wagmiSwitchChain.mutate({ ...parameters, chainId }, options)
     },
-    [chains, wagmiSwitchChain.switchChain]
+    [chains, wagmiSwitchChain.mutate]
   )
 
-  const switchChainAsync = useCallback<UseSwitchChainReturnType['switchChainAsync']>(
-    async (parameters) => {
+  const switchChainAsync = useCallback<UseSwitchChainReturnType['mutateAsync']>(
+    async (parameters, options) => {
       const chainId = chains.resolveExecutionChainId(parameters.chainId)
       if (chainId === undefined) {
         throw new Error(`Chain ${parameters.chainId} is not enabled for execution`)
       }
-      return await wagmiSwitchChain.switchChainAsync?.({ ...parameters, chainId })
+      return await wagmiSwitchChain.mutateAsync({ ...parameters, chainId }, options)
     },
-    [chains, wagmiSwitchChain.switchChainAsync]
+    [chains, wagmiSwitchChain.mutateAsync]
   )
 
-  return { ...wagmiSwitchChain, switchChain, switchChainAsync }
+  return {
+    ...wagmiSwitchChain,
+    mutate: switchChain,
+    mutateAsync: switchChainAsync,
+    switchChain,
+    switchChainAsync
+  }
 }
 
 export function useReadContract<
@@ -91,7 +97,7 @@ export function useReadContract<
   const { chains } = useVaultWidgetRuntime()
   const unsupported = isUnsupportedRequestedChain(parameters.chainId, chains.resolveExecutionChainId)
 
-  return useWagmiReadContract({
+  return useWagmiReadContract<abi, functionName, args>({
     ...parameters,
     chainId: resolveHookChainId(parameters.chainId, chains.resolveExecutionChainId),
     query: {

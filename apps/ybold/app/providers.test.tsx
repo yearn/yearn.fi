@@ -11,8 +11,6 @@ function Passthrough({ children }: { children: ReactNode }) {
   return children
 }
 
-vi.mock('@rainbow-me/rainbowkit', () => ({ RainbowKitProvider: Passthrough }))
-vi.mock('@yearn/wallet-ui/rainbowkit', () => ({ getYearnRainbowTheme: () => ({}) }))
 vi.mock('@yearn/wallet-ui', () => ({
   WalletProvider: Passthrough,
   WalletDrawerProvider: Passthrough,

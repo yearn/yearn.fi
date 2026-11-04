@@ -16,7 +16,7 @@ An attempt is one initial-picker selection. `path=detected|walletconnect|more_wa
 
 Success includes `used_more_wallets`, `initially_visible`, `attempt_number`, `had_previous_failure`, and duration buckets. `initially_visible` compares the successful wallet brand with the initial suggestions locally; the installed-wallet list is never sent. Unrecognized brands report `unknown`. WalletConnect brand attribution reads the public session's peer metadata after connection, with a bounded wait that does not delay the UI. The name is metadata, not a verified identity.
 
-Detected connections have `attempt_scope=connector_request`. RainbowKit's public APIs expose secondary-screen visibility and the successful connector, but do not expose every internal wallet selection, rejection, or retry. Those paths have `attempt_scope=secondary_screen`; closing the screen is not classified as rejection. Desktop WalletConnect opens QR; mobile WalletConnect can open the secondary wallet picker. Closing/reopening starts another journey. In-flight results from abandoned attempts cannot finish a newer journey.
+Detected connections have `attempt_scope=connector_request`. WalletConnect and More wallets retain `attempt_scope=secondary_screen` for continuity with existing funnels. Our picker owns those screens and reports the selected wallet, rejection, retry, and dismissal; closing a screen is not classified as rejection. Desktop WalletConnect opens QR; mobile WalletConnect opens the curated wallet picker. Closing/reopening starts another journey. A pending WalletConnect request is reused on reopening, and its result belongs to the current journey only. In-flight results from abandoned attempts cannot finish a newer journey.
 
 Useful questions:
 
