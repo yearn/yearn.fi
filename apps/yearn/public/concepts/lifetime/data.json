@@ -1,0 +1,99 @@
+{
+  "capturedAt": "2026-10-20T22:38:41.659026+00:00",
+  "releaseId": "079172452b73baaab6cca104a63984e82825ff9d605838c57fea78a9c961c353",
+  "earningsDatasetId": "b6dc2178707f4f9727c52c29d702a2b046d5d1ab59c99ed654420052516f2e3f",
+  "tvlDatasetId": "c06acf3e498686543de76dc25e255da6eef929f61ee00d1df76b98995062cfc5",
+  "earningsUsd": "331084603.4693827731904452206",
+  "feesUsd": "107897568.622969987883434733193179016898050036",
+  "tvlUsd": 208172781.1714352,
+  "tvlAsOf": 1792022399,
+  "weeklyPoints": [
+    {
+      "timestamp": 1791158400,
+      "earningsUsd": "330853900.7798128944361707323"
+    },
+    {
+      "timestamp": 1791763200,
+      "earningsUsd": "331010106.9075870534566133378"
+    }
+  ],
+  "recentWeeks": [
+    {
+      "period": "2026-09-07",
+      "earningsUsd": "173070.9736816184624055349932"
+    },
+    {
+      "period": "2026-09-14",
+      "earningsUsd": "134287.7128576214496424033056"
+    },
+    {
+      "period": "2026-09-21",
+      "earningsUsd": "131569.7837101681098695099381"
+    },
+    {
+      "period": "2026-09-28",
+      "earningsUsd": "210572.0000212557292171413648"
+    },
+    {
+      "period": "2026-10-05",
+      "earningsUsd": "156206.1277741590204426054921"
+    },
+    {
+      "period": "2026-10-12",
+      "earningsUsd": "74496.56179571973383188282551"
+    }
+  ],
+  "sources": ["/api/fees", "/api/fees/history?interval=weekly", "/api/fees?until=1791763200", "/api/tvl"],
+  "methodology": {
+    "earnings": "Incident-adjusted reported P&L. Includes active and retired reports; not consolidated depositor profit. Missing historical prices are not zero.",
+    "fees": "Known gross contract fees across V2 vaults, V3 allocators and Tokenized Strategies; not Yearn treasury revenue.",
+    "tvl": "Uses the same /api/tvl totalTvl field as Powerglove. This is the current value of deposited assets at the recorded snapshot, not cumulative lifetime deposits. Retains the source category scope, retired holdings, overlap deductions and bridge exclusions; no separate endorsed-only filter is applied.",
+    "animation": "Timestamp-based estimate extrapolated from the Oct 12 weekly point at the measured Oct 5–12 rate. Uses the current device clock; not live reported earnings.",
+    "vaults": "Known deployed V2 and V3 vaults in the Yearn-managed inventory, counted once per chain and address. Includes active and retired vaults. This is indexed coverage, not proof of exhaustive historical discovery. Standalone Tokenized Strategies are excluded.",
+    "harvests": "Recorded V2 and V3 StrategyReported events before the earnings publication cutoff, counted once per chain, transaction hash and log index. Includes gain, loss and zero-gain reports regardless of price availability. Counts reporting events, not distinct transactions; indexed coverage is not a claim of complete historical ingestion."
+  },
+  "vaultsDeployed": 732,
+  "harvestCount": 97278,
+  "activityCounts": {
+    "capturedAt": "2026-10-21T13:21:55.592971+00:00",
+    "harvestCutoff": 1792022400,
+    "vaultsByVersion": [
+      {
+        "version": "v2",
+        "count": 639
+      },
+      {
+        "version": "v3",
+        "count": 93
+      }
+    ],
+    "harvestsByVersion": [
+      {
+        "version": "v2",
+        "count": 81316,
+        "last": 1792021319
+      },
+      {
+        "version": "v3",
+        "count": 15962,
+        "last": 1792013711
+      }
+    ],
+    "reportsWithoutVaultMetadata": 0,
+    "source": "Yearn Data Neon, read-only aggregate queries of vaults and strategy_reports"
+  },
+  "tvlSource": {
+    "url": "https://yearn-data-api-preview.vercel.app/api/tvl",
+    "field": "totalTvl",
+    "capturedAt": "2026-10-21T13:33:31.026279+00:00",
+    "consumer": "Powerglove TvlOverview.tsx renders data.totalTvl",
+    "scope": "Published aggregate, with source overlap and bridge exclusions; no additional endorsed-only filter applied."
+  },
+  "assetsSecured": {
+    "usd": 369349928.7401376,
+    "status": "preliminary-placeholder",
+    "asOfTimestamp": 1792627199,
+    "methodology": "Mockup only. Recorded-value scenario including mainnet Katana pre-deposit balances alongside L2 exposure. Current backing attribution, coverage and overlaps require verification before production.",
+    "calculationArtifact": "docs/research/assets-secured/calculation.json"
+  }
+}

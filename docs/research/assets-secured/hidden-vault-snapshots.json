@@ -1,0 +1,3117 @@
+{
+  "capturedAt": "2026-10-23T18:55:22.695749+00:00",
+  "status": "unreconciled",
+  "source": "https://kong.yearn.fi/api/rest/list/vaults",
+  "rows": [
+    {
+      "chainId": 1,
+      "address": "0x7B5A0182E400b241b317e781a4e9dEdFc1429822",
+      "name": "Katana Pre-Deposit USDC",
+      "grossUsd": 70358527.32938166,
+      "yearn": true,
+      "apiVersion": "3.0.4",
+      "origin": "yearn",
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": true,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779335",
+      "debts": [
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1747148987",
+          "lastReport": "1756354031",
+          "maxDebtUsd": 1.1574524351479133e71,
+          "currentDebt": "1",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0x63a028963907F5a0c1cEb7e47100f52DfC611117",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1748644787",
+          "lastReport": "1756354031",
+          "maxDebtUsd": 1.1574524351479133e71,
+          "currentDebt": "70387003627446",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 70358527.32938166,
+          "performanceFee": "1000"
+        }
+      ],
+      "asset": {
+        "name": "USD Coin",
+        "symbol": "USDC",
+        "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "chainId": 1,
+        "decimals": "6"
+      },
+      "totalAssets": "70387003627447"
+    },
+    {
+      "chainId": 1,
+      "address": "0xcc6a16Be713f6a714f68b0E1f4914fD3db15fBeF",
+      "name": "Katana Pre-Deposit WETH",
+      "grossUsd": 45307775.36485807,
+      "yearn": true,
+      "apiVersion": "3.0.4",
+      "origin": "yearn",
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": true,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779335",
+      "debts": [
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0xc56413869c6CDf96496f2b1eF801fEDBdFA7dDB0",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1747148987",
+          "lastReport": "1756355783",
+          "maxDebtUsd": 2.781518034148611e62,
+          "currentDebt": "1",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0x30EAaCaD508BA57B30edafa1aD6bD337B211A9DE",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1748644787",
+          "lastReport": "1756354031",
+          "maxDebtUsd": 2.781518034148611e62,
+          "currentDebt": "18861218641101260273087",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 45307775.36485807,
+          "performanceFee": "1000"
+        }
+      ],
+      "asset": {
+        "name": "Wrapped Ether",
+        "symbol": "WETH",
+        "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        "chainId": 1,
+        "decimals": "18"
+      },
+      "totalAssets": "18861218641101260273088"
+    },
+    {
+      "chainId": 1,
+      "address": "0x3Ed6aa32c930253fc990dE58fF882B9186cd0072",
+      "name": "cap USDC",
+      "grossUsd": 24417878.25686405,
+      "yearn": null,
+      "apiVersion": "3.0.4",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779335",
+      "debts": [
+        {
+          "maxDebt": "50000000000000",
+          "strategy": "0x7D7F72d393F242DA6e22D3b970491C06742984Ff",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1751981615",
+          "lastReport": "1792778351",
+          "maxDebtUsd": 49979771.6222095,
+          "currentDebt": "24327559003150",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 24317716.86201529,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "15000000000000",
+          "strategy": "0x9939009295eAD3c67259aF3b93C284079ffE931e",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1790782991",
+          "lastReport": "1792778351",
+          "maxDebtUsd": 14993931.486662848,
+          "currentDebt": "100201933332",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 100161.39484875738,
+          "performanceFee": "0"
+        }
+      ],
+      "asset": {
+        "name": "USD Coin",
+        "symbol": "USDC",
+        "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "chainId": 1,
+        "decimals": "6"
+      },
+      "totalAssets": "24427760936482"
+    },
+    {
+      "chainId": 1,
+      "address": "0x48c03B6FfD0008460F8657Db1037C7e09dEedfcb",
+      "name": "Katana Pre-Deposit USDT",
+      "grossUsd": 18044379.212463357,
+      "yearn": true,
+      "apiVersion": "3.0.4",
+      "origin": "yearn",
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": true,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779335",
+      "debts": [
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0x310B7Ea7475A0B449Cfd73bE81522F1B88eFAFaa",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1747148987",
+          "lastReport": "1756355783",
+          "maxDebtUsd": 1.156852753338401e71,
+          "currentDebt": "1",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0xBC64210D565aabca8eb6Eb795833Cc505ac3647F",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1748644787",
+          "lastReport": "1756354619",
+          "maxDebtUsd": 1.156852753338401e71,
+          "currentDebt": "18061039851206",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 18044379.212463357,
+          "performanceFee": "1000"
+        }
+      ],
+      "asset": {
+        "name": "Tether USD",
+        "symbol": "USDT",
+        "address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+        "chainId": 1,
+        "decimals": "6"
+      },
+      "totalAssets": "18061039851207"
+    },
+    {
+      "chainId": 1,
+      "address": "0x92C82f5F771F6A44CfA09357DD0575B81BF5F728",
+      "name": "Katana Pre-Deposit WBTC",
+      "grossUsd": 14792261.323162332,
+      "yearn": true,
+      "apiVersion": "3.0.4",
+      "origin": "yearn",
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": true,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779335",
+      "debts": [
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0x751F0cC6115410A3eE9eC92d08f46Ff6Da98b708",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1747148987",
+          "lastReport": "1748750723",
+          "maxDebtUsd": 9.415109470113288e73,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0xb3760eD42E9e87497A371697fF4F08b510C93Df1",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1748644787",
+          "lastReport": "1756354031",
+          "maxDebtUsd": 9.415109470113288e73,
+          "currentDebt": "18192326705",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 14792261.323162332,
+          "performanceFee": "1000"
+        }
+      ],
+      "asset": {
+        "name": "Wrapped BTC",
+        "symbol": "WBTC",
+        "address": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+        "chainId": 1,
+        "decimals": "8"
+      },
+      "totalAssets": "18192326705"
+    },
+    {
+      "chainId": 1,
+      "address": "0x0655977FEb2f289A4aB78af67BAB0d17aAb84367",
+      "name": "Savings crvUSD",
+      "grossUsd": 14695108.82935718,
+      "yearn": null,
+      "apiVersion": "3.0.4",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": true
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779335",
+      "debts": [],
+      "asset": {
+        "name": "Curve.Fi USD Stablecoin",
+        "symbol": "crvUSD",
+        "address": "0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E",
+        "chainId": 1,
+        "decimals": "18"
+      },
+      "totalAssets": "14712347478340621227097697"
+    },
+    {
+      "chainId": 1,
+      "address": "0xF470EB50B4a60c9b069F7Fd6032532B8F5cC014d",
+      "name": "Katana Pre-Deposit USDC",
+      "grossUsd": 7709506.432162777,
+      "yearn": true,
+      "apiVersion": "3.0.4",
+      "origin": "yearn",
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779335",
+      "debts": [
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1751251679",
+          "lastReport": "1751251679",
+          "maxDebtUsd": 1.1574524351479133e71,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0xFDAdC09f678755A84DfD01eEAf4A1709F224F5C3",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1751251679",
+          "lastReport": "1756354031",
+          "maxDebtUsd": 1.1574524351479133e71,
+          "currentDebt": "7712626710787",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 7709506.432162777,
+          "performanceFee": "1000"
+        }
+      ],
+      "asset": {
+        "name": "USD Coin",
+        "symbol": "USDC",
+        "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "chainId": 1,
+        "decimals": "6"
+      },
+      "totalAssets": "7712626710787"
+    },
+    {
+      "chainId": 1,
+      "address": "0xd7a540ba3626c0aa66e7DB4088971d0CD64695B6",
+      "name": "Yearn yETH Recovery Vault",
+      "grossUsd": 5855640.084660349,
+      "yearn": true,
+      "apiVersion": "3.0.4",
+      "origin": "yearn",
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": true,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779335",
+      "debts": [
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0xc56413869c6CDf96496f2b1eF801fEDBdFA7dDB0",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1771880003",
+          "lastReport": "1792465487",
+          "maxDebtUsd": 2.781518034148611e62,
+          "currentDebt": "1647787860940828820686",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 3958259.5947089903,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "500000000000000000000",
+          "strategy": "0xAc37729B76db6438CE62042AE1270ee574CA7571",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1789486067",
+          "lastReport": "1792465487",
+          "maxDebtUsd": 1201082.9290971176,
+          "currentDebt": "489862381159797444282",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 1176730.4922765018,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "500000000000000000000",
+          "strategy": "0xfaC55fAFD0b55BFb8dD41F735EfCc195adA9891F",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1791287555",
+          "lastReport": "1791287555",
+          "maxDebtUsd": 1201082.9290971176,
+          "currentDebt": "300000000000000000000",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 720649.7574582705,
+          "performanceFee": "0"
+        }
+      ],
+      "asset": {
+        "name": "Wrapped Ether",
+        "symbol": "WETH",
+        "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        "chainId": 1,
+        "decimals": "18"
+      },
+      "totalAssets": "2437650242100626264968"
+    },
+    {
+      "chainId": 1,
+      "address": "0xA5DaB32DbE68E6fa784e1e50e4f620a0477D3896",
+      "name": "Katana Pre-Deposit USDT",
+      "grossUsd": 5664544.19815148,
+      "yearn": true,
+      "apiVersion": "3.0.4",
+      "origin": "yearn",
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779335",
+      "debts": [
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0x310B7Ea7475A0B449Cfd73bE81522F1B88eFAFaa",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1751251679",
+          "lastReport": "1751251679",
+          "maxDebtUsd": 1.156852753338401e71,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0x37F490F02cd2EBb55c27796802943Bd080e0cc56",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1751251679",
+          "lastReport": "1756354031",
+          "maxDebtUsd": 1.156852753338401e71,
+          "currentDebt": "5669774354547",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 5664544.19815148,
+          "performanceFee": "1000"
+        }
+      ],
+      "asset": {
+        "name": "Tether USD",
+        "symbol": "USDT",
+        "address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+        "chainId": 1,
+        "decimals": "6"
+      },
+      "totalAssets": "5669774354547"
+    },
+    {
+      "chainId": 1,
+      "address": "0x697c54a84D83F37380d034e2BfC6F7cE8d89F4Ee",
+      "name": "USDC Meta Vault",
+      "grossUsd": 3855430.1587515036,
+      "yearn": null,
+      "apiVersion": "3.0.4",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779335",
+      "debts": [
+        {
+          "maxDebt": "100000000000000",
+          "strategy": "0x2cdaeebe9607ee7579bbD69AF44f44553fDA764F",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1735003691",
+          "lastReport": "1787302019",
+          "maxDebtUsd": 99959543.244419,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "1000"
+        },
+        {
+          "maxDebt": "100000000000000",
+          "strategy": "0xB4e41E6eeF1A77e700B46aBAcdF6d426Fd256791",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1735003691",
+          "lastReport": "1787302019",
+          "maxDebtUsd": 99959543.244419,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "1000"
+        },
+        {
+          "maxDebt": "100000000000000",
+          "strategy": "0x1B1177276CD9B630ec53C912EB6A8CF5A29AE6eB",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1778002823",
+          "lastReport": "1787302019",
+          "maxDebtUsd": 99959543.244419,
+          "currentDebt": "13485960928",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 13480.504917760936,
+          "performanceFee": "1000"
+        },
+        {
+          "maxDebt": "100000000000000",
+          "strategy": "0x533BCB3aBe63C0b876d97B34184765B186A22E10",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1778250827",
+          "lastReport": "1787302019",
+          "maxDebtUsd": 99959543.244419,
+          "currentDebt": "529601106397",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 529386.8468748699,
+          "performanceFee": "1000"
+        },
+        {
+          "maxDebt": "100000000000000",
+          "strategy": "0x047CFddd06018f53F54262fe64f2744ecd463FeA",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1783724099",
+          "lastReport": "1787302019",
+          "maxDebtUsd": 99959543.244419,
+          "currentDebt": "9111935854",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 9108.249406404695,
+          "performanceFee": "1000"
+        },
+        {
+          "maxDebt": "100000000000000",
+          "strategy": "0x369d94320d06492DE265C025bFaa4Cf513A1845f",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1783724099",
+          "lastReport": "1787302019",
+          "maxDebtUsd": 99959543.244419,
+          "currentDebt": "3257182278290",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 3255864.527926881,
+          "performanceFee": "1000"
+        },
+        {
+          "maxDebt": "100000000000000",
+          "strategy": "0x000ecFD73e2E523767E161a99690e6ef8c1B8029",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1784761859",
+          "lastReport": "1787302019",
+          "maxDebtUsd": 99959543.244419,
+          "currentDebt": "47609290600",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 47590.02942566811,
+          "performanceFee": "1000"
+        }
+      ],
+      "asset": {
+        "name": "USD Coin",
+        "symbol": "USDC",
+        "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "chainId": 1,
+        "decimals": "6"
+      },
+      "totalAssets": "3856990572069"
+    },
+    {
+      "chainId": 1,
+      "address": "0xe1Ac97e2616Ad80f69f705ff007A4bbb3655544a",
+      "name": "Katana Pre-Deposit WBTC",
+      "grossUsd": 2739040.833628207,
+      "yearn": true,
+      "apiVersion": "3.0.4",
+      "origin": "yearn",
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779335",
+      "debts": [
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0x751F0cC6115410A3eE9eC92d08f46Ff6Da98b708",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1751251691",
+          "lastReport": "1751251691",
+          "maxDebtUsd": 9.415109470113288e73,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0xc97781bA49a90c68d63F4D235d35cdbe029149D2",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1751251691",
+          "lastReport": "1756354031",
+          "maxDebtUsd": 9.415109470113288e73,
+          "currentDebt": "3368629176",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 2739040.833628207,
+          "performanceFee": "1000"
+        }
+      ],
+      "asset": {
+        "name": "Wrapped BTC",
+        "symbol": "WBTC",
+        "address": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+        "chainId": 1,
+        "decimals": "8"
+      },
+      "totalAssets": "3368629176"
+    },
+    {
+      "chainId": 1,
+      "address": "0x77570CfEcf83bc6bB08E2cD9e8537aeA9F97eA2F",
+      "name": "Katana Pre-Deposit WETH",
+      "grossUsd": 2326302.09736026,
+      "yearn": true,
+      "apiVersion": "3.0.4",
+      "origin": "yearn",
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779335",
+      "debts": [
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0xc56413869c6CDf96496f2b1eF801fEDBdFA7dDB0",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1751251691",
+          "lastReport": "1751251691",
+          "maxDebtUsd": 2.781518034148611e62,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0x20e76ea28E13867C008d319ba4eDE86f6C1fed73",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1751251691",
+          "lastReport": "1756354031",
+          "maxDebtUsd": 2.781518034148611e62,
+          "currentDebt": "968418680516950167320",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 2326302.09736026,
+          "performanceFee": "1000"
+        }
+      ],
+      "asset": {
+        "name": "Wrapped Ether",
+        "symbol": "WETH",
+        "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        "chainId": 1,
+        "decimals": "18"
+      },
+      "totalAssets": "968418680516950167320"
+    },
+    {
+      "chainId": 1,
+      "address": "0x26fCb50eEC367ddAB060ccf5E7394Cecd95F7Db2",
+      "name": "ETH Meta Vault",
+      "grossUsd": 202841.76766495107,
+      "yearn": null,
+      "apiVersion": "3.0.4",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779335",
+      "debts": [
+        {
+          "maxDebt": "50000000000000000000000",
+          "strategy": "0x330732581D30076137a1159B3aE8780158D902bE",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1743486371",
+          "lastReport": "1787302007",
+          "maxDebtUsd": 120108292.90971176,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "1000"
+        },
+        {
+          "maxDebt": "50000000000000000000000",
+          "strategy": "0xfC36C2EdB18829308Fa9eE9500e8be6520A47Caf",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1743695675",
+          "lastReport": "1787302007",
+          "maxDebtUsd": 120108292.90971176,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "1000"
+        },
+        {
+          "maxDebt": "50000000000000000000000",
+          "strategy": "0x76dD96710A73675d9cf9523A046f1587cA9031d4",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1777930535",
+          "lastReport": "1787302007",
+          "maxDebtUsd": 120108292.90971176,
+          "currentDebt": "8909990908108411741",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 21403.057579924814,
+          "performanceFee": "1000"
+        },
+        {
+          "maxDebt": "50000000000000000000000",
+          "strategy": "0x9F1c3173581CED1204136cBc628d2fb2407d7AC4",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1785286967",
+          "lastReport": "1787302007",
+          "maxDebtUsd": 120108292.90971176,
+          "currentDebt": "75531279806333491388",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 181438.4698684404,
+          "performanceFee": "1000"
+        }
+      ],
+      "asset": {
+        "name": "Wrapped Ether",
+        "symbol": "WETH",
+        "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        "chainId": 1,
+        "decimals": "18"
+      },
+      "totalAssets": "84441270714441903129"
+    },
+    {
+      "chainId": 1,
+      "address": "0x254bd33E2f62713F893F0842C99E68f855cDa315",
+      "name": "Coinflakes Vault v2.0",
+      "grossUsd": 166495.1738615263,
+      "yearn": false,
+      "apiVersion": "3.0.2",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779335",
+      "debts": [
+        {
+          "maxDebt": "0",
+          "strategy": "0x430AF232a837510b6f677D1E5aE3715c1e94d9d7",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "0",
+          "lastReport": "0",
+          "maxDebtUsd": 0,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "0",
+          "strategy": "0xDf5f0577Bd56a67fd0844F7EA08649d63a5D5f3C",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "0",
+          "lastReport": "0",
+          "maxDebtUsd": 0,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "1000"
+        },
+        {
+          "maxDebt": "500000000000000000000000",
+          "strategy": "0xAa45993D82C72E8EB3574C55773226E7C54Ee863",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1751976851",
+          "lastReport": "1788610379",
+          "maxDebtUsd": 500043.6355875935,
+          "currentDebt": "166480644905972472913732",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 166495.1738615263,
+          "performanceFee": "0"
+        }
+      ],
+      "asset": {
+        "name": "Dai Stablecoin",
+        "symbol": "DAI",
+        "address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+        "chainId": 1,
+        "decimals": "18"
+      },
+      "totalAssets": "166480644905972472913732"
+    },
+    {
+      "chainId": 1,
+      "address": "0x9cFb40acedaC259B1d23e790f6c6D0C3898361Ad",
+      "name": "usdc-vault",
+      "grossUsd": 13198.772243791469,
+      "yearn": false,
+      "apiVersion": "3.0.2",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": true
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779335",
+      "debts": [
+        {
+          "maxDebt": "100000000000000000000",
+          "strategy": "0xbDb97eC319c41c6FA383E94eCE6Bdf383dFC7BE4",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1713895103",
+          "lastReport": "1728036935",
+          "maxDebtUsd": 99959543244419,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "100000000000000000000",
+          "strategy": "0x7eE351aA702C8fC735D77Fb229b7676AC15D7c79",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1713895151",
+          "lastReport": "1738761911",
+          "maxDebtUsd": 99959543244419,
+          "currentDebt": "13204114216",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 13198.772243791469,
+          "performanceFee": "0"
+        }
+      ],
+      "asset": {
+        "name": "USD Coin",
+        "symbol": "USDC",
+        "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "chainId": 1,
+        "decimals": "6"
+      },
+      "totalAssets": "13204114216"
+    },
+    {
+      "chainId": 8453,
+      "address": "0xD1468AF648565f11393e4033cb0Cd270b62495c9",
+      "name": "USDC BaseInvaders",
+      "grossUsd": 10893.157474621725,
+      "yearn": null,
+      "apiVersion": "3.0.4",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779339",
+      "debts": [
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0xe9F2a5F9f3c846f29066d7fB3564F8E6B6b2D65b",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1743191861",
+          "lastReport": "1777412429",
+          "maxDebtUsd": 1.1574734948636557e71,
+          "currentDebt": "1069005550",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 1068.5924576224952,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "0",
+          "strategy": "0xd5428B889621Eee8060fc105AA0AB0Fa2e344468",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "0",
+          "lastReport": "0",
+          "maxDebtUsd": 0,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "0",
+          "strategy": "0x4B5c90DC6Bc08A10a24487726e614e9d148362E1",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1760285685",
+          "lastReport": "1764173137",
+          "maxDebtUsd": 0,
+          "currentDebt": "9828362519",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 9824.56501699923,
+          "performanceFee": "0"
+        }
+      ],
+      "asset": {
+        "name": "USD Coin",
+        "symbol": "USDC",
+        "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "chainId": 8453,
+        "decimals": "6"
+      },
+      "totalAssets": "10897368069"
+    },
+    {
+      "chainId": 1,
+      "address": "0x46e9893422B9aE9246793489433F72c548CB2455",
+      "name": "Sturdy USDC-taoUSD bridge vault",
+      "grossUsd": 2910.9244577688496,
+      "yearn": null,
+      "apiVersion": "3.0.4",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779335",
+      "debts": [],
+      "asset": {
+        "name": "USD Coin",
+        "symbol": "USDC",
+        "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "chainId": 1,
+        "decimals": "6"
+      },
+      "totalAssets": "2912102670"
+    },
+    {
+      "chainId": 1,
+      "address": "0x381E0BE61b3AEB1F321C4775046e6F57BC84c804",
+      "name": "USDe-2 yVault",
+      "grossUsd": 1798.2330333285727,
+      "yearn": false,
+      "apiVersion": "3.0.2",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": true
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779335",
+      "debts": [
+        {
+          "maxDebt": "1000000000000000000000000",
+          "strategy": "0x4424D0c829316dcEc5701A4E2b30B368721e0A10",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1713238823",
+          "lastReport": "1713238823",
+          "maxDebtUsd": 999338.473273479,
+          "currentDebt": "800000000000000000000",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 799.4707786187832,
+          "performanceFee": "1000"
+        }
+      ],
+      "asset": {
+        "name": "USDe",
+        "symbol": "USDe",
+        "address": "0x4c9EDD5852cd905f086C759E8383e09bff1E68B3",
+        "chainId": 1,
+        "decimals": "18"
+      },
+      "totalAssets": "1799423435378397568448"
+    },
+    {
+      "chainId": 1,
+      "address": "0x482Cce30Cde09292279371956a3C7c57bbe125A9",
+      "name": "Curve reUSD-scrvUSD yVault",
+      "grossUsd": 1402.386215150912,
+      "yearn": null,
+      "apiVersion": "3.0.4",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779335",
+      "debts": [
+        {
+          "maxDebt": "100000000000000000000000000000",
+          "strategy": "0xc6E53d7C2453163f9B708393086237b0EE0fD9B3",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1744900439",
+          "lastReport": "1771457279",
+          "maxDebtUsd": 101691590329.61133,
+          "currentDebt": "1379058207022602906232",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 1402.386215150912,
+          "performanceFee": "0"
+        }
+      ],
+      "asset": {
+        "name": "reUSD/scrvUSD",
+        "symbol": "reusdscrv",
+        "address": "0xc522A6606BBA746d7960404F22a3DB936B6F4F50",
+        "chainId": 1,
+        "decimals": "18"
+      },
+      "totalAssets": "1379058207022602906233"
+    },
+    {
+      "chainId": 1,
+      "address": "0xD91B6DeD55C0fba2c1E88F2cDF6e051ECD788952",
+      "name": "Katana Pre-DepositUSDC",
+      "grossUsd": 1053.6690471599748,
+      "yearn": null,
+      "apiVersion": "3.0.4",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": true
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779335",
+      "debts": [
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1743790331",
+          "lastReport": "1743791483",
+          "maxDebtUsd": 1.1574524351479133e71,
+          "currentDebt": "935003868",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 934.6255277979609,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0x59f6E998A78AA074F67b2e2Cd1DC1774214c7547",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1743790331",
+          "lastReport": "1743790331",
+          "maxDebtUsd": 1.1574524351479133e71,
+          "currentDebt": "99999900",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 99.95944328487575,
+          "performanceFee": "1000"
+        }
+      ],
+      "asset": {
+        "name": "USD Coin",
+        "symbol": "USDC",
+        "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "chainId": 1,
+        "decimals": "6"
+      },
+      "totalAssets": "1054095543"
+    },
+    {
+      "chainId": 42161,
+      "address": "0x2e48847FE29C3883c98125Cb2C44244d6602d549",
+      "name": "Yearn-Silo USDC.e Vault",
+      "grossUsd": 999.5734862318022,
+      "yearn": false,
+      "apiVersion": "3.0.2",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": true
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792778457",
+      "debts": [
+        {
+          "maxDebt": "100000000000",
+          "strategy": "0x3FfA0C3fba4Adfe2b6e4D7E2f8E6e6324bE5305B",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1712255558",
+          "lastReport": "1712781436",
+          "maxDebtUsd": 99957.34862318024,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "1000"
+        },
+        {
+          "maxDebt": "100000000000",
+          "strategy": "0x9a5eca1b228e47a15BD9fab07716a9FcE9Eebfb5",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1712781436",
+          "lastReport": "1712781436",
+          "maxDebtUsd": 99957.34862318024,
+          "currentDebt": "199283585",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 199.19850284347535,
+          "performanceFee": "1000"
+        },
+        {
+          "maxDebt": "10000000000",
+          "strategy": "0x034f12A217405D54bf2654b66A96fa74aD715951",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1713823070",
+          "lastReport": "1713823070",
+          "maxDebtUsd": 9995.734862318022,
+          "currentDebt": "800716416",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 800.3748834309782,
+          "performanceFee": "1000"
+        }
+      ],
+      "asset": {
+        "name": "USD Coin (Arb1)",
+        "symbol": "USDC",
+        "address": "0xFF970A61A04b1cA14834A43f5dE4533eBDDB5CC8",
+        "chainId": 42161,
+        "decimals": "6"
+      },
+      "totalAssets": "1000000001"
+    },
+    {
+      "chainId": 1,
+      "address": "0xEadc18ca9363565E1c8BC5415Db0110d7c91cDE5",
+      "name": "Curve GHO-USR yVault",
+      "grossUsd": 913.3331413465427,
+      "yearn": null,
+      "apiVersion": "3.0.4",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779335",
+      "debts": [
+        {
+          "maxDebt": "1000000000000000000000000000",
+          "strategy": "0x88ac6A2A55ce6ADb53A38e8Be85e179A188Dd7B1",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1739499059",
+          "lastReport": "1749123755",
+          "maxDebtUsd": 79728491.02763972,
+          "currentDebt": "11455542821549386645638",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 913.3331413465427,
+          "performanceFee": "0"
+        }
+      ],
+      "asset": {
+        "name": "GHO/USR",
+        "symbol": "GHOUSR",
+        "address": "0x4628f13651eaD6793F8d838B34B8f8522Fb0cc52",
+        "chainId": 1,
+        "decimals": "18"
+      },
+      "totalAssets": "11455542821549386645638"
+    },
+    {
+      "chainId": 1,
+      "address": "0xFFcaF6549a229D63351B71313559EDbe0C467B78",
+      "name": "Curve reUSD-sfrxUSD yVault",
+      "grossUsd": 562.8661878911367,
+      "yearn": null,
+      "apiVersion": "3.0.4",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779335",
+      "debts": [
+        {
+          "maxDebt": "100000000000000000000000000000",
+          "strategy": "0xf1Fe340a013023733baf7Db8cADd08edCF0D6A0E",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1744900835",
+          "lastReport": "1771457327",
+          "maxDebtUsd": 101796104368.0073,
+          "currentDebt": "552934942124214822146",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 562.8661878911367,
+          "performanceFee": "0"
+        }
+      ],
+      "asset": {
+        "name": "reUSD/sfrxUSD",
+        "symbol": "reusdsfrx",
+        "address": "0xed785Af60bEd688baa8990cD5c4166221599A441",
+        "chainId": 1,
+        "decimals": "18"
+      },
+      "totalAssets": "552934942124214822146"
+    },
+    {
+      "chainId": 42161,
+      "address": "0x630c9050E6b0014C6Fe4C214D4840909345aDB7D",
+      "name": "Curve FRAX-VST Pool Vault",
+      "grossUsd": 503.5280500387517,
+      "yearn": true,
+      "apiVersion": "0.4.3",
+      "origin": "yearn",
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": true,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779357",
+      "debts": [
+        {
+          "strategy": "0xCcFfF90a596fCC0B549a5f69a70DE0a9c5295352",
+          "debtRatio": "10000",
+          "totalDebt": "500517850482247806415",
+          "totalGain": "4947849077264360941",
+          "totalLoss": "0",
+          "activation": "1660594586",
+          "lastReport": "1662995529",
+          "totalDebtUsd": 501.55696618820286,
+          "totalGainUsd": 4.9580725346950505,
+          "totalLossUsd": 0,
+          "performanceFee": "0",
+          "maxDebtPerHarvest": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "minDebtPerHarvest": "0"
+        }
+      ],
+      "asset": {
+        "name": "Curve.fi Factory Plain Pool: VST+FRAX",
+        "symbol": "VSTFRAX-f",
+        "address": "0x59bF0545FCa0E5Ad48E13DA269faCD2E8C886Ba4",
+        "chainId": 42161,
+        "decimals": "18"
+      },
+      "totalAssets": "502484801995050221438"
+    },
+    {
+      "chainId": 100,
+      "address": "0xa21Cc1a4a239708690134bAeD3a1B93cAD55F625",
+      "name": "Curve EURe yVault",
+      "grossUsd": 448.0372849393633,
+      "yearn": false,
+      "apiVersion": "3.0.2",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": true
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779395",
+      "debts": [
+        {
+          "maxDebt": "999999999999999983222784",
+          "strategy": "0x1b66B4a3a80eBCFA3eCaBf5580cD9929ABa57bb1",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1710789665",
+          "lastReport": "1737951975",
+          "maxDebtUsd": 2254831.5554252854,
+          "currentDebt": "198701086670948433033",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 448.0372849393633,
+          "performanceFee": "1000"
+        }
+      ],
+      "asset": {
+        "name": "Curve EURe-3Crv",
+        "symbol": "crvEUReUSD",
+        "address": "0x0CA1C1eC4EBf3CC67a9f545fF90a3795b318cA4a",
+        "chainId": 100,
+        "decimals": "18"
+      },
+      "totalAssets": "198701086670948433034"
+    },
+    {
+      "chainId": 100,
+      "address": "0x39B68451F05Aaa020611CF887a7338f0991fFd60",
+      "name": "AJNA EURe yVault",
+      "grossUsd": 381.2621763372181,
+      "yearn": false,
+      "apiVersion": "3.0.2",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": true,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": true
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792778495",
+      "debts": [
+        {
+          "maxDebt": "100000000000000000000000",
+          "strategy": "0xA48359e7E970BE9f38fB6D183C57c8d0b28268B9",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1712407830",
+          "lastReport": "1712407830",
+          "maxDebtUsd": 112139.43032848027,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "500"
+        },
+        {
+          "maxDebt": "1000000000000000000000000",
+          "strategy": "0x5012C6bf79b3047ECFFf2F212DfFDA4d2128188f",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1712865435",
+          "lastReport": "1727129950",
+          "maxDebtUsd": 1121394.3032848027,
+          "currentDebt": "1",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "1000000000000000000000000",
+          "strategy": "0x94c5786393Ab223e0fC111D7463405F165CE86e3",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1712865435",
+          "lastReport": "1712865435",
+          "maxDebtUsd": 1121394.3032848027,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "500"
+        }
+      ],
+      "asset": {
+        "name": "Monerium EUR emoney",
+        "symbol": "EURe",
+        "address": "0xcB444e90D8198415266c6a2724b7900fb12FC56E",
+        "chainId": 100,
+        "decimals": "18"
+      },
+      "totalAssets": "339989468997221510117"
+    },
+    {
+      "chainId": 1,
+      "address": "0x610E01895cB39078890e3Fe5239b78A51c07892F",
+      "name": "dai-vault",
+      "grossUsd": 288.7745994994725,
+      "yearn": false,
+      "apiVersion": "3.0.2",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": true
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779335",
+      "debts": [
+        {
+          "maxDebt": "333333333333333333333333",
+          "strategy": "0x83F20F44975D03b1b09e64809B757c47f942BEeA",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1713987371",
+          "lastReport": "1726222559",
+          "maxDebtUsd": 333362.42369172606,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "333333333333333333333333",
+          "strategy": "0xEed00e00236cD7F36F2558D8b5fD05046449599D",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1713987419",
+          "lastReport": "1726222583",
+          "maxDebtUsd": 333362.42369172606,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "333333333333333333333333",
+          "strategy": "0x1fd862499e9b9402DE6c599b6C391f83981180Ab",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1713987479",
+          "lastReport": "1726222595",
+          "maxDebtUsd": 333362.42369172606,
+          "currentDebt": "288749409780748938260",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 288.7745994994725,
+          "performanceFee": "0"
+        }
+      ],
+      "asset": {
+        "name": "Dai Stablecoin",
+        "symbol": "DAI",
+        "address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+        "chainId": 1,
+        "decimals": "18"
+      },
+      "totalAssets": "288749409780748938260"
+    },
+    {
+      "chainId": 1,
+      "address": "0x620082F33D442E5806122f71a72b12134f75fF2d",
+      "name": "Curve lvlUSD-USDC yVault",
+      "grossUsd": 211.34338890290252,
+      "yearn": null,
+      "apiVersion": "3.0.4",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779335",
+      "debts": [
+        {
+          "maxDebt": "100000000000000000000000000000",
+          "strategy": "0x4D298a6659A4c24d79D6F4281bDe2BeA24EeC3D5",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1751167079",
+          "lastReport": "1760053679",
+          "maxDebtUsd": 123271182864.62524,
+          "currentDebt": "171445912980767914783",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 211.34338890290252,
+          "performanceFee": "0"
+        }
+      ],
+      "asset": {
+        "name": "lvlUSD/USDC",
+        "symbol": "lvlUSDUSDC",
+        "address": "0x1220868672D5B10F3E1cB9Ab519E4d0B08545ea4",
+        "chainId": 1,
+        "decimals": "18"
+      },
+      "totalAssets": "171445912980767914783"
+    },
+    {
+      "chainId": 1,
+      "address": "0xf20b02131C45b22E147c98e30Cc889a20dc8a00d",
+      "name": "Katana Pre-DepositUSDC",
+      "grossUsd": 104.5176984163645,
+      "yearn": null,
+      "apiVersion": "3.0.4",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779335",
+      "debts": [
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1745852231",
+          "lastReport": "1745852231",
+          "maxDebtUsd": 1.1574524351479133e71,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0xB6830484c8Dfb9BA7d95820858324c5c05eFA0e5",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1745852231",
+          "lastReport": "1745852231",
+          "maxDebtUsd": 1.1574524351479133e71,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "1000"
+        }
+      ],
+      "asset": {
+        "name": "USD Coin",
+        "symbol": "USDC",
+        "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "chainId": 1,
+        "decimals": "6"
+      },
+      "totalAssets": "104560000"
+    },
+    {
+      "chainId": 8453,
+      "address": "0x3Fa853290B0A21396F2e7bF0d4A372927D6Eb5b4",
+      "name": "cbBTC BaseInvaders",
+      "grossUsd": 89.55805964233838,
+      "yearn": null,
+      "apiVersion": "3.0.4",
+      "origin": null,
+      "inclusion": {
+        "isSet": false,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779339",
+      "debts": [
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0x25f32eC89ce7732A4E9f8F3340a09259F823b7d3",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1752280785",
+          "lastReport": "1764265745",
+          "maxDebtUsd": 9.427377121842302e73,
+          "currentDebt": "58635",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 40.70820892833563,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0xBb808A822dD7aEd1635956b85ca5e55478cCa957",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1752280799",
+          "lastReport": "1764265757",
+          "maxDebtUsd": 9.427377121842302e73,
+          "currentDebt": "60498",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 48.84985071400275,
+          "performanceFee": "500"
+        }
+      ],
+      "asset": {
+        "name": "Coinbase Wrapped BTC",
+        "symbol": "cbBTC",
+        "address": "0xcbB7C0000aB88B473b1f5aFd9ef808440eed33Bf",
+        "chainId": 8453,
+        "decimals": "8"
+      },
+      "totalAssets": "119151"
+    },
+    {
+      "chainId": 8453,
+      "address": "0x0Dcb575fd705f1352b0c0F8fA6A64A0561Ce8C3c",
+      "name": "ROOM USDC VAULT",
+      "grossUsd": 41.244757689482874,
+      "yearn": null,
+      "apiVersion": "3.0.4",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779339",
+      "debts": [
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0xe9F2a5F9f3c846f29066d7fB3564F8E6B6b2D65b",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1742476331",
+          "lastReport": "1744466131",
+          "maxDebtUsd": 1.1574734948636557e71,
+          "currentDebt": "20632954",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 20.62492785947236,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0xfdB431E661372fA1146efB70bf120ECDed944a78",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1743516417",
+          "lastReport": "1744466147",
+          "maxDebtUsd": 1.1574734948636557e71,
+          "currentDebt": "8254886",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 8.251610510125694,
+          "performanceFee": "1000"
+        },
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0xc3BD0A2193c8F027B82ddE3611D18589ef3f62a9",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1742422679",
+          "lastReport": "1744466121",
+          "maxDebtUsd": 1.1574734948636557e71,
+          "currentDebt": "12372921",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 12.368119358522824,
+          "performanceFee": "0"
+        }
+      ],
+      "asset": {
+        "name": "USD Coin",
+        "symbol": "USDC",
+        "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "chainId": 8453,
+        "decimals": "6"
+      },
+      "totalAssets": "41260761"
+    },
+    {
+      "chainId": 1,
+      "address": "0x48C05c25FB0C92152B57aa057e121CB2E5da81e4",
+      "name": "WETH Dusfer",
+      "grossUsd": 32.90967225726102,
+      "yearn": null,
+      "apiVersion": "3.0.4",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779335",
+      "debts": [
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0x90759801579208B28D2D36D13b1ED7443D1b717F",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1747896791",
+          "lastReport": "1753333583",
+          "maxDebtUsd": 2.781518034148611e62,
+          "currentDebt": "13739868720437168",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 32.90967225726102,
+          "performanceFee": "0"
+        }
+      ],
+      "asset": {
+        "name": "Wrapped Ether",
+        "symbol": "WETH",
+        "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        "chainId": 1,
+        "decimals": "18"
+      },
+      "totalAssets": "13739868720437168"
+    },
+    {
+      "chainId": 8453,
+      "address": "0xa7A8eB9F200dDD4137F71b92d3d44B403AF20E44",
+      "name": "USDC-1 Gimme",
+      "grossUsd": 19.764060609954473,
+      "yearn": null,
+      "apiVersion": "3.0.4",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779339",
+      "debts": [
+        {
+          "maxDebt": "0",
+          "strategy": "0xe9F2a5F9f3c846f29066d7fB3564F8E6B6b2D65b",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1737956019",
+          "lastReport": "1741311539",
+          "maxDebtUsd": 0,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "0"
+        }
+      ],
+      "asset": {
+        "name": "USD Coin",
+        "symbol": "USDC",
+        "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "chainId": 8453,
+        "decimals": "6"
+      },
+      "totalAssets": "19771774"
+    },
+    {
+      "chainId": 1,
+      "address": "0x140D0d77EeC240F9D3A07c92dF37E257Cf506081",
+      "name": "USDC-1 2-test-project",
+      "grossUsd": 15.745727211404123,
+      "yearn": null,
+      "apiVersion": "3.0.4",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779335",
+      "debts": [
+        {
+          "maxDebt": "1000000000000",
+          "strategy": "0x9Fb7b4477576Fe5B32be4C1843aFB1e55F251B33",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1739261783",
+          "lastReport": "1746514439",
+          "maxDebtUsd": 999595.4324441898,
+          "currentDebt": "7637124",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 7.634010277119524,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "10000000000000",
+          "strategy": "0xF7DE3c70F2db39a188A81052d2f3C8e3e217822a",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1739454131",
+          "lastReport": "1747096607",
+          "maxDebtUsd": 9995954.324441899,
+          "currentDebt": "8114990",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 8.111616974741358,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "0",
+          "strategy": "0x797DD80692c3b2dAdabCe8e30C07fDE5307D48a9",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1739858231",
+          "lastReport": "1739858231",
+          "maxDebtUsd": 0,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0x074134A2784F4F66b6ceD6f68849382990Ff3215",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1746528671",
+          "lastReport": "1747096547",
+          "maxDebtUsd": 1.1574524351479133e71,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "0"
+        }
+      ],
+      "asset": {
+        "name": "USD Coin",
+        "symbol": "USDC",
+        "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "chainId": 1,
+        "decimals": "6"
+      },
+      "totalAssets": "15752114"
+    },
+    {
+      "chainId": 1,
+      "address": "0x76cf74ebA6413Fd290f5599a2eC412882119aF32",
+      "name": "USDT-test",
+      "grossUsd": 15.127232805125422,
+      "yearn": null,
+      "apiVersion": "3.0.4",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779335",
+      "debts": [
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0xe5baF8b6Be442811211e9339d9fbC1B8fb7D66dF",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1746515267",
+          "lastReport": "1747574159",
+          "maxDebtUsd": 1.156852753338401e71,
+          "currentDebt": "968027",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0.9671070559375352,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0x6D2981FF9b8d7edbb7604de7A65BAC8694ac849F",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1746588647",
+          "lastReport": "1747574219",
+          "maxDebtUsd": 1.156852753338401e71,
+          "currentDebt": "14173065",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 14.159925933680459,
+          "performanceFee": "0"
+        }
+      ],
+      "asset": {
+        "name": "Tether USD",
+        "symbol": "USDT",
+        "address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+        "chainId": 1,
+        "decimals": "6"
+      },
+      "totalAssets": "15141284"
+    },
+    {
+      "chainId": 1,
+      "address": "0xFcC0dD0AeBF4ea4b751799169e45F014bA2e02dd",
+      "name": "weth-vault",
+      "grossUsd": 13.69234539170714,
+      "yearn": false,
+      "apiVersion": "3.0.2",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": true
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779335",
+      "debts": [
+        {
+          "maxDebt": "333333333333333333333333",
+          "strategy": "0xd2eFB90C569eBD5b83D5cFB8632322edFAc203A5",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1713987647",
+          "lastReport": "1717091351",
+          "maxDebtUsd": 800721952.6513395,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "333333333333333333333333",
+          "strategy": "0x23eE3D14F09946A084350CC6A7153fc6eb918817",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1713987683",
+          "lastReport": "1726222607",
+          "maxDebtUsd": 800721952.6513395,
+          "currentDebt": "4941419984988020",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 11.770612705151752,
+          "performanceFee": "0"
+        }
+      ],
+      "asset": {
+        "name": "Wrapped Ether",
+        "symbol": "WETH",
+        "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        "chainId": 1,
+        "decimals": "18"
+      },
+      "totalAssets": "5753773884757757"
+    },
+    {
+      "chainId": 1,
+      "address": "0x8b98165bC61841f1df64e1509a450E11e25181Cc",
+      "name": "Dusfer USDT",
+      "grossUsd": 10.288100846304092,
+      "yearn": null,
+      "apiVersion": "3.0.4",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779335",
+      "debts": [
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0x6D2981FF9b8d7edbb7604de7A65BAC8694ac849F",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1747897571",
+          "lastReport": "1753333631",
+          "maxDebtUsd": 1.156852753338401e71,
+          "currentDebt": "10297630",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 10.288100846304092,
+          "performanceFee": "0"
+        }
+      ],
+      "asset": {
+        "name": "Tether USD",
+        "symbol": "USDT",
+        "address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+        "chainId": 1,
+        "decimals": "6"
+      },
+      "totalAssets": "10297630"
+    },
+    {
+      "chainId": 146,
+      "address": "0x2F7397FD2D49E5b636eF44503771B17EDEd67620",
+      "name": "basic USD strategy",
+      "grossUsd": 9.996136199696775,
+      "yearn": null,
+      "apiVersion": "3.0.4",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792778504",
+      "debts": [],
+      "asset": {
+        "name": "Bridged USDC (Sonic Labs)",
+        "symbol": "USDC.e",
+        "address": "0x29219dd400f2Bf60E5a23d13Be72B486D4038894",
+        "chainId": 146,
+        "decimals": "6"
+      },
+      "totalAssets": "10000000"
+    },
+    {
+      "chainId": 42161,
+      "address": "0xa7FEa37aE7eb3fE0b26AB454399cf42Fe5E308A3",
+      "name": "Asset Super Stakehouse",
+      "grossUsd": 9.996136199696775,
+      "yearn": null,
+      "apiVersion": "3.0.4",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792778457",
+      "debts": [
+        {
+          "maxDebt": "8000000",
+          "strategy": "0xe060f2200627dDdcEAfae1266385183681600A9e",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1737502639",
+          "lastReport": "1737508657",
+          "maxDebtUsd": 7.9969089597574206,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "1000"
+        },
+        {
+          "maxDebt": "1000000000000000000",
+          "strategy": "0xcdEB47b7795AE74A0F5A190c52447ef7AAA55b81",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1737755272",
+          "lastReport": "1737756416",
+          "maxDebtUsd": 999613619969.6776,
+          "currentDebt": "10000000",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 9.996136199696775,
+          "performanceFee": "1000"
+        }
+      ],
+      "asset": {
+        "name": "USD Coin",
+        "symbol": "USDC",
+        "address": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "chainId": 42161,
+        "decimals": "6"
+      },
+      "totalAssets": "10000000"
+    },
+    {
+      "chainId": 1,
+      "address": "0x661077153a02628786D180DbDf633F790774df10",
+      "name": "WETH Grothex",
+      "grossUsd": 9.368446846957518,
+      "yearn": null,
+      "apiVersion": "3.0.4",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779335",
+      "debts": [
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0x90759801579208B28D2D36D13b1ED7443D1b717F",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1747575443",
+          "lastReport": "1747575443",
+          "maxDebtUsd": 2.781518034148611e62,
+          "currentDebt": "3971999999996023",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 9.368446846957518,
+          "performanceFee": "0"
+        }
+      ],
+      "asset": {
+        "name": "Wrapped Ether",
+        "symbol": "WETH",
+        "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        "chainId": 1,
+        "decimals": "18"
+      },
+      "totalAssets": "3971999999996028"
+    },
+    {
+      "chainId": 1,
+      "address": "0x8BDB719c46E010C6A0701195e8Ee7f9712f24588",
+      "name": "crvUSD Test Vault",
+      "grossUsd": 8.989454582913147,
+      "yearn": null,
+      "apiVersion": "3.0.4",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779335",
+      "debts": [
+        {
+          "maxDebt": "10000000000000000000000000",
+          "strategy": "0x91aA3d2400655afea2Fb148C5B484812B74A303D",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1743473423",
+          "lastReport": "1743473423",
+          "maxDebtUsd": 9988282.869903496,
+          "currentDebt": "4000000000000000000",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 3.9953131479613986,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "10000000000000000000000000",
+          "strategy": "0x408Bce2FEe41D0285E3b4c9d869F8D70995161bc",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1743473519",
+          "lastReport": "1743473519",
+          "maxDebtUsd": 9988282.869903496,
+          "currentDebt": "2000000000000000000",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 1.9976565739806993,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "10000000000000000000000000",
+          "strategy": "0x134bE1a7ec921fe38Ead8052f2B8e0949eB86a75",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1743473579",
+          "lastReport": "1743473579",
+          "maxDebtUsd": 9988282.869903496,
+          "currentDebt": "3000000000000000000",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 2.9964848609710493,
+          "performanceFee": "0"
+        }
+      ],
+      "asset": {
+        "name": "Curve.Fi USD Stablecoin",
+        "symbol": "crvUSD",
+        "address": "0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E",
+        "chainId": 1,
+        "decimals": "18"
+      },
+      "totalAssets": "9000000000000000000"
+    },
+    {
+      "chainId": 1,
+      "address": "0xCF3005699a305Ad1BA800C00fdDAD8d7e905ec49",
+      "name": "Katana Pre-DepositWBTC",
+      "grossUsd": 8.13104723485643,
+      "yearn": null,
+      "apiVersion": "3.0.4",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": true
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779335",
+      "debts": [
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0xEF0FacE04f2D9CC4dC47f560B0DBFc5dd6b56CBb",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1745852231",
+          "lastReport": "1745852231",
+          "maxDebtUsd": 9.415109470113288e73,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0xE92D07f6454D3107326A5058e589Ae53934CEF01",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1745852231",
+          "lastReport": "1745852231",
+          "maxDebtUsd": 9.415109470113288e73,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "1000"
+        }
+      ],
+      "asset": {
+        "name": "Wrapped BTC",
+        "symbol": "WBTC",
+        "address": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+        "chainId": 1,
+        "decimals": "8"
+      },
+      "totalAssets": "10525"
+    },
+    {
+      "chainId": 1,
+      "address": "0xe7c4bD9ae62B96bF1B77ac5eDB7cCdEb662b479C",
+      "name": "DAI-STB yVault",
+      "grossUsd": 5.000436355875935,
+      "yearn": false,
+      "apiVersion": "3.0.2",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": true
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779335",
+      "debts": [],
+      "asset": {
+        "name": "Dai Stablecoin",
+        "symbol": "DAI",
+        "address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+        "chainId": 1,
+        "decimals": "18"
+      },
+      "totalAssets": "5000000000000002832"
+    },
+    {
+      "chainId": 1,
+      "address": "0xfc1aDcb2c25FF45CF26870852071D9daB337d707",
+      "name": "Napier Curve reUSD-scrvUSD yVault",
+      "grossUsd": 3.640762316980745,
+      "yearn": null,
+      "apiVersion": "3.0.4",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779335",
+      "debts": [
+        {
+          "maxDebt": "100000000000000000000000000000",
+          "strategy": "0x482Cce30Cde09292279371956a3C7c57bbe125A9",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1745366399",
+          "lastReport": "1745366399",
+          "maxDebtUsd": 101691590329.61133,
+          "currentDebt": "3580281482395450458",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 3.640762316980745,
+          "performanceFee": "0"
+        }
+      ],
+      "asset": {
+        "name": "reUSD/scrvUSD",
+        "symbol": "reusdscrv",
+        "address": "0xc522A6606BBA746d7960404F22a3DB936B6F4F50",
+        "chainId": 1,
+        "decimals": "18"
+      },
+      "totalAssets": "3580281482395450458"
+    },
+    {
+      "chainId": 8453,
+      "address": "0x50fd1E6E0E2153C2B26eBBcD9bCdeD4639A1AAE3",
+      "name": "MUV002 - Flagship USDC",
+      "grossUsd": 3.563422632467907,
+      "yearn": false,
+      "apiVersion": "3.0.2",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779339",
+      "debts": [
+        {
+          "maxDebt": "1000000000000",
+          "strategy": "0x59acb98B9E7b015457559F76A10a432D48AAEe4a",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1728980997",
+          "lastReport": "1733010121",
+          "maxDebtUsd": 999613.6199696775,
+          "currentDebt": "3564885",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 3.563422632467907,
+          "performanceFee": "1000"
+        }
+      ],
+      "asset": {
+        "name": "USD Coin",
+        "symbol": "USDC",
+        "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "chainId": 8453,
+        "decimals": "6"
+      },
+      "totalAssets": "3564885"
+    },
+    {
+      "chainId": 8453,
+      "address": "0x338Dfa34F66B6922B9Edec82DA86519CE7938184",
+      "name": "USDC-2 Base USDC Vault",
+      "grossUsd": 2.9988408599090324,
+      "yearn": null,
+      "apiVersion": "3.0.4",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": true
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779339",
+      "debts": [
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0x616a4E1db48e22028f6bbf20444Cd3b8e3273738",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1749199899",
+          "lastReport": "1749210267",
+          "maxDebtUsd": 1.1574734948636557e71,
+          "currentDebt": "1800007",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 1.7993045159454195,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0xc0c5689e6f4D256E861F65465b691aeEcC0dEb12",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1749199905",
+          "lastReport": "1749210277",
+          "maxDebtUsd": 1.1574734948636557e71,
+          "currentDebt": "1200005",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 1.199536343963613,
+          "performanceFee": "0"
+        }
+      ],
+      "asset": {
+        "name": "USD Coin",
+        "symbol": "USDC",
+        "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "chainId": 8453,
+        "decimals": "6"
+      },
+      "totalAssets": "3000012"
+    },
+    {
+      "chainId": 100,
+      "address": "0x5012C6bf79b3047ECFFf2F212DfFDA4d2128188f",
+      "name": "EURe yVault",
+      "grossUsd": 2.062019844880095,
+      "yearn": false,
+      "apiVersion": "3.0.2",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": true
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792778495",
+      "debts": [
+        {
+          "maxDebt": "1000000000000000000000000",
+          "strategy": "0x99474363F03D21375dA1aF4C9694cabCF995e02a",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1710279985",
+          "lastReport": "1746017060",
+          "maxDebtUsd": 1121394.3032848027,
+          "currentDebt": "1838871529347469574",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 2.062019844880095,
+          "performanceFee": "1000"
+        },
+        {
+          "maxDebt": "1000000000000000000000000",
+          "strategy": "0x4B40C9FF9D654Fd7f1E24eD66d8f0f260b199b43",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1710527085",
+          "lastReport": "1727126295",
+          "maxDebtUsd": 1121394.3032848027,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "1000"
+        }
+      ],
+      "asset": {
+        "name": "Monerium EUR emoney",
+        "symbol": "EURe",
+        "address": "0xcB444e90D8198415266c6a2724b7900fb12FC56E",
+        "chainId": 100,
+        "decimals": "18"
+      },
+      "totalAssets": "1838871529347469574"
+    },
+    {
+      "chainId": 146,
+      "address": "0x8dB97437F8E28A11019128D7B2604A42e333025E",
+      "name": "USDC.e-1 RarityFinance",
+      "grossUsd": 0.9996136199696776,
+      "yearn": null,
+      "apiVersion": "3.0.4",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792778504",
+      "debts": [
+        {
+          "maxDebt": "0",
+          "strategy": "0xBe3E3Ca48525406063CB2CE9c7c848BCf24DC9fc",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1737865794",
+          "lastReport": "1737908508",
+          "maxDebtUsd": 0,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "0"
+        }
+      ],
+      "asset": {
+        "name": "Bridged USDC (Sonic Labs)",
+        "symbol": "USDC.e",
+        "address": "0x29219dd400f2Bf60E5a23d13Be72B486D4038894",
+        "chainId": 146,
+        "decimals": "6"
+      },
+      "totalAssets": "1000000"
+    },
+    {
+      "chainId": 1,
+      "address": "0xe3faeD70Ccaf49C9BAA95ca8d41b1777d7ae440f",
+      "name": "usdc-vaulty-moo",
+      "grossUsd": 0.9995954324441898,
+      "yearn": false,
+      "apiVersion": "3.0.2",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": true
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779335",
+      "debts": [
+        {
+          "maxDebt": "0",
+          "strategy": "0x7eE351aA702C8fC735D77Fb229b7676AC15D7c79",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1713260831",
+          "lastReport": "1713260831",
+          "maxDebtUsd": 0,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "0"
+        }
+      ],
+      "asset": {
+        "name": "USD Coin",
+        "symbol": "USDC",
+        "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "chainId": 1,
+        "decimals": "6"
+      },
+      "totalAssets": "1000000"
+    },
+    {
+      "chainId": 8453,
+      "address": "0x5B6c2b7Ac69AD287c7C9Eb85E725f3799695DF09",
+      "name": "Yield Chasing pfUSDC1",
+      "grossUsd": 0.7017287612187136,
+      "yearn": null,
+      "apiVersion": "3.0.4",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": true
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779339",
+      "debts": [
+        {
+          "maxDebt": "10000000000",
+          "strategy": "0x6ea0BFFf586F2F226c80cc98275b810D2Cd95771",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1744148003",
+          "lastReport": "1744235307",
+          "maxDebtUsd": 9996.136199696777,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "10000000000",
+          "strategy": "0x5f6511489c9e770a07fB1aE2969ABe350a3d2Cf4",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1744148133",
+          "lastReport": "1744235331",
+          "maxDebtUsd": 9996.136199696777,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "0"
+        },
+        {
+          "maxDebt": "10000000000",
+          "strategy": "0x4B5c90DC6Bc08A10a24487726e614e9d148362E1",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1744148145",
+          "lastReport": "1744235319",
+          "maxDebtUsd": 9996.136199696777,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "0"
+        }
+      ],
+      "asset": {
+        "name": "USD Coin",
+        "symbol": "USDC",
+        "address": "0x833589fCD6eDb6E08f4c7C32D4f71b54bdA02913",
+        "chainId": 8453,
+        "decimals": "6"
+      },
+      "totalAssets": "702069"
+    },
+    {
+      "chainId": 1,
+      "address": "0xAC64c681102E23f4114bC6fC873499267aeb9eA8",
+      "name": "Dusfer USDC",
+      "grossUsd": 0.508394236941115,
+      "yearn": null,
+      "apiVersion": "3.0.4",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779335",
+      "debts": [
+        {
+          "maxDebt": "115792089237316195423570985008687907853269984665640564039457584007913129639935",
+          "strategy": "0x694E47AFD14A64661a04eee674FB331bCDEF3737",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1747897187",
+          "lastReport": "1753333739",
+          "maxDebtUsd": 1.1574524351479133e71,
+          "currentDebt": "508677",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0.508394236941115,
+          "performanceFee": "0"
+        }
+      ],
+      "asset": {
+        "name": "USD Coin",
+        "symbol": "USDC",
+        "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "chainId": 1,
+        "decimals": "6"
+      },
+      "totalAssets": "508677"
+    },
+    {
+      "chainId": 146,
+      "address": "0xBe3E3Ca48525406063CB2CE9c7c848BCf24DC9fc",
+      "name": "USDC Test",
+      "grossUsd": 0.4998068099848388,
+      "yearn": true,
+      "apiVersion": "3.0.4",
+      "origin": "yearn",
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": true,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792778504",
+      "debts": [],
+      "asset": {
+        "name": "Bridged USDC (Sonic Labs)",
+        "symbol": "USDC.e",
+        "address": "0x29219dd400f2Bf60E5a23d13Be72B486D4038894",
+        "chainId": 146,
+        "decimals": "6"
+      },
+      "totalAssets": "500000"
+    },
+    {
+      "chainId": 42161,
+      "address": "0x12bF88C63bF060355A8d2E4C6eE960365a5E8335",
+      "name": "usdc-vault",
+      "grossUsd": 0.04998068099848388,
+      "yearn": false,
+      "apiVersion": "3.0.2",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792778457",
+      "debts": [
+        {
+          "maxDebt": "1000000000000000000000000",
+          "strategy": "0xd89ee1E95f7728f6964CF321E2648cCd29a881f1",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1715035044",
+          "lastReport": "1715035044",
+          "maxDebtUsd": 999613619969677600,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "500"
+        },
+        {
+          "maxDebt": "1000000000000000000000000",
+          "strategy": "0xCACc53bAcCe744ac7b5C1eC7eb7e3Ab01330733b",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1715035095",
+          "lastReport": "1715035095",
+          "maxDebtUsd": 999613619969677600,
+          "currentDebt": "0",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0,
+          "performanceFee": "500"
+        }
+      ],
+      "asset": {
+        "name": "USD Coin",
+        "symbol": "USDC",
+        "address": "0xaf88d065e77c8cC2239327C5EDb3A432268e5831",
+        "chainId": 42161,
+        "decimals": "6"
+      },
+      "totalAssets": "50000"
+    },
+    {
+      "chainId": 8453,
+      "address": "0xfF3035968A44Df696297d710cB7c0D7f807bF641",
+      "name": "MUV003 - Flagship EURC",
+      "grossUsd": 0.007388938120229635,
+      "yearn": false,
+      "apiVersion": "3.0.2",
+      "origin": null,
+      "inclusion": {
+        "isSet": true,
+        "isCove": false,
+        "isGimme": false,
+        "isYearn": false,
+        "isKatana": false,
+        "isMorpho": false,
+        "isYearnJuiced": false,
+        "isPoolTogether": false,
+        "isPublicERC4626": false
+      },
+      "valuationTime": "1792368000",
+      "stateTime": "1792779339",
+      "debts": [
+        {
+          "maxDebt": "1000000000000",
+          "strategy": "0xF3100B8cE14B4bd5BB369105Ab6527011aF384eb",
+          "totalGain": "0",
+          "totalLoss": "0",
+          "activation": "1728982031",
+          "lastReport": "1733010061",
+          "maxDebtUsd": 1119536.0788226721,
+          "currentDebt": "6669",
+          "totalGainUsd": 0,
+          "totalLossUsd": 0,
+          "currentDebtUsd": 0.007388938120229635,
+          "performanceFee": "1000"
+        }
+      ],
+      "asset": {
+        "name": "EURC",
+        "symbol": "EURC",
+        "address": "0x60a3E35Cc302bFA44Cb288Bc5a4F316Fdb1adb42",
+        "chainId": 8453,
+        "decimals": "6"
+      },
+      "totalAssets": "6669"
+    }
+  ]
+}

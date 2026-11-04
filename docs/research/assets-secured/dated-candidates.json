@@ -1,0 +1,1088 @@
+{
+  "asOfTimestamp": "1792627199",
+  "blockNumber": "26244424",
+  "priceSource": "coins.llama.fi",
+  "rows": [
+    {
+      "address": "0x7B5A0182E400b241b317e781a4e9dEdFc1429822",
+      "name": "Katana Pre-Deposit USDC",
+      "totalAssets": "70387003627447",
+      "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "decimals": 6,
+      "queue": ["0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204", "0x63a028963907F5a0c1cEb7e47100f52DfC611117"],
+      "vault": null,
+      "yVault": null,
+      "compounderVault": null,
+      "yearnVault": null,
+      "price": {
+        "decimals": 6,
+        "symbol": "USDC",
+        "price": 0.9997446375117297,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      },
+      "grossUsd": 70369029.4270588
+    },
+    {
+      "address": "0xcc6a16Be713f6a714f68b0E1f4914fD3db15fBeF",
+      "name": "Katana Pre-Deposit WETH",
+      "totalAssets": "18861218641101260273088",
+      "asset": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+      "decimals": 18,
+      "queue": ["0xc56413869c6CDf96496f2b1eF801fEDBdFA7dDB0", "0x30EAaCaD508BA57B30edafa1aD6bD337B211A9DE"],
+      "vault": null,
+      "yVault": null,
+      "compounderVault": null,
+      "yearnVault": null,
+      "price": {
+        "decimals": 18,
+        "symbol": "WETH",
+        "price": 2471.6514762626875,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      },
+      "grossUsd": 46618358.89839125
+    },
+    {
+      "address": "0x3Ed6aa32c930253fc990dE58fF882B9186cd0072",
+      "name": "cap USDC",
+      "totalAssets": "26217918584191",
+      "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "decimals": 6,
+      "queue": ["0x7D7F72d393F242DA6e22D3b970491C06742984Ff", "0x9939009295eAD3c67259aF3b93C284079ffE931e"],
+      "vault": null,
+      "yVault": null,
+      "compounderVault": null,
+      "yearnVault": null,
+      "price": {
+        "decimals": 6,
+        "symbol": "USDC",
+        "price": 0.9997446375117297,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      },
+      "grossUsd": 26211223.51126407
+    },
+    {
+      "address": "0x48c03B6FfD0008460F8657Db1037C7e09dEedfcb",
+      "name": "Katana Pre-Deposit USDT",
+      "totalAssets": "18061039851207",
+      "asset": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+      "decimals": 6,
+      "queue": ["0x310B7Ea7475A0B449Cfd73bE81522F1B88eFAFaa", "0xBC64210D565aabca8eb6Eb795833Cc505ac3647F"],
+      "vault": null,
+      "yVault": null,
+      "compounderVault": null,
+      "yearnVault": null,
+      "price": {
+        "decimals": 6,
+        "symbol": "USDT",
+        "price": 0.9994227281992402,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      },
+      "grossUsd": 18050613.722208496
+    },
+    {
+      "address": "0x92C82f5F771F6A44CfA09357DD0575B81BF5F728",
+      "name": "Katana Pre-Deposit WBTC",
+      "totalAssets": "18192326705",
+      "asset": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+      "decimals": 8,
+      "queue": ["0x751F0cC6115410A3eE9eC92d08f46Ff6Da98b708", "0xb3760eD42E9e87497A371697fF4F08b510C93Df1"],
+      "vault": null,
+      "yVault": null,
+      "compounderVault": null,
+      "yearnVault": null,
+      "price": {
+        "decimals": 8,
+        "symbol": "WBTC",
+        "price": 83935.74079329867,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      },
+      "grossUsd": 15269864.187378852
+    },
+    {
+      "address": "0x0655977FEb2f289A4aB78af67BAB0d17aAb84367",
+      "name": "Savings crvUSD",
+      "totalAssets": "14504089691982430031550847",
+      "asset": "0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E",
+      "decimals": 18,
+      "queue": [],
+      "vault": null,
+      "yVault": null,
+      "compounderVault": null,
+      "yearnVault": null,
+      "price": {
+        "decimals": 18,
+        "symbol": "crvUSD",
+        "price": 0.9995749907342045,
+        "timestamp": 1792626118,
+        "confidence": 0.99
+      },
+      "grossUsd": 14497925.31947141
+    },
+    {
+      "address": "0xF470EB50B4a60c9b069F7Fd6032532B8F5cC014d",
+      "name": "Katana Pre-Deposit USDC",
+      "totalAssets": "7712626710787",
+      "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "decimals": 6,
+      "queue": ["0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204", "0xFDAdC09f678755A84DfD01eEAf4A1709F224F5C3"],
+      "vault": null,
+      "yVault": null,
+      "compounderVault": null,
+      "yearnVault": null,
+      "price": {
+        "decimals": 6,
+        "symbol": "USDC",
+        "price": 0.9997446375117297,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      },
+      "grossUsd": 7710657.195239034
+    },
+    {
+      "address": "0xd7a540ba3626c0aa66e7DB4088971d0CD64695B6",
+      "name": "Yearn yETH Recovery Vault",
+      "totalAssets": "2437650242100626264968",
+      "asset": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+      "decimals": 18,
+      "queue": ["0xc56413869c6CDf96496f2b1eF801fEDBdFA7dDB0", "0xAc37729B76db6438CE62042AE1270ee574CA7571"],
+      "vault": null,
+      "yVault": null,
+      "compounderVault": null,
+      "yearnVault": null,
+      "price": {
+        "decimals": 18,
+        "symbol": "WETH",
+        "price": 2471.6514762626875,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      },
+      "grossUsd": 6025021.81950011
+    },
+    {
+      "address": "0xA5DaB32DbE68E6fa784e1e50e4f620a0477D3896",
+      "name": "Katana Pre-Deposit USDT",
+      "totalAssets": "5669774354547",
+      "asset": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+      "decimals": 6,
+      "queue": ["0x310B7Ea7475A0B449Cfd73bE81522F1B88eFAFaa", "0x37F490F02cd2EBb55c27796802943Bd080e0cc56"],
+      "vault": null,
+      "yVault": null,
+      "compounderVault": null,
+      "yearnVault": null,
+      "price": {
+        "decimals": 6,
+        "symbol": "USDT",
+        "price": 0.9994227281992402,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      },
+      "grossUsd": 5666501.3536954485
+    },
+    {
+      "address": "0x697c54a84D83F37380d034e2BfC6F7cE8d89F4Ee",
+      "name": "USDC Meta Vault",
+      "totalAssets": "3856990572069",
+      "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "decimals": 6,
+      "queue": [
+        "0x2cdaeebe9607ee7579bbD69AF44f44553fDA764F",
+        "0xB4e41E6eeF1A77e700B46aBAcdF6d426Fd256791",
+        "0x047CFddd06018f53F54262fe64f2744ecd463FeA",
+        "0x369d94320d06492DE265C025bFaa4Cf513A1845f",
+        "0x533BCB3aBe63C0b876d97B34184765B186A22E10",
+        "0x000ecFD73e2E523767E161a99690e6ef8c1B8029",
+        "0x1B1177276CD9B630ec53C912EB6A8CF5A29AE6eB"
+      ],
+      "vault": null,
+      "yVault": null,
+      "compounderVault": null,
+      "yearnVault": null,
+      "price": {
+        "decimals": 6,
+        "symbol": "USDC",
+        "price": 0.9997446375117297,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      },
+      "grossUsd": 3856005.6413592813
+    },
+    {
+      "address": "0xe1Ac97e2616Ad80f69f705ff007A4bbb3655544a",
+      "name": "Katana Pre-Deposit WBTC",
+      "totalAssets": "3368629176",
+      "asset": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+      "decimals": 8,
+      "queue": ["0x751F0cC6115410A3eE9eC92d08f46Ff6Da98b708", "0xc97781bA49a90c68d63F4D235d35cdbe029149D2"],
+      "vault": null,
+      "yVault": null,
+      "compounderVault": null,
+      "yearnVault": null,
+      "price": {
+        "decimals": 8,
+        "symbol": "WBTC",
+        "price": 83935.74079329867,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      },
+      "grossUsd": 2827483.853454793
+    },
+    {
+      "address": "0x77570CfEcf83bc6bB08E2cD9e8537aeA9F97eA2F",
+      "name": "Katana Pre-Deposit WETH",
+      "totalAssets": "968418680516950167320",
+      "asset": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+      "decimals": 18,
+      "queue": ["0xc56413869c6CDf96496f2b1eF801fEDBdFA7dDB0", "0x20e76ea28E13867C008d319ba4eDE86f6C1fed73"],
+      "vault": null,
+      "yVault": null,
+      "compounderVault": null,
+      "yearnVault": null,
+      "price": {
+        "decimals": 18,
+        "symbol": "WETH",
+        "price": 2471.6514762626875,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      },
+      "grossUsd": 2393593.4613400837
+    },
+    {
+      "address": "0x26fCb50eEC367ddAB060ccf5E7394Cecd95F7Db2",
+      "name": "ETH Meta Vault",
+      "totalAssets": "84441270714441903129",
+      "asset": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+      "decimals": 18,
+      "queue": [
+        "0x9F1c3173581CED1204136cBc628d2fb2407d7AC4",
+        "0x76dD96710A73675d9cf9523A046f1587cA9031d4",
+        "0x330732581D30076137a1159B3aE8780158D902bE",
+        "0xfC36C2EdB18829308Fa9eE9500e8be6520A47Caf"
+      ],
+      "vault": null,
+      "yVault": null,
+      "compounderVault": null,
+      "yearnVault": null,
+      "price": {
+        "decimals": 18,
+        "symbol": "WETH",
+        "price": 2471.6514762626875,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      },
+      "grossUsd": 208709.3914188476
+    },
+    {
+      "address": "0x254bd33E2f62713F893F0842C99E68f855cDa315",
+      "name": "Coinflakes Vault v2.0",
+      "totalAssets": "166480644905972472913732",
+      "asset": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+      "decimals": 18,
+      "queue": ["0xAa45993D82C72E8EB3574C55773226E7C54Ee863"],
+      "vault": null,
+      "yVault": null,
+      "compounderVault": null,
+      "yearnVault": null,
+      "price": {
+        "decimals": 18,
+        "symbol": "DAI",
+        "price": 0.9997057994573075,
+        "timestamp": 1792627024,
+        "confidence": 0.99
+      },
+      "grossUsd": 166431.66620989333
+    },
+    {
+      "address": "0x9cFb40acedaC259B1d23e790f6c6D0C3898361Ad",
+      "name": "usdc-vault",
+      "totalAssets": "13204114216",
+      "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "decimals": 6,
+      "queue": ["0xbDb97eC319c41c6FA383E94eCE6Bdf383dFC7BE4", "0x7eE351aA702C8fC735D77Fb229b7676AC15D7c79"],
+      "vault": null,
+      "yVault": null,
+      "compounderVault": null,
+      "yearnVault": null,
+      "price": {
+        "decimals": 6,
+        "symbol": "USDC",
+        "price": 0.9997446375117297,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      },
+      "grossUsd": 13200.742380538397
+    },
+    {
+      "address": "0x46e9893422B9aE9246793489433F72c548CB2455",
+      "name": "Sturdy USDC-taoUSD bridge vault",
+      "totalAssets": "2912102670",
+      "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "decimals": 6,
+      "queue": [],
+      "vault": null,
+      "yVault": null,
+      "compounderVault": null,
+      "yearnVault": null,
+      "price": {
+        "decimals": 6,
+        "symbol": "USDC",
+        "price": 0.9997446375117297,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      },
+      "grossUsd": 2911.3590282160903
+    },
+    {
+      "address": "0x381E0BE61b3AEB1F321C4775046e6F57BC84c804",
+      "name": "USDe-2 yVault",
+      "totalAssets": "1799423435378397568448",
+      "asset": "0x4c9EDD5852cd905f086C759E8383e09bff1E68B3",
+      "decimals": 18,
+      "queue": ["0x4424D0c829316dcEc5701A4E2b30B368721e0A10"],
+      "vault": null,
+      "yVault": null,
+      "compounderVault": null,
+      "yearnVault": null,
+      "price": {
+        "decimals": 18,
+        "symbol": "USDe",
+        "price": 0.9996149385988177,
+        "timestamp": 1792627024,
+        "confidence": 0.99
+      },
+      "grossUsd": 1798.7305468690504
+    },
+    {
+      "address": "0x482Cce30Cde09292279371956a3C7c57bbe125A9",
+      "name": "Curve reUSD-scrvUSD yVault",
+      "totalAssets": "1379058207022602906233",
+      "asset": "0xc522A6606BBA746d7960404F22a3DB936B6F4F50",
+      "decimals": 18,
+      "queue": ["0xc6E53d7C2453163f9B708393086237b0EE0fD9B3"],
+      "vault": null,
+      "yVault": null,
+      "compounderVault": null,
+      "yearnVault": null,
+      "price": {
+        "decimals": 18,
+        "symbol": "reusdscrv",
+        "price": 1.017473466668816,
+        "timestamp": 1792627695,
+        "confidence": 0.99
+      },
+      "grossUsd": 1403.1551346373697
+    },
+    {
+      "address": "0xD91B6DeD55C0fba2c1E88F2cDF6e051ECD788952",
+      "name": "Katana Pre-DepositUSDC",
+      "totalAssets": "1054095543",
+      "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "decimals": 6,
+      "queue": ["0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204", "0x59f6E998A78AA074F67b2e2Cd1DC1774214c7547"],
+      "vault": null,
+      "yVault": null,
+      "compounderVault": null,
+      "yearnVault": null,
+      "price": {
+        "decimals": 6,
+        "symbol": "USDC",
+        "price": 0.9997446375117297,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      },
+      "grossUsd": 1053.8263665392649
+    },
+    {
+      "address": "0xEadc18ca9363565E1c8BC5415Db0110d7c91cDE5",
+      "name": "Curve GHO-USR yVault",
+      "totalAssets": "11455542821549386645638",
+      "asset": "0x4628f13651eaD6793F8d838B34B8f8522Fb0cc52",
+      "decimals": 18,
+      "queue": ["0x88ac6A2A55ce6ADb53A38e8Be85e179A188Dd7B1"],
+      "vault": null,
+      "yVault": null,
+      "compounderVault": null,
+      "yearnVault": null,
+      "price": {
+        "decimals": 18,
+        "symbol": "GHOUSR",
+        "price": 0.08015973758100575,
+        "timestamp": 1792626592,
+        "confidence": 1
+      },
+      "grossUsd": 918.273306423373
+    },
+    {
+      "address": "0xFFcaF6549a229D63351B71313559EDbe0C467B78",
+      "name": "Curve reUSD-sfrxUSD yVault",
+      "totalAssets": "552934942124214822146",
+      "asset": "0xed785Af60bEd688baa8990cD5c4166221599A441",
+      "decimals": 18,
+      "queue": ["0xf1Fe340a013023733baf7Db8cADd08edCF0D6A0E"],
+      "vault": null,
+      "yVault": null,
+      "compounderVault": null,
+      "yearnVault": null,
+      "price": {
+        "decimals": 18,
+        "symbol": "reusdsfrx",
+        "price": 1.0183223748326073,
+        "timestamp": 1792627695,
+        "confidence": 0.99
+      },
+      "grossUsd": 563.0660233918608
+    },
+    {
+      "address": "0x610E01895cB39078890e3Fe5239b78A51c07892F",
+      "name": "dai-vault",
+      "totalAssets": "288749409780748938260",
+      "asset": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+      "decimals": 18,
+      "queue": [
+        "0x83F20F44975D03b1b09e64809B757c47f942BEeA",
+        "0xEed00e00236cD7F36F2558D8b5fD05046449599D",
+        "0x1fd862499e9b9402DE6c599b6C391f83981180Ab"
+      ],
+      "vault": null,
+      "yVault": null,
+      "compounderVault": null,
+      "yearnVault": null,
+      "price": {
+        "decimals": 18,
+        "symbol": "DAI",
+        "price": 0.9997057994573075,
+        "timestamp": 1792627024,
+        "confidence": 0.99
+      },
+      "grossUsd": 288.6644595476893
+    },
+    {
+      "address": "0x620082F33D442E5806122f71a72b12134f75fF2d",
+      "name": "Curve lvlUSD-USDC yVault",
+      "totalAssets": "171445912980767914783",
+      "asset": "0x1220868672D5B10F3E1cB9Ab519E4d0B08545ea4",
+      "decimals": 18,
+      "queue": ["0x4D298a6659A4c24d79D6F4281bDe2BeA24EeC3D5"],
+      "vault": null,
+      "yVault": null,
+      "compounderVault": null,
+      "yearnVault": null,
+      "price": {
+        "decimals": 18,
+        "symbol": "lvlUSDUSDC",
+        "price": 1.2333402470546067,
+        "timestamp": 1792627695,
+        "confidence": 0.99
+      },
+      "grossUsd": 211.45114467220287
+    },
+    {
+      "address": "0xf20b02131C45b22E147c98e30Cc889a20dc8a00d",
+      "name": "Katana Pre-DepositUSDC",
+      "totalAssets": "104560000",
+      "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "decimals": 6,
+      "queue": ["0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204", "0xB6830484c8Dfb9BA7d95820858324c5c05eFA0e5"],
+      "vault": null,
+      "yVault": null,
+      "compounderVault": null,
+      "yearnVault": null,
+      "price": {
+        "decimals": 6,
+        "symbol": "USDC",
+        "price": 0.9997446375117297,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      },
+      "grossUsd": 104.53329929822647
+    },
+    {
+      "address": "0x48C05c25FB0C92152B57aa057e121CB2E5da81e4",
+      "name": "WETH Dusfer",
+      "totalAssets": "13739868720437168",
+      "asset": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+      "decimals": 18,
+      "queue": ["0x90759801579208B28D2D36D13b1ED7443D1b717F"],
+      "vault": null,
+      "yVault": null,
+      "compounderVault": null,
+      "yearnVault": null,
+      "price": {
+        "decimals": 18,
+        "symbol": "WETH",
+        "price": 2471.6514762626875,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      },
+      "grossUsd": 33.96016680652405
+    },
+    {
+      "address": "0x140D0d77EeC240F9D3A07c92dF37E257Cf506081",
+      "name": "USDC-1 2-test-project",
+      "totalAssets": "15752114",
+      "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "decimals": 6,
+      "queue": [
+        "0x9Fb7b4477576Fe5B32be4C1843aFB1e55F251B33",
+        "0xF7DE3c70F2db39a188A81052d2f3C8e3e217822a",
+        "0x797DD80692c3b2dAdabCe8e30C07fDE5307D48a9",
+        "0x074134A2784F4F66b6ceD6f68849382990Ff3215"
+      ],
+      "vault": null,
+      "yVault": null,
+      "compounderVault": null,
+      "yearnVault": null,
+      "price": {
+        "decimals": 6,
+        "symbol": "USDC",
+        "price": 0.9997446375117297,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      },
+      "grossUsd": 15.748091500973443
+    },
+    {
+      "address": "0x76cf74ebA6413Fd290f5599a2eC412882119aF32",
+      "name": "USDT-test",
+      "totalAssets": "15141284",
+      "asset": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+      "decimals": 6,
+      "queue": ["0xe5baF8b6Be442811211e9339d9fbC1B8fb7D66dF", "0x6D2981FF9b8d7edbb7604de7A65BAC8694ac849F"],
+      "vault": null,
+      "yVault": null,
+      "compounderVault": null,
+      "yearnVault": null,
+      "price": {
+        "decimals": 6,
+        "symbol": "USDT",
+        "price": 0.9994227281992402,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      },
+      "grossUsd": 15.132543363719504
+    },
+    {
+      "address": "0xFcC0dD0AeBF4ea4b751799169e45F014bA2e02dd",
+      "name": "weth-vault",
+      "totalAssets": "5753773884757757",
+      "asset": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+      "decimals": 18,
+      "queue": ["0xd2eFB90C569eBD5b83D5cFB8632322edFAc203A5", "0x23eE3D14F09946A084350CC6A7153fc6eb918817"],
+      "vault": null,
+      "yVault": null,
+      "compounderVault": null,
+      "yearnVault": null,
+      "price": {
+        "decimals": 18,
+        "symbol": "WETH",
+        "price": 2471.6514762626875,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      },
+      "grossUsd": 14.221323716343209
+    },
+    {
+      "address": "0x8b98165bC61841f1df64e1509a450E11e25181Cc",
+      "name": "Dusfer USDT",
+      "totalAssets": "10297630",
+      "asset": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+      "decimals": 6,
+      "queue": ["0x6D2981FF9b8d7edbb7604de7A65BAC8694ac849F"],
+      "vault": null,
+      "yVault": null,
+      "compounderVault": null,
+      "yearnVault": null,
+      "price": {
+        "decimals": 6,
+        "symbol": "USDT",
+        "price": 0.9994227281992402,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      },
+      "grossUsd": 10.29168546858634
+    },
+    {
+      "address": "0x661077153a02628786D180DbDf633F790774df10",
+      "name": "WETH Grothex",
+      "totalAssets": "3971999999996028",
+      "asset": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+      "decimals": 18,
+      "queue": ["0x90759801579208B28D2D36D13b1ED7443D1b717F"],
+      "vault": null,
+      "yVault": null,
+      "compounderVault": null,
+      "yearnVault": null,
+      "price": {
+        "decimals": 18,
+        "symbol": "WETH",
+        "price": 2471.6514762626875,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      },
+      "grossUsd": 9.817399663705578
+    },
+    {
+      "address": "0x8BDB719c46E010C6A0701195e8Ee7f9712f24588",
+      "name": "crvUSD Test Vault",
+      "totalAssets": "9000000000000000000",
+      "asset": "0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E",
+      "decimals": 18,
+      "queue": [
+        "0x91aA3d2400655afea2Fb148C5B484812B74A303D",
+        "0x408Bce2FEe41D0285E3b4c9d869F8D70995161bc",
+        "0x134bE1a7ec921fe38Ead8052f2B8e0949eB86a75"
+      ],
+      "vault": null,
+      "yVault": null,
+      "compounderVault": null,
+      "yearnVault": null,
+      "price": {
+        "decimals": 18,
+        "symbol": "crvUSD",
+        "price": 0.9995749907342045,
+        "timestamp": 1792626118,
+        "confidence": 0.99
+      },
+      "grossUsd": 8.99617491660784
+    },
+    {
+      "address": "0xCF3005699a305Ad1BA800C00fdDAD8d7e905ec49",
+      "name": "Katana Pre-DepositWBTC",
+      "totalAssets": "10525",
+      "asset": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+      "decimals": 8,
+      "queue": ["0xEF0FacE04f2D9CC4dC47f560B0DBFc5dd6b56CBb", "0xE92D07f6454D3107326A5058e589Ae53934CEF01"],
+      "vault": null,
+      "yVault": null,
+      "compounderVault": null,
+      "yearnVault": null,
+      "price": {
+        "decimals": 8,
+        "symbol": "WBTC",
+        "price": 83935.74079329867,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      },
+      "grossUsd": 8.834236718494685
+    },
+    {
+      "address": "0xe7c4bD9ae62B96bF1B77ac5eDB7cCdEb662b479C",
+      "name": "DAI-STB yVault",
+      "totalAssets": "5000000000000002832",
+      "asset": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+      "decimals": 18,
+      "queue": [],
+      "vault": null,
+      "yVault": null,
+      "compounderVault": null,
+      "yearnVault": null,
+      "price": {
+        "decimals": 18,
+        "symbol": "DAI",
+        "price": 0.9997057994573075,
+        "timestamp": 1792627024,
+        "confidence": 0.99
+      },
+      "grossUsd": 4.99852899728654
+    },
+    {
+      "address": "0xfc1aDcb2c25FF45CF26870852071D9daB337d707",
+      "name": "Napier Curve reUSD-scrvUSD yVault",
+      "totalAssets": "3580281482395450458",
+      "asset": "0xc522A6606BBA746d7960404F22a3DB936B6F4F50",
+      "decimals": 18,
+      "queue": ["0x482Cce30Cde09292279371956a3C7c57bbe125A9"],
+      "vault": null,
+      "yVault": null,
+      "compounderVault": null,
+      "yearnVault": null,
+      "price": {
+        "decimals": 18,
+        "symbol": "reusdscrv",
+        "price": 1.017473466668816,
+        "timestamp": 1792627695,
+        "confidence": 0.99
+      },
+      "grossUsd": 3.642841411543067
+    },
+    {
+      "address": "0xe3faeD70Ccaf49C9BAA95ca8d41b1777d7ae440f",
+      "name": "usdc-vaulty-moo",
+      "totalAssets": "1000000",
+      "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "decimals": 6,
+      "queue": ["0x7eE351aA702C8fC735D77Fb229b7676AC15D7c79"],
+      "vault": null,
+      "yVault": null,
+      "compounderVault": null,
+      "yearnVault": null,
+      "price": {
+        "decimals": 6,
+        "symbol": "USDC",
+        "price": 0.9997446375117297,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      },
+      "grossUsd": 0.9997446375117297
+    },
+    {
+      "address": "0xAC64c681102E23f4114bC6fC873499267aeb9eA8",
+      "name": "Dusfer USDC",
+      "totalAssets": "508677",
+      "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "decimals": 6,
+      "queue": ["0x694E47AFD14A64661a04eee674FB331bCDEF3737"],
+      "vault": null,
+      "yVault": null,
+      "compounderVault": null,
+      "yearnVault": null,
+      "price": {
+        "decimals": 6,
+        "symbol": "USDC",
+        "price": 0.9997446375117297,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      },
+      "grossUsd": 0.5085471029755542
+    },
+    {
+      "address": "0x8db2350d78abc13f5673a411d4700bcf87864dde",
+      "name": "swBTC",
+      "totalAssets": "580102791",
+      "asset": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+      "decimals": 8,
+      "queue": ["0x8041bA598f0E656EBe80c67289efb42C09E86aE3"],
+      "vault": null,
+      "yVault": null,
+      "compounderVault": null,
+      "yearnVault": null,
+      "price": {
+        "decimals": 8,
+        "symbol": "WBTC",
+        "price": 83935.74079329867,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      },
+      "grossUsd": 486913.57498845115
+    },
+    {
+      "address": "0x2f96cD32b8E84933929061f9e314E078f72C1f9b",
+      "name": "Strategy 1",
+      "octant": true,
+      "totalAssets": "0",
+      "asset": "0xdC035D45d973E3EC169d2276DDab16f1e407384F",
+      "decimals": 18,
+      "queue": null,
+      "vault": null,
+      "yVault": null,
+      "compounderVault": null,
+      "yearnVault": null,
+      "price": {
+        "decimals": 18,
+        "symbol": "USDS",
+        "price": 0.9999966680806639,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      },
+      "grossUsd": 0
+    },
+    {
+      "address": "0x96dCe0fc1eBA3A3e54327e8E8aCA94a9BB2009a6",
+      "name": "Sky-PTS-2",
+      "octant": true,
+      "totalAssets": "0",
+      "asset": "0xdC035D45d973E3EC169d2276DDab16f1e407384F",
+      "decimals": 18,
+      "queue": null,
+      "vault": null,
+      "yVault": null,
+      "compounderVault": null,
+      "yearnVault": null,
+      "price": {
+        "decimals": 18,
+        "symbol": "USDS",
+        "price": 0.9999966680806639,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      },
+      "grossUsd": 0
+    },
+    {
+      "address": "0x763CB5712796E5650E2A249861e9c57449364686",
+      "name": "Sky-USDS->Msig",
+      "octant": true,
+      "totalAssets": "11160118749169913048208",
+      "asset": "0xdC035D45d973E3EC169d2276DDab16f1e407384F",
+      "decimals": 18,
+      "queue": null,
+      "vault": null,
+      "yVault": null,
+      "compounderVault": null,
+      "yearnVault": null,
+      "price": {
+        "decimals": 18,
+        "symbol": "USDS",
+        "price": 0.9999966680806639,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      },
+      "grossUsd": 11160.081564554459
+    },
+    {
+      "address": "0x6a72f92B4A84C4970A183Ec3e3296800F06b1C9B",
+      "name": "MyStrategy1",
+      "octant": true,
+      "totalAssets": "505982797459265778844",
+      "asset": "0xdC035D45d973E3EC169d2276DDab16f1e407384F",
+      "decimals": 18,
+      "queue": null,
+      "vault": null,
+      "yVault": null,
+      "compounderVault": null,
+      "yearnVault": null,
+      "price": {
+        "decimals": 18,
+        "symbol": "USDS",
+        "price": 0.9999966680806639,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      },
+      "grossUsd": 505.98111156539915
+    },
+    {
+      "address": "0xDeD221e57Be9e53a07f985F1eF6a21044610E546",
+      "name": "sky-protocol-team-mainnet",
+      "octant": true,
+      "totalAssets": "0",
+      "asset": "0xdC035D45d973E3EC169d2276DDab16f1e407384F",
+      "decimals": 18,
+      "queue": null,
+      "vault": null,
+      "yVault": null,
+      "compounderVault": null,
+      "yearnVault": null,
+      "price": {
+        "decimals": 18,
+        "symbol": "USDS",
+        "price": 0.9999966680806639,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      },
+      "grossUsd": 0
+    },
+    {
+      "address": "0xc35ef942828997a4f8475adDDEF7853d071cDA03",
+      "name": "DVS 1",
+      "octant": true,
+      "totalAssets": "0",
+      "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "decimals": 6,
+      "queue": null,
+      "vault": null,
+      "yVault": null,
+      "compounderVault": "0x074134A2784F4F66b6ceD6f68849382990Ff3215",
+      "yearnVault": null,
+      "price": {
+        "decimals": 6,
+        "symbol": "USDC",
+        "price": 0.9997446375117297,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      },
+      "grossUsd": 0
+    },
+    {
+      "address": "0xb21FbD35AC45caC1D5011b74Ce06b31f8EB2C377",
+      "name": "SHUGrantPool",
+      "octant": true,
+      "totalAssets": "1204295214287",
+      "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "decimals": 6,
+      "queue": null,
+      "vault": null,
+      "yVault": null,
+      "compounderVault": "0x074134A2784F4F66b6ceD6f68849382990Ff3215",
+      "yearnVault": null,
+      "price": {
+        "decimals": 6,
+        "symbol": "USDC",
+        "price": 0.9997446375117297,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      },
+      "grossUsd": 1203987.6824644676
+    },
+    {
+      "address": "0x927D9aBD1eDceE7DBd9aBF9Fbea6DD9CE1D676dE",
+      "name": "Tutorial Test",
+      "octant": true,
+      "totalAssets": "0",
+      "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "decimals": 6,
+      "queue": null,
+      "vault": null,
+      "yVault": null,
+      "compounderVault": "0x074134A2784F4F66b6ceD6f68849382990Ff3215",
+      "yearnVault": null,
+      "price": {
+        "decimals": 6,
+        "symbol": "USDC",
+        "price": 0.9997446375117297,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      },
+      "grossUsd": 0
+    },
+    {
+      "address": "0x7291A96b261564f0dA1d9D068c5883FF19e7062B",
+      "name": "Morpho Test",
+      "octant": true,
+      "totalAssets": "0",
+      "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "decimals": 6,
+      "queue": null,
+      "vault": null,
+      "yVault": null,
+      "compounderVault": "0x074134A2784F4F66b6ceD6f68849382990Ff3215",
+      "yearnVault": null,
+      "price": {
+        "decimals": 6,
+        "symbol": "USDC",
+        "price": 0.9997446375117297,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      },
+      "grossUsd": 0
+    },
+    {
+      "address": "0xC5B26f6A954cf7480C6992e5C3E0c92F38B5695c",
+      "name": "SHUGrantPool",
+      "octant": true,
+      "totalAssets": "0",
+      "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "decimals": 6,
+      "queue": null,
+      "vault": null,
+      "yVault": null,
+      "compounderVault": "0x074134A2784F4F66b6ceD6f68849382990Ff3215",
+      "yearnVault": null,
+      "price": {
+        "decimals": 6,
+        "symbol": "USDC",
+        "price": 0.9997446375117297,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      },
+      "grossUsd": 0
+    },
+    {
+      "address": "0x1346FC14262928Bc3C180484e013CFe402f09C38",
+      "name": "MyStrategy2",
+      "octant": true,
+      "totalAssets": "505954396",
+      "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "decimals": 6,
+      "queue": null,
+      "vault": null,
+      "yVault": null,
+      "compounderVault": "0x074134A2784F4F66b6ceD6f68849382990Ff3215",
+      "yearnVault": null,
+      "price": {
+        "decimals": 6,
+        "symbol": "USDC",
+        "price": 0.9997446375117297,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      },
+      "grossUsd": 505.82519422648613
+    },
+    {
+      "address": "0x04a8B8A80E3354f8f20FEe097D875e287C319dc5",
+      "name": "YEET #1",
+      "octant": true,
+      "totalAssets": "20180696",
+      "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "decimals": 6,
+      "queue": null,
+      "vault": null,
+      "yVault": null,
+      "compounderVault": "0x074134A2784F4F66b6ceD6f68849382990Ff3215",
+      "yearnVault": null,
+      "price": {
+        "decimals": 6,
+        "symbol": "USDC",
+        "price": 0.9997446375117297,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      },
+      "grossUsd": 20.175542607254414
+    },
+    {
+      "address": "0x09b45BE25Fa18bdF5B60c18aEa4688D2B0Ac3930",
+      "name": "my_strategy",
+      "octant": true,
+      "totalAssets": "100702640",
+      "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "decimals": 6,
+      "queue": null,
+      "vault": null,
+      "yVault": null,
+      "compounderVault": "0x074134A2784F4F66b6ceD6f68849382990Ff3215",
+      "yearnVault": null,
+      "price": {
+        "decimals": 6,
+        "symbol": "USDC",
+        "price": 0.9997446375117297,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      },
+      "grossUsd": 100.67692432327422
+    },
+    {
+      "address": "0x214cC9861E6956bFC706dBB3855C5b2fD33fF000",
+      "name": "Morpho-USDC->PG",
+      "octant": true,
+      "totalAssets": "331323989",
+      "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "decimals": 6,
+      "queue": null,
+      "vault": null,
+      "yVault": null,
+      "compounderVault": "0x074134A2784F4F66b6ceD6f68849382990Ff3215",
+      "yearnVault": null,
+      "price": {
+        "decimals": 6,
+        "symbol": "USDC",
+        "price": 0.9997446375117297,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      },
+      "grossUsd": 331.2393812817453
+    },
+    {
+      "address": "0xBe5123054CBaC2Cb1CE75b19913324B3468Ac9b5",
+      "name": "morpho-protocol-team-mainnet",
+      "octant": true,
+      "totalAssets": "14000000",
+      "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "decimals": 6,
+      "queue": null,
+      "vault": null,
+      "yVault": null,
+      "compounderVault": "0x074134A2784F4F66b6ceD6f68849382990Ff3215",
+      "yearnVault": null,
+      "price": {
+        "decimals": 6,
+        "symbol": "USDC",
+        "price": 0.9997446375117297,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      },
+      "grossUsd": 13.996424925164217
+    }
+  ]
+}
