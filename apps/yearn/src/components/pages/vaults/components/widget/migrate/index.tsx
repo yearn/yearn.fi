@@ -11,7 +11,8 @@ import { IconLinkOut } from '@shared/icons/IconLinkOut'
 import { formatTAmount, isZeroAddress, toAddress, toNormalizedBN } from '@shared/utils'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import { formatWidgetValue, TransactionOverlay, type TransactionStep, WidgetHeader } from '@yearn/vault-widget/advanced'
-import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
+import { useVaultWidgetRuntime } from '@yearn/vault-widget/runtime'
+import { type FC, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { hexToNumber, slice } from 'viem'
 import { useAccount } from 'wagmi'
 import { env } from '@/env'
@@ -45,6 +46,8 @@ export const WidgetMigrate: FC<Props> = ({
   handleMigrateSuccess: onMigrateSuccess
 }) => {
   const { address: account } = useAccount()
+  const runtime = useVaultWidgetRuntime()
+  const signingDeadline = useRef<bigint | undefined>(undefined)
   const { openLoginModal } = useWeb3()
   const { getToken } = useWalletTokens()
   const trackEvent = usePlausible()
@@ -75,7 +78,8 @@ export const WidgetMigrate: FC<Props> = ({
     account,
     chainId,
     enabled: migrateBalance > 0n && !isZeroAddress(migrationContract),
-    permitSignature
+    permitSignature,
+    allowPermit: !runtime.safe.isSafe
   })
 
   // Error handling
@@ -165,7 +169,8 @@ export const WidgetMigrate: FC<Props> = ({
           })
         ])
 
-        const nonce = nonceResult.status === 'fulfilled' ? nonceResult.value : 0n
+        if (nonceResult.status !== 'fulfilled') throw new Error('Permit nonce is unavailable')
+        const nonce = nonceResult.value
         const tokenName = nameResult.status === 'fulfilled' ? nameResult.value : ''
 
         const domainName = isV3Vault ? 'Yearn Vault' : tokenName
@@ -222,10 +227,19 @@ export const WidgetMigrate: FC<Props> = ({
     isV3Vault
   ])
 
-  // Getter for permit data (returns cached data)
+  // Metadata can be cached; authorization nonce and deadline are read for this signing attempt.
   const getPermitData = useCallback(async () => {
-    return permitData
-  }, [permitData])
+    if (!permitData || !client || !account) throw new Error('Permit is unavailable')
+    const nonce = await client.readContract({
+      address: vaultAddress,
+      abi: PERMIT_ABI,
+      functionName: 'nonces',
+      args: [account]
+    })
+    const deadline = BigInt(Math.floor(Date.now() / 1000) + 20 * 60)
+    signingDeadline.current = deadline
+    return { ...permitData, message: { ...permitData.message, nonce, deadline } }
+  }, [permitData, client, account, vaultAddress])
 
   // Handle permit signed callback
   const handlePermitSigned = useCallback(
@@ -241,7 +255,7 @@ export const WidgetMigrate: FC<Props> = ({
         r,
         s,
         v,
-        deadline: periphery.permitDeadline,
+        deadline: signingDeadline.current ?? periphery.permitDeadline,
         signature
       })
     },
@@ -530,6 +544,25 @@ export const WidgetMigrate: FC<Props> = ({
         isOpen={showTransactionOverlay}
         onClose={handleOverlayClose}
         step={currentStep}
+        lifecycleRecipe={{
+          id: [
+            'migrate',
+            chainId,
+            vaultAddress,
+            migrationTarget,
+            periphery.routerAddress,
+            migrateBalance.toString()
+          ].join(':'),
+          chainId,
+          steps: [
+            ...(needsPermitSign
+              ? [{ id: 'permit', label: 'Sign permit' }]
+              : needsApproval
+                ? [{ id: 'approve', label: 'Approve' }]
+                : []),
+            { id: 'migrate', label: 'Migrate' }
+          ]
+        }}
         isLastStep={isLastStep}
         autoContinueToNextStep
         autoContinueStepIds={['approve', 'permit']}

@@ -66,6 +66,7 @@ interface UseMigrateFlowProps {
   account?: Address
   chainId: number
   enabled: boolean
+  allowPermit?: boolean
   permitSignature?: TPermitSignature // Provided after user signs permit
 }
 
@@ -78,7 +79,8 @@ export const useMigrateFlow = ({
   account,
   chainId,
   enabled,
-  permitSignature
+  permitSignature,
+  allowPermit = true
 }: UseMigrateFlowProps): UseMigrateFlowReturn => {
   const client = usePublicClient({ chainId })
   const [permitType, setPermitType] = useState<PermitType>('none')
@@ -140,7 +142,8 @@ export const useMigrateFlow = ({
 
   // Only use permit flow for V3 vaults with EIP-2612 style permits
   // V2 vaults have a different permit signature (Bytes[65] instead of v,r,s) that's incompatible with selfPermit
-  const supportsPermit = migratorConfig.argumentType === 'erc4626-router' && permitType === 'eip2612' && !isV2Vault
+  const supportsPermit =
+    allowPermit && migratorConfig.argumentType === 'erc4626-router' && permitType === 'eip2612' && !isV2Vault
 
   // Determine route type: permit (if V3 with EIP-2612) or approve (V2 or no permit)
   const routeType: MigrateRouteType = supportsPermit ? 'permit' : 'approve'

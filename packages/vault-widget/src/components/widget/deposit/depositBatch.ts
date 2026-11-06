@@ -3,7 +3,7 @@ import { vaultAbi } from '@yearn/vault-widget/internal/contracts/abi/vaultV2.abi
 import { yBoldZapperAbi } from '@yearn/vault-widget/internal/contracts/abi/yBoldZapper.abi'
 import { yvUsdLockedZapAbi } from '@yearn/vault-widget/internal/contracts/abi/yvUsdLockedZap.abi'
 import { getDirectStakeCall } from '@yearn/vault-widget/internal/hooks/actions/stakingAdapter'
-import { getApproveAbi } from '@yearn/vault-widget/internal/utils/approve'
+import { getApproveAbi, requiresAllowanceResetBeforeApproval } from '@yearn/vault-widget/internal/utils/approve'
 import { YBOLD_ZAPPER_ADDRESS } from '@yearn/vault-widget/internal/utils/yBold'
 import { YVUSD_LOCKED_ZAP_ADDRESS } from '@yearn/vault-widget/internal/utils/yvUsd'
 import type { Address, Hex } from 'viem'
@@ -73,7 +73,7 @@ function buildApprovalCalls({
     amount
   })
 
-  if (currentAllowance <= 0n) {
+  if (currentAllowance <= 0n || !requiresAllowanceResetBeforeApproval(depositToken)) {
     return [approveAmountCall]
   }
 

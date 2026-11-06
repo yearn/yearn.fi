@@ -1,25 +1,152 @@
-import { useThemePreference } from '@hooks/useThemePreference'
+import { setThemePreference, useThemePreference } from '@hooks/useThemePreference'
 import { useAppSettings } from '@pages/vaults/contexts/useAppSettings'
+import { RecentActivity } from '@shared/components/RecentActivity'
+import { WalletAccountValue } from '@shared/components/WalletAccountValue'
 import { yToast } from '@shared/components/yToast'
-import { useNotifications } from '@shared/contexts/useNotifications'
-import { useWalletVaultTotals } from '@shared/contexts/useWalletVaultTotals'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useYearn } from '@shared/contexts/useYearn'
+import { IconArrowLeft } from '@shared/icons/IconArrowLeft'
+import { IconArrowRight } from '@shared/icons/IconArrowRight'
 import { IconChevron } from '@shared/icons/IconChevron'
+import { IconCopy } from '@shared/icons/IconCopy'
+import { IconMoon } from '@shared/icons/IconMoon'
+import { IconPower } from '@shared/icons/IconPower'
+import { IconSettings } from '@shared/icons/IconSettings'
+import { IconSun } from '@shared/icons/IconSun'
 import { cl } from '@shared/utils'
 import { truncateHex } from '@shared/utils/tools.address'
-import { AccountMenu } from '@yearn/site-header/account'
 import { WalletSurface } from '@yearn/wallet-ui'
 import { useRouter } from 'next/navigation'
-import { useCallback, useState } from 'react'
+import type { ReactElement } from 'react'
+import { useCallback, useMemo, useState } from 'react'
 
-function AdvancedSettings() {
-  const isDarkTheme = useThemePreference() !== 'light'
+type TAccountDropdownProps = {
+  isOpen: boolean
+  onClose: () => void
+}
+
+type TView = 'account' | 'settings'
+
+function AccountView({ onSettingsClick, onClose }: { onSettingsClick: () => void; onClose: () => void }): ReactElement {
+  const { address, ens, clusters, onDesactivate } = useWeb3()
+  const router = useRouter()
+  const themePreference = useThemePreference()
+  const isDarkTheme = themePreference !== 'light'
+  const { toast } = yToast()
+
+  const displayName = useMemo(() => {
+    if (ens) return ens
+    if (clusters?.name) return clusters.name
+    if (address) return truncateHex(address, 4)
+    return 'Not connected'
+  }, [address, ens, clusters])
+
+  const handleCopyAddress = useCallback(async () => {
+    if (!address) return
+    try {
+      await navigator.clipboard.writeText(address)
+      toast({ content: 'Address copied', type: 'success' })
+    } catch {
+      toast({ content: 'Unable to copy address', type: 'error' })
+    }
+  }, [address, toast])
+
+  const handleViewPortfolio = useCallback(() => {
+    router.push('/portfolio')
+    onClose()
+  }, [router, onClose])
+
+  const handleDisconnect = useCallback(() => {
+    onDesactivate()
+    onClose()
+  }, [onDesactivate, onClose])
+
+  const handleViewAllActivity = useCallback(() => {
+    router.push('/portfolio?tab=activity')
+    onClose()
+  }, [router, onClose])
+
+  const iconButtonClass = cl(
+    'flex size-7 items-center justify-center rounded-full transition-colors',
+    isDarkTheme
+      ? 'text-text-secondary hover:bg-surface-tertiary hover:text-text-primary'
+      : 'text-neutral-500 hover:bg-neutral-200 hover:text-neutral-700'
+  )
+
+  return (
+    <div className={'flex flex-col'}>
+      <div className={cl('rounded-2xl p-4', isDarkTheme ? 'bg-surface-secondary' : 'bg-neutral-100')}>
+        <div className={'mb-4 flex items-start justify-between'}>
+          <div className={'flex flex-col'}>
+            <button
+              aria-label="Copy wallet address"
+              title={address}
+              onClick={handleCopyAddress}
+              disabled={!address}
+              className={
+                'group flex items-center gap-1.5 text-sm font-medium text-text-primary hover:text-primary transition-colors disabled:cursor-default disabled:hover:text-text-primary'
+              }
+            >
+              <span>{displayName}</span>
+              {address && <IconCopy className={'size-3.5 opacity-50 group-hover:opacity-100 transition-opacity'} />}
+            </button>
+            <WalletAccountValue />
+          </div>
+          <div className={'flex items-center gap-1'}>
+            <button
+              id="yearn-wallet-settings"
+              aria-label="Wallet settings"
+              onClick={onSettingsClick}
+              className={iconButtonClass}
+            >
+              <IconSettings className={'size-4'} />
+            </button>
+            <button onClick={handleDisconnect} aria-label="Disconnect wallet" className={iconButtonClass}>
+              <IconPower className={'size-4'} />
+            </button>
+          </div>
+        </div>
+
+        <button
+          onClick={handleViewPortfolio}
+          className={cl(
+            'flex w-full items-center justify-center gap-2 rounded-lg border py-2.5 text-sm font-medium transition-colors',
+            isDarkTheme
+              ? 'border-border bg-transparent text-text-primary hover:bg-surface-tertiary'
+              : 'border-neutral-200 bg-white text-neutral-900 hover:bg-neutral-50'
+          )}
+        >
+          {'View portfolio'}
+          <IconArrowRight className={'size-4'} />
+        </button>
+      </div>
+
+      <RecentActivity onViewAll={handleViewAllActivity} />
+    </div>
+  )
+}
+
+const DARK_VARIANT_LABELS: Record<string, string> = {
+  'soft-dark': 'Soft Dark',
+  'blue-dark': 'Blue Dark',
+  midnight: 'Midnight'
+}
+
+function SettingsView({ onBack }: { onBack: () => void }): ReactElement {
+  const themePreference = useThemePreference()
+  const isDarkTheme = themePreference !== 'light'
   const { mutateVaultList, enableVaultListFetch, isLoadingVaultList } = useYearn()
   const { shouldHideDust, onSwitchHideDust } = useAppSettings()
   const { toast } = yToast()
   const [isAdvancedOpen, setIsAdvancedOpen] = useState(false)
   const [isRefreshingVaults, setIsRefreshingVaults] = useState(false)
+
+  const backButtonClass = cl(
+    'flex size-7 items-center justify-center rounded-full transition-colors',
+    isDarkTheme
+      ? 'text-text-secondary hover:bg-surface-secondary hover:text-text-primary'
+      : 'text-neutral-500 hover:bg-neutral-100 hover:text-neutral-700'
+  )
 
   const menuItemClass = cl(
     'flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors',
@@ -42,8 +169,72 @@ function AdvancedSettings() {
     }
   }, [enableVaultListFetch, mutateVaultList, toast])
 
+  function getVariantButtonClass(variant: string): string {
+    if (themePreference === variant) {
+      return 'flex items-center justify-between rounded-lg px-3 py-2 text-sm font-medium transition-colors bg-primary/10 text-primary'
+    }
+    return menuItemClass
+  }
+
   return (
-    <>
+    <div className={'flex flex-col'}>
+      <div className={'mb-4 flex items-center'}>
+        <button
+          id="yearn-wallet-settings-back"
+          aria-label="Back to account"
+          onClick={onBack}
+          className={backButtonClass}
+        >
+          <IconArrowLeft className={'size-4'} />
+        </button>
+        <h2 className={'flex-1 text-center text-base font-semibold text-text-primary'}>{'Settings'}</h2>
+        <div className={'w-7'} />
+      </div>
+
+      <div className={'mb-4 flex items-center justify-between'}>
+        <span className={'text-sm font-medium text-text-primary'}>{'Theme'}</span>
+        <div className={cl('flex rounded-full p-0.5', isDarkTheme ? 'bg-surface-secondary' : 'bg-neutral-100')}>
+          <button
+            aria-label="Use light theme"
+            onClick={() => setThemePreference('light')}
+            className={cl(
+              'flex items-center justify-center rounded-full px-3 py-1 text-sm font-medium transition-colors',
+              !isDarkTheme ? 'bg-surface text-text-primary shadow-sm' : 'text-text-secondary hover:text-text-primary'
+            )}
+          >
+            <IconSun className={'size-4'} />
+          </button>
+          <button
+            aria-label="Use dark theme"
+            onClick={() => setThemePreference(themePreference === 'light' ? 'soft-dark' : themePreference)}
+            className={cl(
+              'flex items-center justify-center rounded-full px-3 py-1 text-sm font-medium transition-colors',
+              isDarkTheme ? 'bg-surface text-text-primary shadow-sm' : 'text-text-secondary hover:text-text-primary'
+            )}
+          >
+            <IconMoon className={'size-4'} />
+          </button>
+        </div>
+      </div>
+
+      {isDarkTheme && (
+        <div className={'mb-4'}>
+          <span className={'mb-2 block text-xs font-medium text-text-secondary'}>{'Dark variant'}</span>
+          <div className={'flex flex-col gap-1'}>
+            {(['soft-dark', 'blue-dark', 'midnight'] as const).map((variant) => (
+              <button
+                key={variant}
+                onClick={() => setThemePreference(variant)}
+                className={getVariantButtonClass(variant)}
+              >
+                <span>{DARK_VARIANT_LABELS[variant]}</span>
+                {themePreference === variant && <IconChevron className={'size-4 -rotate-90'} />}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       <button
         className={menuItemClass}
         onClick={() => setIsAdvancedOpen((prev) => !prev)}
@@ -94,13 +285,30 @@ function AdvancedSettings() {
           </button>
         </div>
       )}
-    </>
+    </div>
   )
 }
 
-type TDropdownProps = { isOpen: boolean; onClose: () => void }
+function AccountContent({ onClose }: { onClose: () => void }): ReactElement {
+  const [view, setView] = useState<TView>('account')
+  const showView = (nextView: TView): void => {
+    setView(nextView)
+    requestAnimationFrame(() =>
+      document.getElementById(nextView === 'settings' ? 'yearn-wallet-settings-back' : 'yearn-wallet-settings')?.focus()
+    )
+  }
+  return (
+    <div>
+      {view === 'account' ? (
+        <AccountView onSettingsClick={() => showView('settings')} onClose={onClose} />
+      ) : (
+        <SettingsView onBack={() => showView('account')} />
+      )}
+    </div>
+  )
+}
 
-export function AccountDropdown({ isOpen, onClose }: TDropdownProps) {
+export function AccountDropdown({ isOpen, onClose }: TAccountDropdownProps): ReactElement {
   const { address, isActive } = useWeb3()
   return (
     <WalletSurface
@@ -110,58 +318,9 @@ export function AccountDropdown({ isOpen, onClose }: TDropdownProps) {
       title="Wallet"
       triggerSelector="[data-wallet-account-trigger], [data-mobile-nav-trigger]"
       desktopTop="calc(var(--header-height) + 0.5rem)"
-      desktopRight="max(1rem, calc((100vw - 1232px) / 2 + 1rem))"
+      desktopRight="max(1rem,calc((100vw - 1232px)/2 + 1rem))"
     >
-      {isOpen && isActive && <ConnectedAccountContent key={address} onClose={onClose} />}
+      {isOpen && <AccountContent key={address} onClose={onClose} />}
     </WalletSurface>
-  )
-}
-
-function ConnectedAccountContent({ onClose }: { onClose: () => void }) {
-  const { address, ens, clusters, onDesactivate } = useWeb3()
-  const { totalValue, isLoading: isWalletLoading } = useWalletVaultTotals()
-  const [whole, fraction] = totalValue
-    .toLocaleString('en-US', {
-      minimumFractionDigits: 2,
-      maximumFractionDigits: 2
-    })
-    .split('.')
-  const { cachedEntries } = useNotifications()
-  const { toast } = yToast()
-  const router = useRouter()
-  const navigate = (href: string) => {
-    router.push(href)
-    onClose()
-  }
-  return (
-    <AccountMenu
-      account={{
-        address,
-        displayName: ens || clusters?.name || (address ? truncateHex(address, 4) : 'Not connected'),
-        isWalletLoading,
-        portfolioValue: (
-          <>
-            <span>${whole}</span>
-            <span className="text-text-secondary">{totalValue > 0 ? `.${fraction}` : ''}</span>
-          </>
-        ),
-        recentActivity: cachedEntries
-          .toSorted((a, b) => (b.timeFinished ?? 0) - (a.timeFinished ?? 0))
-          .slice(0, 3)
-          .map((activity, index) => ({
-            ...activity,
-            id: activity.id ?? `legacy-${index}`,
-            timestamp: activity.timeFinished
-          })),
-        onDisconnect: () => {
-          onDesactivate()
-          onClose()
-        },
-        onViewPortfolio: () => navigate('/portfolio'),
-        onViewAllActivity: () => navigate('/portfolio?tab=activity'),
-        onCopied: () => toast({ content: 'Address copied', type: 'success' })
-      }}
-      advancedSettings={<AdvancedSettings />}
-    />
   )
 }
