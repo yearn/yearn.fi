@@ -1,4 +1,4 @@
-export type TVaultType = 'all' | 'factory' | 'v3'
+export type TVaultType = 'all' | 'factory' | 'fixed' | 'v3'
 
 export const VAULT_TYPE_COPY: Record<TVaultType, { label: string; emoji: string }> = {
   all: {
@@ -9,6 +9,10 @@ export const VAULT_TYPE_COPY: Record<TVaultType, { label: string; emoji: string 
     label: 'Single Asset',
     emoji: '⚙️'
   },
+  fixed: {
+    label: 'Fixed Yield',
+    emoji: '🛡️'
+  },
   factory: {
     label: 'LP Token',
     emoji: '🏭'
@@ -17,7 +21,8 @@ export const VAULT_TYPE_COPY: Record<TVaultType, { label: string; emoji: string 
 
 export const VAULT_TYPE_DESCRIPTION: Record<TVaultType, string | null> = {
   all: null,
-  v3: 'Deposits a single token; Yearn allocates it across strategies.',
+  v3: 'Deposit a single token into a vault with fixed or floating yield.',
+  fixed: 'Senior tranche products designed for predictable, reserve-backed yield.',
   factory: 'Deposits a DEX LP token; yield comes from fees and incentives, auto-compounded.'
 }
 

@@ -218,6 +218,7 @@ describe('buildYvUsdVaultsModel', () => {
     })
 
     expect(model.assetAddress).toBe(UNDERLYING_ASSET.address)
+    expect(model.listVault.name).toBe('Legacy yvUSD')
     expect(model.listVault.tvl.tvl).toBe(1000)
     expect(model.lockedVault.apr.forwardAPR.netAPR).toBe(0.11)
     expect(model.unlockedVault.strategies?.[0].name).toBe('Infinifi sIUSD Morpho Looper')

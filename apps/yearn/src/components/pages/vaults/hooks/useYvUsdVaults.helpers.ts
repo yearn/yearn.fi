@@ -289,7 +289,7 @@ export function buildYvUsdListVault({
     ...baseView,
     address: YVUSD_UNLOCKED_ADDRESS,
     chainID: YVUSD_CHAIN_ID,
-    name: 'yvUSD',
+    name: 'Legacy yvUSD',
     symbol: 'yvUSD',
     description: YVUSD_DESCRIPTION,
     category: 'Stablecoin',

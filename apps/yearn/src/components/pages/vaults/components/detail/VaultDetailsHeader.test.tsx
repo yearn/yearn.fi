@@ -323,6 +323,23 @@ const YBOLD_VAULT = {
 } as const
 
 describe('VaultDetailsHeaderPresentation', () => {
+  it.each([false, true])('places a custom banner in the expanded header only (compressed: %s)', (isCompressed) => {
+    const html = renderToStaticMarkup(
+      <VaultDetailsHeaderPresentation
+        currentVault={{ ...YVUSD_VAULT, address: '0x0000000000000000000000000000000000001234' } as never}
+        depositedValue={0n}
+        isCompressed={isCompressed}
+        headerBanner={<aside>{'Senior, by Yearn.'}</aside>}
+      />
+    )
+
+    expect(html.includes('Senior, by Yearn.')).toBe(!isCompressed)
+    expect(html).not.toContain('yvUSD banner')
+    if (!isCompressed) {
+      expect(html.indexOf('Senior, by Yearn.')).toBeLessThan(html.indexOf('Est. APY'))
+    }
+  })
+
   beforeEach(() => {
     useVaultUserDataMock.mockClear()
   })

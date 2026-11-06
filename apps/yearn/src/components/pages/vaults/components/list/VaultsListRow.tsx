@@ -263,10 +263,20 @@ function getYvUsdListMetrics({
   }
 }
 
+export type TVaultsListExtraChip = {
+  label: string
+  tooltipDescription?: string
+  isActive?: boolean
+  onClick?: () => void
+  ariaLabel?: string
+}
+
 type TVaultsListRowProps = {
   currentVault: TKongVaultInput
   flags?: TVaultRowFlags
   hrefOverride?: string
+  logoSrcOverride?: string
+  extraChips?: TVaultsListExtraChip[]
   apyDisplayVariant?: TVaultForwardAPYVariant
   showBoostDetails?: boolean
   compareVaultKeys?: string[]
@@ -276,7 +286,7 @@ type TVaultsListRowProps = {
   onToggleChain?: (chainId: number) => void
   onToggleCategory?: (category: string) => void
   onToggleType?: (type: string) => void
-  activeProductType?: 'v3' | 'lp' | 'all'
+  activeProductType?: 'v3' | 'lp' | 'fixed' | 'all'
   activeFeeStructureKey?: string | null
   onToggleVaultType?: (type: 'v3' | 'lp') => void
   onToggleFeeStructure?: (feeStructureKey: string) => void
@@ -306,6 +316,8 @@ function VaultsListRowPresentationComponent({
   currentVault,
   flags,
   hrefOverride,
+  logoSrcOverride,
+  extraChips,
   apyDisplayVariant = 'default',
   showBoostDetails = true,
   compareVaultKeys,
@@ -351,7 +363,7 @@ function VaultsListRowPresentationComponent({
   const href = hrefOverride ?? `/vaults/${chainID}/${toAddress(vaultAddress)}`
   const network = getNetwork(chainID)
   const chainLogoSrc = `${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/chains/${chainID}/logo-32.png`
-  const tokenLogoSrc = getVaultPrimaryLogoSrc(currentVault)
+  const tokenLogoSrc = logoSrcOverride ?? getVaultPrimaryLogoSrc(currentVault)
   const isMobile = useMediaQuery('(max-width: 767px)', { initializeWithValue: false }) ?? false
   const defaultExpandedView: TVaultsExpandedView =
     expandedChartVariant === 'portfolio-user-tvl-overlay' ? 'tvl' : 'strategies'
@@ -819,6 +831,19 @@ function VaultsListRowPresentationComponent({
                     ariaLabel={productTypeAriaLabel}
                   />
                 ) : null}
+                {extraChips?.map((chip) => (
+                  <VaultsListChip
+                    key={chip.label}
+                    label={chip.label}
+                    isCollapsed={isChipsCompressed}
+                    showCollapsedTooltip={showCollapsedTooltip}
+                    tooltipDescription={chip.tooltipDescription}
+                    isActive={chip.isActive}
+                    onClick={chip.onClick}
+                    onHoverChange={handleInteractiveHoverChange}
+                    ariaLabel={chip.ariaLabel}
+                  />
+                ))}
                 {showFeesChip ? (
                   <VaultsListChip
                     label={feesChipLabel}
