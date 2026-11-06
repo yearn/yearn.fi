@@ -21,7 +21,7 @@ describe('getVaultPrimaryLogoSrc', () => {
     'uses the product asset logo for $product.name',
     ({ product, vault, logoSrc }) => {
       if (product.asset === 'USD') {
-        expect(logoSrc).toMatch(/ytranche-logo\.png$/)
+        expect(logoSrc).toMatch(new RegExp(`ytranche/yvusd-${product.kind}\\.png$`))
       } else {
         expect(logoSrc).toContain(`/tokens/1/${vault.token.address.toLowerCase()}/logo-128.png`)
       }

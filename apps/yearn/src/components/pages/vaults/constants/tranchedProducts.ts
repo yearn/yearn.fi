@@ -98,7 +98,6 @@ function getTokenConfig(asset: TTranchedAsset): {
   symbol: string
   decimals: number
   category: string
-  logoSrc: string
 } {
   if (asset === 'USD') {
     return {
@@ -106,8 +105,7 @@ function getTokenConfig(asset: TTranchedAsset): {
       name: 'USD Coin',
       symbol: 'USDC',
       decimals: 6,
-      category: 'Stablecoin',
-      logoSrc: `${getBaseUrl()}ytranche-logo.png`
+      category: 'Stablecoin'
     }
   }
   return {
@@ -115,8 +113,7 @@ function getTokenConfig(asset: TTranchedAsset): {
     name: 'Wrapped Ether',
     symbol: 'WETH',
     decimals: 18,
-    category: 'Volatile',
-    logoSrc: `${getAssetsBaseUrl()}/tokens/1/${WETH_ADDRESS.toLowerCase()}/logo-128.png`
+    category: 'Volatile'
   }
 }
 
@@ -227,7 +224,10 @@ function buildTranchedVault(product: TTranchedProduct): TTranchedVaultRow {
     product,
     vault,
     href: `/vaults/tranched/${product.id}`,
-    logoSrc: token.logoSrc
+    logoSrc:
+      product.asset === 'USD'
+        ? `${getBaseUrl()}ytranche/yvusd-${product.kind}.png`
+        : `${getAssetsBaseUrl()}/tokens/1/${token.address.toLowerCase()}/logo-128.png`
   }
 }
 

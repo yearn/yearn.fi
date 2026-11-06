@@ -1110,6 +1110,7 @@ function UserHoldingsCard({
 }
 
 type TVaultDetailsHeaderBaseProps = {
+  headerBanner?: ReactElement
   currentVault: TKongVaultInput
   depositedValue: bigint
   logoSrcOverride?: string
@@ -1144,6 +1145,7 @@ type TVaultDetailsHeaderPresentationProps = TVaultDetailsHeaderBaseProps & {
 }
 
 export function VaultDetailsHeaderPresentation({
+  headerBanner,
   currentVault: currentVaultInput,
   depositedValue,
   logoSrcOverride,
@@ -1246,7 +1248,7 @@ export function VaultDetailsHeaderPresentation({
         </div>
       ) : (
         <>
-          {isYvUsd ? (
+          {isYvUsd || headerBanner ? (
             <div className={'md:row-start-2 md:flex md:items-stretch md:gap-6 min-[1101px]:col-span-2'}>
               <VaultHeaderIdentity
                 currentVault={currentVault}
@@ -1258,8 +1260,8 @@ export function VaultDetailsHeaderPresentation({
                 extraMetadataChips={extraMetadataChips}
                 includeTourAttributes={includeTourAttributes}
               />
-              <div className={'hidden md:flex md:min-w-0 md:flex-1 self-stretch'}>
-                <YvUsdHeaderBanner className={'w-full max-h-[85px] self-stretch'} />
+              <div className={'hidden max-h-[85px] md:flex md:min-w-0 md:flex-1 self-stretch'}>
+                {headerBanner ?? <YvUsdHeaderBanner className={'w-full max-h-[85px] self-stretch'} />}
               </div>
             </div>
           ) : (

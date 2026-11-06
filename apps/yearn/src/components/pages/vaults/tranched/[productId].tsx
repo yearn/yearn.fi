@@ -9,6 +9,7 @@ import { VaultDetailsHeader } from '@pages/vaults/components/detail/VaultDetails
 import { VaultInfoSection } from '@pages/vaults/components/detail/VaultInfoSection'
 import { VaultRiskSection } from '@pages/vaults/components/detail/VaultRiskSection'
 import { VaultStrategiesSection } from '@pages/vaults/components/detail/VaultStrategiesSection'
+import { TranchedVaultBanner } from '@pages/vaults/components/tranched/TranchedVaultBanner'
 import { TranchedVaultChartsSection } from '@pages/vaults/components/tranched/TranchedVaultChartsSection'
 import { Widget } from '@pages/vaults/components/widget'
 import { LeveredTrancheWithdraw } from '@pages/vaults/components/widget/tranched/LeveredTrancheWithdraw'
@@ -27,6 +28,7 @@ import {
 } from '@pages/vaults/domain/kongVaultSelectors'
 import { useVaultUserData, type VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { WidgetActionType } from '@pages/vaults/types'
+import { useMediaQuery } from '@react-hookz/web'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { cl, toAddress, toNormalizedBN } from '@shared/utils'
 import type { ReactElement, ReactNode } from 'react'
@@ -273,6 +275,8 @@ function TranchedProductDetail({ product }: { product: TTranchedProduct }): Reac
   const resolved = useMemo(() => resolveTranchedProduct(product), [product])
   const [widgetMode, setWidgetMode] = useState<WidgetActionType>(WidgetActionType.Deposit)
   const [activeSectionKey, setActiveSectionKey] = useState<TSectionKey>('charts')
+  const [isHeaderForceCompressed, setIsHeaderForceCompressed] = useState(false)
+  const isBelowDesktopWidgetBreakpoint = useMediaQuery('(max-width: 1100px)', { initializeWithValue: false }) ?? false
   const headerRef = useRef<HTMLElement | null>(null)
   const sectionRefs = useRef<Record<TSectionKey, HTMLDivElement | null>>({
     charts: null,
@@ -379,6 +383,11 @@ function TranchedProductDetail({ product }: { product: TTranchedProduct }): Reac
     }
   }, [])
 
+  const productBanner =
+    product.asset === 'USD' ? (
+      <TranchedVaultBanner kind={product.kind} onExploreStructure={(): void => handleSelectSection('about')} />
+    ) : undefined
+
   const setSectionRef =
     (key: TSectionKey) =>
     (element: HTMLDivElement | null): void => {
@@ -412,10 +421,14 @@ function TranchedProductDetail({ product }: { product: TTranchedProduct }): Reac
             widgetMode={widgetMode}
             onWidgetModeChange={setWidgetMode}
             isCollapsibleMode={true}
+            headerBanner={productBanner}
+            forceCompressed={isBelowDesktopWidgetBreakpoint}
+            onCompressionStateChange={({ isForceCompressed }): void => setIsHeaderForceCompressed(isForceCompressed)}
           />
         </header>
 
         <div className={'py-4 md:hidden'}>
+          {productBanner ? <div className={'mb-3'}>{productBanner}</div> : null}
           <VaultDetailsHeader
             currentVault={resolved.row.vault}
             depositedValue={0n}
@@ -432,6 +445,10 @@ function TranchedProductDetail({ product }: { product: TTranchedProduct }): Reac
             isCollapsibleMode={false}
           />
         </div>
+
+        {productBanner && isBelowDesktopWidgetBreakpoint ? (
+          <div className={'mt-3 hidden md:block'}>{productBanner}</div>
+        ) : null}
 
         <section className={'grid grid-cols-1 gap-4 bg-app md:grid-cols-20 md:items-start md:gap-6'}>
           <div
@@ -460,6 +477,10 @@ function TranchedProductDetail({ product }: { product: TTranchedProduct }): Reac
                 <TranchedVaultChartsSection product={product} />
               </SectionShell>
             </div>
+
+            {productBanner && isHeaderForceCompressed && !isBelowDesktopWidgetBreakpoint ? (
+              <div className={'hidden md:block'}>{productBanner}</div>
+            ) : null}
 
             <div ref={setSectionRef('about')}>
               <SectionShell id={'about'} title={'Vault Info'}>
