@@ -6,11 +6,14 @@ import { WidgetActionType } from '@yearn/vault-widget/types'
 import { afterEach, beforeAll, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@yearn/vault-widget/erc4626/useErc4626Vault', () => ({
-  useErc4626Vault: () => ({
-    vault: { name: 'Retired Test Vault', asset: { symbol: 'TEST', decimals: 18 } },
-    vaultUserData: { depositedValue: 0n },
-    refetch: vi.fn()
-  })
+  useErc4626Vault: ({ address }: { address?: string }) =>
+    address
+      ? {
+          vault: { name: 'Retired Test Vault', asset: { symbol: 'TEST', decimals: 18 } },
+          vaultUserData: { depositedValue: 0n },
+          refetch: vi.fn()
+        }
+      : { refetch: vi.fn() }
 }))
 vi.mock('@yearn/vault-widget/internal/components/widget', () => ({
   Widget: ({ mode }: { mode: WidgetActionType }) => <div data-testid="transaction-form">{mode}</div>,
@@ -44,6 +47,54 @@ const accept = () => {
 const mode = () => screen.getByTestId('transaction-form').textContent
 
 describe('retired vault deposits', () => {
+  it('passes the active action to a host-rendered vault picker', () => {
+    render(<Erc4626VaultWidget chainId={1} vaultSelector={(mode) => <div data-testid="picker-action">{mode}</div>} />)
+    expect(screen.getByTestId('picker-action').textContent).toBe(String(WidgetActionType.Deposit))
+    fireEvent.click(screen.getByRole('button', { name: 'Withdraw' }))
+    expect(screen.getByTestId('picker-action').textContent).toBe(String(WidgetActionType.Withdraw))
+  })
+  it('applies the same retirement confirmation to factory vaults', () => {
+    render(<Erc4626VaultWidget address={address} chainId={1} contractKind="yearn-v2" isRetired />)
+    expect(mode()).toBe(String(WidgetActionType.Withdraw))
+    deposit()
+    expect(mode()).toBe(String(WidgetActionType.Withdraw))
+    accept()
+    expect(mode()).toBe(String(WidgetActionType.Deposit))
+  })
+  it('shows unavailable values in a disabled form until a vault is selected', () => {
+    const select = vi.fn()
+    render(<Erc4626VaultWidget chainId={1} onSelectVault={select} />)
+    const input = screen.getByRole('textbox', { name: 'Amount' }) as HTMLInputElement
+    expect(input.value).toBe('')
+    expect(input.matches(':disabled')).toBe(true)
+    expect(screen.getAllByLabelText('Unavailable')).toHaveLength(5)
+    expect(screen.queryByTestId('transaction-form')).toBeNull()
+    expect(screen.getByText('USDC')).toBeDefined()
+    expect(screen.getByRole('button', { name: 'Select a vault to deposit.' }).matches(':disabled')).toBe(true)
+    fireEvent.click(screen.getByRole('button', { name: 'Select vault to deposit into' }))
+    expect(select).toHaveBeenCalledOnce()
+    fireEvent.click(screen.getByRole('button', { name: 'Withdraw' }))
+    expect(screen.getByRole('button', { name: 'Select vault to withdraw from' })).toBeDefined()
+    expect(screen.getByRole('button', { name: 'Select a vault to withdraw.' }).matches(':disabled')).toBe(true)
+  })
+  it('places host selection content inside the same card and makes the form inert', () => {
+    render(
+      <Erc4626VaultWidget
+        chainId={1}
+        onSelectVault={vi.fn()}
+        vaultSelector={
+          <div role="dialog" aria-label="Vault picker">
+            Choices
+          </div>
+        }
+      />
+    )
+    const picker = screen.getByRole('dialog', { name: 'Vault picker' })
+    const card = picker.closest('[data-erc4626-card]')
+    const trigger = card?.querySelector('[data-vault-selector-trigger]')
+    expect(trigger?.getAttribute('aria-expanded')).toBe('true')
+    expect(trigger?.closest('[inert]')).not.toBeNull()
+  })
   it('starts on withdraw and requires checkbox acceptance before mounting the deposit form', () => {
     render(<Erc4626VaultWidget address={address} chainId={1} isRetired />)
     expect(mode()).toBe(WidgetActionType.Withdraw)
@@ -115,5 +166,27 @@ describe('retired vault deposits', () => {
     deposit()
     expect(mode()).toBe(WidgetActionType.Deposit)
     expect(screen.queryByRole('dialog')).toBeNull()
+  })
+
+  it('toggles the chart independently and saves the shared transaction settings', () => {
+    render(<Erc4626VaultWidget address={address} chainId={1} />)
+    const chart = screen.getByRole('button', { name: 'Toggle chart' })
+    expect(chart.getAttribute('aria-expanded')).toBe('false')
+    fireEvent.click(chart)
+    expect(screen.getByRole('complementary', { name: 'Vault chart' })).toBeDefined()
+    fireEvent.click(screen.getByRole('button', { name: 'Withdraw' }))
+    expect(mode()).toBe(WidgetActionType.Withdraw)
+    expect(chart.getAttribute('aria-expanded')).toBe('true')
+    fireEvent.click(chart)
+    expect(screen.queryByRole('complementary', { name: 'Vault chart' })).toBeNull()
+
+    const settings = screen.getByRole('button', { name: 'Transaction settings' })
+    fireEvent.click(settings)
+    expect(screen.getByRole('heading', { name: 'Transaction Settings' })).toBeDefined()
+    expect(screen.queryByRole('switch', { name: 'Stake Automatically' })).toBeNull()
+    fireEvent.click(screen.getByRole('button', { name: '0.1%' }))
+    fireEvent.click(screen.getByRole('button', { name: 'Close settings' }))
+    fireEvent.click(settings)
+    expect((screen.getByRole('spinbutton', { name: 'Slippage & Price Impact' }) as HTMLInputElement).value).toBe('0.1')
   })
 })

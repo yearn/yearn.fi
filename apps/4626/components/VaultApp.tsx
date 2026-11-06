@@ -1,22 +1,37 @@
 'use client'
 
 import { Header } from '@erc4626/components/Header'
+import { VaultChartSidecar } from '@erc4626/components/VaultChartSidecar'
 import { VaultPicker } from '@erc4626/components/VaultPicker'
+import { VaultZapRuntime } from '@erc4626/components/VaultZapRuntime'
 import { resolveChainId } from '@erc4626/lib/chains'
-import { useYearnAllocators } from '@erc4626/lib/useVaultDiscovery'
+import { useYearnVaultMetadata } from '@erc4626/lib/useVaultDiscovery'
 import { parseVaultSelection } from '@erc4626/lib/vaultSelection'
 import { Erc4626VaultWidget } from '@yearn/vault-widget'
 import { useState } from 'react'
 import type { Address } from 'viem'
 import { useAccount } from 'wagmi'
 
-export function VaultApp({ initialChain, initialAddress }: { initialChain?: string; initialAddress?: string }) {
+export function VaultApp({
+  initialChain,
+  initialAddress,
+  demo = false,
+  headerInsideCard = false
+}: {
+  initialChain?: string
+  initialAddress?: string
+  demo?: boolean
+  headerInsideCard?: boolean
+}) {
   const initial = parseVaultSelection(initialChain, initialAddress)
   const { address: owner, chainId: walletChain } = useAccount()
   const [selection, setSelection] = useState<{ address: Address; chainId: number; retired?: boolean } | undefined>(
     initial.ok ? initial : undefined
   )
-  const catalog = useYearnAllocators(!!selection, { includeHidden: true })
+  const catalog = useYearnVaultMetadata(!!selection)
+  const selectedMetadata = catalog.data?.find(
+    (vault) => vault.chainId === selection?.chainId && vault.address.toLowerCase() === selection?.address.toLowerCase()
+  )
   const isRetired =
     selection?.retired === true ||
     catalog.data?.some(
@@ -38,35 +53,52 @@ export function VaultApp({ initialChain, initialAddress }: { initialChain?: stri
   return (
     <>
       <Header />
-      <main className="mx-auto w-full max-w-xl flex-1 px-5 pb-10 pt-8">
-        <h1 className="text-3xl font-semibold tracking-tight">ERC-4626 Widget</h1>
-        <Erc4626VaultWidget
-          className="mt-7"
-          address={selection?.address}
-          chainId={selection?.chainId ?? resolveChainId(walletChain) ?? 1}
-          selectionRevision={selectionRevision}
-          isRetired={isRetired}
-          isCheckingRetirement={!!selection && !isRetired && catalog.isPending && catalog.isFetching}
-          onSelectVault={() => setPickerOpen(true)}
-        />
-        {pickerOpen && (
-          <VaultPicker
-            key={owner ?? 'disconnected'}
-            selected={selection}
-            chainId={selection?.chainId ?? resolveChainId(walletChain) ?? 1}
-            onSelect={select}
-            onClose={() => setPickerOpen(false)}
-          />
+      <main aria-label="ERC-4626 vault" className="mx-auto w-full max-w-6xl flex-1 px-5 pb-10 pt-8">
+        {!demo && (
+          <a href="/demo" className="mx-auto mb-4 block max-w-xl text-sm text-text-secondary underline">
+            Try the wallet-free playground
+          </a>
         )}
+        <VaultZapRuntime chainId={selection?.chainId ?? resolveChainId(walletChain) ?? 1}>
+          <Erc4626VaultWidget
+            renderChart={({ isOpen, onClose, vault }) => (
+              <VaultChartSidecar
+                key={`${selection?.chainId}:${selection?.address}`}
+                enabled={isOpen}
+                onClose={onClose}
+                vault={vault}
+              />
+            )}
+            headerInsideCard={headerInsideCard}
+            enableZaps
+            address={selection?.address}
+            chainId={selection?.chainId ?? resolveChainId(walletChain) ?? 1}
+            selectionRevision={selectionRevision}
+            isRetired={isRetired}
+            contractKind={selectedMetadata?.factory ? 'yearn-v2' : undefined}
+            isCheckingRetirement={!!selection && !isRetired && catalog.isPending && catalog.isFetching}
+            onSelectVault={() => setPickerOpen(true)}
+            vaultSelector={
+              pickerOpen
+                ? (mode) => (
+                    <VaultPicker
+                      mode={mode}
+                      key={owner ?? 'disconnected'}
+                      selected={selection}
+                      chainId={selection?.chainId ?? resolveChainId(walletChain) ?? 1}
+                      onSelect={select}
+                      onClose={() => setPickerOpen(false)}
+                    />
+                  )
+                : undefined
+            }
+          />
+        </VaultZapRuntime>
         {!selection && initialAddress && !initial.ok && (
           <p role="alert" className="mt-4 text-sm text-red-700">
             {initial.error}
           </p>
         )}
-        <p className="mt-6 text-xs leading-relaxed text-text-secondary">
-          Opening a contract here does not mean it is a Yearn vault or has been reviewed by Yearn. Verify the network,
-          vault address and underlying token before depositing.
-        </p>
       </main>
     </>
   )

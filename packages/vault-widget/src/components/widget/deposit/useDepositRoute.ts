@@ -11,6 +11,7 @@ interface UseDepositRouteProps {
   vaultAddress: Address
   stakingAddress?: Address
   ensoEnabled: boolean
+  isCrossChain?: boolean
 }
 
 type ResolveDepositRouteTypeProps = UseDepositRouteProps
@@ -22,8 +23,10 @@ export function resolveDepositRouteType({
   destinationToken,
   vaultAddress,
   stakingAddress,
-  ensoEnabled
+  ensoEnabled,
+  isCrossChain = false
 }: ResolveDepositRouteTypeProps): DepositRouteType {
+  if (isCrossChain) return ensoEnabled ? 'ENSO' : 'NO_ROUTE'
   // Case 1: Direct vault deposit (asset → vault)
   if (
     (isAddressEqual(depositToken, assetAddress) ||
@@ -75,7 +78,8 @@ export function useDepositRoute({
   destinationToken,
   vaultAddress,
   stakingAddress,
-  ensoEnabled
+  ensoEnabled,
+  isCrossChain = false
 }: UseDepositRouteProps): DepositRouteType {
   return useMemo(
     () =>
@@ -86,8 +90,18 @@ export function useDepositRoute({
         destinationToken,
         vaultAddress,
         stakingAddress,
-        ensoEnabled
+        ensoEnabled,
+        isCrossChain
       }),
-    [ensoEnabled, depositToken, assetAddress, directDepositTokenAddress, destinationToken, vaultAddress, stakingAddress]
+    [
+      ensoEnabled,
+      isCrossChain,
+      depositToken,
+      assetAddress,
+      directDepositTokenAddress,
+      destinationToken,
+      vaultAddress,
+      stakingAddress
+    ]
   )
 }

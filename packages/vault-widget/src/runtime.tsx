@@ -142,6 +142,9 @@ export type VaultWidgetPricesRuntime = {
 
 export type VaultWidgetRoutingRuntime = {
   ensoRouteEndpoint?: string
+  fetchRoute?: typeof fetch
+  tokenSelectionChainIds?: readonly number[]
+  withdrawalTokenSelectionChainIds?: readonly number[]
   isEnsoEnabled: (context: { chainId: number; vaultAddress?: Address }) => boolean
 }
 
@@ -370,6 +373,9 @@ export function createVaultWidgetRuntime(overrides: VaultWidgetRuntimeOverrides 
     },
     routing: {
       ensoRouteEndpoint: overrides.routing?.ensoRouteEndpoint ?? DEFAULT_VAULT_WIDGET_RUNTIME.routing.ensoRouteEndpoint,
+      fetchRoute: overrides.routing?.fetchRoute,
+      tokenSelectionChainIds: overrides.routing?.tokenSelectionChainIds,
+      withdrawalTokenSelectionChainIds: overrides.routing?.withdrawalTokenSelectionChainIds,
       isEnsoEnabled: overrides.routing?.isEnsoEnabled ?? DEFAULT_VAULT_WIDGET_RUNTIME.routing.isEnsoEnabled
     },
     safe: {

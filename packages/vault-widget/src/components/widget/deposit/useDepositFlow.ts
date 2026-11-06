@@ -41,6 +41,7 @@ interface UseDepositFlowProps {
   routeRefreshKey?: number
   stakingSource?: string
   directDepositLimit?: bigint
+  yearnV2PricePerShare?: bigint
   directDepositDisabled?: boolean
 }
 
@@ -103,10 +104,12 @@ export const useDepositFlow = ({
   routeRefreshKey,
   stakingSource,
   directDepositLimit,
+  yearnV2PricePerShare,
   directDepositDisabled
 }: UseDepositFlowProps): DepositFlowResult => {
   // Determine routing type
   const routeType = useDepositRoute({
+    isCrossChain: sourceChainId !== chainId,
     depositToken,
     assetAddress,
     directDepositTokenAddress,
@@ -134,6 +137,8 @@ export const useDepositFlow = ({
     chainId,
     decimals: inputDecimals,
     maxDeposit: directDepositLimit,
+    yearnV2PricePerShare,
+    vaultDecimals,
     enabled: routeType === 'DIRECT_DEPOSIT' && amount > 0n && !isYvUsdLockedZapDeposit && !directDepositDisabled
   })
 

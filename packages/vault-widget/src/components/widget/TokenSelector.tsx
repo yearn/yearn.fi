@@ -14,10 +14,11 @@ import {
   getYearnKnownTokenAddresses,
   type TTokenSelectorMode
 } from '@yearn/vault-widget/internal/components/widget/tokenSelectorList.utils'
+import { IconChevron } from '@yearn/vault-widget/internal/icons/IconChevron'
 import { cl, formatTAmount } from '@yearn/vault-widget/internal/utils'
 import { useVaultWidgetRuntime, type VaultWidgetToken } from '@yearn/vault-widget/runtime'
 import type { Token } from '@yearn/vault-widget/types'
-import { type FC, useCallback, useMemo, useState } from 'react'
+import { type FC, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { type Address, formatUnits, isAddress } from 'viem'
 
 type TTokenType = 'asset' | 'vault' | 'staking' | undefined
@@ -71,6 +72,7 @@ interface TokenSelectorProps {
   stakingAddress?: `0x${string}`
   allowHiddenVaultTokenSelection?: boolean
   mode?: TTokenSelectorMode
+  cardLayout?: boolean
 }
 
 const TokenTypeChip: FC<{ type: TTokenType }> = ({ type }) => {
@@ -92,7 +94,8 @@ const TokenItem: FC<{
   onSelect: () => void
   tokenType?: TTokenType
   logoToken?: TTokenLogoSourceToken
-}> = ({ token, selected, onSelect, tokenType, logoToken }) => {
+  cardLayout?: boolean
+}> = ({ token, selected, onSelect, tokenType, logoToken, cardLayout }) => {
   const { assets } = useVaultWidgetRuntime()
   const logoSources = getTokenLogoSources({
     address: logoToken?.address ?? token.address,
@@ -106,33 +109,48 @@ const TokenItem: FC<{
       type="button"
       onClick={onSelect}
       className={cl(
-        'flex items-center justify-between w-full px-3 py-2 rounded-lg',
-        selected ? 'bg-primary/10 hover:bg-primary/15' : 'hover:bg-surface-secondary'
+        'flex items-center justify-between gap-3 w-full px-3 py-2 rounded-lg',
+        cardLayout ? 'transition-colors duration-150 motion-reduce:transition-none' : undefined,
+        selected
+          ? cardLayout
+            ? 'bg-primary/10'
+            : 'bg-primary/10 hover:bg-primary/15'
+          : cardLayout
+            ? 'hover:bg-surface-secondary/30'
+            : 'hover:bg-surface-secondary'
       )}
     >
-      <div className="flex items-center gap-2">
+      <div className="flex min-w-0 items-center gap-3">
         <TokenLogoV2
           src={logoSources.src}
           altSrc={logoSources.altSrc}
           tokenSymbol={token.symbol}
           tokenName={token.name}
+          chainId={cardLayout ? token.chainId : undefined}
           width={24}
           height={24}
           className="rounded-full"
         />
-        <div className="text-left">
+        <div className="min-w-0 text-left">
           <div className="flex items-center gap-1.5">
             <span className="text-sm font-medium text-text-primary">{token.symbol}</span>
             <TokenTypeChip type={tokenType} />
           </div>
-          <div className="text-xs text-text-secondary">{token.name}</div>
+          <div className="truncate text-xs text-text-secondary">{token.name}</div>
         </div>
       </div>
       {token.balance && token.balance.raw > 0n && (
-        <div className="text-right">
-          <div className="text-xs text-text-secondary">
+        <div className="shrink-0 text-right" data-token-wallet-balance>
+          <div className={cardLayout ? 'text-sm tabular-nums' : 'text-xs text-text-secondary'}>
             {formatTAmount({ value: token.balance.raw, decimals: token.decimals })}
           </div>
+          {cardLayout && (
+            <div className="mt-0.5 text-xs tabular-nums text-text-secondary">
+              {typeof token.value === 'number' && Number.isFinite(token.value) && token.value > 0
+                ? new Intl.NumberFormat('en-US', { style: 'currency', currency: 'USD' }).format(token.value)
+                : 'USD unavailable'}
+            </div>
+          )}
         </div>
       )}
     </button>
@@ -154,11 +172,22 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
   vaultAddress,
   stakingAddress,
   allowHiddenVaultTokenSelection,
-  mode = 'default'
+  mode = 'default',
+  cardLayout = false
 }) => {
   const [searchText, setSearchText] = useState('')
   const [selectedChainId, setSelectedChainId] = useState(chainId)
-  const { assets, catalog, prices, wallet } = useVaultWidgetRuntime()
+  const { assets, catalog, prices, wallet, routing } = useVaultWidgetRuntime()
+  const root = useRef<HTMLDivElement>(null)
+  // Card pickers take keyboard focus without opening the search keyboard on mobile.
+  useEffect(() => {
+    if (cardLayout) root.current?.focus({ preventScroll: true })
+  }, [cardLayout])
+  const allowedChainIds =
+    mode === 'withdraw'
+      ? (routing.withdrawalTokenSelectionChainIds ?? routing.tokenSelectionChainIds)
+      : routing.tokenSelectionChainIds
+  const chains = AVAILABLE_CHAINS.filter((chain) => !allowedChainIds || allowedChainIds.includes(chain.id))
   const { isLoading, tokensByChain: balances } = wallet
   const { knownVaults: allVaults, tokenListsByChain: tokenLists } = catalog
   const getToken = useCallback(
@@ -431,52 +460,192 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
     },
     [assetAddress, knownVaultTokenMetaByAddress, vaultAddress, stakingAddress]
   )
+  const renderToken = (token: Token) => {
+    const knownVaultTokenMeta = knownVaultTokenMetaByAddress[token.address.toLowerCase()]
+    const tokenType = getTokenType(token.address)
+    const shouldUseAssetLogoFallback = tokenType === 'vault' || tokenType === 'staking'
+    return (
+      <TokenItem
+        key={token.address}
+        token={token}
+        selected={token.address.toLowerCase() === value?.toLowerCase()}
+        onSelect={() => handleSelect(token.address)}
+        tokenType={tokenType}
+        cardLayout={cardLayout}
+        logoToken={knownVaultTokenMeta?.logoToken ?? (shouldUseAssetLogoFallback ? assetLogoToken : undefined)}
+      />
+    )
+  }
+  const groups = [
+    { title: 'Your tokens', tokens: filteredTokens.filter((token) => token.balance.raw > 0n) },
+    {
+      title: mode === 'withdraw' && !searchText.trim() ? 'Popular tokens' : 'Other tokens',
+      tokens: filteredTokens.filter((token) => token.balance.raw === 0n)
+    }
+  ].filter((group) => group.tokens.length > 0)
   return (
     <div
-      className="absolute inset-0 bg-surface rounded-lg z-50 flex flex-col shadow-xl overscroll-contain"
+      ref={root}
+      role={cardLayout ? 'dialog' : undefined}
+      aria-label={cardLayout ? 'Select token' : undefined}
+      tabIndex={cardLayout ? -1 : undefined}
+      className={cl(
+        'absolute inset-0 bg-surface z-50 flex min-h-0 flex-col overscroll-contain',
+        cardLayout ? 'text-text-primary' : 'rounded-lg shadow-xl'
+      )}
       onWheel={(e) => e.stopPropagation()}
+      onKeyDown={(event) => {
+        if (!cardLayout) return
+        if (event.key === 'Escape') {
+          event.stopPropagation()
+          onClose?.()
+          return
+        }
+        if (event.key !== 'Tab') return
+        const controls = Array.from(
+          root.current?.querySelectorAll<HTMLElement>('button:not(:disabled),input:not(:disabled),summary') ?? []
+        ).filter((el) => el.getClientRects().length > 0)
+        const next =
+          event.shiftKey && document.activeElement === controls[0]
+            ? controls.at(-1)
+            : !event.shiftKey && document.activeElement === controls.at(-1)
+              ? controls[0]
+              : undefined
+        if (next) {
+          event.preventDefault()
+          next.focus()
+        }
+      }}
     >
-      {/* Header with chain selector and close button */}
-      <div className="flex items-center justify-between p-4 border-b border-border">
-        <div className="flex items-center gap-1 rounded-lg bg-surface-secondary p-1 shadow-inner">
-          {AVAILABLE_CHAINS.map((chain) => (
+      {cardLayout ? (
+        <>
+          <div className="flex shrink-0 items-center justify-between gap-2 px-4 pt-4 pb-3">
+            <h2 className="text-lg font-medium">Select a token</h2>
             <button
-              key={chain.id}
-              onClick={() => setSelectedChainId(chain.id)}
-              className={cl(
-                'size-9 flex items-center justify-center rounded-md',
-                selectedChainId === chain.id ? 'bg-surface shadow-sm' : 'bg-transparent hover:bg-surface/50'
-              )}
               type="button"
+              onClick={onClose}
+              aria-label="Close token picker"
+              className="shrink-0 rounded-lg p-1 hover:bg-surface-secondary"
             >
-              <ImageWithFallback
-                src={assets.getChainLogoUrl(chain.id)}
-                alt={chain.name}
-                width={20}
-                height={20}
-                className="rounded-full"
-              />
+              <CloseIcon className="size-5 text-text-secondary" />
             </button>
-          ))}
-        </div>
-        <button onClick={onClose} className="p-1 hover:bg-surface-secondary rounded-lg" type="button">
-          <CloseIcon className="w-5 h-5 text-text-secondary" />
-        </button>
-      </div>
+          </div>
+          <div className="shrink-0 px-4 pb-3">
+            <div className="relative flex items-center gap-2 rounded-xl border border-border bg-surface px-3 focus-within:border-primary">
+              <svg
+                aria-hidden="true"
+                className="size-4 shrink-0 text-text-secondary"
+                viewBox="0 0 24 24"
+                fill="none"
+                stroke="currentColor"
+                strokeWidth="2"
+              >
+                <circle cx="10.5" cy="10.5" r="6.5" />
+                <path d="m16 16 5 5" />
+              </svg>
+              <input
+                type="search"
+                aria-label="Search tokens or paste a token address"
+                value={searchText}
+                onChange={(event) => setSearchText(event.target.value)}
+                placeholder="Search tokens or paste address"
+                autoComplete="off"
+                spellCheck={false}
+                className="min-w-0 flex-1 bg-transparent py-3 text-sm outline-none focus:outline-none"
+              />
+              <details className="group/network shrink-0">
+                <summary
+                  aria-label="Filter by network"
+                  className="flex cursor-pointer list-none items-center gap-1 rounded-lg p-1.5 hover:bg-surface [&::-webkit-details-marker]:hidden"
+                >
+                  <ImageWithFallback
+                    src={assets.getChainLogoUrl(selectedChainId)}
+                    alt={chains.find((chain) => chain.id === selectedChainId)?.name ?? 'Selected network'}
+                    width={20}
+                    height={20}
+                    className="rounded-full"
+                  />
+                  <IconChevron className="size-4 text-text-secondary group-open/network:rotate-180" />
+                </summary>
+                <div
+                  aria-label="Networks"
+                  className="absolute right-0 top-full z-40 mt-2 max-h-80 w-56 overflow-y-auto rounded-xl border border-border bg-surface p-2 shadow-lg"
+                >
+                  {chains.map((chain) => (
+                    <button
+                      key={chain.id}
+                      type="button"
+                      aria-pressed={selectedChainId === chain.id}
+                      onClick={(event) => {
+                        setSelectedChainId(chain.id)
+                        event.currentTarget.closest('details')?.removeAttribute('open')
+                      }}
+                      className={cl(
+                        'flex w-full items-center gap-3 rounded-lg px-3 py-2.5 text-left text-sm',
+                        selectedChainId === chain.id ? 'bg-surface-secondary' : 'hover:bg-surface-secondary'
+                      )}
+                    >
+                      <ImageWithFallback
+                        src={assets.getChainLogoUrl(chain.id)}
+                        alt=""
+                        width={20}
+                        height={20}
+                        className="rounded-full"
+                      />
+                      <span className="flex-1">{chain.name}</span>
+                      {selectedChainId === chain.id && <span aria-hidden="true">✓</span>}
+                    </button>
+                  ))}
+                </div>
+              </details>
+            </div>
+          </div>
+        </>
+      ) : (
+        <>
+          {/* Header with chain selector and close button */}
+          <div className="flex items-center justify-between p-4 border-b border-border">
+            <div className="flex items-center gap-1 rounded-lg bg-surface-secondary p-1 shadow-inner">
+              {chains.map((chain) => (
+                <button
+                  key={chain.id}
+                  onClick={() => setSelectedChainId(chain.id)}
+                  className={cl(
+                    'size-9 flex items-center justify-center rounded-md',
+                    selectedChainId === chain.id ? 'bg-surface shadow-sm' : 'bg-transparent hover:bg-surface/50'
+                  )}
+                  type="button"
+                >
+                  <ImageWithFallback
+                    src={assets.getChainLogoUrl(chain.id)}
+                    alt={chain.name}
+                    width={20}
+                    height={20}
+                    className="rounded-full"
+                  />
+                </button>
+              ))}
+            </div>
+            <button onClick={onClose} className="p-1 hover:bg-surface-secondary rounded-lg" type="button">
+              <CloseIcon className="w-5 h-5 text-text-secondary" />
+            </button>
+          </div>
 
-      {/* Search input */}
-      <div className="p-4">
-        <input
-          type="text"
-          value={searchText}
-          onChange={(e) => setSearchText(e.target.value)}
-          placeholder="Search by name or paste address"
-          className="w-full px-3 py-2 bg-surface text-text-primary text-sm border border-border rounded-lg"
-        />
-      </div>
+          {/* Search input */}
+          <div className="p-4">
+            <input
+              type="text"
+              value={searchText}
+              onChange={(e) => setSearchText(e.target.value)}
+              placeholder="Search by name or paste address"
+              className="w-full px-3 py-2 bg-surface text-text-primary text-sm border border-border rounded-lg"
+            />
+          </div>
+        </>
+      )}
 
       {/* Token list */}
-      <div className="flex-1 overflow-y-auto px-4 pb-4 overscroll-contain">
+      <div className="min-h-0 flex-1 overflow-y-auto px-4 pb-3 overscroll-contain" data-token-picker-list>
         {isLoading ? (
           <div className="flex items-center justify-center py-8">
             <div className="w-5 h-5 border-2 border-border border-t-primary rounded-full animate-spin" />
@@ -485,29 +654,22 @@ export const TokenSelector: FC<TokenSelectorProps> = ({
           <div className="text-center py-8 text-text-secondary text-sm">
             {searchText ? 'No tokens found' : 'No tokens available'}
           </div>
-        ) : (
-          <div className="space-y-1">
-            {filteredTokens.map((token) => {
-              const knownVaultTokenMeta = knownVaultTokenMetaByAddress[token.address.toLowerCase()]
-              const tokenType = getTokenType(token.address)
-              const shouldUseAssetLogoFallback = tokenType === 'vault' || tokenType === 'staking'
-
-              return (
-                <TokenItem
-                  key={token.address}
-                  token={token}
-                  selected={token.address.toLowerCase() === value?.toLowerCase()}
-                  onSelect={() => handleSelect(token.address)}
-                  tokenType={tokenType}
-                  logoToken={
-                    knownVaultTokenMeta?.logoToken ?? (shouldUseAssetLogoFallback ? assetLogoToken : undefined)
-                  }
-                />
-              )
-            })}
+        ) : cardLayout ? (
+          <div className="space-y-5">
+            {groups.map((group) => (
+              <section key={group.title} aria-label={group.title}>
+                <h3 className="mb-2 flex items-center gap-2 px-3 text-xs font-normal text-text-secondary">
+                  {group.title}
+                </h3>
+                <div className="space-y-1">{group.tokens.map(renderToken)}</div>
+              </section>
+            ))}
           </div>
+        ) : (
+          <div className="space-y-1">{filteredTokens.map(renderToken)}</div>
         )}
       </div>
+      {cardLayout && <div aria-hidden="true" className="relative z-10 h-9 shrink-0 bg-surface" />}
     </div>
   )
 }
