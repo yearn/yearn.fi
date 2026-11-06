@@ -31,15 +31,15 @@ const securityHeaders = [
   },
   {
     key: 'Content-Security-Policy',
-    value: "frame-ancestors 'self' https://app.safe.global"
+    value: [
+      "frame-ancestors 'self' https://app.safe.global",
+      `script-src ${SCRIPT_SRC.join(' ')}`,
+      `report-uri ${CSP_REPORT_URI}`
+    ].join('; ')
   },
   {
     key: 'Content-Security-Policy-Report-Only',
-    value: [
-      `script-src ${SCRIPT_SRC.join(' ')}`,
-      `connect-src ${CONNECT_SRC.join(' ')}`,
-      `report-uri ${CSP_REPORT_URI}`
-    ].join('; ')
+    value: [`connect-src ${CONNECT_SRC.join(' ')}`, `report-uri ${CSP_REPORT_URI}`].join('; ')
   }
 ]
 
@@ -47,9 +47,6 @@ const nextConfig: NextConfig = {
   agentRules: false,
   poweredByHeader: false,
   transpilePackages: ['@yearn/vault-widget', '@yearn/wallet-ui', '@yearn/site-header'],
-  async rewrites() {
-    return [{ source: '/proxy/plausible/:path*', destination: 'https://plausible.io/:path*' }]
-  },
   turbopack: {
     resolveAlias: {
       '@safe-global/safe-apps-sdk': '../../node_modules/@safe-global/safe-apps-sdk/dist/esm'
