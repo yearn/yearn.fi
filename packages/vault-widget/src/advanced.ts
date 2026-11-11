@@ -12,3 +12,5 @@ export {
 export { WidgetHeader } from '@yearn/vault-widget/internal/components/widget/shared/WidgetHeader'
 export { getDefaultTokenLogoSrc } from '@yearn/vault-widget/internal/components/widget/tokenLogo.utils'
 export { WidgetWithdraw } from '@yearn/vault-widget/internal/components/widget/withdraw'
+
+export { useAtomicBatchCapability } from '@yearn/vault-widget/internal/hooks/useAtomicBatchCapability'

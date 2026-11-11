@@ -1,4 +1,6 @@
 import { usePlausible } from '@hooks/usePlausible'
+import { useMigrateError } from '@pages/vaults/components/widget/migrate/useMigrateError'
+import { useMigrateFlow } from '@pages/vaults/components/widget/migrate/useMigrateFlow'
 import type { VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { Button } from '@shared/components/Button'
 import { TokenLogoV2 } from '@shared/components/TokenLogoV2'
@@ -8,15 +10,13 @@ import { usePublicClient } from '@shared/hooks/useAppWagmi'
 import { PERMIT_ABI, type TPermitSignature } from '@shared/hooks/usePermit'
 import { useYearnSpotPrices } from '@shared/hooks/useYearnSpotPrices'
 import { IconLinkOut } from '@shared/icons/IconLinkOut'
-import { formatTAmount, isZeroAddress, toAddress, toNormalizedBN } from '@shared/utils'
+import { cl, formatTAmount, isZeroAddress, toAddress, toNormalizedBN } from '@shared/utils'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import { formatWidgetValue, TransactionOverlay, type TransactionStep, WidgetHeader } from '@yearn/vault-widget/advanced'
-import { type FC, useCallback, useEffect, useMemo, useState } from 'react'
+import { type FC, type ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
 import { hexToNumber, slice } from 'viem'
 import { useAccount } from 'wagmi'
 import { env } from '@/env'
-import { useMigrateError } from './useMigrateError'
-import { useMigrateFlow } from './useMigrateFlow'
 
 interface Props {
   vaultAddress: `0x${string}`
@@ -28,8 +28,23 @@ interface Props {
   migrationTarget: `0x${string}`
   migrationContract: `0x${string}`
   migrationTargetSymbol?: string
+  migrationTargetLogoURI?: string
   vaultUserData: VaultUserData
+  migrationBalanceOverride?: bigint
+  displayVaultUserData?: VaultUserData
+  balanceLabel?: string
+  readyBalance?: bigint
+  transactionStepOverride?: TransactionStep
+  onTransactionStepSuccess?: (stepId: string) => void | Promise<void>
+  actionLabelOverride?: string
   handleMigrateSuccess?: () => void
+  headerActions?: ReactNode
+  destinationActions?: ReactNode
+  contentAboveButton?: ReactNode
+  actionButtonOverride?: ReactNode
+  disableFlow?: boolean
+  hideContainerBorder?: boolean
+  onTransactionOpenChange?: (isOpen: boolean) => void
 }
 
 export const WidgetMigrate: FC<Props> = ({
@@ -41,8 +56,23 @@ export const WidgetMigrate: FC<Props> = ({
   migrationTarget,
   migrationContract,
   migrationTargetSymbol,
+  migrationTargetLogoURI,
   vaultUserData,
-  handleMigrateSuccess: onMigrateSuccess
+  migrationBalanceOverride,
+  displayVaultUserData,
+  balanceLabel = 'Your Balance',
+  readyBalance,
+  transactionStepOverride,
+  onTransactionStepSuccess,
+  actionLabelOverride,
+  handleMigrateSuccess: onMigrateSuccess,
+  headerActions,
+  destinationActions,
+  contentAboveButton,
+  actionButtonOverride,
+  disableFlow = false,
+  hideContainerBorder = false,
+  onTransactionOpenChange
 }) => {
   const { address: account } = useAccount()
   const { openLoginModal } = useWeb3()
@@ -55,6 +85,7 @@ export const WidgetMigrate: FC<Props> = ({
   const [permitSignature, setPermitSignature] = useState<TPermitSignature | undefined>()
   const [permitData, setPermitData] = useState<any>(undefined)
   const [isLoadingPermitData, setIsLoadingPermitData] = useState(false)
+  const signingDeadline = useRef<bigint | null>(null)
 
   // Get destination vault token info
   const destinationVault = getToken({ address: migrationTarget, chainID: chainId })
@@ -63,18 +94,22 @@ export const WidgetMigrate: FC<Props> = ({
   const { vaultToken, isLoading: isLoadingVaultData, refetch: refetchVaultUserData } = vaultUserData
 
   // Use only vault token balance (not staked)
-  const migrateBalance = vaultToken?.balance.raw ?? 0n
+  const migrateBalance = migrationBalanceOverride ?? vaultToken?.balance.raw ?? 0n
+  const displayedUserData = displayVaultUserData ?? vaultUserData
+  const displayedToken = displayedUserData.vaultToken
+  const displayedBalance = displayVaultUserData ? (displayedToken?.balance.raw ?? 0n) : migrateBalance
 
   // Migration flow
   const { actions, periphery } = useMigrateFlow({
     vaultFrom: vaultAddress,
     vaultTo: migrationTarget,
+    assetAddress,
     router: migrationContract,
     vaultVersion,
     balance: migrateBalance,
     account,
     chainId,
-    enabled: migrateBalance > 0n && !isZeroAddress(migrationContract),
+    enabled: !disableFlow && !transactionStepOverride && migrateBalance > 0n && !isZeroAddress(migrationContract),
     permitSignature
   })
 
@@ -82,7 +117,7 @@ export const WidgetMigrate: FC<Props> = ({
   const migrateError = useMigrateError({
     balance: migrateBalance,
     account,
-    simulationError: periphery.error,
+    simulationError: transactionStepOverride ? undefined : periphery.error,
     isSimulating: actions.prepareMigrate.isLoading || actions.prepareMulticall.isLoading
   })
 
@@ -92,29 +127,37 @@ export const WidgetMigrate: FC<Props> = ({
     decimals: vaultToken?.decimals ?? 18,
     options: { maximumFractionDigits: 6 }
   })
-  const displayBalance = formatWidgetValue(migrateBalance, vaultToken?.decimals ?? 18)
+  const displayedBalances = useMemo(() => {
+    const vaultDecimals = displayedToken?.decimals ?? 18
+    const assetDecimals = displayedUserData.assetToken?.decimals ?? vaultDecimals
+    const assetPrice = getPrice({ address: assetAddress, chainID: chainId }).normalized
+    const balances = [
+      { label: balanceLabel, amount: displayedBalance },
+      ...(readyBalance === undefined ? [] : [{ label: 'Ready to migrate', amount: readyBalance }])
+    ]
 
-  const balanceUsd = useMemo(() => {
-    if (migrateBalance === 0n) return '$0'
-
-    const vaultDecimals = vaultToken?.decimals ?? 18
-    const assetDecimals = vaultUserData.assetToken?.decimals ?? vaultDecimals
-    const assetAmount =
-      vaultUserData.pricePerShare > 0n
-        ? (migrateBalance * vaultUserData.pricePerShare) / 10n ** BigInt(vaultDecimals)
-        : 0n
-    const usdValue =
-      toNormalizedBN(assetAmount, assetDecimals).normalized *
-      getPrice({ address: assetAddress, chainID: chainId }).normalized
-    return `$${formatWidgetValue(usdValue)}`
+    return balances.map(({ label, amount }) => {
+      const assetAmount =
+        displayedUserData.pricePerShare > 0n
+          ? (amount * displayedUserData.pricePerShare) / 10n ** BigInt(vaultDecimals)
+          : 0n
+      const usdValue = toNormalizedBN(assetAmount, assetDecimals).normalized * assetPrice
+      return {
+        label,
+        amount: formatWidgetValue(amount, vaultDecimals),
+        usdValue: `$${formatWidgetValue(usdValue)}`
+      }
+    })
   }, [
     assetAddress,
+    balanceLabel,
     chainId,
+    displayedBalance,
+    displayedToken?.decimals,
+    displayedUserData.assetToken?.decimals,
+    displayedUserData.pricePerShare,
     getPrice,
-    migrateBalance,
-    vaultToken?.decimals,
-    vaultUserData.assetToken?.decimals,
-    vaultUserData.pricePerShare
+    readyBalance
   ])
 
   // Determine flow based on routeType
@@ -181,7 +224,7 @@ export const WidgetMigrate: FC<Props> = ({
           domain: {
             name: domainName,
             version: version || '1',
-            chainId,
+            chainId: client.chain.id,
             verifyingContract: vaultAddress
           },
           types: {
@@ -197,8 +240,7 @@ export const WidgetMigrate: FC<Props> = ({
             owner: account,
             spender: periphery.routerAddress,
             value: migrateBalance,
-            nonce,
-            deadline: periphery.permitDeadline
+            nonce
           },
           primaryType: 'Permit'
         })
@@ -210,51 +252,45 @@ export const WidgetMigrate: FC<Props> = ({
     }
 
     fetchPermitData()
-  }, [
-    isPermitFlow,
-    account,
-    client,
-    vaultAddress,
-    chainId,
-    periphery.routerAddress,
-    migrateBalance,
-    periphery.permitDeadline,
-    isV3Vault
-  ])
+  }, [isPermitFlow, account, client, vaultAddress, chainId, periphery.routerAddress, migrateBalance, isV3Vault])
 
-  // Getter for permit data (returns cached data)
   const getPermitData = useCallback(async () => {
-    return permitData
-  }, [permitData])
+    if (!permitData || !client) return undefined
+    const { timestamp } = await client.getBlock()
+    const deadline = timestamp + 20n * 60n
+    signingDeadline.current = deadline
+    return { ...permitData, message: { ...permitData.message, deadline } }
+  }, [client, permitData])
 
   // Handle permit signed callback
-  const handlePermitSigned = useCallback(
-    (signature: `0x${string}`) => {
-      // Parse signature into r, s, v using viem utilities
-      const r = slice(signature, 0, 32)
-      const s = slice(signature, 32, 64)
-      const vRaw = hexToNumber(slice(signature, 64, 65))
-      // Normalize v to 27 or 28 (some wallets return 0 or 1)
-      const v = vRaw < 27 ? vRaw + 27 : vRaw
+  const handlePermitSigned = useCallback((signature: `0x${string}`) => {
+    const deadline = signingDeadline.current
+    if (deadline === null) return
+    // Parse signature into r, s, v using viem utilities
+    const r = slice(signature, 0, 32)
+    const s = slice(signature, 32, 64)
+    const vRaw = hexToNumber(slice(signature, 64, 65))
+    // Normalize v to 27 or 28 (some wallets return 0 or 1)
+    const v = vRaw < 27 ? vRaw + 27 : vRaw
 
-      setPermitSignature({
-        r,
-        s,
-        v,
-        deadline: periphery.permitDeadline,
-        signature
-      })
-    },
-    [periphery.permitDeadline]
-  )
+    setPermitSignature({
+      r,
+      s,
+      v,
+      deadline,
+      signature
+    })
+  }, [])
   // Transaction steps
   const currentStep: TransactionStep | undefined = useMemo(() => {
+    if (transactionStepOverride) return transactionStepOverride
     // PERMIT FLOW
     if (isPermitFlow) {
       // Step 1: Sign permit
       if (needsPermitSign) {
         return {
           id: 'permit',
+          isEnabled: !periphery.isCheckingPermit && !isLoadingPermitData && !!permitData,
           prepare: { isSuccess: true, data: { request: {} } } as any, // Permit doesn't need prepare
           label: 'Sign Permit',
           confirmMessage: `Sign permit for ${formattedBalance} ${vaultSymbol}`,
@@ -277,6 +313,7 @@ export const WidgetMigrate: FC<Props> = ({
       // Step 2: Execute multicall (selfPermit + migrate)
       return {
         id: 'migrate',
+        isEnabled: !periphery.isCheckingPermit && periphery.prepareMulticallEnabled,
         prepare: actions.prepareMulticall,
         label: 'Migrate',
         confirmMessage: `Migrating ${formattedBalance} ${vaultSymbol}`,
@@ -301,6 +338,7 @@ export const WidgetMigrate: FC<Props> = ({
     if (needsApproval) {
       return {
         id: 'approve',
+        isEnabled: !periphery.isCheckingPermit && periphery.prepareApproveEnabled,
         prepare: actions.prepareApprove,
         label: 'Approve',
         confirmMessage: `Approving ${formattedBalance} ${vaultSymbol} for migration`,
@@ -320,6 +358,7 @@ export const WidgetMigrate: FC<Props> = ({
     // Step 2: Migrate
     return {
       id: 'migrate',
+      isEnabled: !periphery.isCheckingPermit && periphery.prepareMigrateEnabled,
       prepare: actions.prepareMigrate,
       label: 'Migrate',
       confirmMessage: `Migrating ${formattedBalance} ${vaultSymbol}`,
@@ -338,6 +377,13 @@ export const WidgetMigrate: FC<Props> = ({
       }
     }
   }, [
+    transactionStepOverride,
+    periphery.isCheckingPermit,
+    periphery.prepareApproveEnabled,
+    periphery.prepareMulticallEnabled,
+    periphery.prepareMigrateEnabled,
+    isLoadingPermitData,
+    permitData,
     isPermitFlow,
     needsPermitSign,
     needsApproval,
@@ -372,24 +418,39 @@ export const WidgetMigrate: FC<Props> = ({
 
   const handleOverlayClose = useCallback(() => {
     setShowTransactionOverlay(false)
-    // Clear permit signature if user closes during permit flow (they can re-sign)
-    if (needsPermitSign) {
-      setPermitSignature(undefined)
-    }
-  }, [needsPermitSign])
+    onTransactionOpenChange?.(false)
+    setPermitSignature(undefined)
+  }, [onTransactionOpenChange])
 
   // Button text
   const buttonText = useMemo(() => {
+    if (actionLabelOverride) return actionLabelOverride
     if (isLoadingPermitData || periphery.isCheckingPermit) return 'Loading...'
     if (isPermitFlow) {
       return needsPermitSign ? 'Sign & Migrate' : 'Migrate All'
     }
     if (needsApproval) return 'Approve & Migrate'
     return 'Migrate All'
-  }, [isPermitFlow, isLoadingPermitData, needsPermitSign, needsApproval, periphery.isCheckingPermit])
+  }, [
+    actionLabelOverride,
+    isPermitFlow,
+    isLoadingPermitData,
+    needsPermitSign,
+    needsApproval,
+    periphery.isCheckingPermit
+  ])
 
   // Button disabled state
   const isButtonDisabled = useMemo(() => {
+    if (disableFlow || isZeroAddress(migrationContract)) return true
+    if (transactionStepOverride) {
+      return (
+        !account ||
+        migrateBalance <= 0n ||
+        transactionStepOverride.isEnabled === false ||
+        !transactionStepOverride.prepare.isSuccess
+      )
+    }
     if (migrateError) return true
 
     if (migrateBalance === 0n) return true
@@ -398,10 +459,7 @@ export const WidgetMigrate: FC<Props> = ({
 
     // Permit flow
     if (isPermitFlow) {
-      if (permitSignature && !actions.prepareMulticall.isSuccess) {
-        return true
-      }
-      return false
+      return needsPermitSign ? !permitData : !actions.prepareMulticall.isSuccess
     }
 
     // Approve flow
@@ -413,11 +471,16 @@ export const WidgetMigrate: FC<Props> = ({
     }
     return false
   }, [
+    disableFlow,
+    migrationContract,
+    transactionStepOverride,
+    account,
     migrateError,
     migrateBalance,
     isPermitFlow,
     isLoadingPermitData,
-    permitSignature,
+    permitData,
+    needsPermitSign,
     needsApproval,
     periphery.prepareApproveEnabled,
     periphery.prepareMigrateEnabled,
@@ -427,17 +490,18 @@ export const WidgetMigrate: FC<Props> = ({
 
   // Determine if current step is the last step
   const isLastStep = useMemo(() => {
+    if (transactionStepOverride) return Boolean(transactionStepOverride.completesFlow)
     if (isPermitFlow) {
       return !needsPermitSign // Last step when we have permit signature
     }
     return !needsApproval // Last step when we have approval
-  }, [isPermitFlow, needsPermitSign, needsApproval])
+  }, [transactionStepOverride, isPermitFlow, needsPermitSign, needsApproval])
 
   // Loading state
   if (isLoadingVaultData && !showTransactionOverlay) {
     return (
-      <div className="flex flex-col border border-border rounded-lg relative h-full">
-        <WidgetHeader title="Migrate" />
+      <div className={cl('flex flex-col rounded-lg relative', hideContainerBorder ? '' : 'border border-border')}>
+        <WidgetHeader title="Migrate" actions={headerActions} />
         <div className="flex items-center justify-center flex-1 p-6">
           <div className="w-6 h-6 border-2 border-border border-t-primary rounded-full animate-spin" />
         </div>
@@ -446,26 +510,31 @@ export const WidgetMigrate: FC<Props> = ({
   }
 
   return (
-    <div className="flex flex-col border border-border rounded-lg relative h-full">
-      <WidgetHeader title="Migrate" />
-      <div className="flex flex-col flex-1 p-6 gap-6">
+    <div className={cl('flex flex-col rounded-lg relative', hideContainerBorder ? '' : 'border border-border')}>
+      <WidgetHeader title="Migrate" actions={headerActions} />
+      <div className="flex flex-col p-6 gap-6">
         {/* Balance Section */}
-        <div>
-          <div className="flex justify-between items-center mb-1">
-            <span className="text-xs text-text-secondary">Your Balance</span>
-          </div>
-          <div className="flex flex-col items-start">
-            <span className="text-xl font-semibold text-text-primary">
-              {displayBalance} {vaultToken?.symbol || vaultSymbol}
-            </span>
-            <span className="text-sm text-text-secondary">{balanceUsd}</span>
-          </div>
+        <div className="space-y-4">
+          {displayedBalances.map(({ label, amount, usdValue }) => (
+            <div key={label}>
+              <div className="flex justify-between items-center mb-1">
+                <span className="text-xs text-text-secondary">{label}</span>
+              </div>
+              <div className="flex flex-col items-start">
+                <span className="text-xl font-semibold text-text-primary">
+                  {amount} {displayedToken?.symbol || vaultSymbol}
+                </span>
+                <span className="text-sm text-text-secondary">{usdValue}</span>
+              </div>
+            </div>
+          ))}
         </div>
 
         {/* Destination Section */}
         <div>
-          <div className="flex justify-between items-center mb-2">
+          <div className="flex flex-wrap justify-between items-center gap-2 mb-2">
             <span className="text-xs text-text-secondary">Destination</span>
+            {destinationActions}
           </div>
           <a
             href={`/vaults/${chainId}/${migrationTarget}`}
@@ -476,10 +545,15 @@ export const WidgetMigrate: FC<Props> = ({
             <div className="flex items-center gap-3">
               <TokenLogoV2
                 src={
+                  migrationTargetLogoURI ||
                   destinationVault?.logoURI ||
                   `${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${chainId}/${assetAddress.toLowerCase()}/logo-128.png`
                 }
-                altSrc={`${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${chainId}/${assetAddress.toLowerCase()}/logo-128.png`}
+                altSrc={
+                  migrationTargetLogoURI
+                    ? undefined
+                    : `${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/tokens/${chainId}/${assetAddress.toLowerCase()}/logo-128.png`
+                }
                 tokenSymbol={destinationVault?.symbol || migrationTargetSymbol}
                 tokenName={destinationVault?.name}
                 width={32}
@@ -498,30 +572,36 @@ export const WidgetMigrate: FC<Props> = ({
           </a>
         </div>
 
+        {contentAboveButton}
+
         <div className="mt-auto">
-          {/* Action Button */}
-          <div>
-            {!account ? (
-              <Button
-                onClick={openLoginModal}
-                variant="filled"
-                className="w-full"
-                classNameOverride="yearn--button--nextgen w-full"
-              >
-                Connect Wallet
-              </Button>
-            ) : (
-              <Button
-                onClick={() => setShowTransactionOverlay(true)}
-                variant="filled"
-                disabled={isButtonDisabled}
-                className="w-full"
-                classNameOverride="yearn--button--nextgen w-full"
-              >
-                {migrateError || buttonText}
-              </Button>
-            )}
-          </div>
+          {actionButtonOverride ?? (
+            <div>
+              {!account ? (
+                <Button
+                  onClick={openLoginModal}
+                  variant="filled"
+                  className="w-full"
+                  classNameOverride="yearn--button--nextgen w-full"
+                >
+                  Connect Wallet
+                </Button>
+              ) : (
+                <Button
+                  onClick={() => {
+                    setShowTransactionOverlay(true)
+                    onTransactionOpenChange?.(true)
+                  }}
+                  variant="filled"
+                  disabled={isButtonDisabled}
+                  className="w-full"
+                  classNameOverride="yearn--button--nextgen w-full"
+                >
+                  {migrateError || buttonText}
+                </Button>
+              )}
+            </div>
+          )}
         </div>
       </div>
 
@@ -532,7 +612,8 @@ export const WidgetMigrate: FC<Props> = ({
         step={currentStep}
         isLastStep={isLastStep}
         autoContinueToNextStep
-        autoContinueStepIds={['approve', 'permit']}
+        autoContinueStepIds={['unlock', 'approve', 'permit']}
+        onStepSuccess={onTransactionStepSuccess}
         onAllComplete={handleMigrateSuccess}
       />
     </div>

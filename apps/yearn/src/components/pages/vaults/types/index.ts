@@ -142,7 +142,6 @@ export type UseMigrateFlowReturn = T<
     prepareMulticallEnabled: boolean
     routeType: MigrateRouteType
     supportsPermit: boolean
-    permitDeadline: bigint
     routerAddress: TAddress
     error?: string
   }
