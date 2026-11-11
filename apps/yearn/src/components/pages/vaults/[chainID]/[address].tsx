@@ -809,9 +809,9 @@ function Index(): ReactElement | null {
       : 0n
 
   const isMigratable = Boolean(currentVault?.migration?.available)
-  const canShowMigrateAction = isMigratable && vaultShareBalance > 0n
-  const isRetired = Boolean(currentVault?.info?.isRetired)
   const hasYvUsdFunds = yvUsdUnlockedShareBalance > 0n || yvUsdLockedShareBalance > 0n
+  const canShowMigrateAction = isMigratable && (isYvUsd ? hasYvUsdFunds : vaultShareBalance > 0n)
+  const isRetired = Boolean(currentVault?.info?.isRetired)
   const hasUserFundsInVault = isYvUsd ? hasYvUsdFunds : vaultShareBalance > 0n || stakingShareBalance > 0n
   const canShowUserCharts = !isWalletLoading && hasUserFundsInVault
   const [isYBoldStakePrefillActive, setIsYBoldStakePrefillActive] = useState(false)
@@ -1166,20 +1166,24 @@ function Index(): ReactElement | null {
     [chainId, currentVault]
   )
 
-  useEffect(() => {
-    updateCollapsedWidgetHeight()
-  }, [updateCollapsedWidgetHeight])
+  const observeWidgetStack = useCallback(
+    (element: HTMLDivElement | null) => {
+      widgetStackRef.current = element
+      if (!element) return
 
-  useEffect(() => {
-    if (typeof ResizeObserver === 'undefined') {
-      return
-    }
-    const observer = new ResizeObserver(() => updateCollapsedWidgetHeight())
-    if (widgetStackRef.current) {
-      observer.observe(widgetStackRef.current)
-    }
-    return () => observer.disconnect()
-  }, [updateCollapsedWidgetHeight])
+      updateCollapsedWidgetHeight()
+      if (typeof ResizeObserver === 'undefined') return
+
+      // The card can mount after the vault data finishes loading.
+      const observer = new ResizeObserver(updateCollapsedWidgetHeight)
+      observer.observe(element)
+      return () => {
+        observer.disconnect()
+        widgetStackRef.current = null
+      }
+    },
+    [updateCollapsedWidgetHeight]
+  )
 
   const sections = useMemo(() => {
     if (!currentVault) {
@@ -1593,6 +1597,13 @@ function Index(): ReactElement | null {
 
   const headerStickyTop = 'var(--header-height)'
   const resolvedWidgetMode = widgetActions.includes(widgetMode) ? widgetMode : widgetActions[0]
+  const isDesktopMigrationPanel =
+    isWidgetPanelActive && !isWidgetRewardsOpen && resolvedWidgetMode === WidgetActionType.Migrate
+  const widgetHeaderTop = 'var(--vault-header-height, var(--header-height))'
+  const widgetStickyTop =
+    isDesktopMigrationPanel && collapsedWidgetHeight
+      ? `min(${widgetHeaderTop}, calc(100dvh - ${collapsedWidgetHeight}px - 1rem - ${DESKTOP_WIDGET_BOTTOM_PADDING_PX}px))`
+      : widgetHeaderTop
   const shouldCollapseWidgetDetails = isCompactWidget
   const mobileListKind = deriveListKind(resolvedCurrentVault)
   const mobileProductTypeLabel = getMobileProductTypeLabel()
@@ -1680,8 +1691,10 @@ function Index(): ReactElement | null {
     if (isYvUsd) {
       return (
         <YvUsdWidget
+          key={address ?? 'disconnected'}
           currentVault={resolvedCurrentVault}
           chainId={chainId}
+          actions={widgetActions}
           mode={resolvedWidgetMode}
           onModeChange={setWidgetMode}
           onOpenSettings={toggleWidgetSettings}
@@ -1736,9 +1749,12 @@ function Index(): ReactElement | null {
     if (isYvUsd) {
       return (
         <YvUsdWidget
+          key={address ?? 'disconnected'}
           currentVault={resolvedCurrentVault}
           chainId={chainId}
+          actions={widgetActions}
           mode={mobileDrawerAction}
+          onModeChange={setMobileDrawerAction}
           onOpenSettings={toggleWidgetSettings}
           isSettingsOpen={isWidgetSettingsOpen}
           onDepositVariantChange={setYvUsdApyVariant}
@@ -2042,16 +2058,20 @@ function Index(): ReactElement | null {
               'hidden min-[1101px]:block',
               'min-[1101px]:col-start-2 min-[1101px]:row-start-1 min-[1101px]:sticky pt-4',
               'flex flex-col overflow-hidden',
-              desktopWidgetHeightClassNames.container
+              isDesktopMigrationPanel ? '' : desktopWidgetHeightClassNames.container
             )}
-            style={{ top: 'var(--vault-header-height, var(--header-height))' }}
+            style={{ top: widgetStickyTop }}
           >
             <div
-              ref={widgetStackRef}
+              ref={observeWidgetStack}
               className={cl(
                 'relative grid w-full min-w-0 flex-1 min-h-0 overflow-hidden',
-                desktopWidgetHeightClassNames.stack,
-                isWidgetRewardsOpen ? 'grid-rows-[auto_minmax(0,1fr)]' : 'grid-rows-[minmax(0,1fr)_auto]'
+                isDesktopMigrationPanel ? '' : desktopWidgetHeightClassNames.stack,
+                isDesktopMigrationPanel
+                  ? ''
+                  : isWidgetRewardsOpen
+                    ? 'grid-rows-[auto_minmax(0,1fr)]'
+                    : 'grid-rows-[minmax(0,1fr)_auto]'
               )}
               style={isWidgetRewardsOpen && collapsedWidgetHeight ? { height: collapsedWidgetHeight } : undefined}
             >

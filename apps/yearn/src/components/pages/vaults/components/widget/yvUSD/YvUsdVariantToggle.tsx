@@ -8,6 +8,7 @@ type TYvUsdVariant = 'locked' | 'unlocked'
 type Props = {
   activeVariant: TYvUsdVariant
   onChange: (variant: TYvUsdVariant) => void
+  disabled?: boolean
 }
 
 const VARIANT_OPTIONS: { id: TYvUsdVariant; label: string; icon: ReactElement }[] = [
@@ -15,17 +16,22 @@ const VARIANT_OPTIONS: { id: TYvUsdVariant; label: string; icon: ReactElement }[
   { id: 'unlocked', label: 'Unlocked', icon: <IconLockOpen className="size-3" /> }
 ]
 
-export function YvUsdVariantToggle({ activeVariant, onChange }: Props): ReactElement {
+export function YvUsdVariantToggle({ activeVariant, onChange, disabled = false }: Props): ReactElement {
   return (
-    <div className={cl('flex items-center gap-0.5 md:gap-1', SELECTOR_BAR_STYLES.container)}>
+    <fieldset
+      aria-label="Legacy yvUSD capital"
+      className={cl('flex items-center gap-0.5 md:gap-1', SELECTOR_BAR_STYLES.container)}
+    >
       {VARIANT_OPTIONS.map((option) => (
         <button
           key={option.id}
           type="button"
           onClick={() => onChange(option.id)}
+          aria-pressed={activeVariant === option.id}
+          disabled={disabled}
           className={cl(
             'flex-1 md:flex-initial rounded-sm px-2 md:px-3 h-[36px] md:h-[26px] text-xs font-semibold transition-all',
-            'active:scale-[0.98] whitespace-nowrap',
+            'active:scale-[0.98] whitespace-nowrap disabled:cursor-not-allowed disabled:opacity-50',
             SELECTOR_BAR_STYLES.buttonBase,
             activeVariant === option.id ? SELECTOR_BAR_STYLES.buttonActive : SELECTOR_BAR_STYLES.buttonInactive
           )}
@@ -36,6 +42,6 @@ export function YvUsdVariantToggle({ activeVariant, onChange }: Props): ReactEle
           </span>
         </button>
       ))}
-    </div>
+    </fieldset>
   )
 }

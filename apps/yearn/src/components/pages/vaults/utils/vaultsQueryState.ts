@@ -247,6 +247,8 @@ export function buildUrlParamsFromSnapshot(
 
   if (snap.vaultType === 'v3') {
     params.set('type', 'single')
+  } else if (snap.vaultType === 'fixed') {
+    params.set('type', 'fixed')
   } else if (snap.vaultType === 'factory') {
     params.set('type', 'lp')
   }

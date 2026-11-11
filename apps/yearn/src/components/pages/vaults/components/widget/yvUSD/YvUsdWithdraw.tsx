@@ -53,6 +53,7 @@ import {
 
 type Props = {
   chainId: number
+  initialVariant?: TYvUsdVariant
   assetAddress: `0x${string}`
   onWithdrawSuccess?: () => void
   onOpenSettings?: () => void
@@ -132,6 +133,7 @@ function getYvUsdWithdrawSymbol(variant: TYvUsdVariant): string {
 
 export function YvUsdWithdraw({
   chainId,
+  initialVariant,
   assetAddress,
   onWithdrawSuccess,
   onOpenSettings,
@@ -141,7 +143,7 @@ export function YvUsdWithdraw({
   const { address: account } = useAccount()
   const { onRefresh: refreshWalletBalances } = useWalletActions()
   const { unlockedVault, lockedVault, assetAddress: yvUsdAssetAddress, isLoading } = useYvUsdVaults()
-  const [variant, setVariant] = useState<TYvUsdVariant | null>(null)
+  const [variant, setVariant] = useState<TYvUsdVariant | null>(initialVariant ?? null)
   const [showCooldownOverlay, setShowCooldownOverlay] = useState(false)
   const [showCancelCooldownOverlay, setShowCancelCooldownOverlay] = useState(false)
   const [showLockedWithdrawOverlay, setShowLockedWithdrawOverlay] = useState(false)
