@@ -7,6 +7,7 @@ import {
   getPlannedTransactionErrorPresentation,
   type TPlannedTransactionFailureKind
 } from '@yearn/vault-widget/internal/components/widget/shared/plannedTransactionController'
+import { TokenSelectorCardContext } from '@yearn/vault-widget/internal/components/widget/shared/TokenSelectorOverlay'
 import {
   createWidgetAnalytics,
   type TWidgetAnalyticsContext,
@@ -27,7 +28,8 @@ import {
   isTransactionPreparationReady,
   type TTransactionPreparation
 } from '@yearn/vault-widget/types'
-import { type FC, useCallback, useEffect, useId, useRef, useState } from 'react'
+import { type FC, useCallback, useContext, useEffect, useId, useRef, useState } from 'react'
+import { createPortal } from 'react-dom'
 import { useReward } from 'react-rewards'
 import type { Address, Hash, TransactionReceipt, TypedData, TypedDataDomain } from 'viem'
 import {
@@ -251,6 +253,20 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
   autoContinueToNextStep = false,
   autoContinueStepIds = []
 }) => {
+  const card = useContext(TokenSelectorCardContext)
+  const overlayRef = useRef<HTMLDivElement>(null)
+  useEffect(() => {
+    if (!card || !isOpen) return
+    const content = card.querySelector<HTMLElement>('[data-erc4626-content]')
+    const wasInert = content?.inert ?? false
+    const returnFocus = document.activeElement
+    if (content) content.inert = true
+    overlayRef.current?.focus({ preventScroll: true })
+    return () => {
+      if (content) content.inert = wasInert
+      if (returnFocus instanceof HTMLElement && returnFocus.isConnected) returnFocus.focus({ preventScroll: true })
+    }
+  }, [card, isOpen])
   const [overlayState, setOverlayState] = useState<OverlayState>(getInitialOverlayState())
   const [errorMessage, setErrorMessage] = useState<string>('')
   const [hasCompletedFlow, setHasCompletedFlow] = useState(false)
@@ -1806,9 +1822,30 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
     return null
   }
 
-  return (
+  const overlay = (
     <div
-      className="absolute z-50"
+      ref={overlayRef}
+      data-transaction-overlay={card ? '' : undefined}
+      role={card ? 'dialog' : undefined}
+      aria-label={card ? 'Transaction progress' : undefined}
+      tabIndex={card ? -1 : undefined}
+      className="absolute z-50 outline-none"
+      onKeyDown={(event) => {
+        if (!card || event.key !== 'Tab') return
+        const controls = Array.from(
+          overlayRef.current?.querySelectorAll<HTMLElement>('button:not(:disabled), a[href]') ?? []
+        ).filter((element) => element.getClientRects().length > 0)
+        const next =
+          event.shiftKey && (document.activeElement === controls[0] || document.activeElement === overlayRef.current)
+            ? controls.at(-1)
+            : !event.shiftKey && document.activeElement === controls.at(-1)
+              ? controls[0]
+              : undefined
+        if (next) {
+          event.preventDefault()
+          next.focus()
+        } else if (controls.length === 0) event.preventDefault()
+      }}
       style={{
         top: 0, // Cover the tabs
         left: 0,
@@ -1818,13 +1855,24 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       }}
     >
       {/* Semi-transparent backdrop with fade animation */}
-      <div className="absolute inset-0 bg-black/5 rounded-lg transition-opacity duration-200 opacity-100" />
+      <div
+        className={cl(
+          'absolute inset-0 bg-black/5 transition-opacity duration-200 opacity-100',
+          card ? 'rounded-2xl' : 'rounded-lg'
+        )}
+      />
       {/* Overlay content with slide and fade animation */}
-      <div className="absolute inset-0 bg-surface rounded-lg transition-all duration-300 ease-out flex flex-col opacity-100 translate-y-0">
+      <div
+        className={cl(
+          'absolute inset-0 bg-surface transition-all duration-300 ease-out flex flex-col opacity-100 translate-y-0',
+          card ? 'rounded-2xl border border-border' : 'rounded-lg'
+        )}
+      >
         {/* Close button - only shown in success/error/submitted states */}
         {(overlayState === 'success' || overlayState === 'error' || overlayState === 'submitted') && (
           <button
             onClick={handleClose}
+            aria-label="Close transaction"
             className="absolute top-4 right-4 p-1 hover:bg-surface-secondary rounded-lg transition-colors z-10"
             type="button"
           >
@@ -1995,4 +2043,5 @@ export const TransactionOverlay: FC<TransactionOverlayProps> = ({
       </div>
     </div>
   )
+  return card ? createPortal(overlay, card) : overlay
 }

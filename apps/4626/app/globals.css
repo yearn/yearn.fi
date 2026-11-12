@@ -19,9 +19,146 @@ button,
 select {
   cursor: pointer;
 }
+
+[data-demo-style="main"] [data-erc4626-card],
+[data-demo-style="main"] [aria-label="Vault history"] {
+  border: 0;
+  background-color: var(--color-app);
+}
+
+[data-demo-style="main"] [aria-label="Vault history"] {
+  padding: 0;
+  border-radius: 0;
+}
+
+[data-demo-style="main"] [data-widget-part="chart-header"] {
+  min-height: 66px;
+  flex-shrink: 0;
+  margin-bottom: 0.75rem;
+}
+
+[data-demo-style="main"] [data-vault-selector-trigger] {
+  min-height: 66px;
+}
+
+[data-demo-style="main"] [data-widget-part="chart-content"] {
+  border: 1px solid var(--color-border);
+  border-radius: var(--radius-md);
+  background-color: var(--color-surface);
+  padding: 1.25rem;
+}
+
+[data-demo-style="main"] [data-widget-part="vault-selector"] {
+  padding: 0;
+}
+
+[data-demo-style="main"] [data-widget-part="form-layout"] {
+  padding-top: 0.75rem;
+  padding-inline: 0;
+  padding-bottom: 0;
+}
+
+[data-demo-style="main"] [data-widget-part="amount-box"] {
+  background-color: var(--color-surface);
+}
+
+[data-demo-style="main"] [data-widget-part="amount-box"] > .flex-col {
+  gap: 0.75rem;
+  padding: 1rem;
+}
+
+[data-demo-style="main"] [data-erc4626-content] [data-widget-part="action-panel"] {
+  background-color: transparent;
+}
+
+/* Alternate demo: the connected segments used by the main vault list. */
+[data-selector-style="segmented"] [data-selector-toggle] {
+  height: 2.5rem;
+  flex: none;
+  align-items: stretch;
+  gap: 0;
+  overflow: hidden;
+  border: 1px solid var(--color-border);
+  border-radius: 0.5rem;
+  padding: 0;
+  background: var(--color-surface-secondary);
+}
+
+[data-selector-style="segmented"] [data-selector-toggle] > span[aria-hidden] {
+  display: none;
+}
+
+[data-selector-style="segmented"] [data-selector-toggle] > button {
+  flex: 1;
+  border: 0;
+  border-radius: 0;
+  padding: 0 1rem;
+  background: transparent;
+  color: var(--color-text-secondary);
+  font-weight: 500;
+}
+
+[data-selector-style="segmented"] [data-selector-toggle] > button + button {
+  border-left: 1px solid var(--color-border);
+}
+
+[data-selector-style="segmented"] [data-selector-toggle] > button[aria-pressed="true"] {
+  background: var(--color-surface);
+  color: var(--color-text-primary);
+  font-weight: 600;
+}
+
+[data-selector-style="segmented"] [data-selector-toggle] > button[aria-pressed="false"]:hover {
+  background: color-mix(in srgb, var(--color-surface) 30%, transparent);
+  color: var(--color-text-primary);
+}
+
+[data-selector-style="segmented"] [aria-label="Vault type"] {
+  flex: 1;
+}
+
+[data-selector-style="segmented"] [data-erc4626-card] {
+  overflow: hidden;
+}
+
+[data-selector-style="segmented"] [aria-label="Vault history"] {
+  padding: 1.5rem;
+}
+
+[data-selector-style="segmented"] [aria-label="Chart metric"] {
+  flex: 1;
+  min-width: 0;
+}
+
+[data-selector-style="segmented"] [aria-label="Chart metric"] > button {
+  padding-inline: 0.5rem;
+}
+
+[data-selector-style="segmented"] [aria-label="Chart metric"] > button[aria-pressed="true"] {
+  box-shadow: inset 0 0 0 1px var(--color-border);
+}
+
+@media (max-width: 359px) {
+  [data-selector-style="segmented"] [aria-label="Widget action"] > button {
+    padding-inline: 0.5rem;
+    font-size: 0.875rem;
+  }
+}
+
+[data-selector-style="segmented"] [aria-label="Vault type"] + div > button {
+  min-height: 2.5rem;
+}
 :focus-visible {
   outline: 2px solid #0657f9;
   outline-offset: 3px;
+}
+
+[data-erc4626-card] input[inputmode="decimal"]:focus-visible {
+  outline: none;
+}
+
+[data-erc4626-card] input[type="search"]:focus-visible {
+  outline: none;
 }
 
 /* The standalone widget normally supplies light defaults; this host supplies the theme. */

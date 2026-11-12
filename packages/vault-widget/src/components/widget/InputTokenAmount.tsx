@@ -166,7 +166,10 @@ export const InputTokenAmount: FC<Props> = ({
   const renderedBalance = displayBalance ?? balance
 
   return (
-    <div className={cl('flex flex-col w-full relative border border-border rounded-md group', className)}>
+    <div
+      data-widget-part="amount-box"
+      className={cl('flex flex-col w-full relative border border-border rounded-md group', className)}
+    >
       <div className="py-2 px-3 flex flex-col gap-1">
         {/* Top row - Title and percentage buttons */}
         <div className="flex items-center justify-between">
