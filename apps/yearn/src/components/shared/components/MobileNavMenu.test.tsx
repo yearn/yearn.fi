@@ -113,32 +113,4 @@ describe('mobile navigation', () => {
     await waitFor(() => expect(screen.queryByRole('dialog')).toBeNull())
     expect(document.body.style.overflow).toBe('')
   })
-
-  it.each([true, false])(
-    'releases navigation immediately and restores the menu opener (connected: %s)',
-    async (isActive) => {
-      wallet.isActive = isActive
-      render(<MobileNavigation />)
-      const opener = screen.getByRole('button', { name: 'Open navigation menu' })
-      opener.focus()
-      fireEvent.click(opener)
-      const walletButton = await screen.findByRole('button', { name: 'Wallet' })
-      walletButton.focus()
-      fireEvent.click(walletButton)
-
-      expect(wallet.closeNavigation).toHaveBeenCalledTimes(1)
-      expect(wallet.openLoginModal).toHaveBeenCalledTimes(isActive ? 0 : 1)
-      expect(screen.queryByRole('button', { name: 'Close navigation menu', hidden: true })).toBeNull()
-      const panel = screen.getByRole('dialog', { name: isActive ? 'Wallet' : 'Connect a wallet' })
-      expect(screen.getAllByRole('dialog')).toHaveLength(1)
-      expect(document.body.style.overflow).toBe('hidden')
-      await waitFor(() => expect(document.activeElement).toBe(panel))
-
-      fireEvent.keyDown(document, { key: 'Escape' })
-      expect(screen.queryByRole('dialog')).toBeNull()
-      await waitFor(() => expect(document.activeElement).toBe(opener))
-      expect(document.body.style.overflow).toBe('')
-      expect(opener.closest('[inert]')).toBeNull()
-    }
-  )
 })

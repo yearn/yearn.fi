@@ -12,10 +12,13 @@ import {
   VaultWidgetRuntimeProvider,
   YBoldVaultWidget
 } from '@yearn/vault-widget'
+import { createWagmiVaultWidgetExecutionAdapter } from '@yearn/vault-widget/wagmi'
 import '@yearn/vault-widget/styles.css'
 
 const runtime: VaultWidgetRuntimeOverrides = {
+  execution: createWagmiVaultWidgetExecutionAdapter({ config: wagmiConfig }),
   wallet: {
+    connectorId: connector?.id,
     address,
     chainId,
     connected,
@@ -127,13 +130,11 @@ Safe proposal, and refresh steps. `executeTransactionPlan` runs the result
 through an injected `VaultWidgetExecutionAdapter`, waits for every receipt,
 reports progress, and preserves partial outcomes in typed errors.
 
-The styled widget already uses this path for ready, same-chain, single-request
-EOA deposits and withdrawals when the host supplies a complete execution
-adapter. Approval, Safe, Enso, cross-chain, chain-switch, and dynamic
-unstake-then-withdraw flows intentionally retain the established production
-state machine until their confirmation and resume semantics are represented by
-the public plan contract. If no complete execution adapter is configured, all
-flows continue through that legacy path.
+The styled widget uses the shared transaction lifecycle. Each host must supply
+an execution adapter through `runtime.execution`; Wagmi providers alone do not
+configure execution. Use `createWagmiVaultWidgetExecutionAdapter({ config })` for
+Wagmi hosts. Hosts that enable cross-chain routes must also supply a lifecycle
+configured with destination-settlement observation.
 
 ## Generic ERC-4626 utility
 

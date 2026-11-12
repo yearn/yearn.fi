@@ -1,5 +1,9 @@
+import { awaitTransactionRefresh } from '@yearn/vault-widget/internal/utils/transactionLifecycle'
 import { type Address, type Hash, isHash, type TransactionReceipt } from 'viem'
 import type {
+  TAtomicBatchStep,
+  TDeferredStep,
+  TPreparedStep,
   VaultWidgetExecutionAdapter,
   VaultWidgetExecutionStep,
   VaultWidgetPlanExecutionState,
@@ -16,6 +20,10 @@ export type ExecuteTransactionPlanParams = {
   adapter: VaultWidgetExecutionAdapter
   plan: VaultWidgetTransactionPlan
   refresh: () => Promise<void>
+  /** Authorize each next step from the confirmed outcome before it starts. */
+  beforeStep?: (step: VaultWidgetExecutionStep, outcome: VaultWidgetPlanOutcome) => Promise<void>
+  prepareStep?: (step: TDeferredStep, outcome: VaultWidgetPlanOutcome) => Promise<TPreparedStep>
+  afterStep?: (step: TPreparedStep, outcome: VaultWidgetPlanOutcome) => Promise<void>
   onState?: (state: VaultWidgetPlanExecutionState) => void
 }
 
@@ -46,7 +54,7 @@ function appendSubmission(
   outcome: VaultWidgetPlanOutcome,
   submission: VaultWidgetPlanSubmission
 ): VaultWidgetPlanOutcome {
-  return { submissions: [...outcome.submissions, submission] }
+  return { ...outcome, submissions: [...outcome.submissions, submission] }
 }
 
 function updateSubmission(
@@ -55,6 +63,7 @@ function updateSubmission(
   update: Partial<VaultWidgetPlanSubmission>
 ): VaultWidgetPlanOutcome {
   return {
+    ...outcome,
     submissions: outcome.submissions.map((submission, index) =>
       index === submissionIndex ? { ...submission, ...update } : submission
     )
@@ -189,23 +198,36 @@ async function executeRequestStep(
     receiptResult,
     true
   )
+  await runOperation(params, { ...initialContext, outcome: confirmedOutcome }, async () => {
+    await params.afterStep?.(step, confirmedOutcome)
+  })
   return executePlanStep(params, stepIndex + 1, confirmedOutcome)
 }
 
-async function executeSafeProposalStep(
+async function executeBatchStep(
   params: ExecuteTransactionPlanParams,
-  step: VaultWidgetSafeProposalStep,
+  step: VaultWidgetSafeProposalStep | TAtomicBatchStep,
   stepIndex: number,
   outcome: VaultWidgetPlanOutcome
 ): Promise<VaultWidgetPlanOutcome> {
   const stepCount = params.plan.steps.length
   const initialContext = { outcome, step, stepIndex, stepCount }
-  const proposeSafeBatch = params.adapter.proposeSafeBatch
-  const waitForSafeExecution = params.adapter.waitForSafeExecution
-  if (!proposeSafeBatch || !waitForSafeExecution) {
+  const isAtomicBatch = step.kind === 'atomic-batch'
+  const proposeSafeBatch = isAtomicBatch ? params.adapter.submitAtomicBatch : params.adapter.proposeSafeBatch
+  const waitForSafeExecution = isAtomicBatch
+    ? (parameters: { chainId: number; proposalId: string }) => {
+        if (!params.adapter.waitForAtomicExecution) throw new Error('Wallet batch tracking is unavailable')
+        return params.adapter.waitForAtomicExecution({ chainId: parameters.chainId, bundleId: parameters.proposalId })
+      }
+    : params.adapter.waitForSafeExecution
+  if (!proposeSafeBatch || !waitForSafeExecution || (isAtomicBatch && !params.adapter.waitForAtomicExecution)) {
     throw createExecutionError(
       params,
-      new Error('Safe batch execution and tracking are not configured'),
+      new Error(
+        isAtomicBatch
+          ? 'Wallet batch execution and tracking are not configured'
+          : 'Safe batch execution and tracking are not configured'
+      ),
       initialContext
     )
   }
@@ -221,7 +243,7 @@ async function executeSafeProposalStep(
   const submittedOutcome = appendSubmission(outcome, {
     stepId: step.id,
     chainId: step.chainId,
-    proposalId
+    ...(isAtomicBatch ? { bundleId: proposalId } : { proposalId })
   })
   params.onState?.({
     status: 'submitted',
@@ -252,6 +274,9 @@ async function executeSafeProposalStep(
     receiptResult,
     false
   )
+  await runOperation(params, { ...initialContext, outcome: confirmedOutcome }, async () => {
+    await params.afterStep?.(step, confirmedOutcome)
+  })
   return executePlanStep(params, stepIndex + 1, confirmedOutcome)
 }
 
@@ -260,16 +285,30 @@ async function executePlanStep(
   stepIndex: number,
   outcome: VaultWidgetPlanOutcome
 ): Promise<VaultWidgetPlanOutcome> {
-  const step = params.plan.steps[stepIndex]
+  const plannedStep = params.plan.steps[stepIndex]
   const stepCount = params.plan.steps.length
-  if (!step) {
+  if (!plannedStep) {
     params.onState?.({ status: 'success', outcome, stepIndex, stepCount })
     return outcome
   }
 
+  await runOperation(params, { outcome, step: plannedStep, stepIndex, stepCount }, async () => {
+    await params.beforeStep?.(plannedStep, outcome)
+  })
+  const step =
+    plannedStep.kind === 'prepare'
+      ? await runOperation(params, { outcome, step: plannedStep, stepIndex, stepCount }, async () => {
+          if (!params.prepareStep) throw new Error('Step preparation is not configured')
+          const prepared = await params.prepareStep(plannedStep, outcome)
+          if (prepared.id !== plannedStep.id || prepared.chainId !== plannedStep.chainId)
+            throw new Error('Prepared action changed the reviewed step or network')
+          return prepared
+        })
+      : plannedStep
+
   if (step.kind === 'refresh') {
     params.onState?.({ status: 'refreshing', outcome, step, stepIndex, stepCount })
-    await runOperation(params, { outcome, step, stepIndex, stepCount }, params.refresh)
+    await runOperation(params, { outcome, step, stepIndex, stepCount }, () => awaitTransactionRefresh(params.refresh))
     return executePlanStep(params, stepIndex + 1, outcome)
   }
 
@@ -280,8 +319,19 @@ async function executePlanStep(
     )
     return executePlanStep(params, stepIndex + 1, outcome)
   }
-  if (step.kind === 'safe-proposal') {
-    return executeSafeProposalStep(params, step, stepIndex, outcome)
+  if (step.kind === 'permit') {
+    const signature = await runOperation(params, { outcome, step, stepIndex, stepCount }, async () => {
+      if (!params.adapter.signPermit) throw new Error('Permit signing is not configured')
+      return params.adapter.signPermit({ account: params.account, chainId: step.chainId, data: step.data })
+    })
+    const signed = { ...outcome, signatures: { ...outcome.signatures, [step.id]: signature } }
+    await runOperation(params, { outcome: signed, step, stepIndex, stepCount }, async () => {
+      await params.afterStep?.(step, signed)
+    })
+    return executePlanStep(params, stepIndex + 1, signed)
+  }
+  if (step.kind === 'safe-proposal' || step.kind === 'atomic-batch') {
+    return executeBatchStep(params, step, stepIndex, outcome)
   }
   return executeRequestStep(params, step, stepIndex, outcome)
 }

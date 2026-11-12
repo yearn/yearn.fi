@@ -1,6 +1,21 @@
 'use client'
 
-import { createContext, type ReactElement, type ReactNode, useContext, useMemo } from 'react'
+import {
+  createTransactionLifecycle,
+  selectTransactionActivity,
+  type TTransactionLifecycle
+} from '@yearn/vault-widget/lifecycle'
+import {
+  createContext,
+  type ReactElement,
+  type ReactNode,
+  useContext,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  useSyncExternalStore
+} from 'react'
 import type { Address, Hash, TransactionReceipt } from 'viem'
 import type { VaultWidgetExecutionAdapter } from './headless/types'
 
@@ -49,7 +64,7 @@ export type VaultWidgetSafeTransactionDetails = {
 }
 
 export type VaultWidgetNotificationId = number | string
-export type VaultWidgetBridgeProtocol = 'stargate' | 'ccip' | 'relay'
+export type VaultWidgetBridgeProtocol = string
 export type VaultWidgetBridgeStatus =
   | 'pending'
   | 'inflight'
@@ -109,6 +124,7 @@ export type VaultWidgetTrackedNotification = {
 export type VaultWidgetAnalyticsProperties = Record<string, boolean | null | number | string | undefined>
 
 export type VaultWidgetWalletRuntime = {
+  connectorId?: string
   address?: Address
   chainId?: number
   connected: boolean
@@ -178,6 +194,7 @@ export type VaultWidgetAssetsRuntime = {
 }
 
 export type VaultWidgetRuntime = {
+  lifecycle?: TTransactionLifecycle
   analytics: VaultWidgetAnalyticsRuntime
   assets: VaultWidgetAssetsRuntime
   catalog: VaultWidgetCatalogRuntime
@@ -197,6 +214,7 @@ export type VaultWidgetRuntime = {
  * disconnected defaults.
  */
 export type VaultWidgetRuntimeOverrides = {
+  lifecycle?: TTransactionLifecycle
   analytics?: Partial<VaultWidgetAnalyticsRuntime>
   assets?: Partial<VaultWidgetAssetsRuntime>
   catalog?: Partial<VaultWidgetCatalogRuntime>
@@ -326,6 +344,7 @@ export function createVaultWidgetRuntime(overrides: VaultWidgetRuntimeOverrides 
     overrides.chains?.resolveExecutionChainId ?? DEFAULT_VAULT_WIDGET_RUNTIME.chains.resolveExecutionChainId
 
   return {
+    lifecycle: overrides.lifecycle,
     analytics: {
       track: overrides.analytics?.track ?? DEFAULT_VAULT_WIDGET_RUNTIME.analytics.track
     },
@@ -385,6 +404,7 @@ export function createVaultWidgetRuntime(overrides: VaultWidgetRuntimeOverrides 
       slippagePercent: overrides.settings?.slippagePercent ?? DEFAULT_VAULT_WIDGET_RUNTIME.settings.slippagePercent
     },
     wallet: {
+      connectorId: overrides.wallet?.connectorId ?? DEFAULT_VAULT_WIDGET_RUNTIME.wallet.connectorId,
       address: overrides.wallet?.address ?? DEFAULT_VAULT_WIDGET_RUNTIME.wallet.address,
       chainId: overrides.wallet?.chainId ?? DEFAULT_VAULT_WIDGET_RUNTIME.wallet.chainId,
       connected: overrides.wallet?.connected ?? DEFAULT_VAULT_WIDGET_RUNTIME.wallet.connected,
@@ -419,6 +439,7 @@ export function VaultWidgetRuntimeProvider({ children, value = {} }: VaultWidget
       catalog: { ...parent.runtime.catalog, ...value.catalog },
       chains: { ...parent.runtime.chains, ...value.chains },
       execution: { ...parent.runtime.execution, ...value.execution },
+      lifecycle: value.lifecycle ?? parent.runtime.lifecycle,
       notifications: { ...parent.runtime.notifications, ...value.notifications },
       prices: { ...parent.runtime.prices, ...value.prices },
       routing: { ...parent.runtime.routing, ...value.routing },
@@ -427,7 +448,33 @@ export function VaultWidgetRuntimeProvider({ children, value = {} }: VaultWidget
       wallet: { ...parent.runtime.wallet, ...value.wallet }
     }
   }, [parent, value])
-  const runtime = useMemo(() => createVaultWidgetRuntime(effectiveOverrides), [effectiveOverrides])
+  const configuredRuntime = useMemo(() => createVaultWidgetRuntime(effectiveOverrides), [effectiveOverrides])
+  const current = useRef(configuredRuntime)
+  current.current = configuredRuntime
+  const [localLifecycle] = useState(() =>
+    createTransactionLifecycle({
+      execution: () => current.current.execution,
+      executionChainId: (chainId) => current.current.chains.resolveExecutionChainId(chainId),
+      wallet: () => current.current.wallet,
+      refresh: async (record) => {
+        await current.current.wallet.refresh([
+          ...(record.display
+            ? [{ address: record.display.fromAddress, chainId: record.original.canonicalChainId }]
+            : []),
+          ...(record.display?.toAddress
+            ? [{ address: record.display.toAddress, chainId: record.original.canonicalChainId }]
+            : [])
+        ])
+      }
+    })
+  )
+  const lifecycle = effectiveOverrides.lifecycle ?? localLifecycle
+  // Only the owning provider manages the observer lifetime; nested widget providers inherit the service.
+  useEffect(
+    () => (effectiveOverrides.lifecycle ? undefined : localLifecycle.connect()),
+    [effectiveOverrides.lifecycle, localLifecycle]
+  )
+  const runtime = useMemo(() => ({ ...configuredRuntime, lifecycle }), [configuredRuntime, lifecycle])
   const contextValue = useMemo(() => ({ overrides: effectiveOverrides, runtime }), [effectiveOverrides, runtime])
 
   return <VaultWidgetRuntimeContext.Provider value={contextValue}>{children}</VaultWidgetRuntimeContext.Provider>
@@ -445,4 +492,26 @@ export function useVaultWidgetRuntime(): VaultWidgetRuntime {
  */
 export function useVaultWidgetRuntimeOverrides(): VaultWidgetRuntimeOverrides | undefined {
   return useContext(VaultWidgetRuntimeContext)?.overrides
+}
+
+const EMPTY_ACTIVITY_RECORDS = Object.freeze([])
+const noActivitySubscribe = () => () => undefined
+const emptyActivityRecords = () => EMPTY_ACTIVITY_RECORDS
+
+/** Account menus subscribe to the same records as the transaction overlay. */
+export function useVaultWidgetActivities({ allWallets = false }: { allWallets?: boolean } = {}) {
+  const { lifecycle, wallet } = useVaultWidgetRuntime()
+  const records = useSyncExternalStore(
+    lifecycle?.subscribe ?? noActivitySubscribe,
+    lifecycle ? () => lifecycle.getSnapshot().records : emptyActivityRecords,
+    emptyActivityRecords
+  )
+  return useMemo(
+    () =>
+      records
+        .filter((record) => allWallets || record.owner.toLowerCase() === wallet.address?.toLowerCase())
+        .map(selectTransactionActivity)
+        .toSorted((a, b) => b.createdAt - a.createdAt),
+    [records, wallet.address, allWallets]
+  )
 }

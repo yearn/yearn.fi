@@ -101,6 +101,7 @@ export function useEnsoWithdraw(params: UseEnsoWithdrawParams): UseWidgetWithdra
         isCrossChain: ensoFlow.periphery.isCrossChain,
         routeHasSwap: ensoFlow.periphery.routeHasSwap,
         bridgeProtocol: ensoFlow.periphery.bridgeProtocol,
+        bridgeSettlement: ensoFlow.periphery.bridgeSettlement,
         routerAddress: ensoFlow.periphery.routerAddress,
         error: params.amountError ?? ensoFlow.periphery.error?.message,
         shareAmount: params.amount,

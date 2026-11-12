@@ -102,6 +102,7 @@ export function useEnsoDeposit(params: UseEnsoDepositParams): UseWidgetDepositFl
         isCrossChain: ensoFlow.periphery.isCrossChain,
         routeHasSwap: ensoFlow.periphery.routeHasSwap,
         bridgeProtocol: ensoFlow.periphery.bridgeProtocol,
+        bridgeSettlement: ensoFlow.periphery.bridgeSettlement,
         routerAddress: ensoFlow.periphery.routerAddress,
         approvalSpenderAddress: ensoFlow.periphery.approvalSpenderAddress,
         approvalWarning: ensoFlow.periphery.approvalWarning,
