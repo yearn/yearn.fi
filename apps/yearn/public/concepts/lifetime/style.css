@@ -2132,3 +2132,41 @@ a.security-choice:hover {
     font-size: 22px;
   }
 }
+
+.version-menu {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 90;
+  font-size: 13px;
+}
+.version-menu summary {
+  cursor: pointer;
+  padding: 12px 18px;
+  border: 1px solid var(--line);
+  border-radius: 24px;
+  background: var(--paper);
+  list-style: none;
+}
+.version-menu summary::-webkit-details-marker {
+  display: none;
+}
+.version-menu nav {
+  position: absolute;
+  bottom: calc(100% + 8px);
+  right: 0;
+  width: 220px;
+  padding: 8px;
+  background: var(--paper);
+  border: 1px solid var(--line);
+  border-radius: 8px;
+}
+.version-menu nav a {
+  display: block;
+  padding: 12px;
+  border-radius: 4px;
+}
+.version-menu nav a:hover,
+.version-menu nav a:focus-visible {
+  background: #f3f4f1;
+}

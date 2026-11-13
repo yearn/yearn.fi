@@ -81,3 +81,7 @@ Generate the capture from the repository root:
 ```
 
 The source JSON and data notes distinguish the metrics reporting date, pilot growth date and presentation capture time. This is a constant-rate mockup estimate beyond the pilot's sampled curve, not a live TVL endpoint. Published TVL already contains locked profits; the animation does not represent new measured totalAssets. No historical growth is backfilled between the older metrics close and the capture. Before production, refresh and align the underlying evidence and replace indefinite constant-rate extrapolation with a refreshed model. Hero failure shows unavailable independently of the other landing statistics.
+
+## Review versions
+
+The application serves the current landing page at `/` via the Next.js rewrite. The floating Older versions menu opens frozen copies of the original PR layout (`d373e809`) and the pre-redesign earnings layout (`395d741a`). Their HTML, CSS, JavaScript and data are isolated in `versions/`; shared images and fonts remain in the parent directory. Each older view links back to `/`.
