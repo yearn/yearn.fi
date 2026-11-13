@@ -158,23 +158,45 @@ select('#replay').addEventListener('click', () => {
   window.scrollTo({ top: 0, behavior: motion.matches ? 'instant' : 'smooth' })
   loadHero()
 })
-if ('IntersectionObserver' in window) {
-  document.body.classList.add('has-observer')
-  const observer = new IntersectionObserver(
-    (entries) => {
-      entries.forEach((entry) => {
-        if (entry.isIntersecting) {
-          entry.target.classList.add('visible')
-          observer.unobserve(entry.target)
-        }
-      })
-    },
-    { threshold: 0.12 }
-  )
-  document.querySelectorAll('.reveal').forEach((element) => {
-    observer.observe(element)
+// Scroll progress is reversible, so content fades again on every return visit.
+document.querySelectorAll('.reveal').forEach((element) => {
+  element.classList.remove('reveal')
+})
+const revealElements = [...document.querySelectorAll('#your-way, #security, #integrators')]
+revealElements.forEach((element) => {
+  element.classList.add('reveal')
+})
+document.body.classList.add('scroll-reveals')
+const revealFrame = { pending: false }
+const paintReveals = () => {
+  revealFrame.pending = false
+  const fadeDistance = Math.min(280, window.innerHeight * 0.35)
+  const revealInset = window.innerHeight * 0.45
+  const measurements = revealElements.map((element) => {
+    const bounds = element.getBoundingClientRect()
+    const entering = (window.innerHeight - revealInset - bounds.top) / fadeDistance
+    return { element, progress: Math.max(0, Math.min(1, entering)) }
+  })
+  measurements.forEach(({ element, progress }) => {
+    element.style.setProperty('--reveal-progress', String(progress))
   })
 }
+const scheduleReveals = () => {
+  if (revealFrame.pending) return
+  revealFrame.pending = true
+  requestAnimationFrame(paintReveals)
+}
+window.addEventListener('scroll', scheduleReveals, { passive: true })
+window.addEventListener('resize', scheduleReveals)
+window.addEventListener('pageshow', scheduleReveals)
+new MutationObserver(scheduleReveals).observe(select('main'), {
+  subtree: true,
+  attributes: true,
+  attributeFilter: ['hidden']
+})
+document.fonts.ready.then(scheduleReveals)
+paintReveals()
+
 load()
 loadHero()
 
@@ -251,12 +273,24 @@ const selectSecurity = (choice) => {
 }
 const placeSecurityPanels = () => {
   securityChoices.forEach((choice) => {
+    if (choice.tagName === 'A') {
+      choice.dataset.destination ??= choice.getAttribute('href')
+      if (mobileSecurity.matches) {
+        choice.removeAttribute('href')
+        choice.setAttribute('role', 'button')
+        choice.tabIndex = 0
+      } else {
+        choice.setAttribute('href', choice.dataset.destination)
+        choice.removeAttribute('role')
+        choice.removeAttribute('tabindex')
+      }
+    }
     const panel = document.getElementById(choice.getAttribute('aria-controls'))
     if (mobileSecurity.matches) (choice.closest('.security-link-row') ?? choice).after(panel)
     else securityDisplay.append(panel)
   })
   const selected = securityChoices.find((choice) => choice.dataset.selected === 'true')
-  selectSecurity(selected ?? (mobileSecurity.matches ? null : securityChoices[0]))
+  selectSecurity(mobileSecurity.matches ? null : (selected ?? securityChoices[0]))
 }
 placeSecurityPanels()
 mobileSecurity.addEventListener('change', placeSecurityPanels)
@@ -268,7 +302,21 @@ securityChoices.forEach((choice) => {
     if (!mobileSecurity.matches) selectSecurity(choice)
   })
   const toggle = choice.parentElement.querySelector('.security-expand') ?? choice
-  if (choice.tagName === 'A') choice.addEventListener('click', () => selectSecurity(choice))
+  if (choice.tagName === 'A') {
+    choice.addEventListener('click', (event) => {
+      if (mobileSecurity.matches) {
+        event.preventDefault()
+        const collapse = choice.getAttribute('aria-expanded') === 'true'
+        selectSecurity(collapse ? null : choice)
+      } else selectSecurity(choice)
+    })
+    choice.addEventListener('keydown', (event) => {
+      if (mobileSecurity.matches && (event.key === 'Enter' || event.key === ' ')) {
+        event.preventDefault()
+        choice.click()
+      }
+    })
+  }
   toggle.addEventListener('click', () => {
     const collapse = mobileSecurity.matches && choice.getAttribute('aria-expanded') === 'true'
     selectSecurity(collapse ? null : choice)
@@ -481,7 +529,9 @@ const statsBarObserver = new ResizeObserver(([entry]) => {
 })
 statsBarObserver.observe(heroStatistics)
 const updateHeroStatistics = () => {
-  const visible = window.scrollY > 12
+  const progress = Math.min(1, Math.max(0, window.scrollY / 120))
+  hero.style.setProperty('--stats-progress', String(progress))
+  const visible = progress > 0
   hero.classList.toggle('has-scrolled', window.scrollY > 12)
   hero.classList.toggle('stats-visible', visible)
   heroStatistics.inert = !visible

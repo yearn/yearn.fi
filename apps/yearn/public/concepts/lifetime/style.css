@@ -368,10 +368,6 @@ footer > div {
     opacity 0.7s,
     transform 0.7s;
 }
-.has-observer .reveal:not(.visible) {
-  opacity: 0;
-  transform: translateY(18px);
-}
 dialog {
   border: 1px solid var(--line);
   background: var(--paper);
@@ -660,8 +656,9 @@ dialog .source-date {
   font-weight: 400;
 }
 .integrations-window {
-  overflow-x: auto;
-  scrollbar-width: none;
+  overflow: clip;
+  touch-action: pan-y;
+  user-select: none;
   mask-image: linear-gradient(to right, transparent, black 4%, black 96%, transparent);
 }
 .integrations-window:focus-visible {
@@ -672,6 +669,8 @@ dialog .source-date {
   display: flex;
   width: max-content;
   animation: partners-scroll 80s linear infinite;
+  will-change: transform;
+  backface-visibility: hidden;
 }
 .integrations-group {
   display: flex;
@@ -693,18 +692,12 @@ dialog .source-date {
   object-fit: contain;
   filter: grayscale(1);
   opacity: 0.65;
-  transition: opacity 180ms ease;
-}
-.integrations-group img:hover {
-  opacity: 1;
-}
-.integrations-window:hover .integrations-track,
-.integrations-window:focus-visible .integrations-track {
-  animation-play-state: paused;
+  pointer-events: none;
+  -webkit-user-drag: none;
 }
 @keyframes partners-scroll {
   to {
-    transform: translateX(-50%);
+    transform: translate3d(-50%, 0, 0);
   }
 }
 @media (max-width: 760px) {
@@ -731,12 +724,6 @@ dialog .source-date {
   }
 }
 @media (prefers-reduced-motion: reduce) {
-  .integrations-track {
-    animation: none;
-  }
-  .integrations-group[aria-hidden="true"] {
-    display: none;
-  }
   .integrations-group img {
     transition: none;
   }
@@ -2169,4 +2156,308 @@ a.security-choice:hover {
 .version-menu nav a:hover,
 .version-menu nav a:focus-visible {
   background: #f3f4f1;
+}
+
+.product-card {
+  display: contents;
+}
+.product-read-more {
+  display: none;
+}
+@media (max-width: 760px) {
+  /* Flowing stats can never overlap the hero copy, even on short phones. */
+  .hero-stage {
+    height: auto;
+  }
+  .hero-stage .hero {
+    height: auto;
+    min-height: 100svh;
+    padding-block: calc(var(--header-height) + 40px) 32px;
+    gap: 32px;
+  }
+  .hero.stats-visible .hero-main {
+    transform: none;
+  }
+  .hero .hero-statistics {
+    position: static;
+    width: 100%;
+    margin-top: 0;
+    flex-shrink: 0;
+  }
+  .hero-statistics .stat dd:not(.stat-detail) {
+    font-size: 28px;
+  }
+  .hero .counter-caption {
+    font-size: 20px;
+  }
+  .hero .tagline {
+    margin-top: 28px;
+    font-size: 20px;
+  }
+  .hero .hero-bottom {
+    bottom: 28px;
+  }
+  .paths-section,
+  .benefits-section {
+    padding-block: calc(var(--header-height) + 16px) 24px;
+  }
+  .paths-heading {
+    padding-bottom: 12px;
+  }
+  .paths-heading h2 {
+    font-size: 34px;
+  }
+  .paths-heading > p {
+    font-size: 14px;
+    line-height: 1.5;
+    margin-top: 16px;
+  }
+  .paths-section .infrastructure-grid,
+  .benefits-section .benefits-grid {
+    margin-top: 12px;
+    gap: 8px;
+  }
+  .infrastructure-card,
+  .product-card {
+    display: flex;
+    flex-direction: row;
+    justify-content: space-between;
+    align-items: center;
+    text-align: left;
+    padding: 12px;
+    min-height: 64px;
+    width: 100%;
+    gap: 16px;
+    border-radius: 4px;
+    background: #f8f9f7;
+  }
+  .infrastructure-card p,
+  .product-card p {
+    display: none;
+  }
+  .infrastructure-card h3,
+  .product-card h3 {
+    font-size: 17px;
+    line-height: 1.25;
+    letter-spacing: -0.025em;
+    margin: 0;
+    max-width: 23ch;
+  }
+  .card-read-more,
+  .product-read-more {
+    display: block;
+    opacity: 1;
+    padding: 0;
+    margin: 0;
+    font-size: 11px;
+    color: var(--blue);
+    white-space: nowrap;
+  }
+  .product-card:hover,
+  .product-card:focus-visible {
+    background: #f3f4f1;
+  }
+  .paths-section .integrations {
+    margin-top: 20px;
+  }
+  .integrations-heading {
+    margin-bottom: 12px;
+  }
+  .integrations-group {
+    display: grid;
+    grid-template-rows: repeat(2, 28px);
+    grid-auto-flow: column;
+    gap: 12px 24px;
+    padding: 4px 88px 4px 0;
+  }
+  .integrations-group li,
+  .integrations-group img {
+    width: 104px;
+  }
+  .integrations-group img {
+    height: 28px;
+  }
+  .integrations-group li:nth-child(even) {
+    transform: translateX(64px);
+  }
+  .benefits-intro h2 {
+    font-size: 38px;
+  }
+  .benefits-intro > p {
+    font-size: 14px;
+    margin-top: 16px;
+  }
+  .benefits-section .integrator-actions {
+    margin-top: 20px;
+    gap: 8px;
+  }
+  .benefits-section .integrator-actions .feature-link {
+    padding: 12px 16px;
+    font-size: 13px;
+  }
+  .security-expand {
+    display: none;
+  }
+  .security-link-row a.security-choice {
+    padding-right: 12px;
+    cursor: pointer;
+  }
+  .security-choice .external-link-icon {
+    opacity: 1;
+    font-size: 0;
+  }
+  .security-choice .external-link-icon::after {
+    content: "+";
+    font-size: 22px;
+  }
+  .security-choice[aria-expanded="true"] .external-link-icon::after {
+    content: "−";
+  }
+}
+
+@media (max-width: 760px) and (max-height: 650px) {
+  .paths-section,
+  .benefits-section {
+    padding-block: calc(var(--header-height) + 8px) 16px;
+  }
+  .paths-heading h2,
+  .benefits-intro h2 {
+    font-size: 28px;
+  }
+  .paths-heading > p,
+  .benefits-intro > p {
+    font-size: 12px;
+    margin-top: 10px;
+  }
+  .infrastructure-card,
+  .product-card {
+    padding: 8px;
+    gap: 8px;
+    min-height: 50px;
+  }
+  .infrastructure-card h3,
+  .product-card h3 {
+    font-size: 15px;
+  }
+  .card-read-more,
+  .product-read-more {
+    font-size: 10px;
+  }
+  .paths-section .integrations {
+    margin-top: 14px;
+  }
+  .integrations-group {
+    grid-template-rows: repeat(2, 24px);
+    row-gap: 8px;
+  }
+  .integrations-group img {
+    height: 24px;
+  }
+  .benefits-section .integrator-actions {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 12px;
+  }
+  .benefits-section .integrator-actions .feature-link {
+    padding: 10px 8px;
+    font-size: 11px;
+    gap: 6px;
+  }
+}
+
+/* Reserve the stats footprint before scrolling so the hero never reflows. */
+@media (max-width: 760px) {
+  .hero-stage .hero {
+    display: grid;
+    grid-template-rows: minmax(200px, 1fr) auto;
+    align-content: stretch;
+    gap: 28px;
+  }
+  .hero-main {
+    align-self: center;
+  }
+  .hero .hero-statistics,
+  .hero.stats-visible .hero-statistics {
+    opacity: var(--stats-progress, 0);
+    transform: none;
+    transition: opacity 80ms linear;
+  }
+  .security-choice .external-link-icon,
+  .security-choice .choice-arrow {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    align-self: center;
+    width: 18px;
+    height: 24px;
+    line-height: 1;
+  }
+  .security-choice .external-link-icon::after,
+  .security-choice .choice-arrow::after {
+    display: block;
+    font-size: 22px;
+    line-height: 1;
+  }
+}
+
+@media (max-width: 760px) {
+  .hero-stage .hero {
+    display: block;
+    padding: 0;
+    height: calc(100svh + var(--stats-bar-height, 200px) + 48px);
+    min-height: 0;
+  }
+  .hero-main {
+    position: absolute;
+    top: 50svh;
+    left: 16px;
+    right: 16px;
+    margin-top: 0;
+    transform: translateY(-50%);
+  }
+  .hero.stats-visible .hero-main {
+    transform: translateY(-50%);
+  }
+  .hero .hero-statistics,
+  .hero.stats-visible .hero-statistics {
+    position: absolute;
+    top: calc(100svh - 72px);
+    bottom: auto;
+    left: 16px;
+    right: 16px;
+    width: calc(100% - 32px);
+  }
+  .hero .hero-bottom {
+    top: calc(100svh - 64px);
+    bottom: auto;
+  }
+}
+
+/* Reversible viewport fades share the same behavior on desktop and mobile. */
+.scroll-reveals .reveal {
+  opacity: var(--reveal-progress, 1);
+  transition: opacity 80ms linear;
+}
+.scroll-reveals .reveal:focus-within {
+  opacity: 1;
+}
+
+@media (max-width: 760px) {
+  .paths-heading > p,
+  .benefits-intro > p {
+    display: none;
+  }
+}
+
+@media (max-width: 760px) {
+  .paths-section .infrastructure-grid,
+  .benefits-section .benefits-grid {
+    margin-top: 28px;
+  }
+  .paths-section .integrations {
+    margin-top: 32px;
+  }
+  .benefits-section .integrator-actions {
+    margin-top: 32px;
+  }
 }
