@@ -1,0 +1,11 @@
+{
+  "timestamp": "1793802839",
+  "blockNumber": "521200470",
+  "blockHash": "0x0f0ad10f4f12a6f48a2e0b93abc46ec3f47357c8893dc3034d1a71993511f54d",
+  "rootCount": 2,
+  "holderCount": 3,
+  "checkedPairs": 4,
+  "zeroPairs": 4,
+  "coverage": "Closed pilot: 2 selected roots plus observed queue/direct holders. No ownership dollars or ratios reused from the older metrics publication.",
+  "positions": []
+}

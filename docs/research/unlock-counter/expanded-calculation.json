@@ -1,0 +1,3966 @@
+{
+  "timestamp": "1793802839",
+  "blockNumber": "26342075",
+  "rows": [
+    {
+      "name": "USDC-1 yVault",
+      "address": "0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204",
+      "kind": "Multi Strategy",
+      "apiVersion": "3.0.2",
+      "assetSymbol": "USDC",
+      "status": "valued",
+      "inventoryTvlUsd": 18244824.593776055,
+      "holderValueUsd": 18229742.725018222,
+      "currentUsdPerSecond": 0.033921301274516126,
+      "remainingSeconds": 398713,
+      "remainingUnlockUsd": 13534.90550353378,
+      "afterOneMinute": {
+        "assets": "18239188292572",
+        "usd": 18229744.76029589,
+        "increaseUsd": 2.0352776683866978
+      },
+      "afterOneHour": {
+        "assets": "18239308437002",
+        "usd": 18229864.842519842,
+        "increaseUsd": 122.11750162020326
+      },
+      "afterOneDay": {
+        "assets": "18242119046414",
+        "usd": 18232673.99670915,
+        "increaseUsd": 2931.271690927446
+      },
+      "final": {
+        "assets": "18252728173214",
+        "usd": 18243277.630521756,
+        "increaseUsd": 13534.90550353378
+      }
+    },
+    {
+      "name": "yvUSD",
+      "address": "0x696d02Db93291651ED510704c9b286841d506987",
+      "kind": "Multi Strategy",
+      "apiVersion": "3.0.4",
+      "assetSymbol": "USDC",
+      "status": "valued",
+      "inventoryTvlUsd": 15411057.826800287,
+      "holderValueUsd": 15403133.950437171,
+      "currentUsdPerSecond": 0.025722430825721867,
+      "remainingSeconds": 277223,
+      "remainingUnlockUsd": 7134.152183910832,
+      "afterOneMinute": {
+        "assets": "15411114761135",
+        "usd": 15403135.493783673,
+        "increaseUsd": 1.5433465018868446
+      },
+      "afterOneHour": {
+        "assets": "15411205866267",
+        "usd": 15403226.55174503,
+        "increaseUsd": 92.60130785778165
+      },
+      "afterOneDay": {
+        "assets": "15413337107161",
+        "usd": 15405356.689166559,
+        "increaseUsd": 2222.7387293875217
+      },
+      "final": {
+        "assets": "15418251064869",
+        "usd": 15410268.102621082,
+        "increaseUsd": 7134.152183910832
+      }
+    },
+    {
+      "name": "WETH-2 yVault",
+      "address": "0xAc37729B76db6438CE62042AE1270ee574CA7571",
+      "kind": "Multi Strategy",
+      "apiVersion": "3.0.2",
+      "assetSymbol": "WETH",
+      "status": "valued",
+      "inventoryTvlUsd": 11743918.155596258,
+      "holderValueUsd": 11826774.372396933,
+      "currentUsdPerSecond": 0.002578757375611829,
+      "remainingSeconds": 357457,
+      "remainingUnlockUsd": 921.8667267616838,
+      "afterOneMinute": {
+        "assets": "5102448454942068507217",
+        "usd": 11826774.527122378,
+        "increaseUsd": 0.1547254454344511
+      },
+      "afterOneHour": {
+        "assets": "5102452393401720616282",
+        "usd": 11826783.655930774,
+        "increaseUsd": 9.283533841371536
+      },
+      "afterOneDay": {
+        "assets": "5102544515039722551218",
+        "usd": 11826997.181231683,
+        "increaseUsd": 222.80883475020528
+      },
+      "final": {
+        "assets": "5102846110952693313932",
+        "usd": 11827696.239123695,
+        "increaseUsd": 921.8667267616838
+      }
+    },
+    {
+      "name": "WETH-1 yVault",
+      "address": "0xc56413869c6CDf96496f2b1eF801fEDBdFA7dDB0",
+      "kind": "Multi Strategy",
+      "apiVersion": "3.0.2",
+      "assetSymbol": "WETH",
+      "status": "valued",
+      "inventoryTvlUsd": 10673861.254663888,
+      "holderValueUsd": 10741878.3375747,
+      "currentUsdPerSecond": 0.01697675120571987,
+      "remainingSeconds": 525648,
+      "remainingUnlockUsd": 8931.214907845482,
+      "afterOneMinute": {
+        "assets": "4634390010430856029094",
+        "usd": 10741879.356179867,
+        "increaseUsd": 1.0186051670461893
+      },
+      "afterOneHour": {
+        "assets": "4634415938648717262612",
+        "usd": 10741939.454226764,
+        "increaseUsd": 61.1166520640254
+      },
+      "afterOneDay": {
+        "assets": "4635022478034635949076",
+        "usd": 10743345.329194915,
+        "increaseUsd": 1466.991620214656
+      },
+      "final": {
+        "assets": "4638242782479772366477",
+        "usd": 10750809.552482545,
+        "increaseUsd": 8931.214907845482
+      }
+    },
+    {
+      "name": "USDS-1 yVault",
+      "address": "0x182863131F9a4630fF9E27830d945B1413e347E8",
+      "kind": "Multi Strategy",
+      "apiVersion": "3.0.3",
+      "assetSymbol": "USDS",
+      "status": "valued",
+      "inventoryTvlUsd": 8830534.608671272,
+      "holderValueUsd": 8822032.280826997,
+      "currentUsdPerSecond": 0.01103610442756912,
+      "remainingSeconds": 218388,
+      "remainingUnlockUsd": 2410.8114001769572,
+      "afterOneMinute": {
+        "assets": "8821619010354841729013825",
+        "usd": 8822032.942993313,
+        "increaseUsd": 0.662166316062212
+      },
+      "afterOneHour": {
+        "assets": "8821658076510307509822102",
+        "usd": 8822072.010981862,
+        "increaseUsd": 39.73015486449003
+      },
+      "afterOneDay": {
+        "assets": "8822571925969074765602690",
+        "usd": 8822985.903320754,
+        "increaseUsd": 953.622493756935
+      },
+      "final": {
+        "assets": "8824029046503720665963250",
+        "usd": 8824443.092227174,
+        "increaseUsd": 2410.8114001769572
+      }
+    },
+    {
+      "name": "Morpho Yearn OG USDC Compounder",
+      "address": "0x0e297dE4005883C757c9F09fdF7cF1363C20e626",
+      "kind": "Single Strategy",
+      "apiVersion": "3.0.4",
+      "assetSymbol": "USDC",
+      "status": "valued",
+      "inventoryTvlUsd": 7470461.678435479,
+      "holderValueUsd": 7466729.03152747,
+      "currentUsdPerSecond": 0.01600779147962704,
+      "remainingSeconds": 194700,
+      "remainingUnlockUsd": 3118.0185067038983,
+      "afterOneMinute": {
+        "assets": "7470597972956",
+        "usd": 7466729.99199392,
+        "increaseUsd": 0.9604664500802755
+      },
+      "afterOneHour": {
+        "assets": "7470654670339",
+        "usd": 7466786.660021252,
+        "increaseUsd": 57.628493782132864
+      },
+      "afterOneDay": {
+        "assets": "7471981058015",
+        "usd": 7468112.360946031,
+        "increaseUsd": 1383.3294185614213
+      },
+      "final": {
+        "assets": "7473716645722",
+        "usd": 7469847.050034174,
+        "increaseUsd": 3118.0185067038983
+      }
+    },
+    {
+      "name": "Yearn BOLD",
+      "address": "0x9F4330700a36B29952869fac9b33f45EEdd8A3d8",
+      "kind": "Multi Strategy",
+      "apiVersion": "3.0.4",
+      "assetSymbol": "BOLD",
+      "status": "valued",
+      "inventoryTvlUsd": 7466057.003542972,
+      "holderValueUsd": 7577251.940499272,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "7607517097079790070979508",
+        "usd": 7577251.940499272,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "7607517097079790070979508",
+        "usd": 7577251.940499272,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "7607517097079790070979508",
+        "usd": 7577251.940499272,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "7607517097079790070979508",
+        "usd": 7577251.940499272,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Staked yBOLD",
+      "address": "0x23346B04a7f55b8760E5860AA5A77383D63491cD",
+      "kind": "Single Strategy",
+      "apiVersion": "3.0.4",
+      "assetSymbol": "yBOLD",
+      "status": "valued",
+      "inventoryTvlUsd": 7391805.31596317,
+      "holderValueUsd": 7500138.911529964,
+      "currentUsdPerSecond": 0.02614295667028195,
+      "remainingSeconds": 1056,
+      "remainingUnlockUsd": 27.6070638615638,
+      "afterOneMinute": {
+        "assets": "7529858510029028558804147",
+        "usd": 7500140.480107692,
+        "increaseUsd": 1.5685777282342315
+      },
+      "afterOneHour": {
+        "assets": "7529884651688230681674388",
+        "usd": 7500166.518593825,
+        "increaseUsd": 27.6070638615638
+      },
+      "afterOneDay": {
+        "assets": "7529884651688230681674388",
+        "usd": 7500166.518593825,
+        "increaseUsd": 27.6070638615638
+      },
+      "final": {
+        "assets": "7529884651688230681674388",
+        "usd": 7500166.518593825,
+        "increaseUsd": 27.6070638615638
+      }
+    },
+    {
+      "name": "DAI-1 yVault",
+      "address": "0x028eC7330ff87667b6dfb0D94b954c820195336c",
+      "kind": "Multi Strategy",
+      "apiVersion": "3.0.2",
+      "assetSymbol": "DAI",
+      "status": "valued",
+      "inventoryTvlUsd": 5732244.564777473,
+      "holderValueUsd": 5729164.968979444,
+      "currentUsdPerSecond": 0.0068869512332928595,
+      "remainingSeconds": 587348,
+      "remainingUnlockUsd": 4047.8950210651383,
+      "afterOneMinute": {
+        "assets": "5728970960343632967692919",
+        "usd": 5729165.382196548,
+        "increaseUsd": 0.41321710404008627
+      },
+      "afterOneHour": {
+        "assets": "5728995339430917995202609",
+        "usd": 5729189.762111177,
+        "increaseUsd": 24.79313173238188
+      },
+      "afterOneDay": {
+        "assets": "5729565621338968240284923",
+        "usd": 5729760.063372661,
+        "increaseUsd": 595.0943932170048
+      },
+      "final": {
+        "assets": "5733018304794444568100241",
+        "usd": 5733212.8640005095,
+        "increaseUsd": 4047.8950210651383
+      }
+    },
+    {
+      "name": "USDT-1 yVault",
+      "address": "0x310B7Ea7475A0B449Cfd73bE81522F1B88eFAFaa",
+      "kind": "Multi Strategy",
+      "apiVersion": "3.0.2",
+      "assetSymbol": "USDT",
+      "status": "valued",
+      "inventoryTvlUsd": 5664397.89547711,
+      "holderValueUsd": 5660444.174945534,
+      "currentUsdPerSecond": 0.007198966513292243,
+      "remainingSeconds": 464016,
+      "remainingUnlockUsd": 3342.4081247374415,
+      "afterOneMinute": {
+        "assets": "5666167278529",
+        "usd": 5660444.6068848455,
+        "increaseUsd": 0.4319393113255501
+      },
+      "afterOneHour": {
+        "assets": "5666192788753",
+        "usd": 5660470.091344228,
+        "increaseUsd": 25.916398693807423
+      },
+      "afterOneDay": {
+        "assets": "5666789534111",
+        "usd": 5661066.234005983,
+        "increaseUsd": 622.0590604487807
+      },
+      "final": {
+        "assets": "5669512633430",
+        "usd": 5663786.583070272,
+        "increaseUsd": 3342.4081247374415
+      }
+    },
+    {
+      "name": "WBTC-1 yVault",
+      "address": "0x751F0cC6115410A3eE9eC92d08f46Ff6Da98b708",
+      "kind": "Multi Strategy",
+      "apiVersion": "3.0.4",
+      "assetSymbol": "WBTC",
+      "status": "valued",
+      "inventoryTvlUsd": 3681677.8681651,
+      "holderValueUsd": 3717062.940867617,
+      "currentUsdPerSecond": 0.000029104448970041166,
+      "remainingSeconds": 144252,
+      "remainingUnlockUsd": 4.199303589295596,
+      "afterOneMinute": {
+        "assets": "4748892825",
+        "usd": 3717062.942433061,
+        "increaseUsd": 0.0015654442831873894
+      },
+      "afterOneHour": {
+        "assets": "4748892957",
+        "usd": 3717063.0457523665,
+        "increaseUsd": 0.10488474974408746
+      },
+      "afterOneDay": {
+        "assets": "4748896036",
+        "usd": 3717065.4557534386,
+        "increaseUsd": 2.5148858218453825
+      },
+      "final": {
+        "assets": "4748898188",
+        "usd": 3717067.140171206,
+        "increaseUsd": 4.199303589295596
+      }
+    },
+    {
+      "name": "Morpho Steakhouse USDC Compounder",
+      "address": "0x074134A2784F4F66b6ceD6f68849382990Ff3215",
+      "kind": "Single Strategy",
+      "apiVersion": "3.0.4",
+      "assetSymbol": "USDC",
+      "status": "valued",
+      "inventoryTvlUsd": 2399895.2662479044,
+      "holderValueUsd": 2399780.3616332915,
+      "currentUsdPerSecond": 0.00378592761717128,
+      "remainingSeconds": 237396,
+      "remainingUnlockUsd": 899.1008039158769,
+      "afterOneMinute": {
+        "assets": "2401023744178",
+        "usd": 2399780.5887886183,
+        "increaseUsd": 0.22715532686561346
+      },
+      "afterOneHour": {
+        "assets": "2401037153382",
+        "usd": 2399793.9910498615,
+        "increaseUsd": 13.629416570067406
+      },
+      "afterOneDay": {
+        "assets": "2401350835116",
+        "usd": 2400107.5103718326,
+        "increaseUsd": 327.1487385411747
+      },
+      "final": {
+        "assets": "2401923083469",
+        "usd": 2400679.4624372073,
+        "increaseUsd": 899.1008039158769
+      }
+    },
+    {
+      "name": "crvUSD-2 yVault",
+      "address": "0xBF319dDC2Edc1Eb6FDf9910E39b37Be221C8805F",
+      "kind": "Multi Strategy",
+      "apiVersion": "3.0.2",
+      "assetSymbol": "crvUSD",
+      "status": "valued",
+      "inventoryTvlUsd": 1445943.7544300265,
+      "holderValueUsd": 1445556.2464989226,
+      "currentUsdPerSecond": 0.003928651859430275,
+      "remainingSeconds": 388474,
+      "remainingUnlockUsd": 1527.7921039320063,
+      "afterOneMinute": {
+        "assets": "1446877960322687483473944",
+        "usd": 1445556.4822180725,
+        "increaseUsd": 0.23571914993226528
+      },
+      "afterOneHour": {
+        "assets": "1446891880602426876809682",
+        "usd": 1445570.3897839927,
+        "increaseUsd": 14.14328507008031
+      },
+      "afterOneDay": {
+        "assets": "1447217550004505874756407",
+        "usd": 1445895.7617421988,
+        "increaseUsd": 339.5152432762552
+      },
+      "final": {
+        "assets": "1448406913147069637900807",
+        "usd": 1447084.0386028546,
+        "increaseUsd": 1527.7921039320063
+      }
+    },
+    {
+      "name": "Flex USDC yVault",
+      "address": "0x863687e4E9751b57F38b4B0ebA04744C72d0f7B8",
+      "kind": "Multi Strategy",
+      "apiVersion": "3.0.4",
+      "assetSymbol": "USDC",
+      "status": "valued",
+      "inventoryTvlUsd": 1118703.1837779037,
+      "holderValueUsd": 1118674.237420499,
+      "currentUsdPerSecond": 0.0009253105503469328,
+      "remainingSeconds": 294619,
+      "remainingUnlockUsd": 272.68052064510994,
+      "afterOneMinute": {
+        "assets": "1119253798408",
+        "usd": 1118674.292938739,
+        "increaseUsd": 0.05551823996938765
+      },
+      "afterOneHour": {
+        "assets": "1119257075715",
+        "usd": 1118677.568548879,
+        "increaseUsd": 3.3311283797957003
+      },
+      "afterOneDay": {
+        "assets": "1119333736825",
+        "usd": 1118754.18996678,
+        "increaseUsd": 79.95254628080875
+      },
+      "final": {
+        "assets": "1119526564638",
+        "usd": 1118946.9179411442,
+        "increaseUsd": 272.68052064510994
+      }
+    },
+    {
+      "name": "Flex WETH yVault",
+      "address": "0xfaC55fAFD0b55BFb8dD41F735EfCc195adA9891F",
+      "kind": "Multi Strategy",
+      "apiVersion": "3.1.0",
+      "assetSymbol": "WETH",
+      "status": "valued",
+      "inventoryTvlUsd": 712611.5165341953,
+      "holderValueUsd": 718995.0463613393,
+      "currentUsdPerSecond": 0.000510212766404955,
+      "remainingSeconds": 311952,
+      "remainingUnlockUsd": 159.19713392318226,
+      "afterOneMinute": {
+        "assets": "310197451655494967455",
+        "usd": 718995.0769741065,
+        "increaseUsd": 0.030612767208367586
+      },
+      "afterOneHour": {
+        "assets": "310198230889721819391",
+        "usd": 718996.8831319906,
+        "increaseUsd": 1.8367706512799487
+      },
+      "afterOneDay": {
+        "assets": "310216458162972591250",
+        "usd": 719039.131447262,
+        "increaseUsd": 44.08508592273574
+      },
+      "final": {
+        "assets": "310266121178879258465",
+        "usd": 719154.2434952625,
+        "increaseUsd": 159.19713392318226
+      }
+    },
+    {
+      "name": "Spark USDS Compounder",
+      "address": "0xc9f01b5c6048B064E6d925d1c2d7206d4fEeF8a3",
+      "kind": "Single Strategy",
+      "apiVersion": "3.0.4",
+      "assetSymbol": "USDS",
+      "status": "valued",
+      "inventoryTvlUsd": 454022.62556548597,
+      "holderValueUsd": 454014.952257944,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "453993649729569017723965",
+        "usd": 454014.952257944,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "453993649729569017723965",
+        "usd": 454014.952257944,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "453993649729569017723965",
+        "usd": 454014.952257944,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "453993649729569017723965",
+        "usd": 454014.952257944,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve Boosted crvUSD-sreUSD Lender",
+      "address": "0x09AcE8B2f2fE2189A5B37046BBaFa29Dce31c920",
+      "kind": "Single Strategy",
+      "apiVersion": "3.0.4",
+      "assetSymbol": "crvUSD",
+      "status": "valued",
+      "inventoryTvlUsd": 370118.55348812975,
+      "holderValueUsd": 370167.2605570872,
+      "currentUsdPerSecond": 0.0004336285072446694,
+      "remainingSeconds": 339720,
+      "remainingUnlockUsd": 147.3709244186757,
+      "afterOneMinute": {
+        "assets": "370505680798941263209582",
+        "usd": 370167.28657479945,
+        "increaseUsd": 0.026017712254542857
+      },
+      "afterOneHour": {
+        "assets": "370507217253729767818124",
+        "usd": 370168.8216262966,
+        "increaseUsd": 1.5610692094196565
+      },
+      "afterOneDay": {
+        "assets": "370543158305969728656556",
+        "usd": 370204.72985246906,
+        "increaseUsd": 37.46929538185941
+      },
+      "final": {
+        "assets": "370653160403302465439933",
+        "usd": 370314.6314815059,
+        "increaseUsd": 147.3709244186757
+      }
+    },
+    {
+      "name": "USDC-2 yVault",
+      "address": "0xAe7d8Db82480E6d8e3873ecbF22cf17b3D8A7308",
+      "kind": "Multi Strategy",
+      "apiVersion": "3.0.2",
+      "assetSymbol": "USDC",
+      "status": "valued",
+      "inventoryTvlUsd": 266829.2399887064,
+      "holderValueUsd": 266427.1924439038,
+      "currentUsdPerSecond": 0.0006736252998418927,
+      "remainingSeconds": 563448,
+      "remainingUnlockUsd": 380.0943122105673,
+      "afterOneMinute": {
+        "assets": "266565249833",
+        "usd": 266427.23286096664,
+        "increaseUsd": 0.040417062817141414
+      },
+      "afterOneHour": {
+        "assets": "266567635724",
+        "usd": 266429.61751664634,
+        "increaseUsd": 2.4250727425096557
+      },
+      "afterOneDay": {
+        "assets": "266623453494",
+        "usd": 266485.40638640674,
+        "increaseUsd": 58.213942502916325
+      },
+      "final": {
+        "assets": "266945500607",
+        "usd": 266807.2867561144,
+        "increaseUsd": 380.0943122105673
+      }
+    },
+    {
+      "name": "yYB yVault",
+      "address": "0x1F6f16945e395593d8050d6Cc33e4328a515B648",
+      "kind": "Multi Strategy",
+      "apiVersion": "3.0.4",
+      "assetSymbol": "yYB",
+      "status": "valued",
+      "inventoryTvlUsd": 144332.19035207178,
+      "holderValueUsd": 146777.33378215032,
+      "currentUsdPerSecond": 0.0003558950009439789,
+      "remainingSeconds": 279084,
+      "remainingUnlockUsd": 99.39185917095165,
+      "afterOneMinute": {
+        "assets": "2591121148086326346073849",
+        "usd": 146777.35513585346,
+        "increaseUsd": 0.021353703137720004
+      },
+      "afterOneHour": {
+        "assets": "2591143389258150029924596",
+        "usd": 146778.6150153376,
+        "increaseUsd": 1.281233187270118
+      },
+      "afterOneDay": {
+        "assets": "2591663715428210125485513",
+        "usd": 146808.0895534563,
+        "increaseUsd": 30.755771305965027
+      },
+      "final": {
+        "assets": "2592875376577331321774158",
+        "usd": 146876.72564132127,
+        "increaseUsd": 99.39185917095165
+      }
+    },
+    {
+      "name": "Morpho Gauntlet WETH Prime Compounder",
+      "address": "0xeEB6Be70fF212238419cD638FAB17910CF61CBE7",
+      "kind": "Single Strategy",
+      "apiVersion": "3.0.4",
+      "assetSymbol": "WETH",
+      "status": "valued",
+      "inventoryTvlUsd": 144152.9990589583,
+      "holderValueUsd": 145449.31916696733,
+      "currentUsdPerSecond": 0.0004178856403967124,
+      "remainingSeconds": 575280,
+      "remainingUnlockUsd": 240.799248537136,
+      "afterOneMinute": {
+        "assets": "62751494931125716525",
+        "usd": 145449.34424011008,
+        "increaseUsd": 0.02507314275135286
+      },
+      "afterOneHour": {
+        "assets": "62752133161671462959",
+        "usd": 145450.82357083287,
+        "increaseUsd": 1.5044038655469194
+      },
+      "afterOneDay": {
+        "assets": "62767064969955847021",
+        "usd": 145485.4334510543,
+        "increaseUsd": 36.114284086972475
+      },
+      "final": {
+        "assets": "62855372604316633766",
+        "usd": 145690.11841550446,
+        "increaseUsd": 240.799248537136
+      }
+    },
+    {
+      "name": "Morpho Gauntlet USDC Prime Compounder",
+      "address": "0x694E47AFD14A64661a04eee674FB331bCDEF3737",
+      "kind": "Single Strategy",
+      "apiVersion": "3.0.4",
+      "assetSymbol": "USDC",
+      "status": "valued",
+      "inventoryTvlUsd": 74939.9258004726,
+      "holderValueUsd": 74936.04365439269,
+      "currentUsdPerSecond": 0.00011760993479884851,
+      "remainingSeconds": 239784,
+      "remainingUnlockUsd": 28.211598580266582,
+      "afterOneMinute": {
+        "assets": "74974869741",
+        "usd": 74936.05071073731,
+        "increaseUsd": 0.007056344620650634
+      },
+      "afterOneHour": {
+        "assets": "74975286298",
+        "usd": 74936.46705206053,
+        "increaseUsd": 0.42339766783697996
+      },
+      "afterOneDay": {
+        "assets": "74985030822",
+        "usd": 74946.20653073036,
+        "increaseUsd": 10.162876337664784
+      },
+      "final": {
+        "assets": "75003088894",
+        "usd": 74964.25525297296,
+        "increaseUsd": 28.211598580266582
+      }
+    },
+    {
+      "name": "SKY-1 yVault",
+      "address": "0xaF71a4f5d93fb88B24C67760BCF9688a6C3A54D4",
+      "kind": "Multi Strategy",
+      "apiVersion": "3.0.4",
+      "assetSymbol": "SKY",
+      "status": "valued",
+      "inventoryTvlUsd": 40143.41247239188,
+      "holderValueUsd": 40021.47621802291,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "609465674913191569787933",
+        "usd": 40021.47621802291,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "609465674913191569787933",
+        "usd": 40021.47621802291,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "609465674913191569787933",
+        "usd": 40021.47621802291,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "609465674913191569787933",
+        "usd": 40021.47621802291,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Sturdy pxETH Compounder",
+      "address": "0xC40dC53931cd184F782f3602d95C7e3609706004",
+      "kind": "Single Strategy",
+      "apiVersion": "3.0.2",
+      "assetSymbol": "pxETH",
+      "status": "price-unavailable",
+      "inventoryTvlUsd": 15997.595684857499,
+      "holderValueUsd": null,
+      "currentUsdPerSecond": null,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": null,
+      "afterOneMinute": {
+        "assets": "6442590384332753635",
+        "usd": null,
+        "increaseUsd": null
+      },
+      "afterOneHour": {
+        "assets": "6442590384332753635",
+        "usd": null,
+        "increaseUsd": null
+      },
+      "afterOneDay": {
+        "assets": "6442590384332753635",
+        "usd": null,
+        "increaseUsd": null
+      },
+      "final": {
+        "assets": "6442590384332753635",
+        "usd": null,
+        "increaseUsd": null
+      }
+    },
+    {
+      "name": "Compound V3 USD Lender",
+      "address": "0x7eE351aA702C8fC735D77Fb229b7676AC15D7c79",
+      "kind": "Single Strategy",
+      "apiVersion": "3.0.2",
+      "assetSymbol": "USDC",
+      "status": "valued",
+      "inventoryTvlUsd": 15542.988938476516,
+      "holderValueUsd": 15541.710219953566,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "15549761273",
+        "usd": 15541.710219953566,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "15549761273",
+        "usd": 15541.710219953566,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "15549761273",
+        "usd": 15541.710219953566,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "15549761273",
+        "usd": 15541.710219953566,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Sturdy crvUSD Compounder",
+      "address": "0x05329AAb081B125eEF7FbbC8b857428D478E692B",
+      "kind": "Single Strategy",
+      "apiVersion": "3.0.2",
+      "assetSymbol": "crvUSD",
+      "status": "valued",
+      "inventoryTvlUsd": 15508.518815099063,
+      "holderValueUsd": 15510.452900870723,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "15524632024380106873306",
+        "usd": 15510.452900870723,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "15524632024380106873306",
+        "usd": 15510.452900870723,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "15524632024380106873306",
+        "usd": 15510.452900870723,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "15524632024380106873306",
+        "usd": 15510.452900870723,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve DOLA-sUSDe Factory yVault",
+      "address": "0x1Fc80CfCF5B345b904A0fB36d4222196Ed9eB8a5",
+      "kind": "Legacy",
+      "apiVersion": "0.4.6",
+      "assetSymbol": "DOLA-sUSDe",
+      "status": "valued",
+      "inventoryTvlUsd": 11549186.343472755,
+      "holderValueUsd": 11552088.908635648,
+      "currentUsdPerSecond": 0.013201771020292418,
+      "remainingSeconds": 71557,
+      "remainingUnlockUsd": 944.6659271288663,
+      "afterOneMinute": {
+        "assets": "11085961838449757512673527",
+        "usd": 11552089.700741911,
+        "increaseUsd": 0.7921062633395195
+      },
+      "afterOneHour": {
+        "assets": "11086006686987179634727849",
+        "usd": 11552136.435011324,
+        "increaseUsd": 47.526375675573945
+      },
+      "afterOneDay": {
+        "assets": "11086867626876743971203266",
+        "usd": 11553033.574562777,
+        "increaseUsd": 944.6659271288663
+      },
+      "final": {
+        "assets": "11086867626876743971203266",
+        "usd": 11553033.574562777,
+        "increaseUsd": 944.6659271288663
+      }
+    },
+    {
+      "name": "WETH yVault",
+      "address": "0xa258C4606Ca8206D8aA700cE2143D7db854D168c",
+      "kind": "Legacy",
+      "apiVersion": "0.4.2",
+      "assetSymbol": "WETH",
+      "status": "valued",
+      "inventoryTvlUsd": 8507936.603777016,
+      "holderValueUsd": 8583709.249298604,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "3703286462113036026391",
+        "usd": 8583709.249298604,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "3703286462113036026391",
+        "usd": 8583709.249298604,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "3703286462113036026391",
+        "usd": 8583709.249298604,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "3703286462113036026391",
+        "usd": 8583709.249298604,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "yCRV yVault",
+      "address": "0x27B5739e22ad9033bcBf192059122d163b60349D",
+      "kind": "Legacy",
+      "apiVersion": "0.4.3",
+      "assetSymbol": "yCRV",
+      "status": "valued",
+      "inventoryTvlUsd": 6163000.909969424,
+      "holderValueUsd": 6157495.1649071155,
+      "currentUsdPerSecond": 0.05682353041431875,
+      "remainingSeconds": 81757,
+      "remainingUnlockUsd": 4645.664552553557,
+      "afterOneMinute": {
+        "assets": "42446393781766055027476626",
+        "usd": 6157498.574318941,
+        "increaseUsd": 3.4094118252396584
+      },
+      "afterOneHour": {
+        "assets": "42447780435270395142486020",
+        "usd": 6157699.729616607,
+        "increaseUsd": 204.56470949109644
+      },
+      "afterOneDay": {
+        "assets": "42478394924334012881310348",
+        "usd": 6162140.829459669,
+        "increaseUsd": 4645.664552553557
+      },
+      "final": {
+        "assets": "42478394924334012881310348",
+        "usd": 6162140.829459669,
+        "increaseUsd": 4645.664552553557
+      }
+    },
+    {
+      "name": "USDC yVault",
+      "address": "0xa354F35829Ae975e850e23e9615b11Da1B3dC4DE",
+      "kind": "Legacy",
+      "apiVersion": "0.4.3",
+      "assetSymbol": "USDC",
+      "status": "valued",
+      "inventoryTvlUsd": 4701312.027028974,
+      "holderValueUsd": 4700925.229045444,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "4703360443565",
+        "usd": 4700925.229045444,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "4703360443565",
+        "usd": 4700925.229045444,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "4703360443565",
+        "usd": 4700925.229045444,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "4703360443565",
+        "usd": 4700925.229045444,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve stETH Factory yVault",
+      "address": "0x5B8C556B8b2a78696F0B9B830B3d67623122E270",
+      "kind": "Legacy",
+      "apiVersion": "0.4.5",
+      "assetSymbol": "steCRV",
+      "status": "valued",
+      "inventoryTvlUsd": 4665343.400292225,
+      "holderValueUsd": 4709574.387492804,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "1774741485961483115124",
+        "usd": 4709574.387492804,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "1774741485961483115124",
+        "usd": 4709574.387492804,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "1774741485961483115124",
+        "usd": 4709574.387492804,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "1774741485961483115124",
+        "usd": 4709574.387492804,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "USDT yVault",
+      "address": "0x3B27F92C0e212C671EA351827EDF93DB27cc0c65",
+      "kind": "Legacy",
+      "apiVersion": "0.4.3",
+      "assetSymbol": "USDT",
+      "status": "valued",
+      "inventoryTvlUsd": 4388222.293872082,
+      "holderValueUsd": 4387748.708711929,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "4392184693314",
+        "usd": 4387748.708711929,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "4392184693314",
+        "usd": 4387748.708711929,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "4392184693314",
+        "usd": 4387748.708711929,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "4392184693314",
+        "usd": 4387748.708711929,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "USDT yVault",
+      "address": "0x7Da96a3891Add058AdA2E826306D812C638D87a7",
+      "kind": "Legacy",
+      "apiVersion": "0.3.5",
+      "assetSymbol": "USDT",
+      "status": "valued",
+      "inventoryTvlUsd": 4316060.811872019,
+      "holderValueUsd": 4315595.014590168,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "4319958052290",
+        "usd": 4315595.014590168,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "4319958052290",
+        "usd": 4315595.014590168,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "4319958052290",
+        "usd": 4315595.014590168,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "4319958052290",
+        "usd": 4315595.014590168,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "WBTC yVault",
+      "address": "0xA696a63cc78DfFa1a63E9E50587C197387FF6C7E",
+      "kind": "Legacy",
+      "apiVersion": "0.3.5",
+      "assetSymbol": "WBTC",
+      "status": "valued",
+      "inventoryTvlUsd": 3677305.3383367714,
+      "holderValueUsd": 3712649.888420445,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "4743254739",
+        "usd": 3712649.888420445,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "4743254739",
+        "usd": 3712649.888420445,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "4743254739",
+        "usd": 3712649.888420445,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "4743254739",
+        "usd": 3712649.888420445,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve reUSD-sDOLA Factory yVault",
+      "address": "0x7c439Df9ADE8831180EA4D546c1E910D4Ba71a86",
+      "kind": "Legacy",
+      "apiVersion": "0.4.6",
+      "assetSymbol": "reusdsdola",
+      "status": "valued",
+      "inventoryTvlUsd": 3357856.7423063666,
+      "holderValueUsd": 3359752.1703387396,
+      "currentUsdPerSecond": 0.0028814896263163864,
+      "remainingSeconds": 44797,
+      "remainingUnlockUsd": 129.07920930022374,
+      "afterOneMinute": {
+        "assets": "3114367029088187826275075",
+        "usd": 3359752.343228117,
+        "increaseUsd": 0.1728893774561584
+      },
+      "afterOneHour": {
+        "assets": "3114376484552284611135203",
+        "usd": 3359762.543701394,
+        "increaseUsd": 10.373362654354423
+      },
+      "afterOneDay": {
+        "assets": "3114486520512434654730211",
+        "usd": 3359881.24954804,
+        "increaseUsd": 129.07920930022374
+      },
+      "final": {
+        "assets": "3114486520512434654730211",
+        "usd": 3359881.24954804,
+        "increaseUsd": 129.07920930022374
+      }
+    },
+    {
+      "name": "Curve stETH Pool yVault",
+      "address": "0xdCD90C7f6324cfa40d7169ef80b12031770B4325",
+      "kind": "Legacy",
+      "apiVersion": "0.3.0",
+      "assetSymbol": "steCRV",
+      "status": "valued",
+      "inventoryTvlUsd": 2863776.5984159117,
+      "holderValueUsd": 2890927.4758027457,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "1089408193198622247198",
+        "usd": 2890927.4758027457,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "1089408193198622247198",
+        "usd": 2890927.4758027457,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "1089408193198622247198",
+        "usd": 2890927.4758027457,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "1089408193198622247198",
+        "usd": 2890927.4758027457,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve CRV-ETH Pool yVault",
+      "address": "0x6A5468752f8DB94134B6508dAbAC54D3b45efCE6",
+      "kind": "Legacy",
+      "apiVersion": "0.4.3",
+      "assetSymbol": "crvCRVETH",
+      "status": "price-unavailable",
+      "inventoryTvlUsd": 2839432.027449663,
+      "holderValueUsd": null,
+      "currentUsdPerSecond": null,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": null,
+      "afterOneMinute": {
+        "assets": "1194070514822121902355",
+        "usd": null,
+        "increaseUsd": null
+      },
+      "afterOneHour": {
+        "assets": "1194070514822121902355",
+        "usd": null,
+        "increaseUsd": null
+      },
+      "afterOneDay": {
+        "assets": "1194070514822121902355",
+        "usd": null,
+        "increaseUsd": null
+      },
+      "final": {
+        "assets": "1194070514822121902355",
+        "usd": null,
+        "increaseUsd": null
+      }
+    },
+    {
+      "name": "DAI yVault",
+      "address": "0xdA816459F1AB5631232FE5e97a05BBBb94970c95",
+      "kind": "Legacy",
+      "apiVersion": "0.4.3",
+      "assetSymbol": "DAI",
+      "status": "valued",
+      "inventoryTvlUsd": 2710671.7531390404,
+      "holderValueUsd": 2711086.019742731,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "2710994017796163689012747",
+        "usd": 2711086.019742731,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "2710994017796163689012747",
+        "usd": 2711086.019742731,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "2710994017796163689012747",
+        "usd": 2711086.019742731,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "2710994017796163689012747",
+        "usd": 2711086.019742731,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve msETH Factory yVault",
+      "address": "0xAD2f9A55518Dba12E8AB069502820923351667C5",
+      "kind": "Legacy",
+      "apiVersion": "0.4.6",
+      "assetSymbol": "msETHWETH-f",
+      "status": "valued",
+      "inventoryTvlUsd": 2112553.7426843815,
+      "holderValueUsd": 2083732.9407530774,
+      "currentUsdPerSecond": 0.0006507436187217964,
+      "remainingSeconds": 111349,
+      "remainingUnlockUsd": 72.45900045754388,
+      "afterOneMinute": {
+        "assets": "953843527991261925009",
+        "usd": 2083732.9797976946,
+        "increaseUsd": 0.03904461720958352
+      },
+      "afterOneHour": {
+        "assets": "953844582495311491464",
+        "usd": 2083735.2834301048,
+        "increaseUsd": 2.342677027452737
+      },
+      "afterOneDay": {
+        "assets": "953869247166301350917",
+        "usd": 2083789.165001735,
+        "increaseUsd": 56.22424865770154
+      },
+      "final": {
+        "assets": "953876678738908313975",
+        "usd": 2083805.399753535,
+        "increaseUsd": 72.45900045754388
+      }
+    },
+    {
+      "name": "USDC yVault",
+      "address": "0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9",
+      "kind": "Legacy",
+      "apiVersion": "0.3.0",
+      "assetSymbol": "USDC",
+      "status": "valued",
+      "inventoryTvlUsd": 1487793.5406055616,
+      "holderValueUsd": 1487671.1331690452,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "1488441789618",
+        "usd": 1487671.1331690452,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "1488441789618",
+        "usd": 1487671.1331690452,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "1488441789618",
+        "usd": 1487671.1331690452,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "1488441789618",
+        "usd": 1487671.1331690452,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve reUSD-scrvUSD Factory yVault",
+      "address": "0xf165a634296800812B8B0607a75DeDdcD4D3cC88",
+      "kind": "Legacy",
+      "apiVersion": "0.4.6",
+      "assetSymbol": "reusdscrv",
+      "status": "valued",
+      "inventoryTvlUsd": 1436107.0909603194,
+      "holderValueUsd": 1435558.4286008624,
+      "currentUsdPerSecond": 0.009110753994756155,
+      "remainingSeconds": 145249,
+      "remainingUnlockUsd": 1323.318796230713,
+      "afterOneMinute": {
+        "assets": "1406622537711368162521042",
+        "usd": 1435558.975246102,
+        "increaseUsd": 0.546645239694044
+      },
+      "afterOneHour": {
+        "assets": "1406654139678354153479391",
+        "usd": 1435591.2273152436,
+        "increaseUsd": 32.79871438117698
+      },
+      "afterOneDay": {
+        "assets": "1407393304329890891149247",
+        "usd": 1436345.5977460095,
+        "increaseUsd": 787.1691451470833
+      },
+      "final": {
+        "assets": "1407918646859041612356810",
+        "usd": 1436881.747397093,
+        "increaseUsd": 1323.318796230713
+      }
+    },
+    {
+      "name": "Curve LUSD Pool yVault",
+      "address": "0x5fA5B62c8AF877CB37031e0a3B2f34A78e3C56A6",
+      "kind": "Legacy",
+      "apiVersion": "0.3.5",
+      "assetSymbol": "LUSD3CRV-f",
+      "status": "valued",
+      "inventoryTvlUsd": 1302262.2022676745,
+      "holderValueUsd": 1303262.2959634946,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "1245464846745353717271974",
+        "usd": 1303262.2959634946,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "1245464846745353717271974",
+        "usd": 1303262.2959634946,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "1245464846745353717271974",
+        "usd": 1303262.2959634946,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "1245464846745353717271974",
+        "usd": 1303262.2959634946,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "LP Yearn CRV Vault v2",
+      "address": "0x6E9455D109202b426169F0d8f01A3332DAE160f3",
+      "kind": "Legacy",
+      "apiVersion": "0.4.6",
+      "assetSymbol": "yCRV-f",
+      "status": "valued",
+      "inventoryTvlUsd": 1035289.6218566957,
+      "holderValueUsd": 996701.7604042229,
+      "currentUsdPerSecond": 0.001821870142597055,
+      "remainingSeconds": 198805,
+      "remainingUnlockUsd": 362.1950718287844,
+      "afterOneMinute": {
+        "assets": "6303827021787437751211506",
+        "usd": 996701.8697164312,
+        "increaseUsd": 0.10931220836937428
+      },
+      "afterOneHour": {
+        "assets": "6303867812350019708882492",
+        "usd": 996708.3191367361,
+        "increaseUsd": 6.558732513221912
+      },
+      "afterOneDay": {
+        "assets": "6304821896695157023898792",
+        "usd": 996859.1699845431,
+        "increaseUsd": 157.40958032023627
+      },
+      "final": {
+        "assets": "6306117100761955017195724",
+        "usd": 997063.9554760517,
+        "increaseUsd": 362.1950718287844
+      }
+    },
+    {
+      "name": "Curve DOLA-sUSDS Factory yVault",
+      "address": "0x342D24F2a3233F7Ac8A7347fA239187BFd186066",
+      "kind": "Legacy",
+      "apiVersion": "0.4.6",
+      "assetSymbol": "DOLA-sUSDS",
+      "status": "valued",
+      "inventoryTvlUsd": 980173.4615512808,
+      "holderValueUsd": 980460.707388815,
+      "currentUsdPerSecond": 0.003370110243990588,
+      "remainingSeconds": 52849,
+      "remainingUnlockUsd": 178.10358617431484,
+      "afterOneMinute": {
+        "assets": "951076694271541944003842",
+        "usd": 980460.9095954295,
+        "increaseUsd": 0.20220661454368383
+      },
+      "afterOneHour": {
+        "assets": "951088266916414382271031",
+        "usd": 980472.8397856933,
+        "increaseUsd": 12.13239687832538
+      },
+      "afterOneDay": {
+        "assets": "951249263982707559158520",
+        "usd": 980638.8109749893,
+        "increaseUsd": 178.10358617431484
+      },
+      "final": {
+        "assets": "951249263982707559158520",
+        "usd": 980638.8109749893,
+        "increaseUsd": 178.10358617431484
+      }
+    },
+    {
+      "name": "Curve CRV-ETH Factory yVault",
+      "address": "0x6f0Ace0F94f4B9890Dfa99A4175B3Ef0288C16B3",
+      "kind": "Legacy",
+      "apiVersion": "0.4.5",
+      "assetSymbol": "crvCRVETH",
+      "status": "price-unavailable",
+      "inventoryTvlUsd": 945514.4030830066,
+      "holderValueUsd": null,
+      "currentUsdPerSecond": null,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": null,
+      "afterOneMinute": {
+        "assets": "305704482293820431036",
+        "usd": null,
+        "increaseUsd": null
+      },
+      "afterOneHour": {
+        "assets": "305704482293820431036",
+        "usd": null,
+        "increaseUsd": null
+      },
+      "afterOneDay": {
+        "assets": "305704482293820431036",
+        "usd": null,
+        "increaseUsd": null
+      },
+      "final": {
+        "assets": "305704482293820431036",
+        "usd": null,
+        "increaseUsd": null
+      }
+    },
+    {
+      "name": "DAI yVault",
+      "address": "0x19D3364A399d251E894aC732651be8B0E4e85001",
+      "kind": "Legacy",
+      "apiVersion": "0.3.0",
+      "assetSymbol": "DAI",
+      "status": "valued",
+      "inventoryTvlUsd": 899032.368430949,
+      "holderValueUsd": 899169.7658047796,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "899139252066688450998789",
+        "usd": 899169.7658047796,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "899139252066688450998789",
+        "usd": 899169.7658047796,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "899139252066688450998789",
+        "usd": 899169.7658047796,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "899139252066688450998789",
+        "usd": 899169.7658047796,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve TriCryptoUSDC Factory yVault",
+      "address": "0xaA379c2aA72529d5ec0da8A41e2F41ED7Fe4b48C",
+      "kind": "Legacy",
+      "apiVersion": "0.4.6",
+      "assetSymbol": "crvUSDCWBTCWETH",
+      "status": "valued",
+      "inventoryTvlUsd": 549553.8948459913,
+      "holderValueUsd": 553144.1902565557,
+      "currentUsdPerSecond": 0.0007821076206488435,
+      "remainingSeconds": 29305,
+      "remainingUnlockUsd": 22.918881715624593,
+      "afterOneMinute": {
+        "assets": "313772042627113943229",
+        "usd": 553144.2371830129,
+        "increaseUsd": 0.04692645720206201
+      },
+      "afterOneHour": {
+        "assets": "313773613154928803660",
+        "usd": 553147.00584399,
+        "increaseUsd": 2.8155874343356118
+      },
+      "afterOneDay": {
+        "assets": "313785016784011648238",
+        "usd": 553167.1091382713,
+        "increaseUsd": 22.918881715624593
+      },
+      "final": {
+        "assets": "313785016784011648238",
+        "usd": 553167.1091382713,
+        "increaseUsd": 22.918881715624593
+      }
+    },
+    {
+      "name": "Curve Iron Bank Pool yVault",
+      "address": "0x27b7b1ad7288079A66d12350c828D3C00A6F07d7",
+      "kind": "Legacy",
+      "apiVersion": "0.3.2",
+      "assetSymbol": "ib3CRV",
+      "status": "valued",
+      "inventoryTvlUsd": 502435.0488222866,
+      "holderValueUsd": 502476.80774284643,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "112884799818894831081972",
+        "usd": 502476.80774284643,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "112884799818894831081972",
+        "usd": 502476.80774284643,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "112884799818894831081972",
+        "usd": 502476.80774284643,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "112884799818894831081972",
+        "usd": 502476.80774284643,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "WETH yVault",
+      "address": "0xa9fE4601811213c340e850ea305481afF02f5b28",
+      "kind": "Legacy",
+      "apiVersion": "0.3.2",
+      "assetSymbol": "WETH",
+      "status": "valued",
+      "inventoryTvlUsd": 496391.7819031353,
+      "holderValueUsd": 500812.70469786547,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "216066604249598396766",
+        "usd": 500812.70469786547,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "216066604249598396766",
+        "usd": 500812.70469786547,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "216066604249598396766",
+        "usd": 500812.70469786547,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "216066604249598396766",
+        "usd": 500812.70469786547,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve iREET-pmUSD Factory yVault",
+      "address": "0x668c5Ef17f2F01503FBB4F285F32161251047720",
+      "kind": "Legacy",
+      "apiVersion": "0.4.6",
+      "assetSymbol": "iREETpmUSD",
+      "status": "valued",
+      "inventoryTvlUsd": 419695.4504517503,
+      "holderValueUsd": 413149.34777671687,
+      "currentUsdPerSecond": 0.0037661299544258903,
+      "remainingSeconds": 70585,
+      "remainingUnlockUsd": 265.82851670344826,
+      "afterOneMinute": {
+        "assets": "348714337790497590072692",
+        "usd": 413149.57374451414,
+        "increaseUsd": 0.22596779727609828
+      },
+      "afterOneHour": {
+        "assets": "348725590602388945411083",
+        "usd": 413162.9058445528,
+        "increaseUsd": 13.558067835925613
+      },
+      "afterOneDay": {
+        "assets": "348938516690448618544011",
+        "usd": 413415.1762934203,
+        "increaseUsd": 265.82851670344826
+      },
+      "final": {
+        "assets": "348938516690448618544011",
+        "usd": 413415.1762934203,
+        "increaseUsd": 265.82851670344826
+      }
+    },
+    {
+      "name": "Curve EURS Pool yVault",
+      "address": "0x25212Df29073FfFA7A67399AcEfC2dd75a831A1A",
+      "kind": "Legacy",
+      "apiVersion": "0.3.5",
+      "assetSymbol": "eursCRV",
+      "status": "price-unavailable",
+      "inventoryTvlUsd": 329629.54977291607,
+      "holderValueUsd": null,
+      "currentUsdPerSecond": null,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": null,
+      "afterOneMinute": {
+        "assets": "290350111844913636561052",
+        "usd": null,
+        "increaseUsd": null
+      },
+      "afterOneHour": {
+        "assets": "290350111844913636561052",
+        "usd": null,
+        "increaseUsd": null
+      },
+      "afterOneDay": {
+        "assets": "290350111844913636561052",
+        "usd": null,
+        "increaseUsd": null
+      },
+      "final": {
+        "assets": "290350111844913636561052",
+        "usd": null,
+        "increaseUsd": null
+      }
+    },
+    {
+      "name": "Curve LUSD Factory yVault",
+      "address": "0xAd86Df2e8F989c828B25A7Da5EB1Ec363283fA3F",
+      "kind": "Legacy",
+      "apiVersion": "0.4.5",
+      "assetSymbol": "LUSD3CRV-f",
+      "status": "valued",
+      "inventoryTvlUsd": 318000.7045399787,
+      "holderValueUsd": 318244.9185084879,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "304131301799560398145733",
+        "usd": 318244.9185084879,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "304131301799560398145733",
+        "usd": 318244.9185084879,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "304131301799560398145733",
+        "usd": 318244.9185084879,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "304131301799560398145733",
+        "usd": 318244.9185084879,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve DUSD-frxUSD Factory yVault",
+      "address": "0xB53B70Cb960FeEAf2093Df3C733E368F6D254898",
+      "kind": "Legacy",
+      "apiVersion": "0.4.6",
+      "assetSymbol": "frxUSDDUSD",
+      "status": "valued",
+      "inventoryTvlUsd": 301848.46684292634,
+      "holderValueUsd": 301892.2119277429,
+      "currentUsdPerSecond": 0.0014956265545352364,
+      "remainingSeconds": 23569,
+      "remainingUnlockUsd": 35.24892663746141,
+      "afterOneMinute": {
+        "assets": "301699887200502970692219",
+        "usd": 301892.3016653361,
+        "increaseUsd": 0.08973759325454012
+      },
+      "afterOneHour": {
+        "assets": "301705178343985236101344",
+        "usd": 301897.5961833392,
+        "increaseUsd": 5.384255596320145
+      },
+      "afterOneDay": {
+        "assets": "301735023980441225756142",
+        "usd": 301927.46085438033,
+        "increaseUsd": 35.24892663746141
+      },
+      "final": {
+        "assets": "301735023980441225756142",
+        "usd": 301927.46085438033,
+        "increaseUsd": 35.24892663746141
+      }
+    },
+    {
+      "name": "YFI yVault",
+      "address": "0xdb25cA703181E7484a155DD612b06f57E12Be5F0",
+      "kind": "Legacy",
+      "apiVersion": "0.4.3",
+      "assetSymbol": "YFI",
+      "status": "valued",
+      "inventoryTvlUsd": 294469.69885185064,
+      "holderValueUsd": 293512.23119473614,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "145699190279078626315",
+        "usd": 293512.23119473614,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "145699190279078626315",
+        "usd": 293512.23119473614,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "145699190279078626315",
+        "usd": 293512.23119473614,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "145699190279078626315",
+        "usd": 293512.23119473614,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve reUSD-sfrxUSD Factory yVault",
+      "address": "0xD2433Ec6De2a932Ab7bc1A0080676333AeF8B546",
+      "kind": "Legacy",
+      "apiVersion": "0.4.6",
+      "assetSymbol": "reusdsfrx",
+      "status": "valued",
+      "inventoryTvlUsd": 293038.4928358574,
+      "holderValueUsd": 293021.7869408687,
+      "currentUsdPerSecond": 0.0011987595657217223,
+      "remainingSeconds": 145789,
+      "remainingUnlockUsd": 174.7647595674498,
+      "afterOneMinute": {
+        "assets": "286836100723154369167513",
+        "usd": 293021.85886644264,
+        "increaseUsd": 0.07192557392409071
+      },
+      "afterOneHour": {
+        "assets": "286840254748467931017740",
+        "usd": 293026.10247530526,
+        "increaseUsd": 4.315534436551388
+      },
+      "afterOneDay": {
+        "assets": "286937416696480055650154",
+        "usd": 293125.35976734705,
+        "increaseUsd": 103.57282647833927
+      },
+      "final": {
+        "assets": "287007105751655781194320",
+        "usd": 293196.55170043616,
+        "increaseUsd": 174.7647595674498
+      }
+    },
+    {
+      "name": "Curve 3Crypto Factory yVault",
+      "address": "0x8078198Fc424986ae89Ce4a910Fc109587b6aBF3",
+      "kind": "Legacy",
+      "apiVersion": "0.4.5",
+      "assetSymbol": "crv3crypto",
+      "status": "valued",
+      "inventoryTvlUsd": 248092.66654711223,
+      "holderValueUsd": 249752.0299909662,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "136798900875875320642",
+        "usd": 249752.0299909662,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "136798900875875320642",
+        "usd": 249752.0299909662,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "136798900875875320642",
+        "usd": 249752.0299909662,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "136798900875875320642",
+        "usd": 249752.0299909662,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve YFI-ETH Pool yVault",
+      "address": "0x790a60024bC3aea28385b60480f15a0771f26D09",
+      "kind": "Legacy",
+      "apiVersion": "0.4.3",
+      "assetSymbol": "YFIETH-f",
+      "status": "valued",
+      "inventoryTvlUsd": 216906.98765592676,
+      "holderValueUsd": 217633.00003337342,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "47456490308501133598",
+        "usd": 217633.00003337342,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "47456490308501133598",
+        "usd": 217633.00003337342,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "47456490308501133598",
+        "usd": 217633.00003337342,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "47456490308501133598",
+        "usd": 217633.00003337342,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve GEAR-ETH Factory yVault",
+      "address": "0x04c8bfe2eb09a1e2e9fA97A2fd970E06d87B43de",
+      "kind": "Legacy",
+      "apiVersion": "0.4.5",
+      "assetSymbol": "crvGEARETH-f",
+      "status": "valued",
+      "inventoryTvlUsd": 189345.91440703868,
+      "holderValueUsd": 193641.0918693645,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "81742886207667905737609",
+        "usd": 193641.0918693645,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "81742886207667905737609",
+        "usd": 193641.0918693645,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "81742886207667905737609",
+        "usd": 193641.0918693645,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "81742886207667905737609",
+        "usd": 193641.0918693645,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve CVX-ETH Factory yVault",
+      "address": "0x75A291F0232ADD37d72Dd1Dcff55B715755ECDEe",
+      "kind": "Legacy",
+      "apiVersion": "0.4.5",
+      "assetSymbol": "crvCVXETH",
+      "status": "valued",
+      "inventoryTvlUsd": 187899.97314978455,
+      "holderValueUsd": 188412.646880346,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "1271663599217515468788",
+        "usd": 188412.646880346,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "1271663599217515468788",
+        "usd": 188412.646880346,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "1271663599217515468788",
+        "usd": 188412.646880346,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "1271663599217515468788",
+        "usd": 188412.646880346,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve BOLD-USDC Factory yVault",
+      "address": "0xb83461b887398CD981957BD93CB7067cF89c21C0",
+      "kind": "Legacy",
+      "apiVersion": "0.4.6",
+      "assetSymbol": "BOLDUSDC",
+      "status": "valued",
+      "inventoryTvlUsd": 181451.91274746705,
+      "holderValueUsd": 181330.2755318076,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "180234647807697194554347",
+        "usd": 181330.2755318076,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "180234647807697194554347",
+        "usd": 181330.2755318076,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "180234647807697194554347",
+        "usd": 181330.2755318076,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "180234647807697194554347",
+        "usd": 181330.2755318076,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve 3Crypto Pool yVault",
+      "address": "0xE537B5cc158EB71037D4125BDD7538421981E6AA",
+      "kind": "Legacy",
+      "apiVersion": "0.4.3",
+      "assetSymbol": "crv3crypto",
+      "status": "valued",
+      "inventoryTvlUsd": 175585.55088935856,
+      "holderValueUsd": 176760.12741910544,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "96818396833402866168",
+        "usd": 176760.12741910544,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "96818396833402866168",
+        "usd": 176760.12741910544,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "96818396833402866168",
+        "usd": 176760.12741910544,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "96818396833402866168",
+        "usd": 176760.12741910544,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve msUSD-frxUSD Factory yVault",
+      "address": "0xe0287cA62fE23f4FFAB827d5448d68aFe6DD9Fd7",
+      "kind": "Legacy",
+      "apiVersion": "0.4.6",
+      "assetSymbol": "FrxMsUSD",
+      "status": "valued",
+      "inventoryTvlUsd": 170133.34222596878,
+      "holderValueUsd": 166238.7483055117,
+      "currentUsdPerSecond": 0.0007773582264948166,
+      "remainingSeconds": 105637,
+      "remainingUnlockUsd": 82.11701361404266,
+      "afterOneMinute": {
+        "assets": "190081768820624040253728",
+        "usd": 166238.79494700528,
+        "increaseUsd": 0.046641493594506755
+      },
+      "afterOneHour": {
+        "assets": "190084915355454749407200",
+        "usd": 166241.5467951271,
+        "increaseUsd": 2.798489615408471
+      },
+      "afterOneDay": {
+        "assets": "190158512271834048251116",
+        "usd": 166305.91205628088,
+        "increaseUsd": 67.16375076919212
+      },
+      "final": {
+        "assets": "190175610222117583885542",
+        "usd": 166320.86531912573,
+        "increaseUsd": 82.11701361404266
+      }
+    },
+    {
+      "name": "Curve sETH Factory yVault",
+      "address": "0xB5dE7250128775a317B3f775a7AFcEC73571B732",
+      "kind": "Legacy",
+      "apiVersion": "0.4.5",
+      "assetSymbol": "eCRV",
+      "status": "price-unavailable",
+      "inventoryTvlUsd": 148266.3840802579,
+      "holderValueUsd": null,
+      "currentUsdPerSecond": null,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": null,
+      "afterOneMinute": {
+        "assets": "63104717526180687697",
+        "usd": null,
+        "increaseUsd": null
+      },
+      "afterOneHour": {
+        "assets": "63104717526180687697",
+        "usd": null,
+        "increaseUsd": null
+      },
+      "afterOneDay": {
+        "assets": "63104717526180687697",
+        "usd": null,
+        "increaseUsd": null
+      },
+      "final": {
+        "assets": "63104717526180687697",
+        "usd": null,
+        "increaseUsd": null
+      }
+    },
+    {
+      "name": "Curve USDC-crvUSD Factory yVault",
+      "address": "0x7cA00559B978CFde81297849be6151d3ccB408A9",
+      "kind": "Legacy",
+      "apiVersion": "0.4.6",
+      "assetSymbol": "crvUSDUSDC-f",
+      "status": "valued",
+      "inventoryTvlUsd": 140483.57819336437,
+      "holderValueUsd": 140364.4850965467,
+      "currentUsdPerSecond": 0.0009305491116740656,
+      "remainingSeconds": 141697,
+      "remainingUnlockUsd": 131.85508692782605,
+      "afterOneMinute": {
+        "assets": "136650355253774489117829",
+        "usd": 140364.5409294934,
+        "increaseUsd": 0.05583294670213945
+      },
+      "afterOneHour": {
+        "assets": "136653562231299628287447",
+        "usd": 140367.83507334875,
+        "increaseUsd": 3.3499768020410556
+      },
+      "afterOneDay": {
+        "assets": "136728572892057120729350",
+        "usd": 140444.88453979537,
+        "increaseUsd": 80.3994432486652
+      },
+      "final": {
+        "assets": "136778666968110876135047",
+        "usd": 140496.34018347453,
+        "increaseUsd": 131.85508692782605
+      }
+    },
+    {
+      "name": "LINK yVault",
+      "address": "0x671a912C10bba0CFA74Cfc2d6Fba9BA1ed9530B2",
+      "kind": "Legacy",
+      "apiVersion": "0.4.2",
+      "assetSymbol": "LINK",
+      "status": "valued",
+      "inventoryTvlUsd": 125545.1705034838,
+      "holderValueUsd": 125959.27052047424,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "11243628633799472247158",
+        "usd": 125959.27052047424,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "11243628633799472247158",
+        "usd": 125959.27052047424,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "11243628633799472247158",
+        "usd": 125959.27052047424,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "11243628633799472247158",
+        "usd": 125959.27052047424,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve sETH Pool yVault",
+      "address": "0x986b4AFF588a109c09B50A03f42E4110E29D353F",
+      "kind": "Legacy",
+      "apiVersion": "0.3.2",
+      "assetSymbol": "eCRV",
+      "status": "price-unavailable",
+      "inventoryTvlUsd": 118581.95249676578,
+      "holderValueUsd": null,
+      "currentUsdPerSecond": null,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": null,
+      "afterOneMinute": {
+        "assets": "50470575878665898443",
+        "usd": null,
+        "increaseUsd": null
+      },
+      "afterOneHour": {
+        "assets": "50470575878665898443",
+        "usd": null,
+        "increaseUsd": null
+      },
+      "afterOneDay": {
+        "assets": "50470575878665898443",
+        "usd": null,
+        "increaseUsd": null
+      },
+      "final": {
+        "assets": "50470575878665898443",
+        "usd": null,
+        "increaseUsd": null
+      }
+    },
+    {
+      "name": "UNI yVault",
+      "address": "0xFBEB78a723b8087fD2ea7Ef1afEc93d35E8Bed42",
+      "kind": "Legacy",
+      "apiVersion": "0.3.5",
+      "assetSymbol": "UNI",
+      "status": "valued",
+      "inventoryTvlUsd": 115054.52927119687,
+      "holderValueUsd": 115509.95544796895,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "15698601683670976299520",
+        "usd": 115509.95544796895,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "15698601683670976299520",
+        "usd": 115509.95544796895,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "15698601683670976299520",
+        "usd": 115509.95544796895,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "15698601683670976299520",
+        "usd": 115509.95544796895,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve msUSD-FRAXBP Factory yVault",
+      "address": "0xDb26d8815EdA864Dfa43306766f2F8CA50C03F9E",
+      "kind": "Legacy",
+      "apiVersion": "0.4.6",
+      "assetSymbol": "msUSDFRAX3CRV-f",
+      "status": "valued",
+      "inventoryTvlUsd": 112363.5931141158,
+      "holderValueUsd": 109780.09441681342,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "115936034582830034698091",
+        "usd": 109780.09441681342,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "115936034582830034698091",
+        "usd": 109780.09441681342,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "115936034582830034698091",
+        "usd": 109780.09441681342,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "115936034582830034698091",
+        "usd": 109780.09441681342,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve CVX-ETH Pool yVault",
+      "address": "0x1635b506a88fBF428465Ad65d00e8d6B6E5846C3",
+      "kind": "Legacy",
+      "apiVersion": "0.4.3",
+      "assetSymbol": "crvCVXETH",
+      "status": "valued",
+      "inventoryTvlUsd": 111581.09375941477,
+      "holderValueUsd": 111885.5400008508,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "755155085678694101542",
+        "usd": 111885.5400008508,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "755155085678694101542",
+        "usd": 111885.5400008508,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "755155085678694101542",
+        "usd": 111885.5400008508,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "755155085678694101542",
+        "usd": 111885.5400008508,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve pmUSD-frxUSD Factory yVault",
+      "address": "0xc952f3028E322da48e239A077b810A24556f36f1",
+      "kind": "Legacy",
+      "apiVersion": "0.4.6",
+      "assetSymbol": "pmfrxUSD",
+      "status": "valued",
+      "inventoryTvlUsd": 108830.11754118298,
+      "holderValueUsd": 107167.51346103399,
+      "currentUsdPerSecond": 0.0009881270397278771,
+      "remainingSeconds": 53089,
+      "remainingUnlockUsd": 52.45768828513974,
+      "afterOneMinute": {
+        "assets": "179527588941008191294679",
+        "usd": 107167.5727486564,
+        "increaseUsd": 0.05928762241092045
+      },
+      "afterOneHour": {
+        "assets": "179533448755260095487073",
+        "usd": 107171.07071837701,
+        "increaseUsd": 3.5572573430254124
+      },
+      "afterOneDay": {
+        "assets": "179615366972124106103009",
+        "usd": 107219.97114931913,
+        "increaseUsd": 52.45768828513974
+      },
+      "final": {
+        "assets": "179615366972124106103009",
+        "usd": 107219.97114931913,
+        "increaseUsd": 52.45768828513974
+      }
+    },
+    {
+      "name": "Curve USDT-crvUSD Factory yVault",
+      "address": "0x241AdD131B9aaa7527132b752252b99420937ADc",
+      "kind": "Legacy",
+      "apiVersion": "0.4.6",
+      "assetSymbol": "crvUSDUSDT-f",
+      "status": "valued",
+      "inventoryTvlUsd": 108513.7808646791,
+      "holderValueUsd": 108519.58416386183,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "105645640983738072529872",
+        "usd": 108519.58416386183,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "105645640983738072529872",
+        "usd": 108519.58416386183,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "105645640983738072529872",
+        "usd": 108519.58416386183,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "105645640983738072529872",
+        "usd": 108519.58416386183,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve CRV LlamaLend Recovery Factory yVault",
+      "address": "0x192725C6516656f3e288c08Db8228c25Fe1f77D5",
+      "kind": "Legacy",
+      "apiVersion": "0.4.6",
+      "assetSymbol": "LL-CRV-rec",
+      "status": "valued",
+      "inventoryTvlUsd": 108273.21224252191,
+      "holderValueUsd": 108209.28428649783,
+      "currentUsdPerSecond": 0.0001504683024083356,
+      "remainingSeconds": 211009,
+      "remainingUnlockUsd": 31.750015554600395,
+      "afterOneMinute": {
+        "assets": "112018386593760981668703",
+        "usd": 108209.29331459597,
+        "increaseUsd": 0.009028098138514906
+      },
+      "afterOneHour": {
+        "assets": "112018938001726726294710",
+        "usd": 108209.8259723865,
+        "increaseUsd": 0.5416858886746923
+      },
+      "afterOneDay": {
+        "assets": "112031835340586515852154",
+        "usd": 108222.28474782592,
+        "increaseUsd": 13.00046132809075
+      },
+      "final": {
+        "assets": "112051244900980736334350",
+        "usd": 108241.03430205243,
+        "increaseUsd": 31.750015554600395
+      }
+    },
+    {
+      "name": "Yearn Compounding veCRV yVault",
+      "address": "0x9d409a0A012CFbA9B15F6D4B36Ac57A46966Ab9a",
+      "kind": "Legacy",
+      "apiVersion": "0.3.5",
+      "assetSymbol": "yveCRV-DAO",
+      "status": "price-unavailable",
+      "inventoryTvlUsd": 104945.99227162599,
+      "holderValueUsd": null,
+      "currentUsdPerSecond": null,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": null,
+      "afterOneMinute": {
+        "assets": "351089616867247549945259",
+        "usd": null,
+        "increaseUsd": null
+      },
+      "afterOneHour": {
+        "assets": "351089616867247549945259",
+        "usd": null,
+        "increaseUsd": null
+      },
+      "afterOneDay": {
+        "assets": "351089616867247549945259",
+        "usd": null,
+        "increaseUsd": null
+      },
+      "final": {
+        "assets": "351089616867247549945259",
+        "usd": null,
+        "increaseUsd": null
+      }
+    },
+    {
+      "name": "Curve LINK Pool yVault",
+      "address": "0xf2db9a7c0ACd427A680D640F02d90f6186E71725",
+      "kind": "Legacy",
+      "apiVersion": "0.3.5",
+      "assetSymbol": "linkCRV",
+      "status": "valued",
+      "inventoryTvlUsd": 99917.36498012474,
+      "holderValueUsd": 100027.1511420594,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "9147421519730865350991",
+        "usd": 100027.1511420594,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "9147421519730865350991",
+        "usd": 100027.1511420594,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "9147421519730865350991",
+        "usd": 100027.1511420594,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "9147421519730865350991",
+        "usd": 100027.1511420594,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve frxUSD-crvUSD Factory yVault",
+      "address": "0x4282B8f159ee677559Dc6A20cd478DD0BDe75fF2",
+      "kind": "Legacy",
+      "apiVersion": "0.4.6",
+      "assetSymbol": "crvfrxUSD",
+      "status": "valued",
+      "inventoryTvlUsd": 96312.29876105372,
+      "holderValueUsd": 96376.30856701054,
+      "currentUsdPerSecond": 0.0006501017345865345,
+      "remainingSeconds": 314485,
+      "remainingUnlockUsd": 204.4465938997455,
+      "afterOneMinute": {
+        "assets": "95864831728254541302410",
+        "usd": 96376.3475731146,
+        "increaseUsd": 0.03900610406708438
+      },
+      "afterOneHour": {
+        "assets": "95867120873964713305459",
+        "usd": 96378.64893325506,
+        "increaseUsd": 2.340366244519828
+      },
+      "afterOneDay": {
+        "assets": "95920663604134838122541",
+        "usd": 96432.47735687882,
+        "increaseUsd": 56.168789868286694
+      },
+      "final": {
+        "assets": "96068154426213655329811",
+        "usd": 96580.75516091028,
+        "increaseUsd": 204.4465938997455
+      }
+    },
+    {
+      "name": "YFI yVault",
+      "address": "0xE14d13d8B3b85aF791b2AADD661cDBd5E6097Db1",
+      "kind": "Legacy",
+      "apiVersion": "0.3.2",
+      "assetSymbol": "YFI",
+      "status": "valued",
+      "inventoryTvlUsd": 96076.53697421736,
+      "holderValueUsd": 95764.09220102677,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "47537203593547749139",
+        "usd": 95764.09220102677,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "47537203593547749139",
+        "usd": 95764.09220102677,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "47537203593547749139",
+        "usd": 95764.09220102677,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "47537203593547749139",
+        "usd": 95764.09220102677,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "LP Yearn CRV Vault",
+      "address": "0xc97232527B62eFb0D8ed38CF3EA103A6CcA4037e",
+      "kind": "Legacy",
+      "apiVersion": "0.4.3",
+      "assetSymbol": "yCRV-f",
+      "status": "valued",
+      "inventoryTvlUsd": 90265.00626494472,
+      "holderValueUsd": 86934.37330899746,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "545574178613704937059637",
+        "usd": 86934.37330899746,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "545574178613704937059637",
+        "usd": 86934.37330899746,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "545574178613704937059637",
+        "usd": 86934.37330899746,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "545574178613704937059637",
+        "usd": 86934.37330899746,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve FRAX Factory yVault",
+      "address": "0xb37094c1B5614Bd6EcE40AFb295C26F4377069d3",
+      "kind": "Legacy",
+      "apiVersion": "0.4.5",
+      "assetSymbol": "FRAX3CRV-f",
+      "status": "valued",
+      "inventoryTvlUsd": 88021.41025342818,
+      "holderValueUsd": 88006.12907833043,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "86807149469145977241147",
+        "usd": 88006.12907833043,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "86807149469145977241147",
+        "usd": 88006.12907833043,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "86807149469145977241147",
+        "usd": 88006.12907833043,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "86807149469145977241147",
+        "usd": 88006.12907833043,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve FRAX Pool yVault",
+      "address": "0xB4AdA607B9d6b2c9Ee07A275e9616B84AC560139",
+      "kind": "Legacy",
+      "apiVersion": "0.3.5",
+      "assetSymbol": "FRAX3CRV-f",
+      "status": "valued",
+      "inventoryTvlUsd": 87988.32453385976,
+      "holderValueUsd": 87973.04906830276,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "86774520135200868783896",
+        "usd": 87973.04906830276,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "86774520135200868783896",
+        "usd": 87973.04906830276,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "86774520135200868783896",
+        "usd": 87973.04906830276,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "86774520135200868783896",
+        "usd": 87973.04906830276,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve 3pool yVault",
+      "address": "0x84E13785B5a27879921D6F685f041421C7F482dA",
+      "kind": "Legacy",
+      "apiVersion": "0.3.5",
+      "assetSymbol": "3Crv",
+      "status": "valued",
+      "inventoryTvlUsd": 81612.49157007452,
+      "holderValueUsd": 81612.49167105986,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "78486853396958482853533",
+        "usd": 81612.49167105986,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "78486853396958482853533",
+        "usd": 81612.49167105986,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "78486853396958482853533",
+        "usd": 81612.49167105986,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "78486853396958482853533",
+        "usd": 81612.49167105986,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve alUSD Factory yVault",
+      "address": "0x4CbB6A5EC00cEEC252a7091559484F7adb83165f",
+      "kind": "Legacy",
+      "apiVersion": "0.4.5",
+      "assetSymbol": "alUSD3CRV-f",
+      "status": "valued",
+      "inventoryTvlUsd": 78641.67990229954,
+      "holderValueUsd": 78702.03508332379,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "79169471546736008452484",
+        "usd": 78702.03508332379,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "79169471546736008452484",
+        "usd": 78702.03508332379,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "79169471546736008452484",
+        "usd": 78702.03508332379,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "79169471546736008452484",
+        "usd": 78702.03508332379,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve alUSD Pool yVault",
+      "address": "0xA74d4B67b3368E83797a35382AFB776bAAE4F5C8",
+      "kind": "Legacy",
+      "apiVersion": "0.3.5",
+      "assetSymbol": "alUSD3CRV-f",
+      "status": "valued",
+      "inventoryTvlUsd": 78617.05904143873,
+      "holderValueUsd": 78677.39533303966,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "79144685453123897417348",
+        "usd": 78677.39533303966,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "79144685453123897417348",
+        "usd": 78677.39533303966,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "79144685453123897417348",
+        "usd": 78677.39533303966,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "79144685453123897417348",
+        "usd": 78677.39533303966,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve sAave Pool yVault",
+      "address": "0xb4D1Be44BfF40ad6e506edf43156577a3f8672eC",
+      "kind": "Legacy",
+      "apiVersion": "0.3.5",
+      "assetSymbol": "saCRV",
+      "status": "valued",
+      "inventoryTvlUsd": 75400.36804151462,
+      "holderValueUsd": 75386.90954977779,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "79629722133414213467966",
+        "usd": 75386.90954977779,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "79629722133414213467966",
+        "usd": 75386.90954977779,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "79629722133414213467966",
+        "usd": 75386.90954977779,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "79629722133414213467966",
+        "usd": 75386.90954977779,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve ibKRW Pool yVault",
+      "address": "0x528D50dC9a333f01544177a924893FA1F5b9F748",
+      "kind": "Legacy",
+      "apiVersion": "0.4.3",
+      "assetSymbol": "ibKRW+sKRW-f",
+      "status": "price-unavailable",
+      "inventoryTvlUsd": 67931.20616439918,
+      "holderValueUsd": null,
+      "currentUsdPerSecond": null,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": null,
+      "afterOneMinute": {
+        "assets": "91181490603081959732573507",
+        "usd": null,
+        "increaseUsd": null
+      },
+      "afterOneHour": {
+        "assets": "91181490603081959732573507",
+        "usd": null,
+        "increaseUsd": null
+      },
+      "afterOneDay": {
+        "assets": "91181490603081959732573507",
+        "usd": null,
+        "increaseUsd": null
+      },
+      "final": {
+        "assets": "91181490603081959732573507",
+        "usd": null,
+        "increaseUsd": null
+      }
+    },
+    {
+      "name": "Curve 3EUR Factory yVault",
+      "address": "0x82c83ddA32DB09F63F9A59A129278f3fdC3EeE67",
+      "kind": "Legacy",
+      "apiVersion": "0.4.5",
+      "assetSymbol": "3EURpool-f",
+      "status": "price-unavailable",
+      "inventoryTvlUsd": 64224.8267822294,
+      "holderValueUsd": null,
+      "currentUsdPerSecond": null,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": null,
+      "afterOneMinute": {
+        "assets": "14658781457478799981630",
+        "usd": null,
+        "increaseUsd": null
+      },
+      "afterOneHour": {
+        "assets": "14658781457478799981630",
+        "usd": null,
+        "increaseUsd": null
+      },
+      "afterOneDay": {
+        "assets": "14658781457478799981630",
+        "usd": null,
+        "increaseUsd": null
+      },
+      "final": {
+        "assets": "14658781457478799981630",
+        "usd": null,
+        "increaseUsd": null
+      }
+    },
+    {
+      "name": "Curve ynETHx Factory yVault",
+      "address": "0xe7c25cb1eac7D870F3cD103cBB060A6DFbc5eaF2",
+      "kind": "Legacy",
+      "apiVersion": "0.4.6",
+      "assetSymbol": "ynETHx/ETH",
+      "status": "valued",
+      "inventoryTvlUsd": 58848.29571116017,
+      "holderValueUsd": 59488.42832282838,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "23919250549379208156",
+        "usd": 59488.42832282838,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "23919250549379208156",
+        "usd": 59488.42832282838,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "23919250549379208156",
+        "usd": 59488.42832282838,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "23919250549379208156",
+        "usd": 59488.42832282838,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve sdCRVv2 Factory yVault",
+      "address": "0xa669d6C2Df33F41940c2646A9BF3031e2524d515",
+      "kind": "Legacy",
+      "apiVersion": "0.4.6",
+      "assetSymbol": "sdCRVlp-f",
+      "status": "valued",
+      "inventoryTvlUsd": 57710.83565381354,
+      "holderValueUsd": 56143.50190129266,
+      "currentUsdPerSecond": 0.0019214608945686907,
+      "remainingSeconds": 222409,
+      "remainingUnlockUsd": 427.34827463934926,
+      "afterOneMinute": {
+        "assets": "345374656108470353461022",
+        "usd": 56143.61718894634,
+        "increaseUsd": 0.11528765367984306
+      },
+      "afterOneHour": {
+        "assets": "345416499308256141320414",
+        "usd": 56150.41916051311,
+        "increaseUsd": 6.91725922045589
+      },
+      "afterOneDay": {
+        "assets": "346395204659177959048570",
+        "usd": 56309.51612258339,
+        "increaseUsd": 166.01422129073035
+      },
+      "final": {
+        "assets": "348002834579084181250032",
+        "usd": 56570.850175932006,
+        "increaseUsd": 427.34827463934926
+      }
+    },
+    {
+      "name": "Curve avUSD-frxUSD Factory yVault",
+      "address": "0x8F49C410ac9d05aa7260ef0951b3f328E80d1f3D",
+      "kind": "Legacy",
+      "apiVersion": "0.4.6",
+      "assetSymbol": "av/frxUSD",
+      "status": "valued",
+      "inventoryTvlUsd": 56925.69627453521,
+      "holderValueUsd": 56937.45784318841,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "56833734443342410817322",
+        "usd": 56937.45784318841,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "56833734443342410817322",
+        "usd": 56937.45784318841,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "56833734443342410817322",
+        "usd": 56937.45784318841,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "56833734443342410817322",
+        "usd": 56937.45784318841,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve ETH+ Factory yVault",
+      "address": "0x849dC56ceCa7Cf55AbF5ec87910DA21c5C7dA581",
+      "kind": "Legacy",
+      "apiVersion": "0.4.6",
+      "assetSymbol": "ETH+ETH-f",
+      "status": "valued",
+      "inventoryTvlUsd": 48038.41016625354,
+      "holderValueUsd": 48458.849977058,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "9978676522027909781",
+        "usd": 48458.849977058,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "9978676522027909781",
+        "usd": 48458.849977058,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "9978676522027909781",
+        "usd": 48458.849977058,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "9978676522027909781",
+        "usd": 48458.849977058,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve sUSD Pool yVault",
+      "address": "0x5a770DbD3Ee6bAF2802D29a901Ef11501C44797A",
+      "kind": "Legacy",
+      "apiVersion": "0.3.5",
+      "assetSymbol": "crvPlain3andSUSD",
+      "status": "price-unavailable",
+      "inventoryTvlUsd": 43902.89540972903,
+      "holderValueUsd": null,
+      "currentUsdPerSecond": null,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": null,
+      "afterOneMinute": {
+        "assets": "38224346181366110405748",
+        "usd": null,
+        "increaseUsd": null
+      },
+      "afterOneHour": {
+        "assets": "38224346181366110405748",
+        "usd": null,
+        "increaseUsd": null
+      },
+      "afterOneDay": {
+        "assets": "38224346181366110405748",
+        "usd": null,
+        "increaseUsd": null
+      },
+      "final": {
+        "assets": "38224346181366110405748",
+        "usd": null,
+        "increaseUsd": null
+      }
+    },
+    {
+      "name": "Curve USDM-sDAI Factory yVault",
+      "address": "0x2027D3b2B58F522178cE4cC4E86e99b7C4DE3876",
+      "kind": "Legacy",
+      "apiVersion": "0.4.6",
+      "assetSymbol": "sdai-usdm",
+      "status": "valued",
+      "inventoryTvlUsd": 40898.50890334347,
+      "holderValueUsd": 40901.05510491537,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "37308720212990700508770",
+        "usd": 40901.05510491537,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "37308720212990700508770",
+        "usd": 40901.05510491537,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "37308720212990700508770",
+        "usd": 40901.05510491537,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "37308720212990700508770",
+        "usd": 40901.05510491537,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve yYB Factory yVault",
+      "address": "0x0844C227b892be5d7c837000C096f64bFc316c2d",
+      "kind": "Legacy",
+      "apiVersion": "0.4.6",
+      "assetSymbol": "yYB-LP",
+      "status": "valued",
+      "inventoryTvlUsd": 34724.904861949966,
+      "holderValueUsd": 35232.9856977062,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "603036305511357299755873",
+        "usd": 35232.9856977062,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "603036305511357299755873",
+        "usd": 35232.9856977062,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "603036305511357299755873",
+        "usd": 35232.9856977062,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "603036305511357299755873",
+        "usd": 35232.9856977062,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve 3EUR Pool yVault",
+      "address": "0x5AB64C599FcC59f0f2726A300b03166A395578Da",
+      "kind": "Legacy",
+      "apiVersion": "0.4.3",
+      "assetSymbol": "3EURpool-f",
+      "status": "price-unavailable",
+      "inventoryTvlUsd": 34457.6355045601,
+      "holderValueUsd": null,
+      "currentUsdPerSecond": null,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": null,
+      "afterOneMinute": {
+        "assets": "7864668143554354467153",
+        "usd": null,
+        "increaseUsd": null
+      },
+      "afterOneHour": {
+        "assets": "7864668143554354467153",
+        "usd": null,
+        "increaseUsd": null
+      },
+      "afterOneDay": {
+        "assets": "7864668143554354467153",
+        "usd": null,
+        "increaseUsd": null
+      },
+      "final": {
+        "assets": "7864668143554354467153",
+        "usd": null,
+        "increaseUsd": null
+      }
+    },
+    {
+      "name": "Curve TriCRV Factory yVault",
+      "address": "0x3f34A7eF4f17528CbFFb7817060941BCdaC924fa",
+      "kind": "Legacy",
+      "apiVersion": "0.4.6",
+      "assetSymbol": "crvUSDETHCRV",
+      "status": "valued",
+      "inventoryTvlUsd": 34073.75845574197,
+      "holderValueUsd": 34488.825608776075,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "1118117964956725744281",
+        "usd": 34488.825608776075,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "1118117964956725744281",
+        "usd": 34488.825608776075,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "1118117964956725744281",
+        "usd": 34488.825608776075,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "1118117964956725744281",
+        "usd": 34488.825608776075,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve alUSD-sDOLA Factory yVault",
+      "address": "0xb7b1C394b3F82091988A1e400C6499178eE64b99",
+      "kind": "Legacy",
+      "apiVersion": "0.4.6",
+      "assetSymbol": "alUSDsDOLA",
+      "status": "valued",
+      "inventoryTvlUsd": 32616.296278977232,
+      "holderValueUsd": 32642.53498823912,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "31663396255491284124661",
+        "usd": 32642.53498823912,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "31663396255491284124661",
+        "usd": 32642.53498823912,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "31663396255491284124661",
+        "usd": 32642.53498823912,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "31663396255491284124661",
+        "usd": 32642.53498823912,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve StaFi rETH Factory yVault",
+      "address": "0x77e829FFF18C14AD9bb88963acB0010A0506de88",
+      "kind": "Legacy",
+      "apiVersion": "0.4.6",
+      "assetSymbol": "rCRV",
+      "status": "valued",
+      "inventoryTvlUsd": 32002.16162771222,
+      "holderValueUsd": 32309.924510580186,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "12922627061358630048",
+        "usd": 32309.924510580186,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "12922627061358630048",
+        "usd": 32309.924510580186,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "12922627061358630048",
+        "usd": 32309.924510580186,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "12922627061358630048",
+        "usd": 32309.924510580186,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve rETH Pool yVault",
+      "address": "0xBfedbcbe27171C418CDabC2477042554b1904857",
+      "kind": "Legacy",
+      "apiVersion": "0.3.5",
+      "assetSymbol": "rCRV",
+      "status": "valued",
+      "inventoryTvlUsd": 32001.913982798444,
+      "holderValueUsd": 32309.695274020007,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "12922535376261220211",
+        "usd": 32309.695274020007,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "12922535376261220211",
+        "usd": 32309.695274020007,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "12922535376261220211",
+        "usd": 32309.695274020007,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "12922535376261220211",
+        "usd": 32309.695274020007,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve triCrypto Pool yVault",
+      "address": "0x3D980E50508CFd41a13837A60149927a11c03731",
+      "kind": "Legacy",
+      "apiVersion": "0.4.2",
+      "assetSymbol": "crvTricrypto",
+      "status": "valued",
+      "inventoryTvlUsd": 31629.770364037144,
+      "holderValueUsd": 31843.30938573758,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "17754260255436357087",
+        "usd": 31843.30938573758,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "17754260255436357087",
+        "usd": 31843.30938573758,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "17754260255436357087",
+        "usd": 31843.30938573758,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "17754260255436357087",
+        "usd": 31843.30938573758,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve stETHv2 Factory yVault",
+      "address": "0x5F208d3a8b13062adE45a33Ca9Bc8de64D520CB9",
+      "kind": "Legacy",
+      "apiVersion": "0.4.6",
+      "assetSymbol": "stETH-ng-f",
+      "status": "valued",
+      "inventoryTvlUsd": 31253.16336158989,
+      "holderValueUsd": 31549.061334961003,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "12585996602237752992",
+        "usd": 31549.061334961003,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "12585996602237752992",
+        "usd": 31549.061334961003,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "12585996602237752992",
+        "usd": 31549.061334961003,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "12585996602237752992",
+        "usd": 31549.061334961003,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve TriCryptoUSDT Factory yVault",
+      "address": "0x7845Ebf66c9575Fc5f5A0dBb9a34a706Ad997a3f",
+      "kind": "Legacy",
+      "apiVersion": "0.4.6",
+      "assetSymbol": "crvUSDTWBTCWETH",
+      "status": "valued",
+      "inventoryTvlUsd": 30349.678206610526,
+      "holderValueUsd": 30549.18876849647,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "17068859781080501252",
+        "usd": 30549.18876849647,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "17068859781080501252",
+        "usd": 30549.18876849647,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "17068859781080501252",
+        "usd": 30549.18876849647,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "17068859781080501252",
+        "usd": 30549.18876849647,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve Iron Bank Factory yVault",
+      "address": "0xa8E0c42F45C877e611C76F2D4bF57476f2014381",
+      "kind": "Legacy",
+      "apiVersion": "0.4.5",
+      "assetSymbol": "ib3CRV",
+      "status": "valued",
+      "inventoryTvlUsd": 29216.4618552812,
+      "holderValueUsd": 29218.890368264703,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "6564220555707335409054",
+        "usd": 29218.890368264703,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "6564220555707335409054",
+        "usd": 29218.890368264703,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "6564220555707335409054",
+        "usd": 29218.890368264703,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "6564220555707335409054",
+        "usd": 29218.890368264703,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve RSUP-WETH Factory yVault",
+      "address": "0x8017B5d498f75d12dA6A857e867699fB07De41a4",
+      "kind": "Legacy",
+      "apiVersion": "0.4.6",
+      "assetSymbol": "wethrsup",
+      "status": "valued",
+      "inventoryTvlUsd": 27878.698768226815,
+      "holderValueUsd": 27705.930153454552,
+      "currentUsdPerSecond": 0.0008393151351253797,
+      "remainingSeconds": 148321,
+      "remainingUnlockUsd": 124.48722084184192,
+      "afterOneMinute": {
+        "assets": "1019546529614349461896",
+        "usd": 27705.980512362657,
+        "increaseUsd": 0.05035890810540877
+      },
+      "afterOneHour": {
+        "assets": "1019655865277399672101",
+        "usd": 27708.951687941004,
+        "increaseUsd": 3.0215344864518556
+      },
+      "afterOneDay": {
+        "assets": "1022213207904675775218",
+        "usd": 27778.446981129386,
+        "increaseUsd": 72.51682767483362
+      },
+      "final": {
+        "assets": "1024125655434640686874",
+        "usd": 27830.417374296394,
+        "increaseUsd": 124.48722084184192
+      }
+    },
+    {
+      "name": "Curve mUSD Factory yVault",
+      "address": "0x944d749017053e0D37ec206c9898716A21e0B2E2",
+      "kind": "Legacy",
+      "apiVersion": "0.4.6",
+      "assetSymbol": "musd3CRV",
+      "status": "valued",
+      "inventoryTvlUsd": 26955.101004519944,
+      "holderValueUsd": 26918.41470207805,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "26150181669769783137901",
+        "usd": 26918.41470207805,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "26150181669769783137901",
+        "usd": 26918.41470207805,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "26150181669769783137901",
+        "usd": 26918.41470207805,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "26150181669769783137901",
+        "usd": 26918.41470207805,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve rETH-wstETH Pool yVault",
+      "address": "0x5c0A86A32c129538D62C106Eb8115a8b02358d57",
+      "kind": "Legacy",
+      "apiVersion": "0.4.3",
+      "assetSymbol": "rETHwstETH-f",
+      "status": "valued",
+      "inventoryTvlUsd": 26827.92796906912,
+      "holderValueUsd": 27074.31368529569,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "9720729127629985860",
+        "usd": 27074.31368529569,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "9720729127629985860",
+        "usd": 27074.31368529569,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "9720729127629985860",
+        "usd": 27074.31368529569,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "9720729127629985860",
+        "usd": 27074.31368529569,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve mUSD Pool yVault",
+      "address": "0x8cc94ccd0f3841a468184aCA3Cc478D2148E1757",
+      "kind": "Legacy",
+      "apiVersion": "0.3.5",
+      "assetSymbol": "musd3CRV",
+      "status": "valued",
+      "inventoryTvlUsd": 26554.977109950505,
+      "holderValueUsd": 26518.83539971013,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "25762006085730119265213",
+        "usd": 26518.83539971013,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "25762006085730119265213",
+        "usd": 26518.83539971013,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "25762006085730119265213",
+        "usd": 26518.83539971013,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "25762006085730119265213",
+        "usd": 26518.83539971013,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve OETH-ARM-stETH Factory yVault",
+      "address": "0x5fFd0C196838aa5e700657C1f6fd8A87f5d80ED2",
+      "kind": "Legacy",
+      "apiVersion": "0.4.6",
+      "assetSymbol": "OETHAstETH",
+      "status": "valued",
+      "inventoryTvlUsd": 24130.58501796674,
+      "holderValueUsd": 24362.020881226625,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "10340848438417220946",
+        "usd": 24362.020881226625,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "10340848438417220946",
+        "usd": 24362.020881226625,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "10340848438417220946",
+        "usd": 24362.020881226625,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "10340848438417220946",
+        "usd": 24362.020881226625,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve TriCryptoINV Factory yVault",
+      "address": "0x6949145469362F9eeaB3c96Ea41b51D9B4cC2b21",
+      "kind": "Legacy",
+      "apiVersion": "0.4.6",
+      "assetSymbol": "crvUSDCWETHINV",
+      "status": "valued",
+      "inventoryTvlUsd": 21108.54816039093,
+      "holderValueUsd": 21145.21571491458,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "213202898035762549318",
+        "usd": 21145.21571491458,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "213202898035762549318",
+        "usd": 21145.21571491458,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "213202898035762549318",
+        "usd": 21145.21571491458,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "213202898035762549318",
+        "usd": 21145.21571491458,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve RAI Pool yVault",
+      "address": "0x2D5D4869381C4Fce34789BC1D38aCCe747E295AE",
+      "kind": "Legacy",
+      "apiVersion": "0.4.3",
+      "assetSymbol": "RAI3CRV",
+      "status": "valued",
+      "inventoryTvlUsd": 20572.722700081948,
+      "holderValueUsd": 20812.654615151634,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "19507327215115950621172",
+        "usd": 20812.654615151634,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "19507327215115950621172",
+        "usd": 20812.654615151634,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "19507327215115950621172",
+        "usd": 20812.654615151634,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "19507327215115950621172",
+        "usd": 20812.654615151634,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "AAVE yVault",
+      "address": "0xd9788f3931Ede4D5018184E198699dC6d66C1915",
+      "kind": "Legacy",
+      "apiVersion": "0.4.3",
+      "assetSymbol": "AAVE",
+      "status": "valued",
+      "inventoryTvlUsd": 19362.43377257788,
+      "holderValueUsd": 19936.465844224393,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "151809034300044668722",
+        "usd": 19936.465844224393,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "151809034300044668722",
+        "usd": 19936.465844224393,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "151809034300044668722",
+        "usd": 19936.465844224393,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "151809034300044668722",
+        "usd": 19936.465844224393,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve oBTC Pool yVault",
+      "address": "0xe9Dc63083c464d6EDcCFf23444fF3CFc6886f6FB",
+      "kind": "Legacy",
+      "apiVersion": "0.3.5",
+      "assetSymbol": "oBTC/sbtcCRV",
+      "status": "valued",
+      "inventoryTvlUsd": 19050.983114682764,
+      "holderValueUsd": 19311.601722845757,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "214883817372906859",
+        "usd": 19311.601722845757,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "214883817372906859",
+        "usd": 19311.601722845757,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "214883817372906859",
+        "usd": 19311.601722845757,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "214883817372906859",
+        "usd": 19311.601722845757,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve Aave Pool yVault",
+      "address": "0x39CAF13a104FF567f71fd2A4c68C026FDB6E740B",
+      "kind": "Legacy",
+      "apiVersion": "0.3.5",
+      "assetSymbol": "a3CRV",
+      "status": "valued",
+      "inventoryTvlUsd": 18481.297014944008,
+      "holderValueUsd": 18481.753221078092,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "14955102970561781407653",
+        "usd": 18481.753221078092,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "14955102970561781407653",
+        "usd": 18481.753221078092,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "14955102970561781407653",
+        "usd": 18481.753221078092,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "14955102970561781407653",
+        "usd": 18481.753221078092,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve xETH Factory yVault",
+      "address": "0xd02b103f7f5dba89Ad316E2b3Fe247F280CcE5b2",
+      "kind": "Legacy",
+      "apiVersion": "0.4.6",
+      "assetSymbol": "xETHETH-f",
+      "status": "valued",
+      "inventoryTvlUsd": 18076.969275904456,
+      "holderValueUsd": 18731.494943039357,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "181130263626558081936",
+        "usd": 18731.494943039357,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "181130263626558081936",
+        "usd": 18731.494943039357,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "181130263626558081936",
+        "usd": 18731.494943039357,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "181130263626558081936",
+        "usd": 18731.494943039357,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve TriCryptoLLAMA Factory yVault",
+      "address": "0xE2CaD35CFD1A9B5acD557558f44B096ef8340C1B",
+      "kind": "Legacy",
+      "apiVersion": "0.4.6",
+      "assetSymbol": "crvCRVUSDTBTCWSTETH",
+      "status": "valued",
+      "inventoryTvlUsd": 17792.42072315073,
+      "holderValueUsd": 17888.357555823324,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "9380569142678282291",
+        "usd": 17888.357555823324,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "9380569142678282291",
+        "usd": 17888.357555823324,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "9380569142678282291",
+        "usd": 17888.357555823324,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "9380569142678282291",
+        "usd": 17888.357555823324,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "SNX yVault",
+      "address": "0xF29AE508698bDeF169B89834F76704C3B205aedf",
+      "kind": "Legacy",
+      "apiVersion": "0.3.5",
+      "assetSymbol": "SNX",
+      "status": "valued",
+      "inventoryTvlUsd": 15942.570416999424,
+      "holderValueUsd": 16044.958325673886,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "90187383060780075931932",
+        "usd": 16044.958325673886,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "90187383060780075931932",
+        "usd": 16044.958325673886,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "90187383060780075931932",
+        "usd": 16044.958325673886,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "90187383060780075931932",
+        "usd": 16044.958325673886,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve ibCHF Pool yVault",
+      "address": "0x490bD0886F221A5F79713D3E84404355A9293C50",
+      "kind": "Legacy",
+      "apiVersion": "0.4.3",
+      "assetSymbol": "ibCHF+sCHF-f",
+      "status": "price-unavailable",
+      "inventoryTvlUsd": 13879.533191949498,
+      "holderValueUsd": null,
+      "currentUsdPerSecond": null,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": null,
+      "afterOneMinute": {
+        "assets": "12336825512702460332349",
+        "usd": null,
+        "increaseUsd": null
+      },
+      "afterOneHour": {
+        "assets": "12336825512702460332349",
+        "usd": null,
+        "increaseUsd": null
+      },
+      "afterOneDay": {
+        "assets": "12336825512702460332349",
+        "usd": null,
+        "increaseUsd": null
+      },
+      "final": {
+        "assets": "12336825512702460332349",
+        "usd": null,
+        "increaseUsd": null
+      }
+    },
+    {
+      "name": "Curve sBTC Pool yVault",
+      "address": "0x8414Db07a7F743dEbaFb402070AB01a4E0d2E45e",
+      "kind": "Legacy",
+      "apiVersion": "0.3.5",
+      "assetSymbol": "crvRenWSBTC",
+      "status": "valued",
+      "inventoryTvlUsd": 13869.987206188956,
+      "holderValueUsd": 14372.915554691606,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "175065157697082883",
+        "usd": 14372.915554691606,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "175065157697082883",
+        "usd": 14372.915554691606,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "175065157697082883",
+        "usd": 14372.915554691606,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "175065157697082883",
+        "usd": 14372.915554691606,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve tBTC-cbBTC Factory yVault",
+      "address": "0x03f8CCf5b5004B55309e949ea9D08136a32E9C5d",
+      "kind": "Legacy",
+      "apiVersion": "0.4.6",
+      "assetSymbol": "tBTC/cbBTC",
+      "status": "valued",
+      "inventoryTvlUsd": 12822.622500128877,
+      "holderValueUsd": 12939.386734629465,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "164322703755561933",
+        "usd": 12939.386734629465,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "164322703755561933",
+        "usd": 12939.386734629465,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "164322703755561933",
+        "usd": 12939.386734629465,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "164322703755561933",
+        "usd": 12939.386734629465,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve JPEG-pETH Factory yVault",
+      "address": "0x2fB06235aB90812e5BaE28404024C9498fF9414d",
+      "kind": "Legacy",
+      "apiVersion": "0.4.6",
+      "assetSymbol": "JPEGpETH-f",
+      "status": "price-unavailable",
+      "inventoryTvlUsd": 12160.01357795,
+      "holderValueUsd": null,
+      "currentUsdPerSecond": null,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": null,
+      "afterOneMinute": {
+        "assets": "1102999185636174745404",
+        "usd": null,
+        "increaseUsd": null
+      },
+      "afterOneHour": {
+        "assets": "1102999185636174745404",
+        "usd": null,
+        "increaseUsd": null
+      },
+      "afterOneDay": {
+        "assets": "1102999185636174745404",
+        "usd": null,
+        "increaseUsd": null
+      },
+      "final": {
+        "assets": "1102999185636174745404",
+        "usd": null,
+        "increaseUsd": null
+      }
+    },
+    {
+      "name": "Curve Compound Factory yVault",
+      "address": "0xAE6eD98B1Bd9aAdd3185160324e0e011159B61D3",
+      "kind": "Legacy",
+      "apiVersion": "0.4.6",
+      "assetSymbol": "cDAI+cUSDC",
+      "status": "valued",
+      "inventoryTvlUsd": 11188.376403101705,
+      "holderValueUsd": 11188.451784792422,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "8938343390274252997791",
+        "usd": 11188.451784792422,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "8938343390274252997791",
+        "usd": 11188.451784792422,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "8938343390274252997791",
+        "usd": 11188.451784792422,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "8938343390274252997791",
+        "usd": 11188.451784792422,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve OUSD-frxUSD Factory yVault",
+      "address": "0x5591Ac6CC8cdeE5d47E553a8c3543eF5eA808919",
+      "kind": "Legacy",
+      "apiVersion": "0.4.6",
+      "assetSymbol": "frxUSDOUSD",
+      "status": "valued",
+      "inventoryTvlUsd": 10400.179043445123,
+      "holderValueUsd": 10401.390332917746,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "10392531996536239035383",
+        "usd": 10401.390332917746,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "10392531996536239035383",
+        "usd": 10401.390332917746,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "10392531996536239035383",
+        "usd": 10401.390332917746,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "10392531996536239035383",
+        "usd": 10401.390332917746,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve Compound Pool yVault",
+      "address": "0xD6Ea40597Be05c201845c0bFd2e96A60bACde267",
+      "kind": "Legacy",
+      "apiVersion": "0.3.5",
+      "assetSymbol": "cDAI+cUSDC",
+      "status": "valued",
+      "inventoryTvlUsd": 10273.586644842839,
+      "holderValueUsd": 10273.655881229302,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "8207521997346823670195",
+        "usd": 10273.655881229302,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "8207521997346823670195",
+        "usd": 10273.655881229302,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "8207521997346823670195",
+        "usd": 10273.655881229302,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "8207521997346823670195",
+        "usd": 10273.655881229302,
+        "increaseUsd": 0
+      }
+    }
+  ]
+}

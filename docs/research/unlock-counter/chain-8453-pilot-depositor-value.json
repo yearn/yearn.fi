@@ -1,0 +1,546 @@
+{
+  "schemaVersion": "depositor-value-pilot-1",
+  "modelVersion": "fixed-share-attribution-v2-v3-unlock-v2",
+  "status": "incomplete-pilot",
+  "generatedAt": "2026-11-04T16:38:55.800Z",
+  "asOfTimestamp": 1793802839,
+  "sourceBlock": {
+    "chainId": 8453,
+    "number": "53506746",
+    "hash": "0x7af9fb300f8ea1dc6a0abbaf242d82c4b08cfe136b7d7720048d431f624c0c0c",
+    "timestamp": 1793802839
+  },
+  "scope": {
+    "label": "Closed Base V2/V3 pilot, $10k cutoff",
+    "selectedRootCount": 6,
+    "valuedRootCount": 4,
+    "definition": "Non-self holder share-conversion value minus attributed internal share positions. Exact direct ownership; canonical metrics budgets and caps allocate routed positions once at the snapshot. Not a complete holder census or immediately withdrawable liquidity.",
+    "excludedFromScope": [
+      "Other chains (combined separately using chain-scoped positions)",
+      "V1 and curation-only roots",
+      "Hidden and sub-cutoff roots; retired V3 roots"
+    ],
+    "dependencies": "Observed queue strategies are included for routing even when not selected roots"
+  },
+  "aggregate": {
+    "completeValueUsd": null,
+    "knownSubtotalUsd": 2060395.946424519,
+    "unadjustedKnownSubtotalUsd": 4013310.509138483,
+    "observedOverlapUsd": 1952914.562713964,
+    "averageNextMinuteUsdPerSecond": 0.0031957637751474977,
+    "unadjustedAverageNextMinuteUsdPerSecond": 0.007048651195752124,
+    "nextHourIncreaseUsd": 11.504723185207695,
+    "next24HoursIncreaseUsd": 276.14912039553747
+  },
+  "coverage": {
+    "status": "incomplete",
+    "unavailableRoots": [
+      {
+        "chainId": 8453,
+        "address": "0x4d3ceba4349adb06d2de8ebd2f9320a61303ad81",
+        "name": "Aerodrome hyUSD-eUSD Factory yVault",
+        "reason": "missing USD asset price"
+      },
+      {
+        "chainId": 8453,
+        "address": "0x31ce9ab5a358e5c802cc01080f29a65a14eb45b8",
+        "name": "Aerodrome BMX-wBLT Factory yVault",
+        "reason": "missing USD asset price"
+      }
+    ],
+    "checkedHolderPairs": 60,
+    "cutoffUnknownCandidates": [
+      {
+        "chainId": 8453,
+        "address": "0x1F1969209E18F24282CE6Fae9c27f6e1fe5a1d1b",
+        "name": "Aerodrome pHAM-pwBLT Factory yVault",
+        "totalAssets": "194847801256874332343",
+        "reason": "funded but USD price unavailable"
+      },
+      {
+        "chainId": 8453,
+        "address": "0x5b508fE98Ac33DA9352FA539E2EFA9F1DdA26c51",
+        "name": "Aerodrome eUSD-USDbC Factory yVault",
+        "totalAssets": "330358399496993",
+        "reason": "funded but USD price unavailable"
+      },
+      {
+        "chainId": 8453,
+        "address": "0xEcFc1e5BDa4d4191c9Cab053ec704347Db87Be5d",
+        "name": "Aerodrome WETH-DAI Factory yVault",
+        "totalAssets": "5155481447280395467",
+        "reason": "funded but USD price unavailable"
+      },
+      {
+        "chainId": 8453,
+        "address": "0x68A0ba9EcaD98BFd16D2457E2546226e8FB7C101",
+        "name": "Aerodrome ION-WETH Factory yVault",
+        "totalAssets": "76980759714901478996",
+        "reason": "funded but USD price unavailable"
+      },
+      {
+        "chainId": 8453,
+        "address": "0xf4B57A2177e6695Bc56fd16c042548BAF4Aa8f5A",
+        "name": "Aerodrome sfrxETH-wstETH Factory yVault",
+        "totalAssets": "1138563995909321",
+        "reason": "funded but USD price unavailable"
+      },
+      {
+        "chainId": 8453,
+        "address": "0x58dcE038423A1e43f3429cb62425a1364cc3bb4c",
+        "name": "Aerodrome WETH-USDbC Factory yVault",
+        "totalAssets": "43037088",
+        "reason": "funded but USD price unavailable"
+      },
+      {
+        "chainId": 8453,
+        "address": "0x37A74970f80adAa8215598e95A17Cbed2C39030D",
+        "name": "Aerodrome SONNE-USDbC Factory yVault",
+        "totalAssets": "6624956943182",
+        "reason": "funded but USD price unavailable"
+      },
+      {
+        "chainId": 8453,
+        "address": "0x37fDacD764AA64F4e453842D8056853e5550c09b",
+        "name": "Aerodrome USDC-USDbC Factory yVault",
+        "totalAssets": "18695",
+        "reason": "funded but USD price unavailable"
+      },
+      {
+        "chainId": 8453,
+        "address": "0x41489713d581EC717E1AA55b7729d24965Cf96b5",
+        "name": "Aerodrome USD+-USDbC Factory yVault",
+        "totalAssets": "10066",
+        "reason": "funded but USD price unavailable"
+      },
+      {
+        "chainId": 8453,
+        "address": "0x5C366341bB86baD85e78eBa974E3f335c9488FA2",
+        "name": "Aerodrome agEUR-USDbC Factory yVault",
+        "totalAssets": "12285609178289",
+        "reason": "funded but USD price unavailable"
+      },
+      {
+        "chainId": 8453,
+        "address": "0xA49dCCD9425cc38d4111Df2e665f2a33fe799C42",
+        "name": "Aerodrome tBTC-USDbC Factory yVault",
+        "totalAssets": "1267129368098",
+        "reason": "funded but USD price unavailable"
+      },
+      {
+        "chainId": 8453,
+        "address": "0xa6cBdD6aE6596b5EE57F67DF70CC7c801129464F",
+        "name": "Aerodrome DAI-USDbC Factory yVault",
+        "totalAssets": "27002039310",
+        "reason": "funded but USD price unavailable"
+      }
+    ],
+    "observedPositiveHoldings": 2,
+    "appliedPositionCount": 2,
+    "limitations": [
+      "Ownership discovery covers observed queues/direct holders, not all historical allocations, adapters or cross-chain routes",
+      "Internal ownership is relative to selected pilot roots, not all Yearn contracts",
+      "Routed attribution uses recorded-debt caps; residual unreported strategy-owned appreciation is not proof of external wallet ownership",
+      "Base asset prices are frozen historical quotes; selected share-token underlying is repriced through the child conversion",
+      "No future reports, deposits, withdrawals, losses, configuration changes or new accrual beyond scheduled unlocking are assumed"
+    ]
+  },
+  "projection": {
+    "fromTimestamp": 1793802839,
+    "validUntilTimestamp": 1793806439,
+    "validUntilMeaning": "End of this historical pilot projection, not an assertion the snapshot remains live",
+    "interpolation": "linear between supplied timestamps; stop at validUntilTimestamp and request a refreshed snapshot",
+    "points": [
+      {
+        "timestamp": 1793802839,
+        "knownSubtotalUsd": 2060395.946424519
+      },
+      {
+        "timestamp": 1793802840,
+        "knownSubtotalUsd": 2060395.9496216408
+      },
+      {
+        "timestamp": 1793802899,
+        "knownSubtotalUsd": 2060396.1381703455
+      },
+      {
+        "timestamp": 1793802959,
+        "knownSubtotalUsd": 2060396.3299140462
+      },
+      {
+        "timestamp": 1793803019,
+        "knownSubtotalUsd": 2060396.521657874
+      },
+      {
+        "timestamp": 1793803079,
+        "knownSubtotalUsd": 2060396.7134017018
+      },
+      {
+        "timestamp": 1793803139,
+        "knownSubtotalUsd": 2060396.9051474012
+      },
+      {
+        "timestamp": 1793803199,
+        "knownSubtotalUsd": 2060397.0968921015
+      },
+      {
+        "timestamp": 1793803259,
+        "knownSubtotalUsd": 2060397.2886359296
+      },
+      {
+        "timestamp": 1793803319,
+        "knownSubtotalUsd": 2060397.4803817559
+      },
+      {
+        "timestamp": 1793803379,
+        "knownSubtotalUsd": 2060397.6721254569
+      },
+      {
+        "timestamp": 1793803439,
+        "knownSubtotalUsd": 2060397.8638691579
+      },
+      {
+        "timestamp": 1793803499,
+        "knownSubtotalUsd": 2060398.0556139848
+      },
+      {
+        "timestamp": 1793803559,
+        "knownSubtotalUsd": 2060398.2473598113
+      },
+      {
+        "timestamp": 1793803619,
+        "knownSubtotalUsd": 2060398.4391045116
+      },
+      {
+        "timestamp": 1793803679,
+        "knownSubtotalUsd": 2060398.6308503381
+      },
+      {
+        "timestamp": 1793803739,
+        "knownSubtotalUsd": 2060398.822593167
+      },
+      {
+        "timestamp": 1793803799,
+        "knownSubtotalUsd": 2060399.0143377401
+      },
+      {
+        "timestamp": 1793803859,
+        "knownSubtotalUsd": 2060399.206082567
+      },
+      {
+        "timestamp": 1793803919,
+        "knownSubtotalUsd": 2060399.3978283938
+      },
+      {
+        "timestamp": 1793803979,
+        "knownSubtotalUsd": 2060399.5895720948
+      },
+      {
+        "timestamp": 1793804039,
+        "knownSubtotalUsd": 2060399.7813189207
+      },
+      {
+        "timestamp": 1793804099,
+        "knownSubtotalUsd": 2060399.9730616221
+      },
+      {
+        "timestamp": 1793804159,
+        "knownSubtotalUsd": 2060400.1648074489
+      },
+      {
+        "timestamp": 1793804219,
+        "knownSubtotalUsd": 2060400.3565531485
+      },
+      {
+        "timestamp": 1793804279,
+        "knownSubtotalUsd": 2060400.5482989752
+      },
+      {
+        "timestamp": 1793804339,
+        "knownSubtotalUsd": 2060400.740044802
+      },
+      {
+        "timestamp": 1793804399,
+        "knownSubtotalUsd": 2060400.9317885025
+      },
+      {
+        "timestamp": 1793804459,
+        "knownSubtotalUsd": 2060401.1235332028
+      },
+      {
+        "timestamp": 1793804519,
+        "knownSubtotalUsd": 2060401.3152780298
+      },
+      {
+        "timestamp": 1793804579,
+        "knownSubtotalUsd": 2060401.5070248563
+      },
+      {
+        "timestamp": 1793804639,
+        "knownSubtotalUsd": 2060401.6987685573
+      },
+      {
+        "timestamp": 1793804699,
+        "knownSubtotalUsd": 2060401.8905153833
+      },
+      {
+        "timestamp": 1793804759,
+        "knownSubtotalUsd": 2060402.0822612098
+      },
+      {
+        "timestamp": 1793804819,
+        "knownSubtotalUsd": 2060402.2740047837
+      },
+      {
+        "timestamp": 1793804879,
+        "knownSubtotalUsd": 2060402.4657506102
+      },
+      {
+        "timestamp": 1793804939,
+        "knownSubtotalUsd": 2060402.6574974363
+      },
+      {
+        "timestamp": 1793804999,
+        "knownSubtotalUsd": 2060402.8492432632
+      },
+      {
+        "timestamp": 1793805059,
+        "knownSubtotalUsd": 2060403.040986964
+      },
+      {
+        "timestamp": 1793805119,
+        "knownSubtotalUsd": 2060403.2327346627
+      },
+      {
+        "timestamp": 1793805179,
+        "knownSubtotalUsd": 2060403.4244784904
+      },
+      {
+        "timestamp": 1793805239,
+        "knownSubtotalUsd": 2060403.61622419
+      },
+      {
+        "timestamp": 1793805299,
+        "knownSubtotalUsd": 2060403.807971016
+      },
+      {
+        "timestamp": 1793805359,
+        "knownSubtotalUsd": 2060403.9997168428
+      },
+      {
+        "timestamp": 1793805419,
+        "knownSubtotalUsd": 2060404.1914626695
+      },
+      {
+        "timestamp": 1793805479,
+        "knownSubtotalUsd": 2060404.383207243
+      },
+      {
+        "timestamp": 1793805539,
+        "knownSubtotalUsd": 2060404.5749530697
+      },
+      {
+        "timestamp": 1793805599,
+        "knownSubtotalUsd": 2060404.766699896
+      },
+      {
+        "timestamp": 1793805659,
+        "knownSubtotalUsd": 2060404.958444596
+      },
+      {
+        "timestamp": 1793805719,
+        "knownSubtotalUsd": 2060405.1501924216
+      },
+      {
+        "timestamp": 1793805779,
+        "knownSubtotalUsd": 2060405.3419392477
+      },
+      {
+        "timestamp": 1793805839,
+        "knownSubtotalUsd": 2060405.533683821
+      },
+      {
+        "timestamp": 1793805899,
+        "knownSubtotalUsd": 2060405.7254286483
+      },
+      {
+        "timestamp": 1793805959,
+        "knownSubtotalUsd": 2060405.9171764737
+      },
+      {
+        "timestamp": 1793806019,
+        "knownSubtotalUsd": 2060406.1089223004
+      },
+      {
+        "timestamp": 1793806079,
+        "knownSubtotalUsd": 2060406.3006680005
+      },
+      {
+        "timestamp": 1793806139,
+        "knownSubtotalUsd": 2060406.4924148265
+      },
+      {
+        "timestamp": 1793806199,
+        "knownSubtotalUsd": 2060406.6841605264
+      },
+      {
+        "timestamp": 1793806259,
+        "knownSubtotalUsd": 2060406.8759062262
+      },
+      {
+        "timestamp": 1793806319,
+        "knownSubtotalUsd": 2060407.0676520527
+      },
+      {
+        "timestamp": 1793806379,
+        "knownSubtotalUsd": 2060407.2594008776
+      },
+      {
+        "timestamp": 1793806439,
+        "knownSubtotalUsd": 2060407.4511477042
+      }
+    ],
+    "comparisonAfter24Hours": {
+      "timestamp": 1793889239,
+      "observedUnadjustedUsd": 4013919.606629044,
+      "observedOverlapUsd": 1953247.5110841286,
+      "knownSubtotalUsd": 2060672.0955449145
+    }
+  },
+  "engine": {
+    "engine": "yearn_data.tvl.account",
+    "engineSha256": "ca49b7100309cc807a9725eca32ac13eb01fbc805f762e719822387d5a357293",
+    "sourceCommit": "0108ed6ec7279c917ff9f29dfac234319f5c1c29",
+    "use": "Snapshot ownership budgets for routed positions; exact balances for direct internal holdings; no repeated future-dollar deductions"
+  },
+  "allocations": [
+    {
+      "parent": "0xb13cf163d916917d9cd6e836905ca5f12a1def4b",
+      "holder": "0xb13cf163d916917d9cd6e836905ca5f12a1def4b",
+      "child": "0xf115c134c23c7a05fbd489a8be3116ebf54b0d9f",
+      "method": "exact-direct-share-ownership",
+      "observedSharesRaw": "195398898486",
+      "canonicalAllocatedSharesRaw": "195396752798",
+      "attributedSharesRaw": "195398898486",
+      "canonicalOverlapUsd": "1219019.1878351471",
+      "reason": "Direct internal ownership excludes the actual shares even when parent recorded debt or locking makes its conversion value smaller",
+      "attributedHolderValueUsd": 1219032.5741056737
+    },
+    {
+      "parent": "0xc3bd0a2193c8f027b82dde3611d18589ef3f62a9",
+      "holder": "0xc3bd0a2193c8f027b82dde3611d18589ef3f62a9",
+      "child": "0xf115c134c23c7a05fbd489a8be3116ebf54b0d9f",
+      "method": "exact-direct-share-ownership",
+      "observedSharesRaw": "117634044601",
+      "canonicalAllocatedSharesRaw": "117632752854",
+      "attributedSharesRaw": "117634044601",
+      "canonicalOverlapUsd": "733873.929802983",
+      "reason": "Direct internal ownership excludes the actual shares even when parent recorded debt or locking makes its conversion value smaller",
+      "attributedHolderValueUsd": 733881.988606291
+    }
+  ],
+  "entries": [
+    {
+      "chainId": 8453,
+      "address": "0xf115c134c23c7a05fbd489a8be3116ebf54b0d9f",
+      "name": "Morpho Yearn Morpho Vault 1 Compounder",
+      "version": "v3",
+      "isFactory": false,
+      "isRetired": false,
+      "status": "valued",
+      "reason": null,
+      "nonSelfHolderSharesRaw": "315174725124",
+      "attributedInternalSharesRaw": "313032943087",
+      "attributedExternalSharesRaw": "2141782037",
+      "unadjustedHolderValueUsd": 1966276.4705332764,
+      "adjustedHolderValueUsd": 13361.907819312468,
+      "observedOverlapUsd": 1952914.562713964,
+      "averageNextMinuteUsdPerSecond": 0.00002636967307504771
+    },
+    {
+      "chainId": 8453,
+      "address": "0xb13cf163d916917d9cd6e836905ca5f12a1def4b",
+      "name": "True Yield Dollar",
+      "version": "v3",
+      "isFactory": false,
+      "isRetired": false,
+      "status": "valued",
+      "reason": null,
+      "nonSelfHolderSharesRaw": "1235451227591",
+      "attributedInternalSharesRaw": "0",
+      "attributedExternalSharesRaw": "1235451227591",
+      "unadjustedHolderValueUsd": 1292911.8375296309,
+      "adjustedHolderValueUsd": 1292911.8375296309,
+      "observedOverlapUsd": 0,
+      "averageNextMinuteUsdPerSecond": 0.0018811921511466304
+    },
+    {
+      "chainId": 8453,
+      "address": "0xc3bd0a2193c8f027b82dde3611d18589ef3f62a9",
+      "name": "USDC Horizon yVault",
+      "version": "v3",
+      "isFactory": false,
+      "isRetired": false,
+      "status": "valued",
+      "reason": null,
+      "nonSelfHolderSharesRaw": "675627968457",
+      "attributedInternalSharesRaw": "0",
+      "attributedExternalSharesRaw": "675627968457",
+      "unadjustedHolderValueUsd": 734630.6897105781,
+      "adjustedHolderValueUsd": 734630.6897105781,
+      "observedOverlapUsd": 0,
+      "averageNextMinuteUsdPerSecond": 0.0012728073149143408
+    },
+    {
+      "chainId": 8453,
+      "address": "0x4d3ceba4349adb06d2de8ebd2f9320a61303ad81",
+      "name": "Aerodrome hyUSD-eUSD Factory yVault",
+      "version": "v2",
+      "isFactory": true,
+      "isRetired": false,
+      "status": "unavailable",
+      "reason": "missing USD asset price",
+      "nonSelfHolderSharesRaw": "11463595003713790064156",
+      "attributedInternalSharesRaw": "0",
+      "attributedExternalSharesRaw": "11463595003713790064156",
+      "unadjustedHolderValueUsd": null,
+      "adjustedHolderValueUsd": null,
+      "observedOverlapUsd": null,
+      "averageNextMinuteUsdPerSecond": null
+    },
+    {
+      "chainId": 8453,
+      "address": "0x31ce9ab5a358e5c802cc01080f29a65a14eb45b8",
+      "name": "Aerodrome BMX-wBLT Factory yVault",
+      "version": "v2",
+      "isFactory": true,
+      "isRetired": false,
+      "status": "unavailable",
+      "reason": "missing USD asset price",
+      "nonSelfHolderSharesRaw": "1943211515911870172746",
+      "attributedInternalSharesRaw": "0",
+      "attributedExternalSharesRaw": "1943211515911870172746",
+      "unadjustedHolderValueUsd": null,
+      "adjustedHolderValueUsd": null,
+      "observedOverlapUsd": null,
+      "averageNextMinuteUsdPerSecond": null
+    },
+    {
+      "chainId": 8453,
+      "address": "0x0de119f5790c4ecf6eed80aac7c25d2dcad10f0f",
+      "name": "EURC Fluid Lender",
+      "version": "v3",
+      "isFactory": false,
+      "isRetired": false,
+      "status": "valued",
+      "reason": null,
+      "nonSelfHolderSharesRaw": "16873754516",
+      "attributedInternalSharesRaw": "0",
+      "attributedExternalSharesRaw": "16873754516",
+      "unadjustedHolderValueUsd": 19491.511364997616,
+      "adjustedHolderValueUsd": 19491.511364997616,
+      "observedOverlapUsd": 0,
+      "averageNextMinuteUsdPerSecond": 0.00001539463416217283
+    }
+  ]
+}

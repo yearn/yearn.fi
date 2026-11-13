@@ -1,0 +1,103 @@
+{
+  "chainId": 42161,
+  "blockNumber": "521200470",
+  "blockHash": "0x0f0ad10f4f12a6f48a2e0b93abc46ec3f47357c8893dc3034d1a71993511f54d",
+  "method": "Read-only pinned-state contract calls with timestamp overrides at snapshot, one hour, one day and seven days",
+  "passed": 8,
+  "failed": 0,
+  "unsupported": [],
+  "frames": [
+    {
+      "timestamp": "1793802839",
+      "checks": [
+        {
+          "chainId": 42161,
+          "address": "0xCACc53bAcCe744ac7b5C1eC7eb7e3Ab01330733b",
+          "name": "USDC CompoundV3 Lender",
+          "version": "v3",
+          "expected": "22746985063",
+          "actual": "22746985063",
+          "matched": true
+        },
+        {
+          "chainId": 42161,
+          "address": "0x239e14A19DFF93a17339DCC444f74406C17f8E67",
+          "name": "Curve Tricrypto Pool Vault",
+          "version": "v2",
+          "expected": "1110561005888671821",
+          "actual": "1110561005888671821",
+          "matched": true
+        }
+      ]
+    },
+    {
+      "timestamp": "1793806439",
+      "checks": [
+        {
+          "chainId": 42161,
+          "address": "0xCACc53bAcCe744ac7b5C1eC7eb7e3Ab01330733b",
+          "name": "USDC CompoundV3 Lender",
+          "version": "v3",
+          "expected": "22747061929",
+          "actual": "22747061929",
+          "matched": true
+        },
+        {
+          "chainId": 42161,
+          "address": "0x239e14A19DFF93a17339DCC444f74406C17f8E67",
+          "name": "Curve Tricrypto Pool Vault",
+          "version": "v2",
+          "expected": "1110561005888671821",
+          "actual": "1110561005888671821",
+          "matched": true
+        }
+      ]
+    },
+    {
+      "timestamp": "1793889239",
+      "checks": [
+        {
+          "chainId": 42161,
+          "address": "0xCACc53bAcCe744ac7b5C1eC7eb7e3Ab01330733b",
+          "name": "USDC CompoundV3 Lender",
+          "version": "v3",
+          "expected": "22748830012",
+          "actual": "22748830012",
+          "matched": true
+        },
+        {
+          "chainId": 42161,
+          "address": "0x239e14A19DFF93a17339DCC444f74406C17f8E67",
+          "name": "Curve Tricrypto Pool Vault",
+          "version": "v2",
+          "expected": "1110561005888671821",
+          "actual": "1110561005888671821",
+          "matched": true
+        }
+      ]
+    },
+    {
+      "timestamp": "1794407639",
+      "checks": [
+        {
+          "chainId": 42161,
+          "address": "0xCACc53bAcCe744ac7b5C1eC7eb7e3Ab01330733b",
+          "name": "USDC CompoundV3 Lender",
+          "version": "v3",
+          "expected": "22750557447",
+          "actual": "22750557447",
+          "matched": true
+        },
+        {
+          "chainId": 42161,
+          "address": "0x239e14A19DFF93a17339DCC444f74406C17f8E67",
+          "name": "Curve Tricrypto Pool Vault",
+          "version": "v2",
+          "expected": "1110561005888671821",
+          "actual": "1110561005888671821",
+          "matched": true
+        }
+      ]
+    }
+  ]
+}

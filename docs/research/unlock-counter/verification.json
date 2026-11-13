@@ -1,0 +1,757 @@
+{
+  "blockNumber": "26342075",
+  "blockHash": "0x8ebbd85fc01dd9d549c5e439952f896e209edc7d678363344dd53b6e2fef9598",
+  "method": "Read-only eth_call at pinned state with block timestamp override; no transactions",
+  "results": [
+    {
+      "address": "0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204",
+      "name": "USDC-1 yVault",
+      "checks": [
+        {
+          "timestamp": "1793802839",
+          "expected": "18239186256240",
+          "actual": "18239186256240",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793806439",
+          "expected": "18239308437002",
+          "actual": "18239308437002",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793889239",
+          "expected": "18242119046414",
+          "actual": "18242119046414",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1794201553",
+          "expected": "18252728173214",
+          "actual": "18252728173214",
+          "status": "matched"
+        }
+      ]
+    },
+    {
+      "address": "0x696d02Db93291651ED510704c9b286841d506987",
+      "name": "yvUSD",
+      "checks": [
+        {
+          "timestamp": "1793802839",
+          "expected": "15411113216989",
+          "actual": "15411113216989",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793806439",
+          "expected": "15411205866267",
+          "actual": "15411205866267",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793889239",
+          "expected": "15413337107161",
+          "actual": "15413337107161",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1794080063",
+          "expected": "15418251064869",
+          "actual": "15418251064869",
+          "status": "matched"
+        }
+      ]
+    },
+    {
+      "address": "0xAc37729B76db6438CE62042AE1270ee574CA7571",
+      "name": "WETH-2 yVault",
+      "checks": [
+        {
+          "timestamp": "1793802839",
+          "expected": "5102448388188567480407",
+          "actual": "5102448388188567480407",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793806439",
+          "expected": "5102452393401720616282",
+          "actual": "5102452393401720616282",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793889239",
+          "expected": "5102544515039722551218",
+          "actual": "5102544515039722551218",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1794160297",
+          "expected": "5102846110952693313932",
+          "actual": "5102846110952693313932",
+          "status": "matched"
+        }
+      ]
+    },
+    {
+      "address": "0xc56413869c6CDf96496f2b1eF801fEDBdFA7dDB0",
+      "name": "WETH-1 yVault",
+      "checks": [
+        {
+          "timestamp": "1793802839",
+          "expected": "4634389570972036678202",
+          "actual": "4634389570972036678202",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793806439",
+          "expected": "4634415938648717262612",
+          "actual": "4634415938648717262612",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793889239",
+          "expected": "4635022478034635949076",
+          "actual": "4635022478034635949076",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1794328488",
+          "expected": "4638242782479772366477",
+          "actual": "4638242782479772366477",
+          "status": "matched"
+        }
+      ]
+    },
+    {
+      "address": "0x182863131F9a4630fF9E27830d945B1413e347E8",
+      "name": "USDS-1 yVault",
+      "checks": [
+        {
+          "timestamp": "1793802839",
+          "expected": "8821618348219595431466286",
+          "actual": "8821618348219595431466286",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793806439",
+          "expected": "8821658076510307509822102",
+          "actual": "8821658076510307509822102",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793889239",
+          "expected": "8822571925969074765602690",
+          "actual": "8822571925969074765602690",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1794021228",
+          "expected": "8824029046503720665963250",
+          "actual": "8824029046503720665963250",
+          "status": "matched"
+        }
+      ]
+    },
+    {
+      "address": "0x0e297dE4005883C757c9F09fdF7cF1363C20e626",
+      "name": "Morpho Yearn OG USDC Compounder",
+      "checks": [
+        {
+          "timestamp": "1793802839",
+          "expected": "7470597011992",
+          "actual": "7470597011992",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793806439",
+          "expected": "7470654670339",
+          "actual": "7470654670339",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793889239",
+          "expected": "7471981058015",
+          "actual": "7471981058015",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793997540",
+          "expected": "7473716645722",
+          "actual": "7473716645722",
+          "status": "matched"
+        }
+      ]
+    },
+    {
+      "address": "0x9F4330700a36B29952869fac9b33f45EEdd8A3d8",
+      "name": "Yearn BOLD",
+      "checks": [
+        {
+          "timestamp": "1793802839",
+          "expected": "7607517097079790070979508",
+          "actual": "7607517097079790070979508",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793806439",
+          "expected": "7607517097079790070979508",
+          "actual": "7607517097079790070979508",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793889239",
+          "expected": "7607517097079790070979508",
+          "actual": "7607517097079790070979508",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1794407639",
+          "expected": "7607517097079790070979508",
+          "actual": "7607517097079790070979508",
+          "status": "matched"
+        }
+      ]
+    },
+    {
+      "address": "0x23346B04a7f55b8760E5860AA5A77383D63491cD",
+      "name": "Staked yBOLD",
+      "checks": [
+        {
+          "timestamp": "1793802839",
+          "expected": "7529856935236078056880155",
+          "actual": "7529856935236078056880155",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793806439",
+          "expected": "7529884651688230681674388",
+          "actual": "7529884651688230681674388",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793889239",
+          "expected": "7529884651688230681674388",
+          "actual": "7529884651688230681674388",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793803896",
+          "expected": "7529884651688230681674388",
+          "actual": "7529884651688230681674388",
+          "status": "matched"
+        }
+      ]
+    },
+    {
+      "address": "0x028eC7330ff87667b6dfb0D94b954c820195336c",
+      "name": "DAI-1 yVault",
+      "checks": [
+        {
+          "timestamp": "1793802839",
+          "expected": "5728970547140551878556535",
+          "actual": "5728970547140551878556535",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793806439",
+          "expected": "5728995339430917995202609",
+          "actual": "5728995339430917995202609",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793889239",
+          "expected": "5729565621338968240284923",
+          "actual": "5729565621338968240284923",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1794390188",
+          "expected": "5733018304794444568100241",
+          "actual": "5733018304794444568100241",
+          "status": "matched"
+        }
+      ]
+    },
+    {
+      "address": "0x310B7Ea7475A0B449Cfd73bE81522F1B88eFAFaa",
+      "name": "USDT-1 yVault",
+      "checks": [
+        {
+          "timestamp": "1793802839",
+          "expected": "5666166846153",
+          "actual": "5666166846153",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793806439",
+          "expected": "5666192788753",
+          "actual": "5666192788753",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793889239",
+          "expected": "5666789534111",
+          "actual": "5666789534111",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1794266856",
+          "expected": "5669512633430",
+          "actual": "5669512633430",
+          "status": "matched"
+        }
+      ]
+    },
+    {
+      "address": "0x751F0cC6115410A3eE9eC92d08f46Ff6Da98b708",
+      "name": "WBTC-1 yVault",
+      "checks": [
+        {
+          "timestamp": "1793802839",
+          "expected": "4748892823",
+          "actual": "4748892823",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793806439",
+          "expected": "4748892957",
+          "actual": "4748892957",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793889239",
+          "expected": "4748896036",
+          "actual": "4748896036",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793947092",
+          "expected": "4748898188",
+          "actual": "4748898188",
+          "status": "matched"
+        }
+      ]
+    },
+    {
+      "address": "0x074134A2784F4F66b6ceD6f68849382990Ff3215",
+      "name": "Morpho Steakhouse USDC Compounder",
+      "checks": [
+        {
+          "timestamp": "1793802839",
+          "expected": "2401023516905",
+          "actual": "2401023516905",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793806439",
+          "expected": "2401037153382",
+          "actual": "2401037153382",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793889239",
+          "expected": "2401350835116",
+          "actual": "2401350835116",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1794040236",
+          "expected": "2401923083469",
+          "actual": "2401923083469",
+          "status": "matched"
+        }
+      ]
+    },
+    {
+      "address": "0xBF319dDC2Edc1Eb6FDf9910E39b37Be221C8805F",
+      "name": "crvUSD-2 yVault",
+      "checks": [
+        {
+          "timestamp": "1793802839",
+          "expected": "1446877724388051126396799",
+          "actual": "1446877724388051126396799",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793806439",
+          "expected": "1446891880602426876809682",
+          "actual": "1446891880602426876809682",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793889239",
+          "expected": "1447217550004505874756407",
+          "actual": "1447217550004505874756407",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1794191314",
+          "expected": "1448406913147069637900807",
+          "actual": "1448406913147069637900807",
+          "status": "matched"
+        }
+      ]
+    },
+    {
+      "address": "0x863687e4E9751b57F38b4B0ebA04744C72d0f7B8",
+      "name": "Flex USDC yVault",
+      "checks": [
+        {
+          "timestamp": "1793802839",
+          "expected": "1119253742861",
+          "actual": "1119253742861",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793806439",
+          "expected": "1119257075715",
+          "actual": "1119257075715",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793889239",
+          "expected": "1119333736825",
+          "actual": "1119333736825",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1794097459",
+          "expected": "1119526564638",
+          "actual": "1119526564638",
+          "status": "matched"
+        }
+      ]
+    },
+    {
+      "address": "0xfaC55fAFD0b55BFb8dD41F735EfCc195adA9891F",
+      "name": "Flex WETH yVault",
+      "checks": [
+        {
+          "timestamp": "1793802839",
+          "expected": "310197438448168930215",
+          "actual": "310197438448168930215",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793806439",
+          "expected": "310198230889721819391",
+          "actual": "310198230889721819391",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793889239",
+          "expected": "310216458162972591250",
+          "actual": "310216458162972591250",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1794114792",
+          "expected": "310266121178879258465",
+          "actual": "310266121178879258465",
+          "status": "matched"
+        }
+      ]
+    },
+    {
+      "address": "0xc9f01b5c6048B064E6d925d1c2d7206d4fEeF8a3",
+      "name": "Spark USDS Compounder",
+      "checks": [
+        {
+          "timestamp": "1793802839",
+          "expected": "453993649729569017723965",
+          "actual": "453993649729569017723965",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793806439",
+          "expected": "453993649729569017723965",
+          "actual": "453993649729569017723965",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793889239",
+          "expected": "453993649729569017723965",
+          "actual": "453993649729569017723965",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1794407639",
+          "expected": "453993649729569017723965",
+          "actual": "453993649729569017723965",
+          "status": "matched"
+        }
+      ]
+    },
+    {
+      "address": "0x09AcE8B2f2fE2189A5B37046BBaFa29Dce31c920",
+      "name": "Curve Boosted crvUSD-sreUSD Lender",
+      "checks": [
+        {
+          "timestamp": "1793802839",
+          "expected": "370505654757444500574471",
+          "actual": "370505654757444500574471",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793806439",
+          "expected": "370507217253729767818124",
+          "actual": "370507217253729767818124",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793889239",
+          "expected": "370543158305969728656556",
+          "actual": "370543158305969728656556",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1794142560",
+          "expected": "370653160403302465439933",
+          "actual": "370653160403302465439933",
+          "status": "matched"
+        }
+      ]
+    },
+    {
+      "address": "0xAe7d8Db82480E6d8e3873ecbF22cf17b3D8A7308",
+      "name": "USDC-2 yVault",
+      "checks": [
+        {
+          "timestamp": "1793802839",
+          "expected": "266565209395",
+          "actual": "266565209395",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793806439",
+          "expected": "266567635724",
+          "actual": "266567635724",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793889239",
+          "expected": "266623453494",
+          "actual": "266623453494",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1794366288",
+          "expected": "266945500607",
+          "actual": "266945500607",
+          "status": "matched"
+        }
+      ]
+    },
+    {
+      "address": "0x1F6f16945e395593d8050d6Cc33e4328a515B648",
+      "name": "yYB yVault",
+      "checks": [
+        {
+          "timestamp": "1793802839",
+          "expected": "2591120771120602954676990",
+          "actual": "2591120771120602954676990",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793806439",
+          "expected": "2591143389258150029924596",
+          "actual": "2591143389258150029924596",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793889239",
+          "expected": "2591663715428210125485513",
+          "actual": "2591663715428210125485513",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1794081924",
+          "expected": "2592875376577331321774158",
+          "actual": "2592875376577331321774158",
+          "status": "matched"
+        }
+      ]
+    },
+    {
+      "address": "0xeEB6Be70fF212238419cD638FAB17910CF61CBE7",
+      "name": "Morpho Gauntlet WETH Prime Compounder",
+      "checks": [
+        {
+          "timestamp": "1793802839",
+          "expected": "62751484113770724973",
+          "actual": "62751484113770724973",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793806439",
+          "expected": "62752133161671462959",
+          "actual": "62752133161671462959",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793889239",
+          "expected": "62767064969955847021",
+          "actual": "62767064969955847021",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1794378120",
+          "expected": "62855372604316633766",
+          "actual": "62855372604316633766",
+          "status": "matched"
+        }
+      ]
+    },
+    {
+      "address": "0x694E47AFD14A64661a04eee674FB331bCDEF3737",
+      "name": "Morpho Gauntlet USDC Prime Compounder",
+      "checks": [
+        {
+          "timestamp": "1793802839",
+          "expected": "74974862681",
+          "actual": "74974862681",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793806439",
+          "expected": "74975286298",
+          "actual": "74975286298",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793889239",
+          "expected": "74985030822",
+          "actual": "74985030822",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1794042624",
+          "expected": "75003088894",
+          "actual": "75003088894",
+          "status": "matched"
+        }
+      ]
+    },
+    {
+      "address": "0xaF71a4f5d93fb88B24C67760BCF9688a6C3A54D4",
+      "name": "SKY-1 yVault",
+      "checks": [
+        {
+          "timestamp": "1793802839",
+          "expected": "609465674913191569787933",
+          "actual": "609465674913191569787933",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793806439",
+          "expected": "609465674913191569787933",
+          "actual": "609465674913191569787933",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793889239",
+          "expected": "609465674913191569787933",
+          "actual": "609465674913191569787933",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1794407639",
+          "expected": "609465674913191569787933",
+          "actual": "609465674913191569787933",
+          "status": "matched"
+        }
+      ]
+    },
+    {
+      "address": "0xC40dC53931cd184F782f3602d95C7e3609706004",
+      "name": "Sturdy pxETH Compounder",
+      "checks": [
+        {
+          "timestamp": "1793802839",
+          "expected": "6442590384332753635",
+          "actual": "6442590384332753635",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793806439",
+          "expected": "6442590384332753635",
+          "actual": "6442590384332753635",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793889239",
+          "expected": "6442590384332753635",
+          "actual": "6442590384332753635",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1794407639",
+          "expected": "6442590384332753635",
+          "actual": "6442590384332753635",
+          "status": "matched"
+        }
+      ]
+    },
+    {
+      "address": "0x7eE351aA702C8fC735D77Fb229b7676AC15D7c79",
+      "name": "Compound V3 USD Lender",
+      "checks": [
+        {
+          "timestamp": "1793802839",
+          "expected": "15549761273",
+          "actual": "15549761273",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793806439",
+          "expected": "15549761273",
+          "actual": "15549761273",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793889239",
+          "expected": "15549761273",
+          "actual": "15549761273",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1794407639",
+          "expected": "15549761273",
+          "actual": "15549761273",
+          "status": "matched"
+        }
+      ]
+    },
+    {
+      "address": "0x05329AAb081B125eEF7FbbC8b857428D478E692B",
+      "name": "Sturdy crvUSD Compounder",
+      "checks": [
+        {
+          "timestamp": "1793802839",
+          "expected": "15524632024380106873306",
+          "actual": "15524632024380106873306",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793806439",
+          "expected": "15524632024380106873306",
+          "actual": "15524632024380106873306",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1793889239",
+          "expected": "15524632024380106873306",
+          "actual": "15524632024380106873306",
+          "status": "matched"
+        },
+        {
+          "timestamp": "1794407639",
+          "expected": "15524632024380106873306",
+          "actual": "15524632024380106873306",
+          "status": "matched"
+        }
+      ]
+    }
+  ]
+}

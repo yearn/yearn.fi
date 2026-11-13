@@ -582,42 +582,40 @@ dialog .source-date {
   border: 0;
 }
 
+/* Compact metrics appear immediately below the hero. */
 .statistics-section {
-  min-height: calc(100svh - var(--header-height));
-  padding: 70px 7vw 90px;
   display: flex;
   flex-direction: column;
-  justify-content: center;
+  padding: 40px 16px 64px;
 }
 .statistics-grid {
-  width: min(100%, 1080px);
-  margin: auto;
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  width: 100%;
+  max-width: 1200px;
+  margin: 0 auto;
+  gap: 32px;
 }
 .stat {
-  display: grid;
-  grid-template-columns: minmax(0, 1fr) auto;
-  column-gap: 32px;
-  row-gap: 8px;
-  padding: 26px 0;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  text-align: center;
+  gap: 10px;
+  padding: 24px 0;
 }
 .stat dt {
-  font-size: 20px;
-  align-self: end;
+  font-size: 16px;
 }
 .stat dd:not(.stat-detail) {
-  grid-column: 2;
-  grid-row: 1 / span 2;
-  align-self: center;
   margin: 0;
-  text-align: right;
-  font-size: clamp(32px, 3.6vw, 54px);
+  font-size: clamp(36px, 4vw, 54px);
+  line-height: 1.1;
   letter-spacing: -0.05em;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
 .stat-detail {
-  grid-column: 1;
-  grid-row: 2;
   margin: 0;
   color: var(--muted);
   font-size: 12px;
@@ -625,20 +623,20 @@ dialog .source-date {
 }
 @media (max-width: 760px) {
   .statistics-section {
-    padding: 50px 24px 90px;
+    padding-block: 24px 48px;
+  }
+  .statistics-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 20px 24px;
   }
   .stat {
-    column-gap: 12px;
-    padding: 24px 0;
+    padding: 12px 0;
   }
   .stat dt {
     font-size: 14px;
   }
-  .stat dd:not(.stat-detail) {
-    font-size: clamp(20px, 5.8vw, 32px);
-  }
   .stat-detail {
-    font-size: 10px;
+    font-size: 11px;
   }
 }
 
@@ -1094,7 +1092,8 @@ dialog .source-date {
   border-radius: 4px;
   transition: background 0.2s;
 }
-.security-choice[aria-pressed="true"] {
+.security-choice[aria-pressed="true"],
+.security-choice[data-selected="true"] {
   background: #f3f4f1;
 }
 .security-choice:focus-visible {
@@ -1846,4 +1845,290 @@ a.primary-button:hover {
 .stat dd.metric-pending {
   font-size: clamp(22px, 3vw, 36px);
   color: var(--muted);
+}
+
+/* Preserve natural scrolling and reserve space for the second-scroll metrics. */
+.hero-stage {
+  --stats-scroll-distance: 120px;
+  height: calc(clamp(780px, 100svh, 1300px) + var(--stats-scroll-distance));
+}
+.hero-stage .hero {
+  position: relative;
+}
+/* The second scroll replaces the hero's down arrow with compact metrics. */
+.hero-statistics {
+  position: absolute;
+  bottom: calc(64px - var(--stats-scroll-distance) + var(--stats-bar-height, 160px));
+  left: 16px;
+  right: 16px;
+  width: calc(100% - 32px);
+  opacity: 0;
+  transform: translateY(12px);
+  visibility: hidden;
+  transition:
+    opacity 320ms ease,
+    transform 320ms ease,
+    visibility 320ms;
+}
+.hero .hero-bottom {
+  transition:
+    opacity 220ms ease,
+    transform 220ms ease,
+    visibility 220ms;
+}
+.hero.stats-visible .hero-statistics {
+  opacity: 1;
+  transform: translateY(0);
+  visibility: visible;
+}
+.hero.has-scrolled .hero-bottom {
+  opacity: 0;
+  transform: translateY(-8px);
+  visibility: hidden;
+  pointer-events: none;
+}
+@media (max-width: 760px) {
+  .hero-stage {
+    height: calc(clamp(650px, 100svh, 1000px) + var(--stats-scroll-distance));
+  }
+  .hero-statistics {
+    gap: 12px 20px;
+    bottom: calc(64px - var(--stats-scroll-distance) + var(--stats-bar-height, 160px));
+  }
+  .hero-statistics .stat {
+    gap: 6px;
+    padding: 4px 0;
+  }
+  .hero-statistics .stat dd:not(.stat-detail) {
+    font-size: 30px;
+  }
+  .hero-main {
+    transition: transform 320ms ease;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-statistics,
+  .hero .hero-bottom,
+  .hero-main {
+    transition: none;
+  }
+}
+
+.infrastructure-grid {
+  margin-top: 32px;
+  text-align: center;
+}
+.infrastructure-grid h3 {
+  font-size: clamp(22px, 2.1vw, 30px);
+  font-weight: 400;
+  letter-spacing: -0.035em;
+  line-height: 1.25;
+}
+.infrastructure-grid p {
+  margin-top: 20px;
+  color: var(--muted);
+  font-size: 16px;
+  line-height: 1.6;
+}
+.paths-section .integrations {
+  position: relative;
+  left: 50%;
+  transform: translateX(-50%);
+  align-self: flex-start;
+  width: 100vw;
+  margin-left: 0;
+  margin-top: 80px;
+}
+
+/* Each destination occupies its own screen; taller mobile content can flow naturally. */
+:root {
+  scroll-padding-top: 0;
+}
+.hero-stage {
+  position: relative;
+  height: calc(100svh + var(--stats-scroll-distance));
+}
+.hero-stats-stop {
+  position: absolute;
+  top: var(--stats-scroll-distance);
+  width: 1px;
+  height: 1px;
+  pointer-events: none;
+}
+.hero-stage .hero {
+  position: relative;
+  top: 0;
+  height: 100svh;
+  min-height: 0;
+  max-height: none;
+  padding-top: var(--header-height);
+  padding-bottom: var(--header-height);
+}
+.hero-statistics {
+  bottom: calc(64px - var(--stats-scroll-distance) + var(--stats-bar-height, 160px));
+}
+.hero-main {
+  transition: transform 320ms ease;
+}
+.hero.stats-visible .hero-main {
+  transform: none;
+}
+.paths-section,
+.security-section,
+.benefits-section {
+  min-height: 100svh;
+  padding-block: calc(var(--header-height) + 32px) 48px;
+}
+.paths-section,
+.benefits-section {
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+.paths-heading {
+  padding-block: 0 24px;
+}
+.paths-section .infrastructure-grid {
+  margin-top: 24px;
+}
+.paths-section .integrations {
+  margin-top: 40px;
+}
+.security-section {
+  align-content: center;
+}
+.benefits-section .benefits-grid {
+  margin-top: 48px;
+}
+.benefits-section .integrator-actions {
+  margin-top: 40px;
+}
+@media (max-width: 760px) {
+  .hero-statistics {
+    bottom: calc(64px - var(--stats-scroll-distance) + var(--stats-bar-height, 160px));
+  }
+  .hero.stats-visible .hero-main {
+    transform: none;
+  }
+  .paths-section,
+  .security-section,
+  .benefits-section {
+    padding-block: calc(var(--header-height) + 24px) 48px;
+  }
+  .paths-section .infrastructure-grid {
+    gap: 28px;
+  }
+}
+@media (max-height: 650px) {
+  .hero-stage .hero {
+    padding-block: var(--header-height) 24px;
+  }
+  .hero .tagline {
+    margin-top: 24px;
+  }
+  .hero .counter-caption {
+    margin-top: 16px;
+  }
+  .hero-statistics {
+    bottom: calc(32px - var(--stats-scroll-distance) + var(--stats-bar-height, 160px));
+  }
+  .hero.stats-visible .hero-main {
+    transform: none;
+  }
+  .hero-statistics .stat {
+    padding-block: 4px;
+    gap: 4px;
+  }
+  .hero-statistics .stat dd:not(.stat-detail) {
+    font-size: 28px;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .hero-main {
+    transition: none;
+  }
+}
+
+/* Whole-card documentation links keep their footprint stable on hover. */
+.infrastructure-grid > article {
+  display: flex;
+}
+.infrastructure-card {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  width: 100%;
+  padding: 24px 16px 20px;
+  border-radius: 6px;
+  transition: background-color 200ms ease;
+}
+.infrastructure-card:hover,
+.infrastructure-card:focus-visible {
+  background: #f3f4f1;
+}
+.infrastructure-card:focus-visible {
+  outline: 2px solid var(--blue);
+  outline-offset: 3px;
+}
+.card-read-more {
+  display: block;
+  padding-top: 20px;
+  margin-top: auto;
+  font-size: 14px;
+  color: var(--blue);
+  opacity: 0;
+  transition: opacity 200ms ease;
+}
+.infrastructure-card:hover .card-read-more,
+.infrastructure-card:focus-visible .card-read-more {
+  opacity: 1;
+}
+@media (hover: none) {
+  .card-read-more {
+    opacity: 1;
+  }
+}
+@media (prefers-reduced-motion: reduce) {
+  .infrastructure-card,
+  .card-read-more {
+    transition: none;
+  }
+}
+
+.security-link-row {
+  position: relative;
+}
+a.security-choice {
+  grid-template-columns: 22px minmax(0, 1fr) 18px;
+}
+.external-link-icon {
+  align-self: center;
+  opacity: 0;
+  transition: opacity 180ms ease;
+}
+a.security-choice:hover .external-link-icon,
+a.security-choice:focus-visible .external-link-icon {
+  opacity: 1;
+}
+a.security-choice:hover {
+  background: #f3f4f1;
+}
+.security-expand {
+  display: none;
+}
+@media (max-width: 760px) {
+  .security-link-row a.security-choice {
+    padding-right: 52px;
+  }
+  .security-expand {
+    display: block;
+    position: absolute;
+    right: 4px;
+    top: 50%;
+    transform: translateY(-50%);
+    width: 44px;
+    height: 44px;
+    background: transparent;
+    font-size: 22px;
+  }
 }

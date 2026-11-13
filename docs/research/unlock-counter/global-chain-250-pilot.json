@@ -1,0 +1,559 @@
+{
+  "sourceBlock": {
+    "chainId": 250,
+    "number": "123951333",
+    "hash": "0x0005729b000002f45e0eebe45c10d785227a20c0e74b1a77c19d2adff0e0681d",
+    "timestamp": 1793802825,
+    "secondsBeforeCommonTimestamp": 14
+  },
+  "schemaVersion": "depositor-value-multichain-pilot-2",
+  "modelVersion": "global-fixed-share-attribution-db-graph-v3",
+  "asOfTimestamp": 1793802839,
+  "scope": {
+    "label": "Closed Fantom V2/V3 pilot, $10k cutoff",
+    "selectedRootCount": 9,
+    "valuedRootCount": 2,
+    "definition": "Non-self holder share-conversion value minus attributed internal share positions. Exact direct ownership; canonical metrics budgets and caps allocate routed positions once at the snapshot. Not a complete holder census or immediately withdrawable liquidity.",
+    "excludedFromScope": [
+      "Other chains (combined separately using chain-scoped positions)",
+      "V1 and curation-only roots",
+      "Hidden and sub-cutoff roots; retired V3 roots"
+    ],
+    "dependencies": "Observed queue strategies are included for routing even when not selected roots",
+    "ownershipBoundary": "Selected roots across all screened chains in one canonical ledger. Updated DB mapping identities plus pinned queue/direct observations; cross-chain remote holders verified at destination block."
+  },
+  "aggregate": {
+    "completeValueUsd": null,
+    "knownSubtotalUsd": 60075.95631002904,
+    "unadjustedKnownSubtotalUsd": 60075.95631002904,
+    "observedOverlapUsd": 0,
+    "averageNextMinuteUsdPerSecond": 0,
+    "unadjustedAverageNextMinuteUsdPerSecond": 0,
+    "nextHourIncreaseUsd": 0,
+    "next24HoursIncreaseUsd": 0
+  },
+  "coverage": {
+    "unavailableRoots": [
+      {
+        "chainId": 250,
+        "chainName": "Fantom",
+        "address": "0xef0210eb96c7eb36af8ed1c20306462764935607",
+        "name": "USDC yVault",
+        "reason": "missing USD asset price"
+      },
+      {
+        "chainId": 250,
+        "chainName": "Fantom",
+        "address": "0xd817a100ab8a29fe3dbd925c2eb489d67f758da9",
+        "name": "WBTC yVault",
+        "reason": "missing USD asset price"
+      },
+      {
+        "chainId": 250,
+        "chainName": "Fantom",
+        "address": "0x637ec617c86d24e421328e6caea1d92114892439",
+        "name": "DAI yVault",
+        "reason": "missing USD asset price"
+      },
+      {
+        "chainId": 250,
+        "chainName": "Fantom",
+        "address": "0xce2fc0bdc18bd6a4d9a725791a3dee33f3a23bb7",
+        "name": "WETH yVault",
+        "reason": "missing USD asset price"
+      },
+      {
+        "chainId": 250,
+        "chainName": "Fantom",
+        "address": "0xf137d22d7b23eeb1950b3e19d1f578c053ed9715",
+        "name": "Curve Geist Pool yVault",
+        "reason": "missing USD asset price"
+      },
+      {
+        "chainId": 250,
+        "chainName": "Fantom",
+        "address": "0x148c05caf1bb09b5670f00d511718f733c54bc4c",
+        "name": "USDT yVault",
+        "reason": "missing USD asset price"
+      },
+      {
+        "chainId": 250,
+        "chainName": "Fantom",
+        "address": "0xcbcaf8cb8cbeafa927ecee0c5c56560f83e9b7d9",
+        "name": "Curve Tricrypto Pool yVault",
+        "reason": "missing USD asset price"
+      }
+    ],
+    "cutoffUnknownCandidates": [
+      {
+        "chainId": 250,
+        "address": "0x1e2fe8074a5ce1Bb7394856B0C618E75D823B93b",
+        "name": "fBEETS yVault",
+        "totalAssets": "161375589308462501313809",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Fantom"
+      },
+      {
+        "chainId": 250,
+        "address": "0xA97E7dA01C7047D6a65f894c99bE8c832227a8BC",
+        "name": "Curve MIM Pool Vault",
+        "totalAssets": "1070581483806550333624",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Fantom"
+      },
+      {
+        "chainId": 250,
+        "address": "0x03B82e4070cA32FF63A03F2EcfC16c0165689a9d",
+        "name": "Curve AVAX yVault",
+        "totalAssets": "16600000000000000",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Fantom"
+      }
+    ]
+  },
+  "projection": {
+    "fromTimestamp": 1793802839,
+    "validUntilTimestamp": 1793806439,
+    "interpolation": "Linear between published timestamps; values are recomputed from frozen external share positions, with base prices and contract state fixed.",
+    "points": [
+      {
+        "timestamp": 1793802839,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793802840,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793802899,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793802959,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793803019,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793803079,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793803139,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793803199,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793803259,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793803319,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793803379,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793803439,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793803499,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793803559,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793803619,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793803679,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793803739,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793803799,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793803859,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793803894,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793803895,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793803896,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793803919,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793803979,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793804039,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793804099,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793804159,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793804219,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793804279,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793804339,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793804399,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793804459,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793804519,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793804579,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793804639,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793804699,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793804759,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793804819,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793804879,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793804939,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793804999,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793805059,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793805119,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793805179,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793805239,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793805299,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793805359,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793805419,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793805479,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793805539,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793805599,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793805659,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793805719,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793805779,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793805839,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793805899,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793805959,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793806019,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793806079,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793806139,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793806199,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793806259,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793806319,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793806379,
+        "knownSubtotalUsd": 60075.95631002904
+      },
+      {
+        "timestamp": 1793806439,
+        "knownSubtotalUsd": 60075.95631002904
+      }
+    ],
+    "comparisonAfter24Hours": {
+      "timestamp": 1793889239,
+      "knownSubtotalUsd": 60075.95631002904
+    }
+  },
+  "entries": [
+    {
+      "chainId": 250,
+      "chainName": "Fantom",
+      "address": "0xef0210eb96c7eb36af8ed1c20306462764935607",
+      "name": "USDC yVault",
+      "version": "v2",
+      "isFactory": false,
+      "isRetired": true,
+      "status": "unavailable",
+      "reason": "missing USD asset price",
+      "nonSelfHolderSharesRaw": "1738814078987",
+      "attributedInternalSharesRaw": "0",
+      "attributedExternalSharesRaw": "1738814078987",
+      "unadjustedHolderValueUsd": null,
+      "adjustedHolderValueUsd": null,
+      "observedOverlapUsd": null,
+      "averageNextMinuteUsdPerSecond": null
+    },
+    {
+      "chainId": 250,
+      "chainName": "Fantom",
+      "address": "0xd817a100ab8a29fe3dbd925c2eb489d67f758da9",
+      "name": "WBTC yVault",
+      "version": "v2",
+      "isFactory": false,
+      "isRetired": true,
+      "status": "unavailable",
+      "reason": "missing USD asset price",
+      "nonSelfHolderSharesRaw": "1896894535",
+      "attributedInternalSharesRaw": "0",
+      "attributedExternalSharesRaw": "1896894535",
+      "unadjustedHolderValueUsd": null,
+      "adjustedHolderValueUsd": null,
+      "observedOverlapUsd": null,
+      "averageNextMinuteUsdPerSecond": null
+    },
+    {
+      "chainId": 250,
+      "chainName": "Fantom",
+      "address": "0x637ec617c86d24e421328e6caea1d92114892439",
+      "name": "DAI yVault",
+      "version": "v2",
+      "isFactory": false,
+      "isRetired": true,
+      "status": "unavailable",
+      "reason": "missing USD asset price",
+      "nonSelfHolderSharesRaw": "544180340128367169009610",
+      "attributedInternalSharesRaw": "0",
+      "attributedExternalSharesRaw": "544180340128367169009610",
+      "unadjustedHolderValueUsd": null,
+      "adjustedHolderValueUsd": null,
+      "observedOverlapUsd": null,
+      "averageNextMinuteUsdPerSecond": null
+    },
+    {
+      "chainId": 250,
+      "chainName": "Fantom",
+      "address": "0xce2fc0bdc18bd6a4d9a725791a3dee33f3a23bb7",
+      "name": "WETH yVault",
+      "version": "v2",
+      "isFactory": false,
+      "isRetired": true,
+      "status": "unavailable",
+      "reason": "missing USD asset price",
+      "nonSelfHolderSharesRaw": "98174458607836008178",
+      "attributedInternalSharesRaw": "0",
+      "attributedExternalSharesRaw": "98174458607836008178",
+      "unadjustedHolderValueUsd": null,
+      "adjustedHolderValueUsd": null,
+      "observedOverlapUsd": null,
+      "averageNextMinuteUsdPerSecond": null
+    },
+    {
+      "chainId": 250,
+      "chainName": "Fantom",
+      "address": "0xf137d22d7b23eeb1950b3e19d1f578c053ed9715",
+      "name": "Curve Geist Pool yVault",
+      "version": "v2",
+      "isFactory": false,
+      "isRetired": true,
+      "status": "unavailable",
+      "reason": "missing USD asset price",
+      "nonSelfHolderSharesRaw": "160591582866447127617373",
+      "attributedInternalSharesRaw": "0",
+      "attributedExternalSharesRaw": "160591582866447127617373",
+      "unadjustedHolderValueUsd": null,
+      "adjustedHolderValueUsd": null,
+      "observedOverlapUsd": null,
+      "averageNextMinuteUsdPerSecond": null
+    },
+    {
+      "chainId": 250,
+      "chainName": "Fantom",
+      "address": "0x0dec85e74a92c52b7f708c4b10207d9560cefaf0",
+      "name": "WFTM yVault",
+      "version": "v2",
+      "isFactory": false,
+      "isRetired": true,
+      "status": "valued",
+      "reason": null,
+      "nonSelfHolderSharesRaw": "382140391297391758352326",
+      "attributedInternalSharesRaw": "0",
+      "attributedExternalSharesRaw": "382140391297391758352326",
+      "unadjustedHolderValueUsd": 31190.67848712853,
+      "adjustedHolderValueUsd": 31190.67848712853,
+      "observedOverlapUsd": 0,
+      "averageNextMinuteUsdPerSecond": 0
+    },
+    {
+      "chainId": 250,
+      "chainName": "Fantom",
+      "address": "0x2c850cced00ce2b14aa9d658b7cad5df659493db",
+      "name": "YFI yVault",
+      "version": "v2",
+      "isFactory": false,
+      "isRetired": true,
+      "status": "valued",
+      "reason": null,
+      "nonSelfHolderSharesRaw": "13717245591499505916",
+      "attributedInternalSharesRaw": "0",
+      "attributedExternalSharesRaw": "13717245591499505916",
+      "unadjustedHolderValueUsd": 28885.277822900513,
+      "adjustedHolderValueUsd": 28885.277822900513,
+      "observedOverlapUsd": 0,
+      "averageNextMinuteUsdPerSecond": 0
+    },
+    {
+      "chainId": 250,
+      "chainName": "Fantom",
+      "address": "0x148c05caf1bb09b5670f00d511718f733c54bc4c",
+      "name": "USDT yVault",
+      "version": "v2",
+      "isFactory": false,
+      "isRetired": true,
+      "status": "unavailable",
+      "reason": "missing USD asset price",
+      "nonSelfHolderSharesRaw": "26184706623",
+      "attributedInternalSharesRaw": "0",
+      "attributedExternalSharesRaw": "26184706623",
+      "unadjustedHolderValueUsd": null,
+      "adjustedHolderValueUsd": null,
+      "observedOverlapUsd": null,
+      "averageNextMinuteUsdPerSecond": null
+    },
+    {
+      "chainId": 250,
+      "chainName": "Fantom",
+      "address": "0xcbcaf8cb8cbeafa927ecee0c5c56560f83e9b7d9",
+      "name": "Curve Tricrypto Pool yVault",
+      "version": "v2",
+      "isFactory": false,
+      "isRetired": true,
+      "status": "unavailable",
+      "reason": "missing USD asset price",
+      "nonSelfHolderSharesRaw": "5840717014425918432",
+      "attributedInternalSharesRaw": "0",
+      "attributedExternalSharesRaw": "5840717014425918432",
+      "unadjustedHolderValueUsd": null,
+      "adjustedHolderValueUsd": null,
+      "observedOverlapUsd": null,
+      "averageNextMinuteUsdPerSecond": null
+    }
+  ],
+  "ownershipGraph": {
+    "datasetId": "4a8caca4b3901493b2f691a7c1b5174cb5fa46e223e2439175b4934cb5311505",
+    "mappingTimestamp": 1793750399,
+    "pilotTimestamp": 1793802839,
+    "mappingUse": "Identity discovery only; no historical dollar allocation or ownership ratio copied into the pilot",
+    "routeReads": "db-ownership-routes.json",
+    "graph": "db-ownership-graph.json",
+    "ledgerInputs": "global-pilot-ledger-inputs.json",
+    "ledgerAudit": "global-pilot-ledger-audit.json"
+  }
+}

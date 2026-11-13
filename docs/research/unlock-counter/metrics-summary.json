@@ -1,0 +1,24 @@
+{
+  "source": "https://yearn-data-api-preview.vercel.app/api/tvl",
+  "capturedAt": "2026-11-04T15:26:36.334877+00:00",
+  "asOfTimestamp": 1793318399,
+  "datasetId": "010e4ce9d6ebf842222ef23a1b6f50aa4d36643942356b9e1e7b341895995316",
+  "totalTvl": 163940653.23410723,
+  "completeness": {
+    "issues": ["ValueError", "selected_child_block_mismatch"],
+    "scope": "network",
+    "status": "incomplete",
+    "totals": "known-subtotals",
+    "unresolvedPositions": 5,
+    "valuedVaultCount": 895,
+    "vaultCount": 1022
+  },
+  "overlapExcluded": 101052225.91764092,
+  "tvlByCategory": {
+    "curation": 52501574.612521246,
+    "v1": 2388193.393967392,
+    "v2": 40566278.997272074,
+    "v3": 136064641.89056814
+  },
+  "scopeNote": "Published network TVL; not the same scope or timestamp as the Ethereum V3 pilot. Gross vault valuation uses totalAssets, so locked profit is included before holder conversion adjustment."
+}

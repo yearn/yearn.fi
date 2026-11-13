@@ -8,8 +8,8 @@
     <title>Yearn | Curating Vaults since 2020</title>
     <meta name="description" content="A new Yearn landing concept. Years of yield. One simple idea." />
     <link rel="icon" href="/favicons/favicon-32x32.png" />
-    <link rel="stylesheet" href="/concepts/lifetime/style.css?v=statistics-62" />
-    <script src="/concepts/lifetime/concept.js?v=statistics-62" type="module"></script>
+    <link rel="stylesheet" href="/concepts/lifetime/style.css?v=first-scroll-stats-79" />
+    <script src="/concepts/lifetime/concept.js?v=first-scroll-stats-79" type="module"></script>
   </head>
   <body>
     <a class="skip" href="#main">Skip to content</a>
@@ -31,21 +31,30 @@
       <nav class="mobile-nav-content" aria-label="Mobile navigation"><div class="mobile-nav-actions"><a class="launch" href="https://yearn.fi/vaults">Launch app <span aria-hidden="true">↗</span></a><a class="launch build-launch" href="https://partners.yearn.fi"><span>Build with Yearn </span><span aria-hidden="true">↗</span></a></div><div id="mobile-nav-sections"></div></nav>
     </dialog>
     <main id="main">
+      <div class="hero-stage">
+        <div class="hero-stats-stop" aria-hidden="true"></div>
       <section class="hero" aria-labelledby="earnings-label">
         <div class="hero-main">
-          <div class="counter" role="img" aria-label="Loading lifetime earnings"><span class="currency" aria-hidden="true">$</span><span id="earnings" aria-hidden="true"><span id="earnings-whole">—</span><span id="earnings-decimals" class="counter-decimals"></span></span></div>
-          <h1 id="earnings-label" class="counter-caption">Earned for depositors, and counting.</h1>
+          <div class="counter" role="img" aria-label="Loading estimated total value locked"><span class="currency" aria-hidden="true">$</span><span id="earnings" aria-hidden="true"><span id="earnings-whole">—</span><span id="earnings-decimals" class="counter-decimals"></span></span></div>
+          <h1 id="earnings-label" class="counter-caption">Currently earning, and growing.</h1>
           <a class="tagline" id="tagline" href="https://yearn.fi/vaults"><span>Deposit once. Earn forever.</span><span class="tagline-arrow" aria-hidden="true">→</span></a>
         </div>
         <div class="hero-bottom"><a class="scroll-link" href="#capital" aria-label="Scroll to Yearn statistics"><span aria-hidden="true">↓</span><span class="sr-only">Scroll to <span class="yearn-word"><img src="/concepts/lifetime/navigation/YearnWordmark.svg" alt="Yearn" /></span> statistics</span></a></div>
-      </section>
-      <section class="statistics-section" id="capital" aria-label="Yearn statistics">
-        <dl class="statistics-grid reveal">
+        <dl class="statistics-grid hero-statistics" id="capital" aria-label="Yearn statistics" inert>
           <div class="stat" id="assets-secured"><dt>Total assets secured</dt><dd id="assets-secured-value">—</dd><dd class="stat-detail">Across Yearn vaults and partner contracts</dd></div>
           <div class="stat"><dt>Total value deposited</dt><dd id="tvl">—</dd><dd class="stat-detail">in Yearn Endorsed vaults</dd></div>
           <div class="stat"><dt>Vaults deployed</dt><dd id="vaults-deployed">—</dd><dd class="stat-detail">Indexed V2 + V3 vaults</dd></div>
           <div class="stat"><dt>Harvests</dt><dd id="harvest-count">—</dd><dd class="stat-detail">Recorded across V2 + V3 vaults</dd></div>
         </dl>
+      </section>
+      </div>
+      <section class="paths-section" id="your-way" aria-labelledby="paths-title">
+        <div class="paths-heading reveal"><h2 id="paths-title"><span class="yearn-word"><img src="/concepts/lifetime/navigation/YearnWordmark.svg" alt="Yearn" /></span> builds vault infrastructure to last.</h2><p>Whether you are looking to deposit your onchain assets and earn or are building a protocol that needs flexible yield generation infrastructure, Yearn is engineered for you.</p></div>
+        <div class="benefits-grid infrastructure-grid" id="build">
+          <article class="reveal"><a class="infrastructure-card" href="https://ethereum.org/developers/docs/standards/tokens/erc-4626/" target="_blank" rel="noopener noreferrer"><h3>Built on tried and true ERC-4626 code</h3><p>A shared standard for tokenized vaults, built on a codebase we helped create.</p><span class="card-read-more">Read more <span aria-hidden="true">→</span></span></a></article>
+          <article class="reveal"><a class="infrastructure-card" href="https://docs.yearn.fi/developers/v3/vault_management" target="_blank" rel="noopener noreferrer"><h3>Verifiable roles and accounting rules</h3><p>Clear permission and accounting rules with consistent code patterns you can verify.</p><span class="card-read-more">Read more <span aria-hidden="true">→</span></span></a></article>
+          <article class="reveal"><a class="infrastructure-card" href="https://docs.yearn.fi/developers/smart-contracts/V3/" target="_blank" rel="noopener noreferrer"><h3>Open source. Extendable. Flexible.</h3><p>Inspect the code, extend the foundation, and adapt vault infrastructure to your needs.</p><span class="card-read-more">Read more <span aria-hidden="true">→</span></span></a></article>
+        </div>
         <section class="integrations" aria-labelledby="integrations-title">
           <div class="integrations-heading"><h2 id="integrations-title">Teams building with <span class="yearn-word"><img src="/concepts/lifetime/navigation/YearnWordmark.svg" alt="Yearn" /></span></h2></div>
           <!-- biome-ignore lint/a11y/noNoninteractiveTabindex: The horizontal logo strip must support keyboard scrolling. -->
@@ -89,21 +98,14 @@
           </section>
         </section>
       </section>
-      <section class="paths-section" id="your-way" aria-labelledby="paths-title">
-        <div class="paths-heading reveal"><h2 id="paths-title"><span class="yearn-word"><img src="/concepts/lifetime/navigation/YearnWordmark.svg" alt="Yearn" /></span> builds vault infrastructure to last.</h2><p>Whether you are looking to deposit your onchain assets and earn or are building a protocol that needs flexible yield generation infrastructure, Yearn is engineered for you.</p></div>
-        <div class="paths">
-          <article class="path reveal" aria-labelledby="earn-title"><span class="eyebrow">For Depositors</span><h3 id="earn-title">Yield made easy.</h3><p>Find a vault for the assets you hold.<br />Deposit. Let the strategy take it from there.</p><a class="path-cta" href="https://yearn.fi/vaults">Explore vaults <span aria-hidden="true">↗</span></a></article>
-          <article class="path reveal" id="build" aria-labelledby="build-title"><span class="eyebrow">For Builders</span><h3 id="build-title">Make it part of yours.</h3><p>Bring Yearn vaults into your app, wallet or protocol.<br />Your experience. Yearn under the hood.</p><a class="path-cta" href="https://partners.yearn.fi"><span>Build with Yearn </span><span aria-hidden="true">↗</span></a></article>
-        </div>
-      </section>
       <section class="security-section feature-section" id="security" aria-labelledby="security-title">
         <div class="security-heading"><h2 id="security-title">Security is built in at every layer.</h2></div>
         <div class="security-layers" aria-label="Explore security features">
-<button class="security-choice" id="security-choice-code" type="button" aria-controls="security-code" aria-pressed="true" data-security="code"><span class="layer-number" aria-hidden="true">01</span><span><span class="security-choice-title">Open Source Code</span><span class="security-choice-description">Inspect the foundation your vaults are built on.</span></span><span class="choice-arrow" aria-hidden="true"></span></button>
-<button class="security-choice" id="security-choice-audits" type="button" aria-controls="security-audits" aria-pressed="false" data-security="audits"><span class="layer-number" aria-hidden="true">02</span><span><span class="security-choice-title">Extensively Audited</span><span class="security-choice-description">Independent reviews, with reports you can read.</span></span><span class="choice-arrow" aria-hidden="true"></span></button>
-<button class="security-choice" id="security-choice-monitoring" type="button" aria-controls="security-monitoring" aria-pressed="false" data-security="monitoring"><span class="layer-number" aria-hidden="true">03</span><span><span class="security-choice-title">Active Monitoring</span><span class="security-choice-description">Real alerts from Yearn Curation.</span></span><span class="choice-arrow" aria-hidden="true"></span></button>
+<div class="security-link-row"><a class="security-choice" id="security-choice-code" href="https://github.com/yearn/yearn-vaults-v3/blob/89ab996bf94a16878e174e50e9862d69c6495875/contracts/VaultV3.vy" target="_blank" rel="noopener noreferrer" aria-controls="security-code" data-selected="true" data-security="code"><span class="layer-number" aria-hidden="true">01</span><span><span class="security-choice-title">Open Source Code</span><span class="security-choice-description">Inspect the foundation your vaults are built on.</span></span><span class="external-link-icon" aria-hidden="true">↗</span></a><button class="security-expand" type="button" aria-controls="security-code" aria-expanded="true" aria-label="Expand code details">+</button></div>
+<div class="security-link-row"><a class="security-choice" id="security-choice-audits" href="https://github.com/yearn/yearn-security/tree/master/audits" target="_blank" rel="noopener noreferrer" aria-controls="security-audits" data-selected="false" data-security="audits"><span class="layer-number" aria-hidden="true">02</span><span><span class="security-choice-title">Extensively Audited</span><span class="security-choice-description">Independent reviews, with reports you can read.</span></span><span class="external-link-icon" aria-hidden="true">↗</span></a><button class="security-expand" type="button" aria-controls="security-audits" aria-expanded="false" aria-label="Expand audits details">+</button></div>
+<div class="security-link-row"><a class="security-choice" id="security-choice-monitoring" href="https://curation.yearn.fi/monitoring/" target="_blank" rel="noopener noreferrer" aria-controls="security-monitoring" data-selected="false" data-security="monitoring"><span class="layer-number" aria-hidden="true">03</span><span><span class="security-choice-title">Active Monitoring</span><span class="security-choice-description">Real alerts from Yearn Curation.</span></span><span class="external-link-icon" aria-hidden="true">↗</span></a><button class="security-expand" type="button" aria-controls="security-monitoring" aria-expanded="false" aria-label="Expand monitoring details">+</button></div>
 <button class="security-choice" id="security-choice-breakers" type="button" aria-controls="security-breakers" aria-pressed="false" data-security="breakers"><span class="layer-number" aria-hidden="true">04</span><span><span class="security-choice-title">Automated Circuit Breakers</span><span class="security-choice-description">Defined limits. Protective responses.</span></span><span class="choice-arrow" aria-hidden="true"></span></button>
-<button class="security-choice" id="security-choice-underwriting" type="button" aria-controls="security-underwriting" aria-pressed="false" data-security="underwriting"><span class="layer-number" aria-hidden="true">05</span><span><span class="security-choice-title">Defi-native Underwriting</span><span class="security-choice-description">Understand the risks behind the allocation.</span></span><span class="choice-arrow" aria-hidden="true"></span></button>
+<div class="security-link-row"><a class="security-choice" id="security-choice-underwriting" href="https://curation.yearn.fi/reports/" target="_blank" rel="noopener noreferrer" aria-controls="security-underwriting" data-selected="false" data-security="underwriting"><span class="layer-number" aria-hidden="true">05</span><span><span class="security-choice-title">Defi-native Underwriting</span><span class="security-choice-description">Understand the risks behind the allocation.</span></span><span class="external-link-icon" aria-hidden="true">↗</span></a><button class="security-expand" type="button" aria-controls="security-underwriting" aria-expanded="false" aria-label="Expand underwriting details">+</button></div>
         </div>
         <div class="security-display">
           <section class="security-panel" id="security-code"  aria-labelledby="security-choice-code">
@@ -2422,7 +2424,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
       </section>
     </main>
     <footer><a class="brand" href="#main" aria-label="Back to top"><img src="/concepts/lifetime/navigation/TypeMarkYearn.svg?v=37" alt="Yearn" width="116" height="32" /></a><nav class="footer-links" aria-label="Footer navigation"><a href="https://docs.yearn.fi/" target="_blank" rel="noopener noreferrer">Docs <span aria-hidden="true">↗</span></a><a href="https://discord.gg/yearn" target="_blank" rel="noopener noreferrer">Support <span aria-hidden="true">↗</span></a><a href="https://blog.yearn.fi/" target="_blank" rel="noopener noreferrer">Blog <span aria-hidden="true">↗</span></a><a href="https://gov.yearn.fi/" target="_blank" rel="noopener noreferrer">Discourse <span aria-hidden="true">↗</span></a><a href="https://github.com/yearn" target="_blank" rel="noopener noreferrer">Github <span aria-hidden="true">↗</span></a><a href="https://x.com/yearnfi" target="_blank" rel="noopener noreferrer">X (Twitter) <span aria-hidden="true">↗</span></a></nav></footer>
-    <dialog id="notes" aria-labelledby="notes-title"><div class="dialog-top"><span class="eyebrow">Behind the Numbers</span><button class="close" type="button" aria-label="Close data notes">×</button></div><h2 id="notes-title">A moment in <span class="yearn-word"><img src="/concepts/lifetime/navigation/YearnWordmark.svg" alt="Yearn" /></span>.</h2><p>This concept uses a captured <span class="yearn-word"><img src="/concepts/lifetime/navigation/YearnWordmark.svg" alt="Yearn" /></span> Data publication, not a live feed.</p><dl><dt>Lifetime earnings</dt><dd id="earnings-note">Loading source details.</dd><dt>The moving number</dt><dd id="animation-note">Loading animation details.</dd><dt>Total value deposited</dt><dd id="tvl-note">Loading source details.</dd><dt>Lifetime fees</dt><dd id="fees-note">Loading source details.</dd><dt>Vaults deployed</dt><dd id="vaults-note">Loading source details.</dd><dt>Harvests</dt><dd id="harvests-note">Loading source details.</dd></dl><p class="source-date" id="capture-date"></p><a class="source-link" href="/concepts/lifetime/data.json" target="_blank" rel="noreferrer">View the source snapshot ↗</a><button class="replay-button" id="replay" type="button">Refresh the estimate</button></dialog>
+    <dialog id="notes" aria-labelledby="notes-title"><div class="dialog-top"><span class="eyebrow">Behind the Numbers</span><button class="close" type="button" aria-label="Close data notes">×</button></div><h2 id="notes-title">A moment in <span class="yearn-word"><img src="/concepts/lifetime/navigation/YearnWordmark.svg" alt="Yearn" /></span>.</h2><p>This concept uses a captured <span class="yearn-word"><img src="/concepts/lifetime/navigation/YearnWordmark.svg" alt="Yearn" /></span> Data publication, not a live feed.</p><dl><dt>TVL hero baseline</dt><dd id="earnings-note">Loading source details.</dd><dt>The moving number</dt><dd id="animation-note">Loading animation details.</dd><dt>Total value deposited</dt><dd id="tvl-note">Loading source details.</dd><dt>Lifetime fees</dt><dd id="fees-note">Loading source details.</dd><dt>Vaults deployed</dt><dd id="vaults-note">Loading source details.</dd><dt>Harvests</dt><dd id="harvests-note">Loading source details.</dd></dl><p class="source-date" id="capture-date"></p><a class="source-link" href="/concepts/lifetime/hero-tvl.json" target="_blank" rel="noreferrer">View the counter snapshot ↗</a><button class="replay-button" id="replay" type="button">Refresh the estimate</button></dialog>
     <noscript><p class="noscript">Enable JavaScript to view the captured metrics. The vault and documentation links work without it.</p></noscript>
   </body>
 </html>

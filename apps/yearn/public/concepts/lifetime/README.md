@@ -35,9 +35,9 @@ The October 21 read-only Neon capture records 732 Yearn-managed vaults (639 V2, 
 
 ## Deposited value and shared earnings counter
 
-The deposited-value snapshot was refreshed from `https://yearn-data-api-preview.vercel.app/api/tvl`, the default hosted data target in Powerglove. Its TVL overview renders `totalTvl` directly; the concept now captures the same $208,172,781.1714352 response. Source URL, field, capture time and observation boundary are stored in `tvlSource`. This remains a captured snapshot rather than a live feed. The requested “in Yearn Endorsed vaults” display copy does not introduce an endorsed-only filter: the API aggregate retains its existing categories, retired holdings, overlap and bridge accounting.
+The hero and “Total value deposited” row now read the same `hero-tvl.json` baseline and use the same clock-based estimated growth value. The hero shows cents; the row abbreviates the same value (for example, `$171M`). Both become unavailable if the shared hero snapshot cannot load. The historical `data.json` TVL field is retained as provenance but no longer drives either display.
 
-Hero and statistics earnings are painted from the same value on every animation frame, with two decimal places in the hero and whole dollars in the statistics, including tab restoration and reduced motion.
+The requested “in Yearn Endorsed vaults” copy remains unchanged. It does not introduce an endorsed-only filter: the published API aggregate retains its categories, overlap deductions and bridge exclusions. The displayed estimate is not live measured TVL.
 
 ## Integrations strip
 
@@ -67,3 +67,17 @@ Security iteration 19: monitoring requests 20 alerts with protocol/action/date c
 
 
 The branch now serves this static landing at `/` through a Next.js beforeFiles rewrite. Absolute asset URLs also preserve the original `/concepts/lifetime/` review route. The existing React homepage is bypassed, while app routes remain unchanged. The concept retains its noindex directive and snapshot/demo data; production data and SEO integration remain separate work.
+
+## Estimated TVL hero
+
+The hero now reads `hero-tvl.json` and displays “Currently earning, and growing.” The captured anchor is the latest published Yearn Metrics known TVL subtotal, currently $171,537,470.25. Estimated growth is the approved research pilot's first-minute net rate, $0.236693889/s, with Yearn scheduled unlocking and Morpho projected accrual retained as separate source components.
+
+`counter-model.mjs` computes `anchor.valueUsd + estimatedUsdPerSecond * max(0, now - anchor.timestamp)`. The anchor is shared by all windows and retained when regenerating from identical source versions. Rendering never accumulates frame deltas or resets time after reload. Visibility, page restoration, focus and an animation watchdog restart rendering from the canonical clock position. Counter animation continues under reduced motion as previously requested; other site motion keeps its existing preference handling.
+
+Generate the capture from the repository root:
+
+```sh
+/usr/bin/node docs/research/unlock-counter/build-hero-counter.mjs
+```
+
+The source JSON and data notes distinguish the metrics reporting date, pilot growth date and presentation capture time. This is a constant-rate mockup estimate beyond the pilot's sampled curve, not a live TVL endpoint. Published TVL already contains locked profits; the animation does not represent new measured totalAssets. No historical growth is backfilled between the older metrics close and the capture. Before production, refresh and align the underlying evidence and replace indefinite constant-rate extrapolation with a refreshed model. Hero failure shows unavailable independently of the other landing statistics.

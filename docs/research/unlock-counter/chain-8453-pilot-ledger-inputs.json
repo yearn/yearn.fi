@@ -1,0 +1,97 @@
+{
+  "timestamp": 1793802839,
+  "rows": [
+    {
+      "chain_id": 8453,
+      "vault": "0xf115c134c23c7a05fbd489a8be3116ebf54b0d9f",
+      "name": "Morpho Yearn Morpho Vault 1 Compounder",
+      "version": "v3",
+      "category": "v3",
+      "timestamp": 1793802839,
+      "block_number": 53506746,
+      "tvl_usd": "1967995.6605903637"
+    },
+    {
+      "chain_id": 8453,
+      "vault": "0xb13cf163d916917d9cd6e836905ca5f12a1def4b",
+      "name": "True Yield Dollar",
+      "version": "v3",
+      "category": "v3",
+      "timestamp": 1793802839,
+      "block_number": 53506746,
+      "tvl_usd": "1293226.512877747"
+    },
+    {
+      "chain_id": 8453,
+      "vault": "0xc3bd0a2193c8f027b82dde3611d18589ef3f62a9",
+      "name": "USDC Horizon yVault",
+      "version": "v3",
+      "category": "v3",
+      "timestamp": 1793802839,
+      "block_number": 53506746,
+      "tvl_usd": "734843.6070202857"
+    },
+    {
+      "chain_id": 8453,
+      "vault": "0x4d3ceba4349adb06d2de8ebd2f9320a61303ad81",
+      "name": "Aerodrome hyUSD-eUSD Factory yVault",
+      "version": "v2",
+      "category": "v2",
+      "timestamp": 1793802839,
+      "block_number": 53506746,
+      "tvl_usd": null
+    },
+    {
+      "chain_id": 8453,
+      "vault": "0x31ce9ab5a358e5c802cc01080f29a65a14eb45b8",
+      "name": "Aerodrome BMX-wBLT Factory yVault",
+      "version": "v2",
+      "category": "v2",
+      "timestamp": 1793802839,
+      "block_number": 53506746,
+      "tvl_usd": null
+    },
+    {
+      "chain_id": 8453,
+      "vault": "0x0de119f5790c4ecf6eed80aac7c25d2dcad10f0f",
+      "name": "EURC Fluid Lender",
+      "version": "v3",
+      "category": "v3",
+      "timestamp": 1793802839,
+      "block_number": 53506746,
+      "tvl_usd": "19504.714708499367"
+    }
+  ],
+  "positions": [
+    {
+      "chain_id": 8453,
+      "parent": "0xb13cf163d916917d9cd6e836905ca5f12a1def4b",
+      "strategy": "0xb13cf163d916917d9cd6e836905ca5f12a1def4b",
+      "child": "0xf115c134c23c7a05fbd489a8be3116ebf54b0d9f",
+      "timestamp": 1793802839,
+      "block_number": 53506746,
+      "child_block_number": 53506746,
+      "method": "direct-strategy",
+      "debt_usd": "1219019.1878351471",
+      "owned_usd": "1219032.5741056737",
+      "status": "ok",
+      "source": "pinned direct strategy/holder observation",
+      "balance_raw": "195398898486"
+    },
+    {
+      "chain_id": 8453,
+      "parent": "0xc3bd0a2193c8f027b82dde3611d18589ef3f62a9",
+      "strategy": "0xc3bd0a2193c8f027b82dde3611d18589ef3f62a9",
+      "child": "0xf115c134c23c7a05fbd489a8be3116ebf54b0d9f",
+      "timestamp": 1793802839,
+      "block_number": 53506746,
+      "child_block_number": 53506746,
+      "method": "direct-strategy",
+      "debt_usd": "733873.929802983",
+      "owned_usd": "733881.988606291",
+      "status": "ok",
+      "source": "pinned direct strategy/holder observation",
+      "balance_raw": "117634044601"
+    }
+  ]
+}

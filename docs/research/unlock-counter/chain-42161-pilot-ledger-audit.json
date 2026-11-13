@@ -1,0 +1,55 @@
+{
+  "engine": {
+    "engine": "yearn_data.tvl.account",
+    "engineSha256": "ca49b7100309cc807a9725eca32ac13eb01fbc805f762e719822387d5a357293",
+    "sourceCommit": "0108ed6ec7279c917ff9f29dfac234319f5c1c29"
+  },
+  "baseline": {
+    "timestamp": 1793802839,
+    "rows": [
+      {
+        "chain_id": 42161,
+        "vault": "0xcacc53bacce744ac7b5c1ec7eb7e3ab01330733b",
+        "name": "USDC CompoundV3 Lender",
+        "version": "v3",
+        "category": "v3",
+        "timestamp": 1793802839,
+        "block_number": 521200470,
+        "tvl_usd": "22738.778105720994",
+        "accounting_unresolved": false,
+        "overlap_usd": "0",
+        "external_tvl_usd": "22738.778105720994"
+      },
+      {
+        "chain_id": 42161,
+        "vault": "0x239e14a19dff93a17339dcc444f74406c17f8e67",
+        "name": "Curve Tricrypto Pool Vault",
+        "version": "v2",
+        "category": "v2",
+        "timestamp": 1793802839,
+        "block_number": 521200470,
+        "tvl_usd": "17237.20103409411",
+        "accounting_unresolved": false,
+        "overlap_usd": "0",
+        "external_tvl_usd": "17237.20103409411"
+      }
+    ],
+    "positions": [],
+    "diagnostics": {
+      "timestamp": 1793802839,
+      "gross_tvl_usd": "39975.979139815104",
+      "overlap_usd": "0",
+      "external_tvl_usd": "39975.979139815104",
+      "known_gross_tvl_usd": "39975.979139815104",
+      "known_overlap_usd": "0",
+      "known_external_tvl_usd": "39975.979139815104",
+      "vault_count": 2,
+      "valued_vault_count": 2,
+      "position_count": 0,
+      "unresolved_positions": 0,
+      "status": "complete",
+      "mapping_scope": "known candidates",
+      "issues": []
+    }
+  }
+}

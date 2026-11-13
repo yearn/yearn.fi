@@ -1,0 +1,1196 @@
+{
+  "sourceBlock": {
+    "chainId": 10,
+    "number": "159102031",
+    "hash": "0xe2215994a42e1f7228a91d4682e89591e4f3c92dcc61e431c1029beae53f5656",
+    "timestamp": 1793802839,
+    "secondsBeforeCommonTimestamp": 0
+  },
+  "schemaVersion": "depositor-value-curation-pilot-1",
+  "modelVersion": "global-share-conversion-curation-v1",
+  "asOfTimestamp": 1793802839,
+  "scope": {
+    "label": "Closed OP Mainnet V2/V3 pilot, $10k cutoff",
+    "selectedRootCount": 14,
+    "valuedRootCount": 4,
+    "definition": "Non-self holder share-conversion value minus attributed internal share positions. Exact direct ownership; canonical metrics budgets and caps allocate routed positions once at the snapshot. Not a complete holder census or immediately withdrawable liquidity.",
+    "excludedFromScope": [
+      "Other chains (combined separately using chain-scoped positions)",
+      "V1 and curation-only roots",
+      "Hidden and sub-cutoff roots; retired V3 roots"
+    ],
+    "dependencies": "Observed queue strategies are included for routing even when not selected roots",
+    "ownershipBoundary": "Selected roots across all screened chains in one canonical ledger. Updated DB mapping identities plus pinned queue/direct observations; cross-chain remote holders verified at destination block."
+  },
+  "aggregate": {
+    "completeValueUsd": null,
+    "knownSubtotalUsd": 129779.66491945858,
+    "unadjustedKnownSubtotalUsd": 129779.97922697691,
+    "observedOverlapUsd": 0.31430751831794623,
+    "averageNextMinuteUsdPerSecond": 0,
+    "unadjustedAverageNextMinuteUsdPerSecond": 0,
+    "nextHourIncreaseUsd": 0,
+    "next24HoursIncreaseUsd": 0
+  },
+  "coverage": {
+    "unavailableRoots": [
+      {
+        "chainId": 10,
+        "chainName": "Optimism",
+        "address": "0xf7d66b41cd4241eae450fd9d2d6995754634d9f3",
+        "name": "Velodrome v2 alETH-WETH Factory yVault",
+        "reason": "missing USD asset price"
+      },
+      {
+        "chainId": 10,
+        "chainName": "Optimism",
+        "address": "0xd0d2ac44cc842079e978bb11b094764f7d0dec6a",
+        "name": "Velodrome v2 msETH-WETH Factory yVault",
+        "reason": "missing USD asset price"
+      },
+      {
+        "chainId": 10,
+        "chainName": "Optimism",
+        "address": "0x7e1d451799af57ea5570d1015c342c12a918a30b",
+        "name": "Velodrome v2 alETH-frxETH Factory yVault",
+        "reason": "missing USD asset price"
+      },
+      {
+        "chainId": 10,
+        "chainName": "Optimism",
+        "address": "0x65bab5c963aec5bfc72986c2a4c468c190d6de96",
+        "name": "Velodrome v2 STG-USDC Factory yVault",
+        "reason": "missing USD asset price"
+      },
+      {
+        "chainId": 10,
+        "chainName": "Optimism",
+        "address": "0x3b141bd7d6e1d67e2101a08e4dd849a8408d91aa",
+        "name": "Velodrome v2 alUSD-USDC.e Factory yVault",
+        "reason": "missing USD asset price"
+      },
+      {
+        "chainId": 10,
+        "chainName": "Optimism",
+        "address": "0x8e8d635e28bb8774fd23107cc1d9b6d30ad5d0b9",
+        "name": "Velodrome v2 IB-WETH Factory yVault",
+        "reason": "missing USD asset price"
+      },
+      {
+        "chainId": 10,
+        "chainName": "Optimism",
+        "address": "0xbc61b71562b01a3a4808d3b9291a3bf743ab3361",
+        "name": "Velodrome v2 LUSD-WETH Factory yVault",
+        "reason": "missing USD asset price"
+      },
+      {
+        "chainId": 10,
+        "chainName": "Optimism",
+        "address": "0x88b429359665b8685b7431f5a0f6e8c719bf49aa",
+        "name": "Velodrome v2 VELO-USDC.e Factory yVault",
+        "reason": "missing USD asset price"
+      },
+      {
+        "chainId": 10,
+        "chainName": "Optimism",
+        "address": "0xfa3c6122906f2a2d644409dbb507db1060d10b3a",
+        "name": "Velodrome v2 RED-OP Factory yVault",
+        "reason": "missing USD asset price"
+      },
+      {
+        "chainId": 10,
+        "chainName": "Optimism",
+        "address": "0xd3668ca9df5d1bba8d264b8d10dd2f0c5962cc4c",
+        "name": "Velodrome v2 ERN-WETH Factory yVault",
+        "reason": "missing USD asset price"
+      }
+    ],
+    "cutoffUnknownCandidates": [
+      {
+        "chainId": 10,
+        "address": "0xD7EE0E2d232BcBeFa74EF36A439d0De880c6ece5",
+        "name": "Velodrome v2 RED-VELO Factory yVault",
+        "totalAssets": "230788742181019634298944",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0x83b8391B9efBc5B5A38777fB22A4968c622a405a",
+        "name": "Velodrome v2 BLU-USDC.e Factory yVault",
+        "totalAssets": "423622161393621446",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0xDdDCAeE873f2D9Df0E18a80709ef2B396d4a6EA5",
+        "name": "Velodrome v2 OP-WETH Factory yVault",
+        "totalAssets": "193833727300803271786",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0x03894Ca9b0CABfC53dDE7C2DCfcC2A58D6192687",
+        "name": "Velodrome v2 agEUR-USDC.e Factory yVault",
+        "totalAssets": "46580801398630",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0x906122aC1b55B71248ABFA552fDc6ABd3356884A",
+        "name": "Velodrome v2 MTA-USDC.e Factory yVault",
+        "totalAssets": "15318807336160977",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0x00a2faF97CC2b985B29a0a0eAa6E0D8033Dc0eA1",
+        "name": "Velodrome v2 tBTC-WETH Factory yVault",
+        "totalAssets": "185170623055072374",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0xa3d57625B9a6284D1265d76294443b1E39a18007",
+        "name": "Velodrome v2 ERN-USDC Factory yVault",
+        "totalAssets": "2195194379336520",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0x7bDEA31F968089f93A548ddec8BB74036E8ac6e0",
+        "name": "Velodrome v2 ERN-LUSD Factory yVault",
+        "totalAssets": "1791969130344827818724",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0xC86B70e2C16C5fB5315e4663737E0E077ABFC395",
+        "name": "Velodrome v2 OP-VELO Factory yVault",
+        "totalAssets": "19989526133453436096762",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0x3f14Df340498F3EAA2894BFc19789dD592Dc062D",
+        "name": "Velodrome v2 FRAX-DOLA Factory yVault",
+        "totalAssets": "1369775874421652597336",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0x9056b19Fde674B5Ad8397e7Ed3E25a1BCCEf0C27",
+        "name": "Velodrome v2 alUSD-FRAX Factory yVault",
+        "totalAssets": "1301752023740838116476",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0x01c77E8a099e97B7b0Dca2F987d9bd1911CdDE50",
+        "name": "Velodrome v2 SNX-USDC.e Factory yVault",
+        "totalAssets": "2627525835233018",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0xa7B550B3A80361d8e47E07616dC42f04c655881b",
+        "name": "Velodrome v2 stERN-ERN Factory yVault",
+        "totalAssets": "1119621727810326761650",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0x39F60710a27a87332d10E3333c2eFF41EeC911Ee",
+        "name": "Velodrome v2 DOLA-USDC.e Factory yVault",
+        "totalAssets": "1121130438529719",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0x50032bE2b2c7e8A6a6bc241e3aEbef21497A3cF0",
+        "name": "Velodrome v2 ERN-DOLA Factory yVault",
+        "totalAssets": "1079619273530629581452",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0x507343bAD3a1ee0B67C3B1712133290DED43980D",
+        "name": "Velodrome v2 LDO-wstETH Factory yVault",
+        "totalAssets": "26695400567029412799",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0xc009D857bFA8AE8d43ddF2DDbe1686063fC73799",
+        "name": "Velodrome v2 DOLA-USDC Factory yVault",
+        "totalAssets": "984379565992425",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0x3AD9566b15AACDd26d8a220cA8635F925EA7a3f6",
+        "name": "Velodrome v2 OP-USDC.e Factory yVault",
+        "totalAssets": "2138070552995344",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0x36bAF52bc8A2dB4450500c1a6c78f10F6d0E1C3B",
+        "name": "Velodrome v2 TAROT-USDC.e Factory yVault",
+        "totalAssets": "8200884576304954",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0x830cB4AabF786b9349d9701dD8ee073215d95174",
+        "name": "Velodrome v2 wstETH-OP Factory yVault",
+        "totalAssets": "32125894320066938469",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0x6Ec9d003f0e5184Ee54c1d899B414322a0f0Dc07",
+        "name": "Velodrome v2 wstETH-WETH Factory yVault",
+        "totalAssets": "226353752659324689",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0x1d49ab5b03268E329fc7d2111E5364e63b36a3cE",
+        "name": "Velodrome v2 MAI-USDC.e Factory yVault",
+        "totalAssets": "15075576088358219",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0xc3439Ba7db7566ed0deF55c179ED9b3bA273A67F",
+        "name": "Velodrome v2 EXA-WETH Factory yVault",
+        "totalAssets": "21263738898638491625",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0x45b0a7Dc29B7856A1B5069DB4CfA2A984b69cC41",
+        "name": "Velodrome v2 THALES-WETH Factory yVault",
+        "totalAssets": "18174291426942496035",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0x2a90F479002DAae9934c3a70EBB6e8DbeB46292b",
+        "name": "sUSD yVault",
+        "totalAssets": "823274249936986758756",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0xD02Ce9E211279ab3f414ff7A661518f9173780CB",
+        "name": "Velodrome v2 MAI-alUSD Factory yVault",
+        "totalAssets": "3691270638371688970913",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0xdD76A3C91A358B1093de52Cb82af5EC3282f6f7F",
+        "name": "Velodrome v2 TAROT-OP Factory yVault",
+        "totalAssets": "3840257084133835717556",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0x27939E33435cc4ee4e74c0F0260914596bcEb116",
+        "name": "Velodrome v2 OATH-WETH Factory yVault",
+        "totalAssets": "254286068820876447861",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0xf39B6196E6BB16cf0f37E4741a83413Cc329539D",
+        "name": "Velodrome v2 GRAIN-WETH Factory yVault",
+        "totalAssets": "123785229662016388764",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0x78e20312105A85B7fe86dB119CfD5cD8de81FDaA",
+        "name": "Velodrome v2 USD+-DAI+ Factory yVault",
+        "totalAssets": "27504555152070",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0x5e70E0EdE43373bD9CF4Bc85199d424AcF0241EF",
+        "name": "Curve sUSD Pool yVault",
+        "totalAssets": "109823749780620900382",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0xC328D83883F5F90E1108D4Dd7A18FFcA17Ae74d7",
+        "name": "sUSD yVault",
+        "totalAssets": "296244048744915814512",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0x686c125472024bDd3fA74eeb3720B3237541dCDC",
+        "name": "Velodrome v2 KWENTA-WETH Factory yVault",
+        "totalAssets": "688309651086736921",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0xa31Ad8D355B5223Ad34FD4fD0bC854A68E7D9681",
+        "name": "Velodrome v2 THALES-USDC.e Factory yVault",
+        "totalAssets": "111070882803426",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0xf6B272134A193Df5b04332e73184E5b40b8EB810",
+        "name": "Velodrome v2 STG-USDC.e Factory yVault",
+        "totalAssets": "186498657098286",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0xB3532518DACA20Fd14e539B0eD6C0De5C59Fd2DE",
+        "name": "Velodrome v2 frxETH-WETH Factory yVault",
+        "totalAssets": "14881526195055550",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0x68f2B1db2DA6204489279a8fC681f83728bB9622",
+        "name": "Velodrome v2 MAI-DOLA Factory yVault",
+        "totalAssets": "890092647910785589923",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0x93d6D0AB2b2aA25580cb77e8C5f9D5a0cc5E08Fe",
+        "name": "Velodrome v2 UNIDX-WETH Factory yVault",
+        "totalAssets": "14711425153352731946",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0xAa07Ca79490B3CDA1A25B8fCC69b76C09C6e7A4f",
+        "name": "Velodrome v2 CHI-DAI Factory yVault",
+        "totalAssets": "120901015885851282185",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0xB9A14C5C760023801f8c731b4621C99F8ac211D9",
+        "name": "Velodrome v2 SONNE-USDC.e Factory yVault",
+        "totalAssets": "1843775342533232",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0xf5A8aF3C13C0f6c139F58aac8A549100484E0aaD",
+        "name": "Velodrome v2 UNLOCK-VELO Factory yVault",
+        "totalAssets": "11584481920101256047966",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0xc2626aCEdc27cFfB418680d0307C9178955A4743",
+        "name": "Velodrome v2 sfrxETH-frxETH Factory yVault",
+        "totalAssets": "5142927051242626",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0x71117Bcd8FE69177EEb8857538D625209756B745",
+        "name": "Velodrome v2 rETH-WETH Factory yVault",
+        "totalAssets": "4862678639430538",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0xb4E4CFA9971C7e1069685771DaB61CA56e72e5C3",
+        "name": "Curve sETH Pool yVault",
+        "totalAssets": "43601865894726081",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0x9778589c8e0417687cF5D3Dd2eD7C4ec01d7e53B",
+        "name": "Velodrome v2 UNIDX-DAI Factory yVault",
+        "totalAssets": "112259685505190304267",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0x6a44B0415a5c440D32E82965FDFAad54a72D477D",
+        "name": "Velodrome v2 sETH-WETH Factory yVault",
+        "totalAssets": "11159170003288114",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0x6657BdB994fC8678f6D709077F30aA0B3249b5c8",
+        "name": "Velodrome v2 LYRA-USDC.e Factory yVault",
+        "totalAssets": "259488798608038",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0x8BF2D37ACC93FdE36DCfFe9Ba9b8B0fB5d2fA747",
+        "name": "Velodrome sAMMV2-pxETH/WETH Factory yVault",
+        "totalAssets": "864312754305665",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0x00Cb8E36A9C40491A39e8bF2864Ed30C1B579860",
+        "name": "Velodrome v2 tBTC-WBTC Factory yVault",
+        "totalAssets": "176840820412",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0x05bBAF27429EB35cb3d51a979aCBA69f2F00E66A",
+        "name": "Velodrome v2 wTBT-USDC.e Factory yVault",
+        "totalAssets": "11033695307633",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0x1B1d2EfB6045851F8ccdE24369003e0fF157980b",
+        "name": "Velodrome v2 sUSD-USDC.e Factory yVault",
+        "totalAssets": "11842916006255",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0x22687Ca792A8Cb5E169a77E0949e71Fe37147604",
+        "name": "Velodrome USDC-DOLA yVault",
+        "totalAssets": "1562459850268",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0x36E4c18B2B43CC989085B4a7306915b115058abF",
+        "name": "Velodrome v2 DAI-USDC.e Factory yVault",
+        "totalAssets": "9512420057978",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0x3fb792Fa67cde50A41e20304E4afEf522CF711ee",
+        "name": "Velodrome v2 USDT-USDC.e Factory yVault",
+        "totalAssets": "15091923",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0x4F1220f6375e95b43462465972cB2f478Ed34D0b",
+        "name": "Velodrome v2 USD+-DOLA Factory yVault",
+        "totalAssets": "30143005655953",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0x4e9C59F9b1b13bA7E1Ac4c09B64Df7Fdeff41b03",
+        "name": "Velodrome v2 USX-USDC.e Factory yVault",
+        "totalAssets": "5462754028425",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0x531fDb1C8429F404116932226D487db94471C4b7",
+        "name": "Velodrome v2 wUSDR-USDC.e Factory yVault",
+        "totalAssets": "4818295905",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0x56EeF8430dDdF95b2B92c58B21edf1AC7F77E6a6",
+        "name": "Velodrome v2 USD+-USDC.e Factory yVault",
+        "totalAssets": "19008499",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0x6F4f01A02e6037AA98d22405fEA4DCAB98D2a8eE",
+        "name": "Velodrome v2 PERP-USDC.e Factory yVault",
+        "totalAssets": "14355510157",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0x6aFA09145245eAeDDdAb9333523af9984494FF34",
+        "name": "Velodrome v2 LUSD-USDC.e Factory yVault",
+        "totalAssets": "10217253820932",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0x950f384f566b82CCA6380f75AE42E2BBE9B357B2",
+        "name": "Velodrome v2 MIM-USDC.e Factory yVault",
+        "totalAssets": "12360466624534",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0x9E724b3f65b509326A4F5Ec90D4689BeE6b6C78e",
+        "name": "Velodrome v2 ERN-USDC.e Factory yVault",
+        "totalAssets": "14412458141209",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0xC3566662862c26FF56e3E709dc021902cC68BecD",
+        "name": "Velodrome v2 TAROT-USDC.e Factory yVault",
+        "totalAssets": "17725693480689",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0xCF6beF33c49824226fB9dEFCdc3b1DE11F207Db7",
+        "name": "Velodrome v2 FRAX-USDC.e Factory yVault",
+        "totalAssets": "30359335479111",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0xD402F3c8A999BFE97F8644E80DbD57E2bA7704ae",
+        "name": "Velodrome v2 QI-USDC.e Factory yVault",
+        "totalAssets": "10534555812651",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0xF89FdBBCE1A707061e9d59B8E4387f89798B4d10",
+        "name": "Velodrome v2 USDC.e-WETH Factory yVault",
+        "totalAssets": "1686465428358",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      },
+      {
+        "chainId": 10,
+        "address": "0xb83DBAC6087592328909996A39D138e89E4B0AfE",
+        "name": "Velodrome v2 USD+-FRAX Factory yVault",
+        "totalAssets": "22092200470908",
+        "reason": "funded but USD price unavailable",
+        "chainName": "Optimism"
+      }
+    ]
+  },
+  "projection": {
+    "fromTimestamp": 1793802839,
+    "validUntilTimestamp": 1793806439,
+    "interpolation": "Linear between published timestamps; values are recomputed from frozen external share positions, with base prices and contract state fixed.",
+    "points": [
+      {
+        "timestamp": 1793802839,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793802840,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793802899,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793802959,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793803019,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793803079,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793803139,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793803199,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793803259,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793803319,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793803379,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793803439,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793803499,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793803559,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793803619,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793803679,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793803739,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793803799,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793803859,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793803894,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793803895,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793803896,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793803919,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793803979,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793804039,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793804099,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793804159,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793804219,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793804279,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793804339,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793804399,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793804459,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793804519,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793804579,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793804639,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793804699,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793804759,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793804819,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793804879,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793804939,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793804999,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793805059,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793805119,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793805179,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793805239,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793805299,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793805359,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793805419,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793805479,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793805539,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793805599,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793805659,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793805719,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793805779,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793805839,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793805899,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793805959,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793806019,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793806079,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793806139,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793806199,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793806259,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793806319,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793806379,
+        "knownSubtotalUsd": 129779.66491945858
+      },
+      {
+        "timestamp": 1793806439,
+        "knownSubtotalUsd": 129779.66491945858
+      }
+    ],
+    "comparisonAfter24Hours": {
+      "timestamp": 1793889239,
+      "knownSubtotalUsd": 129779.66491945858
+    }
+  },
+  "entries": [
+    {
+      "chainId": 10,
+      "chainName": "Optimism",
+      "address": "0xf7d66b41cd4241eae450fd9d2d6995754634d9f3",
+      "name": "Velodrome v2 alETH-WETH Factory yVault",
+      "version": "v2",
+      "isFactory": true,
+      "isRetired": false,
+      "status": "unavailable",
+      "reason": "missing USD asset price",
+      "growthFamily": "scheduled-yearn-unlock",
+      "nonSelfHolderSharesRaw": "248194486970140805623",
+      "attributedInternalSharesRaw": "0",
+      "attributedExternalSharesRaw": "248194486970140805623",
+      "unadjustedHolderValueUsd": null,
+      "adjustedHolderValueUsd": null,
+      "observedOverlapUsd": null,
+      "averageNextMinuteUsdPerSecond": null
+    },
+    {
+      "chainId": 10,
+      "chainName": "Optimism",
+      "address": "0xd0d2ac44cc842079e978bb11b094764f7d0dec6a",
+      "name": "Velodrome v2 msETH-WETH Factory yVault",
+      "version": "v2",
+      "isFactory": true,
+      "isRetired": false,
+      "status": "unavailable",
+      "reason": "missing USD asset price",
+      "growthFamily": "scheduled-yearn-unlock",
+      "nonSelfHolderSharesRaw": "19292073382275645466",
+      "attributedInternalSharesRaw": "0",
+      "attributedExternalSharesRaw": "19292073382275645466",
+      "unadjustedHolderValueUsd": null,
+      "adjustedHolderValueUsd": null,
+      "observedOverlapUsd": null,
+      "averageNextMinuteUsdPerSecond": null
+    },
+    {
+      "chainId": 10,
+      "chainName": "Optimism",
+      "address": "0x5b977577eb8a480f63e11fc615d6753adb8652ae",
+      "name": "WETH yVault",
+      "version": "v2",
+      "isFactory": false,
+      "isRetired": true,
+      "status": "valued",
+      "reason": null,
+      "growthFamily": "scheduled-yearn-unlock",
+      "nonSelfHolderSharesRaw": "25584928628173646430",
+      "attributedInternalSharesRaw": "130000000000000",
+      "attributedExternalSharesRaw": "25584798628173646430",
+      "unadjustedHolderValueUsd": 61857.96479538871,
+      "adjustedHolderValueUsd": 61857.65048787039,
+      "observedOverlapUsd": 0.31430751831794623,
+      "averageNextMinuteUsdPerSecond": 0
+    },
+    {
+      "chainId": 10,
+      "chainName": "Optimism",
+      "address": "0x7e1d451799af57ea5570d1015c342c12a918a30b",
+      "name": "Velodrome v2 alETH-frxETH Factory yVault",
+      "version": "v2",
+      "isFactory": true,
+      "isRetired": false,
+      "status": "unavailable",
+      "reason": "missing USD asset price",
+      "growthFamily": "scheduled-yearn-unlock",
+      "nonSelfHolderSharesRaw": "9831103930695150448",
+      "attributedInternalSharesRaw": "0",
+      "attributedExternalSharesRaw": "9831103930695150448",
+      "unadjustedHolderValueUsd": null,
+      "adjustedHolderValueUsd": null,
+      "observedOverlapUsd": null,
+      "averageNextMinuteUsdPerSecond": null
+    },
+    {
+      "chainId": 10,
+      "chainName": "Optimism",
+      "address": "0xad17a225074191d5c8a37b50fda1ae278a2ee6a2",
+      "name": "USDC.e yVault",
+      "version": "v2",
+      "isFactory": false,
+      "isRetired": true,
+      "status": "valued",
+      "reason": null,
+      "growthFamily": "scheduled-yearn-unlock",
+      "nonSelfHolderSharesRaw": "38144519766",
+      "attributedInternalSharesRaw": "0",
+      "attributedExternalSharesRaw": "38144519766",
+      "unadjustedHolderValueUsd": 41682.79088520157,
+      "adjustedHolderValueUsd": 41682.79088520157,
+      "observedOverlapUsd": 0,
+      "averageNextMinuteUsdPerSecond": 0
+    },
+    {
+      "chainId": 10,
+      "chainName": "Optimism",
+      "address": "0x65bab5c963aec5bfc72986c2a4c468c190d6de96",
+      "name": "Velodrome v2 STG-USDC Factory yVault",
+      "version": "v2",
+      "isFactory": true,
+      "isRetired": false,
+      "status": "unavailable",
+      "reason": "missing USD asset price",
+      "growthFamily": "scheduled-yearn-unlock",
+      "nonSelfHolderSharesRaw": "29773506848015350",
+      "attributedInternalSharesRaw": "0",
+      "attributedExternalSharesRaw": "29773506848015350",
+      "unadjustedHolderValueUsd": null,
+      "adjustedHolderValueUsd": null,
+      "observedOverlapUsd": null,
+      "averageNextMinuteUsdPerSecond": null
+    },
+    {
+      "chainId": 10,
+      "chainName": "Optimism",
+      "address": "0x3b141bd7d6e1d67e2101a08e4dd849a8408d91aa",
+      "name": "Velodrome v2 alUSD-USDC.e Factory yVault",
+      "version": "v2",
+      "isFactory": true,
+      "isRetired": false,
+      "status": "unavailable",
+      "reason": "missing USD asset price",
+      "growthFamily": "scheduled-yearn-unlock",
+      "nonSelfHolderSharesRaw": "13917252794744192",
+      "attributedInternalSharesRaw": "0",
+      "attributedExternalSharesRaw": "13917252794744192",
+      "unadjustedHolderValueUsd": null,
+      "adjustedHolderValueUsd": null,
+      "observedOverlapUsd": null,
+      "averageNextMinuteUsdPerSecond": null
+    },
+    {
+      "chainId": 10,
+      "chainName": "Optimism",
+      "address": "0x8e8d635e28bb8774fd23107cc1d9b6d30ad5d0b9",
+      "name": "Velodrome v2 IB-WETH Factory yVault",
+      "version": "v2",
+      "isFactory": true,
+      "isRetired": false,
+      "status": "unavailable",
+      "reason": "missing USD asset price",
+      "growthFamily": "scheduled-yearn-unlock",
+      "nonSelfHolderSharesRaw": "728154091578441374807",
+      "attributedInternalSharesRaw": "0",
+      "attributedExternalSharesRaw": "728154091578441374807",
+      "unadjustedHolderValueUsd": null,
+      "adjustedHolderValueUsd": null,
+      "observedOverlapUsd": null,
+      "averageNextMinuteUsdPerSecond": null
+    },
+    {
+      "chainId": 10,
+      "chainName": "Optimism",
+      "address": "0x7d2382b1f8af621229d33464340541db362b4907",
+      "name": "OP yVault",
+      "version": "v2",
+      "isFactory": false,
+      "isRetired": true,
+      "status": "valued",
+      "reason": null,
+      "growthFamily": "scheduled-yearn-unlock",
+      "nonSelfHolderSharesRaw": "140282943111075098814659",
+      "attributedInternalSharesRaw": "0",
+      "attributedExternalSharesRaw": "140282943111075098814659",
+      "unadjustedHolderValueUsd": 15956.326538421958,
+      "adjustedHolderValueUsd": 15956.326538421958,
+      "observedOverlapUsd": 0,
+      "averageNextMinuteUsdPerSecond": 0
+    },
+    {
+      "chainId": 10,
+      "chainName": "Optimism",
+      "address": "0xbc61b71562b01a3a4808d3b9291a3bf743ab3361",
+      "name": "Velodrome v2 LUSD-WETH Factory yVault",
+      "version": "v2",
+      "isFactory": true,
+      "isRetired": false,
+      "status": "unavailable",
+      "reason": "missing USD asset price",
+      "growthFamily": "scheduled-yearn-unlock",
+      "nonSelfHolderSharesRaw": "116316363284822164706",
+      "attributedInternalSharesRaw": "0",
+      "attributedExternalSharesRaw": "116316363284822164706",
+      "unadjustedHolderValueUsd": null,
+      "adjustedHolderValueUsd": null,
+      "observedOverlapUsd": null,
+      "averageNextMinuteUsdPerSecond": null
+    },
+    {
+      "chainId": 10,
+      "chainName": "Optimism",
+      "address": "0x88b429359665b8685b7431f5a0f6e8c719bf49aa",
+      "name": "Velodrome v2 VELO-USDC.e Factory yVault",
+      "version": "v2",
+      "isFactory": true,
+      "isRetired": false,
+      "status": "unavailable",
+      "reason": "missing USD asset price",
+      "growthFamily": "scheduled-yearn-unlock",
+      "nonSelfHolderSharesRaw": "14312121081531968",
+      "attributedInternalSharesRaw": "53977535338592",
+      "attributedExternalSharesRaw": "14258143546193376",
+      "unadjustedHolderValueUsd": null,
+      "adjustedHolderValueUsd": null,
+      "observedOverlapUsd": null,
+      "averageNextMinuteUsdPerSecond": null
+    },
+    {
+      "chainId": 10,
+      "chainName": "Optimism",
+      "address": "0xfa3c6122906f2a2d644409dbb507db1060d10b3a",
+      "name": "Velodrome v2 RED-OP Factory yVault",
+      "version": "v2",
+      "isFactory": true,
+      "isRetired": false,
+      "status": "unavailable",
+      "reason": "missing USD asset price",
+      "growthFamily": "scheduled-yearn-unlock",
+      "nonSelfHolderSharesRaw": "7969430491815605236669",
+      "attributedInternalSharesRaw": "0",
+      "attributedExternalSharesRaw": "7969430491815605236669",
+      "unadjustedHolderValueUsd": null,
+      "adjustedHolderValueUsd": null,
+      "observedOverlapUsd": null,
+      "averageNextMinuteUsdPerSecond": null
+    },
+    {
+      "chainId": 10,
+      "chainName": "Optimism",
+      "address": "0xd3668ca9df5d1bba8d264b8d10dd2f0c5962cc4c",
+      "name": "Velodrome v2 ERN-WETH Factory yVault",
+      "version": "v2",
+      "isFactory": true,
+      "isRetired": false,
+      "status": "unavailable",
+      "reason": "missing USD asset price",
+      "growthFamily": "scheduled-yearn-unlock",
+      "nonSelfHolderSharesRaw": "80064728821408315845",
+      "attributedInternalSharesRaw": "0",
+      "attributedExternalSharesRaw": "80064728821408315845",
+      "unadjustedHolderValueUsd": null,
+      "adjustedHolderValueUsd": null,
+      "observedOverlapUsd": null,
+      "averageNextMinuteUsdPerSecond": null
+    },
+    {
+      "chainId": 10,
+      "chainName": "Optimism",
+      "address": "0x65343f414ffd6c97b0f6add33d16f6845ac22bac",
+      "name": "DAI yVault",
+      "version": "v2",
+      "isFactory": false,
+      "isRetired": true,
+      "status": "valued",
+      "reason": null,
+      "growthFamily": "scheduled-yearn-unlock",
+      "nonSelfHolderSharesRaw": "11876675470843864067407",
+      "attributedInternalSharesRaw": "0",
+      "attributedExternalSharesRaw": "11876675470843864067407",
+      "unadjustedHolderValueUsd": 10282.897007964662,
+      "adjustedHolderValueUsd": 10282.897007964662,
+      "observedOverlapUsd": 0,
+      "averageNextMinuteUsdPerSecond": 0
+    }
+  ],
+  "ownershipGraph": {
+    "datasetId": "4a8caca4b3901493b2f691a7c1b5174cb5fa46e223e2439175b4934cb5311505",
+    "mappingTimestamp": 1793750399,
+    "pilotTimestamp": 1793802839,
+    "mappingUse": "Identity discovery only; no historical dollar allocation or ownership ratio copied into the pilot",
+    "routeReads": "curation-ownership-routes.json",
+    "graph": "db-ownership-graph.json",
+    "ledgerInputs": "curation-ledger-inputs.json",
+    "ledgerAudit": "curation-ledger-audit.json"
+  }
+}

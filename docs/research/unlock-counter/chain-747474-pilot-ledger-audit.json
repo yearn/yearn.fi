@@ -1,0 +1,144 @@
+{
+  "engine": {
+    "engine": "yearn_data.tvl.account",
+    "engineSha256": "ca49b7100309cc807a9725eca32ac13eb01fbc805f762e719822387d5a357293",
+    "sourceCommit": "0108ed6ec7279c917ff9f29dfac234319f5c1c29"
+  },
+  "baseline": {
+    "timestamp": 1793802839,
+    "rows": [
+      {
+        "chain_id": 747474,
+        "vault": "0xe007ca01894c863d7898045ed5a3b4abf0b18f37",
+        "name": "vbETH yVault",
+        "version": "v3",
+        "category": "v3",
+        "timestamp": 1793802839,
+        "block_number": 47060028,
+        "tvl_usd": "6100629.822761116",
+        "accounting_unresolved": false,
+        "overlap_usd": "0",
+        "external_tvl_usd": "6100629.822761116"
+      },
+      {
+        "chain_id": 747474,
+        "vault": "0x80c34bd3a3569e126e7055831036aa7b212cb159",
+        "name": "vbUSDC yVault",
+        "version": "v3",
+        "category": "v3",
+        "timestamp": 1793802839,
+        "block_number": 47060028,
+        "tvl_usd": "5995452.428322942",
+        "accounting_unresolved": false,
+        "overlap_usd": "307140.77982497524",
+        "external_tvl_usd": "5688311.64849796676"
+      },
+      {
+        "chain_id": 747474,
+        "vault": "0x9a6bd7b6fd5c4f87eb66356441502fc7dcdd185b",
+        "name": "vbUSDT yVault",
+        "version": "v3",
+        "category": "v3",
+        "timestamp": 1793802839,
+        "block_number": 47060028,
+        "tvl_usd": "1413560.7207196099",
+        "accounting_unresolved": false,
+        "overlap_usd": "0",
+        "external_tvl_usd": "1413560.7207196099"
+      },
+      {
+        "chain_id": 747474,
+        "vault": "0xaa0362ecc584b985056e47812931270b99c91f9d",
+        "name": "vbWBTC yVault",
+        "version": "v3",
+        "category": "v3",
+        "timestamp": 1793802839,
+        "block_number": 47060028,
+        "tvl_usd": "872611.2665470704",
+        "accounting_unresolved": false,
+        "overlap_usd": "0",
+        "external_tvl_usd": "872611.2665470704"
+      },
+      {
+        "chain_id": 747474,
+        "vault": "0x0432337365d89c0d73f1d0cb263791f8f1b98d43",
+        "name": "Morpho vbWBTC/yvUSDC Lender Borrower",
+        "version": "v3",
+        "category": "v3",
+        "timestamp": 1793802839,
+        "block_number": 47060028,
+        "tvl_usd": "522424.18774363",
+        "accounting_unresolved": false,
+        "overlap_usd": "522414.638471035",
+        "external_tvl_usd": "9.549272595"
+      },
+      {
+        "chain_id": 747474,
+        "vault": "0x78ec25fba1baf6b7dc097ebb8115a390a2a4ee12",
+        "name": "Morpho Yearn OG USDC Compounder",
+        "version": "v3",
+        "category": "v3",
+        "timestamp": 1793802839,
+        "block_number": 47060028,
+        "tvl_usd": "10990.368058349057",
+        "accounting_unresolved": false,
+        "overlap_usd": "0",
+        "external_tvl_usd": "10990.368058349057"
+      }
+    ],
+    "positions": [
+      {
+        "chain_id": 747474,
+        "parent": "0xaa0362ecc584b985056e47812931270b99c91f9d",
+        "strategy": "0xaa0362ecc584b985056e47812931270b99c91f9d",
+        "child": "0x0432337365d89c0d73f1d0cb263791f8f1b98d43",
+        "timestamp": 1793802839,
+        "block_number": 47060028,
+        "child_block_number": 47060028,
+        "method": "direct-strategy",
+        "debt_usd": "523141.90260376607",
+        "owned_usd": "522414.638471035",
+        "status": "ok",
+        "source": "pinned direct strategy/holder observation",
+        "balance_raw": "547987389",
+        "overlap_usd": "522414.638471035",
+        "accounting_unresolved": false,
+        "allocated_shares_raw": "547987389"
+      },
+      {
+        "chain_id": 747474,
+        "parent": "0x0432337365d89c0d73f1d0cb263791f8f1b98d43",
+        "strategy": "0x0432337365d89c0d73f1d0cb263791f8f1b98d43",
+        "child": "0x80c34bd3a3569e126e7055831036aa7b212cb159",
+        "timestamp": 1793802839,
+        "block_number": 47060028,
+        "child_block_number": 47060028,
+        "method": "vault-held-shares",
+        "debt_usd": "307140.77982497524",
+        "owned_usd": "307140.77982497524",
+        "status": "ok",
+        "source": "pinned unregistered direct token holding",
+        "balance_raw": "298463858178",
+        "overlap_usd": "307140.77982497524",
+        "accounting_unresolved": false,
+        "allocated_shares_raw": "298463858178"
+      }
+    ],
+    "diagnostics": {
+      "timestamp": 1793802839,
+      "gross_tvl_usd": "14915668.794152717357",
+      "overlap_usd": "829555.41829601024",
+      "external_tvl_usd": "14086113.375856707117",
+      "known_gross_tvl_usd": "14915668.794152717357",
+      "known_overlap_usd": "829555.41829601024",
+      "known_external_tvl_usd": "14086113.375856707117",
+      "vault_count": 6,
+      "valued_vault_count": 6,
+      "position_count": 2,
+      "unresolved_positions": 0,
+      "status": "complete",
+      "mapping_scope": "known candidates",
+      "issues": []
+    }
+  }
+}

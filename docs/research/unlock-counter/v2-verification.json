@@ -1,0 +1,3068 @@
+{
+  "blockNumber": "26342075",
+  "method": "pricePerShare at original stored state with timestamp overrides, compared with version-specific free-funds model",
+  "passed": 380,
+  "failed": 0,
+  "frames": [
+    {
+      "timestamp": "1793802839",
+      "checks": [
+        {
+          "address": "0x1Fc80CfCF5B345b904A0fB36d4222196Ed9eB8a5",
+          "name": "Curve DOLA-sUSDe Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1244488973199492275",
+          "actual": "1244488973199492275",
+          "matched": true
+        },
+        {
+          "address": "0xa258C4606Ca8206D8aA700cE2143D7db854D168c",
+          "name": "WETH yVault",
+          "apiVersion": "0.4.2",
+          "expected": "1129840803808049235",
+          "actual": "1129840803808049235",
+          "matched": true
+        },
+        {
+          "address": "0x27B5739e22ad9033bcBf192059122d163b60349D",
+          "name": "yCRV yVault",
+          "apiVersion": "0.4.3",
+          "expected": "2652969120826393357",
+          "actual": "2652969120826393357",
+          "matched": true
+        },
+        {
+          "address": "0xa354F35829Ae975e850e23e9615b11Da1B3dC4DE",
+          "name": "USDC yVault",
+          "apiVersion": "0.4.3",
+          "expected": "1192416",
+          "actual": "1192416",
+          "matched": true
+        },
+        {
+          "address": "0x5B8C556B8b2a78696F0B9B830B3d67623122E270",
+          "name": "Curve stETH Factory yVault",
+          "apiVersion": "0.4.5",
+          "expected": "1005446236681781028",
+          "actual": "1005446236681781028",
+          "matched": true
+        },
+        {
+          "address": "0x3B27F92C0e212C671EA351827EDF93DB27cc0c65",
+          "name": "USDT yVault",
+          "apiVersion": "0.4.3",
+          "expected": "1150383",
+          "actual": "1150383",
+          "matched": true
+        },
+        {
+          "address": "0x7Da96a3891Add058AdA2E826306D812C638D87a7",
+          "name": "USDT yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1174742",
+          "actual": "1174742",
+          "matched": true
+        },
+        {
+          "address": "0xA696a63cc78DfFa1a63E9E50587C197387FF6C7E",
+          "name": "WBTC yVault",
+          "apiVersion": "0.3.5",
+          "expected": "102432778",
+          "actual": "102432778",
+          "matched": true
+        },
+        {
+          "address": "0x7c439Df9ADE8831180EA4D546c1E910D4Ba71a86",
+          "name": "Curve reUSD-sDOLA Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1296200505489569827",
+          "actual": "1296200505489569827",
+          "matched": true
+        },
+        {
+          "address": "0xdCD90C7f6324cfa40d7169ef80b12031770B4325",
+          "name": "Curve stETH Pool yVault",
+          "apiVersion": "0.3.0",
+          "expected": "1098425989399406290",
+          "actual": "1098425989399406290",
+          "matched": true
+        },
+        {
+          "address": "0x6A5468752f8DB94134B6508dAbAC54D3b45efCE6",
+          "name": "Curve CRV-ETH Pool yVault",
+          "apiVersion": "0.4.3",
+          "expected": "1222606466551708213",
+          "actual": "1222606466551708213",
+          "matched": true
+        },
+        {
+          "address": "0xdA816459F1AB5631232FE5e97a05BBBb94970c95",
+          "name": "DAI yVault",
+          "apiVersion": "0.4.3",
+          "expected": "1233506545293171739",
+          "actual": "1233506545293171739",
+          "matched": true
+        },
+        {
+          "address": "0xAD2f9A55518Dba12E8AB069502820923351667C5",
+          "name": "Curve msETH Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1471573139498949061",
+          "actual": "1471573139498949061",
+          "matched": true
+        },
+        {
+          "address": "0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9",
+          "name": "USDC yVault",
+          "apiVersion": "0.3.0",
+          "expected": "1251496",
+          "actual": "1251496",
+          "matched": true
+        },
+        {
+          "address": "0xf165a634296800812B8B0607a75DeDdcD4D3cC88",
+          "name": "Curve reUSD-scrvUSD Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1198592106226866674",
+          "actual": "1198592106226866674",
+          "matched": true
+        },
+        {
+          "address": "0x5fA5B62c8AF877CB37031e0a3B2f34A78e3C56A6",
+          "name": "Curve LUSD Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1132777851724125655",
+          "actual": "1132777851724125655",
+          "matched": true
+        },
+        {
+          "address": "0x6E9455D109202b426169F0d8f01A3332DAE160f3",
+          "name": "LP Yearn CRV Vault v2",
+          "apiVersion": "0.4.6",
+          "expected": "1763831643478563693",
+          "actual": "1763831643478563693",
+          "matched": true
+        },
+        {
+          "address": "0x342D24F2a3233F7Ac8A7347fA239187BFd186066",
+          "name": "Curve DOLA-sUSDS Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1222005812049287309",
+          "actual": "1222005812049287309",
+          "matched": true
+        },
+        {
+          "address": "0x6f0Ace0F94f4B9890Dfa99A4175B3Ef0288C16B3",
+          "name": "Curve CRV-ETH Factory yVault",
+          "apiVersion": "0.4.5",
+          "expected": "1100575027469643374",
+          "actual": "1100575027469643374",
+          "matched": true
+        },
+        {
+          "address": "0x19D3364A399d251E894aC732651be8B0E4e85001",
+          "name": "DAI yVault",
+          "apiVersion": "0.3.0",
+          "expected": "1269282135519613164",
+          "actual": "1269282135519613164",
+          "matched": true
+        },
+        {
+          "address": "0xaA379c2aA72529d5ec0da8A41e2F41ED7Fe4b48C",
+          "name": "Curve TriCryptoUSDC Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1290481266302175880",
+          "actual": "1290481266302175880",
+          "matched": true
+        },
+        {
+          "address": "0x27b7b1ad7288079A66d12350c828D3C00A6F07d7",
+          "name": "Curve Iron Bank Pool yVault",
+          "apiVersion": "0.3.2",
+          "expected": "1072098097564623381",
+          "actual": "1072098097564623381",
+          "matched": true
+        },
+        {
+          "address": "0xa9fE4601811213c340e850ea305481afF02f5b28",
+          "name": "WETH yVault",
+          "apiVersion": "0.3.2",
+          "expected": "1131590650329010050",
+          "actual": "1131590650329010050",
+          "matched": true
+        },
+        {
+          "address": "0x668c5Ef17f2F01503FBB4F285F32161251047720",
+          "name": "Curve iREET-pmUSD Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1063851316221665298",
+          "actual": "1063851316221665298",
+          "matched": true
+        },
+        {
+          "address": "0x25212Df29073FfFA7A67399AcEfC2dd75a831A1A",
+          "name": "Curve EURS Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1101116680963397473",
+          "actual": "1101116680963397473",
+          "matched": true
+        },
+        {
+          "address": "0xAd86Df2e8F989c828B25A7Da5EB1Ec363283fA3F",
+          "name": "Curve LUSD Factory yVault",
+          "apiVersion": "0.4.5",
+          "expected": "1021915765172766659",
+          "actual": "1021915765172766659",
+          "matched": true
+        },
+        {
+          "address": "0xB53B70Cb960FeEAf2093Df3C733E368F6D254898",
+          "name": "Curve DUSD-frxUSD Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1049451266103250094",
+          "actual": "1049451266103250094",
+          "matched": true
+        },
+        {
+          "address": "0xdb25cA703181E7484a155DD612b06f57E12Be5F0",
+          "name": "YFI yVault",
+          "apiVersion": "0.4.3",
+          "expected": "1013228104132560109",
+          "actual": "1013228104132560109",
+          "matched": true
+        },
+        {
+          "address": "0xD2433Ec6De2a932Ab7bc1A0080676333AeF8B546",
+          "name": "Curve reUSD-sfrxUSD Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1228936981027086881",
+          "actual": "1228936981027086881",
+          "matched": true
+        },
+        {
+          "address": "0x8078198Fc424986ae89Ce4a910Fc109587b6aBF3",
+          "name": "Curve 3Crypto Factory yVault",
+          "apiVersion": "0.4.5",
+          "expected": "1107343369128624708",
+          "actual": "1107343369128624708",
+          "matched": true
+        },
+        {
+          "address": "0x790a60024bC3aea28385b60480f15a0771f26D09",
+          "name": "Curve YFI-ETH Pool yVault",
+          "apiVersion": "0.4.3",
+          "expected": "1151341090403530191",
+          "actual": "1151341090403530191",
+          "matched": true
+        },
+        {
+          "address": "0x04c8bfe2eb09a1e2e9fA97A2fd970E06d87B43de",
+          "name": "Curve GEAR-ETH Factory yVault",
+          "apiVersion": "0.4.5",
+          "expected": "1955652169309741783",
+          "actual": "1955652169309741783",
+          "matched": true
+        },
+        {
+          "address": "0x75A291F0232ADD37d72Dd1Dcff55B715755ECDEe",
+          "name": "Curve CVX-ETH Factory yVault",
+          "apiVersion": "0.4.5",
+          "expected": "1920848477317319945",
+          "actual": "1920848477317319945",
+          "matched": true
+        },
+        {
+          "address": "0xb83461b887398CD981957BD93CB7067cF89c21C0",
+          "name": "Curve BOLD-USDC Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1020392325351599556",
+          "actual": "1020392325351599556",
+          "matched": true
+        },
+        {
+          "address": "0xE537B5cc158EB71037D4125BDD7538421981E6AA",
+          "name": "Curve 3Crypto Pool yVault",
+          "apiVersion": "0.4.3",
+          "expected": "1230000723761796632",
+          "actual": "1230000723761796632",
+          "matched": true
+        },
+        {
+          "address": "0xe0287cA62fE23f4FFAB827d5448d68aFe6DD9Fd7",
+          "name": "Curve msUSD-frxUSD Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1165760141978730012",
+          "actual": "1165760141978730012",
+          "matched": true
+        },
+        {
+          "address": "0xB5dE7250128775a317B3f775a7AFcEC73571B732",
+          "name": "Curve sETH Factory yVault",
+          "apiVersion": "0.4.5",
+          "expected": "1046220418912899441",
+          "actual": "1046220418912899441",
+          "matched": true
+        },
+        {
+          "address": "0x7cA00559B978CFde81297849be6151d3ccB408A9",
+          "name": "Curve USDC-crvUSD Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1415236862013581775",
+          "actual": "1415236862013581775",
+          "matched": true
+        },
+        {
+          "address": "0x671a912C10bba0CFA74Cfc2d6Fba9BA1ed9530B2",
+          "name": "LINK yVault",
+          "apiVersion": "0.4.2",
+          "expected": "1023757226593305450",
+          "actual": "1023757226593305450",
+          "matched": true
+        },
+        {
+          "address": "0x986b4AFF588a109c09B50A03f42E4110E29D353F",
+          "name": "Curve sETH Pool yVault",
+          "apiVersion": "0.3.2",
+          "expected": "1952465462263270778",
+          "actual": "1952465462263270778",
+          "matched": true
+        },
+        {
+          "address": "0xFBEB78a723b8087fD2ea7Ef1afEc93d35E8Bed42",
+          "name": "UNI yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1017746042147565603",
+          "actual": "1017746042147565603",
+          "matched": true
+        },
+        {
+          "address": "0xDb26d8815EdA864Dfa43306766f2F8CA50C03F9E",
+          "name": "Curve msUSD-FRAXBP Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "5878402132476538107",
+          "actual": "5878402132476538107",
+          "matched": true
+        },
+        {
+          "address": "0x1635b506a88fBF428465Ad65d00e8d6B6E5846C3",
+          "name": "Curve CVX-ETH Pool yVault",
+          "apiVersion": "0.4.3",
+          "expected": "2105403388306471788",
+          "actual": "2105403388306471788",
+          "matched": true
+        },
+        {
+          "address": "0xc952f3028E322da48e239A077b810A24556f36f1",
+          "name": "Curve pmUSD-frxUSD Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1206135333701216131",
+          "actual": "1206135333701216131",
+          "matched": true
+        },
+        {
+          "address": "0x241AdD131B9aaa7527132b752252b99420937ADc",
+          "name": "Curve USDT-crvUSD Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1500947921494877972",
+          "actual": "1500947921494877972",
+          "matched": true
+        },
+        {
+          "address": "0x192725C6516656f3e288c08Db8228c25Fe1f77D5",
+          "name": "Curve CRV LlamaLend Recovery Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1080984617030890183",
+          "actual": "1080984617030890183",
+          "matched": true
+        },
+        {
+          "address": "0x9d409a0A012CFbA9B15F6D4B36Ac57A46966Ab9a",
+          "name": "Yearn Compounding veCRV yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1993421298729529618",
+          "actual": "1993421298729529618",
+          "matched": true
+        },
+        {
+          "address": "0xf2db9a7c0ACd427A680D640F02d90f6186E71725",
+          "name": "Curve LINK Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1015764501718117121",
+          "actual": "1015764501718117121",
+          "matched": true
+        },
+        {
+          "address": "0x4282B8f159ee677559Dc6A20cd478DD0BDe75fF2",
+          "name": "Curve frxUSD-crvUSD Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1084828828268137483",
+          "actual": "1084828828268137483",
+          "matched": true
+        },
+        {
+          "address": "0xE14d13d8B3b85aF791b2AADD661cDBd5E6097Db1",
+          "name": "YFI yVault",
+          "apiVersion": "0.3.2",
+          "expected": "1065136554030822613",
+          "actual": "1065136554030822613",
+          "matched": true
+        },
+        {
+          "address": "0xc97232527B62eFb0D8ed38CF3EA103A6CcA4037e",
+          "name": "LP Yearn CRV Vault",
+          "apiVersion": "0.4.3",
+          "expected": "1198479703806331371",
+          "actual": "1198479703806331371",
+          "matched": true
+        },
+        {
+          "address": "0xb37094c1B5614Bd6EcE40AFb295C26F4377069d3",
+          "name": "Curve FRAX Factory yVault",
+          "apiVersion": "0.4.5",
+          "expected": "1020249730685111421",
+          "actual": "1020249730685111421",
+          "matched": true
+        },
+        {
+          "address": "0xB4AdA607B9d6b2c9Ee07A275e9616B84AC560139",
+          "name": "Curve FRAX Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1146542112963344004",
+          "actual": "1146542112963344004",
+          "matched": true
+        },
+        {
+          "address": "0x84E13785B5a27879921D6F685f041421C7F482dA",
+          "name": "Curve 3pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1071837803436822798",
+          "actual": "1071837803436822798",
+          "matched": true
+        },
+        {
+          "address": "0x4CbB6A5EC00cEEC252a7091559484F7adb83165f",
+          "name": "Curve alUSD Factory yVault",
+          "apiVersion": "0.4.5",
+          "expected": "1093696318628477934",
+          "actual": "1093696318628477934",
+          "matched": true
+        },
+        {
+          "address": "0xA74d4B67b3368E83797a35382AFB776bAAE4F5C8",
+          "name": "Curve alUSD Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1205086867847253893",
+          "actual": "1205086867847253893",
+          "matched": true
+        },
+        {
+          "address": "0xb4D1Be44BfF40ad6e506edf43156577a3f8672eC",
+          "name": "Curve sAave Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1062183756025662299",
+          "actual": "1062183756025662299",
+          "matched": true
+        },
+        {
+          "address": "0x528D50dC9a333f01544177a924893FA1F5b9F748",
+          "name": "Curve ibKRW Pool yVault",
+          "apiVersion": "0.4.3",
+          "expected": "1320077603750772056",
+          "actual": "1320077603750772056",
+          "matched": true
+        },
+        {
+          "address": "0x82c83ddA32DB09F63F9A59A129278f3fdC3EeE67",
+          "name": "Curve 3EUR Factory yVault",
+          "apiVersion": "0.4.5",
+          "expected": "1585191824749234083",
+          "actual": "1585191824749234083",
+          "matched": true
+        },
+        {
+          "address": "0xe7c25cb1eac7D870F3cD103cBB060A6DFbc5eaF2",
+          "name": "Curve ynETHx Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1058167510744300485",
+          "actual": "1058167510744300485",
+          "matched": true
+        },
+        {
+          "address": "0xa669d6C2Df33F41940c2646A9BF3031e2524d515",
+          "name": "Curve sdCRVv2 Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1845223202543688732",
+          "actual": "1845223202543688732",
+          "matched": true
+        },
+        {
+          "address": "0x8F49C410ac9d05aa7260ef0951b3f328E80d1f3D",
+          "name": "Curve avUSD-frxUSD Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1063787034803504976",
+          "actual": "1063787034803504976",
+          "matched": true
+        },
+        {
+          "address": "0x849dC56ceCa7Cf55AbF5ec87910DA21c5C7dA581",
+          "name": "Curve ETH+ Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1309282448159108607",
+          "actual": "1309282448159108607",
+          "matched": true
+        },
+        {
+          "address": "0x5a770DbD3Ee6bAF2802D29a901Ef11501C44797A",
+          "name": "Curve sUSD Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1160509198175035959",
+          "actual": "1160509198175035959",
+          "matched": true
+        },
+        {
+          "address": "0x2027D3b2B58F522178cE4cC4E86e99b7C4DE3876",
+          "name": "Curve USDM-sDAI Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1053908411406400885",
+          "actual": "1053908411406400885",
+          "matched": true
+        },
+        {
+          "address": "0x0844C227b892be5d7c837000C096f64bFc316c2d",
+          "name": "Curve yYB Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1380538386474680970",
+          "actual": "1380538386474680970",
+          "matched": true
+        },
+        {
+          "address": "0x5AB64C599FcC59f0f2726A300b03166A395578Da",
+          "name": "Curve 3EUR Pool yVault",
+          "apiVersion": "0.4.3",
+          "expected": "2005693223525160480",
+          "actual": "2005693223525160480",
+          "matched": true
+        },
+        {
+          "address": "0x3f34A7eF4f17528CbFFb7817060941BCdaC924fa",
+          "name": "Curve TriCRV Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1688775227238638318",
+          "actual": "1688775227238638318",
+          "matched": true
+        },
+        {
+          "address": "0xb7b1C394b3F82091988A1e400C6499178eE64b99",
+          "name": "Curve alUSD-sDOLA Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1570009893123128699",
+          "actual": "1570009893123128699",
+          "matched": true
+        },
+        {
+          "address": "0x77e829FFF18C14AD9bb88963acB0010A0506de88",
+          "name": "Curve StaFi rETH Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1118337248537447642",
+          "actual": "1118337248537447642",
+          "matched": true
+        },
+        {
+          "address": "0xBfedbcbe27171C418CDabC2477042554b1904857",
+          "name": "Curve rETH Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1169184835944364521",
+          "actual": "1169184835944364521",
+          "matched": true
+        },
+        {
+          "address": "0x3D980E50508CFd41a13837A60149927a11c03731",
+          "name": "Curve triCrypto Pool yVault",
+          "apiVersion": "0.4.2",
+          "expected": "1037889609364136300",
+          "actual": "1037889609364136300",
+          "matched": true
+        },
+        {
+          "address": "0x5F208d3a8b13062adE45a33Ca9Bc8de64D520CB9",
+          "name": "Curve stETHv2 Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1026325105105288037",
+          "actual": "1026325105105288037",
+          "matched": true
+        },
+        {
+          "address": "0x7845Ebf66c9575Fc5f5A0dBb9a34a706Ad997a3f",
+          "name": "Curve TriCryptoUSDT Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1329176873356295605",
+          "actual": "1329176873356295605",
+          "matched": true
+        },
+        {
+          "address": "0xa8E0c42F45C877e611C76F2D4bF57476f2014381",
+          "name": "Curve Iron Bank Factory yVault",
+          "apiVersion": "0.4.5",
+          "expected": "1020141687252549509",
+          "actual": "1020141687252549509",
+          "matched": true
+        },
+        {
+          "address": "0x8017B5d498f75d12dA6A857e867699fB07De41a4",
+          "name": "Curve RSUP-WETH Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "2432210177358646432",
+          "actual": "2432210177358646432",
+          "matched": true
+        },
+        {
+          "address": "0x944d749017053e0D37ec206c9898716A21e0B2E2",
+          "name": "Curve mUSD Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1027566317650418245",
+          "actual": "1027566317650418245",
+          "matched": true
+        },
+        {
+          "address": "0x5c0A86A32c129538D62C106Eb8115a8b02358d57",
+          "name": "Curve rETH-wstETH Pool yVault",
+          "apiVersion": "0.4.3",
+          "expected": "1001725659625476577",
+          "actual": "1001725659625476577",
+          "matched": true
+        },
+        {
+          "address": "0x8cc94ccd0f3841a468184aCA3Cc478D2148E1757",
+          "name": "Curve mUSD Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1134713547415505990",
+          "actual": "1134713547415505990",
+          "matched": true
+        },
+        {
+          "address": "0x5fFd0C196838aa5e700657C1f6fd8A87f5d80ED2",
+          "name": "Curve OETH-ARM-stETH Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1020858054832310051",
+          "actual": "1020858054832310051",
+          "matched": true
+        },
+        {
+          "address": "0x6949145469362F9eeaB3c96Ea41b51D9B4cC2b21",
+          "name": "Curve TriCryptoINV Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1773908621061121409",
+          "actual": "1773908621061121409",
+          "matched": true
+        },
+        {
+          "address": "0x2D5D4869381C4Fce34789BC1D38aCCe747E295AE",
+          "name": "Curve RAI Pool yVault",
+          "apiVersion": "0.4.3",
+          "expected": "1029882406011568415",
+          "actual": "1029882406011568415",
+          "matched": true
+        },
+        {
+          "address": "0xd9788f3931Ede4D5018184E198699dC6d66C1915",
+          "name": "AAVE yVault",
+          "apiVersion": "0.4.3",
+          "expected": "1049363732534658754",
+          "actual": "1049363732534658754",
+          "matched": true
+        },
+        {
+          "address": "0xe9Dc63083c464d6EDcCFf23444fF3CFc6886f6FB",
+          "name": "Curve oBTC Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1065667304704515360",
+          "actual": "1065667304704515360",
+          "matched": true
+        },
+        {
+          "address": "0x39CAF13a104FF567f71fd2A4c68C026FDB6E740B",
+          "name": "Curve Aave Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1029642769234918699",
+          "actual": "1029642769234918699",
+          "matched": true
+        },
+        {
+          "address": "0xd02b103f7f5dba89Ad316E2b3Fe247F280CcE5b2",
+          "name": "Curve xETH Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1600867587748982831",
+          "actual": "1600867587748982831",
+          "matched": true
+        },
+        {
+          "address": "0xE2CaD35CFD1A9B5acD557558f44B096ef8340C1B",
+          "name": "Curve TriCryptoLLAMA Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1701801432435850161",
+          "actual": "1701801432435850161",
+          "matched": true
+        },
+        {
+          "address": "0xF29AE508698bDeF169B89834F76704C3B205aedf",
+          "name": "SNX yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1146536340809926676",
+          "actual": "1146536340809926676",
+          "matched": true
+        },
+        {
+          "address": "0x490bD0886F221A5F79713D3E84404355A9293C50",
+          "name": "Curve ibCHF Pool yVault",
+          "apiVersion": "0.4.3",
+          "expected": "1380346376526765172",
+          "actual": "1380346376526765172",
+          "matched": true
+        },
+        {
+          "address": "0x8414Db07a7F743dEbaFb402070AB01a4E0d2E45e",
+          "name": "Curve sBTC Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1026794713148063200",
+          "actual": "1026794713148063200",
+          "matched": true
+        },
+        {
+          "address": "0x03f8CCf5b5004B55309e949ea9D08136a32E9C5d",
+          "name": "Curve tBTC-cbBTC Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1000000000000000000",
+          "actual": "1000000000000000000",
+          "matched": true
+        },
+        {
+          "address": "0x2fB06235aB90812e5BaE28404024C9498fF9414d",
+          "name": "Curve JPEG-pETH Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "7191047920917440398",
+          "actual": "7191047920917440398",
+          "matched": true
+        },
+        {
+          "address": "0xAE6eD98B1Bd9aAdd3185160324e0e011159B61D3",
+          "name": "Curve Compound Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1339610656117630050",
+          "actual": "1339610656117630050",
+          "matched": true
+        },
+        {
+          "address": "0x5591Ac6CC8cdeE5d47E553a8c3543eF5eA808919",
+          "name": "Curve OUSD-frxUSD Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1070965762619500449",
+          "actual": "1070965762619500449",
+          "matched": true
+        },
+        {
+          "address": "0xD6Ea40597Be05c201845c0bFd2e96A60bACde267",
+          "name": "Curve Compound Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1613281262183432676",
+          "actual": "1613281262183432676",
+          "matched": true
+        }
+      ]
+    },
+    {
+      "timestamp": "1793806439",
+      "checks": [
+        {
+          "address": "0x1Fc80CfCF5B345b904A0fB36d4222196Ed9eB8a5",
+          "name": "Curve DOLA-sUSDe Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1244494093143679775",
+          "actual": "1244494093143679775",
+          "matched": true
+        },
+        {
+          "address": "0xa258C4606Ca8206D8aA700cE2143D7db854D168c",
+          "name": "WETH yVault",
+          "apiVersion": "0.4.2",
+          "expected": "1129840803808049235",
+          "actual": "1129840803808049235",
+          "matched": true
+        },
+        {
+          "address": "0x27B5739e22ad9033bcBf192059122d163b60349D",
+          "name": "yCRV yVault",
+          "apiVersion": "0.4.3",
+          "expected": "2653057257941073509",
+          "actual": "2653057257941073509",
+          "matched": true
+        },
+        {
+          "address": "0xa354F35829Ae975e850e23e9615b11Da1B3dC4DE",
+          "name": "USDC yVault",
+          "apiVersion": "0.4.3",
+          "expected": "1192416",
+          "actual": "1192416",
+          "matched": true
+        },
+        {
+          "address": "0x5B8C556B8b2a78696F0B9B830B3d67623122E270",
+          "name": "Curve stETH Factory yVault",
+          "apiVersion": "0.4.5",
+          "expected": "1005446236681781028",
+          "actual": "1005446236681781028",
+          "matched": true
+        },
+        {
+          "address": "0x3B27F92C0e212C671EA351827EDF93DB27cc0c65",
+          "name": "USDT yVault",
+          "apiVersion": "0.4.3",
+          "expected": "1150383",
+          "actual": "1150383",
+          "matched": true
+        },
+        {
+          "address": "0x7Da96a3891Add058AdA2E826306D812C638D87a7",
+          "name": "USDT yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1174742",
+          "actual": "1174742",
+          "matched": true
+        },
+        {
+          "address": "0xA696a63cc78DfFa1a63E9E50587C197387FF6C7E",
+          "name": "WBTC yVault",
+          "apiVersion": "0.3.5",
+          "expected": "102432778",
+          "actual": "102432778",
+          "matched": true
+        },
+        {
+          "address": "0x7c439Df9ADE8831180EA4D546c1E910D4Ba71a86",
+          "name": "Curve reUSD-sDOLA Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1296204507557947193",
+          "actual": "1296204507557947193",
+          "matched": true
+        },
+        {
+          "address": "0xdCD90C7f6324cfa40d7169ef80b12031770B4325",
+          "name": "Curve stETH Pool yVault",
+          "apiVersion": "0.3.0",
+          "expected": "1098425989399406290",
+          "actual": "1098425989399406290",
+          "matched": true
+        },
+        {
+          "address": "0x6A5468752f8DB94134B6508dAbAC54D3b45efCE6",
+          "name": "Curve CRV-ETH Pool yVault",
+          "apiVersion": "0.4.3",
+          "expected": "1222606466551708213",
+          "actual": "1222606466551708213",
+          "matched": true
+        },
+        {
+          "address": "0xdA816459F1AB5631232FE5e97a05BBBb94970c95",
+          "name": "DAI yVault",
+          "apiVersion": "0.4.3",
+          "expected": "1233506545293171739",
+          "actual": "1233506545293171739",
+          "matched": true
+        },
+        {
+          "address": "0xAD2f9A55518Dba12E8AB069502820923351667C5",
+          "name": "Curve msETH Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1471574793943489730",
+          "actual": "1471574793943489730",
+          "matched": true
+        },
+        {
+          "address": "0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9",
+          "name": "USDC yVault",
+          "apiVersion": "0.3.0",
+          "expected": "1251496",
+          "actual": "1251496",
+          "matched": true
+        },
+        {
+          "address": "0xf165a634296800812B8B0607a75DeDdcD4D3cC88",
+          "name": "Curve reUSD-scrvUSD Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1198619490887336341",
+          "actual": "1198619490887336341",
+          "matched": true
+        },
+        {
+          "address": "0x5fA5B62c8AF877CB37031e0a3B2f34A78e3C56A6",
+          "name": "Curve LUSD Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1132777851724125655",
+          "actual": "1132777851724125655",
+          "matched": true
+        },
+        {
+          "address": "0x6E9455D109202b426169F0d8f01A3332DAE160f3",
+          "name": "LP Yearn CRV Vault v2",
+          "apiVersion": "0.4.6",
+          "expected": "1763843250260459479",
+          "actual": "1763843250260459479",
+          "matched": true
+        },
+        {
+          "address": "0x342D24F2a3233F7Ac8A7347fA239187BFd186066",
+          "name": "Curve DOLA-sUSDS Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1222020933368670863",
+          "actual": "1222020933368670863",
+          "matched": true
+        },
+        {
+          "address": "0x6f0Ace0F94f4B9890Dfa99A4175B3Ef0288C16B3",
+          "name": "Curve CRV-ETH Factory yVault",
+          "apiVersion": "0.4.5",
+          "expected": "1100575027469643374",
+          "actual": "1100575027469643374",
+          "matched": true
+        },
+        {
+          "address": "0x19D3364A399d251E894aC732651be8B0E4e85001",
+          "name": "DAI yVault",
+          "apiVersion": "0.3.0",
+          "expected": "1269282135519613164",
+          "actual": "1269282135519613164",
+          "matched": true
+        },
+        {
+          "address": "0xaA379c2aA72529d5ec0da8A41e2F41ED7Fe4b48C",
+          "name": "Curve TriCryptoUSDC Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1290487835046640070",
+          "actual": "1290487835046640070",
+          "matched": true
+        },
+        {
+          "address": "0x27b7b1ad7288079A66d12350c828D3C00A6F07d7",
+          "name": "Curve Iron Bank Pool yVault",
+          "apiVersion": "0.3.2",
+          "expected": "1072098097564623381",
+          "actual": "1072098097564623381",
+          "matched": true
+        },
+        {
+          "address": "0xa9fE4601811213c340e850ea305481afF02f5b28",
+          "name": "WETH yVault",
+          "apiVersion": "0.3.2",
+          "expected": "1131590650329010050",
+          "actual": "1131590650329010050",
+          "matched": true
+        },
+        {
+          "address": "0x668c5Ef17f2F01503FBB4F285F32161251047720",
+          "name": "Curve iREET-pmUSD Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1063886227975466433",
+          "actual": "1063886227975466433",
+          "matched": true
+        },
+        {
+          "address": "0x25212Df29073FfFA7A67399AcEfC2dd75a831A1A",
+          "name": "Curve EURS Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1101116680963397473",
+          "actual": "1101116680963397473",
+          "matched": true
+        },
+        {
+          "address": "0xAd86Df2e8F989c828B25A7Da5EB1Ec363283fA3F",
+          "name": "Curve LUSD Factory yVault",
+          "apiVersion": "0.4.5",
+          "expected": "1021915765172766659",
+          "actual": "1021915765172766659",
+          "matched": true
+        },
+        {
+          "address": "0xB53B70Cb960FeEAf2093Df3C733E368F6D254898",
+          "name": "Curve DUSD-frxUSD Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1049469983094379170",
+          "actual": "1049469983094379170",
+          "matched": true
+        },
+        {
+          "address": "0xdb25cA703181E7484a155DD612b06f57E12Be5F0",
+          "name": "YFI yVault",
+          "apiVersion": "0.4.3",
+          "expected": "1013228104132560109",
+          "actual": "1013228104132560109",
+          "matched": true
+        },
+        {
+          "address": "0xD2433Ec6De2a932Ab7bc1A0080676333AeF8B546",
+          "name": "Curve reUSD-sfrxUSD Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1228955080431630823",
+          "actual": "1228955080431630823",
+          "matched": true
+        },
+        {
+          "address": "0x8078198Fc424986ae89Ce4a910Fc109587b6aBF3",
+          "name": "Curve 3Crypto Factory yVault",
+          "apiVersion": "0.4.5",
+          "expected": "1107343369128624708",
+          "actual": "1107343369128624708",
+          "matched": true
+        },
+        {
+          "address": "0x790a60024bC3aea28385b60480f15a0771f26D09",
+          "name": "Curve YFI-ETH Pool yVault",
+          "apiVersion": "0.4.3",
+          "expected": "1151341090403530191",
+          "actual": "1151341090403530191",
+          "matched": true
+        },
+        {
+          "address": "0x04c8bfe2eb09a1e2e9fA97A2fd970E06d87B43de",
+          "name": "Curve GEAR-ETH Factory yVault",
+          "apiVersion": "0.4.5",
+          "expected": "1955652169309741783",
+          "actual": "1955652169309741783",
+          "matched": true
+        },
+        {
+          "address": "0x75A291F0232ADD37d72Dd1Dcff55B715755ECDEe",
+          "name": "Curve CVX-ETH Factory yVault",
+          "apiVersion": "0.4.5",
+          "expected": "1920848477317319945",
+          "actual": "1920848477317319945",
+          "matched": true
+        },
+        {
+          "address": "0xb83461b887398CD981957BD93CB7067cF89c21C0",
+          "name": "Curve BOLD-USDC Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1020392325351599556",
+          "actual": "1020392325351599556",
+          "matched": true
+        },
+        {
+          "address": "0xE537B5cc158EB71037D4125BDD7538421981E6AA",
+          "name": "Curve 3Crypto Pool yVault",
+          "apiVersion": "0.4.3",
+          "expected": "1230000723761796632",
+          "actual": "1230000723761796632",
+          "matched": true
+        },
+        {
+          "address": "0xe0287cA62fE23f4FFAB827d5448d68aFe6DD9Fd7",
+          "name": "Curve msUSD-frxUSD Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1165779766570978249",
+          "actual": "1165779766570978249",
+          "matched": true
+        },
+        {
+          "address": "0xB5dE7250128775a317B3f775a7AFcEC73571B732",
+          "name": "Curve sETH Factory yVault",
+          "apiVersion": "0.4.5",
+          "expected": "1046220418912899441",
+          "actual": "1046220418912899441",
+          "matched": true
+        },
+        {
+          "address": "0x7cA00559B978CFde81297849be6151d3ccB408A9",
+          "name": "Curve USDC-crvUSD Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1415270638439676007",
+          "actual": "1415270638439676007",
+          "matched": true
+        },
+        {
+          "address": "0x671a912C10bba0CFA74Cfc2d6Fba9BA1ed9530B2",
+          "name": "LINK yVault",
+          "apiVersion": "0.4.2",
+          "expected": "1023757226593305450",
+          "actual": "1023757226593305450",
+          "matched": true
+        },
+        {
+          "address": "0x986b4AFF588a109c09B50A03f42E4110E29D353F",
+          "name": "Curve sETH Pool yVault",
+          "apiVersion": "0.3.2",
+          "expected": "1952465462263270778",
+          "actual": "1952465462263270778",
+          "matched": true
+        },
+        {
+          "address": "0xFBEB78a723b8087fD2ea7Ef1afEc93d35E8Bed42",
+          "name": "UNI yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1017746042147565603",
+          "actual": "1017746042147565603",
+          "matched": true
+        },
+        {
+          "address": "0xDb26d8815EdA864Dfa43306766f2F8CA50C03F9E",
+          "name": "Curve msUSD-FRAXBP Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "5878402132476538107",
+          "actual": "5878402132476538107",
+          "matched": true
+        },
+        {
+          "address": "0x1635b506a88fBF428465Ad65d00e8d6B6E5846C3",
+          "name": "Curve CVX-ETH Pool yVault",
+          "apiVersion": "0.4.3",
+          "expected": "2105403388306471788",
+          "actual": "2105403388306471788",
+          "matched": true
+        },
+        {
+          "address": "0xc952f3028E322da48e239A077b810A24556f36f1",
+          "name": "Curve pmUSD-frxUSD Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1206175369469835928",
+          "actual": "1206175369469835928",
+          "matched": true
+        },
+        {
+          "address": "0x241AdD131B9aaa7527132b752252b99420937ADc",
+          "name": "Curve USDT-crvUSD Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1500947921494877972",
+          "actual": "1500947921494877972",
+          "matched": true
+        },
+        {
+          "address": "0x192725C6516656f3e288c08Db8228c25Fe1f77D5",
+          "name": "Curve CRV LlamaLend Recovery Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1080990028342098606",
+          "actual": "1080990028342098606",
+          "matched": true
+        },
+        {
+          "address": "0x9d409a0A012CFbA9B15F6D4B36Ac57A46966Ab9a",
+          "name": "Yearn Compounding veCRV yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1993421298729529618",
+          "actual": "1993421298729529618",
+          "matched": true
+        },
+        {
+          "address": "0xf2db9a7c0ACd427A680D640F02d90f6186E71725",
+          "name": "Curve LINK Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1015764501718117121",
+          "actual": "1015764501718117121",
+          "matched": true
+        },
+        {
+          "address": "0x4282B8f159ee677559Dc6A20cd478DD0BDe75fF2",
+          "name": "Curve frxUSD-crvUSD Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1084855171845812348",
+          "actual": "1084855171845812348",
+          "matched": true
+        },
+        {
+          "address": "0xE14d13d8B3b85aF791b2AADD661cDBd5E6097Db1",
+          "name": "YFI yVault",
+          "apiVersion": "0.3.2",
+          "expected": "1065136554030822613",
+          "actual": "1065136554030822613",
+          "matched": true
+        },
+        {
+          "address": "0xc97232527B62eFb0D8ed38CF3EA103A6CcA4037e",
+          "name": "LP Yearn CRV Vault",
+          "apiVersion": "0.4.3",
+          "expected": "1198479703806331371",
+          "actual": "1198479703806331371",
+          "matched": true
+        },
+        {
+          "address": "0xb37094c1B5614Bd6EcE40AFb295C26F4377069d3",
+          "name": "Curve FRAX Factory yVault",
+          "apiVersion": "0.4.5",
+          "expected": "1020249730685111421",
+          "actual": "1020249730685111421",
+          "matched": true
+        },
+        {
+          "address": "0xB4AdA607B9d6b2c9Ee07A275e9616B84AC560139",
+          "name": "Curve FRAX Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1146542112963344004",
+          "actual": "1146542112963344004",
+          "matched": true
+        },
+        {
+          "address": "0x84E13785B5a27879921D6F685f041421C7F482dA",
+          "name": "Curve 3pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1071837803436822798",
+          "actual": "1071837803436822798",
+          "matched": true
+        },
+        {
+          "address": "0x4CbB6A5EC00cEEC252a7091559484F7adb83165f",
+          "name": "Curve alUSD Factory yVault",
+          "apiVersion": "0.4.5",
+          "expected": "1093696318628477934",
+          "actual": "1093696318628477934",
+          "matched": true
+        },
+        {
+          "address": "0xA74d4B67b3368E83797a35382AFB776bAAE4F5C8",
+          "name": "Curve alUSD Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1205086867847253893",
+          "actual": "1205086867847253893",
+          "matched": true
+        },
+        {
+          "address": "0xb4D1Be44BfF40ad6e506edf43156577a3f8672eC",
+          "name": "Curve sAave Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1062183756025662299",
+          "actual": "1062183756025662299",
+          "matched": true
+        },
+        {
+          "address": "0x528D50dC9a333f01544177a924893FA1F5b9F748",
+          "name": "Curve ibKRW Pool yVault",
+          "apiVersion": "0.4.3",
+          "expected": "1320077603750772056",
+          "actual": "1320077603750772056",
+          "matched": true
+        },
+        {
+          "address": "0x82c83ddA32DB09F63F9A59A129278f3fdC3EeE67",
+          "name": "Curve 3EUR Factory yVault",
+          "apiVersion": "0.4.5",
+          "expected": "1585191824749234083",
+          "actual": "1585191824749234083",
+          "matched": true
+        },
+        {
+          "address": "0xe7c25cb1eac7D870F3cD103cBB060A6DFbc5eaF2",
+          "name": "Curve ynETHx Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1058167510744300485",
+          "actual": "1058167510744300485",
+          "matched": true
+        },
+        {
+          "address": "0xa669d6C2Df33F41940c2646A9BF3031e2524d515",
+          "name": "Curve sdCRVv2 Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1845450546524369152",
+          "actual": "1845450546524369152",
+          "matched": true
+        },
+        {
+          "address": "0x8F49C410ac9d05aa7260ef0951b3f328E80d1f3D",
+          "name": "Curve avUSD-frxUSD Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1063787034803504976",
+          "actual": "1063787034803504976",
+          "matched": true
+        },
+        {
+          "address": "0x849dC56ceCa7Cf55AbF5ec87910DA21c5C7dA581",
+          "name": "Curve ETH+ Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1309282448159108607",
+          "actual": "1309282448159108607",
+          "matched": true
+        },
+        {
+          "address": "0x5a770DbD3Ee6bAF2802D29a901Ef11501C44797A",
+          "name": "Curve sUSD Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1160509198175035959",
+          "actual": "1160509198175035959",
+          "matched": true
+        },
+        {
+          "address": "0x2027D3b2B58F522178cE4cC4E86e99b7C4DE3876",
+          "name": "Curve USDM-sDAI Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1053908411406400885",
+          "actual": "1053908411406400885",
+          "matched": true
+        },
+        {
+          "address": "0x0844C227b892be5d7c837000C096f64bFc316c2d",
+          "name": "Curve yYB Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1380538386474680970",
+          "actual": "1380538386474680970",
+          "matched": true
+        },
+        {
+          "address": "0x5AB64C599FcC59f0f2726A300b03166A395578Da",
+          "name": "Curve 3EUR Pool yVault",
+          "apiVersion": "0.4.3",
+          "expected": "2005693223525160480",
+          "actual": "2005693223525160480",
+          "matched": true
+        },
+        {
+          "address": "0x3f34A7eF4f17528CbFFb7817060941BCdaC924fa",
+          "name": "Curve TriCRV Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1688775227238638318",
+          "actual": "1688775227238638318",
+          "matched": true
+        },
+        {
+          "address": "0xb7b1C394b3F82091988A1e400C6499178eE64b99",
+          "name": "Curve alUSD-sDOLA Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1570009893123128699",
+          "actual": "1570009893123128699",
+          "matched": true
+        },
+        {
+          "address": "0x77e829FFF18C14AD9bb88963acB0010A0506de88",
+          "name": "Curve StaFi rETH Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1118337248537447642",
+          "actual": "1118337248537447642",
+          "matched": true
+        },
+        {
+          "address": "0xBfedbcbe27171C418CDabC2477042554b1904857",
+          "name": "Curve rETH Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1169184835944364521",
+          "actual": "1169184835944364521",
+          "matched": true
+        },
+        {
+          "address": "0x3D980E50508CFd41a13837A60149927a11c03731",
+          "name": "Curve triCrypto Pool yVault",
+          "apiVersion": "0.4.2",
+          "expected": "1037889609364136300",
+          "actual": "1037889609364136300",
+          "matched": true
+        },
+        {
+          "address": "0x5F208d3a8b13062adE45a33Ca9Bc8de64D520CB9",
+          "name": "Curve stETHv2 Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1026325105105288037",
+          "actual": "1026325105105288037",
+          "matched": true
+        },
+        {
+          "address": "0x7845Ebf66c9575Fc5f5A0dBb9a34a706Ad997a3f",
+          "name": "Curve TriCryptoUSDT Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1329176873356295605",
+          "actual": "1329176873356295605",
+          "matched": true
+        },
+        {
+          "address": "0xa8E0c42F45C877e611C76F2D4bF57476f2014381",
+          "name": "Curve Iron Bank Factory yVault",
+          "apiVersion": "0.4.5",
+          "expected": "1020141687252549509",
+          "actual": "1020141687252549509",
+          "matched": true
+        },
+        {
+          "address": "0x8017B5d498f75d12dA6A857e867699fB07De41a4",
+          "name": "Curve RSUP-WETH Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "2432475427681897927",
+          "actual": "2432475427681897927",
+          "matched": true
+        },
+        {
+          "address": "0x944d749017053e0D37ec206c9898716A21e0B2E2",
+          "name": "Curve mUSD Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1027566317650418245",
+          "actual": "1027566317650418245",
+          "matched": true
+        },
+        {
+          "address": "0x5c0A86A32c129538D62C106Eb8115a8b02358d57",
+          "name": "Curve rETH-wstETH Pool yVault",
+          "apiVersion": "0.4.3",
+          "expected": "1001725659625476577",
+          "actual": "1001725659625476577",
+          "matched": true
+        },
+        {
+          "address": "0x8cc94ccd0f3841a468184aCA3Cc478D2148E1757",
+          "name": "Curve mUSD Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1134713547415505990",
+          "actual": "1134713547415505990",
+          "matched": true
+        },
+        {
+          "address": "0x5fFd0C196838aa5e700657C1f6fd8A87f5d80ED2",
+          "name": "Curve OETH-ARM-stETH Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1020858054832310051",
+          "actual": "1020858054832310051",
+          "matched": true
+        },
+        {
+          "address": "0x6949145469362F9eeaB3c96Ea41b51D9B4cC2b21",
+          "name": "Curve TriCryptoINV Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1773908621061121409",
+          "actual": "1773908621061121409",
+          "matched": true
+        },
+        {
+          "address": "0x2D5D4869381C4Fce34789BC1D38aCCe747E295AE",
+          "name": "Curve RAI Pool yVault",
+          "apiVersion": "0.4.3",
+          "expected": "1029882406011568415",
+          "actual": "1029882406011568415",
+          "matched": true
+        },
+        {
+          "address": "0xd9788f3931Ede4D5018184E198699dC6d66C1915",
+          "name": "AAVE yVault",
+          "apiVersion": "0.4.3",
+          "expected": "1049363732534658754",
+          "actual": "1049363732534658754",
+          "matched": true
+        },
+        {
+          "address": "0xe9Dc63083c464d6EDcCFf23444fF3CFc6886f6FB",
+          "name": "Curve oBTC Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1065667304704515360",
+          "actual": "1065667304704515360",
+          "matched": true
+        },
+        {
+          "address": "0x39CAF13a104FF567f71fd2A4c68C026FDB6E740B",
+          "name": "Curve Aave Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1029642769234918699",
+          "actual": "1029642769234918699",
+          "matched": true
+        },
+        {
+          "address": "0xd02b103f7f5dba89Ad316E2b3Fe247F280CcE5b2",
+          "name": "Curve xETH Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1600867587748982831",
+          "actual": "1600867587748982831",
+          "matched": true
+        },
+        {
+          "address": "0xE2CaD35CFD1A9B5acD557558f44B096ef8340C1B",
+          "name": "Curve TriCryptoLLAMA Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1701801432435850161",
+          "actual": "1701801432435850161",
+          "matched": true
+        },
+        {
+          "address": "0xF29AE508698bDeF169B89834F76704C3B205aedf",
+          "name": "SNX yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1146536340809926676",
+          "actual": "1146536340809926676",
+          "matched": true
+        },
+        {
+          "address": "0x490bD0886F221A5F79713D3E84404355A9293C50",
+          "name": "Curve ibCHF Pool yVault",
+          "apiVersion": "0.4.3",
+          "expected": "1380346376526765172",
+          "actual": "1380346376526765172",
+          "matched": true
+        },
+        {
+          "address": "0x8414Db07a7F743dEbaFb402070AB01a4E0d2E45e",
+          "name": "Curve sBTC Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1026794713148063200",
+          "actual": "1026794713148063200",
+          "matched": true
+        },
+        {
+          "address": "0x03f8CCf5b5004B55309e949ea9D08136a32E9C5d",
+          "name": "Curve tBTC-cbBTC Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1000000000000000000",
+          "actual": "1000000000000000000",
+          "matched": true
+        },
+        {
+          "address": "0x2fB06235aB90812e5BaE28404024C9498fF9414d",
+          "name": "Curve JPEG-pETH Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "7191047920917440398",
+          "actual": "7191047920917440398",
+          "matched": true
+        },
+        {
+          "address": "0xAE6eD98B1Bd9aAdd3185160324e0e011159B61D3",
+          "name": "Curve Compound Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1339610656117630050",
+          "actual": "1339610656117630050",
+          "matched": true
+        },
+        {
+          "address": "0x5591Ac6CC8cdeE5d47E553a8c3543eF5eA808919",
+          "name": "Curve OUSD-frxUSD Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1070965762619500449",
+          "actual": "1070965762619500449",
+          "matched": true
+        },
+        {
+          "address": "0xD6Ea40597Be05c201845c0bFd2e96A60bACde267",
+          "name": "Curve Compound Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1613281262183432676",
+          "actual": "1613281262183432676",
+          "matched": true
+        }
+      ]
+    },
+    {
+      "timestamp": "1793889239",
+      "checks": [
+        {
+          "address": "0x1Fc80CfCF5B345b904A0fB36d4222196Ed9eB8a5",
+          "name": "Curve DOLA-sUSDe Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1244590740623459148",
+          "actual": "1244590740623459148",
+          "matched": true
+        },
+        {
+          "address": "0xa258C4606Ca8206D8aA700cE2143D7db854D168c",
+          "name": "WETH yVault",
+          "apiVersion": "0.4.2",
+          "expected": "1129840803808049235",
+          "actual": "1129840803808049235",
+          "matched": true
+        },
+        {
+          "address": "0x27B5739e22ad9033bcBf192059122d163b60349D",
+          "name": "yCRV yVault",
+          "apiVersion": "0.4.3",
+          "expected": "2654970714700779613",
+          "actual": "2654970714700779613",
+          "matched": true
+        },
+        {
+          "address": "0xa354F35829Ae975e850e23e9615b11Da1B3dC4DE",
+          "name": "USDC yVault",
+          "apiVersion": "0.4.3",
+          "expected": "1192416",
+          "actual": "1192416",
+          "matched": true
+        },
+        {
+          "address": "0x5B8C556B8b2a78696F0B9B830B3d67623122E270",
+          "name": "Curve stETH Factory yVault",
+          "apiVersion": "0.4.5",
+          "expected": "1005446236681781028",
+          "actual": "1005446236681781028",
+          "matched": true
+        },
+        {
+          "address": "0x3B27F92C0e212C671EA351827EDF93DB27cc0c65",
+          "name": "USDT yVault",
+          "apiVersion": "0.4.3",
+          "expected": "1150383",
+          "actual": "1150383",
+          "matched": true
+        },
+        {
+          "address": "0x7Da96a3891Add058AdA2E826306D812C638D87a7",
+          "name": "USDT yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1174742",
+          "actual": "1174742",
+          "matched": true
+        },
+        {
+          "address": "0xA696a63cc78DfFa1a63E9E50587C197387FF6C7E",
+          "name": "WBTC yVault",
+          "apiVersion": "0.3.5",
+          "expected": "102432778",
+          "actual": "102432778",
+          "matched": true
+        },
+        {
+          "address": "0x7c439Df9ADE8831180EA4D546c1E910D4Ba71a86",
+          "name": "Curve reUSD-sDOLA Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1296250304560412185",
+          "actual": "1296250304560412185",
+          "matched": true
+        },
+        {
+          "address": "0xdCD90C7f6324cfa40d7169ef80b12031770B4325",
+          "name": "Curve stETH Pool yVault",
+          "apiVersion": "0.3.0",
+          "expected": "1098425989399406290",
+          "actual": "1098425989399406290",
+          "matched": true
+        },
+        {
+          "address": "0x6A5468752f8DB94134B6508dAbAC54D3b45efCE6",
+          "name": "Curve CRV-ETH Pool yVault",
+          "apiVersion": "0.4.3",
+          "expected": "1222606466551708213",
+          "actual": "1222606466551708213",
+          "matched": true
+        },
+        {
+          "address": "0xdA816459F1AB5631232FE5e97a05BBBb94970c95",
+          "name": "DAI yVault",
+          "apiVersion": "0.4.3",
+          "expected": "1233506545293171739",
+          "actual": "1233506545293171739",
+          "matched": true
+        },
+        {
+          "address": "0xAD2f9A55518Dba12E8AB069502820923351667C5",
+          "name": "Curve msETH Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1471612846167925114",
+          "actual": "1471612846167925114",
+          "matched": true
+        },
+        {
+          "address": "0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9",
+          "name": "USDC yVault",
+          "apiVersion": "0.3.0",
+          "expected": "1251496",
+          "actual": "1251496",
+          "matched": true
+        },
+        {
+          "address": "0xf165a634296800812B8B0607a75DeDdcD4D3cC88",
+          "name": "Curve reUSD-scrvUSD Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1199249338078138671",
+          "actual": "1199249338078138671",
+          "matched": true
+        },
+        {
+          "address": "0x5fA5B62c8AF877CB37031e0a3B2f34A78e3C56A6",
+          "name": "Curve LUSD Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1132777851724125655",
+          "actual": "1132777851724125655",
+          "matched": true
+        },
+        {
+          "address": "0x6E9455D109202b426169F0d8f01A3332DAE160f3",
+          "name": "LP Yearn CRV Vault v2",
+          "apiVersion": "0.4.6",
+          "expected": "1764110206244062547",
+          "actual": "1764110206244062547",
+          "matched": true
+        },
+        {
+          "address": "0x342D24F2a3233F7Ac8A7347fA239187BFd186066",
+          "name": "Curve DOLA-sUSDS Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1222227793017837891",
+          "actual": "1222227793017837891",
+          "matched": true
+        },
+        {
+          "address": "0x6f0Ace0F94f4B9890Dfa99A4175B3Ef0288C16B3",
+          "name": "Curve CRV-ETH Factory yVault",
+          "apiVersion": "0.4.5",
+          "expected": "1100575027469643374",
+          "actual": "1100575027469643374",
+          "matched": true
+        },
+        {
+          "address": "0x19D3364A399d251E894aC732651be8B0E4e85001",
+          "name": "DAI yVault",
+          "apiVersion": "0.3.0",
+          "expected": "1269282135519613164",
+          "actual": "1269282135519613164",
+          "matched": true
+        },
+        {
+          "address": "0xaA379c2aA72529d5ec0da8A41e2F41ED7Fe4b48C",
+          "name": "Curve TriCryptoUSDC Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1290534735882114494",
+          "actual": "1290534735882114494",
+          "matched": true
+        },
+        {
+          "address": "0x27b7b1ad7288079A66d12350c828D3C00A6F07d7",
+          "name": "Curve Iron Bank Pool yVault",
+          "apiVersion": "0.3.2",
+          "expected": "1072098097564623381",
+          "actual": "1072098097564623381",
+          "matched": true
+        },
+        {
+          "address": "0xa9fE4601811213c340e850ea305481afF02f5b28",
+          "name": "WETH yVault",
+          "apiVersion": "0.3.2",
+          "expected": "1131590650329010050",
+          "actual": "1131590650329010050",
+          "matched": true
+        },
+        {
+          "address": "0x668c5Ef17f2F01503FBB4F285F32161251047720",
+          "name": "Curve iREET-pmUSD Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1064535819341193482",
+          "actual": "1064535819341193482",
+          "matched": true
+        },
+        {
+          "address": "0x25212Df29073FfFA7A67399AcEfC2dd75a831A1A",
+          "name": "Curve EURS Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1101116680963397473",
+          "actual": "1101116680963397473",
+          "matched": true
+        },
+        {
+          "address": "0xAd86Df2e8F989c828B25A7Da5EB1Ec363283fA3F",
+          "name": "Curve LUSD Factory yVault",
+          "apiVersion": "0.4.5",
+          "expected": "1021915765172766659",
+          "actual": "1021915765172766659",
+          "matched": true
+        },
+        {
+          "address": "0xB53B70Cb960FeEAf2093Df3C733E368F6D254898",
+          "name": "Curve DUSD-frxUSD Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1049573800005175434",
+          "actual": "1049573800005175434",
+          "matched": true
+        },
+        {
+          "address": "0xdb25cA703181E7484a155DD612b06f57E12Be5F0",
+          "name": "YFI yVault",
+          "apiVersion": "0.4.3",
+          "expected": "1013228104132560109",
+          "actual": "1013228104132560109",
+          "matched": true
+        },
+        {
+          "address": "0xD2433Ec6De2a932Ab7bc1A0080676333AeF8B546",
+          "name": "Curve reUSD-sfrxUSD Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1229371366736141478",
+          "actual": "1229371366736141478",
+          "matched": true
+        },
+        {
+          "address": "0x8078198Fc424986ae89Ce4a910Fc109587b6aBF3",
+          "name": "Curve 3Crypto Factory yVault",
+          "apiVersion": "0.4.5",
+          "expected": "1107343369128624708",
+          "actual": "1107343369128624708",
+          "matched": true
+        },
+        {
+          "address": "0x790a60024bC3aea28385b60480f15a0771f26D09",
+          "name": "Curve YFI-ETH Pool yVault",
+          "apiVersion": "0.4.3",
+          "expected": "1151341090403530191",
+          "actual": "1151341090403530191",
+          "matched": true
+        },
+        {
+          "address": "0x04c8bfe2eb09a1e2e9fA97A2fd970E06d87B43de",
+          "name": "Curve GEAR-ETH Factory yVault",
+          "apiVersion": "0.4.5",
+          "expected": "1955652169309741783",
+          "actual": "1955652169309741783",
+          "matched": true
+        },
+        {
+          "address": "0x75A291F0232ADD37d72Dd1Dcff55B715755ECDEe",
+          "name": "Curve CVX-ETH Factory yVault",
+          "apiVersion": "0.4.5",
+          "expected": "1920848477317319945",
+          "actual": "1920848477317319945",
+          "matched": true
+        },
+        {
+          "address": "0xb83461b887398CD981957BD93CB7067cF89c21C0",
+          "name": "Curve BOLD-USDC Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1020392325351599556",
+          "actual": "1020392325351599556",
+          "matched": true
+        },
+        {
+          "address": "0xE537B5cc158EB71037D4125BDD7538421981E6AA",
+          "name": "Curve 3Crypto Pool yVault",
+          "apiVersion": "0.4.3",
+          "expected": "1230000723761796632",
+          "actual": "1230000723761796632",
+          "matched": true
+        },
+        {
+          "address": "0xe0287cA62fE23f4FFAB827d5448d68aFe6DD9Fd7",
+          "name": "Curve msUSD-frxUSD Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1166231132192687698",
+          "actual": "1166231132192687698",
+          "matched": true
+        },
+        {
+          "address": "0xB5dE7250128775a317B3f775a7AFcEC73571B732",
+          "name": "Curve sETH Factory yVault",
+          "apiVersion": "0.4.5",
+          "expected": "1046220418912899441",
+          "actual": "1046220418912899441",
+          "matched": true
+        },
+        {
+          "address": "0x7cA00559B978CFde81297849be6151d3ccB408A9",
+          "name": "Curve USDC-crvUSD Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1416047496239843348",
+          "actual": "1416047496239843348",
+          "matched": true
+        },
+        {
+          "address": "0x671a912C10bba0CFA74Cfc2d6Fba9BA1ed9530B2",
+          "name": "LINK yVault",
+          "apiVersion": "0.4.2",
+          "expected": "1023757226593305450",
+          "actual": "1023757226593305450",
+          "matched": true
+        },
+        {
+          "address": "0x986b4AFF588a109c09B50A03f42E4110E29D353F",
+          "name": "Curve sETH Pool yVault",
+          "apiVersion": "0.3.2",
+          "expected": "1952465462263270778",
+          "actual": "1952465462263270778",
+          "matched": true
+        },
+        {
+          "address": "0xFBEB78a723b8087fD2ea7Ef1afEc93d35E8Bed42",
+          "name": "UNI yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1017746042147565603",
+          "actual": "1017746042147565603",
+          "matched": true
+        },
+        {
+          "address": "0xDb26d8815EdA864Dfa43306766f2F8CA50C03F9E",
+          "name": "Curve msUSD-FRAXBP Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "5878402132476538107",
+          "actual": "5878402132476538107",
+          "matched": true
+        },
+        {
+          "address": "0x1635b506a88fBF428465Ad65d00e8d6B6E5846C3",
+          "name": "Curve CVX-ETH Pool yVault",
+          "apiVersion": "0.4.3",
+          "expected": "2105403388306471788",
+          "actual": "2105403388306471788",
+          "matched": true
+        },
+        {
+          "address": "0xc952f3028E322da48e239A077b810A24556f36f1",
+          "name": "Curve pmUSD-frxUSD Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1206725727835796762",
+          "actual": "1206725727835796762",
+          "matched": true
+        },
+        {
+          "address": "0x241AdD131B9aaa7527132b752252b99420937ADc",
+          "name": "Curve USDT-crvUSD Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1500947921494877972",
+          "actual": "1500947921494877972",
+          "matched": true
+        },
+        {
+          "address": "0x192725C6516656f3e288c08Db8228c25Fe1f77D5",
+          "name": "Curve CRV LlamaLend Recovery Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1081114488499892342",
+          "actual": "1081114488499892342",
+          "matched": true
+        },
+        {
+          "address": "0x9d409a0A012CFbA9B15F6D4B36Ac57A46966Ab9a",
+          "name": "Yearn Compounding veCRV yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1993421298729529618",
+          "actual": "1993421298729529618",
+          "matched": true
+        },
+        {
+          "address": "0xf2db9a7c0ACd427A680D640F02d90f6186E71725",
+          "name": "Curve LINK Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1015764501718117121",
+          "actual": "1015764501718117121",
+          "matched": true
+        },
+        {
+          "address": "0x4282B8f159ee677559Dc6A20cd478DD0BDe75fF2",
+          "name": "Curve frxUSD-crvUSD Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1085461074132334228",
+          "actual": "1085461074132334228",
+          "matched": true
+        },
+        {
+          "address": "0xE14d13d8B3b85aF791b2AADD661cDBd5E6097Db1",
+          "name": "YFI yVault",
+          "apiVersion": "0.3.2",
+          "expected": "1065136554030822613",
+          "actual": "1065136554030822613",
+          "matched": true
+        },
+        {
+          "address": "0xc97232527B62eFb0D8ed38CF3EA103A6CcA4037e",
+          "name": "LP Yearn CRV Vault",
+          "apiVersion": "0.4.3",
+          "expected": "1198479703806331371",
+          "actual": "1198479703806331371",
+          "matched": true
+        },
+        {
+          "address": "0xb37094c1B5614Bd6EcE40AFb295C26F4377069d3",
+          "name": "Curve FRAX Factory yVault",
+          "apiVersion": "0.4.5",
+          "expected": "1020249730685111421",
+          "actual": "1020249730685111421",
+          "matched": true
+        },
+        {
+          "address": "0xB4AdA607B9d6b2c9Ee07A275e9616B84AC560139",
+          "name": "Curve FRAX Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1146542112963344004",
+          "actual": "1146542112963344004",
+          "matched": true
+        },
+        {
+          "address": "0x84E13785B5a27879921D6F685f041421C7F482dA",
+          "name": "Curve 3pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1071837803436822798",
+          "actual": "1071837803436822798",
+          "matched": true
+        },
+        {
+          "address": "0x4CbB6A5EC00cEEC252a7091559484F7adb83165f",
+          "name": "Curve alUSD Factory yVault",
+          "apiVersion": "0.4.5",
+          "expected": "1093696318628477934",
+          "actual": "1093696318628477934",
+          "matched": true
+        },
+        {
+          "address": "0xA74d4B67b3368E83797a35382AFB776bAAE4F5C8",
+          "name": "Curve alUSD Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1205086867847253893",
+          "actual": "1205086867847253893",
+          "matched": true
+        },
+        {
+          "address": "0xb4D1Be44BfF40ad6e506edf43156577a3f8672eC",
+          "name": "Curve sAave Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1062183756025662299",
+          "actual": "1062183756025662299",
+          "matched": true
+        },
+        {
+          "address": "0x528D50dC9a333f01544177a924893FA1F5b9F748",
+          "name": "Curve ibKRW Pool yVault",
+          "apiVersion": "0.4.3",
+          "expected": "1320077603750772056",
+          "actual": "1320077603750772056",
+          "matched": true
+        },
+        {
+          "address": "0x82c83ddA32DB09F63F9A59A129278f3fdC3EeE67",
+          "name": "Curve 3EUR Factory yVault",
+          "apiVersion": "0.4.5",
+          "expected": "1585191824749234083",
+          "actual": "1585191824749234083",
+          "matched": true
+        },
+        {
+          "address": "0xe7c25cb1eac7D870F3cD103cBB060A6DFbc5eaF2",
+          "name": "Curve ynETHx Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1058167510744300485",
+          "actual": "1058167510744300485",
+          "matched": true
+        },
+        {
+          "address": "0xa669d6C2Df33F41940c2646A9BF3031e2524d515",
+          "name": "Curve sdCRVv2 Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1850679458080018811",
+          "actual": "1850679458080018811",
+          "matched": true
+        },
+        {
+          "address": "0x8F49C410ac9d05aa7260ef0951b3f328E80d1f3D",
+          "name": "Curve avUSD-frxUSD Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1063787034803504976",
+          "actual": "1063787034803504976",
+          "matched": true
+        },
+        {
+          "address": "0x849dC56ceCa7Cf55AbF5ec87910DA21c5C7dA581",
+          "name": "Curve ETH+ Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1309282448159108607",
+          "actual": "1309282448159108607",
+          "matched": true
+        },
+        {
+          "address": "0x5a770DbD3Ee6bAF2802D29a901Ef11501C44797A",
+          "name": "Curve sUSD Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1160509198175035959",
+          "actual": "1160509198175035959",
+          "matched": true
+        },
+        {
+          "address": "0x2027D3b2B58F522178cE4cC4E86e99b7C4DE3876",
+          "name": "Curve USDM-sDAI Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1053908411406400885",
+          "actual": "1053908411406400885",
+          "matched": true
+        },
+        {
+          "address": "0x0844C227b892be5d7c837000C096f64bFc316c2d",
+          "name": "Curve yYB Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1380538386474680970",
+          "actual": "1380538386474680970",
+          "matched": true
+        },
+        {
+          "address": "0x5AB64C599FcC59f0f2726A300b03166A395578Da",
+          "name": "Curve 3EUR Pool yVault",
+          "apiVersion": "0.4.3",
+          "expected": "2005693223525160480",
+          "actual": "2005693223525160480",
+          "matched": true
+        },
+        {
+          "address": "0x3f34A7eF4f17528CbFFb7817060941BCdaC924fa",
+          "name": "Curve TriCRV Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1688775227238638318",
+          "actual": "1688775227238638318",
+          "matched": true
+        },
+        {
+          "address": "0xb7b1C394b3F82091988A1e400C6499178eE64b99",
+          "name": "Curve alUSD-sDOLA Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1570009893123128699",
+          "actual": "1570009893123128699",
+          "matched": true
+        },
+        {
+          "address": "0x77e829FFF18C14AD9bb88963acB0010A0506de88",
+          "name": "Curve StaFi rETH Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1118337248537447642",
+          "actual": "1118337248537447642",
+          "matched": true
+        },
+        {
+          "address": "0xBfedbcbe27171C418CDabC2477042554b1904857",
+          "name": "Curve rETH Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1169184835944364521",
+          "actual": "1169184835944364521",
+          "matched": true
+        },
+        {
+          "address": "0x3D980E50508CFd41a13837A60149927a11c03731",
+          "name": "Curve triCrypto Pool yVault",
+          "apiVersion": "0.4.2",
+          "expected": "1037889609364136300",
+          "actual": "1037889609364136300",
+          "matched": true
+        },
+        {
+          "address": "0x5F208d3a8b13062adE45a33Ca9Bc8de64D520CB9",
+          "name": "Curve stETHv2 Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1026325105105288037",
+          "actual": "1026325105105288037",
+          "matched": true
+        },
+        {
+          "address": "0x7845Ebf66c9575Fc5f5A0dBb9a34a706Ad997a3f",
+          "name": "Curve TriCryptoUSDT Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1329176873356295605",
+          "actual": "1329176873356295605",
+          "matched": true
+        },
+        {
+          "address": "0xa8E0c42F45C877e611C76F2D4bF57476f2014381",
+          "name": "Curve Iron Bank Factory yVault",
+          "apiVersion": "0.4.5",
+          "expected": "1020141687252549509",
+          "actual": "1020141687252549509",
+          "matched": true
+        },
+        {
+          "address": "0x8017B5d498f75d12dA6A857e867699fB07De41a4",
+          "name": "Curve RSUP-WETH Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "2438576185116682298",
+          "actual": "2438576185116682298",
+          "matched": true
+        },
+        {
+          "address": "0x944d749017053e0D37ec206c9898716A21e0B2E2",
+          "name": "Curve mUSD Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1027566317650418245",
+          "actual": "1027566317650418245",
+          "matched": true
+        },
+        {
+          "address": "0x5c0A86A32c129538D62C106Eb8115a8b02358d57",
+          "name": "Curve rETH-wstETH Pool yVault",
+          "apiVersion": "0.4.3",
+          "expected": "1001725659625476577",
+          "actual": "1001725659625476577",
+          "matched": true
+        },
+        {
+          "address": "0x8cc94ccd0f3841a468184aCA3Cc478D2148E1757",
+          "name": "Curve mUSD Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1134713547415505990",
+          "actual": "1134713547415505990",
+          "matched": true
+        },
+        {
+          "address": "0x5fFd0C196838aa5e700657C1f6fd8A87f5d80ED2",
+          "name": "Curve OETH-ARM-stETH Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1020858054832310051",
+          "actual": "1020858054832310051",
+          "matched": true
+        },
+        {
+          "address": "0x6949145469362F9eeaB3c96Ea41b51D9B4cC2b21",
+          "name": "Curve TriCryptoINV Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1773908621061121409",
+          "actual": "1773908621061121409",
+          "matched": true
+        },
+        {
+          "address": "0x2D5D4869381C4Fce34789BC1D38aCCe747E295AE",
+          "name": "Curve RAI Pool yVault",
+          "apiVersion": "0.4.3",
+          "expected": "1029882406011568415",
+          "actual": "1029882406011568415",
+          "matched": true
+        },
+        {
+          "address": "0xd9788f3931Ede4D5018184E198699dC6d66C1915",
+          "name": "AAVE yVault",
+          "apiVersion": "0.4.3",
+          "expected": "1049363732534658754",
+          "actual": "1049363732534658754",
+          "matched": true
+        },
+        {
+          "address": "0xe9Dc63083c464d6EDcCFf23444fF3CFc6886f6FB",
+          "name": "Curve oBTC Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1065667304704515360",
+          "actual": "1065667304704515360",
+          "matched": true
+        },
+        {
+          "address": "0x39CAF13a104FF567f71fd2A4c68C026FDB6E740B",
+          "name": "Curve Aave Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1029642769234918699",
+          "actual": "1029642769234918699",
+          "matched": true
+        },
+        {
+          "address": "0xd02b103f7f5dba89Ad316E2b3Fe247F280CcE5b2",
+          "name": "Curve xETH Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1600867587748982831",
+          "actual": "1600867587748982831",
+          "matched": true
+        },
+        {
+          "address": "0xE2CaD35CFD1A9B5acD557558f44B096ef8340C1B",
+          "name": "Curve TriCryptoLLAMA Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1701801432435850161",
+          "actual": "1701801432435850161",
+          "matched": true
+        },
+        {
+          "address": "0xF29AE508698bDeF169B89834F76704C3B205aedf",
+          "name": "SNX yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1146536340809926676",
+          "actual": "1146536340809926676",
+          "matched": true
+        },
+        {
+          "address": "0x490bD0886F221A5F79713D3E84404355A9293C50",
+          "name": "Curve ibCHF Pool yVault",
+          "apiVersion": "0.4.3",
+          "expected": "1380346376526765172",
+          "actual": "1380346376526765172",
+          "matched": true
+        },
+        {
+          "address": "0x8414Db07a7F743dEbaFb402070AB01a4E0d2E45e",
+          "name": "Curve sBTC Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1026794713148063200",
+          "actual": "1026794713148063200",
+          "matched": true
+        },
+        {
+          "address": "0x03f8CCf5b5004B55309e949ea9D08136a32E9C5d",
+          "name": "Curve tBTC-cbBTC Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1000000000000000000",
+          "actual": "1000000000000000000",
+          "matched": true
+        },
+        {
+          "address": "0x2fB06235aB90812e5BaE28404024C9498fF9414d",
+          "name": "Curve JPEG-pETH Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "7191047920917440398",
+          "actual": "7191047920917440398",
+          "matched": true
+        },
+        {
+          "address": "0xAE6eD98B1Bd9aAdd3185160324e0e011159B61D3",
+          "name": "Curve Compound Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1339610656117630050",
+          "actual": "1339610656117630050",
+          "matched": true
+        },
+        {
+          "address": "0x5591Ac6CC8cdeE5d47E553a8c3543eF5eA808919",
+          "name": "Curve OUSD-frxUSD Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1070965762619500449",
+          "actual": "1070965762619500449",
+          "matched": true
+        },
+        {
+          "address": "0xD6Ea40597Be05c201845c0bFd2e96A60bACde267",
+          "name": "Curve Compound Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1613281262183432676",
+          "actual": "1613281262183432676",
+          "matched": true
+        }
+      ]
+    },
+    {
+      "timestamp": "1794407639",
+      "checks": [
+        {
+          "address": "0x1Fc80CfCF5B345b904A0fB36d4222196Ed9eB8a5",
+          "name": "Curve DOLA-sUSDe Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1244590740623459148",
+          "actual": "1244590740623459148",
+          "matched": true
+        },
+        {
+          "address": "0xa258C4606Ca8206D8aA700cE2143D7db854D168c",
+          "name": "WETH yVault",
+          "apiVersion": "0.4.2",
+          "expected": "1129840803808049235",
+          "actual": "1129840803808049235",
+          "matched": true
+        },
+        {
+          "address": "0x27B5739e22ad9033bcBf192059122d163b60349D",
+          "name": "yCRV yVault",
+          "apiVersion": "0.4.3",
+          "expected": "2654970714700779613",
+          "actual": "2654970714700779613",
+          "matched": true
+        },
+        {
+          "address": "0xa354F35829Ae975e850e23e9615b11Da1B3dC4DE",
+          "name": "USDC yVault",
+          "apiVersion": "0.4.3",
+          "expected": "1192416",
+          "actual": "1192416",
+          "matched": true
+        },
+        {
+          "address": "0x5B8C556B8b2a78696F0B9B830B3d67623122E270",
+          "name": "Curve stETH Factory yVault",
+          "apiVersion": "0.4.5",
+          "expected": "1005446236681781028",
+          "actual": "1005446236681781028",
+          "matched": true
+        },
+        {
+          "address": "0x3B27F92C0e212C671EA351827EDF93DB27cc0c65",
+          "name": "USDT yVault",
+          "apiVersion": "0.4.3",
+          "expected": "1150383",
+          "actual": "1150383",
+          "matched": true
+        },
+        {
+          "address": "0x7Da96a3891Add058AdA2E826306D812C638D87a7",
+          "name": "USDT yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1174742",
+          "actual": "1174742",
+          "matched": true
+        },
+        {
+          "address": "0xA696a63cc78DfFa1a63E9E50587C197387FF6C7E",
+          "name": "WBTC yVault",
+          "apiVersion": "0.3.5",
+          "expected": "102432778",
+          "actual": "102432778",
+          "matched": true
+        },
+        {
+          "address": "0x7c439Df9ADE8831180EA4D546c1E910D4Ba71a86",
+          "name": "Curve reUSD-sDOLA Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1296250304560412185",
+          "actual": "1296250304560412185",
+          "matched": true
+        },
+        {
+          "address": "0xdCD90C7f6324cfa40d7169ef80b12031770B4325",
+          "name": "Curve stETH Pool yVault",
+          "apiVersion": "0.3.0",
+          "expected": "1098425989399406290",
+          "actual": "1098425989399406290",
+          "matched": true
+        },
+        {
+          "address": "0x6A5468752f8DB94134B6508dAbAC54D3b45efCE6",
+          "name": "Curve CRV-ETH Pool yVault",
+          "apiVersion": "0.4.3",
+          "expected": "1222606466551708213",
+          "actual": "1222606466551708213",
+          "matched": true
+        },
+        {
+          "address": "0xdA816459F1AB5631232FE5e97a05BBBb94970c95",
+          "name": "DAI yVault",
+          "apiVersion": "0.4.3",
+          "expected": "1233506545293171739",
+          "actual": "1233506545293171739",
+          "matched": true
+        },
+        {
+          "address": "0xAD2f9A55518Dba12E8AB069502820923351667C5",
+          "name": "Curve msETH Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1471624311468591978",
+          "actual": "1471624311468591978",
+          "matched": true
+        },
+        {
+          "address": "0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9",
+          "name": "USDC yVault",
+          "apiVersion": "0.3.0",
+          "expected": "1251496",
+          "actual": "1251496",
+          "matched": true
+        },
+        {
+          "address": "0xf165a634296800812B8B0607a75DeDdcD4D3cC88",
+          "name": "Curve reUSD-scrvUSD Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1199696985994616624",
+          "actual": "1199696985994616624",
+          "matched": true
+        },
+        {
+          "address": "0x5fA5B62c8AF877CB37031e0a3B2f34A78e3C56A6",
+          "name": "Curve LUSD Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1132777851724125655",
+          "actual": "1132777851724125655",
+          "matched": true
+        },
+        {
+          "address": "0x6E9455D109202b426169F0d8f01A3332DAE160f3",
+          "name": "LP Yearn CRV Vault v2",
+          "apiVersion": "0.4.6",
+          "expected": "1764472608664122159",
+          "actual": "1764472608664122159",
+          "matched": true
+        },
+        {
+          "address": "0x342D24F2a3233F7Ac8A7347fA239187BFd186066",
+          "name": "Curve DOLA-sUSDS Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1222227793017837891",
+          "actual": "1222227793017837891",
+          "matched": true
+        },
+        {
+          "address": "0x6f0Ace0F94f4B9890Dfa99A4175B3Ef0288C16B3",
+          "name": "Curve CRV-ETH Factory yVault",
+          "apiVersion": "0.4.5",
+          "expected": "1100575027469643374",
+          "actual": "1100575027469643374",
+          "matched": true
+        },
+        {
+          "address": "0x19D3364A399d251E894aC732651be8B0E4e85001",
+          "name": "DAI yVault",
+          "apiVersion": "0.3.0",
+          "expected": "1269282135519613164",
+          "actual": "1269282135519613164",
+          "matched": true
+        },
+        {
+          "address": "0xaA379c2aA72529d5ec0da8A41e2F41ED7Fe4b48C",
+          "name": "Curve TriCryptoUSDC Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1290534735882114494",
+          "actual": "1290534735882114494",
+          "matched": true
+        },
+        {
+          "address": "0x27b7b1ad7288079A66d12350c828D3C00A6F07d7",
+          "name": "Curve Iron Bank Pool yVault",
+          "apiVersion": "0.3.2",
+          "expected": "1072098097564623381",
+          "actual": "1072098097564623381",
+          "matched": true
+        },
+        {
+          "address": "0xa9fE4601811213c340e850ea305481afF02f5b28",
+          "name": "WETH yVault",
+          "apiVersion": "0.3.2",
+          "expected": "1131590650329010050",
+          "actual": "1131590650329010050",
+          "matched": true
+        },
+        {
+          "address": "0x668c5Ef17f2F01503FBB4F285F32161251047720",
+          "name": "Curve iREET-pmUSD Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1064535819341193482",
+          "actual": "1064535819341193482",
+          "matched": true
+        },
+        {
+          "address": "0x25212Df29073FfFA7A67399AcEfC2dd75a831A1A",
+          "name": "Curve EURS Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1101116680963397473",
+          "actual": "1101116680963397473",
+          "matched": true
+        },
+        {
+          "address": "0xAd86Df2e8F989c828B25A7Da5EB1Ec363283fA3F",
+          "name": "Curve LUSD Factory yVault",
+          "apiVersion": "0.4.5",
+          "expected": "1021915765172766659",
+          "actual": "1021915765172766659",
+          "matched": true
+        },
+        {
+          "address": "0xB53B70Cb960FeEAf2093Df3C733E368F6D254898",
+          "name": "Curve DUSD-frxUSD Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1049573800005175434",
+          "actual": "1049573800005175434",
+          "matched": true
+        },
+        {
+          "address": "0xdb25cA703181E7484a155DD612b06f57E12Be5F0",
+          "name": "YFI yVault",
+          "apiVersion": "0.4.3",
+          "expected": "1013228104132560109",
+          "actual": "1013228104132560109",
+          "matched": true
+        },
+        {
+          "address": "0xD2433Ec6De2a932Ab7bc1A0080676333AeF8B546",
+          "name": "Curve reUSD-sfrxUSD Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1229669946579768344",
+          "actual": "1229669946579768344",
+          "matched": true
+        },
+        {
+          "address": "0x8078198Fc424986ae89Ce4a910Fc109587b6aBF3",
+          "name": "Curve 3Crypto Factory yVault",
+          "apiVersion": "0.4.5",
+          "expected": "1107343369128624708",
+          "actual": "1107343369128624708",
+          "matched": true
+        },
+        {
+          "address": "0x790a60024bC3aea28385b60480f15a0771f26D09",
+          "name": "Curve YFI-ETH Pool yVault",
+          "apiVersion": "0.4.3",
+          "expected": "1151341090403530191",
+          "actual": "1151341090403530191",
+          "matched": true
+        },
+        {
+          "address": "0x04c8bfe2eb09a1e2e9fA97A2fd970E06d87B43de",
+          "name": "Curve GEAR-ETH Factory yVault",
+          "apiVersion": "0.4.5",
+          "expected": "1955652169309741783",
+          "actual": "1955652169309741783",
+          "matched": true
+        },
+        {
+          "address": "0x75A291F0232ADD37d72Dd1Dcff55B715755ECDEe",
+          "name": "Curve CVX-ETH Factory yVault",
+          "apiVersion": "0.4.5",
+          "expected": "1920848477317319945",
+          "actual": "1920848477317319945",
+          "matched": true
+        },
+        {
+          "address": "0xb83461b887398CD981957BD93CB7067cF89c21C0",
+          "name": "Curve BOLD-USDC Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1020392325351599556",
+          "actual": "1020392325351599556",
+          "matched": true
+        },
+        {
+          "address": "0xE537B5cc158EB71037D4125BDD7538421981E6AA",
+          "name": "Curve 3Crypto Pool yVault",
+          "apiVersion": "0.4.3",
+          "expected": "1230000723761796632",
+          "actual": "1230000723761796632",
+          "matched": true
+        },
+        {
+          "address": "0xe0287cA62fE23f4FFAB827d5448d68aFe6DD9Fd7",
+          "name": "Curve msUSD-frxUSD Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1166335992930601115",
+          "actual": "1166335992930601115",
+          "matched": true
+        },
+        {
+          "address": "0xB5dE7250128775a317B3f775a7AFcEC73571B732",
+          "name": "Curve sETH Factory yVault",
+          "apiVersion": "0.4.5",
+          "expected": "1046220418912899441",
+          "actual": "1046220418912899441",
+          "matched": true
+        },
+        {
+          "address": "0x7cA00559B978CFde81297849be6151d3ccB408A9",
+          "name": "Curve USDC-crvUSD Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1416566302144651336",
+          "actual": "1416566302144651336",
+          "matched": true
+        },
+        {
+          "address": "0x671a912C10bba0CFA74Cfc2d6Fba9BA1ed9530B2",
+          "name": "LINK yVault",
+          "apiVersion": "0.4.2",
+          "expected": "1023757226593305450",
+          "actual": "1023757226593305450",
+          "matched": true
+        },
+        {
+          "address": "0x986b4AFF588a109c09B50A03f42E4110E29D353F",
+          "name": "Curve sETH Pool yVault",
+          "apiVersion": "0.3.2",
+          "expected": "1952465462263270778",
+          "actual": "1952465462263270778",
+          "matched": true
+        },
+        {
+          "address": "0xFBEB78a723b8087fD2ea7Ef1afEc93d35E8Bed42",
+          "name": "UNI yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1017746042147565603",
+          "actual": "1017746042147565603",
+          "matched": true
+        },
+        {
+          "address": "0xDb26d8815EdA864Dfa43306766f2F8CA50C03F9E",
+          "name": "Curve msUSD-FRAXBP Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "5878402132476538107",
+          "actual": "5878402132476538107",
+          "matched": true
+        },
+        {
+          "address": "0x1635b506a88fBF428465Ad65d00e8d6B6E5846C3",
+          "name": "Curve CVX-ETH Pool yVault",
+          "apiVersion": "0.4.3",
+          "expected": "2105403388306471788",
+          "actual": "2105403388306471788",
+          "matched": true
+        },
+        {
+          "address": "0xc952f3028E322da48e239A077b810A24556f36f1",
+          "name": "Curve pmUSD-frxUSD Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1206725727835796762",
+          "actual": "1206725727835796762",
+          "matched": true
+        },
+        {
+          "address": "0x241AdD131B9aaa7527132b752252b99420937ADc",
+          "name": "Curve USDT-crvUSD Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1500947921494877972",
+          "actual": "1500947921494877972",
+          "matched": true
+        },
+        {
+          "address": "0x192725C6516656f3e288c08Db8228c25Fe1f77D5",
+          "name": "Curve CRV LlamaLend Recovery Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1081301792018519992",
+          "actual": "1081301792018519992",
+          "matched": true
+        },
+        {
+          "address": "0x9d409a0A012CFbA9B15F6D4B36Ac57A46966Ab9a",
+          "name": "Yearn Compounding veCRV yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1993421298729529618",
+          "actual": "1993421298729529618",
+          "matched": true
+        },
+        {
+          "address": "0xf2db9a7c0ACd427A680D640F02d90f6186E71725",
+          "name": "Curve LINK Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1015764501718117121",
+          "actual": "1015764501718117121",
+          "matched": true
+        },
+        {
+          "address": "0x4282B8f159ee677559Dc6A20cd478DD0BDe75fF2",
+          "name": "Curve frxUSD-crvUSD Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1087130115401888505",
+          "actual": "1087130115401888505",
+          "matched": true
+        },
+        {
+          "address": "0xE14d13d8B3b85aF791b2AADD661cDBd5E6097Db1",
+          "name": "YFI yVault",
+          "apiVersion": "0.3.2",
+          "expected": "1065136554030822613",
+          "actual": "1065136554030822613",
+          "matched": true
+        },
+        {
+          "address": "0xc97232527B62eFb0D8ed38CF3EA103A6CcA4037e",
+          "name": "LP Yearn CRV Vault",
+          "apiVersion": "0.4.3",
+          "expected": "1198479703806331371",
+          "actual": "1198479703806331371",
+          "matched": true
+        },
+        {
+          "address": "0xb37094c1B5614Bd6EcE40AFb295C26F4377069d3",
+          "name": "Curve FRAX Factory yVault",
+          "apiVersion": "0.4.5",
+          "expected": "1020249730685111421",
+          "actual": "1020249730685111421",
+          "matched": true
+        },
+        {
+          "address": "0xB4AdA607B9d6b2c9Ee07A275e9616B84AC560139",
+          "name": "Curve FRAX Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1146542112963344004",
+          "actual": "1146542112963344004",
+          "matched": true
+        },
+        {
+          "address": "0x84E13785B5a27879921D6F685f041421C7F482dA",
+          "name": "Curve 3pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1071837803436822798",
+          "actual": "1071837803436822798",
+          "matched": true
+        },
+        {
+          "address": "0x4CbB6A5EC00cEEC252a7091559484F7adb83165f",
+          "name": "Curve alUSD Factory yVault",
+          "apiVersion": "0.4.5",
+          "expected": "1093696318628477934",
+          "actual": "1093696318628477934",
+          "matched": true
+        },
+        {
+          "address": "0xA74d4B67b3368E83797a35382AFB776bAAE4F5C8",
+          "name": "Curve alUSD Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1205086867847253893",
+          "actual": "1205086867847253893",
+          "matched": true
+        },
+        {
+          "address": "0xb4D1Be44BfF40ad6e506edf43156577a3f8672eC",
+          "name": "Curve sAave Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1062183756025662299",
+          "actual": "1062183756025662299",
+          "matched": true
+        },
+        {
+          "address": "0x528D50dC9a333f01544177a924893FA1F5b9F748",
+          "name": "Curve ibKRW Pool yVault",
+          "apiVersion": "0.4.3",
+          "expected": "1320077603750772056",
+          "actual": "1320077603750772056",
+          "matched": true
+        },
+        {
+          "address": "0x82c83ddA32DB09F63F9A59A129278f3fdC3EeE67",
+          "name": "Curve 3EUR Factory yVault",
+          "apiVersion": "0.4.5",
+          "expected": "1585191824749234083",
+          "actual": "1585191824749234083",
+          "matched": true
+        },
+        {
+          "address": "0xe7c25cb1eac7D870F3cD103cBB060A6DFbc5eaF2",
+          "name": "Curve ynETHx Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1058167510744300485",
+          "actual": "1058167510744300485",
+          "matched": true
+        },
+        {
+          "address": "0xa669d6C2Df33F41940c2646A9BF3031e2524d515",
+          "name": "Curve sdCRVv2 Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1859268513670128988",
+          "actual": "1859268513670128988",
+          "matched": true
+        },
+        {
+          "address": "0x8F49C410ac9d05aa7260ef0951b3f328E80d1f3D",
+          "name": "Curve avUSD-frxUSD Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1063787034803504976",
+          "actual": "1063787034803504976",
+          "matched": true
+        },
+        {
+          "address": "0x849dC56ceCa7Cf55AbF5ec87910DA21c5C7dA581",
+          "name": "Curve ETH+ Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1309282448159108607",
+          "actual": "1309282448159108607",
+          "matched": true
+        },
+        {
+          "address": "0x5a770DbD3Ee6bAF2802D29a901Ef11501C44797A",
+          "name": "Curve sUSD Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1160509198175035959",
+          "actual": "1160509198175035959",
+          "matched": true
+        },
+        {
+          "address": "0x2027D3b2B58F522178cE4cC4E86e99b7C4DE3876",
+          "name": "Curve USDM-sDAI Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1053908411406400885",
+          "actual": "1053908411406400885",
+          "matched": true
+        },
+        {
+          "address": "0x0844C227b892be5d7c837000C096f64bFc316c2d",
+          "name": "Curve yYB Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1380538386474680970",
+          "actual": "1380538386474680970",
+          "matched": true
+        },
+        {
+          "address": "0x5AB64C599FcC59f0f2726A300b03166A395578Da",
+          "name": "Curve 3EUR Pool yVault",
+          "apiVersion": "0.4.3",
+          "expected": "2005693223525160480",
+          "actual": "2005693223525160480",
+          "matched": true
+        },
+        {
+          "address": "0x3f34A7eF4f17528CbFFb7817060941BCdaC924fa",
+          "name": "Curve TriCRV Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1688775227238638318",
+          "actual": "1688775227238638318",
+          "matched": true
+        },
+        {
+          "address": "0xb7b1C394b3F82091988A1e400C6499178eE64b99",
+          "name": "Curve alUSD-sDOLA Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1570009893123128699",
+          "actual": "1570009893123128699",
+          "matched": true
+        },
+        {
+          "address": "0x77e829FFF18C14AD9bb88963acB0010A0506de88",
+          "name": "Curve StaFi rETH Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1118337248537447642",
+          "actual": "1118337248537447642",
+          "matched": true
+        },
+        {
+          "address": "0xBfedbcbe27171C418CDabC2477042554b1904857",
+          "name": "Curve rETH Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1169184835944364521",
+          "actual": "1169184835944364521",
+          "matched": true
+        },
+        {
+          "address": "0x3D980E50508CFd41a13837A60149927a11c03731",
+          "name": "Curve triCrypto Pool yVault",
+          "apiVersion": "0.4.2",
+          "expected": "1037889609364136300",
+          "actual": "1037889609364136300",
+          "matched": true
+        },
+        {
+          "address": "0x5F208d3a8b13062adE45a33Ca9Bc8de64D520CB9",
+          "name": "Curve stETHv2 Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1026325105105288037",
+          "actual": "1026325105105288037",
+          "matched": true
+        },
+        {
+          "address": "0x7845Ebf66c9575Fc5f5A0dBb9a34a706Ad997a3f",
+          "name": "Curve TriCryptoUSDT Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1329176873356295605",
+          "actual": "1329176873356295605",
+          "matched": true
+        },
+        {
+          "address": "0xa8E0c42F45C877e611C76F2D4bF57476f2014381",
+          "name": "Curve Iron Bank Factory yVault",
+          "apiVersion": "0.4.5",
+          "expected": "1020141687252549509",
+          "actual": "1020141687252549509",
+          "matched": true
+        },
+        {
+          "address": "0x8017B5d498f75d12dA6A857e867699fB07De41a4",
+          "name": "Curve RSUP-WETH Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "2443138490676612565",
+          "actual": "2443138490676612565",
+          "matched": true
+        },
+        {
+          "address": "0x944d749017053e0D37ec206c9898716A21e0B2E2",
+          "name": "Curve mUSD Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1027566317650418245",
+          "actual": "1027566317650418245",
+          "matched": true
+        },
+        {
+          "address": "0x5c0A86A32c129538D62C106Eb8115a8b02358d57",
+          "name": "Curve rETH-wstETH Pool yVault",
+          "apiVersion": "0.4.3",
+          "expected": "1001725659625476577",
+          "actual": "1001725659625476577",
+          "matched": true
+        },
+        {
+          "address": "0x8cc94ccd0f3841a468184aCA3Cc478D2148E1757",
+          "name": "Curve mUSD Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1134713547415505990",
+          "actual": "1134713547415505990",
+          "matched": true
+        },
+        {
+          "address": "0x5fFd0C196838aa5e700657C1f6fd8A87f5d80ED2",
+          "name": "Curve OETH-ARM-stETH Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1020858054832310051",
+          "actual": "1020858054832310051",
+          "matched": true
+        },
+        {
+          "address": "0x6949145469362F9eeaB3c96Ea41b51D9B4cC2b21",
+          "name": "Curve TriCryptoINV Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1773908621061121409",
+          "actual": "1773908621061121409",
+          "matched": true
+        },
+        {
+          "address": "0x2D5D4869381C4Fce34789BC1D38aCCe747E295AE",
+          "name": "Curve RAI Pool yVault",
+          "apiVersion": "0.4.3",
+          "expected": "1029882406011568415",
+          "actual": "1029882406011568415",
+          "matched": true
+        },
+        {
+          "address": "0xd9788f3931Ede4D5018184E198699dC6d66C1915",
+          "name": "AAVE yVault",
+          "apiVersion": "0.4.3",
+          "expected": "1049363732534658754",
+          "actual": "1049363732534658754",
+          "matched": true
+        },
+        {
+          "address": "0xe9Dc63083c464d6EDcCFf23444fF3CFc6886f6FB",
+          "name": "Curve oBTC Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1065667304704515360",
+          "actual": "1065667304704515360",
+          "matched": true
+        },
+        {
+          "address": "0x39CAF13a104FF567f71fd2A4c68C026FDB6E740B",
+          "name": "Curve Aave Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1029642769234918699",
+          "actual": "1029642769234918699",
+          "matched": true
+        },
+        {
+          "address": "0xd02b103f7f5dba89Ad316E2b3Fe247F280CcE5b2",
+          "name": "Curve xETH Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1600867587748982831",
+          "actual": "1600867587748982831",
+          "matched": true
+        },
+        {
+          "address": "0xE2CaD35CFD1A9B5acD557558f44B096ef8340C1B",
+          "name": "Curve TriCryptoLLAMA Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1701801432435850161",
+          "actual": "1701801432435850161",
+          "matched": true
+        },
+        {
+          "address": "0xF29AE508698bDeF169B89834F76704C3B205aedf",
+          "name": "SNX yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1146536340809926676",
+          "actual": "1146536340809926676",
+          "matched": true
+        },
+        {
+          "address": "0x490bD0886F221A5F79713D3E84404355A9293C50",
+          "name": "Curve ibCHF Pool yVault",
+          "apiVersion": "0.4.3",
+          "expected": "1380346376526765172",
+          "actual": "1380346376526765172",
+          "matched": true
+        },
+        {
+          "address": "0x8414Db07a7F743dEbaFb402070AB01a4E0d2E45e",
+          "name": "Curve sBTC Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1026794713148063200",
+          "actual": "1026794713148063200",
+          "matched": true
+        },
+        {
+          "address": "0x03f8CCf5b5004B55309e949ea9D08136a32E9C5d",
+          "name": "Curve tBTC-cbBTC Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1000000000000000000",
+          "actual": "1000000000000000000",
+          "matched": true
+        },
+        {
+          "address": "0x2fB06235aB90812e5BaE28404024C9498fF9414d",
+          "name": "Curve JPEG-pETH Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "7191047920917440398",
+          "actual": "7191047920917440398",
+          "matched": true
+        },
+        {
+          "address": "0xAE6eD98B1Bd9aAdd3185160324e0e011159B61D3",
+          "name": "Curve Compound Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1339610656117630050",
+          "actual": "1339610656117630050",
+          "matched": true
+        },
+        {
+          "address": "0x5591Ac6CC8cdeE5d47E553a8c3543eF5eA808919",
+          "name": "Curve OUSD-frxUSD Factory yVault",
+          "apiVersion": "0.4.6",
+          "expected": "1070965762619500449",
+          "actual": "1070965762619500449",
+          "matched": true
+        },
+        {
+          "address": "0xD6Ea40597Be05c201845c0bFd2e96A60bACde267",
+          "name": "Curve Compound Pool yVault",
+          "apiVersion": "0.3.5",
+          "expected": "1613281262183432676",
+          "actual": "1613281262183432676",
+          "matched": true
+        }
+      ]
+    }
+  ]
+}
