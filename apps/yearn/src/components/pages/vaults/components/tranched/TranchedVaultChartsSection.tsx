@@ -144,6 +144,7 @@ export function TranchedVaultChartsSection({
     trancheQuery.isPlaceholderData ||
     referenceQuery.isLoading ||
     referenceQuery.isPlaceholderData
+  const showApyNote = !hasActualApy && (isSenior ? !hasReferenceApy && !isLoading : hasReferenceApy)
   const error = trancheQuery.error ?? referenceQuery.error
   const hasActiveData = isApyTab
     ? Boolean(seniorApyData || juniorApyData)
@@ -212,13 +213,11 @@ export function TranchedVaultChartsSection({
               showSingleSeries
             />
           ) : null}
-          {isApyTab && !hasActualApy && (hasReferenceApy || !isLoading) ? (
+          {isApyTab && showApyNote ? (
             <p className={'px-4 pb-1 text-center text-xs text-text-secondary'}>
-              {hasReferenceApy
-                ? isSenior
-                  ? `Reference APY shows ${referenceVault.name} history.`
-                  : `Illustrative APY uses twice the 30-day APY of ${referenceVault.name}.`
-                : 'Actual APY history is unavailable.'}
+              {isSenior
+                ? 'Actual APY history is unavailable.'
+                : `Illustrative APY uses twice the 30-day APY of ${referenceVault.name}.`}
             </p>
           ) : null}
         </div>

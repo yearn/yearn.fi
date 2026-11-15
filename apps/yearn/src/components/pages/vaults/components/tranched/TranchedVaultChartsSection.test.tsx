@@ -83,7 +83,7 @@ it.each([
   ])
   expect(screen.getByText('Target APY')).toBeTruthy()
   expect(screen.getByText('Reference APY')).toBeTruthy()
-  expect(screen.getByText(`Reference APY shows ${vaultName} history.`)).toBeTruthy()
+  expect(screen.queryByText(`Reference APY shows ${vaultName} history.`)).toBeNull()
   expect(screen.queryByRole('button', { name: 'Target APY' })).toBeNull()
 
   fireEvent.change(screen.getByRole('combobox', { name: 'Chart timeframe' }), { target: { value: '30d' } })
