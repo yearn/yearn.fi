@@ -43,9 +43,46 @@ Use this checklist to switch the frontend to the production deployment.
   underlying vaults and apply synthetic Senior and Junior values. Keep yvETH
   preview rows out of the live catalog until their addresses and data are ready.
 - [ ] Update the Migrate panel's docs and live-data links to the launch URLs.
-  Verify the 5% Senior target and each tranche's withdrawal terms against the
-  deployed configuration. The current Migrate panel says Junior has no cooldown
-  while the current Junior withdrawal widget implements one.
+  Verify the 5% Senior target and Senior withdrawal terms against the
+  deployed configuration.
+
+## Vault pages and widget selection
+
+- [ ] Use the standard `/vaults/:chainId/:address` detail page for each
+  deployed yvUSD and yvETH tranche. Show each Senior and Junior vault
+  separately in the vault list, with its own balance and performance history.
+- [ ] Resolve widget behavior once per page for desktop and mobile. Use a
+  small registry keyed by chain ID and normalized vault address. Default to
+  the standard widget and register exceptions per action, so a vault can
+  reuse Deposit while customizing Withdraw. Preserve the existing Legacy
+  yvUSD and yvBTC experiences when consolidating the address checks.
+
+| Vault | Deposit | Withdraw | Migrate |
+| --- | --- | --- | --- |
+| Legacy yvUSD, either address | Legacy Locked / Unlocked | Legacy Locked / Unlocked | Choose Legacy source and Senior or Junior destination |
+| New yvUSD or yvETH Senior | Standard with tranche summary | Standard when direct withdrawal is supported | Standard eligibility |
+| New yvUSD or yvETH Junior | Standard with tranche summary | Use the deployed withdrawal flow. The playground yvUSD Junior tab opens with transaction buttons disabled. | Standard eligibility |
+
+- [ ] Choose the withdrawal flow from the verified deployment. Senior and
+  Junior labels describe the tranche. The contract determines cooldown
+  duration and withdrawal window. Reuse the
+  [cooldown panel](../apps/yearn/src/components/pages/vaults/components/widget/WithdrawalCooldownPanel.tsx)
+  for cooldown withdrawals and share transaction logic when the contracts
+  expose the same flow.
+
+## Junior withdrawals
+
+- [ ] Handle Junior withdrawals separately from Legacy yvUSD migration.
+  The playground Junior contract lacks the required cooldown flow, so its
+  Withdraw tab opens with its transaction buttons disabled. Deposits and
+  migration into Junior can still be tested.
+- [ ] Confirm the deployed Junior cooldown contract, ABI, duration, and
+  withdrawal window. The [allocation guidelines](https://github.com/johnnyonline/ytranche-allocations/blob/main/GUIDELINES.md#L40-L43)
+  call for 14 days. Review the existing
+  [withdrawal prototype](../apps/yearn/src/components/pages/vaults/components/widget/tranched/LeveredTrancheWithdraw.tsx)
+  against that contract. Verify starting and canceling cooldowns, eligible
+  amounts, withdrawal during the window, and expiry before enabling
+  withdrawal transactions and updating the preview copy.
 
 ## End-to-end verification
 

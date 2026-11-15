@@ -43,6 +43,8 @@ const ZERO_ADDRESS = toAddress('0x0000000000000000000000000000000000000000')
 const WETH_ADDRESS = toAddress('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2')
 const USDC_ADDRESS = toAddress('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48')
 
+export const YVUSD_JUNIOR_COOLDOWN_DAYS = 14
+
 export const YVUSD_TRANCHE_DEPLOYMENT = {
   chainId: 1,
   asset: USDC_ADDRESS,
@@ -306,13 +308,13 @@ export const TRANCHED_PRODUCTS: TTranchedProduct[] = [
     apyCaption: '30-day avg APY',
     tvl: '$3.0M',
     capacity: 'Open',
-    liquidity: '14-day cooldown',
+    liquidity: `Planned ${YVUSD_JUNIOR_COOLDOWN_DAYS}-day cooldown`,
     riskPosition: 'Junior: second paid, second loss',
     protection: 'Upside after senior target',
     underlying: 'USDC-denominated yvUSD stack',
     primaryAction: 'Deposit levered',
     listPlacement: 'Floating Yield list',
-    detailLead: 'A junior public tranche for users who arrive wanting the higher-yield, risk-on side of the USD stack.',
+    detailLead: `A junior public tranche for users who arrive wanting the higher-yield, risk-on side of the USD stack. The planned withdrawal cooldown is ${YVUSD_JUNIOR_COOLDOWN_DAYS} days.`,
     mechanics: [
       'Junior receives its coupon only after senior obligations are covered.',
       'Most excess yield flows to junior, creating convex upside.',

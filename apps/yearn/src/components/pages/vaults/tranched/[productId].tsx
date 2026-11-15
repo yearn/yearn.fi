@@ -1,3 +1,4 @@
+import { BottomDrawer } from '@pages/vaults/components/detail/BottomDrawer'
 import {
   DESKTOP_WIDGET_BOTTOM_PADDING_PX,
   DESKTOP_WIDGET_OFFSET_CSS_VAR,
@@ -13,6 +14,7 @@ import { TranchedVaultBanner } from '@pages/vaults/components/tranched/TranchedV
 import { TranchedVaultChartsSection } from '@pages/vaults/components/tranched/TranchedVaultChartsSection'
 import { Widget } from '@pages/vaults/components/widget'
 import { LeveredTrancheWithdraw } from '@pages/vaults/components/widget/tranched/LeveredTrancheWithdraw'
+import { YvUsdTrancheSummary } from '@pages/vaults/components/widget/tranched/YvUsdTrancheSummary'
 import {
   getTranchedProductById,
   getTranchedVaultRowsByKind,
@@ -231,6 +233,7 @@ function TranchedWidget({
         vaultUserData={vaultUserData}
         onOpenSettings={(): void => setIsSettingsOpen((previous) => !previous)}
         isSettingsOpen={isSettingsOpen}
+        disableActions
       />
     ) : (
       <Widget
@@ -244,14 +247,14 @@ function TranchedWidget({
         showTabs={false}
         onOpenSettings={(): void => setIsSettingsOpen((previous) => !previous)}
         isSettingsOpen={isSettingsOpen}
-        disableBorderRadius
+        depositContentAboveButton={isLiveYvUsdProduct ? <YvUsdTrancheSummary kind={resolved.product.kind} /> : null}
       />
     )
 
   return (
     <div
       className={
-        'flex w-full min-w-0 max-w-full flex-col overflow-hidden [&_*]:min-w-0 [&_.yearn--button--nextgen]:max-w-full'
+        'flex w-full min-w-0 max-w-full flex-col overflow-hidden rounded-lg bg-surface [&_*]:min-w-0 [&_.yearn--button--nextgen]:max-w-full'
       }
     >
       {widget}
@@ -274,6 +277,7 @@ function AdditionalFeatures({ product }: { product: TTranchedProduct }): ReactEl
 function TranchedProductDetail({ product }: { product: TTranchedProduct }): ReactElement {
   const resolved = useMemo(() => resolveTranchedProduct(product), [product])
   const [widgetMode, setWidgetMode] = useState<WidgetActionType>(WidgetActionType.Deposit)
+  const [isMobileDrawerOpen, setIsMobileDrawerOpen] = useState(false)
   const [activeSectionKey, setActiveSectionKey] = useState<TSectionKey>('charts')
   const [isHeaderForceCompressed, setIsHeaderForceCompressed] = useState(false)
   const isBelowDesktopWidgetBreakpoint = useMediaQuery('(max-width: 1100px)', { initializeWithValue: false }) ?? false
@@ -286,6 +290,10 @@ function TranchedProductDetail({ product }: { product: TTranchedProduct }): Reac
     info: null
   })
   const widgetActions = [WidgetActionType.Deposit, WidgetActionType.Withdraw]
+  const openMobileWidget = (mode: WidgetActionType): void => {
+    setWidgetMode(mode)
+    setIsMobileDrawerOpen(true)
+  }
   const positionChip = getPositionChip(product)
   const vaultAddresses: TVaultAddressItem[] = [{ label: 'Vault', address: resolved.row.vault.address }]
   const scrollPadding = 16
@@ -441,7 +449,7 @@ function TranchedProductDetail({ product }: { product: TTranchedProduct }): Reac
             onSelectSection={handleSelectSection}
             widgetActions={widgetActions}
             widgetMode={widgetMode}
-            onWidgetModeChange={setWidgetMode}
+            onWidgetModeChange={openMobileWidget}
             isCollapsibleMode={false}
           />
         </div>
@@ -525,7 +533,7 @@ function TranchedProductDetail({ product }: { product: TTranchedProduct }): Reac
             type={'button'}
             className={'yearn--button--nextgen flex-1'}
             data-variant={'filled'}
-            onClick={(): void => setWidgetMode(WidgetActionType.Deposit)}
+            onClick={(): void => openMobileWidget(WidgetActionType.Deposit)}
           >
             {'Deposit'}
           </button>
@@ -533,12 +541,19 @@ function TranchedProductDetail({ product }: { product: TTranchedProduct }): Reac
             type={'button'}
             className={'yearn--button flex-1'}
             data-variant={'light'}
-            onClick={(): void => setWidgetMode(WidgetActionType.Withdraw)}
+            onClick={(): void => openMobileWidget(WidgetActionType.Withdraw)}
           >
             {'Withdraw'}
           </button>
         </div>
       </div>
+      <BottomDrawer
+        isOpen={isMobileDrawerOpen}
+        onClose={() => setIsMobileDrawerOpen(false)}
+        title={resolved.product.name}
+      >
+        <TranchedWidget resolved={resolved} widgetMode={widgetMode} setWidgetMode={setWidgetMode} />
+      </BottomDrawer>
     </div>
   )
 }

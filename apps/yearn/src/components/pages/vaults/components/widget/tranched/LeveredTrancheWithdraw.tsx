@@ -1,10 +1,15 @@
 import {
+  WithdrawalCooldownPanel,
+  WithdrawalCooldownStatus
+} from '@pages/vaults/components/widget/WithdrawalCooldownPanel'
+import {
   formatDays,
   formatDuration,
   parseCooldownStatus,
   resolveCooldownWindowState,
   resolveDurationSeconds
 } from '@pages/vaults/components/widget/yvUSD/cooldownUtils'
+import { YVUSD_JUNIOR_COOLDOWN_DAYS } from '@pages/vaults/constants/tranchedProducts'
 import type { VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { Button } from '@shared/components/Button'
 import { erc4626Abi } from '@shared/contracts/abi/4626.abi'
@@ -27,9 +32,9 @@ type Props = {
   vaultUserData: VaultUserData
   onOpenSettings?: () => void
   isSettingsOpen?: boolean
+  disableActions?: boolean
 }
 
-const FALLBACK_COOLDOWN_DAYS = 7
 const FALLBACK_WITHDRAWAL_WINDOW_DAYS = 3
 
 export function LeveredTrancheWithdraw({
@@ -40,7 +45,8 @@ export function LeveredTrancheWithdraw({
   vaultVersion,
   vaultUserData,
   onOpenSettings,
-  isSettingsOpen
+  isSettingsOpen,
+  disableActions = false
 }: Props): ReactElement {
   const { address: account } = useAccount()
   const [withdrawAmount, setWithdrawAmount] = useState(0n)
@@ -56,19 +62,21 @@ export function LeveredTrancheWithdraw({
     functionName: 'getCooldownStatus',
     args: account ? [toAddress(account)] : undefined,
     chainId,
-    query: { enabled: !!account, refetchInterval: account ? 30_000 : false }
+    query: { enabled: !disableActions && !!account, refetchInterval: account ? 30_000 : false }
   })
   const { data: rawCooldownDuration } = useReadContract({
     address: vaultAddress,
     abi: yvUsdLockedVaultAbi,
     functionName: 'cooldownDuration',
-    chainId
+    chainId,
+    query: { enabled: !disableActions }
   })
   const { data: rawWithdrawalWindow } = useReadContract({
     address: vaultAddress,
     abi: yvUsdLockedVaultAbi,
     functionName: 'withdrawalWindow',
-    chainId
+    chainId,
+    query: { enabled: !disableActions }
   })
   const {
     data: rawMaxWithdrawAssets,
@@ -92,8 +100,8 @@ export function LeveredTrancheWithdraw({
   })
 
   const cooldownStatus = useMemo(() => parseCooldownStatus(rawCooldownStatus), [rawCooldownStatus])
-  const maxWithdrawAssets = typeof rawMaxWithdrawAssets === 'bigint' ? rawMaxWithdrawAssets : 0n
-  const hasActiveCooldown = cooldownStatus.shares > 0n
+  const maxWithdrawAssets = !disableActions && typeof rawMaxWithdrawAssets === 'bigint' ? rawMaxWithdrawAssets : 0n
+  const hasActiveCooldown = !disableActions && cooldownStatus.shares > 0n
   const { timestamp: nowTimestamp } = useChainTimestamp({ chainId, enabled: !!account })
   const { isCooldownActive, isWithdrawalWindowOpen, isCooldownWindowExpired } = resolveCooldownWindowState({
     hasActiveCooldown,
@@ -118,7 +126,7 @@ export function LeveredTrancheWithdraw({
     args: sharesToCooldown > 0n ? [sharesToCooldown] : undefined,
     account: account ? toAddress(account) : undefined,
     chainId,
-    query: { enabled: !!account && !hasActiveCooldown && sharesToCooldown > 0n }
+    query: { enabled: !disableActions && !!account && !hasActiveCooldown && sharesToCooldown > 0n }
   })
   const prepareCancelCooldown: AppUseSimulateContractReturnType = useSimulateContract({
     address: vaultAddress,
@@ -126,10 +134,10 @@ export function LeveredTrancheWithdraw({
     functionName: 'cancelCooldown',
     account: account ? toAddress(account) : undefined,
     chainId,
-    query: { enabled: !!account && hasActiveCooldown }
+    query: { enabled: !disableActions && !!account && hasActiveCooldown }
   })
 
-  const cooldownDuration = resolveDurationSeconds(rawCooldownDuration, FALLBACK_COOLDOWN_DAYS)
+  const cooldownDuration = resolveDurationSeconds(rawCooldownDuration, YVUSD_JUNIOR_COOLDOWN_DAYS)
   const withdrawalWindow = resolveDurationSeconds(rawWithdrawalWindow, FALLBACK_WITHDRAWAL_WINDOW_DAYS)
   const vaultDecimals = vaultUserData.vaultToken?.decimals ?? 18
   const assetDecimals = vaultUserData.assetToken?.decimals ?? 6
@@ -143,7 +151,7 @@ export function LeveredTrancheWithdraw({
       label: 'Start Cooldown',
       confirmMessage: `Starting cooldown for ${formatTAmount({ value: sharesToCooldown, decimals: vaultDecimals })} ${vaultSymbol}`,
       successTitle: 'Cooldown started',
-      successMessage: `Your withdrawal will be available in ${formatDays(cooldownDuration, FALLBACK_COOLDOWN_DAYS)}.`
+      successMessage: `Your withdrawal will be available in ${formatDays(cooldownDuration, YVUSD_JUNIOR_COOLDOWN_DAYS)}.`
     }
   }, [cooldownDuration, prepareStartCooldown, sharesToCooldown, vaultDecimals, vaultSymbol])
 
@@ -172,65 +180,94 @@ export function LeveredTrancheWithdraw({
   const windowRemaining = Math.max(0, cooldownStatus.windowEnd - nowTimestamp)
   const inputBalance = isWithdrawalWindowOpen ? maxWithdrawAssets : depositedAssets
 
+  const cooldownDurationLabel = formatDays(cooldownDuration, YVUSD_JUNIOR_COOLDOWN_DAYS)
+  const withdrawalWindowLabel = formatDays(withdrawalWindow, FALLBACK_WITHDRAWAL_WINDOW_DAYS)
+  const selectedAmount = formatTAmount({ value: withdrawAmount, decimals: assetDecimals })
   const cooldownPanel = (
-    <div className="mt-3 rounded-lg border border-primary/80 bg-surface-tertiary/80 p-4 text-sm text-text-primary">
-      <div className="flex items-center justify-between gap-3">
-        <p className="font-semibold">{'Levered withdrawal cooldown'}</p>
-        {isWithdrawalWindowOpen ? (
-          <span className="inline-flex items-center gap-1 text-xs font-medium">
-            <IconCheck className="size-3 text-green-600" />
-            {'Ready'}
-          </span>
-        ) : null}
-      </div>
-      <p className="mt-1 text-text-secondary">
-        {`Cooldown: ${formatDays(cooldownDuration, FALLBACK_COOLDOWN_DAYS)} · Withdrawal window: ${formatDays(withdrawalWindow, FALLBACK_WITHDRAWAL_WINDOW_DAYS)}`}
-      </p>
-      <div className="mt-3 space-y-1 text-text-secondary">
-        {!account ? (
-          <p>{'Connect wallet to view cooldown status.'}</p>
-        ) : isLoadingStatus ? (
-          <p>{'Loading cooldown status…'}</p>
-        ) : !hasBalance && !hasActiveCooldown ? (
-          <p>{'No Levered Yield balance found in this wallet.'}</p>
-        ) : isWithdrawalWindowOpen ? (
-          <>
-            <p>{`Available now: ${formatTAmount({ value: maxWithdrawAssets, decimals: assetDecimals })} ${assetSymbol}`}</p>
-            <p>{`Window remaining: ${formatDuration(windowRemaining)}`}</p>
-          </>
-        ) : isCooldownActive ? (
-          <>
-            <p>{`Shares cooling down: ${formatTAmount({ value: cooldownStatus.shares, decimals: vaultDecimals })} ${vaultSymbol}`}</p>
-            <p>{`Cooldown remaining: ${formatDuration(cooldownRemaining)}`}</p>
-          </>
-        ) : isCooldownWindowExpired ? (
-          <p>{'The withdrawal window closed. Cancel this cooldown, then start a new one.'}</p>
-        ) : (
-          <p>{'Choose an amount above, then start the cooldown.'}</p>
-        )}
-      </div>
-      {canStartCooldown ? (
-        <Button
-          variant={prepareStartCooldown.isLoading || prepareStartCooldown.isFetching ? 'busy' : 'filled'}
-          isBusy={prepareStartCooldown.isLoading || prepareStartCooldown.isFetching}
-          disabled={!startStep}
-          classNameOverride="yearn--button--nextgen mt-3 w-full"
-          onClick={() => setOverlay('start')}
-        >
-          {'Start Cooldown'}
-        </Button>
-      ) : hasActiveCooldown && !isWithdrawalWindowOpen ? (
-        <Button
-          variant={prepareCancelCooldown.isLoading || prepareCancelCooldown.isFetching ? 'busy' : 'outlined'}
-          isBusy={prepareCancelCooldown.isLoading || prepareCancelCooldown.isFetching}
-          disabled={!cancelStep}
-          classNameOverride="yearn--button--nextgen mt-3 w-full"
-          onClick={() => setOverlay('cancel')}
-        >
-          {isCooldownWindowExpired ? 'Reset Cooldown' : 'Cancel Cooldown'}
-        </Button>
-      ) : null}
-    </div>
+    <WithdrawalCooldownPanel
+      title="Junior withdrawal cooldown"
+      cooldownDuration={cooldownDurationLabel}
+      withdrawalWindow={disableActions ? undefined : withdrawalWindowLabel}
+      info={
+        <>
+          <p>{`The planned Junior withdrawal cooldown is ${cooldownDurationLabel}.`}</p>
+          {disableActions ? (
+            <p>{'Cooldown and withdrawal transactions are disabled in this preview.'}</p>
+          ) : (
+            <p>{`Withdraw during the ${withdrawalWindowLabel} window after the cooldown finishes.`}</p>
+          )}
+        </>
+      }
+      actions={
+        disableActions || canStartCooldown || (hasActiveCooldown && !isWithdrawalWindowOpen) ? (
+          <div className="mt-3 space-y-2">
+            {disableActions || canStartCooldown ? (
+              <Button
+                variant={prepareStartCooldown.isLoading || prepareStartCooldown.isFetching ? 'busy' : 'filled'}
+                isBusy={prepareStartCooldown.isLoading || prepareStartCooldown.isFetching}
+                disabled={disableActions || !startStep}
+                classNameOverride="yearn--button--nextgen w-full"
+                onClick={() => setOverlay('start')}
+              >
+                {'Start Cooldown'}
+              </Button>
+            ) : (
+              <Button
+                variant={prepareCancelCooldown.isLoading || prepareCancelCooldown.isFetching ? 'busy' : 'outlined'}
+                isBusy={prepareCancelCooldown.isLoading || prepareCancelCooldown.isFetching}
+                disabled={disableActions || !cancelStep}
+                classNameOverride="yearn--button--nextgen w-full"
+                onClick={() => setOverlay('cancel')}
+              >
+                {isCooldownWindowExpired ? 'Reset Cooldown' : 'Cancel Cooldown'}
+              </Button>
+            )}
+            {disableActions ? (
+              <Button disabled classNameOverride="yearn--button--nextgen w-full">
+                {'Withdraw'}
+              </Button>
+            ) : null}
+          </div>
+        ) : null
+      }
+    >
+      {!disableActions && !account ? (
+        <p>{'Connect wallet to view cooldown status.'}</p>
+      ) : isLoadingStatus && !disableActions ? (
+        <p>{'Loading cooldown status…'}</p>
+      ) : !disableActions && !hasBalance && !hasActiveCooldown ? (
+        <p>{'No Junior balance found in this wallet.'}</p>
+      ) : (
+        <>
+          {isWithdrawalWindowOpen ? (
+            <p>{`Available to withdraw now: ${formatTAmount({ value: maxWithdrawAssets, decimals: assetDecimals })} ${assetSymbol}`}</p>
+          ) : hasActiveCooldown ? (
+            <p>{`Shares in cooldown: ${formatTAmount({ value: cooldownStatus.shares, decimals: vaultDecimals })} ${vaultSymbol}`}</p>
+          ) : (
+            <p>{`Selected cooldown amount: ${selectedAmount} ${assetSymbol}`}</p>
+          )}
+          <WithdrawalCooldownStatus
+            remaining={
+              isWithdrawalWindowOpen ? (
+                <span className="inline-flex items-center gap-1 text-text-primary">
+                  {'Complete'}
+                  <IconCheck className="size-3 text-green-600" />
+                </span>
+              ) : (
+                <span>
+                  {isCooldownActive
+                    ? formatDuration(cooldownRemaining)
+                    : isCooldownWindowExpired
+                      ? 'Complete'
+                      : 'Not started'}
+                </span>
+              )
+            }
+            windowRemaining={isWithdrawalWindowOpen ? formatDuration(windowRemaining) : 'Closed'}
+          />
+        </>
+      )}
+    </WithdrawalCooldownPanel>
   )
 
   return (
@@ -244,26 +281,25 @@ export function LeveredTrancheWithdraw({
         vaultUserData={vaultUserData}
         inputBalanceOverride={account ? inputBalance : undefined}
         maxWithdrawAssets={isWithdrawalWindowOpen ? maxWithdrawAssets : undefined}
-        disableFlow={!isWithdrawalWindowOpen}
-        disableTokenSelector={!isWithdrawalWindowOpen}
+        disableFlow={disableActions || !isWithdrawalWindowOpen}
+        disableTokenSelector={disableActions || !isWithdrawalWindowOpen}
         disableAmountInput={isCooldownActive}
-        hideActionButton={!isWithdrawalWindowOpen}
+        hideActionButton={disableActions || !isWithdrawalWindowOpen}
         onAmountChange={setWithdrawAmount}
         handleWithdrawSuccess={refresh}
         onOpenSettings={onOpenSettings}
         isSettingsOpen={isSettingsOpen}
-        hideContainerBorder
         contentBelowInput={cooldownPanel}
       />
       <TransactionOverlay
-        isOpen={overlay === 'start'}
+        isOpen={!disableActions && overlay === 'start'}
         onClose={() => setOverlay(null)}
         step={startStep}
         isLastStep
         onAllComplete={refresh}
       />
       <TransactionOverlay
-        isOpen={overlay === 'cancel'}
+        isOpen={!disableActions && overlay === 'cancel'}
         onClose={() => setOverlay(null)}
         step={cancelStep}
         isLastStep

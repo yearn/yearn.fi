@@ -1,9 +1,11 @@
 import { WidgetMigrate } from '@pages/vaults/components/widget/migrate'
+import { YvUsdTrancheSummary } from '@pages/vaults/components/widget/tranched/YvUsdTrancheSummary'
 import { useYvUsdMigrationFlow } from '@pages/vaults/components/widget/yvUSD/useYvUsdMigrationFlow'
 import { YvUsdVariantToggle } from '@pages/vaults/components/widget/yvUSD/YvUsdVariantToggle'
 import {
   getTranchedVaultRowByAddress,
   type TTranchedProductKind,
+  YVUSD_JUNIOR_COOLDOWN_DAYS,
   YVUSD_TRANCHE_DEPLOYMENT
 } from '@pages/vaults/constants/tranchedProducts'
 import type { TKongVaultView } from '@pages/vaults/domain/kongVaultSelectors'
@@ -96,10 +98,6 @@ export function YvUsdMigrate({
   })
   const destinationLabel = destination === 'senior' ? 'Senior' : 'Junior'
   const destinationLogoURI = getTranchedVaultRowByAddress(destinationAddress)?.logoSrc
-  const destinationItems =
-    destination === 'senior'
-      ? ['5% Target APY', 'Lower risk, steady return', 'No lockups or cooldowns']
-      : ['No target APY', 'Higher risk, higher yield', 'No lockups or cooldown']
 
   return (
     <div className="relative flex flex-col">
@@ -161,23 +159,7 @@ export function YvUsdMigrate({
         }
         contentAboveButton={
           <div className="space-y-3" aria-live="polite">
-            <div className="rounded-lg border border-primary/80 bg-surface-tertiary/80 px-3 py-2 text-sm text-text-primary">
-              <div className="flex items-center gap-2 mb-2">
-                <p className="font-semibold">{`${destinationLabel} vault`}</p>
-                <button
-                  type="button"
-                  onClick={() => setIsInfoOpen(true)}
-                  className="text-xs font-medium text-text-secondary underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-colors hover:text-text-primary hover:decoration-neutral-600"
-                >
-                  {'more info'}
-                </button>
-              </div>
-              <ul className="list-disc space-y-1 pl-5">
-                {destinationItems.map((item) => (
-                  <li key={item}>{item}</li>
-                ))}
-              </ul>
-            </div>
+            <YvUsdTrancheSummary kind={destination} onMoreInfo={() => setIsInfoOpen(true)} />
             {isLockedVariant ? (
               <p className="text-sm text-text-secondary">
                 {flow.isReadyToUnlock
@@ -231,9 +213,9 @@ export function YvUsdMigrate({
             <div className="space-y-1">
               <p className="font-semibold text-text-primary">{'Withdrawals'}</p>
               <p>
-                {
-                  'There is no scheduled lockup or cooldown for this destination. Withdrawals remain subject to available liquidity and protocol limits. Check the live data for the current configuration.'
-                }
+                {destination === 'senior'
+                  ? 'There is no scheduled lockup or cooldown for this destination. Withdrawals remain subject to available liquidity and protocol limits. Check the live data for the current configuration.'
+                  : `The planned Junior withdrawal cooldown is ${YVUSD_JUNIOR_COOLDOWN_DAYS} days.`}
               </p>
               {isLockedVariant ? (
                 <p>

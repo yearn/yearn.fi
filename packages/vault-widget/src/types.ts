@@ -139,6 +139,7 @@ export type VaultWidgetProps = {
   onDepositPrefillConsumed?: () => void
   forceDepositStake?: boolean
   depositTitleOverride?: string
+  depositContentAboveButton?: ReactNode
   onDepositUserTokenSelectionChange?: (address: WidgetAddress, chainId: number) => void
   hideTabSelector?: boolean
   disableBorderRadius?: boolean

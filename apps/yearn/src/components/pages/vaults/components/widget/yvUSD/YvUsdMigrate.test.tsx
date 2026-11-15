@@ -140,7 +140,7 @@ describe('Legacy yvUSD migration selections', () => {
     expect(screen.getAllByRole('listitem')).toHaveLength(3)
     expect(screen.getByText('Higher risk, higher yield')).toBeTruthy()
     expect(screen.getByText('No target APY')).toBeTruthy()
-    expect(screen.getByText('No lockups or cooldown')).toBeTruthy()
+    expect(screen.getByText('14-day withdrawal cooldown')).toBeTruthy()
     expect(capturePanel.mock.lastCall?.[0].migrationTargetLogoURI).toMatch(/ytranche\/yvusd-junior\.png$/)
     expect(screen.queryByText('5% Target APY')).toBeNull()
   })
@@ -151,6 +151,7 @@ describe('Legacy yvUSD migration selections', () => {
     fireEvent.click(screen.getByRole('button', { name: 'more info' }))
     expect(screen.getByRole('heading', { name: 'Junior vault info' })).toBeTruthy()
     expect(screen.getByText('Risk and protection')).toBeTruthy()
+    expect(screen.getByText(/the planned Junior withdrawal cooldown is 14 days/i)).toBeTruthy()
     expect(screen.getByRole('link', { name: 'Documentation' }).getAttribute('href')).toBe(
       'https://github.com/yearn/ytranche#readme'
     )

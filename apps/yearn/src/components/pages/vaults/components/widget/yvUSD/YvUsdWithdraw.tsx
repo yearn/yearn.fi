@@ -1,3 +1,7 @@
+import {
+  WithdrawalCooldownPanel,
+  WithdrawalCooldownStatus
+} from '@pages/vaults/components/widget/WithdrawalCooldownPanel'
 import { useVaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import {
@@ -18,7 +22,7 @@ import { type AppUseSimulateContractReturnType, useReadContract, useSimulateCont
 import { useChainTimestamp } from '@shared/hooks/useChainTimestamp'
 import { IconCheck } from '@shared/icons/IconCheck'
 import { formatTAmount, toAddress } from '@shared/utils'
-import { InfoOverlay, TransactionOverlay, type TransactionStep } from '@yearn/vault-widget/advanced'
+import { TransactionOverlay, type TransactionStep } from '@yearn/vault-widget/advanced'
 import type { ReactElement } from 'react'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { formatUnits } from 'viem'
@@ -148,7 +152,6 @@ export function YvUsdWithdraw({
   const [showCancelCooldownOverlay, setShowCancelCooldownOverlay] = useState(false)
   const [showLockedWithdrawOverlay, setShowLockedWithdrawOverlay] = useState(false)
   const [lockedWithdrawMode, setLockedWithdrawMode] = useState<'unlock' | 'unlock-and-withdraw'>('unlock-and-withdraw')
-  const [showCooldownInfoOverlay, setShowCooldownInfoOverlay] = useState(false)
   const [draftWithdrawAmount, setDraftWithdrawAmount] = useState<bigint>(0n)
   const [pendingPrefillAmount, setPendingPrefillAmount] = useState<string | undefined>(undefined)
   const [pendingPrefillAddress, setPendingPrefillAddress] = useState<`0x${string}` | undefined>(undefined)
@@ -1172,96 +1175,100 @@ export function YvUsdWithdraw({
         {needsCooldownStart ? (
           <p>{`Selected cooldown amount: ${formattedSelectedCooldownAmount} ${lockedDisplayAssetSymbol}`}</p>
         ) : null}
-        <p className="flex items-center gap-2">
-          <span>{'Cooldown remaining:'}</span>
-          {isWithdrawalWindowOpen ? (
-            <span className="inline-flex items-center gap-1 text-text-primary">
-              <span>{'Complete'}</span>
-              <IconCheck className="size-3 text-green-600" />
-              {showInlineResetCooldownAction ? (
-                <button
-                  type="button"
-                  onClick={() => setShowCancelCooldownOverlay(true)}
-                  disabled={!cancelCooldownStep || isCancelCooldownPending}
-                  className="text-xs font-medium text-text-secondary underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-colors hover:text-text-primary hover:decoration-neutral-600 disabled:cursor-not-allowed disabled:no-underline disabled:opacity-60"
-                >
-                  {'reset'}
-                </button>
-              ) : null}
-            </span>
-          ) : (
-            <span>{cooldownRemainingLabel}</span>
-          )}
-        </p>
-        <p>{`Withdrawal window remaining: ${withdrawalWindowRemainingLabel}`}</p>
+        <WithdrawalCooldownStatus
+          windowRemaining={withdrawalWindowRemainingLabel}
+          remaining={
+            isWithdrawalWindowOpen ? (
+              <span className="inline-flex items-center gap-1 text-text-primary">
+                <span>{'Complete'}</span>
+                <IconCheck className="size-3 text-green-600" />
+                {showInlineResetCooldownAction ? (
+                  <button
+                    type="button"
+                    onClick={() => setShowCancelCooldownOverlay(true)}
+                    disabled={!cancelCooldownStep || isCancelCooldownPending}
+                    className="text-xs font-medium text-text-secondary underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-colors hover:text-text-primary hover:decoration-neutral-600 disabled:cursor-not-allowed disabled:no-underline disabled:opacity-60"
+                  >
+                    {'reset'}
+                  </button>
+                ) : null}
+              </span>
+            ) : (
+              <span>{cooldownRemainingLabel}</span>
+            )
+          }
+        />
       </>
     )
   }
 
   const withdrawTypeSection = isLockedVariant ? (
-    <div className="rounded-lg border border-primary/80 bg-surface-tertiary/80 mt-3 p-4 text-sm text-text-primary">
-      <div className="flex flex-col gap-1">
-        <div className="flex items-center gap-2">
-          <p className="font-semibold text-text-primary">{'Locked withdrawal cooldown'}</p>
-          <button
-            type="button"
-            onClick={() => setShowCooldownInfoOverlay(true)}
-            className="text-xs font-medium text-text-secondary underline decoration-neutral-600/30 decoration-dotted underline-offset-4 transition-colors hover:text-text-primary hover:decoration-neutral-600"
-          >
-            {'more info'}
-          </button>
-        </div>
-        <p className="text-sm text-text-primary/70">
-          {`Cooldown: ${cooldownDurationLabel} | Withdrawal window: ${withdrawalWindowLabel}`}
-        </p>
-      </div>
-      <div className="mt-3 flex flex-col gap-1 text-sm text-text-primary/70">{cooldownStatusContent}</div>
-      {showLockedWithdrawAction ? (
-        <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
-          <Button
-            variant="filled"
-            disabled={!isLockedUnlockReady}
-            classNameOverride="yearn--button--nextgen w-full"
-            onClick={() => openLockedWithdrawOverlay('unlock')}
-          >
-            {'Unlock'}
-          </Button>
-          <Button
-            variant="filled"
-            disabled={!isLockedUnlockAndWithdrawReady}
-            classNameOverride="yearn--button--nextgen w-full"
-            onClick={() => openLockedWithdrawOverlay('unlock-and-withdraw')}
-          >
-            {'Unlock + Withdraw'}
-          </Button>
-        </div>
-      ) : showStartCooldownActions || showCancelCooldownAction ? (
-        <div className={showStartCooldownActions ? 'mt-3 space-y-2' : 'mt-3'}>
-          {showStartCooldownActions ? (
+    <WithdrawalCooldownPanel
+      title="Locked withdrawal cooldown"
+      cooldownDuration={cooldownDurationLabel}
+      withdrawalWindow={withdrawalWindowLabel}
+      info={
+        <>
+          <p>{'Locked yvUSD withdrawals use a cooldown period before the withdrawal window opens.'}</p>
+          <p>{'Interest continues to accrue while your position is in cooldown.'}</p>
+          <p>
+            {
+              'If only part of your deposited amount is in cooldown and you want to include more funds, cancel the current cooldown and restart it with the larger amount.'
+            }
+          </p>
+          <p>{`Cooldown period: ${cooldownDurationLabel}. Withdrawal window: ${withdrawalWindowLabel}.`}</p>
+        </>
+      }
+      actions={
+        showLockedWithdrawAction ? (
+          <div className="mt-3 grid grid-cols-1 gap-2 sm:grid-cols-2">
             <Button
-              variant={isStartCooldownPending ? 'busy' : 'filled'}
-              isBusy={isStartCooldownPending}
-              disabled={!cooldownStep || !!lockedWithdrawInputError}
+              variant="filled"
+              disabled={!isLockedUnlockReady}
               classNameOverride="yearn--button--nextgen w-full"
-              onClick={() => setShowCooldownOverlay(true)}
+              onClick={() => openLockedWithdrawOverlay('unlock')}
             >
-              {'Start Cooldown'}
+              {'Unlock'}
             </Button>
-          ) : null}
-          {showCancelCooldownAction ? (
             <Button
-              variant={isCancelCooldownPending ? 'busy' : 'outlined'}
-              isBusy={isCancelCooldownPending}
-              disabled={!cancelCooldownStep}
+              variant="filled"
+              disabled={!isLockedUnlockAndWithdrawReady}
               classNameOverride="yearn--button--nextgen w-full"
-              onClick={() => setShowCancelCooldownOverlay(true)}
+              onClick={() => openLockedWithdrawOverlay('unlock-and-withdraw')}
             >
-              {'Cancel Cooldown'}
+              {'Unlock + Withdraw'}
             </Button>
-          ) : null}
-        </div>
-      ) : null}
-    </div>
+          </div>
+        ) : showStartCooldownActions || showCancelCooldownAction ? (
+          <div className={showStartCooldownActions ? 'mt-3 space-y-2' : 'mt-3'}>
+            {showStartCooldownActions ? (
+              <Button
+                variant={isStartCooldownPending ? 'busy' : 'filled'}
+                isBusy={isStartCooldownPending}
+                disabled={!cooldownStep || !!lockedWithdrawInputError}
+                classNameOverride="yearn--button--nextgen w-full"
+                onClick={() => setShowCooldownOverlay(true)}
+              >
+                {'Start Cooldown'}
+              </Button>
+            ) : null}
+            {showCancelCooldownAction ? (
+              <Button
+                variant={isCancelCooldownPending ? 'busy' : 'outlined'}
+                isBusy={isCancelCooldownPending}
+                disabled={!cancelCooldownStep}
+                classNameOverride="yearn--button--nextgen w-full"
+                onClick={() => setShowCancelCooldownOverlay(true)}
+              >
+                {'Cancel Cooldown'}
+              </Button>
+            ) : null}
+          </div>
+        ) : null
+      }
+    >
+      {cooldownStatusContent}
+    </WithdrawalCooldownPanel>
   ) : undefined
 
   return (
@@ -1330,22 +1337,6 @@ export function YvUsdWithdraw({
         onBeforeSuccess={handleLockedWithdrawBeforeSuccess}
         onAllComplete={handleLockedWithdrawSuccess}
       />
-      <InfoOverlay
-        isOpen={showCooldownInfoOverlay}
-        onClose={() => setShowCooldownInfoOverlay(false)}
-        title="Cooldown info"
-      >
-        <div className="space-y-3 text-sm text-text-secondary">
-          <p>{'Locked yvUSD withdrawals use a cooldown period before the withdrawal window opens.'}</p>
-          <p>{'Interest continues to accrue while your position is in cooldown.'}</p>
-          <p>
-            {
-              'If only part of your deposited amount is in cooldown and you want to include more funds, cancel the current cooldown and restart it with the larger amount.'
-            }
-          </p>
-          <p>{`Cooldown period: ${cooldownDurationLabel}. Withdrawal window: ${withdrawalWindowLabel}.`}</p>
-        </div>
-      </InfoOverlay>
     </div>
   )
 }

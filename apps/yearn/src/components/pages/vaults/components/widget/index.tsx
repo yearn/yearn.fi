@@ -14,7 +14,15 @@ import {
   WidgetTabs as SharedWidgetTabs,
   type TWidgetRef as TSharedWidgetRef
 } from '@yearn/vault-widget'
-import { type ForwardedRef, forwardRef, type ReactElement, useImperativeHandle, useMemo, useRef } from 'react'
+import {
+  type ForwardedRef,
+  forwardRef,
+  type ReactElement,
+  type ReactNode,
+  useImperativeHandle,
+  useMemo,
+  useRef
+} from 'react'
 
 export interface VaultWidgetProps {
   currentVault: TKongVaultInput
@@ -39,6 +47,7 @@ export interface VaultWidgetProps {
   onDepositPrefillConsumed?: () => void
   forceDepositStake?: boolean
   depositTitleOverride?: string
+  depositContentAboveButton?: ReactNode
   onDepositUserTokenSelectionChange?: (address: TAddress, chainId: number) => void
   hideTabSelector?: boolean
   disableBorderRadius?: boolean
@@ -96,6 +105,7 @@ export const Widget = forwardRef<TWidgetRef, VaultWidgetProps>(function Widget(
     onDepositPrefillConsumed,
     forceDepositStake,
     depositTitleOverride,
+    depositContentAboveButton,
     onDepositUserTokenSelectionChange,
     hideTabSelector,
     disableBorderRadius,
@@ -141,6 +151,7 @@ export const Widget = forwardRef<TWidgetRef, VaultWidgetProps>(function Widget(
       onDepositPrefillConsumed={onDepositPrefillConsumed}
       forceDepositStake={forceDepositStake}
       depositTitleOverride={depositTitleOverride}
+      depositContentAboveButton={depositContentAboveButton}
       onDepositUserTokenSelectionChange={onDepositUserTokenSelectionChange}
       hideTabSelector={hideTabSelector}
       disableBorderRadius={disableBorderRadius}

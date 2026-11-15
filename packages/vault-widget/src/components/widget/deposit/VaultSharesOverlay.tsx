@@ -140,7 +140,7 @@ export const VaultSharesOverlay: FC<VaultSharesOverlayProps> = ({
             {willReceiveStakedShares ? (
               <li>Unstake anytime to receive your {vaultSymbol} vault shares</li>
             ) : (
-              <li>Redeemable for {vaultAssetSymbol} plus earnings anytime</li>
+              <li>Redeemable for {vaultAssetSymbol} plus any earnings</li>
             )}
           </ul>
         </div>
