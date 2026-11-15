@@ -178,6 +178,7 @@ export function VaultAboutSection({
   className,
   vaultAddresses = [],
   additionalFeaturesContent,
+  descriptionSupplement,
   showKindTag = true,
   showVaultAddress = false
 }: {
@@ -187,6 +188,7 @@ export function VaultAboutSection({
   showKindTag?: boolean
   showVaultAddress?: boolean
   additionalFeaturesContent?: ReactNode
+  descriptionSupplement?: ReactNode
   showHiddenTag?: boolean
   isHidden?: boolean
 }): ReactElement {
@@ -278,6 +280,7 @@ export function VaultAboutSection({
               </div>
             )}
           </div>
+          {descriptionSupplement}
           {showVaultAddress ? (
             <div className={'flex flex-wrap items-center py-3 gap-2 text-sm border-b border-border'}>
               {explorerHref ? (

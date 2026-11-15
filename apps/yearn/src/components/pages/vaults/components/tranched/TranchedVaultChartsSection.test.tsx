@@ -1,103 +1,122 @@
 // @vitest-environment jsdom
 
 import { TranchedVaultChartsSection } from '@pages/vaults/components/tranched/TranchedVaultChartsSection'
-import { getTranchedProductById } from '@pages/vaults/constants/tranchedProducts'
+import { getTranchedProductById, YVUSD_TRANCHE_DEPLOYMENT } from '@pages/vaults/constants/tranchedProducts'
+import type { TChartDataPoint } from '@pages/vaults/types/charts'
 import { cleanup, fireEvent, render, screen } from '@testing-library/react'
 import { afterEach, expect, it, vi } from 'vitest'
 
-const mocks = vi.hoisted(() => ({ error: null as Error | null, isLoading: false }))
+const mocks = vi.hoisted(() => ({
+  actualApy: null as number | null,
+  referenceApy: 0.04 as number | null,
+  error: null as Error | null
+}))
 
-vi.mock('@shared/contexts/useYearn', () => ({
-  useYearn: () => ({
-    allVaults: {},
-    vaults: {
-      example: {
-        chainID: 1,
-        version: '3',
-        address: '0x0000000000000000000000000000000000000001',
-        name: 'USDC-1',
-        symbol: 'USDC-1'
-      }
-    }
-  })
-}))
 vi.mock('@pages/vaults/hooks/useVaultChartTimeseries', () => ({
-  useVaultChartTimeseries: () => ({
-    data: {
-      apyWeekly: [
-        { time: 1767225600, value: 0.04 },
-        { time: 1767312000, value: 0.06 }
-      ],
-      apyMonthly: [
-        { time: 1767225600, value: 0.03 },
-        { time: 1767312000, value: 0.05 }
-      ],
-      pps: [
-        { time: 1767225600, value: 1 },
-        { time: 1767312000, value: 1.01 }
-      ],
-      tvl: [
-        { time: 1767225600, value: 1000000 },
-        { time: 1767312000, value: 1100000 }
-      ]
-    },
-    isLoading: mocks.isLoading,
-    error: mocks.error
-  })
+  useVaultChartTimeseries: ({ address }: { address?: string }) => {
+    const isTranche =
+      address === YVUSD_TRANCHE_DEPLOYMENT.tranches.fixed || address === YVUSD_TRANCHE_DEPLOYMENT.tranches.levered
+    const apy = isTranche ? mocks.actualApy : mocks.referenceApy
+    return {
+      data:
+        address && apy !== null
+          ? {
+              apyMonthly: [
+                { time: 1767225600, value: apy },
+                { time: 1767312000, value: apy + 0.01 }
+              ],
+              apyWeekly: [],
+              pps: [],
+              tvl: []
+            }
+          : undefined,
+      isLoading: false,
+      error: mocks.error
+    }
+  }
 }))
-vi.mock('@pages/vaults/components/detail/charts/APYChart', () => ({
-  APYChart: ({
-    chartData,
-    timeframe,
-    seriesLabel
-  }: {
-    chartData: unknown
-    timeframe: string
-    seriesLabel?: string
-  }) => (
-    <output aria-label={seriesLabel ?? 'Historical APY'} data-timeframe={timeframe}>
+
+vi.mock('@pages/vaults/components/detail/charts/YvUsdDualLineChart', () => ({
+  DualLineApyChart: ({ chartData, timeframe }: { chartData: TChartDataPoint[]; timeframe: string }) => (
+    <output aria-label="Senior APY" data-timeframe={timeframe}>
       {JSON.stringify(chartData)}
     </output>
+  ),
+  DualLineChartLegend: ({
+    series,
+    chartData
+  }: {
+    series: Array<{ key: string; label: string }>
+    chartData: TChartDataPoint[]
+  }) => (
+    <div>
+      {series
+        .filter(({ key }) => chartData.some((point) => Number.isFinite(point[key])))
+        .map(({ key, label }) => (
+          <span key={key}>{label}</span>
+        ))}
+    </div>
   )
+}))
+
+vi.mock('@pages/vaults/components/detail/charts/APYChart', () => ({
+  APYChart: ({ seriesLabel }: { seriesLabel: string }) => <output aria-label={seriesLabel} />
 }))
 
 afterEach(() => {
   cleanup()
+  mocks.actualApy = null
+  mocks.referenceApy = 0.04
   mocks.error = null
-  mocks.isLoading = false
 })
 
-it('shows the Fixed target history at 5% for every date and keeps the timeframe selector', () => {
-  const product = getTranchedProductById('yvusd-fixed')!
-  render(<TranchedVaultChartsSection product={product} />)
-  fireEvent.click(screen.getByRole('button', { name: 'Target APY' }))
-  expect(screen.getByRole('button', { name: 'Target APY' }).getAttribute('aria-pressed')).toBe('true')
-  const data = JSON.parse(screen.getByLabelText('Target APY').textContent ?? '[]')
-  expect(data.length).toBeGreaterThan(90)
-  expect(
-    data.every(
-      (point: { thirtyDayApy: number; sevenDayApy: null; derivedApy: null }) =>
-        point.thirtyDayApy === 5 && point.sevenDayApy === null && point.derivedApy === null
-    )
-  ).toBe(true)
-  fireEvent.change(screen.getByRole('combobox', { name: 'Chart timeframe' }), { target: { value: '30d' } })
-  expect(screen.getByLabelText('Target APY').getAttribute('data-timeframe')).toBe('30d')
-  fireEvent.click(screen.getByRole('button', { name: '30-Day APY' }))
-  expect(screen.queryByLabelText('Target APY')).toBeNull()
-  expect(screen.getByLabelText('Historical APY')).toBeTruthy()
-})
+it.each([
+  ['yvusd-fixed', 5, 'USDC-1'],
+  ['yveth-fixed', 3, 'WETH-1']
+] as const)('combines the target and reference APY for %s', (id, target, vaultName) => {
+  render(<TranchedVaultChartsSection product={getTranchedProductById(id)!} />)
 
-it('keeps the Junior chart options separate from the Fixed target', () => {
-  render(<TranchedVaultChartsSection product={getTranchedProductById('yvusd-levered')!} />)
+  const chart = screen.getByLabelText('Senior APY')
+  expect(JSON.parse(chart.textContent ?? '[]')).toEqual([
+    { date: expect.any(String), historical: 4, target },
+    { date: expect.any(String), historical: 5, target }
+  ])
+  expect(screen.getByText('Target APY')).toBeTruthy()
+  expect(screen.getByText('Reference APY')).toBeTruthy()
+  expect(screen.getByText(`Reference APY shows ${vaultName} history.`)).toBeTruthy()
   expect(screen.queryByRole('button', { name: 'Target APY' })).toBeNull()
-  expect(screen.getByRole('button', { name: '30-Day APY' })).toBeTruthy()
+
+  fireEvent.change(screen.getByRole('combobox', { name: 'Chart timeframe' }), { target: { value: '30d' } })
+  expect(chart.getAttribute('data-timeframe')).toBe('30d')
 })
 
-it('shows the mock target even when underlying chart data is unavailable', () => {
-  mocks.error = new Error('Chart service unavailable')
-  mocks.isLoading = true
+it('shows actual tranche history even without price-per-share or TVL data', () => {
+  mocks.actualApy = 0.02
   render(<TranchedVaultChartsSection product={getTranchedProductById('yvusd-fixed')!} />)
-  fireEvent.click(screen.getByRole('button', { name: 'Target APY' }))
-  expect(screen.getByLabelText('Target APY')).toBeTruthy()
-  expect(screen.queryByText('Unable to load chart data right now.')).toBeNull()
+
+  expect(JSON.parse(screen.getByLabelText('Senior APY').textContent ?? '[]')).toEqual([
+    { date: expect.any(String), historical: 2, target: 5 },
+    { date: expect.any(String), historical: 3, target: 5 }
+  ])
+  expect(screen.getByText('Actual APY')).toBeTruthy()
+  expect(screen.queryByText('Reference APY')).toBeNull()
+})
+
+it('keeps the target chart visible if all historical data is unavailable', () => {
+  mocks.referenceApy = null
+  mocks.error = new Error('Chart service unavailable')
+  render(<TranchedVaultChartsSection product={getTranchedProductById('yvusd-fixed')!} />)
+
+  expect(JSON.parse(screen.getByLabelText('Senior APY').textContent ?? '[]')).toHaveLength(365)
+  expect(screen.getByText('Target APY')).toBeTruthy()
+  expect(screen.getByText('Actual APY history is unavailable.')).toBeTruthy()
+})
+
+it('keeps a single illustrative series for Junior and shows an empty state for missing metrics', () => {
+  render(<TranchedVaultChartsSection product={getTranchedProductById('yvusd-levered')!} />)
+  expect(screen.getByLabelText('Illustrative APY')).toBeTruthy()
+  expect(screen.queryByText('Target APY')).toBeNull()
+
+  fireEvent.click(screen.getByRole('button', { name: 'TVL' }))
+  expect(screen.getByText('No chart history is available for this vault yet.')).toBeTruthy()
 })

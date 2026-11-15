@@ -4,60 +4,47 @@ import ChartSkeleton from '@pages/vaults/components/detail/charts/ChartSkeleton'
 import { FixedHeightChartContainer } from '@pages/vaults/components/detail/charts/FixedHeightChartContainer'
 import { PPSChart } from '@pages/vaults/components/detail/charts/PPSChart'
 import { TVLChart } from '@pages/vaults/components/detail/charts/TVLChart'
+import { DualLineApyChart, DualLineChartLegend } from '@pages/vaults/components/detail/charts/YvUsdDualLineChart'
 import {
   type TVaultChartTab,
   type TVaultChartTimeframe,
   VAULT_CHART_TABS,
   VaultChartTimeframeDropdown
 } from '@pages/vaults/components/detail/VaultChartsSection'
-import type { TTranchedProduct } from '@pages/vaults/constants/tranchedProducts'
-import {
-  getVaultAddress,
-  getVaultChainID,
-  getVaultName,
-  getVaultSymbol,
-  type TKongVaultInput
-} from '@pages/vaults/domain/kongVaultSelectors'
+import { type TTranchedProduct, YVUSD_TRANCHE_DEPLOYMENT } from '@pages/vaults/constants/tranchedProducts'
 import { useVaultChartTimeseries } from '@pages/vaults/hooks/useVaultChartTimeseries'
-import type { TAprApyChartData, TPpsChartData } from '@pages/vaults/types/charts'
-import { formatUnixTimestamp, transformVaultChartData } from '@pages/vaults/utils/charts'
-import { useYearn } from '@shared/contexts/useYearn'
+import type { TAprApyChartData, TChartDataPoint, TPpsChartData } from '@pages/vaults/types/charts'
+import { formatUnixTimestamp, getTimeframeLimit, transformVaultChartData } from '@pages/vaults/utils/charts'
 import { cl, SELECTOR_BAR_STYLES } from '@shared/utils'
 import type { ReactElement } from 'react'
 import { Suspense, useMemo, useState } from 'react'
 
-type TTranchedVaultChartTab = TVaultChartTab | 'target-apy'
-
-function parseApyLabel(value: string): number {
-  const parsed = Number(value.replace('%', '').trim())
-  return Number.isFinite(parsed) ? parsed : 0
+const REFERENCE_VAULTS = {
+  USD: { name: 'USDC-1', address: '0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204' },
+  ETH: { name: 'WETH-1', address: '0xc56413869c6CDf96496f2b1eF801fEDBdFA7dDB0' }
 }
 
-function resolveBaseChartVault({
-  product,
-  vaults
-}: {
-  product: TTranchedProduct
-  vaults: TKongVaultInput[]
-}): TKongVaultInput | undefined {
-  const targetSymbols = product.asset === 'USD' ? ['yvusdc-1', 'usdc-1'] : ['yvweth', 'weth-1']
-  return vaults.find((vault) => {
-    const symbol = getVaultSymbol(vault).toLowerCase()
-    const name = getVaultName(vault).toLowerCase()
-    return targetSymbols.some((target) => symbol === target || name.includes(target))
-  })
+const SECONDS_PER_DAY = 86_400
+
+function hasChartValues<T extends TChartDataPoint>(
+  data: T[] | null,
+  key: keyof T,
+  timeframe: TVaultChartTimeframe
+): data is T[] {
+  return data?.slice(-getTimeframeLimit(timeframe)).some((point) => Number.isFinite(point[key])) ?? false
 }
 
-function buildSteadyApyData(baseData: TAprApyChartData | null, targetApy: number): TAprApyChartData | null {
-  if (!baseData) {
-    return null
+function buildSeniorApyData(baseData: TAprApyChartData | null, target: number): TChartDataPoint[] {
+  if (baseData) {
+    return baseData.map(({ date, thirtyDayApy }) => ({ date, historical: thirtyDayApy, target }))
   }
-  return baseData.map((point) => ({
-    ...point,
-    sevenDayApy: targetApy,
-    thirtyDayApy: targetApy,
-    derivedApr: targetApy,
-    derivedApy: targetApy
+
+  const today = Math.floor(Date.now() / 86_400_000) * SECONDS_PER_DAY
+  const days = getTimeframeLimit('1y')
+  return Array.from({ length: days }, (_, day) => ({
+    date: formatUnixTimestamp(today - (days - 1 - day) * SECONDS_PER_DAY),
+    historical: null,
+    target
   }))
 }
 
@@ -95,61 +82,81 @@ export function TranchedVaultChartsSection({
   timeframe
 }: {
   product: TTranchedProduct
-  chartTab?: TTranchedVaultChartTab
-  onChartTabChange?: (tab: TTranchedVaultChartTab) => void
+  chartTab?: TVaultChartTab
+  onChartTabChange?: (tab: TVaultChartTab) => void
   timeframe?: TVaultChartTimeframe
   onTimeframeChange?: (timeframe: TVaultChartTimeframe) => void
   shouldRenderSelectors?: boolean
   chartHeightPx?: number
   chartHeightMdPx?: number
 }): ReactElement {
-  const { allVaults, vaults } = useYearn()
-  const [uncontrolledTab, setUncontrolledTab] = useState<TTranchedVaultChartTab>('historical-apy')
+  const [uncontrolledTab, setUncontrolledTab] = useState<TVaultChartTab>('historical-apy')
   const [uncontrolledTimeframe, setUncontrolledTimeframe] = useState<TVaultChartTimeframe>('1y')
   const activeTab = chartTab ?? uncontrolledTab
   const activeTimeframe = timeframe ?? uncontrolledTimeframe
   const setActiveTab = onChartTabChange ?? setUncontrolledTab
   const setActiveTimeframe = onTimeframeChange ?? setUncontrolledTimeframe
-  const chartTabs =
-    product.id === 'yvusd-fixed'
-      ? [{ id: 'target-apy' as const, label: 'Target APY' }, ...VAULT_CHART_TABS]
-      : VAULT_CHART_TABS
-  const catalogVaults = useMemo(() => Object.values({ ...allVaults, ...vaults }), [allVaults, vaults])
-  const baseVault = useMemo(() => resolveBaseChartVault({ product, vaults: catalogVaults }), [catalogVaults, product])
-  const { data, error, isLoading } = useVaultChartTimeseries({
-    chainId: baseVault ? getVaultChainID(baseVault) : undefined,
-    address: baseVault ? getVaultAddress(baseVault) : undefined
+  const isSenior = product.kind === 'senior'
+  const isApyTab = activeTab === 'historical-apy'
+  const referenceVault = REFERENCE_VAULTS[product.asset]
+  // The ETH products still point to preview addresses in the tranche catalog.
+  const trancheAddress =
+    product.asset === 'USD' ? YVUSD_TRANCHE_DEPLOYMENT.tranches[isSenior ? 'fixed' : 'levered'] : undefined
+  const trancheQuery = useVaultChartTimeseries({
+    chainId: YVUSD_TRANCHE_DEPLOYMENT.chainId,
+    address: trancheAddress
   })
-  const transformed = useMemo(() => transformVaultChartData(data), [data])
-  const apyData = useMemo(
-    () =>
-      product.kind === 'senior'
-        ? buildSteadyApyData(transformed.aprApyData, parseApyLabel(product.apyLabel))
-        : buildLeveredApyData(transformed.aprApyData),
-    [product.apyLabel, product.kind, transformed.aprApyData]
+  const referenceQuery = useVaultChartTimeseries({ chainId: 1, address: referenceVault.address })
+  const trancheData = trancheQuery.isPlaceholderData ? undefined : trancheQuery.data
+  const referenceData = referenceQuery.isPlaceholderData ? undefined : referenceQuery.data
+  const tranche = useMemo(() => transformVaultChartData(trancheData), [trancheData])
+  const reference = useMemo(() => transformVaultChartData(referenceData), [referenceData])
+
+  const hasActualApy = hasChartValues(tranche.aprApyData, 'thirtyDayApy', activeTimeframe)
+  const hasReferenceApy = hasChartValues(reference.aprApyData, 'thirtyDayApy', activeTimeframe)
+  const apyData = hasActualApy ? tranche.aprApyData : hasReferenceApy ? reference.aprApyData : null
+  const targetApy = Number.parseFloat(product.apyLabel)
+  const seniorApyData = useMemo(
+    () => (isSenior ? buildSeniorApyData(apyData, targetApy) : null),
+    [apyData, isSenior, targetApy]
   )
-  // Mock the target history independently of the underlying vault's chart availability.
-  const targetApyData = useMemo<TAprApyChartData>(() => {
-    const today = Math.floor(Date.now() / 86_400_000) * 86_400
-    return Array.from({ length: 365 }, (_, day) => ({
-      date: formatUnixTimestamp(today - (364 - day) * 86_400),
-      sevenDayApy: null,
-      thirtyDayApy: 5,
-      derivedApr: null,
-      derivedApy: null
-    }))
-  }, [])
-  const isTargetApyTab = activeTab === 'target-apy'
-  const ppsData = useMemo(() => buildPpsData(product, transformed.ppsData), [product, transformed.ppsData])
-  const tvlData = transformed.tvlData
-  const isChartLoading = isLoading || !baseVault || !apyData || !ppsData || !tvlData
+  const juniorApyData = useMemo(
+    () => (!isSenior && !hasActualApy ? buildLeveredApyData(apyData) : apyData),
+    [apyData, hasActualApy, isSenior]
+  )
+  const apySeries = [
+    { key: 'historical', label: hasActualApy ? 'Actual APY' : 'Reference APY' },
+    { key: 'target', label: 'Target APY' }
+  ] as const
+
+  const ppsData = hasChartValues(tranche.ppsData, 'PPS', activeTimeframe)
+    ? tranche.ppsData
+    : hasChartValues(reference.ppsData, 'PPS', activeTimeframe)
+      ? buildPpsData(product, reference.ppsData)
+      : null
+  const tvlData = hasChartValues(tranche.tvlData, 'TVL', activeTimeframe)
+    ? tranche.tvlData
+    : hasChartValues(reference.tvlData, 'TVL', activeTimeframe)
+      ? reference.tvlData
+      : null
+  const isLoading =
+    trancheQuery.isLoading ||
+    trancheQuery.isPlaceholderData ||
+    referenceQuery.isLoading ||
+    referenceQuery.isPlaceholderData
+  const error = trancheQuery.error ?? referenceQuery.error
+  const hasActiveData = isApyTab
+    ? Boolean(seniorApyData || juniorApyData)
+    : activeTab === 'historical-pps'
+      ? Boolean(ppsData)
+      : Boolean(tvlData)
 
   return (
     <div className={'space-y-3 rounded-lg pt-4 md:space-y-4'}>
       {shouldRenderSelectors ? (
         <div className={'flex flex-col gap-2 px-3 md:flex-row md:items-start md:justify-between md:gap-3 md:px-4'}>
           <div className={cl('flex w-full items-center gap-0.5 md:w-auto md:gap-1', SELECTOR_BAR_STYLES.container)}>
-            {chartTabs.map((tab) => (
+            {VAULT_CHART_TABS.map((tab) => (
               <button
                 key={tab.id}
                 type={'button'}
@@ -171,30 +178,57 @@ export function TranchedVaultChartsSection({
         </div>
       ) : null}
 
-      {error && !isTargetApyTab ? (
-        <div className={'bg-neutral-300 p-6 text-center text-sm text-red-700'}>
-          {'Unable to load chart data right now.'}
+      {hasActiveData ? (
+        <div>
+          <div className={'px-4'}>
+            <FixedHeightChartContainer heightPx={chartHeightPx} heightMdPx={chartHeightMdPx}>
+              <ChartErrorBoundary>
+                <Suspense fallback={<ChartSkeleton />}>
+                  {isApyTab &&
+                    (seniorApyData ? (
+                      <DualLineApyChart chartData={seniorApyData} series={apySeries} timeframe={activeTimeframe} />
+                    ) : juniorApyData ? (
+                      <APYChart
+                        chartData={juniorApyData}
+                        timeframe={activeTimeframe}
+                        seriesLabel={hasActualApy ? 'Actual APY' : 'Illustrative APY'}
+                      />
+                    ) : null)}
+                  {activeTab === 'historical-pps' && ppsData ? (
+                    <PPSChart chartData={ppsData} timeframe={activeTimeframe} />
+                  ) : null}
+                  {activeTab === 'historical-tvl' && tvlData ? (
+                    <TVLChart chartData={tvlData} timeframe={activeTimeframe} />
+                  ) : null}
+                </Suspense>
+              </ChartErrorBoundary>
+            </FixedHeightChartContainer>
+          </div>
+          {isApyTab && seniorApyData ? (
+            <DualLineChartLegend
+              chartData={seniorApyData}
+              series={apySeries}
+              timeframe={activeTimeframe}
+              showSingleSeries
+            />
+          ) : null}
+          {isApyTab && !hasActualApy && (hasReferenceApy || !isLoading) ? (
+            <p className={'px-4 pb-1 text-center text-xs text-text-secondary'}>
+              {hasReferenceApy
+                ? isSenior
+                  ? `Reference APY shows ${referenceVault.name} history.`
+                  : `Illustrative APY uses twice the 30-day APY of ${referenceVault.name}.`
+                : 'Actual APY history is unavailable.'}
+            </p>
+          ) : null}
         </div>
-      ) : isChartLoading && !isTargetApyTab ? (
+      ) : isLoading ? (
         <ChartSkeleton />
       ) : (
-        <FixedHeightChartContainer heightPx={chartHeightPx} heightMdPx={chartHeightMdPx} className={'mx-4'}>
-          <ChartErrorBoundary>
-            <Suspense fallback={<ChartSkeleton />}>
-              {isTargetApyTab ? (
-                <APYChart chartData={targetApyData} timeframe={activeTimeframe} seriesLabel={'Target APY'} />
-              ) : null}
-              {activeTab === 'historical-apy' && apyData ? (
-                <APYChart chartData={apyData} timeframe={activeTimeframe} />
-              ) : null}
-              {activeTab === 'historical-pps' && ppsData ? (
-                <PPSChart chartData={ppsData} timeframe={activeTimeframe} />
-              ) : null}
-              {activeTab === 'historical-tvl' && tvlData ? (
-                <TVLChart chartData={tvlData} timeframe={activeTimeframe} />
-              ) : null}
-            </Suspense>
-          </ChartErrorBoundary>
+        <FixedHeightChartContainer heightPx={chartHeightPx} heightMdPx={chartHeightMdPx}>
+          <div className={'grid h-full place-items-center px-4 text-center text-sm text-text-secondary'}>
+            {error ? 'Unable to load chart data right now.' : 'No chart history is available for this vault yet.'}
+          </div>
         </FixedHeightChartContainer>
       )}
     </div>

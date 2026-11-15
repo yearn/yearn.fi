@@ -8,7 +8,12 @@ import { ChartErrorBoundary } from './charts/ChartErrorBoundary'
 import ChartSkeleton from './charts/ChartSkeleton'
 import ChartsLoader from './charts/ChartsLoader'
 import { FixedHeightChartContainer } from './charts/FixedHeightChartContainer'
-import { YvUsdApyChart, YvUsdChartLegend, YvUsdPerformanceChart, YvUsdTvlChart } from './charts/YvUsdDualLineChart'
+import {
+  DualLineApyChart,
+  DualLineChartLegend,
+  YvUsdPerformanceChart,
+  YvUsdTvlChart
+} from './charts/YvUsdDualLineChart'
 import { VAULT_CHART_TABS, type VAULT_CHART_TIMEFRAME_OPTIONS, VaultChartTimeframeDropdown } from './VaultChartsSection'
 
 const VaultTvlGrowthChart = lazy(() =>
@@ -71,7 +76,7 @@ function renderActiveChart({
     case 'historical-tvl':
       return tvlData ? <YvUsdTvlChart chartData={tvlData} timeframe={activeTimeframe} /> : null
     default:
-      return apyData ? <YvUsdApyChart chartData={apyData} timeframe={activeTimeframe} /> : null
+      return apyData ? <DualLineApyChart chartData={apyData} timeframe={activeTimeframe} /> : null
   }
 }
 
@@ -209,7 +214,7 @@ export function YvUsdChartsSection({
             </FixedHeightChartContainer>
           </div>
           {!activeTabIsUserChart && activeChartData ? (
-            <YvUsdChartLegend chartData={activeChartData} timeframe={activeTimeframe} />
+            <DualLineChartLegend chartData={activeChartData} timeframe={activeTimeframe} />
           ) : null}
         </div>
       )}

@@ -66,6 +66,34 @@ it('keeps row category handlers stable across unrelated wallet updates, while ca
   expect(result.current.list.activeFilters.activeCategories).toEqual([])
 })
 
+it.each(['fixed', 'floating'] as const)('clears the %s rate when its chip is selected again', (rate) => {
+  const { result } = renderHook(() => useVaultsPageModel())
+
+  act(() => result.current.list.handlers.onSelectYieldRate(rate))
+  expect(result.current.list.activeFilters.activeYieldRate).toBe(rate)
+  expect(result.current.filtersBar.activeVaultType).toBe(rate === 'fixed' ? 'fixed' : 'all')
+
+  act(() => result.current.list.handlers.onSelectYieldRate(rate))
+  expect(result.current.list.activeFilters.activeYieldRate).toBe('all')
+  expect(result.current.filtersBar.activeVaultType).toBe('all')
+})
+
+it.each(['senior', 'junior'] as const)('toggles %s without clearing the selected rate', (seniority) => {
+  const { result } = renderHook(() => useVaultsPageModel())
+  const rate = seniority === 'senior' ? 'fixed' : 'floating'
+  const getListArgs = () => mocks.useVaultsListModel.mock.calls.findLast(([args]) => args.enabled === undefined)?.[0]
+  act(() => result.current.list.handlers.onSelectYieldRate(rate))
+
+  act(() => result.current.list.handlers.onToggleSeniority(seniority))
+  expect(result.current.list.activeFilters.activeSeniority).toBe(seniority)
+  expect(getListArgs()?.listSeniority).toBe(seniority)
+
+  act(() => result.current.list.handlers.onToggleSeniority(seniority))
+  expect(result.current.list.activeFilters.activeSeniority).toBeNull()
+  expect(getListArgs()?.listSeniority).toBeNull()
+  expect(result.current.list.activeFilters.activeYieldRate).toBe(rate)
+})
+
 it('keeps the initial catalog visible through connection and hands over only when the full catalog is available', () => {
   const vaultAddress = '0x1111111111111111111111111111111111111111'
   const initialVaults = { vaults: [[vaultAddress, 1, '3.0.0']] }

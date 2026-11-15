@@ -124,9 +124,17 @@ export default function Index({ initialQueryState, initialVaults }: TVaultsPageP
     hiddenByFiltersCount,
     blockingFilterActions
   } = data
-  const { activeChains, activeCategories, activeProductType, activeYieldRate, activeFeeStructureKey } = activeFilters
-  const { onToggleChain, onToggleCategory, onToggleType, onToggleVaultType, onSelectYieldRate, onToggleFeeStructure } =
-    handlers
+  const { activeChains, activeCategories, activeProductType, activeYieldRate, activeSeniority, activeFeeStructureKey } =
+    activeFilters
+  const {
+    onToggleChain,
+    onToggleCategory,
+    onToggleType,
+    onToggleVaultType,
+    onSelectYieldRate,
+    onToggleSeniority,
+    onToggleFeeStructure
+  } = handlers
 
   const [compareVaultKeys, setCompareVaultKeys] = useState<string[]>([])
   const [isCompareOpen, setIsCompareOpen] = useState(false)
@@ -213,40 +221,37 @@ export default function Index({ initialQueryState, initialVaults }: TVaultsPageP
 
   const resolveTranchedExtraChips = useCallback(
     (vault: TKongVaultInput): TVaultsListExtraChip[] => {
-      const row = getTranchedVaultRowByAddress(getVaultAddress(vault))
-      if (row?.product.kind === 'senior') {
-        return [
-          {
-            label: 'Fixed Rate',
-            tooltipDescription: 'Show Fixed Yield vaults with a predefined target rate.',
-            isActive: activeYieldRate === 'fixed',
-            onClick: (): void => onSelectYieldRate('fixed'),
-            ariaLabel: 'Show Fixed Yield vaults'
-          }
-        ]
-      }
-
+      const kind = getTranchedVaultRowByAddress(getVaultAddress(vault))?.product.kind
+      const rate = kind === 'senior' ? 'fixed' : 'floating'
       const chips: TVaultsListExtraChip[] = [
         {
-          label: 'Floating Rate',
-          tooltipDescription: 'Show all vaults whose rate floats with strategy performance.',
-          isActive: activeYieldRate === 'floating',
-          onClick: (): void => onSelectYieldRate('floating'),
-          ariaLabel: 'Show Floating Rate vaults'
+          label: rate === 'fixed' ? 'Fixed Rate' : 'Floating Rate',
+          tooltipDescription:
+            rate === 'fixed'
+              ? 'Fixed Yield vaults have a predefined target rate.'
+              : 'Floating Rate vaults have rates that vary with strategy performance.',
+          isActive: activeYieldRate === rate,
+          onClick: () => onSelectYieldRate(rate),
+          ariaLabel: rate === 'fixed' ? 'Filter by Fixed Rate' : 'Filter by Floating Rate'
         }
       ]
 
-      if (row?.product.kind === 'junior') {
+      if (kind) {
         chips.push({
-          label: 'Junior',
+          label: kind === 'senior' ? 'Senior' : 'Junior',
           tooltipDescription:
-            'Junior products receive excess yield after senior obligations and sit below senior in the waterfall.'
+            kind === 'senior'
+              ? 'Senior receives its target yield first and absorbs losses after Junior.'
+              : 'Junior receives excess yield after Senior obligations and absorbs losses before Senior.',
+          isActive: activeSeniority === kind,
+          onClick: () => onToggleSeniority(kind),
+          ariaLabel: kind === 'senior' ? 'Filter by Senior' : 'Filter by Junior'
         })
       }
 
       return chips
     },
-    [activeYieldRate, onSelectYieldRate]
+    [activeSeniority, activeYieldRate, onSelectYieldRate, onToggleSeniority]
   )
 
   const resolveTranchedProductTypeChipOverride = useCallback((vault: TKongVaultInput): boolean | undefined => {

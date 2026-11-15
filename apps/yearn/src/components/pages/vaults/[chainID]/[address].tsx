@@ -1946,7 +1946,12 @@ function Index(): ReactElement | null {
               />
             </div>
             <div className="flex-1 min-w-0">
-              <h1 className={'text-lg font-black leading-tight truncate-safe text-text-primary'}>
+              <h1
+                className={cl(
+                  'text-lg font-black leading-tight text-text-primary',
+                  isYvUsd ? 'truncate' : 'truncate-safe'
+                )}
+              >
                 {getVaultName(currentVault)}
               </h1>
               <div className="flex items-center gap-1 mt-1">

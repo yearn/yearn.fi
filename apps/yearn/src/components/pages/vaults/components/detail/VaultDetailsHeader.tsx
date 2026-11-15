@@ -210,6 +210,7 @@ function VaultHeaderIdentity({
   const titleSlotRef = useRef<HTMLDivElement>(null)
   const titleMeasureRef = useRef<HTMLSpanElement>(null)
   const vaultName = getVaultName(currentVault)
+  const singleLineTitle = isYvUsdVault(currentVault)
   const tokenLogoSize = getVaultLogoSize({ isCompressed })
   const tokenLogoContainerSizeClassName = getVaultLogoContainerSizeClassName({ isCompressed })
 
@@ -264,7 +265,8 @@ function VaultHeaderIdentity({
         <div
           className={cl(
             'relative flex items-center justify-start rounded-full bg-surface/70',
-            tokenLogoContainerSizeClassName
+            tokenLogoContainerSizeClassName,
+            singleLineTitle ? 'shrink-0' : undefined
           )}
         >
           <TokenLogo
@@ -283,12 +285,12 @@ function VaultHeaderIdentity({
             </div>
           ) : null}
         </div>
-        <div className={cl('flex flex-col', isCompressed ? 'min-w-0 flex-1' : '')}>
+        <div className={cl('flex flex-col', isCompressed || singleLineTitle ? 'min-w-0 flex-1' : undefined)}>
           <div
             className={cl(
               'flex',
               isCompressed ? 'min-w-0' : 'items-center gap-3',
-              isCompressed && isTitleClipped ? 'items-start' : 'items-center',
+              isCompressed && isTitleClipped && !singleLineTitle ? 'items-start' : 'items-center',
               isCompressed ? 'relative' : ''
             )}
           >
@@ -309,9 +311,10 @@ function VaultHeaderIdentity({
                   <strong
                     className={cl(
                       'block text-lg font-black leading-tight text-text-primary',
-                      isTitleClipped
-                        ? `${COMPRESSED_TITLE_COMPACT_SIZE_CLASS} md:[display:-webkit-box] md:[-webkit-box-orient:vertical] md:[-webkit-line-clamp:2] md:[text-wrap:balance] md:whitespace-normal`
-                        : `truncate whitespace-nowrap ${COMPRESSED_TITLE_FULL_SIZE_CLASS}`
+                      isTitleClipped ? COMPRESSED_TITLE_COMPACT_SIZE_CLASS : COMPRESSED_TITLE_FULL_SIZE_CLASS,
+                      isTitleClipped && !singleLineTitle
+                        ? 'md:[display:-webkit-box] md:[-webkit-box-orient:vertical] md:[-webkit-line-clamp:2] md:[text-wrap:balance] md:whitespace-normal'
+                        : 'truncate'
                     )}
                   >
                     {vaultName}
@@ -331,8 +334,13 @@ function VaultHeaderIdentity({
               </div>
             ) : (
               <>
-                <div ref={titleSlotRef}>
-                  <strong className={'text-lg font-black leading-tight md:text-3xl md:leading-10 text-text-primary'}>
+                <div ref={titleSlotRef} className={singleLineTitle ? 'min-w-0' : undefined}>
+                  <strong
+                    className={cl(
+                      'text-lg font-black leading-tight md:text-3xl md:leading-10 text-text-primary',
+                      singleLineTitle ? 'block truncate' : undefined
+                    )}
+                  >
                     {vaultName}
                   </strong>
                 </div>
@@ -341,7 +349,10 @@ function VaultHeaderIdentity({
                     href={explorerHref}
                     target={'_blank'}
                     rel={'noopener noreferrer'}
-                    className={'h-7 content-end text-text-secondary transition-colors hover:text-text-primary'}
+                    className={cl(
+                      'h-7 content-end text-text-secondary transition-colors hover:text-text-primary',
+                      singleLineTitle ? 'shrink-0' : undefined
+                    )}
                     aria-label={'View vault on block explorer'}
                   >
                     <IconLinkOut className={'size-4 md:size-4'} />
@@ -1253,7 +1264,9 @@ export function VaultDetailsHeaderPresentation({
               <VaultHeaderIdentity
                 currentVault={currentVault}
                 isCompressed={isCompressed}
-                className={'md:w-[20%] md:min-w-[300px] md:max-w-[420px] md:flex-none'}
+                className={
+                  isYvUsd ? 'md:w-[22rem] md:flex-none' : 'md:w-[20%] md:min-w-[300px] md:max-w-[420px] md:flex-none'
+                }
                 logoSrcOverride={logoSrcOverride}
                 productTypeLabelOverride={productTypeLabelOverride}
                 productTypeDescriptionOverride={productTypeDescriptionOverride}

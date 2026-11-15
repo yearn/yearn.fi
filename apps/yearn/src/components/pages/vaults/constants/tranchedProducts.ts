@@ -43,6 +43,7 @@ const ZERO_ADDRESS = toAddress('0x0000000000000000000000000000000000000000')
 const WETH_ADDRESS = toAddress('0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2')
 const USDC_ADDRESS = toAddress('0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48')
 
+export const YTRANCHE_DOCS_URL = 'https://github.com/yearn/ytranche#readme'
 export const YVUSD_JUNIOR_COOLDOWN_DAYS = 14
 
 export const YVUSD_TRANCHE_DEPLOYMENT = {
@@ -64,6 +65,8 @@ const PRODUCT_ADDRESSES: Record<string, `0x${string}`> = {
   'yvusd-levered': YVUSD_TRANCHE_DEPLOYMENT.tranches.levered,
   'yveth-levered': toAddress('0x0000000000000000000000000000000000000b02')
 }
+
+export const DEFAULT_PINNED_TRANCHE_ADDRESSES = [PRODUCT_ADDRESSES['yvusd-fixed'], PRODUCT_ADDRESSES['yveth-fixed']]
 
 const PRODUCT_TVL: Record<string, number> = {
   'yvusd-fixed': 12_000_000,
@@ -92,7 +95,6 @@ const TOKEN_PRICE: Record<TTranchedAsset, number> = {
 }
 
 const getBaseUrl = (): string => env.BASE_URL || '/'
-const getAssetsBaseUrl = (): string => env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI || ''
 
 function getTokenConfig(asset: TTranchedAsset): {
   address: `0x${string}`
@@ -226,10 +228,7 @@ function buildTranchedVault(product: TTranchedProduct): TTranchedVaultRow {
     product,
     vault,
     href: `/vaults/tranched/${product.id}`,
-    logoSrc:
-      product.asset === 'USD'
-        ? `${getBaseUrl()}ytranche/yvusd-${product.kind}.png`
-        : `${getAssetsBaseUrl()}/tokens/1/${token.address.toLowerCase()}/logo-128.png`
+    logoSrc: `${getBaseUrl()}ytranche/yv${product.asset.toLowerCase()}-${product.kind}.png`
   }
 }
 
@@ -269,9 +268,9 @@ export const TRANCHED_PRODUCTS: TTranchedProduct[] = [
     id: 'yveth-fixed',
     kind: 'senior',
     asset: 'ETH',
-    name: 'yvWETH',
-    symbol: 'yvWETH-A',
-    shortName: 'WETH',
+    name: 'yvETH',
+    symbol: 'yvETH-A',
+    shortName: 'ETH',
     intent: 'Steady ETH-denominated yield with reserve and junior protection beneath it.',
     apyLabel: '3.00%',
     apyCaption: 'target APY',
@@ -280,7 +279,7 @@ export const TRANCHED_PRODUCTS: TTranchedProduct[] = [
     liquidity: 'Instant target liquidity',
     riskPosition: 'Senior: first paid, last loss',
     protection: 'Reserve plus junior buffer',
-    underlying: 'WETH-denominated yvWETH stack',
+    underlying: 'WETH-denominated yvETH stack',
     primaryAction: 'Deposit fixed yield',
     listPlacement: 'Fixed Yield tab',
     detailLead:
@@ -330,9 +329,9 @@ export const TRANCHED_PRODUCTS: TTranchedProduct[] = [
     id: 'yveth-levered',
     kind: 'junior',
     asset: 'ETH',
-    name: 'yvWETH Junior',
-    symbol: 'yvWETH-B',
-    shortName: 'WETH Junior',
+    name: 'yvETH Junior',
+    symbol: 'yvETH-B',
+    shortName: 'ETH Junior',
     intent: 'Higher-upside ETH yield with cooldown and junior loss position.',
     apyLabel: '13.35%',
     apyCaption: 'above-threshold example',
@@ -341,13 +340,13 @@ export const TRANCHED_PRODUCTS: TTranchedProduct[] = [
     liquidity: '14-day cooldown',
     riskPosition: 'Junior: second paid, second loss',
     protection: '90% excess-yield share',
-    underlying: 'WETH-denominated yvWETH stack',
+    underlying: 'WETH-denominated yvETH stack',
     primaryAction: 'Deposit levered',
     listPlacement: 'Floating Yield list',
     detailLead:
       'A junior ETH tranche for users who explicitly want risk-on ETH yield after senior fixed-yield obligations are met.',
     mechanics: [
-      'Junior begins earning once the underlying yvWETH stack clears the target threshold.',
+      'Junior begins earning once the underlying yvETH stack clears the target threshold.',
       'Returns scale steeply above threshold because junior is a smaller capital slice.',
       'Cooldown makes the risk and liquidity tradeoff visible before deposit.'
     ],

@@ -9,14 +9,11 @@ import {
 
 describe('tranched product list copy', () => {
   it('uses the fixed product names', () => {
-    expect(getTranchedProductsByKind('senior').map((product) => product.name)).toEqual(['yvUSD', 'yvWETH'])
+    expect(getTranchedProductsByKind('senior').map((product) => product.name)).toEqual(['yvUSD', 'yvETH'])
   })
 
   it('uses the junior product names', () => {
-    expect(getTranchedProductsByKind('junior').map((product) => product.name)).toEqual([
-      'yvUSD Junior',
-      'yvWETH Junior'
-    ])
+    expect(getTranchedProductsByKind('junior').map((product) => product.name)).toEqual(['yvUSD Junior', 'yvETH Junior'])
   })
 
   it('removes the BTC tranche products and their detail routes', () => {

@@ -56,12 +56,37 @@ it.each(['all', 'v3'] as const)('pins new yvUSD and keeps Legacy yvUSD unpinned 
   expect(result.current.mainVaults.find((vault) => vault.address === YVUSD_UNLOCKED_ADDRESS)?.name).toBe('Legacy yvUSD')
 })
 
-it.each(['tvl', 'estAPY', 'deposited'] as const)('honors explicit %s sorting without the product pin', (sortBy) => {
-  const { result } = renderHook(() => useVaultsListModel({ ...defaultArgs, sortBy }))
-  expect(result.current.pinnedVaults).toEqual([])
-  expect(result.current.mainVaults.some((vault) => vault.address === YVUSD_TRANCHE_DEPLOYMENT.tranches.fixed)).toBe(
-    true
+it.each([
+  ['senior', YVUSD_TRANCHE_DEPLOYMENT.tranches.fixed],
+  ['junior', YVUSD_TRANCHE_DEPLOYMENT.tranches.levered]
+] as const)('shows only %s vaults while the seniority filter is active', (listSeniority, address) => {
+  const { result, rerender } = renderHook<ReturnType<typeof useVaultsListModel>, typeof listSeniority | null>(
+    (seniority) => useVaultsListModel({ ...defaultArgs, listSeniority: seniority }),
+    { initialProps: listSeniority }
   )
+
+  expect([...result.current.pinnedVaults, ...result.current.mainVaults].map((vault) => vault.address)).toEqual([
+    address
+  ])
+
+  rerender(null)
+  expect([...result.current.pinnedVaults, ...result.current.mainVaults].map((vault) => vault.address)).toContain(
+    YVUSD_UNLOCKED_ADDRESS
+  )
+})
+
+it('pins yvUSD Senior above yvETH Senior in the default view', () => {
+  const { result } = renderHook(() => useVaultsListModel({ ...defaultArgs, searchValue: '' }))
+  expect(result.current.pinnedVaults.map((vault) => vault.name)).toEqual(['yvUSD', 'yvETH'])
+})
+
+it.each(['tvl', 'estAPY', 'deposited'] as const)('sorts both Senior vaults without default pins for %s', (sortBy) => {
+  const { result } = renderHook(() => useVaultsListModel({ ...defaultArgs, searchValue: '', sortBy }))
+  expect(result.current.pinnedVaults).toEqual([])
+  const seniorNames = result.current.mainVaults
+    .map((vault) => vault.name)
+    .filter((name) => name === 'yvUSD' || name === 'yvETH')
+  expect(seniorNames).toEqual(sortBy === 'tvl' ? ['yvETH', 'yvUSD'] : ['yvUSD', 'yvETH'])
 })
 
 it.each([{ searchValue: 'Junior' }, { listChains: [8453] }, { listMinTvl: 13_000_000 }])(
@@ -72,9 +97,10 @@ it.each([{ searchValue: 'Junior' }, { listChains: [8453] }, { listMinTvl: 13_000
   }
 )
 
-it('does not duplicate yvUSD when Available to Deposit is also pinned', () => {
-  const { result } = renderHook(() => useVaultsListModel({ ...defaultArgs, isAvailablePinned: true }))
+it('does not duplicate either Senior vault when Available to Deposit is also pinned', () => {
+  const { result } = renderHook(() => useVaultsListModel({ ...defaultArgs, searchValue: '', isAvailablePinned: true }))
   const visibleVaults = [...result.current.pinnedVaults, ...result.current.mainVaults]
-  expect(result.current.pinnedSections[0].key).toBe('yvUSD')
-  expect(visibleVaults.filter((vault) => vault.address === YVUSD_TRANCHE_DEPLOYMENT.tranches.fixed)).toHaveLength(1)
+  expect(result.current.pinnedSections[0].vaults.map((vault) => vault.name)).toEqual(['yvUSD', 'yvETH'])
+  expect(visibleVaults.filter((vault) => vault.name === 'yvUSD')).toHaveLength(1)
+  expect(visibleVaults.filter((vault) => vault.name === 'yvETH')).toHaveLength(1)
 })

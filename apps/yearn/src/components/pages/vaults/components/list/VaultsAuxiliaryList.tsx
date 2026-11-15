@@ -99,7 +99,7 @@ export function VaultsAuxiliaryList({
       <VirtualizedVaultsList
         items={vaults}
         estimateSize={81}
-        itemSpacingClassName={'pb-px'}
+        itemSpacingClassName={'max-md:pb-px md:border-b md:border-border'}
         getItemKey={getVaultListKey}
         renderItem={(vault): ReactElement => {
           const key = getVaultListKey(vault)

@@ -20,11 +20,8 @@ describe('getVaultPrimaryLogoSrc', () => {
   it.each([...getTranchedVaultRowsByKind('senior'), ...getTranchedVaultRowsByKind('junior')])(
     'uses the product asset logo for $product.name',
     ({ product, vault, logoSrc }) => {
-      if (product.asset === 'USD') {
-        expect(logoSrc).toMatch(new RegExp(`ytranche/yvusd-${product.kind}\\.png$`))
-      } else {
-        expect(logoSrc).toContain(`/tokens/1/${vault.token.address.toLowerCase()}/logo-128.png`)
-      }
+      const expectedLogo = `/ytranche/${product.asset === 'USD' ? 'yvusd' : 'yveth'}-${product.kind}.png`
+      expect(logoSrc.endsWith(expectedLogo)).toBe(true)
       expect(getVaultPrimaryLogoSrc(vault)).toBe(logoSrc)
     }
   )

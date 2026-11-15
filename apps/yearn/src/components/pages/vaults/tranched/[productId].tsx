@@ -18,7 +18,8 @@ import { YvUsdTrancheSummary } from '@pages/vaults/components/widget/tranched/Yv
 import {
   getTranchedProductById,
   getTranchedVaultRowsByKind,
-  type TTranchedProduct
+  type TTranchedProduct,
+  YTRANCHE_DOCS_URL
 } from '@pages/vaults/constants/tranchedProducts'
 import {
   getVaultAddress,
@@ -262,14 +263,24 @@ function TranchedWidget({
   )
 }
 
-function AdditionalFeatures({ product }: { product: TTranchedProduct }): ReactElement {
+function TrancheDescription({ product }: { product: TTranchedProduct }): ReactElement {
   return (
-    <div
-      className={'mt-2 rounded-lg border border-border bg-surface-secondary p-3 text-sm leading-6 text-text-secondary'}
-    >
-      {product.kind === 'senior'
-        ? 'Senior receives the target coupon first. Junior and reserve capital sit below it.'
-        : 'Junior receives excess return after senior obligations are covered and accepts earlier loss exposure.'}
+    <div className={'mt-2 space-y-2'}>
+      <p>
+        {product.kind === 'senior'
+          ? 'Senior receives the target coupon first. Junior and reserve capital sit below it.'
+          : 'Junior receives excess yield after Senior obligations are covered and absorbs losses before Senior.'}
+      </p>
+      {product.asset === 'USD' || product.kind === 'junior' ? (
+        <a
+          href={YTRANCHE_DOCS_URL}
+          target="_blank"
+          rel="noopener noreferrer"
+          className="inline-block text-primary underline underline-offset-4 hover:opacity-80"
+        >
+          {'Explore the structure'}
+        </a>
+      ) : null}
     </div>
   )
 }
@@ -391,10 +402,7 @@ function TranchedProductDetail({ product }: { product: TTranchedProduct }): Reac
     }
   }, [])
 
-  const productBanner =
-    product.asset === 'USD' ? (
-      <TranchedVaultBanner kind={product.kind} onExploreStructure={(): void => handleSelectSection('about')} />
-    ) : undefined
+  const productBanner = <TranchedVaultBanner {...product} />
 
   const setSectionRef =
     (key: TSectionKey) =>
@@ -436,7 +444,7 @@ function TranchedProductDetail({ product }: { product: TTranchedProduct }): Reac
         </header>
 
         <div className={'py-4 md:hidden'}>
-          {productBanner ? <div className={'mb-3'}>{productBanner}</div> : null}
+          <div className={'mb-3'}>{productBanner}</div>
           <VaultDetailsHeader
             currentVault={resolved.row.vault}
             depositedValue={0n}
@@ -454,9 +462,7 @@ function TranchedProductDetail({ product }: { product: TTranchedProduct }): Reac
           />
         </div>
 
-        {productBanner && isBelowDesktopWidgetBreakpoint ? (
-          <div className={'mt-3 hidden md:block'}>{productBanner}</div>
-        ) : null}
+        {isBelowDesktopWidgetBreakpoint ? <div className={'mt-3 hidden md:block'}>{productBanner}</div> : null}
 
         <section className={'grid grid-cols-1 gap-4 bg-app md:grid-cols-20 md:items-start md:gap-6'}>
           <div
@@ -486,7 +492,7 @@ function TranchedProductDetail({ product }: { product: TTranchedProduct }): Reac
               </SectionShell>
             </div>
 
-            {productBanner && isHeaderForceCompressed && !isBelowDesktopWidgetBreakpoint ? (
+            {isHeaderForceCompressed && !isBelowDesktopWidgetBreakpoint ? (
               <div className={'hidden md:block'}>{productBanner}</div>
             ) : null}
 
@@ -495,7 +501,7 @@ function TranchedProductDetail({ product }: { product: TTranchedProduct }): Reac
                 <VaultAboutSection
                   currentVault={resolved.row.vault}
                   vaultAddresses={vaultAddresses}
-                  additionalFeaturesContent={<AdditionalFeatures product={product} />}
+                  descriptionSupplement={<TrancheDescription product={product} />}
                 />
               </SectionShell>
             </div>

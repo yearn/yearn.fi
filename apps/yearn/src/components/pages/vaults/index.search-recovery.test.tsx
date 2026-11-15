@@ -143,7 +143,8 @@ describe('Vaults page search recovery row', () => {
           activeChains: [],
           activeCategories: [],
           activeProductType: 'all',
-          activeYieldRate: 'all'
+          activeYieldRate: 'all',
+          activeSeniority: null
         },
         data: {
           isLoading: false,
@@ -173,7 +174,7 @@ describe('Vaults page search recovery row', () => {
           onToggleType: vi.fn(),
           onToggleVaultType: vi.fn(),
           onSelectYieldRate: vi.fn(),
-          onSelectSeniority: vi.fn()
+          onToggleSeniority: vi.fn()
         },
         onResetFilters: vi.fn(),
         resolveApyDisplayVariant: vi.fn(() => 'default')

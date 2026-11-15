@@ -342,7 +342,8 @@ export function transformVaultChartData(timeseries?: TChartTimeseriesResponse | 
     PPS: point.value ?? null
   }))
 
-  const aprApyData: TAprApyChartData = aprFilled.map((point, index) => ({
+  const apyDates = aprFilled.length ? aprFilled : apyMonthlyFilled.length ? apyMonthlyFilled : apyWeeklyFilled
+  const aprApyData: TAprApyChartData = apyDates.map((point, index) => ({
     date: formatUnixTimestamp(point.time),
     sevenDayApy:
       apyWeeklyFilled[index]?.value !== null && apyWeeklyFilled[index]?.value !== undefined
@@ -352,7 +353,7 @@ export function transformVaultChartData(timeseries?: TChartTimeseriesResponse | 
       apyMonthlyFilled[index]?.value !== null && apyMonthlyFilled[index]?.value !== undefined
         ? Number(apyMonthlyFilled[index]?.value) * 100
         : null,
-    derivedApr: point.value !== null ? point.value * 100 : null,
+    derivedApr: aprFilled[index]?.value != null ? aprFilled[index].value * 100 : null,
     derivedApy:
       aprAsApyFilled[index]?.value !== null && aprAsApyFilled[index]?.value !== undefined
         ? Number(aprAsApyFilled[index]?.value) * 100

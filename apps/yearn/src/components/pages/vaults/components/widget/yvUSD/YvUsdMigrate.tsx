@@ -5,6 +5,7 @@ import { YvUsdVariantToggle } from '@pages/vaults/components/widget/yvUSD/YvUsdV
 import {
   getTranchedVaultRowByAddress,
   type TTranchedProductKind,
+  YTRANCHE_DOCS_URL,
   YVUSD_JUNIOR_COOLDOWN_DAYS,
   YVUSD_TRANCHE_DEPLOYMENT
 } from '@pages/vaults/constants/tranchedProducts'
@@ -26,7 +27,6 @@ import { useAccount } from 'wagmi'
 import { isTenderlyModeEnabled } from '@/config/tenderly'
 import { env } from '@/env'
 
-const YTRANCHE_DOCS_URL = 'https://github.com/yearn/ytranche#readme'
 const YTRANCHE_LIVE_DATA_URL = 'https://ytranche-git-separate-ui-w84aprils-projects.vercel.app/institutions'
 
 type Props = {

@@ -1,4 +1,4 @@
-import type { TYvUsdSeriesPoint } from '@pages/vaults/hooks/useYvUsdCharts'
+import type { TChartDataPoint } from '@pages/vaults/types/charts'
 import {
   formatChartMonthYearLabel,
   formatChartTooltipDate,
@@ -21,8 +21,12 @@ import {
   CHART_Y_AXIS_WIDTH
 } from './chartLayout'
 
-type TYvUsdDualLineChartProps = {
-  chartData: TYvUsdSeriesPoint[]
+type TLineSeries = { key: string; label: string }
+type TDualLineSeries = readonly [TLineSeries, TLineSeries]
+
+type TDualLineChartProps = {
+  chartData: TChartDataPoint[]
+  series?: TDualLineSeries
   timeframe: string
   hideTooltip?: boolean
   allowNegativeValues?: boolean
@@ -32,21 +36,15 @@ type TYvUsdDualLineChartProps = {
   formatTick: (value: number | string) => string
 }
 
-type TYvUsdSeriesKey = 'unlocked' | 'locked'
 type TYAxisDomain = NonNullable<ComponentProps<typeof YAxis>['domain']>
 
-const SERIES_CONFIG: ChartConfig = {
-  unlocked: {
-    label: 'Unlocked',
-    color: 'var(--chart-1)'
-  },
-  locked: {
-    label: 'Locked',
-    color: 'var(--chart-2)'
-  }
-}
+const YVUSD_SERIES: TDualLineSeries = [
+  { key: 'unlocked', label: 'Unlocked' },
+  { key: 'locked', label: 'Locked' }
+]
+const SERIES_COLORS = ['var(--chart-1)', 'var(--chart-2)'] as const
 
-function getFilteredYvUsdChartData(chartData: TYvUsdSeriesPoint[], timeframe: string): TYvUsdSeriesPoint[] {
+function getFilteredChartData(chartData: TChartDataPoint[], timeframe: string): TChartDataPoint[] {
   const limit = getTimeframeLimit(timeframe)
   if (!Number.isFinite(limit) || limit >= chartData.length) {
     return chartData
@@ -54,19 +52,9 @@ function getFilteredYvUsdChartData(chartData: TYvUsdSeriesPoint[], timeframe: st
   return chartData.slice(-limit)
 }
 
-function getVisibleSeriesKeys(chartData: TYvUsdSeriesPoint[], timeframe: string): TYvUsdSeriesKey[] {
-  const filteredData = getFilteredYvUsdChartData(chartData, timeframe)
-  return (Object.keys(SERIES_CONFIG) as TYvUsdSeriesKey[]).filter((seriesKey) =>
-    filteredData.some((point) => typeof point[seriesKey] === 'number' && Number.isFinite(point[seriesKey]))
-  )
-}
-
-function getSeriesLabel(name: string): string {
-  return name === 'locked' ? 'Locked' : 'Unlocked'
-}
-
-export function YvUsdDualLineChart({
+function DualLineChart({
   chartData,
+  series = YVUSD_SERIES,
   timeframe,
   hideTooltip,
   allowNegativeValues = false,
@@ -74,17 +62,22 @@ export function YvUsdDualLineChart({
   referenceFloor,
   formatValue,
   formatTick
-}: TYvUsdDualLineChartProps): ReactElement {
-  const filteredData = useMemo(() => getFilteredYvUsdChartData(chartData, timeframe), [chartData, timeframe])
+}: TDualLineChartProps): ReactElement {
+  const [primary, secondary] = series
+  const chartConfig: ChartConfig = {
+    [primary.key]: { label: primary.label, color: SERIES_COLORS[0] },
+    [secondary.key]: { label: secondary.label, color: SERIES_COLORS[1] }
+  }
+  const filteredData = useMemo(() => getFilteredChartData(chartData, timeframe), [chartData, timeframe])
   const hasNegativeValues = useMemo(
     () =>
       filteredData.some((point) =>
-        (Object.keys(SERIES_CONFIG) as TYvUsdSeriesKey[]).some((seriesKey) => {
-          const value = point[seriesKey]
+        series.some(({ key }) => {
+          const value = point[key]
           return typeof value === 'number' && Number.isFinite(value) && value < 0
         })
       ),
-    [filteredData]
+    [filteredData, series]
   )
   const isShortTimeframe = timeframe === '30d' || timeframe === '90d'
   const ticks = useMemo(
@@ -105,7 +98,7 @@ export function YvUsdDualLineChart({
   }, [allowNegativeValues, hasNegativeValues, referenceFloor])
 
   return (
-    <ChartContainer config={SERIES_CONFIG} style={{ height: 'inherit' }}>
+    <ChartContainer config={chartConfig} style={{ height: 'inherit' }}>
       <LineChart data={filteredData} margin={CHART_WITH_AXES_MARGIN}>
         <CartesianGrid vertical={false} />
         <XAxis
@@ -130,12 +123,12 @@ export function YvUsdDualLineChart({
           <ChartTooltip
             formatter={(value: number, name: string) => {
               const numericValue = Number(value ?? 0)
-              return [formatValue(numericValue), getSeriesLabel(name)]
+              return [formatValue(numericValue), chartConfig[name]?.label ?? name]
             }}
             labelFormatter={formatChartTooltipDate}
-            itemSorter={(item) => (item.dataKey === 'locked' ? 0 : 1)}
+            itemSorter={(item) => (item.dataKey === secondary.key ? 0 : 1)}
             labelStyle={{ marginBottom: 8 }}
-            itemStyle={{ color: 'var(--color-unlocked)', paddingTop: 0, paddingBottom: 2 }}
+            itemStyle={{ color: `var(--color-${primary.key})`, paddingTop: 0, paddingBottom: 2 }}
             contentStyle={{
               backgroundColor: 'var(--chart-tooltip-bg)',
               borderRadius: 'var(--chart-tooltip-radius)',
@@ -146,20 +139,20 @@ export function YvUsdDualLineChart({
         )}
         <Line
           type={'monotone'}
-          dataKey={'unlocked'}
-          stroke={'var(--color-unlocked)'}
+          dataKey={primary.key}
+          stroke={`var(--color-${primary.key})`}
           strokeWidth={2}
-          dot={false}
+          dot={filteredData.filter((point) => Number.isFinite(point[primary.key])).length === 1}
           isAnimationActive={false}
           connectNulls={connectNulls}
         />
         <Line
           type={'monotone'}
-          dataKey={'locked'}
-          stroke={'var(--color-locked)'}
+          dataKey={secondary.key}
+          stroke={`var(--color-${secondary.key})`}
           strokeWidth={2}
           strokeDasharray="4 3"
-          dot={false}
+          dot={filteredData.filter((point) => Number.isFinite(point[secondary.key])).length === 1}
           isAnimationActive={false}
           connectNulls={connectNulls}
         />
@@ -168,31 +161,38 @@ export function YvUsdDualLineChart({
   )
 }
 
-export function YvUsdChartLegend({
+export function DualLineChartLegend({
   chartData,
-  timeframe
-}: Pick<TYvUsdDualLineChartProps, 'chartData' | 'timeframe'>): ReactElement | null {
+  series = YVUSD_SERIES,
+  timeframe,
+  showSingleSeries = false
+}: Pick<TDualLineChartProps, 'chartData' | 'series' | 'timeframe'> & {
+  showSingleSeries?: boolean
+}): ReactElement | null {
   const { chartStyle } = useChartStyle()
   const chartStyleVars = getChartStyleVariables(chartStyle)
-  const visibleSeries = useMemo(() => getVisibleSeriesKeys(chartData, timeframe), [chartData, timeframe])
+  const filteredData = useMemo(() => getFilteredChartData(chartData, timeframe), [chartData, timeframe])
+  const visibleSeries = series
+    .map(({ key, label }, index) => ({ key, label, color: SERIES_COLORS[index], dashed: index === 1 }))
+    .filter(({ key }) => filteredData.some((point) => Number.isFinite(point[key])))
 
-  if (visibleSeries.length <= 1) {
+  if (visibleSeries.length < (showSingleSeries ? 1 : 2)) {
     return null
   }
 
   return (
     <div className="relative h-0 -top-6 flex justify-center px-4" style={chartStyleVars as CSSProperties}>
       <div className="flex flex-wrap items-center justify-center gap-x-5 gap-y-2 text-xs font-medium text-text-secondary">
-        {visibleSeries.map((seriesKey) => (
-          <div key={seriesKey} className="flex items-center gap-2">
+        {visibleSeries.map(({ key, label, color, dashed }) => (
+          <div key={key} className="flex items-center gap-2">
             <span
               className="block w-6 border-t-2"
               style={{
-                borderColor: SERIES_CONFIG[seriesKey].color,
-                borderTopStyle: seriesKey === 'locked' ? 'dashed' : 'solid'
+                borderColor: color,
+                borderTopStyle: dashed ? 'dashed' : 'solid'
               }}
             />
-            <span>{SERIES_CONFIG[seriesKey].label}</span>
+            <span>{label}</span>
           </div>
         ))}
       </div>
@@ -218,14 +218,16 @@ function formatTvlTick(value: number | string): string {
   return `$${(numericValue / 1_000_000).toFixed(1)}M`
 }
 
-export function YvUsdApyChart({
+export function DualLineApyChart({
   chartData,
+  series,
   timeframe,
   hideTooltip
-}: Omit<TYvUsdDualLineChartProps, 'formatValue' | 'formatTick'>): ReactElement {
+}: Omit<TDualLineChartProps, 'formatValue' | 'formatTick'>): ReactElement {
   return (
-    <YvUsdDualLineChart
+    <DualLineChart
       chartData={chartData}
+      series={series}
       timeframe={timeframe}
       hideTooltip={hideTooltip}
       allowNegativeValues
@@ -239,9 +241,9 @@ export function YvUsdPerformanceChart({
   chartData,
   timeframe,
   hideTooltip
-}: Omit<TYvUsdDualLineChartProps, 'formatValue' | 'formatTick'>): ReactElement {
+}: Omit<TDualLineChartProps, 'formatValue' | 'formatTick'>): ReactElement {
   return (
-    <YvUsdDualLineChart
+    <DualLineChart
       chartData={chartData}
       timeframe={timeframe}
       hideTooltip={hideTooltip}
@@ -256,9 +258,9 @@ export function YvUsdTvlChart({
   chartData,
   timeframe,
   hideTooltip
-}: Omit<TYvUsdDualLineChartProps, 'formatValue' | 'formatTick'>): ReactElement {
+}: Omit<TDualLineChartProps, 'formatValue' | 'formatTick'>): ReactElement {
   return (
-    <YvUsdDualLineChart
+    <DualLineChart
       chartData={chartData}
       timeframe={timeframe}
       hideTooltip={hideTooltip}

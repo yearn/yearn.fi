@@ -39,9 +39,11 @@ Use this checklist to switch the frontend to the production deployment.
 - [ ] Replace the tranche catalog's sample TVL, APY, total assets, price per
   share, capacity, and token prices with indexed or onchain data. Point
   [`TranchedVaultChartsSection`](../apps/yearn/src/components/pages/vaults/components/tranched/TranchedVaultChartsSection.tsx)
-  at each tranche's history. The playground charts currently derive series from
-  underlying vaults and apply synthetic Senior and Junior values. Keep yvETH
-  preview rows out of the live catalog until their addresses and data are ready.
+  at each tranche's history. The charts already prefer Kong history for the
+  configured yvUSD addresses. Remove the USDC-1 and WETH-1 reference series and
+  the illustrative Junior multiplier when the deployment has indexed history.
+  Keep yvETH preview rows out of the live catalog until their addresses and data
+  are ready.
 - [ ] Update the Migrate panel's docs and live-data links to the launch URLs.
   Verify the 5% Senior target and Senior withdrawal terms against the
   deployed configuration.

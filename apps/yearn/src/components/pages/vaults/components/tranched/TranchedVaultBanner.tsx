@@ -1,14 +1,14 @@
-import type { TTranchedProductKind } from '@pages/vaults/constants/tranchedProducts'
+import { type TTranchedProduct, YVUSD_JUNIOR_COOLDOWN_DAYS } from '@pages/vaults/constants/tranchedProducts'
 import type { ReactElement } from 'react'
 import { env } from '@/env'
 
-type TTranchedVaultBannerProps = {
-  kind: TTranchedProductKind
-  onExploreStructure: () => void
-}
+type TTranchedVaultBannerProps = Pick<TTranchedProduct, 'apyLabel' | 'asset' | 'kind' | 'name'>
 
-export function TranchedVaultBanner({ kind, onExploreStructure }: TTranchedVaultBannerProps): ReactElement {
-  const label = kind === 'senior' ? 'Senior' : 'Junior'
+export function TranchedVaultBanner({ apyLabel, asset, kind, name }: TTranchedVaultBannerProps): ReactElement {
+  const isSenior = kind === 'senior'
+  const label = isSenior ? 'Senior' : 'Junior'
+  const heading = isSenior && asset === 'USD' ? 'Still yvUSD, now Senior.' : `Meet ${name}${isSenior ? ' Senior' : ''}.`
+  const cooldownDays = asset === 'USD' ? YVUSD_JUNIOR_COOLDOWN_DAYS : 14
   return (
     <aside
       aria-label={`${label} tranche banner`}
@@ -22,16 +22,12 @@ export function TranchedVaultBanner({ kind, onExploreStructure }: TTranchedVault
       }}
     >
       <div className={'space-y-1'}>
-        <p className={'text-2xl font-bold leading-none md:text-[28px]'}>{`${label}, by Yearn.`}</p>
-        <button
-          type={'button'}
-          onClick={onExploreStructure}
-          className={
-            'text-left text-sm font-bold leading-tight underline underline-offset-4 transition-opacity hover:opacity-80 focus-visible:outline-2 focus-visible:outline-offset-4'
-          }
-        >
-          {'Explore the structure'}
-        </button>
+        <p className={'text-2xl font-bold leading-none md:text-[28px]'}>{heading}</p>
+        <p className="text-sm font-bold leading-tight">
+          {isSenior
+            ? `A ${apyLabel.replace('.00%', '%')} target APY with no withdrawal cooldown`
+            : `Higher yield potential with a ${cooldownDays}-day withdrawal cooldown`}
+        </p>
       </div>
     </aside>
   )
