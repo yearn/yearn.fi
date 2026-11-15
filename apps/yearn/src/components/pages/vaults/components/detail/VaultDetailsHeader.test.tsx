@@ -334,6 +334,8 @@ describe('VaultDetailsHeaderPresentation', () => {
     )
 
     expect(html.includes('Senior, by Yearn.')).toBe(!isCompressed)
+    const logoSize = isCompressed ? 32 : 85
+    expect(html).toContain(`style="width:${logoSize}px;height:${logoSize}px"`)
     expect(html).not.toContain('yvUSD banner')
     if (!isCompressed) {
       expect(html.indexOf('Senior, by Yearn.')).toBeLessThan(html.indexOf('Est. APY'))
@@ -352,6 +354,14 @@ describe('VaultDetailsHeaderPresentation', () => {
     expect(html).toContain('style="width:32px;height:32px"')
     expect(html).not.toContain('style="width:40px;height:40px"')
     expect(html).toContain('size-8')
+  })
+
+  it('uses the expanded logo size on a vault without a banner', () => {
+    const html = renderToStaticMarkup(
+      <VaultDetailsHeaderPresentation currentVault={YVBTC_VAULT as never} depositedValue={0n} isCompressed={false} />
+    )
+
+    expect(html).toContain('style="width:85px;height:85px"')
   })
 
   it('keeps the explorer link visible when header is compressed', () => {

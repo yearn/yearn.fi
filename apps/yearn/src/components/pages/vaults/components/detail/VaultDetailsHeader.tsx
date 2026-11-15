@@ -20,7 +20,7 @@ import { useYvUsdVaults } from '@pages/vaults/hooks/useYvUsdVaults'
 import { getYvUsdTvlBreakdown } from '@pages/vaults/hooks/useYvUsdVaults.helpers'
 import type { WidgetActionType } from '@pages/vaults/types'
 import { deriveListKind } from '@pages/vaults/utils/vaultListFacets'
-import { getVaultPrimaryLogoSrc } from '@pages/vaults/utils/vaultLogo'
+import { EXPANDED_VAULT_LOGO_SIZE_PX, getVaultPrimaryLogoSrc } from '@pages/vaults/utils/vaultLogo'
 import {
   getCategoryDescription,
   getChainDescription,
@@ -149,18 +149,6 @@ function getVaultKindLabel(kindType: TVaultKindType, fallbackKind: string | null
   return fallbackKind ?? undefined
 }
 
-function getVaultLogoSize({ isCompressed }: { isCompressed: boolean }): number {
-  return isCompressed ? 32 : 40
-}
-
-function getVaultLogoContainerSizeClassName({ isCompressed }: { isCompressed: boolean }): string {
-  if (!isCompressed) {
-    return 'size-10'
-  }
-
-  return 'size-8'
-}
-
 function getYvUsdHistoricalValue(monthAgo: number, weekAgo: number): number {
   return isZero(monthAgo) ? weekAgo : monthAgo
 }
@@ -211,8 +199,7 @@ function VaultHeaderIdentity({
   const titleMeasureRef = useRef<HTMLSpanElement>(null)
   const vaultName = getVaultName(currentVault)
   const singleLineTitle = isYvUsdVault(currentVault)
-  const tokenLogoSize = getVaultLogoSize({ isCompressed })
-  const tokenLogoContainerSizeClassName = getVaultLogoContainerSizeClassName({ isCompressed })
+  const tokenLogoSize = isCompressed ? 32 : EXPANDED_VAULT_LOGO_SIZE_PX
 
   useEffect(() => {
     // Preload chain logo so it appears instantly when the chip mounts
@@ -258,14 +245,20 @@ function VaultHeaderIdentity({
 
   return (
     <div
-      className={cl('flex flex-col gap-1 px-1 mt-0', isCompressed ? 'md:justify-center' : 'pt-4', className)}
+      className={cl(
+        'gap-1 px-1 mt-0',
+        isCompressed
+          ? 'flex flex-col md:justify-center'
+          : 'grid grid-cols-[auto_minmax(0,1fr)] gap-x-4 py-2 md:gap-x-5',
+        className
+      )}
       data-tour={includeTourAttributes ? 'vault-detail-title' : undefined}
     >
-      <div className={cl('flex items-center', isCompressed ? 'gap-2' : ' gap-4')}>
+      <div className={isCompressed ? 'flex items-center gap-2' : 'contents'}>
         <div
           className={cl(
-            'relative flex items-center justify-start rounded-full bg-surface/70',
-            tokenLogoContainerSizeClassName,
+            'relative flex items-center justify-start rounded-full',
+            isCompressed ? 'bg-surface/70 size-8' : 'row-span-2 self-center',
             singleLineTitle ? 'shrink-0' : undefined
           )}
         >
@@ -285,7 +278,13 @@ function VaultHeaderIdentity({
             </div>
           ) : null}
         </div>
-        <div className={cl('flex flex-col', isCompressed || singleLineTitle ? 'min-w-0 flex-1' : undefined)}>
+        <div
+          className={cl(
+            'flex min-w-0 flex-col',
+            isCompressed || singleLineTitle ? 'flex-1' : undefined,
+            isCompressed ? undefined : 'self-end'
+          )}
+        >
           <div
             className={cl(
               'flex',
@@ -334,11 +333,11 @@ function VaultHeaderIdentity({
               </div>
             ) : (
               <>
-                <div ref={titleSlotRef} className={singleLineTitle ? 'min-w-0' : undefined}>
+                <div ref={titleSlotRef} className={'min-w-0'}>
                   <strong
                     className={cl(
                       'text-lg font-black leading-tight md:text-3xl md:leading-10 text-text-primary',
-                      singleLineTitle ? 'block truncate' : undefined
+                      singleLineTitle ? 'block truncate' : 'wrap-anywhere'
                     )}
                   >
                     {vaultName}
@@ -349,10 +348,7 @@ function VaultHeaderIdentity({
                     href={explorerHref}
                     target={'_blank'}
                     rel={'noopener noreferrer'}
-                    className={cl(
-                      'h-7 content-end text-text-secondary transition-colors hover:text-text-primary',
-                      singleLineTitle ? 'shrink-0' : undefined
-                    )}
+                    className={'h-7 shrink-0 content-end text-text-secondary transition-colors hover:text-text-primary'}
                     aria-label={'View vault on block explorer'}
                   >
                     <IconLinkOut className={'size-4 md:size-4'} />
@@ -366,8 +362,8 @@ function VaultHeaderIdentity({
       {shouldShowMetadata ? (
         <div
           className={cl(
-            'flex flex-wrap items-center gap-1 text-xs text-text-primary/70 md:text-xs pt-1',
-            isCompressed ? 'hidden' : ''
+            'flex flex-wrap items-center gap-1 text-xs text-text-primary/70 md:text-xs',
+            isCompressed ? 'hidden pt-1' : 'self-start'
           )}
         >
           {showChainChip ? (
@@ -1260,21 +1256,19 @@ export function VaultDetailsHeaderPresentation({
       ) : (
         <>
           {isYvUsd || headerBanner ? (
-            <div className={'md:row-start-2 md:flex md:items-stretch md:gap-6 min-[1101px]:col-span-2'}>
+            <div className={'md:row-start-2 md:flex md:items-center md:gap-6 min-[1101px]:col-span-2'}>
               <VaultHeaderIdentity
                 currentVault={currentVault}
                 isCompressed={isCompressed}
-                className={
-                  isYvUsd ? 'md:w-[22rem] md:flex-none' : 'md:w-[20%] md:min-w-[300px] md:max-w-[420px] md:flex-none'
-                }
+                className={isYvUsd ? 'md:w-[24rem] md:flex-none' : 'md:w-[28rem] md:flex-none'}
                 logoSrcOverride={logoSrcOverride}
                 productTypeLabelOverride={productTypeLabelOverride}
                 productTypeDescriptionOverride={productTypeDescriptionOverride}
                 extraMetadataChips={extraMetadataChips}
                 includeTourAttributes={includeTourAttributes}
               />
-              <div className={'hidden max-h-[85px] md:flex md:min-w-0 md:flex-1 self-stretch'}>
-                {headerBanner ?? <YvUsdHeaderBanner className={'w-full max-h-[85px] self-stretch'} />}
+              <div className={'hidden md:flex md:min-w-0 md:flex-1'} style={{ height: EXPANDED_VAULT_LOGO_SIZE_PX }}>
+                {headerBanner ?? <YvUsdHeaderBanner />}
               </div>
             </div>
           ) : (
