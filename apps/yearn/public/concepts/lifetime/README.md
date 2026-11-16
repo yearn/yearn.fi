@@ -33,11 +33,9 @@ Open `/concepts/lifetime/`. The ordinary Next app also serves this public direct
 
 The October 21 read-only Neon capture records 732 Yearn-managed vaults (639 V2, 93 V3) and 97,278 StrategyReported events (81,316 V2, 15,962 V3). Harvest events use the earnings publication cutoff, October 15, 2026 00:00 UTC (exclusive), and their chain/transaction/log identity; they are not unique transaction counts. All counted reports resolve to vault inventory metadata. Vaults include active and retired inventory, excluding standalone Tokenized Strategies. These are known indexed counts; the source does not certify exhaustive historical discovery. The capture and version breakdowns are retained in data.json.
 
-## Deposited value and shared earnings counter
+## TVL hero and total yield earned
 
-The hero and “Total value deposited” row now read the same `hero-tvl.json` baseline and use the same clock-based estimated growth value. The hero shows cents; the row abbreviates the same value (for example, `$171M`). Both become unavailable if the shared hero snapshot cannot load. The historical `data.json` TVL field is retained as provenance but no longer drives either display.
-
-The requested “in Yearn Endorsed vaults” copy remains unchanged. It does not introduce an endorsed-only filter: the published API aggregate retains its categories, overlap deductions and bridge exclusions. The displayed estimate is not live measured TVL.
+The hero reads the captured `hero-tvl.json` baseline and clock-based estimated growth. The stats row instead shows captured lifetime reported earnings from `data.json.earningsUsd`, abbreviated as `$331M`. The two metrics intentionally measure different things. Each source fails independently without substituting zero. The prior deposited-value statistic remains available in the archived November 13 layout.
 
 ## Integrations strip
 
@@ -85,3 +83,7 @@ The source JSON and data notes distinguish the metrics reporting date, pilot gro
 ## Review versions
 
 The application serves the current landing page at `/` via the Next.js rewrite. The floating Older versions menu opens frozen copies of the original PR layout (`d373e809`) and the pre-redesign earnings layout (`395d741a`). Their HTML, CSS, JavaScript and data are isolated in `versions/`; shared images and fonts remain in the parent directory. Each older view links back to `/`.
+
+## November 16 iteration
+
+The floating menu preserves the November 13 layout in `versions/nov13/`, including its own counter model, snapshots, CSS and script. The current stats row shows captured lifetime reported yield instead of deposited value; it no longer mirrors the TVL hero. The partner marquee sits between the hero/stats and infrastructure sections. Circuit Breakers was removed from the current security sequence. Underwriting logos are bundled in `security/report-logos/`, sourced from the current Curation report index (icons.llamao.fi); the historical BUCK logo uses its CoinMarketCap listing, asset ID 39335. Report names, scores and captured reporting boundaries remain unchanged.

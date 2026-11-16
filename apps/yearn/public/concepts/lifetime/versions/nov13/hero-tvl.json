@@ -1,0 +1,44 @@
+{
+  "schemaVersion": "landing-tvl-estimate-1",
+  "capturedAt": "2026-11-04T20:04:19.922Z",
+  "status": "estimated-known-subtotal",
+  "anchor": {
+    "timestamp": 1793822372,
+    "valueUsd": 171537470.2521514
+  },
+  "metrics": {
+    "source": "https://yearn-data-api-preview.vercel.app/api/tvl",
+    "datasetId": "4a8caca4b3901493b2f691a7c1b5174cb5fa46e223e2439175b4934cb5311505",
+    "asOfTimestamp": 1793750399,
+    "totalTvlUsd": 171537470.2521514,
+    "completeness": {
+      "issues": [
+        "ValueError"
+      ],
+      "scope": "network",
+      "status": "incomplete",
+      "totals": "known-subtotals",
+      "unresolvedPositions": 4,
+      "valuedVaultCount": 815,
+      "vaultCount": 1022
+    }
+  },
+  "growth": {
+    "estimatedUsdPerSecond": 0.23669388890266418,
+    "yearnScheduledUnlockUsdPerSecond": 0.2134656662742297,
+    "morphoProjectedNetAccrualUsdPerSecond": 0.023228223094095786,
+    "asOfTimestamp": 1793802839,
+    "modelVersion": "global-share-conversion-curation-v1",
+    "valuedRoots": 145,
+    "selectedRoots": 178,
+    "unavailableRoots": 33
+  },
+  "method": "Latest published metrics TVL anchored when captured, plus elapsed wall-clock seconds times the approved pilot first-minute estimated growth rate. No backfill from the older metrics reporting date.",
+  "limitations": [
+    "Illustrative constant-rate estimate, not a live on-chain TVL reading. This does not replay the finite Yearn unlock schedules indefinitely as fact.",
+    "Metrics TVL already includes locked profit; the animation is a presentation estimate, not an increase in measured totalAssets or independently reconciled net deposits.",
+    "Growth extrapolates the initial pilot rate beyond its one-hour sampled curve and assumes no changes in prices, fees, rates, positions or reporting. Regenerate from refreshed evidence before production use.",
+    "Metrics and growth reporting dates differ, and both retain incomplete coverage. Missing valuations are not zero.",
+    "Identical source versions retain one shared anchor across regeneration; reloads and windows use the same clock-based formula. Device clock differences affect the result."
+  ]
+}

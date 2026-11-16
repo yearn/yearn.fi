@@ -8,8 +8,8 @@
     <title>Yearn | Curating Vaults since 2020</title>
     <meta name="description" content="A new Yearn landing concept. Years of yield. One simple idea." />
     <link rel="icon" href="/favicons/favicon-32x32.png" />
-    <link rel="stylesheet" href="/concepts/lifetime/style.css?v=static-product-93" />
-    <script src="/concepts/lifetime/concept.js?v=static-product-93" type="module"></script>
+    <link rel="stylesheet" href="/concepts/lifetime/style.css?v=hero-outline-107" />
+    <script src="/concepts/lifetime/concept.js?v=hero-outline-107" type="module"></script>
   </head>
   <body>
     <a class="skip" href="#main">Skip to content</a>
@@ -36,25 +36,19 @@
       <section class="hero" aria-labelledby="earnings-label">
         <div class="hero-main">
           <div class="counter" role="img" aria-label="Loading estimated total value locked"><span class="currency" aria-hidden="true">$</span><span id="earnings" aria-hidden="true"><span id="earnings-whole">—</span><span id="earnings-decimals" class="counter-decimals"></span></span></div>
-          <h1 id="earnings-label" class="counter-caption">Currently earning, and growing.</h1>
-          <a class="tagline" id="tagline" href="https://yearn.fi/vaults"><span>Deposit once. Earn forever.</span><span class="tagline-arrow" aria-hidden="true">→</span></a>
+          <h1 id="earnings-label" class="counter-caption">Currently deposited, and growing.</h1>
+          <a class="tagline secondary-button" id="tagline" href="https://yearn.fi/vaults"><span>Deposit once. Earn forever.</span><span class="tagline-arrow" aria-hidden="true">→</span><svg class="hero-outline" aria-hidden="true" focusable="false"><defs><linearGradient id="hero-outline-gradient" gradientUnits="userSpaceOnUse"><stop offset="0" stop-color="currentColor" stop-opacity="0" /><stop offset="1" stop-color="currentColor" stop-opacity="1" /></linearGradient></defs><rect class="hero-outline-stroke" x="0" y="0" width="100%" height="100%" rx="16" pathLength="100" /></svg></a>
         </div>
         <div class="hero-bottom"><a class="scroll-link" href="#capital" aria-label="Scroll to Yearn statistics"><span aria-hidden="true">↓</span><span class="sr-only">Scroll to <span class="yearn-word"><img src="/concepts/lifetime/navigation/YearnWordmark.svg" alt="Yearn" /></span> statistics</span></a></div>
         <dl class="statistics-grid hero-statistics" id="capital" aria-label="Yearn statistics" inert>
           <div class="stat" id="assets-secured"><dt>Total assets secured</dt><dd id="assets-secured-value">—</dd><dd class="stat-detail">Across Yearn vaults and partner contracts</dd></div>
-          <div class="stat"><dt>Total value deposited</dt><dd id="tvl">—</dd><dd class="stat-detail">in Yearn Endorsed vaults</dd></div>
+          <div class="stat"><dt>Total yield earned</dt><dd id="yield-earned">—</dd><dd class="stat-detail">Lifetime reported earnings</dd></div>
           <div class="stat"><dt>Vaults deployed</dt><dd id="vaults-deployed">—</dd><dd class="stat-detail">Indexed V2 + V3 vaults</dd></div>
           <div class="stat"><dt>Harvests</dt><dd id="harvest-count">—</dd><dd class="stat-detail">Recorded across V2 + V3 vaults</dd></div>
         </dl>
       </section>
       </div>
-      <section class="paths-section" id="your-way" aria-labelledby="paths-title">
-        <div class="paths-heading reveal"><h2 id="paths-title"><span class="yearn-word"><img src="/concepts/lifetime/navigation/YearnWordmark.svg" alt="Yearn" /></span> builds vault infrastructure to last.</h2><p>Whether you are looking to deposit your onchain assets and earn or are building a protocol that needs flexible yield generation infrastructure, Yearn is engineered for you.</p></div>
-        <div class="benefits-grid infrastructure-grid" id="build">
-          <article class="reveal"><a class="infrastructure-card" href="https://ethereum.org/developers/docs/standards/tokens/erc-4626/" target="_blank" rel="noopener noreferrer"><h3>Built on tried and true ERC-4626 code</h3><p>A shared standard for tokenized vaults, built on a codebase we helped create.</p><span class="card-read-more">Read more <span aria-hidden="true">→</span></span></a></article>
-          <article class="reveal"><a class="infrastructure-card" href="https://docs.yearn.fi/developers/v3/vault_management" target="_blank" rel="noopener noreferrer"><h3>Verifiable roles and accounting rules</h3><p>Clear permission and accounting rules with consistent code patterns you can verify.</p><span class="card-read-more">Read more <span aria-hidden="true">→</span></span></a></article>
-          <article class="reveal"><a class="infrastructure-card" href="https://docs.yearn.fi/developers/smart-contracts/V3/" target="_blank" rel="noopener noreferrer"><h3>Open source. Extendable. Flexible.</h3><p>Inspect the code, extend the foundation, and adapt vault infrastructure to your needs.</p><span class="card-read-more">Read more <span aria-hidden="true">→</span></span></a></article>
-        </div>
+      <section class="partners-section" aria-label="Teams building with Yearn">
         <section class="integrations" aria-labelledby="integrations-title">
           <div class="integrations-heading"><h2 id="integrations-title">Teams building with <span class="yearn-word"><img src="/concepts/lifetime/navigation/YearnWordmark.svg" alt="Yearn" /></span></h2></div>
           <section class="integrations-window" aria-label="Teams building with Yearn">
@@ -97,28 +91,36 @@
           </section>
         </section>
       </section>
+      <section class="paths-section" id="your-way" aria-labelledby="paths-title">
+        <div class="paths-heading reveal"><h2 id="paths-title"><span class="yearn-word"><img src="/concepts/lifetime/navigation/YearnWordmark.svg" alt="Yearn" /></span> builds vault infrastructure to last.</h2><p>Whether you are looking to deposit your onchain assets and earn, or you are building a protocol that needs flexible yield generation infrastructure, Yearn is engineered for you.</p></div>
+        <div class="benefits-grid infrastructure-grid" id="build">
+          <article class="reveal"><a class="infrastructure-card" href="https://ethereum.org/developers/docs/standards/tokens/erc-4626/" target="_blank" rel="noopener noreferrer"><h3>Built on tried and true ERC-4626 code</h3><p>A shared standard for tokenized vaults, built on a codebase we helped create.</p><span class="card-read-more">Read more <span aria-hidden="true">→</span></span></a></article>
+          <article class="reveal"><a class="infrastructure-card" href="https://docs.yearn.fi/developers/v3/vault_management" target="_blank" rel="noopener noreferrer"><h3>Verifiable roles and accounting rules</h3><p>Clear permission and accounting rules with consistent code patterns you can verify.</p><span class="card-read-more">Read more <span aria-hidden="true">→</span></span></a></article>
+          <article class="reveal"><a class="infrastructure-card" href="https://github.com/yearn" target="_blank" rel="noopener noreferrer"><h3>Open source. Extendable. Flexible.</h3><p>Inspect the code, extend the foundation, and adapt vault infrastructure to your needs.</p><span class="card-read-more">Read more <span aria-hidden="true">→</span></span></a></article>
+        </div>
+
+      </section>
       <section class="security-section feature-section" id="security" aria-labelledby="security-title">
         <div class="security-heading"><h2 id="security-title">Security is built in at every layer.</h2></div>
         <div class="security-layers" aria-label="Explore security features">
 <div class="security-link-row"><a class="security-choice" id="security-choice-code" href="https://github.com/yearn/yearn-vaults-v3/blob/89ab996bf94a16878e174e50e9862d69c6495875/contracts/VaultV3.vy" target="_blank" rel="noopener noreferrer" aria-controls="security-code" data-selected="true" data-security="code"><span class="layer-number" aria-hidden="true">01</span><span><span class="security-choice-title">Open Source Code</span><span class="security-choice-description">Inspect the foundation your vaults are built on.</span></span><span class="external-link-icon" aria-hidden="true">→</span></a><button class="security-expand" type="button" aria-controls="security-code" aria-expanded="true" aria-label="Expand code details">+</button></div>
 <div class="security-link-row"><a class="security-choice" id="security-choice-audits" href="https://github.com/yearn/yearn-security/tree/master/audits" target="_blank" rel="noopener noreferrer" aria-controls="security-audits" data-selected="false" data-security="audits"><span class="layer-number" aria-hidden="true">02</span><span><span class="security-choice-title">Extensively Audited</span><span class="security-choice-description">Independent reviews, with reports you can read.</span></span><span class="external-link-icon" aria-hidden="true">→</span></a><button class="security-expand" type="button" aria-controls="security-audits" aria-expanded="false" aria-label="Expand audits details">+</button></div>
 <div class="security-link-row"><a class="security-choice" id="security-choice-monitoring" href="https://curation.yearn.fi/monitoring/" target="_blank" rel="noopener noreferrer" aria-controls="security-monitoring" data-selected="false" data-security="monitoring"><span class="layer-number" aria-hidden="true">03</span><span><span class="security-choice-title">Active Monitoring</span><span class="security-choice-description">Real alerts from Yearn Curation.</span></span><span class="external-link-icon" aria-hidden="true">→</span></a><button class="security-expand" type="button" aria-controls="security-monitoring" aria-expanded="false" aria-label="Expand monitoring details">+</button></div>
-<button class="security-choice" id="security-choice-breakers" type="button" aria-controls="security-breakers" aria-pressed="false" data-security="breakers"><span class="layer-number" aria-hidden="true">04</span><span><span class="security-choice-title">Automated Circuit Breakers</span><span class="security-choice-description">Defined limits. Protective responses.</span></span><span class="choice-arrow" aria-hidden="true"></span></button>
-<div class="security-link-row"><a class="security-choice" id="security-choice-underwriting" href="https://curation.yearn.fi/reports/" target="_blank" rel="noopener noreferrer" aria-controls="security-underwriting" data-selected="false" data-security="underwriting"><span class="layer-number" aria-hidden="true">05</span><span><span class="security-choice-title">Defi-native Underwriting</span><span class="security-choice-description">Understand the risks behind the allocation.</span></span><span class="external-link-icon" aria-hidden="true">→</span></a><button class="security-expand" type="button" aria-controls="security-underwriting" aria-expanded="false" aria-label="Expand underwriting details">+</button></div>
+<div class="security-link-row"><a class="security-choice" id="security-choice-underwriting" href="https://curation.yearn.fi/reports/" target="_blank" rel="noopener noreferrer" aria-controls="security-underwriting" data-selected="false" data-security="underwriting"><span class="layer-number" aria-hidden="true">04</span><span><span class="security-choice-title">Defi-native Underwriting</span><span class="security-choice-description">Understand the risks behind the allocation.</span></span><span class="external-link-icon" aria-hidden="true">→</span></a><button class="security-expand" type="button" aria-controls="security-underwriting" aria-expanded="false" aria-label="Expand underwriting details">+</button></div>
         </div>
         <div class="security-display">
           <section class="security-panel" id="security-code"  aria-labelledby="security-choice-code">
             <div class="panel-caption"><span>VaultV3.vy</span><span>Vyper · ERC-4626</span></div>
             <!-- biome-ignore lint/a11y/noNoninteractiveTabindex: Scrollable code must support keyboard scrolling. -->
-<pre class="vault-code" tabindex="0" aria-label="Complete VaultV3 source code"><code><span class="syntax-comment"># @version 0.3.10</span>
-<span class="syntax-comment">#pragma evm-version paris</span>
-<span class="syntax-comment">#pragma optimize codesize</span>
+<pre class="vault-code" tabindex="0" aria-label="Complete VaultV3 source code"><code><span class="syntax-comment"># <span class="syntax-tag">@version</span> 0.3.10</span>
+<span class="syntax-comment"><span class="syntax-tag">#pragma</span> evm-version paris</span>
+<span class="syntax-comment"><span class="syntax-tag">#pragma</span> optimize codesize</span>
 
 <span class="syntax-comment">&quot;&quot;&quot;
-@title Yearn V3 Vault
-@license GNU AGPLv3
-@author yearn.finance
-@notice
+<span class="syntax-tag">@title</span> Yearn V3 Vault
+<span class="syntax-tag">@license</span> GNU AGPLv3
+<span class="syntax-tag">@author</span> yearn.finance
+<span class="syntax-tag">@notice</span>
     The Yearn VaultV3 is designed as a non-opinionated system to distribute funds of 
     depositors for a specific `asset` into different opportunities (aka Strategies)
     and manage accounting in a robust way.
@@ -420,7 +422,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
     profit_max_unlock_time: uint256
 ):
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice
+    <span class="syntax-tag">@notice</span>
         Initialize a new vault. Sets the asset, name, symbol, and role manager.
     @param asset
         The address of the asset that the vault will accept.
@@ -1476,7 +1478,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@external</span>
 <span class="syntax-keyword">def</span> setName(name: String[64]):
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Change the vault name.
+    <span class="syntax-tag">@notice</span> Change the vault name.
     @dev Can only be called by the Role Manager.
     @param name The new name for the vault.
     &quot;&quot;&quot;</span>
@@ -1486,7 +1488,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@external</span>
 <span class="syntax-keyword">def</span> setSymbol(symbol: String[32]):
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Change the vault symbol.
+    <span class="syntax-tag">@notice</span> Change the vault symbol.
     @dev Can only be called by the Role Manager.
     @param symbol The new name for the vault.
     &quot;&quot;&quot;</span>
@@ -1496,7 +1498,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@external</span>
 <span class="syntax-keyword">def</span> set_accountant(new_accountant: address):
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Set the new accountant address.
+    <span class="syntax-tag">@notice</span> Set the new accountant address.
     @param new_accountant The new accountant address.
     &quot;&quot;&quot;</span>
     self._enforce_role(msg.sender, Roles.ACCOUNTANT_MANAGER)
@@ -1507,7 +1509,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@external</span>
 <span class="syntax-keyword">def</span> set_default_queue(new_default_queue: DynArray[address, MAX_QUEUE]):
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Set the new default queue array.
+    <span class="syntax-tag">@notice</span> Set the new default queue array.
     @dev Will check each strategy to make sure it is active. But will not
         check that the same strategy is not added twice. maxRedeem and maxWithdraw
         return values may be inaccurate if a strategy is added twice.
@@ -1527,7 +1529,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@external</span>
 <span class="syntax-keyword">def</span> set_use_default_queue(use_default_queue: bool):
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Set a new value for `use_default_queue`.
+    <span class="syntax-tag">@notice</span> Set a new value for `use_default_queue`.
     @dev If set `True` the default queue will always be
         used no matter whats passed in.
     @param use_default_queue new value.
@@ -1540,7 +1542,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@external</span>
 <span class="syntax-keyword">def</span> set_auto_allocate(auto_allocate: bool):
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Set new value for `auto_allocate`
+    <span class="syntax-tag">@notice</span> Set new value for `auto_allocate`
     @dev If `True` every {deposit} and {mint} call will
         try and allocate the deposited amount to the strategy
         at position 0 of the `default_queue` atomically.
@@ -1555,7 +1557,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@external</span>
 <span class="syntax-keyword">def</span> set_deposit_limit(deposit_limit: uint256, override: bool = <span class="syntax-keyword">False</span>):
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Set the new deposit limit.
+    <span class="syntax-tag">@notice</span> Set the new deposit limit.
     @dev Can not be changed if a deposit_hook
     is set unless the override flag is true or if shutdown.
     @param deposit_limit The new deposit limit.
@@ -1582,7 +1584,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@external</span>
 <span class="syntax-keyword">def</span> set_deposit_hook(deposit_hook: address, override: bool = <span class="syntax-keyword">False</span>):
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Set a contract to handle the deposit limit and post-deposit hook.
+    <span class="syntax-tag">@notice</span> Set a contract to handle the deposit limit and post-deposit hook.
     @dev The default `deposit_limit` will need to be set to
     max uint256 since the hook will override it or the override flag
     must be set to true to set it to max in 1 tx..
@@ -1610,7 +1612,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@external</span>
 <span class="syntax-keyword">def</span> set_withdraw_hook(withdraw_hook: address):
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Set a contract to handle the withdraw limit and post-withdraw hook.
+    <span class="syntax-tag">@notice</span> Set a contract to handle the withdraw limit and post-withdraw hook.
     @dev This will override the default `max_withdraw`.
     @param withdraw_hook Address of the hook.
     &quot;&quot;&quot;</span>
@@ -1623,7 +1625,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@external</span>
 <span class="syntax-keyword">def</span> set_transfer_hook(transfer_hook: address):
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Set a contract to receive post-transfer callbacks.
+    <span class="syntax-tag">@notice</span> Set a contract to receive post-transfer callbacks.
     @dev The callback executes while the vault&#x27;s shared nonreentrant lock is held.
         Setting this to the zero address disables transfer callbacks.
     @param transfer_hook Address of the hook.
@@ -1637,7 +1639,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@external</span>
 <span class="syntax-keyword">def</span> set_minimum_total_idle(minimum_total_idle: uint256):
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Set the new minimum total idle.
+    <span class="syntax-tag">@notice</span> Set the new minimum total idle.
     @param minimum_total_idle The new minimum total idle.
     &quot;&quot;&quot;</span>
     self._enforce_role(msg.sender, Roles.MINIMUM_IDLE_MANAGER)
@@ -1648,7 +1650,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@external</span>
 <span class="syntax-keyword">def</span> setProfitMaxUnlockTime(new_profit_max_unlock_time: uint256):
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Set the new profit max unlock time.
+    <span class="syntax-tag">@notice</span> Set the new profit max unlock time.
     @dev The time is denominated in seconds and must be less than 1 year.
         We only need to update locking period if setting to 0,
         since the current period will use the old rate and on the next
@@ -1688,7 +1690,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@external</span>
 <span class="syntax-keyword">def</span> set_role(account: address, role: Roles):
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Set the roles for an account.
+    <span class="syntax-tag">@notice</span> Set the roles for an account.
     @dev This will fully override an accounts current roles
      so it should include all roles the account should hold.
     @param account The account to set the role for.
@@ -1702,7 +1704,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@external</span>
 <span class="syntax-keyword">def</span> add_role(account: address, role: Roles):
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Add a new role/s to an address.
+    <span class="syntax-tag">@notice</span> Add a new role/s to an address.
     @dev This will add a new role/s to the account
      without effecting any of the previously held roles.
     @param account The account to add a role to.
@@ -1717,7 +1719,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@external</span>
 <span class="syntax-keyword">def</span> remove_role(account: address, role: Roles):
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Remove a role/s from an account.
+    <span class="syntax-tag">@notice</span> Remove a role/s from an account.
     @dev This will leave all other roles for the 
      account unchanged.
     @param account The account to remove a Role/s from.
@@ -1732,7 +1734,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@external</span>
 <span class="syntax-keyword">def</span> transfer_role_manager(role_manager: address):
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Step 1 of 2 in order to transfer the 
+    <span class="syntax-tag">@notice</span> Step 1 of 2 in order to transfer the
         role manager to a new address. This will set
         the future_role_manager. Which will then need
         to be accepted by the new manager.
@@ -1746,7 +1748,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@external</span>
 <span class="syntax-keyword">def</span> accept_role_manager():
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Accept the role manager transfer.
+    <span class="syntax-tag">@notice</span> Accept the role manager transfer.
     &quot;&quot;&quot;</span>
     <span class="syntax-keyword">assert</span> msg.sender == self.future_role_manager
     self.role_manager = msg.sender
@@ -1760,7 +1762,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@external</span>
 <span class="syntax-keyword">def</span> isShutdown() -&gt; bool:
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Get if the vault is shutdown.
+    <span class="syntax-tag">@notice</span> Get if the vault is shutdown.
     @return Bool representing the shutdown status
     &quot;&quot;&quot;</span>
     <span class="syntax-keyword">return</span> self.shutdown
@@ -1769,7 +1771,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@external</span>
 <span class="syntax-keyword">def</span> isPaused() -&gt; bool:
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Get if the vault is paused.
+    <span class="syntax-tag">@notice</span> Get if the vault is paused.
     @return Bool representing the paused status.
     &quot;&quot;&quot;</span>
     <span class="syntax-keyword">return</span> self.paused
@@ -1778,7 +1780,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@external</span>
 <span class="syntax-keyword">def</span> unlockedShares() -&gt; uint256:
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Get the amount of shares that have been unlocked.
+    <span class="syntax-tag">@notice</span> Get the amount of shares that have been unlocked.
     @return The amount of shares that are have been unlocked.
     &quot;&quot;&quot;</span>
     <span class="syntax-keyword">return</span> self._unlocked_shares()
@@ -1787,7 +1789,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@external</span>
 <span class="syntax-keyword">def</span> pricePerShare() -&gt; uint256:
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Get the price per share (pps) of the vault.
+    <span class="syntax-tag">@notice</span> Get the price per share (pps) of the vault.
     @dev This value offers limited precision. Integrations that require 
         exact precision should use convertToAssets or convertToShares instead.
     @return The price per share.
@@ -1798,7 +1800,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@external</span>
 <span class="syntax-keyword">def</span> get_default_queue() -&gt; DynArray[address, MAX_QUEUE]:
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Get the full default queue currently set.
+    <span class="syntax-tag">@notice</span> Get the full default queue currently set.
     @return The current default withdrawal queue.
     &quot;&quot;&quot;</span>
     <span class="syntax-keyword">return</span> self.default_queue
@@ -1808,7 +1810,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@nonreentrant</span>(<span class="syntax-string">&quot;lock&quot;</span>)
 <span class="syntax-keyword">def</span> process_report(strategy: address) -&gt; (uint256, uint256):
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Process the report of a strategy.
+    <span class="syntax-tag">@notice</span> Process the report of a strategy.
     @param strategy The strategy to process the report for.
     @return The gain and loss of the strategy.
     &quot;&quot;&quot;</span>
@@ -1819,7 +1821,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@nonreentrant</span>(<span class="syntax-string">&quot;lock&quot;</span>)
 <span class="syntax-keyword">def</span> buy_debt(strategy: address, amount: uint256):
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Used for governance to buy bad debt from the vault.
+    <span class="syntax-tag">@notice</span> Used for governance to buy bad debt from the vault.
     @dev This should only ever be used in an emergency in place
     of force revoking a strategy in order to not report a loss.
     It allows the DEBT_PURCHASER role to buy the strategies debt
@@ -1870,7 +1872,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@external</span>
 <span class="syntax-keyword">def</span> add_strategy(new_strategy: address, add_to_queue: bool=<span class="syntax-keyword">True</span>):
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Add a new strategy.
+    <span class="syntax-tag">@notice</span> Add a new strategy.
     @param new_strategy The new strategy to add.
     &quot;&quot;&quot;</span>
     self._enforce_role(msg.sender, Roles.ADD_STRATEGY_MANAGER)
@@ -1879,7 +1881,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@external</span>
 <span class="syntax-keyword">def</span> revoke_strategy(strategy: address):
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Revoke a strategy.
+    <span class="syntax-tag">@notice</span> Revoke a strategy.
     @param strategy The strategy to revoke.
     &quot;&quot;&quot;</span>
     self._enforce_role(msg.sender, Roles.REVOKE_STRATEGY_MANAGER)
@@ -1888,7 +1890,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@external</span>
 <span class="syntax-keyword">def</span> force_revoke_strategy(strategy: address):
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Force revoke a strategy.
+    <span class="syntax-tag">@notice</span> Force revoke a strategy.
     @dev The vault will remove the strategy and write off any debt left 
         in it as a loss. This function is a dangerous function as it can force a 
         strategy to take a loss. All possible assets should be removed from the 
@@ -1903,7 +1905,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@external</span>
 <span class="syntax-keyword">def</span> update_max_debt_for_strategy(strategy: address, new_max_debt: uint256):
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Update the max debt for a strategy.
+    <span class="syntax-tag">@notice</span> Update the max debt for a strategy.
     @param strategy The strategy to update the max debt for.
     @param new_max_debt The new max debt for the strategy.
     &quot;&quot;&quot;</span>
@@ -1921,7 +1923,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
     max_loss: uint256 = MAX_BPS
 ) -&gt; uint256:
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Update the debt for a strategy.
+    <span class="syntax-tag">@notice</span> Update the debt for a strategy.
     @dev Pass max uint256 to allocate as much idle as possible.
     @param strategy The strategy to update the debt for.
     @param target_debt The target debt for the strategy.
@@ -1935,7 +1937,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@external</span>
 <span class="syntax-keyword">def</span> setPaused(paused: bool):
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Set the vault&#x27;s paused status.
+    <span class="syntax-tag">@notice</span> Set the vault&#x27;s paused status.
     &quot;&quot;&quot;</span>
     self._enforce_role(msg.sender, Roles.EMERGENCY_MANAGER)
     self.paused = paused
@@ -1945,7 +1947,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@external</span>
 <span class="syntax-keyword">def</span> shutdown_vault():
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Shutdown the vault.
+    <span class="syntax-tag">@notice</span> Shutdown the vault.
     &quot;&quot;&quot;</span>
     self._enforce_role(msg.sender, Roles.EMERGENCY_MANAGER)
     <span class="syntax-keyword">assert</span> self.shutdown == <span class="syntax-keyword">False</span>
@@ -1975,7 +1977,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@nonreentrant</span>(<span class="syntax-string">&quot;lock&quot;</span>)
 <span class="syntax-keyword">def</span> deposit(assets: uint256, receiver: address) -&gt; uint256:
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Deposit assets into the vault.
+    <span class="syntax-tag">@notice</span> Deposit assets into the vault.
     @dev Pass max uint256 to deposit full asset balance.
     @param assets The amount of assets to deposit.
     @param receiver The address to receive the shares.
@@ -1994,7 +1996,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@nonreentrant</span>(<span class="syntax-string">&quot;lock&quot;</span>)
 <span class="syntax-keyword">def</span> mint(shares: uint256, receiver: address) -&gt; uint256:
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Mint shares for the receiver.
+    <span class="syntax-tag">@notice</span> Mint shares for the receiver.
     @param shares The amount of shares to mint.
     @param receiver The address to receive the shares.
     @return The amount of assets deposited.
@@ -2013,7 +2015,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
     strategies: DynArray[address, MAX_QUEUE] = []
 ) -&gt; uint256:
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Withdraw an amount of asset to `receiver` burning `owner`s shares.
+    <span class="syntax-tag">@notice</span> Withdraw an amount of asset to `receiver` burning `owner`s shares.
     @dev The default behavior is to not allow any loss.
     @param assets The amount of asset to withdraw.
     @param receiver The address to receive the assets.
@@ -2036,7 +2038,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
     strategies: DynArray[address, MAX_QUEUE] = []
 ) -&gt; uint256:
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Redeems an amount of shares of `owners` shares sending funds to `receiver`.
+    <span class="syntax-tag">@notice</span> Redeems an amount of shares of `owners` shares sending funds to `receiver`.
     @dev The default behavior is to allow losses to be realized.
     @param shares The amount of shares to burn.
     @param receiver The address to receive the assets.
@@ -2053,7 +2055,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@external</span>
 <span class="syntax-keyword">def</span> approve(spender: address, amount: uint256) -&gt; bool:
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Approve an address to spend the vault&#x27;s shares.
+    <span class="syntax-tag">@notice</span> Approve an address to spend the vault&#x27;s shares.
     @param spender The address to approve.
     @param amount The amount of shares to approve.
     @return True if the approval was successful.
@@ -2064,7 +2066,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@nonreentrant</span>(<span class="syntax-string">&quot;lock&quot;</span>)
 <span class="syntax-keyword">def</span> transfer(receiver: address, amount: uint256) -&gt; bool:
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Transfer shares to a receiver.
+    <span class="syntax-tag">@notice</span> Transfer shares to a receiver.
     @param receiver The address to transfer shares to.
     @param amount The amount of shares to transfer.
     @return True if the transfer was successful.
@@ -2077,7 +2079,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@nonreentrant</span>(<span class="syntax-string">&quot;lock&quot;</span>)
 <span class="syntax-keyword">def</span> transferFrom(sender: address, receiver: address, amount: uint256) -&gt; bool:
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Transfer shares from a sender to a receiver.
+    <span class="syntax-tag">@notice</span> Transfer shares from a sender to a receiver.
     @param sender The address to transfer shares from.
     @param receiver The address to transfer shares to.
     @param amount The amount of shares to transfer.
@@ -2098,7 +2100,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
     s: bytes32
 ) -&gt; bool:
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Approve an address to spend the vault&#x27;s shares.
+    <span class="syntax-tag">@notice</span> Approve an address to spend the vault&#x27;s shares.
     @param owner The address to approve.
     @param spender The address to approve.
     @param amount The amount of shares to approve.
@@ -2114,7 +2116,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@external</span>
 <span class="syntax-keyword">def</span> balanceOf(addr: address) -&gt; uint256:
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Get the balance of a user.
+    <span class="syntax-tag">@notice</span> Get the balance of a user.
     @param addr The address to get the balance of.
     @return The balance of the user.
     &quot;&quot;&quot;</span>
@@ -2128,7 +2130,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@external</span>
 <span class="syntax-keyword">def</span> totalSupply() -&gt; uint256:
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Get the total supply of shares.
+    <span class="syntax-tag">@notice</span> Get the total supply of shares.
     @return The total supply of shares.
     &quot;&quot;&quot;</span>
     <span class="syntax-keyword">return</span> self._total_supply()
@@ -2137,7 +2139,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@external</span>
 <span class="syntax-keyword">def</span> totalAssets() -&gt; uint256:
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Get the total assets held by the vault.
+    <span class="syntax-tag">@notice</span> Get the total assets held by the vault.
     @return The total assets held by the vault.
     &quot;&quot;&quot;</span>
     <span class="syntax-keyword">return</span> self._total_assets()
@@ -2146,7 +2148,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@external</span>
 <span class="syntax-keyword">def</span> totalIdle() -&gt; uint256:
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Get the amount of loose `asset` the vault holds.
+    <span class="syntax-tag">@notice</span> Get the amount of loose `asset` the vault holds.
     @return The current total idle.
     &quot;&quot;&quot;</span>
     <span class="syntax-keyword">return</span> self.total_idle
@@ -2155,7 +2157,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@external</span>
 <span class="syntax-keyword">def</span> totalDebt() -&gt; uint256:
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Get the the total amount of funds invested
+    <span class="syntax-tag">@notice</span> Get the the total amount of funds invested
     across all strategies.
     @return The current total debt.
     &quot;&quot;&quot;</span>
@@ -2165,7 +2167,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@external</span>
 <span class="syntax-keyword">def</span> convertToShares(assets: uint256) -&gt; uint256:
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Convert an amount of assets to shares.
+    <span class="syntax-tag">@notice</span> Convert an amount of assets to shares.
     @param assets The amount of assets to convert.
     @return The amount of shares.
     &quot;&quot;&quot;</span>
@@ -2175,7 +2177,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@external</span>
 <span class="syntax-keyword">def</span> previewDeposit(assets: uint256) -&gt; uint256:
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Preview the amount of shares that would be minted for a deposit.
+    <span class="syntax-tag">@notice</span> Preview the amount of shares that would be minted for a deposit.
     @param assets The amount of assets to deposit.
     @return The amount of shares that would be minted.
     &quot;&quot;&quot;</span>
@@ -2185,7 +2187,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@external</span>
 <span class="syntax-keyword">def</span> previewMint(shares: uint256) -&gt; uint256:
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Preview the amount of assets that would be deposited for a mint.
+    <span class="syntax-tag">@notice</span> Preview the amount of assets that would be deposited for a mint.
     @param shares The amount of shares to mint.
     @return The amount of assets that would be deposited.
     &quot;&quot;&quot;</span>
@@ -2195,7 +2197,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@external</span>
 <span class="syntax-keyword">def</span> convertToAssets(shares: uint256) -&gt; uint256:
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Convert an amount of shares to assets.
+    <span class="syntax-tag">@notice</span> Convert an amount of shares to assets.
     @param shares The amount of shares to convert.
     @return The amount of assets.
     &quot;&quot;&quot;</span>
@@ -2205,7 +2207,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@external</span>
 <span class="syntax-keyword">def</span> maxDeposit(receiver: address) -&gt; uint256:
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Get the maximum amount of assets that can be deposited.
+    <span class="syntax-tag">@notice</span> Get the maximum amount of assets that can be deposited.
     @param receiver The address that will receive the shares.
     @return The maximum amount of assets that can be deposited.
     &quot;&quot;&quot;</span>
@@ -2215,7 +2217,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@external</span>
 <span class="syntax-keyword">def</span> maxMint(receiver: address) -&gt; uint256:
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Get the maximum amount of shares that can be minted.
+    <span class="syntax-tag">@notice</span> Get the maximum amount of shares that can be minted.
     @param receiver The address that will receive the shares.
     @return The maximum amount of shares that can be minted.
     &quot;&quot;&quot;</span>
@@ -2230,7 +2232,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
     strategies: DynArray[address, MAX_QUEUE] = []
 ) -&gt; uint256:
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Get the maximum amount of assets that can be withdrawn.
+    <span class="syntax-tag">@notice</span> Get the maximum amount of assets that can be withdrawn.
     @dev Complies to normal 4626 interface and takes custom params.
     NOTE: Passing in a incorrectly ordered queue may result in
      incorrect returns values.
@@ -2249,7 +2251,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
     strategies: DynArray[address, MAX_QUEUE] = []
 ) -&gt; uint256:
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Get the maximum amount of shares that can be redeemed.
+    <span class="syntax-tag">@notice</span> Get the maximum amount of shares that can be redeemed.
     @dev Complies to normal 4626 interface and takes custom params.
     NOTE: Passing in a incorrectly ordered queue may result in
      incorrect returns values.
@@ -2268,7 +2270,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@external</span>
 <span class="syntax-keyword">def</span> previewWithdraw(assets: uint256) -&gt; uint256:
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Preview the amount of shares that would be redeemed for a withdraw.
+    <span class="syntax-tag">@notice</span> Preview the amount of shares that would be redeemed for a withdraw.
     @param assets The amount of assets to withdraw.
     @return The amount of shares that would be redeemed.
     &quot;&quot;&quot;</span>
@@ -2278,7 +2280,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@external</span>
 <span class="syntax-keyword">def</span> previewRedeem(shares: uint256) -&gt; uint256:
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Preview the amount of assets that would be withdrawn for a redeem.
+    <span class="syntax-tag">@notice</span> Preview the amount of assets that would be withdrawn for a redeem.
     @param shares The amount of shares to redeem.
     @return The amount of assets that would be withdrawn.
     &quot;&quot;&quot;</span>
@@ -2288,7 +2290,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@external</span>
 <span class="syntax-keyword">def</span> FACTORY() -&gt; address:
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Address of the factory that deployed the vault.
+    <span class="syntax-tag">@notice</span> Address of the factory that deployed the vault.
     @dev Is used to retrieve the protocol fees.
     @return Address of the vault factory.
     &quot;&quot;&quot;</span>
@@ -2298,7 +2300,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@external</span>
 <span class="syntax-keyword">def</span> apiVersion() -&gt; String[28]:
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Get the API version of the vault.
+    <span class="syntax-tag">@notice</span> Get the API version of the vault.
     @return The API version of the vault.
     &quot;&quot;&quot;</span>
     <span class="syntax-keyword">return</span> API_VERSION
@@ -2307,7 +2309,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@external</span>
 <span class="syntax-keyword">def</span> assess_share_of_unrealised_losses(strategy: address, assets_needed: uint256) -&gt; uint256:
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Assess the share of unrealised losses that a strategy has.
+    <span class="syntax-tag">@notice</span> Assess the share of unrealised losses that a strategy has.
     @param strategy The address of the strategy.
     @param assets_needed The amount of assets needed to be withdrawn.
     @return The share of unrealised losses that the strategy has.
@@ -2323,7 +2325,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@external</span>
 <span class="syntax-keyword">def</span> profitMaxUnlockTime() -&gt; uint256:
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Gets the current time profits are set to unlock over.
+    <span class="syntax-tag">@notice</span> Gets the current time profits are set to unlock over.
     @return The current profit max unlock time.
     &quot;&quot;&quot;</span>
     <span class="syntax-keyword">return</span> self.profit_max_unlock_time
@@ -2332,7 +2334,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@external</span>
 <span class="syntax-keyword">def</span> fullProfitUnlockDate() -&gt; uint256:
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Gets the timestamp at which all profits will be unlocked.
+    <span class="syntax-tag">@notice</span> Gets the timestamp at which all profits will be unlocked.
     @return The full profit unlocking timestamp
     &quot;&quot;&quot;</span>
     <span class="syntax-keyword">return</span> self.full_profit_unlock_date
@@ -2341,7 +2343,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@external</span>
 <span class="syntax-keyword">def</span> profitUnlockingRate() -&gt; uint256:
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice The per second rate at which profits are unlocking.
+    <span class="syntax-tag">@notice</span> The per second rate at which profits are unlocking.
     @dev This is denominated in EXTENDED_BPS decimals.
     @return The current profit unlocking rate.
     &quot;&quot;&quot;</span>
@@ -2352,7 +2354,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@external</span>
 <span class="syntax-keyword">def</span> lastProfitUpdate() -&gt; uint256:
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice The timestamp of the last time shares were locked.
+    <span class="syntax-tag">@notice</span> The timestamp of the last time shares were locked.
     @return The last profit update.
     &quot;&quot;&quot;</span>
     <span class="syntax-keyword">return</span> self.last_profit_update
@@ -2375,7 +2377,7 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <span class="syntax-keyword">@external</span>
 <span class="syntax-keyword">def</span> DOMAIN_SEPARATOR() -&gt; bytes32:
     <span class="syntax-comment">&quot;&quot;&quot;
-    @notice Get the domain separator.
+    <span class="syntax-tag">@notice</span> Get the domain separator.
     @return The domain separator.
     &quot;&quot;&quot;</span>
     <span class="syntax-keyword">return</span> self.domain_separator()
@@ -2398,17 +2400,8 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
 <div id="security-alerts" tabindex="0" aria-label="Recent alerts, pauses while focused" data-auto-scroll></div>
             <a class="feature-link" href="https://curation.yearn.fi/monitoring/" target="_blank" rel="noreferrer">Open monitoring <span aria-hidden="true">→</span></a>
           </section>
-          <section class="security-panel" id="security-breakers"  aria-labelledby="security-choice-breakers" hidden>
-            <div class="panel-caption"><span>Circuit breakers</span><span>Demo · simulated status</span></div>
-            <div class="breaker-summary"><strong>3 armed</strong><span>1 triggered</span></div>
-            <div class="breaker-status"><span>Share price deviation<small>Observed 0.02% · limit 0.50%</small></span><span class="status-pill">Armed</span></div>
-            <div class="breaker-status"><span>Liquidity floor<small>Available 12.4% · floor 10%</small></span><span class="status-pill">Armed</span></div>
-            <div class="breaker-status"><span>Debt ceiling<small>Utilization 74% · limit 90%</small></span><span class="status-pill">Armed</span></div>
-            <div class="breaker-status"><span>Asset peg deviation<small>Observed 1.20% · limit 1% · deposits paused</small></span><span class="status-pill triggered">Triggered</span></div>
-            <p class="panel-note">Illustrative controls and values, not current vault status.</p>
-          </section>
           <section class="security-panel" id="security-underwriting"  aria-labelledby="security-choice-underwriting" hidden>
-            <div class="panel-caption"><span>Risk assessments</span><span>Yearn Curation</span></div><div class="feed-labels report-labels" aria-hidden="true"><span>Reviewed item</span><span>Risk level</span><span>Score</span></div><div class="report-scroll" aria-label="Yearn Curation reports" data-auto-scroll><a class="report-item" href="https://curation.yearn.fi/report/yearn-yvusdt/" target="_blank" rel="noreferrer"><span>Yearn — yvUSDT-1</span><span class="report-risk">Minimal Risk</span><span class="report-score" aria-label="Risk score 1.2">1.2</span></a><a class="report-item" href="https://curation.yearn.fi/report/sky-usds/" target="_blank" rel="noreferrer"><span>Sky — USDS &amp; sUSDS</span><span class="report-risk">Minimal Risk</span><span class="report-score" aria-label="Risk score 1.3">1.3</span></a><a class="report-item" href="https://curation.yearn.fi/report/yearn-yvusds/" target="_blank" rel="noreferrer"><span>Yearn — yvUSDS-1</span><span class="report-risk">Minimal Risk</span><span class="report-score" aria-label="Risk score 1.3">1.3</span></a><a class="report-item" href="https://curation.yearn.fi/report/yearn-yvwbtc/" target="_blank" rel="noreferrer"><span>Yearn — yvWBTC-1</span><span class="report-risk">Minimal Risk</span><span class="report-score" aria-label="Risk score 1.3">1.3</span></a><a class="report-item" href="https://curation.yearn.fi/report/yearn-yvdai/" target="_blank" rel="noreferrer"><span>Yearn — yvDAI-1</span><span class="report-risk">Minimal Risk</span><span class="report-score" aria-label="Risk score 1.4">1.4</span></a><a class="report-item" href="https://curation.yearn.fi/report/yearn-yvusdc/" target="_blank" rel="noreferrer"><span>Yearn — yvUSDC-1</span><span class="report-risk">Minimal Risk</span><span class="report-score" aria-label="Risk score 1.4">1.4</span></a><a class="report-item" href="https://curation.yearn.fi/report/origin-arm/" target="_blank" rel="noreferrer"><span>Origin ARM</span><span class="report-risk">Minimal Risk</span><span class="report-score" aria-label="Risk score 1.4">1.4</span></a><a class="report-item" href="https://curation.yearn.fi/report/yearn-yvweth/" target="_blank" rel="noreferrer"><span>Yearn — yvWETH-1</span><span class="report-risk">Minimal Risk</span><span class="report-score" aria-label="Risk score 1.4">1.4</span></a><a class="report-item" href="https://curation.yearn.fi/report/reserve-ethplus/" target="_blank" rel="noreferrer"><span>Reserve Protocol</span><span class="report-risk">Low Risk</span><span class="report-score" aria-label="Risk score 1.7">1.7</span></a><a class="report-item" href="https://curation.yearn.fi/report/origin-ousd/" target="_blank" rel="noreferrer"><span>Origin OUSD</span><span class="report-risk">Low Risk</span><span class="report-score" aria-label="Risk score 2.0">2.0</span></a><a class="report-item" href="https://curation.yearn.fi/report/strata-srusde/" target="_blank" rel="noreferrer"><span>Strata</span><span class="report-risk">Low Risk</span><span class="report-score" aria-label="Risk score 2.1">2.1</span></a><a class="report-item" href="https://curation.yearn.fi/report/superstate-ustb/" target="_blank" rel="noreferrer"><span>Superstate USTB</span><span class="report-risk">Low Risk</span><span class="report-score" aria-label="Risk score 2.1">2.1</span></a><a class="report-item" href="https://curation.yearn.fi/report/fx-fxusd/" target="_blank" rel="noreferrer"><span>f(x) Protocol — fxUSD</span><span class="report-risk">Low Risk</span><span class="report-score" aria-label="Risk score 2.1">2.1</span></a><a class="report-item" href="https://curation.yearn.fi/report/paxos-usdg/" target="_blank" rel="noreferrer"><span>Paxos USDG (Global Dollar)</span><span class="report-risk">Low Risk</span><span class="report-score" aria-label="Risk score 2.1">2.1</span></a><a class="report-item" href="https://curation.yearn.fi/report/kinetiq-khype/" target="_blank" rel="noreferrer"><span>Kinetiq kHYPE</span><span class="report-risk">Low Risk</span><span class="report-score" aria-label="Risk score 2.3">2.3</span></a><a class="report-item" href="https://curation.yearn.fi/report/maple-syrupusdc/" target="_blank" rel="noreferrer"><span>Maple Finance</span><span class="report-risk">Low Risk</span><span class="report-score" aria-label="Risk score 2.3">2.3</span></a><a class="report-item" href="https://curation.yearn.fi/report/spectra-finance/" target="_blank" rel="noreferrer"><span>Spectra Finance</span><span class="report-risk">Low Risk</span><span class="report-score" aria-label="Risk score 2.3">2.3</span></a><a class="report-item" href="https://curation.yearn.fi/report/cap-stcusd/" target="_blank" rel="noreferrer"><span>Cap — stcUSD</span><span class="report-risk">Low Risk</span><span class="report-score" aria-label="Risk score 2.4">2.4</span></a><a class="report-item" href="https://curation.yearn.fi/report/ondo-usdy/" target="_blank" rel="noreferrer"><span>Ondo USDY</span><span class="report-risk">Low Risk</span><span class="report-score" aria-label="Risk score 2.4">2.4</span></a><a class="report-item" href="https://curation.yearn.fi/report/superstate-uscc/" target="_blank" rel="noreferrer"><span>Superstate USCC</span><span class="report-risk">Low Risk</span><span class="report-score" aria-label="Risk score 2.4">2.4</span></a><a class="report-item" href="https://curation.yearn.fi/report/yearn-yvusd/" target="_blank" rel="noreferrer"><span>Yearn — yvUSD</span><span class="report-risk">Low Risk</span><span class="report-score" aria-label="Risk score 2.4">2.4</span></a><a class="report-item" href="https://curation.yearn.fi/report/aave-sgho/" target="_blank" rel="noreferrer"><span>Aave — sGHO</span><span class="report-risk">Medium Risk</span><span class="report-score" aria-label="Risk score 2.5">2.5</span></a><a class="report-item" href="https://curation.yearn.fi/report/sky-stusds/" target="_blank" rel="noreferrer"><span>Sky — stUSDS (Staked USDS)</span><span class="report-risk">Medium Risk</span><span class="report-score" aria-label="Risk score 2.5">2.5</span></a><a class="report-item" href="https://curation.yearn.fi/report/centrifuge-jaaa/" target="_blank" rel="noreferrer"><span>Centrifuge JAAA</span><span class="report-risk">Medium Risk</span><span class="report-score" aria-label="Risk score 2.6">2.6</span></a><a class="report-item" href="https://curation.yearn.fi/report/fluid/" target="_blank" rel="noreferrer"><span>Fluid Lending Protocol</span><span class="report-risk">Medium Risk</span><span class="report-score" aria-label="Risk score 2.6">2.6</span></a><a class="report-item" href="https://curation.yearn.fi/report/flex/" target="_blank" rel="noreferrer"><span>Flex</span><span class="report-risk">Medium Risk</span><span class="report-score" aria-label="Risk score 2.6">2.6</span></a><a class="report-item" href="https://curation.yearn.fi/report/stakedhype-sthype/" target="_blank" rel="noreferrer"><span>StakedHYPE</span><span class="report-risk">Medium Risk</span><span class="report-score" aria-label="Risk score 2.8">2.8</span></a><a class="report-item" href="https://curation.yearn.fi/report/midas-mhyper/" target="_blank" rel="noreferrer"><span>Midas mHYPER</span><span class="report-risk">Medium Risk</span><span class="report-score" aria-label="Risk score 2.9">2.9</span></a><a class="report-item" href="https://curation.yearn.fi/report/flying-tulip/" target="_blank" rel="noreferrer"><span>Flying Tulip — FT Lend (ftDNMM)</span><span class="report-risk">Medium Risk</span><span class="report-score" aria-label="Risk score 3.0">3.0</span></a><a class="report-item" href="https://curation.yearn.fi/report/curvance-hyausd/" target="_blank" rel="noreferrer"><span>Curvance High Yield AUSD (hyAUSD)</span><span class="report-risk">Medium Risk</span><span class="report-score" aria-label="Risk score 3.0">3.0</span></a><a class="report-item" href="https://curation.yearn.fi/report/mezo-musd/" target="_blank" rel="noreferrer"><span>Mezo MUSD</span><span class="report-risk">Medium Risk</span><span class="report-score" aria-label="Risk score 3.1">3.1</span></a><a class="report-item" href="https://curation.yearn.fi/report/saturn-usdat/" target="_blank" rel="noreferrer"><span>Saturn (USDat)</span><span class="report-risk">Medium Risk</span><span class="report-score" aria-label="Risk score 3.1">3.1</span></a><a class="report-item" href="https://curation.yearn.fi/report/infinifi/" target="_blank" rel="noreferrer"><span>InfiniFi</span><span class="report-risk">Medium Risk</span><span class="report-score" aria-label="Risk score 3.1">3.1</span></a><a class="report-item" href="https://curation.yearn.fi/report/flying-tulip-ftusd/" target="_blank" rel="noreferrer"><span>Flying Tulip — ftUSD &amp; Staked ftUSD (sftUSD)</span><span class="report-risk">Medium Risk</span><span class="report-score" aria-label="Risk score 3.4">3.4</span></a><a class="report-item" href="https://curation.yearn.fi/report/midas-mglobal/" target="_blank" rel="noreferrer"><span>Midas mGLOBAL</span><span class="report-risk">Medium Risk</span><span class="report-score" aria-label="Risk score 3.4">3.4</span></a><a class="report-item" href="https://curation.yearn.fi/report/re-reusd/" target="_blank" rel="noreferrer"><span>Re Protocol reUSD</span><span class="report-risk">Medium Risk</span><span class="report-score" aria-label="Risk score 3.4">3.4</span></a><a class="report-item" href="https://curation.yearn.fi/report/3jane-usd3/" target="_blank" rel="noreferrer"><span>3Jane — USD3</span><span class="report-risk">Medium Risk</span><span class="report-score" aria-label="Risk score 3.4">3.4</span></a><a class="report-item" href="https://curation.yearn.fi/report/across-protocol/" target="_blank" rel="noreferrer"><span>Across Protocol</span><span class="report-risk">Elevated Risk</span><span class="report-score" aria-label="Risk score 3.5">3.5</span></a><a class="report-item" href="https://curation.yearn.fi/report/apyx-apxusd/" target="_blank" rel="noreferrer"><span>Apyx</span><span class="report-risk">Elevated Risk</span><span class="report-score" aria-label="Risk score 3.5">3.5</span></a><a class="report-item" href="https://curation.yearn.fi/report/kerneldao-hgeth/" target="_blank" rel="noreferrer"><span>KernelDAO (Kelp Gain)</span><span class="report-risk">Elevated Risk</span><span class="report-score" aria-label="Risk score 3.8">3.8</span></a><a class="report-item" href="https://curation.yearn.fi/report/d2-hypeplus/" target="_blank" rel="noreferrer"><span>D2 Finance HYPE++</span><span class="report-risk">Elevated Risk</span><span class="report-score" aria-label="Risk score 4.1">4.1</span></a><a class="report-item" href="https://curation.yearn.fi/report/unit-ubtc/" target="_blank" rel="noreferrer"><span>Unit Bitcoin (UBTC)</span><span class="report-risk">High Risk</span><span class="report-score" aria-label="Risk score 5.0">5.0</span></a><a class="report-item" href="https://curation.yearn.fi/report/buck/" target="_blank" rel="noreferrer"><span>BUCK (Bitcoin Dollar SavingsCoin)</span><span class="report-risk">Danger Zone</span><span class="report-score" aria-label="Risk score Not scored">Not scored</span></a><a class="report-item" href="https://curation.yearn.fi/report/resolv-rlp/" target="_blank" rel="noreferrer"><span>Resolv RLP</span><span class="report-risk">Danger Zone</span><span class="report-score" aria-label="Risk score Not scored">Not scored</span></a><a class="report-item" href="https://curation.yearn.fi/report/resolv-wstusr/" target="_blank" rel="noreferrer"><span>Resolv wstUSR</span><span class="report-risk">Danger Zone</span><span class="report-score" aria-label="Risk score Not scored">Not scored</span></a></div><p class="panel-note">Scores captured Oct 22, 2026 · lower indicates lower assessed risk.</p><a class="feature-link" href="https://curation.yearn.fi/reports/" target="_blank" rel="noreferrer">Explore all reports <span aria-hidden="true">→</span></a>
+            <div class="panel-caption"><span>Risk assessments</span><span>Yearn Curation</span></div><div class="feed-labels report-labels" aria-hidden="true"><span>Reviewed item</span><span>Risk level</span><span>Score</span></div><div class="report-scroll" aria-label="Yearn Curation reports" data-auto-scroll><a class="report-item" href="https://curation.yearn.fi/report/yearn-yvusdt/" target="_blank" rel="noreferrer"><span class="report-name"><img src="/concepts/lifetime/security/report-logos/yearn-finance.webp" alt="" width="24" height="24" loading="lazy" /><span>Yearn — yvUSDT-1</span></span><span class="report-risk">Minimal Risk</span><span class="report-score" aria-label="Risk score 1.2">1.2</span></a><a class="report-item" href="https://curation.yearn.fi/report/sky-usds/" target="_blank" rel="noreferrer"><span class="report-name"><img src="/concepts/lifetime/security/report-logos/sky-lending.webp" alt="" width="24" height="24" loading="lazy" /><span>Sky — USDS &amp; sUSDS</span></span><span class="report-risk">Minimal Risk</span><span class="report-score" aria-label="Risk score 1.3">1.3</span></a><a class="report-item" href="https://curation.yearn.fi/report/yearn-yvusds/" target="_blank" rel="noreferrer"><span class="report-name"><img src="/concepts/lifetime/security/report-logos/yearn-finance.webp" alt="" width="24" height="24" loading="lazy" /><span>Yearn — yvUSDS-1</span></span><span class="report-risk">Minimal Risk</span><span class="report-score" aria-label="Risk score 1.3">1.3</span></a><a class="report-item" href="https://curation.yearn.fi/report/yearn-yvwbtc/" target="_blank" rel="noreferrer"><span class="report-name"><img src="/concepts/lifetime/security/report-logos/yearn-finance.webp" alt="" width="24" height="24" loading="lazy" /><span>Yearn — yvWBTC-1</span></span><span class="report-risk">Minimal Risk</span><span class="report-score" aria-label="Risk score 1.3">1.3</span></a><a class="report-item" href="https://curation.yearn.fi/report/yearn-yvdai/" target="_blank" rel="noreferrer"><span class="report-name"><img src="/concepts/lifetime/security/report-logos/yearn-finance.webp" alt="" width="24" height="24" loading="lazy" /><span>Yearn — yvDAI-1</span></span><span class="report-risk">Minimal Risk</span><span class="report-score" aria-label="Risk score 1.4">1.4</span></a><a class="report-item" href="https://curation.yearn.fi/report/yearn-yvusdc/" target="_blank" rel="noreferrer"><span class="report-name"><img src="/concepts/lifetime/security/report-logos/yearn-finance.webp" alt="" width="24" height="24" loading="lazy" /><span>Yearn — yvUSDC-1</span></span><span class="report-risk">Minimal Risk</span><span class="report-score" aria-label="Risk score 1.4">1.4</span></a><a class="report-item" href="https://curation.yearn.fi/report/origin-arm/" target="_blank" rel="noreferrer"><span class="report-name"><img src="/concepts/lifetime/security/report-logos/origin-arm.webp" alt="" width="24" height="24" loading="lazy" /><span>Origin ARM</span></span><span class="report-risk">Minimal Risk</span><span class="report-score" aria-label="Risk score 1.4">1.4</span></a><a class="report-item" href="https://curation.yearn.fi/report/yearn-yvweth/" target="_blank" rel="noreferrer"><span class="report-name"><img src="/concepts/lifetime/security/report-logos/yearn-finance.webp" alt="" width="24" height="24" loading="lazy" /><span>Yearn — yvWETH-1</span></span><span class="report-risk">Minimal Risk</span><span class="report-score" aria-label="Risk score 1.4">1.4</span></a><a class="report-item" href="https://curation.yearn.fi/report/reserve-ethplus/" target="_blank" rel="noreferrer"><span class="report-name"><img src="/concepts/lifetime/security/report-logos/reserve-protocol.webp" alt="" width="24" height="24" loading="lazy" /><span>Reserve Protocol</span></span><span class="report-risk">Low Risk</span><span class="report-score" aria-label="Risk score 1.7">1.7</span></a><a class="report-item" href="https://curation.yearn.fi/report/origin-ousd/" target="_blank" rel="noreferrer"><span class="report-name"><img src="/concepts/lifetime/security/report-logos/origin-dollar.webp" alt="" width="24" height="24" loading="lazy" /><span>Origin OUSD</span></span><span class="report-risk">Low Risk</span><span class="report-score" aria-label="Risk score 2.0">2.0</span></a><a class="report-item" href="https://curation.yearn.fi/report/strata-srusde/" target="_blank" rel="noreferrer"><span class="report-name"><img src="/concepts/lifetime/security/report-logos/strata.webp" alt="" width="24" height="24" loading="lazy" /><span>Strata</span></span><span class="report-risk">Low Risk</span><span class="report-score" aria-label="Risk score 2.1">2.1</span></a><a class="report-item" href="https://curation.yearn.fi/report/superstate-ustb/" target="_blank" rel="noreferrer"><span class="report-name"><img src="/concepts/lifetime/security/report-logos/superstate.webp" alt="" width="24" height="24" loading="lazy" /><span>Superstate USTB</span></span><span class="report-risk">Low Risk</span><span class="report-score" aria-label="Risk score 2.1">2.1</span></a><a class="report-item" href="https://curation.yearn.fi/report/fx-fxusd/" target="_blank" rel="noreferrer"><span class="report-name"><img src="/concepts/lifetime/security/report-logos/fx-protocol.webp" alt="" width="24" height="24" loading="lazy" /><span>f(x) Protocol — fxUSD</span></span><span class="report-risk">Low Risk</span><span class="report-score" aria-label="Risk score 2.1">2.1</span></a><a class="report-item" href="https://curation.yearn.fi/report/paxos-usdg/" target="_blank" rel="noreferrer"><span class="report-name"><img src="/concepts/lifetime/security/report-logos/global-dollar.webp" alt="" width="24" height="24" loading="lazy" /><span>Paxos USDG (Global Dollar)</span></span><span class="report-risk">Low Risk</span><span class="report-score" aria-label="Risk score 2.1">2.1</span></a><a class="report-item" href="https://curation.yearn.fi/report/kinetiq-khype/" target="_blank" rel="noreferrer"><span class="report-name"><img src="/concepts/lifetime/security/report-logos/kinetiq.webp" alt="" width="24" height="24" loading="lazy" /><span>Kinetiq kHYPE</span></span><span class="report-risk">Low Risk</span><span class="report-score" aria-label="Risk score 2.3">2.3</span></a><a class="report-item" href="https://curation.yearn.fi/report/maple-syrupusdc/" target="_blank" rel="noreferrer"><span class="report-name"><img src="/concepts/lifetime/security/report-logos/maple-finance.webp" alt="" width="24" height="24" loading="lazy" /><span>Maple Finance</span></span><span class="report-risk">Low Risk</span><span class="report-score" aria-label="Risk score 2.3">2.3</span></a><a class="report-item" href="https://curation.yearn.fi/report/spectra-finance/" target="_blank" rel="noreferrer"><span class="report-name"><img src="/concepts/lifetime/security/report-logos/spectra-v2.webp" alt="" width="24" height="24" loading="lazy" /><span>Spectra Finance</span></span><span class="report-risk">Low Risk</span><span class="report-score" aria-label="Risk score 2.3">2.3</span></a><a class="report-item" href="https://curation.yearn.fi/report/cap-stcusd/" target="_blank" rel="noreferrer"><span class="report-name"><img src="/concepts/lifetime/security/report-logos/cap.webp" alt="" width="24" height="24" loading="lazy" /><span>Cap — stcUSD</span></span><span class="report-risk">Low Risk</span><span class="report-score" aria-label="Risk score 2.4">2.4</span></a><a class="report-item" href="https://curation.yearn.fi/report/ondo-usdy/" target="_blank" rel="noreferrer"><span class="report-name"><img src="/concepts/lifetime/security/report-logos/ondo-yield-assets.webp" alt="" width="24" height="24" loading="lazy" /><span>Ondo USDY</span></span><span class="report-risk">Low Risk</span><span class="report-score" aria-label="Risk score 2.4">2.4</span></a><a class="report-item" href="https://curation.yearn.fi/report/superstate-uscc/" target="_blank" rel="noreferrer"><span class="report-name"><img src="/concepts/lifetime/security/report-logos/bitwise-uscc.webp" alt="" width="24" height="24" loading="lazy" /><span>Superstate USCC</span></span><span class="report-risk">Low Risk</span><span class="report-score" aria-label="Risk score 2.4">2.4</span></a><a class="report-item" href="https://curation.yearn.fi/report/yearn-yvusd/" target="_blank" rel="noreferrer"><span class="report-name"><img src="/concepts/lifetime/security/report-logos/yearn-finance.webp" alt="" width="24" height="24" loading="lazy" /><span>Yearn — yvUSD</span></span><span class="report-risk">Low Risk</span><span class="report-score" aria-label="Risk score 2.4">2.4</span></a><a class="report-item" href="https://curation.yearn.fi/report/aave-sgho/" target="_blank" rel="noreferrer"><span class="report-name"><img src="/concepts/lifetime/security/report-logos/aave.webp" alt="" width="24" height="24" loading="lazy" /><span>Aave — sGHO</span></span><span class="report-risk">Medium Risk</span><span class="report-score" aria-label="Risk score 2.5">2.5</span></a><a class="report-item" href="https://curation.yearn.fi/report/sky-stusds/" target="_blank" rel="noreferrer"><span class="report-name"><img src="/concepts/lifetime/security/report-logos/sky-lending.webp" alt="" width="24" height="24" loading="lazy" /><span>Sky — stUSDS (Staked USDS)</span></span><span class="report-risk">Medium Risk</span><span class="report-score" aria-label="Risk score 2.5">2.5</span></a><a class="report-item" href="https://curation.yearn.fi/report/centrifuge-jaaa/" target="_blank" rel="noreferrer"><span class="report-name"><img src="/concepts/lifetime/security/report-logos/centrifuge.webp" alt="" width="24" height="24" loading="lazy" /><span>Centrifuge JAAA</span></span><span class="report-risk">Medium Risk</span><span class="report-score" aria-label="Risk score 2.6">2.6</span></a><a class="report-item" href="https://curation.yearn.fi/report/fluid/" target="_blank" rel="noreferrer"><span class="report-name"><img src="/concepts/lifetime/security/report-logos/fluid-lending.webp" alt="" width="24" height="24" loading="lazy" /><span>Fluid Lending Protocol</span></span><span class="report-risk">Medium Risk</span><span class="report-score" aria-label="Risk score 2.6">2.6</span></a><a class="report-item" href="https://curation.yearn.fi/report/flex/" target="_blank" rel="noreferrer"><span class="report-name"><img src="/concepts/lifetime/security/report-logos/flex.webp" alt="" width="24" height="24" loading="lazy" /><span>Flex</span></span><span class="report-risk">Medium Risk</span><span class="report-score" aria-label="Risk score 2.6">2.6</span></a><a class="report-item" href="https://curation.yearn.fi/report/stakedhype-sthype/" target="_blank" rel="noreferrer"><span class="report-name"><img src="/concepts/lifetime/security/report-logos/sthype.webp" alt="" width="24" height="24" loading="lazy" /><span>StakedHYPE</span></span><span class="report-risk">Medium Risk</span><span class="report-score" aria-label="Risk score 2.8">2.8</span></a><a class="report-item" href="https://curation.yearn.fi/report/midas-mhyper/" target="_blank" rel="noreferrer"><span class="report-name"><img src="/concepts/lifetime/security/report-logos/midas-rwa.webp" alt="" width="24" height="24" loading="lazy" /><span>Midas mHYPER</span></span><span class="report-risk">Medium Risk</span><span class="report-score" aria-label="Risk score 2.9">2.9</span></a><a class="report-item" href="https://curation.yearn.fi/report/flying-tulip/" target="_blank" rel="noreferrer"><span class="report-name"><img src="/concepts/lifetime/security/report-logos/flying-tulip.webp" alt="" width="24" height="24" loading="lazy" /><span>Flying Tulip — FT Lend (ftDNMM)</span></span><span class="report-risk">Medium Risk</span><span class="report-score" aria-label="Risk score 3.0">3.0</span></a><a class="report-item" href="https://curation.yearn.fi/report/curvance-hyausd/" target="_blank" rel="noreferrer"><span class="report-name"><img src="/concepts/lifetime/security/report-logos/curvance.webp" alt="" width="24" height="24" loading="lazy" /><span>Curvance High Yield AUSD (hyAUSD)</span></span><span class="report-risk">Medium Risk</span><span class="report-score" aria-label="Risk score 3.0">3.0</span></a><a class="report-item" href="https://curation.yearn.fi/report/mezo-musd/" target="_blank" rel="noreferrer"><span class="report-name"><img src="/concepts/lifetime/security/report-logos/mezo-borrow.webp" alt="" width="24" height="24" loading="lazy" /><span>Mezo MUSD</span></span><span class="report-risk">Medium Risk</span><span class="report-score" aria-label="Risk score 3.1">3.1</span></a><a class="report-item" href="https://curation.yearn.fi/report/saturn-usdat/" target="_blank" rel="noreferrer"><span class="report-name"><img src="/concepts/lifetime/security/report-logos/saturn.webp" alt="" width="24" height="24" loading="lazy" /><span>Saturn (USDat)</span></span><span class="report-risk">Medium Risk</span><span class="report-score" aria-label="Risk score 3.1">3.1</span></a><a class="report-item" href="https://curation.yearn.fi/report/infinifi/" target="_blank" rel="noreferrer"><span class="report-name"><img src="/concepts/lifetime/security/report-logos/infinifi.webp" alt="" width="24" height="24" loading="lazy" /><span>InfiniFi</span></span><span class="report-risk">Medium Risk</span><span class="report-score" aria-label="Risk score 3.1">3.1</span></a><a class="report-item" href="https://curation.yearn.fi/report/flying-tulip-ftusd/" target="_blank" rel="noreferrer"><span class="report-name"><img src="/concepts/lifetime/security/report-logos/flying-tulip.webp" alt="" width="24" height="24" loading="lazy" /><span>Flying Tulip — ftUSD &amp; Staked ftUSD (sftUSD)</span></span><span class="report-risk">Medium Risk</span><span class="report-score" aria-label="Risk score 3.4">3.4</span></a><a class="report-item" href="https://curation.yearn.fi/report/midas-mglobal/" target="_blank" rel="noreferrer"><span class="report-name"><img src="/concepts/lifetime/security/report-logos/midas-rwa.webp" alt="" width="24" height="24" loading="lazy" /><span>Midas mGLOBAL</span></span><span class="report-risk">Medium Risk</span><span class="report-score" aria-label="Risk score 3.4">3.4</span></a><a class="report-item" href="https://curation.yearn.fi/report/re-reusd/" target="_blank" rel="noreferrer"><span class="report-name"><img src="/concepts/lifetime/security/report-logos/re.webp" alt="" width="24" height="24" loading="lazy" /><span>Re Protocol reUSD</span></span><span class="report-risk">Medium Risk</span><span class="report-score" aria-label="Risk score 3.4">3.4</span></a><a class="report-item" href="https://curation.yearn.fi/report/3jane-usd3/" target="_blank" rel="noreferrer"><span class="report-name"><img src="/concepts/lifetime/security/report-logos/3jane.webp" alt="" width="24" height="24" loading="lazy" /><span>3Jane — USD3</span></span><span class="report-risk">Medium Risk</span><span class="report-score" aria-label="Risk score 3.4">3.4</span></a><a class="report-item" href="https://curation.yearn.fi/report/across-protocol/" target="_blank" rel="noreferrer"><span class="report-name"><img src="/concepts/lifetime/security/report-logos/across.webp" alt="" width="24" height="24" loading="lazy" /><span>Across Protocol</span></span><span class="report-risk">Elevated Risk</span><span class="report-score" aria-label="Risk score 3.5">3.5</span></a><a class="report-item" href="https://curation.yearn.fi/report/apyx-apxusd/" target="_blank" rel="noreferrer"><span class="report-name"><img src="/concepts/lifetime/security/report-logos/apyx-protocol.webp" alt="" width="24" height="24" loading="lazy" /><span>Apyx</span></span><span class="report-risk">Elevated Risk</span><span class="report-score" aria-label="Risk score 3.5">3.5</span></a><a class="report-item" href="https://curation.yearn.fi/report/kerneldao-hgeth/" target="_blank" rel="noreferrer"><span class="report-name"><img src="/concepts/lifetime/security/report-logos/kelp.webp" alt="" width="24" height="24" loading="lazy" /><span>KernelDAO (Kelp Gain)</span></span><span class="report-risk">Elevated Risk</span><span class="report-score" aria-label="Risk score 3.8">3.8</span></a><a class="report-item" href="https://curation.yearn.fi/report/d2-hypeplus/" target="_blank" rel="noreferrer"><span class="report-name"><img src="/concepts/lifetime/security/report-logos/d2-finance.webp" alt="" width="24" height="24" loading="lazy" /><span>D2 Finance HYPE++</span></span><span class="report-risk">Elevated Risk</span><span class="report-score" aria-label="Risk score 4.1">4.1</span></a><a class="report-item" href="https://curation.yearn.fi/report/unit-ubtc/" target="_blank" rel="noreferrer"><span class="report-name"><img src="/concepts/lifetime/security/report-logos/unit.webp" alt="" width="24" height="24" loading="lazy" /><span>Unit Bitcoin (UBTC)</span></span><span class="report-risk">High Risk</span><span class="report-score" aria-label="Risk score 5.0">5.0</span></a><a class="report-item" href="https://curation.yearn.fi/report/buck/" target="_blank" rel="noreferrer"><span class="report-name"><img src="/concepts/lifetime/security/report-logos/buck.png" alt="" width="24" height="24" loading="lazy" /><span>BUCK (Bitcoin Dollar SavingsCoin)</span></span><span class="report-risk">Danger Zone</span><span class="report-score" aria-label="Risk score Not scored">Not scored</span></a><a class="report-item" href="https://curation.yearn.fi/report/resolv-rlp/" target="_blank" rel="noreferrer"><span class="report-name"><img src="/concepts/lifetime/security/report-logos/resolv.webp" alt="" width="24" height="24" loading="lazy" /><span>Resolv RLP</span></span><span class="report-risk">Danger Zone</span><span class="report-score" aria-label="Risk score Not scored">Not scored</span></a><a class="report-item" href="https://curation.yearn.fi/report/resolv-wstusr/" target="_blank" rel="noreferrer"><span class="report-name"><img src="/concepts/lifetime/security/report-logos/resolv.webp" alt="" width="24" height="24" loading="lazy" /><span>Resolv wstUSR</span></span><span class="report-risk">Danger Zone</span><span class="report-score" aria-label="Risk score Not scored">Not scored</span></a></div><p class="panel-note">Scores captured Oct 22, 2026 · lower indicates lower assessed risk.</p><a class="feature-link" href="https://curation.yearn.fi/reports/" target="_blank" rel="noreferrer">Explore all reports <span aria-hidden="true">→</span></a>
           </section>
         </div>
       </section>
@@ -2422,9 +2415,9 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
         <div class="integrator-actions"><a class="feature-link primary-button" href="https://yearn.fi/vaults"><span>Browse Yearn Vaults </span><span aria-hidden="true">→</span></a><a class="feature-link secondary-button" href="https://partners.yearn.fi"><span>Start building with Yearn </span><span aria-hidden="true">→</span></a></div>
       </section>
     </main>
-    <details class="version-menu"><summary>Older versions</summary><nav aria-label="Older landing page versions"><a href="/concepts/lifetime/versions/original/">Original earnings layout</a><a href="/concepts/lifetime/versions/previous/">Previous earnings layout</a></nav></details>
+    <details class="version-menu"><summary>Older versions</summary><nav aria-label="Older landing page versions"><a href="/concepts/lifetime/versions/nov13/">November 13 layout</a><a href="/concepts/lifetime/versions/original/">Original earnings layout</a><a href="/concepts/lifetime/versions/previous/">Previous earnings layout</a></nav></details>
     <footer><a class="brand" href="#main" aria-label="Back to top"><img src="/concepts/lifetime/navigation/TypeMarkYearn.svg?v=37" alt="Yearn" width="116" height="32" /></a><nav class="footer-links" aria-label="Footer navigation"><a href="https://docs.yearn.fi/" target="_blank" rel="noopener noreferrer">Docs <span aria-hidden="true">↗</span></a><a href="https://discord.gg/yearn" target="_blank" rel="noopener noreferrer">Support <span aria-hidden="true">↗</span></a><a href="https://blog.yearn.fi/" target="_blank" rel="noopener noreferrer">Blog <span aria-hidden="true">↗</span></a><a href="https://gov.yearn.fi/" target="_blank" rel="noopener noreferrer">Discourse <span aria-hidden="true">↗</span></a><a href="https://github.com/yearn" target="_blank" rel="noopener noreferrer">Github <span aria-hidden="true">↗</span></a><a href="https://x.com/yearnfi" target="_blank" rel="noopener noreferrer">X (Twitter) <span aria-hidden="true">↗</span></a></nav></footer>
-    <dialog id="notes" aria-labelledby="notes-title"><div class="dialog-top"><span class="eyebrow">Behind the Numbers</span><button class="close" type="button" aria-label="Close data notes">×</button></div><h2 id="notes-title">A moment in <span class="yearn-word"><img src="/concepts/lifetime/navigation/YearnWordmark.svg" alt="Yearn" /></span>.</h2><p>This concept uses a captured <span class="yearn-word"><img src="/concepts/lifetime/navigation/YearnWordmark.svg" alt="Yearn" /></span> Data publication, not a live feed.</p><dl><dt>TVL hero baseline</dt><dd id="earnings-note">Loading source details.</dd><dt>The moving number</dt><dd id="animation-note">Loading animation details.</dd><dt>Total value deposited</dt><dd id="tvl-note">Loading source details.</dd><dt>Lifetime fees</dt><dd id="fees-note">Loading source details.</dd><dt>Vaults deployed</dt><dd id="vaults-note">Loading source details.</dd><dt>Harvests</dt><dd id="harvests-note">Loading source details.</dd></dl><p class="source-date" id="capture-date"></p><a class="source-link" href="/concepts/lifetime/hero-tvl.json" target="_blank" rel="noreferrer">View the counter snapshot →</a><button class="replay-button" id="replay" type="button">Refresh the estimate</button></dialog>
+    <dialog id="notes" aria-labelledby="notes-title"><div class="dialog-top"><span class="eyebrow">Behind the Numbers</span><button class="close" type="button" aria-label="Close data notes">×</button></div><h2 id="notes-title">A moment in <span class="yearn-word"><img src="/concepts/lifetime/navigation/YearnWordmark.svg" alt="Yearn" /></span>.</h2><p>This concept uses a captured <span class="yearn-word"><img src="/concepts/lifetime/navigation/YearnWordmark.svg" alt="Yearn" /></span> Data publication, not a live feed.</p><dl><dt>TVL hero baseline</dt><dd id="earnings-note">Loading source details.</dd><dt>The moving number</dt><dd id="animation-note">Loading animation details.</dd><dt>Total yield earned</dt><dd id="yield-note">Loading source details.</dd><dt>Lifetime fees</dt><dd id="fees-note">Loading source details.</dd><dt>Vaults deployed</dt><dd id="vaults-note">Loading source details.</dd><dt>Harvests</dt><dd id="harvests-note">Loading source details.</dd></dl><p class="source-date" id="capture-date"></p><a class="source-link" href="/concepts/lifetime/hero-tvl.json" target="_blank" rel="noreferrer">View the counter snapshot →</a><button class="replay-button" id="replay" type="button">Refresh the estimate</button></dialog>
     <noscript><p class="noscript">Enable JavaScript to view the captured metrics. The vault and documentation links work without it.</p></noscript>
   </body>
 </html>

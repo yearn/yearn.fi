@@ -50,7 +50,6 @@ const renderCounter = (data) => {
   stopCounter()
   const paint = () => {
     const value = counterValueAt(data, Date.now() / 1000)
-    renderStat('#tvl', value, true)
     const [whole, fraction] = earningsMoney.format(value).split('.')
     if (select('#earnings-whole').textContent !== whole) select('#earnings-whole').textContent = whole
     const decimals = `.${fraction}`
@@ -80,18 +79,12 @@ const loadHero = async () => {
     renderCounter(data)
     select('#earnings-note').textContent =
       `${earningsUsd(data.metrics.totalTvlUsd)} published metrics TVL, reported at ${new Date(data.metrics.asOfTimestamp * 1000).toISOString()}. ${data.metrics.completeness.status === 'complete' ? 'Complete published scope.' : 'Known subtotal with incomplete coverage.'}`
-    select('#tvl-note').textContent =
-      `Uses the same published metrics baseline and estimated growth as the hero, abbreviated for display. Baseline: ${usd(data.metrics.totalTvlUsd)}. Reporting boundary: ${date(data.metrics.asOfTimestamp)}. Includes source overlap and bridge deductions; the display label does not apply an endorsed-only filter.`
     select('#animation-note').textContent =
       `Estimated TVL starts at the latest published metrics value when this mockup was captured (${new Date(data.anchor.timestamp * 1000).toISOString()}). It then adds $${data.growth.estimatedUsdPerSecond.toFixed(9)} per second: $${data.growth.yearnScheduledUnlockUsdPerSecond.toFixed(9)} of Yearn scheduled unlocking plus $${data.growth.morphoProjectedNetAccrualUsdPerSecond.toFixed(9)} of estimated Morpho net accrual. The growth model is dated ${new Date(data.growth.asOfTimestamp * 1000).toISOString()}; ${data.growth.valuedRoots} of ${data.growth.selectedRoots} roots are valued. This is a constant-rate presentation estimate beyond the sampled pilot curve, not live measured TVL or a guarantee of future interest. Metrics TVL already includes locked profit, so this animation does not imply new measured totalAssets. Reloads and tabs use the same shared anchor and wall-clock formula. Device clock differences affect the estimate. The counter animates independently of reduced-motion preferences.`
   } catch (error) {
     console.error('Unable to load the TVL counter:', error)
     stopCounter()
     state.data = null
-    select('#tvl').textContent = 'Unavailable'
-    select('#tvl').removeAttribute('title')
-    select('#tvl').removeAttribute('aria-label')
-    select('#tvl-note').textContent = 'Unavailable. No zero value has been substituted.'
     select('#earnings-whole').textContent = 'Unavailable'
     select('#earnings-decimals').textContent = ''
     select('.currency').hidden = true
@@ -129,6 +122,9 @@ const load = async () => {
       ![data.earningsUsd, data.feesUsd, data.tvlUsd].every((value) => value !== null && Number.isFinite(Number(value)))
     )
       throw new Error('Invalid snapshot')
+    renderStat('#yield-earned', Number(data.earningsUsd), true)
+    select('#yield-note').textContent =
+      `${data.methodology.earnings} Snapshot captured ${new Date(data.capturedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}.`
     if (Number.isFinite(data.assetsSecured?.usd)) renderStat('#assets-secured-value', data.assetsSecured.usd, true)
     else select('#assets-secured-value').textContent = 'Unavailable'
     if (Number.isInteger(data.vaultsDeployed)) renderStat('#vaults-deployed', data.vaultsDeployed)
@@ -148,7 +144,7 @@ const load = async () => {
     select('#fees-note').textContent = 'Unavailable. No zero value has been substituted.'
     select('#vaults-note').textContent = 'Unavailable. No zero value has been substituted.'
     select('#harvests-note').textContent = 'Unavailable. No zero value has been substituted.'
-    ;['#tvl', '#assets-secured-value', '#vaults-deployed', '#harvest-count'].forEach((selector) => {
+    ;['#yield-earned', '#assets-secured-value', '#vaults-deployed', '#harvest-count'].forEach((selector) => {
       select(selector).textContent = 'Unavailable'
     })
   }
@@ -162,7 +158,7 @@ select('#replay').addEventListener('click', () => {
 document.querySelectorAll('.reveal').forEach((element) => {
   element.classList.remove('reveal')
 })
-const revealElements = [...document.querySelectorAll('#your-way, #security, #integrators')]
+const revealElements = [...document.querySelectorAll('.partners-section, #your-way, #security, #integrators')]
 revealElements.forEach((element) => {
   element.classList.add('reveal')
 })
@@ -174,7 +170,10 @@ const paintReveals = () => {
   const revealInset = window.innerHeight * 0.45
   const measurements = revealElements.map((element) => {
     const bounds = element.getBoundingClientRect()
-    const entering = (window.innerHeight - revealInset - bounds.top) / fadeDistance
+    const isPartners = element.classList.contains('partners-section')
+    const inset = isPartners ? revealInset / 2 : revealInset
+    const distance = isPartners ? (Math.min(180, window.innerHeight * 0.2) + fadeDistance) / 2 : fadeDistance
+    const entering = (window.innerHeight - inset - bounds.top) / distance
     return { element, progress: Math.max(0, Math.min(1, entering)) }
   })
   measurements.forEach(({ element, progress }) => {
@@ -547,3 +546,28 @@ select('.scroll-link').addEventListener('click', (event) => {
   })
 })
 updateHeroStatistics()
+
+// A single stroke avoids seams; its gradient follows the tail and leading edge.
+const outlineStroke = select('.hero-outline-stroke')
+const outlineGradient = select('#hero-outline-gradient')
+const outlineMotion = { frame: null, length: 0 }
+new ResizeObserver(() => {
+  outlineMotion.length = outlineStroke.getTotalLength()
+}).observe(select('#tagline'))
+const paintOutline = (timestamp) => {
+  const position = (timestamp % 10666.667) / 10666.667
+  const tail = outlineStroke.getPointAtLength(position * outlineMotion.length)
+  const head = outlineStroke.getPointAtLength(((position + 0.18) % 1) * outlineMotion.length)
+  outlineStroke.style.strokeDashoffset = `${-position * 100}px`
+  outlineGradient.setAttribute('x1', tail.x)
+  outlineGradient.setAttribute('y1', tail.y)
+  outlineGradient.setAttribute('x2', head.x)
+  outlineGradient.setAttribute('y2', head.y)
+  outlineMotion.frame = document.hidden ? null : requestAnimationFrame(paintOutline)
+}
+const resumeOutline = () => {
+  if (!document.hidden && outlineMotion.frame === null) outlineMotion.frame = requestAnimationFrame(paintOutline)
+}
+document.addEventListener('visibilitychange', resumeOutline)
+window.addEventListener('pageshow', resumeOutline)
+resumeOutline()
