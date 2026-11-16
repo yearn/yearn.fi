@@ -547,27 +547,142 @@ select('.scroll-link').addEventListener('click', (event) => {
 })
 updateHeroStatistics()
 
-// A single stroke avoids seams; its gradient follows the tail and leading edge.
-const outlineStroke = select('.hero-outline-stroke')
-const outlineGradient = select('#hero-outline-gradient')
-const outlineMotion = { frame: null, length: 0 }
-new ResizeObserver(() => {
-  outlineMotion.length = outlineStroke.getTotalLength()
-}).observe(select('#tagline'))
-const paintOutline = (timestamp) => {
-  const position = (timestamp % 10666.667) / 10666.667
-  const tail = outlineStroke.getPointAtLength(position * outlineMotion.length)
-  const head = outlineStroke.getPointAtLength(((position + 0.18) % 1) * outlineMotion.length)
-  outlineStroke.style.strokeDashoffset = `${-position * 100}px`
-  outlineGradient.setAttribute('x1', tail.x)
-  outlineGradient.setAttribute('y1', tail.y)
-  outlineGradient.setAttribute('x2', head.x)
-  outlineGradient.setAttribute('y2', head.y)
-  outlineMotion.frame = document.hidden ? null : requestAnimationFrame(paintOutline)
+// Reuse the same perimeter-based fade for hero and card outlines.
+const svgElement = (tag, attributes) => {
+  const element = document.createElementNS('http://www.w3.org/2000/svg', tag)
+  Object.entries(attributes).forEach(([key, value]) => {
+    element.setAttribute(key, value)
+  })
+  return element
 }
-const resumeOutline = () => {
-  if (!document.hidden && outlineMotion.frame === null) outlineMotion.frame = requestAnimationFrame(paintOutline)
+const createTravellingOutline = (target, instance, hoverOnly = false) => {
+  const outline =
+    target.querySelector('.hero-outline') ??
+    svgElement('svg', { class: 'hero-outline', 'aria-hidden': 'true', focusable: 'false' })
+  if (!outline.parentElement) {
+    outline.append(svgElement('defs', {}), svgElement('g', { class: 'hero-outline-stroke' }))
+    target.append(outline)
+  }
+  const outlineStroke = outline.querySelector('.hero-outline-stroke')
+  const outlineDefinitions = outline.querySelector('defs')
+  const outlineMotion = { frame: null, length: 0, elapsed: 0, lastTimestamp: null, pieces: [], hoverProgress: 0 }
+  const buildOutline = () => {
+    const { width, height } = outline.getBoundingClientRect()
+    const radius = Math.min(Number.parseFloat(getComputedStyle(target).borderRadius) || 0, height / 2, width / 2)
+    const point = (cx, cy, angle) => [cx + radius * Math.cos(angle), cy + radius * Math.sin(angle)]
+    const line = (from, to) => ({ from, to, length: Math.hypot(to[0] - from[0], to[1] - from[1]), d: `M${from}L${to}` })
+    const corner = (cx, cy, start) =>
+      Array.from({ length: 4 }, (_, index) => {
+        const from = point(cx, cy, start + (index * Math.PI) / 8)
+        const to = point(cx, cy, start + ((index + 1) * Math.PI) / 8)
+        return { from, to, length: (radius * Math.PI) / 8, d: `M${from}A${radius},${radius} 0 0 1 ${to}` }
+      })
+    const geometry = [
+      line([radius, 0], [width - radius, 0]),
+      ...corner(width - radius, radius, -Math.PI / 2),
+      line([width, radius], [width, height - radius]),
+      ...corner(width - radius, height - radius, 0),
+      line([width - radius, height], [radius, height]),
+      ...corner(radius, height - radius, Math.PI / 2),
+      line([0, height - radius], [0, radius]),
+      ...corner(radius, radius, Math.PI)
+    ]
+    outlineDefinitions.replaceChildren()
+    outlineStroke.replaceChildren()
+    outlineMotion.length = geometry.reduce((total, piece) => total + piece.length, 0)
+    outlineMotion.pieces = geometry.map((piece, index) => {
+      const id = `outline-${instance}-edge-${index}`
+      const gradient = svgElement('linearGradient', {
+        id,
+        gradientUnits: 'userSpaceOnUse',
+        x1: piece.from[0],
+        y1: piece.from[1],
+        x2: piece.to[0],
+        y2: piece.to[1]
+      })
+      const stops = Array.from({ length: 6 }, () => svgElement('stop', { 'stop-color': 'currentColor' }))
+      gradient.append(...stops)
+      outlineDefinitions.append(gradient)
+      outlineStroke.append(svgElement('path', { d: piece.d, stroke: `url(#${id})` }))
+      return { ...piece, start: geometry.slice(0, index).reduce((total, part) => total + part.length, 0), stops }
+    })
+  }
+  new ResizeObserver(buildOutline).observe(target)
+  const paintOutline = (timestamp) => {
+    const delta = outlineMotion.lastTimestamp === null ? 0 : timestamp - outlineMotion.lastTimestamp
+    outlineMotion.elapsed += delta
+    outlineMotion.lastTimestamp = timestamp
+    const hovered = target.matches(':hover, :focus-visible')
+    outlineMotion.hoverProgress = Math.max(
+      0,
+      Math.min(1, outlineMotion.hoverProgress + ((hovered ? 1 : -1) * delta) / 450)
+    )
+    const total = outlineMotion.length
+    const head = ((outlineMotion.elapsed % 10666.667) / 10666.667) * total
+    const trail = 0.18 * total
+    const blueTrail = (hoverOnly ? 0.6 : 0.95) * total
+    const blueTail = (head - blueTrail + total) % total
+    const tail = (head - trail + total) % total
+    const alphaAt = (distance) => {
+      const behind = (head - distance + total) % total
+      const greyAlpha = !hoverOnly && behind <= trail ? 1 - behind / trail : 0
+      const blueAlpha = behind <= blueTrail ? 1 - behind / blueTrail : 0
+      return greyAlpha + (blueAlpha - greyAlpha) * outlineMotion.hoverProgress
+    }
+    if (total > 0)
+      outlineMotion.pieces.forEach((piece) => {
+        const end = piece.start + piece.length
+        const boundaries = [
+          ...(blueTail > piece.start && blueTail < end
+            ? [{ offset: (blueTail - piece.start) / piece.length, alpha: 0 }]
+            : []),
+          ...(trail < total && tail > piece.start && tail < end
+            ? [{ offset: (tail - piece.start) / piece.length, alpha: alphaAt(tail) }]
+            : []),
+          ...(head > piece.start && head < end
+            ? [
+                { offset: (head - piece.start) / piece.length, alpha: alphaAt(head) },
+                { offset: (head - piece.start) / piece.length, alpha: 0 }
+              ]
+            : [])
+        ].sort((a, b) => a.offset - b.offset)
+        const values = [{ offset: 0, alpha: alphaAt(piece.start) }, ...boundaries, { offset: 1, alpha: alphaAt(end) }]
+        piece.stops.forEach((stop, index) => {
+          const value = values[Math.min(index, values.length - 1)]
+          stop.setAttribute('offset', value.offset)
+          stop.setAttribute('stop-opacity', value.alpha)
+        })
+      })
+    outlineMotion.frame =
+      document.hidden || (hoverOnly && !hovered && outlineMotion.hoverProgress === 0)
+        ? null
+        : requestAnimationFrame(paintOutline)
+  }
+  const resumeOutline = () => {
+    if (!document.hidden && outlineMotion.frame === null) {
+      outlineMotion.lastTimestamp = null
+      outlineMotion.frame = requestAnimationFrame(paintOutline)
+    }
+  }
+  document.addEventListener('visibilitychange', resumeOutline)
+  window.addEventListener('pageshow', resumeOutline)
+  if (hoverOnly) {
+    ;['pointerenter', 'pointerleave', 'focus', 'blur'].forEach((event) => {
+      target.addEventListener(event, resumeOutline)
+    })
+  } else resumeOutline()
 }
-document.addEventListener('visibilitychange', resumeOutline)
-window.addEventListener('pageshow', resumeOutline)
-resumeOutline()
+createTravellingOutline(select('#tagline'), 'hero')
+document.querySelectorAll('.infrastructure-card').forEach((card, index) => {
+  createTravellingOutline(card, `infrastructure-${index}`, true)
+})
+
+const partnerSweep = select('.partners-section')
+partnerSweep.addEventListener('pointerenter', (event) => {
+  if (event.pointerType !== 'mouse' || !matchMedia('(hover: hover) and (pointer: fine)').matches) return
+  if (partnerSweep.classList.contains('is-sweeping')) return
+  partnerSweep.classList.add('is-sweeping')
+})
+partnerSweep.addEventListener('animationend', (event) => {
+  if (event.animationName === 'partner-border-sweep') partnerSweep.classList.remove('is-sweeping')
+})
