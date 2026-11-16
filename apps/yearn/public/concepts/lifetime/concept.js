@@ -255,11 +255,38 @@ document.addEventListener('keydown', (event) => {
 const securityChoices = [...document.querySelectorAll('[data-security]')]
 const mobileSecurity = matchMedia('(max-width: 760px)')
 const securityDisplay = document.querySelector('.security-display')
+const securityPin = { choice: null }
+const securityTransition = { outgoing: null, incoming: null }
 const selectSecurity = (choice) => {
+  const previous = securityDisplay.querySelector('.security-panel:not([hidden]):not(.security-panel-outgoing)')
+  const next = choice ? document.getElementById(choice.getAttribute('aria-controls')) : null
+  const crossfade = !mobileSecurity.matches && !motion.matches && previous && next && previous !== next
+  if (previous !== next || mobileSecurity.matches) {
+    securityTransition.incoming?.cancel()
+    securityTransition.outgoing?.remove()
+    securityTransition.outgoing = null
+  }
+  const outgoing = crossfade ? previous.cloneNode(true) : null
+  if (outgoing) {
+    outgoing.classList.add('security-panel-outgoing')
+    outgoing.removeAttribute('id')
+    outgoing.removeAttribute('aria-labelledby')
+    outgoing.querySelectorAll('[id]').forEach((element) => {
+      element.removeAttribute('id')
+    })
+    outgoing.setAttribute('aria-hidden', 'true')
+    outgoing.inert = true
+    const originals = [...previous.querySelectorAll('[data-auto-scroll], .vault-code')]
+    outgoing.querySelectorAll('[data-auto-scroll], .vault-code').forEach((element, index) => {
+      element.scrollTop = originals[index].scrollTop
+    })
+  }
   securityChoices.forEach((item) => {
     const selected = item === choice
     item.dataset.selected = String(selected)
-    if (item.tagName === 'BUTTON') item.setAttribute('aria-pressed', String(selected))
+    if (mobileSecurity.matches) item.removeAttribute('aria-pressed')
+    else item.setAttribute('aria-pressed', String(item === securityPin.choice))
+    item.classList.toggle('is-pinned', !mobileSecurity.matches && item === securityPin.choice)
     const expand = item.parentElement.querySelector('.security-expand')
     if (expand) {
       expand.setAttribute('aria-expanded', String(selected))
@@ -269,21 +296,24 @@ const selectSecurity = (choice) => {
     else item.removeAttribute('aria-expanded')
     document.getElementById(item.getAttribute('aria-controls')).hidden = !selected
   })
+  if (outgoing) {
+    securityDisplay.append(outgoing)
+    securityTransition.outgoing = outgoing
+    const fade = outgoing.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 180, easing: 'ease-in' })
+    fade.onfinish = () => {
+      outgoing.remove()
+    }
+    securityTransition.incoming = next.animate([{ opacity: 0 }, { opacity: 1 }], {
+      duration: 320,
+      delay: 90,
+      fill: 'backwards',
+      easing: 'ease-in-out'
+    })
+  }
 }
 const placeSecurityPanels = () => {
+  securityPin.choice = null
   securityChoices.forEach((choice) => {
-    if (choice.tagName === 'A') {
-      choice.dataset.destination ??= choice.getAttribute('href')
-      if (mobileSecurity.matches) {
-        choice.removeAttribute('href')
-        choice.setAttribute('role', 'button')
-        choice.tabIndex = 0
-      } else {
-        choice.setAttribute('href', choice.dataset.destination)
-        choice.removeAttribute('role')
-        choice.removeAttribute('tabindex')
-      }
-    }
     const panel = document.getElementById(choice.getAttribute('aria-controls'))
     if (mobileSecurity.matches) (choice.closest('.security-link-row') ?? choice).after(panel)
     else securityDisplay.append(panel)
@@ -295,79 +325,28 @@ placeSecurityPanels()
 mobileSecurity.addEventListener('change', placeSecurityPanels)
 securityChoices.forEach((choice) => {
   choice.addEventListener('pointerenter', (event) => {
-    if (!mobileSecurity.matches && event.pointerType === 'mouse') selectSecurity(choice)
+    if (!mobileSecurity.matches && !securityPin.choice && event.pointerType === 'mouse') selectSecurity(choice)
   })
   choice.addEventListener('focus', () => {
-    if (!mobileSecurity.matches) selectSecurity(choice)
+    if (!mobileSecurity.matches && !securityPin.choice) selectSecurity(choice)
   })
-  const toggle = choice.parentElement.querySelector('.security-expand') ?? choice
-  if (choice.tagName === 'A') {
-    choice.addEventListener('click', (event) => {
-      if (mobileSecurity.matches) {
-        event.preventDefault()
-        const collapse = choice.getAttribute('aria-expanded') === 'true'
-        selectSecurity(collapse ? null : choice)
-      } else selectSecurity(choice)
-    })
-    choice.addEventListener('keydown', (event) => {
-      if (mobileSecurity.matches && (event.key === 'Enter' || event.key === ' ')) {
-        event.preventDefault()
-        choice.click()
-      }
-    })
-  }
-  toggle.addEventListener('click', () => {
+  choice.addEventListener('click', () => {
+    if (!mobileSecurity.matches) {
+      securityPin.choice = securityPin.choice === choice ? null : choice
+      securityRotation.resumeAt = performance.now() + 1000
+      selectSecurity(choice)
+      return
+    }
     const collapse = mobileSecurity.matches && choice.getAttribute('aria-expanded') === 'true'
     selectSecurity(collapse ? null : choice)
-    if (mobileSecurity.matches && !collapse) choice.scrollIntoView({ block: 'start', behavior: 'instant' })
   })
 })
-// Rotate desktop panels only; mobile keeps its user-controlled accordion.
+// One clock drives both the selected panel and its travelling underline.
 const securitySection = document.getElementById('security')
-const securityRotation = { timer: null, hovered: false }
-const stopSecurityRotation = () => {
-  clearTimeout(securityRotation.timer)
-  securityRotation.timer = null
-}
-const scheduleSecurityRotation = () => {
-  stopSecurityRotation()
-  securityRotation.timer = setTimeout(() => {
-    const bounds = securitySection.getBoundingClientRect()
-    if (
-      !mobileSecurity.matches &&
-      !motion.matches &&
-      !document.hidden &&
-      !securityRotation.hovered &&
-      !securitySection.contains(document.activeElement) &&
-      bounds.top < window.innerHeight &&
-      bounds.bottom > 0
-    ) {
-      const index = securityChoices.findIndex((choice) => choice.dataset.selected === 'true')
-      selectSecurity(securityChoices[(index + 1) % securityChoices.length])
-    }
-    scheduleSecurityRotation()
-  }, 4000)
-}
-securitySection.addEventListener('pointerenter', (event) => {
-  if (event.pointerType !== 'mouse') return
-  securityRotation.hovered = true
-  stopSecurityRotation()
-})
-securitySection.addEventListener('pointerleave', () => {
-  securityRotation.hovered = false
-  scheduleSecurityRotation()
-})
-securitySection.addEventListener('focusin', stopSecurityRotation)
-securitySection.addEventListener('focusout', scheduleSecurityRotation)
-document.addEventListener('visibilitychange', () => {
-  if (document.hidden) stopSecurityRotation()
-  else scheduleSecurityRotation()
-})
-scheduleSecurityRotation()
+const securityRotation = { elapsed: 0, lastTimestamp: null, index: 0, pieces: [], resumeAt: 0, returning: false }
 
 const alertContainer = document.getElementById('security-alerts')
-const alertStatus = document.getElementById('alert-status')
-const renderSecurityAlerts = (data, status) => {
+const renderSecurityAlerts = (data) => {
   if (
     !Array.isArray(data) ||
     data.some((item) => typeof item.message !== 'string' || !Number.isFinite(Date.parse(item.created_at)))
@@ -407,7 +386,6 @@ const renderSecurityAlerts = (data, status) => {
     })
   )
   if (!data.length) alertContainer.textContent = 'No recent alerts returned.'
-  alertStatus.textContent = status
 }
 const refreshSecurityAlerts = async () => {
   try {
@@ -416,15 +394,14 @@ const refreshSecurityAlerts = async () => {
     })
     if (!response.ok) throw new Error('Alerts unavailable')
     const payload = await response.json()
-    renderSecurityAlerts(payload.data, 'Updated just now · refreshes every minute')
+    renderSecurityAlerts(payload.data)
   } catch {
     try {
       const response = await fetch(new URL('./security/alerts.json', import.meta.url))
       if (!response.ok) throw new Error('Snapshot unavailable')
       const snapshot = await response.json()
-      renderSecurityAlerts(snapshot.data, `Snapshot · ${snapshot.capturedAt}`)
+      renderSecurityAlerts(snapshot.data)
     } catch {
-      alertStatus.textContent = 'Alerts unavailable'
       alertContainer.textContent = 'Visit Yearn Curation to view monitoring alerts.'
     }
   }
@@ -555,7 +532,13 @@ const svgElement = (tag, attributes) => {
   })
   return element
 }
-const createTravellingOutline = (target, instance, hoverOnly = false) => {
+const createTravellingOutline = (
+  target,
+  instance,
+  hoverOnly = false,
+  coverage = hoverOnly ? 0.6 : 0.95,
+  direction = 1
+) => {
   const outline =
     target.querySelector('.hero-outline') ??
     svgElement('svg', { class: 'hero-outline', 'aria-hidden': 'true', focusable: 'false' })
@@ -612,19 +595,19 @@ const createTravellingOutline = (target, instance, hoverOnly = false) => {
     const delta = outlineMotion.lastTimestamp === null ? 0 : timestamp - outlineMotion.lastTimestamp
     outlineMotion.elapsed += delta
     outlineMotion.lastTimestamp = timestamp
-    const hovered = target.matches(':hover, :focus-visible')
+    const hovered = target.matches(':hover, :focus-visible, .is-pinned')
     outlineMotion.hoverProgress = Math.max(
       0,
       Math.min(1, outlineMotion.hoverProgress + ((hovered ? 1 : -1) * delta) / 450)
     )
     const total = outlineMotion.length
-    const head = ((outlineMotion.elapsed % 10666.667) / 10666.667) * total
+    const head = (((((direction * outlineMotion.elapsed) % 10666.667) + 10666.667) % 10666.667) / 10666.667) * total
     const trail = 0.18 * total
-    const blueTrail = (hoverOnly ? 0.6 : 0.95) * total
-    const blueTail = (head - blueTrail + total) % total
-    const tail = (head - trail + total) % total
+    const blueTrail = typeof coverage === 'function' ? coverage(total) : coverage * total
+    const blueTail = (head - direction * blueTrail + total) % total
+    const tail = (head - direction * trail + total) % total
     const alphaAt = (distance) => {
-      const behind = (head - distance + total) % total
+      const behind = (direction * (head - distance) + total) % total
       const greyAlpha = !hoverOnly && behind <= trail ? 1 - behind / trail : 0
       const blueAlpha = behind <= blueTrail ? 1 - behind / blueTrail : 0
       return greyAlpha + (blueAlpha - greyAlpha) * outlineMotion.hoverProgress
@@ -641,8 +624,8 @@ const createTravellingOutline = (target, instance, hoverOnly = false) => {
             : []),
           ...(head > piece.start && head < end
             ? [
-                { offset: (head - piece.start) / piece.length, alpha: alphaAt(head) },
-                { offset: (head - piece.start) / piece.length, alpha: 0 }
+                { offset: (head - piece.start) / piece.length, alpha: direction === 1 ? alphaAt(head) : 0 },
+                { offset: (head - piece.start) / piece.length, alpha: direction === 1 ? 0 : alphaAt(head) }
               ]
             : [])
         ].sort((a, b) => a.offset - b.offset)
@@ -667,7 +650,7 @@ const createTravellingOutline = (target, instance, hoverOnly = false) => {
   document.addEventListener('visibilitychange', resumeOutline)
   window.addEventListener('pageshow', resumeOutline)
   if (hoverOnly) {
-    ;['pointerenter', 'pointerleave', 'focus', 'blur'].forEach((event) => {
+    ;['pointerenter', 'pointerleave', 'focus', 'blur', 'click'].forEach((event) => {
       target.addEventListener(event, resumeOutline)
     })
   } else resumeOutline()
@@ -676,6 +659,147 @@ createTravellingOutline(select('#tagline'), 'hero')
 document.querySelectorAll('.infrastructure-card').forEach((card, index) => {
   createTravellingOutline(card, `infrastructure-${index}`, true)
 })
+
+const securityTrailLength = 180
+securityChoices.forEach((choice, index) => {
+  createTravellingOutline(choice, `security-${index}`, true, () => securityTrailLength, index % 2 === 0 ? -1 : 1)
+  choice.addEventListener('pointerleave', (event) => {
+    if (event.pointerType === 'mouse') securityRotation.resumeAt = performance.now() + 1000
+  })
+})
+securityDisplay.addEventListener('pointerleave', (event) => {
+  if (event.pointerType === 'mouse') securityRotation.resumeAt = performance.now() + 1000
+})
+const securityLayers = select('.security-layers')
+const securitySnake = svgElement('svg', { class: 'security-snake', 'aria-hidden': 'true', focusable: 'false' })
+const snakeDefinitions = svgElement('defs', {})
+const snakeStroke = svgElement('g', { class: 'security-snake-stroke' })
+securitySnake.append(snakeDefinitions, snakeStroke)
+securityLayers.append(securitySnake)
+const buildSecuritySnake = () => {
+  if (mobileSecurity.matches) return
+  const origin = securityLayers.getBoundingClientRect()
+  snakeDefinitions.replaceChildren()
+  snakeStroke.replaceChildren()
+  const cards = securityChoices.map((choice) => choice.getBoundingClientRect())
+  securityRotation.pieces = [...cards, cards[0]].map((card, index) => {
+    const left = card.left - origin.left
+    const right = card.right - origin.left
+    const bottom = card.bottom - origin.top
+    const top = index === 0 ? card.top - origin.top : cards[index - 1].bottom - origin.top
+    const startX = index % 2 === 0 ? left : right
+    const endX = index % 2 === 0 ? right : left
+    const vertical = bottom - top
+    const horizontal = right - left
+    const geometry =
+      index === cards.length
+        ? [{ from: [left, top], to: [left, card.top - origin.top], start: 0, length: top - (card.top - origin.top) }]
+        : [
+            { from: [startX, top], to: [startX, bottom], start: 0, length: vertical },
+            { from: [startX, bottom], to: [endX, bottom], start: vertical, length: horizontal }
+          ]
+    return {
+      length: geometry.reduce((sum, edge) => sum + edge.length, 0),
+      edges: geometry.map((edge, edgeIndex) => {
+        const id = `security-snake-${index}-${edgeIndex}`
+        const gradient = svgElement('linearGradient', {
+          id,
+          gradientUnits: 'userSpaceOnUse',
+          x1: edge.from[0],
+          y1: edge.from[1],
+          x2: edge.to[0],
+          y2: edge.to[1]
+        })
+        const stops = Array.from({ length: 5 }, () => svgElement('stop', { 'stop-color': '#0657f9' }))
+        gradient.append(...stops)
+        snakeDefinitions.append(gradient)
+        snakeStroke.append(svgElement('path', { d: `M${edge.from}L${edge.to}`, stroke: `url(#${id})` }))
+        return { ...edge, stops }
+      })
+    }
+  })
+}
+new ResizeObserver(buildSecuritySnake).observe(securityLayers)
+const paintSecuritySnake = (timestamp) => {
+  const bounds = securitySection.getBoundingClientRect()
+  const interacting =
+    securityPin.choice !== null ||
+    securityChoices.some((choice) => choice.matches(':hover, :focus-visible')) ||
+    securityDisplay.matches(':hover') ||
+    securityDisplay.contains(document.activeElement)
+  const running =
+    !mobileSecurity.matches &&
+    !document.hidden &&
+    !motion.matches &&
+    !interacting &&
+    timestamp >= securityRotation.resumeAt &&
+    bounds.top < window.innerHeight &&
+    bounds.bottom > 0
+  const selected = securityChoices.findIndex((choice) => choice.dataset.selected === 'true')
+  if (selected >= 0 && selected !== securityRotation.index) {
+    securityRotation.index = selected
+    securityRotation.elapsed = 0
+    securityRotation.returning = false
+  }
+  const delta = securityRotation.lastTimestamp === null ? 0 : Math.min(100, timestamp - securityRotation.lastTimestamp)
+  securityRotation.lastTimestamp = timestamp
+  const duration = securityRotation.returning ? 2550 : 4000
+  if (running) {
+    securityRotation.elapsed += delta
+    if (securityRotation.elapsed >= duration) {
+      securityRotation.elapsed %= duration
+      if (securityRotation.returning) {
+        securityRotation.returning = false
+        securityRotation.index = 0
+      } else if (securityRotation.index === securityChoices.length - 1) {
+        securityRotation.returning = true
+      } else securityRotation.index += 1
+      selectSecurity(securityChoices[securityRotation.index])
+    }
+  }
+  securitySnake.classList.toggle('is-running', running)
+  securitySnake.dataset.phase = securityRotation.returning ? 'return' : 'carousel'
+  const routeIndex = securityRotation.returning ? securityChoices.length : securityRotation.index
+  const current = securityRotation.pieces[routeIndex]
+  const progress = securityRotation.returning
+    ? Math.min(1, Math.max(0, securityRotation.elapsed - 250) / 1800)
+    : securityRotation.elapsed / 4000
+  // After the final card, follow the left edge upwards without changing its panel.
+  const head =
+    securityRotation.pieces.slice(0, routeIndex).reduce((sum, piece) => sum + piece.length, 0) +
+    (current?.length ?? 0) * progress
+  snakeStroke.style.opacity = securityRotation.returning
+    ? String(1 - 0.75 * Math.min(1, securityRotation.elapsed / 250))
+    : '1'
+  const trail = securityTrailLength
+  securityRotation.pieces.forEach((piece, index) => {
+    const base = securityRotation.pieces.slice(0, index).reduce((sum, part) => sum + part.length, 0)
+    piece.edges.forEach((edge) => {
+      const start = base + edge.start
+      const alpha = (distance) => Math.max(0, Math.min(1, 1 - (head - distance) / trail)) * (distance <= head ? 1 : 0)
+      const boundaries = [
+        { offset: 0, alpha: alpha(start) },
+        ...(head - trail > start && head - trail < start + edge.length
+          ? [{ offset: (head - trail - start) / edge.length, alpha: 0 }]
+          : []),
+        ...(head >= start && head < start + edge.length
+          ? [
+              { offset: (head - start) / edge.length, alpha: 1 },
+              { offset: (head - start) / edge.length, alpha: 0 }
+            ]
+          : []),
+        { offset: 1, alpha: alpha(start + edge.length) }
+      ]
+      edge.stops.forEach((stop, stopIndex) => {
+        const value = boundaries[Math.min(stopIndex, boundaries.length - 1)]
+        stop.setAttribute('offset', value.offset)
+        stop.setAttribute('stop-opacity', value.alpha)
+      })
+    })
+  })
+  requestAnimationFrame(paintSecuritySnake)
+}
+requestAnimationFrame(paintSecuritySnake)
 
 const partnerSweep = select('.partners-section')
 partnerSweep.addEventListener('pointerenter', (event) => {
