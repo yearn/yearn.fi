@@ -810,3 +810,19 @@ partnerSweep.addEventListener('pointerenter', (event) => {
 partnerSweep.addEventListener('animationend', (event) => {
   if (event.animationName === 'partner-border-sweep') partnerSweep.classList.remove('is-sweeping')
 })
+
+// Let the final content group occupy its own view even on tall screens.
+const finalSection = select('#integrators')
+const finalFooter = select('footer')
+const measureFinalView = () => {
+  const first = finalSection.firstElementChild.getBoundingClientRect()
+  const last = finalSection.lastElementChild.getBoundingClientRect()
+  finalSection.style.setProperty('--final-content-height', `${last.bottom - first.top}px`)
+  finalSection.style.setProperty('--final-footer-height', `${finalFooter.getBoundingClientRect().height}px`)
+}
+const finalViewObserver = new ResizeObserver(measureFinalView)
+;[...finalSection.children, finalFooter].forEach((element) => {
+  finalViewObserver.observe(element)
+})
+window.addEventListener('resize', measureFinalView)
+measureFinalView()

@@ -2846,3 +2846,19 @@ a.security-choice:hover {
   inset: 0;
   pointer-events: none;
 }
+
+/* Balance the closing group above the footer and clear the preceding section. */
+.benefits-section {
+  padding-top: max(
+    var(--content-section-gap),
+    calc(
+      (100svh + var(--header-height) - var(--final-footer-height, 140px) - var(--final-content-height, 500px)) /
+      2 +
+      24px
+    )
+  );
+  padding-bottom: max(
+    48px,
+    calc((100svh - var(--header-height) - var(--final-footer-height, 140px) - var(--final-content-height, 500px)) / 2)
+  );
+}
