@@ -1,7 +1,5 @@
 'use client'
 
-import '@rainbow-me/rainbowkit/styles.css'
-import { RainbowKitProvider } from '@rainbow-me/rainbowkit'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { useWalletActivity, WalletActivityProvider } from '@ybold/components/WalletActivityProvider'
 import { initializeAnalytics, trackAnalytics } from '@ybold/lib/analytics'
@@ -10,11 +8,8 @@ import { type VaultWidgetRuntimeOverrides, VaultWidgetRuntimeProvider } from '@y
 import { createWagmiVaultWidgetExecutionAdapter } from '@yearn/vault-widget/wagmi'
 import { useWalletDrawer, WalletDrawerProvider, WalletProvider } from '@yearn/wallet-ui'
 import { getWalletAnalyticsProperties } from '@yearn/wallet-ui/analytics'
-import { getYearnRainbowTheme } from '@yearn/wallet-ui/rainbowkit'
 import { useEffect, useMemo, useState } from 'react'
 import { useAccount } from 'wagmi'
-
-const theme = getYearnRainbowTheme('light')
 
 const queryClient = new QueryClient()
 const YEARN_ASSETS_BASE_URI =
@@ -106,18 +101,16 @@ export function Providers({ children }: { children: React.ReactNode }) {
   return (
     <WalletProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider theme={theme}>
-          <WalletDrawerProvider
-            onAnalytics={trackAnalytics}
-            desktopTop="calc(var(--header-height) + 0.5rem)"
-            desktopRight="max(1rem, calc((100vw - 1232px) / 2 + 1rem))"
-            themeClassName="ybold-wallet-ui"
-          >
-            <WalletActivityProvider>
-              <WidgetHostProvider>{children}</WidgetHostProvider>
-            </WalletActivityProvider>
-          </WalletDrawerProvider>
-        </RainbowKitProvider>
+        <WalletDrawerProvider
+          onAnalytics={trackAnalytics}
+          desktopTop="calc(var(--header-height) + 0.5rem)"
+          desktopRight="max(1rem, calc((100vw - 1232px) / 2 + 1rem))"
+          themeClassName="ybold-wallet-ui"
+        >
+          <WalletActivityProvider>
+            <WidgetHostProvider>{children}</WidgetHostProvider>
+          </WalletActivityProvider>
+        </WalletDrawerProvider>
       </QueryClientProvider>
     </WalletProvider>
   )

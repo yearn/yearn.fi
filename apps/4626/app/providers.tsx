@@ -1,13 +1,10 @@
 'use client'
 
-import '@rainbow-me/rainbowkit/styles.css'
 import { WalletActivityContext } from '@erc4626/components/WalletActivity'
 import { getChain, resolveChainId } from '@erc4626/lib/chains'
 import { getSafeTransactionDetails } from '@erc4626/lib/safe'
 import { wagmiConfig } from '@erc4626/lib/wagmiConfig'
-import { RainbowKitProvider } from '@rainbow-me/rainbowkit'
 import { QueryClient, QueryClientProvider, useQuery, useQueryClient } from '@tanstack/react-query'
-import { useThemePreference } from '@yearn/site-header/theme'
 import { type VaultWidgetRuntimeOverrides, VaultWidgetRuntimeProvider } from '@yearn/vault-widget'
 import type {
   VaultWidgetNotificationInput,
@@ -16,7 +13,6 @@ import type {
 } from '@yearn/vault-widget/runtime'
 import { createWagmiVaultWidgetExecutionAdapter } from '@yearn/vault-widget/wagmi'
 import { useWalletDrawer, WalletDrawerProvider, WalletProvider } from '@yearn/wallet-ui'
-import { getYearnRainbowTheme } from '@yearn/wallet-ui/rainbowkit'
 import { type ReactNode, useCallback, useEffect, useMemo, useState } from 'react'
 import type { Hash } from 'viem'
 import { useAccount, usePublicClient } from 'wagmi'
@@ -107,7 +103,7 @@ function WidgetHost({ children }: { children: ReactNode }) {
       },
       execution,
       safe: {
-        isSafe: connector?.id.toLowerCase().includes('safe') === true,
+        isSafe: connector?.id.toLowerCase() === 'safe',
         getTransactionDetails: getSafeTransactionDetails
       },
       notifications: {
@@ -209,18 +205,15 @@ function Notice({
 
 export function Providers({ children }: { children: ReactNode }) {
   const [queryClient] = useState(() => new QueryClient())
-  const theme = getYearnRainbowTheme(useThemePreference() === 'light' ? 'light' : 'dark')
   return (
     <WalletProvider config={wagmiConfig}>
       <QueryClientProvider client={queryClient}>
-        <RainbowKitProvider theme={theme}>
-          <WalletDrawerProvider
-            desktopTop="calc(var(--header-height) + 0.5rem)"
-            desktopRight="max(1rem, calc((100vw - 1232px) / 2 + 1rem))"
-          >
-            <WidgetHost>{children}</WidgetHost>
-          </WalletDrawerProvider>
-        </RainbowKitProvider>
+        <WalletDrawerProvider
+          desktopTop="calc(var(--header-height) + 0.5rem)"
+          desktopRight="max(1rem, calc((100vw - 1232px) / 2 + 1rem))"
+        >
+          <WidgetHost>{children}</WidgetHost>
+        </WalletDrawerProvider>
       </QueryClientProvider>
     </WalletProvider>
   )

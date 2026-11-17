@@ -77,32 +77,34 @@ export function useChainId(): number {
 export function useSwitchChain(): UseSwitchChainReturnType {
   const wagmiSwitchChain = useWagmiSwitchChain()
 
-  const switchChain = useCallback<UseSwitchChainReturnType['switchChain']>(
-    (parameters) => {
+  const switchChain = useCallback<UseSwitchChainReturnType['mutate']>(
+    (parameters, options) => {
       const executionChainId = resolveExecutionChainId(parameters.chainId)
       if (executionChainId === undefined) {
         throw new Error(`Chain ${parameters.chainId} is not enabled for execution`)
       }
 
-      return wagmiSwitchChain.switchChain?.({ ...parameters, chainId: executionChainId })
+      return wagmiSwitchChain.mutate({ ...parameters, chainId: executionChainId }, options)
     },
-    [wagmiSwitchChain]
+    [wagmiSwitchChain.mutate]
   )
 
-  const switchChainAsync = useCallback<UseSwitchChainReturnType['switchChainAsync']>(
-    async (parameters) => {
+  const switchChainAsync = useCallback<UseSwitchChainReturnType['mutateAsync']>(
+    async (parameters, options) => {
       const executionChainId = resolveExecutionChainId(parameters.chainId)
       if (executionChainId === undefined) {
         throw new Error(`Chain ${parameters.chainId} is not enabled for execution`)
       }
 
-      return await wagmiSwitchChain.switchChainAsync?.({ ...parameters, chainId: executionChainId })
+      return await wagmiSwitchChain.mutateAsync({ ...parameters, chainId: executionChainId }, options)
     },
-    [wagmiSwitchChain]
+    [wagmiSwitchChain.mutateAsync]
   )
 
   return {
     ...wagmiSwitchChain,
+    mutate: switchChain,
+    mutateAsync: switchChainAsync,
     switchChain,
     switchChainAsync
   }
@@ -119,7 +121,7 @@ export function useReadContract<
 >(parameters: UseReadContractParameters<abi, functionName, args>): UseReadContractReturnType<abi, functionName, args> {
   const unsupportedRequestedChain = isUnsupportedRequestedChain(parameters.chainId)
 
-  return useWagmiReadContract({
+  return useWagmiReadContract<abi, functionName, args>({
     ...parameters,
     chainId: resolveHookChainId(parameters.chainId),
     query: {

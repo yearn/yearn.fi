@@ -1,5 +1,5 @@
 import type { Chain } from 'viem'
-import { base, mainnet } from 'viem/chains'
+import { base, mainnet, robinhood } from 'viem/chains'
 import { describe, expect, it } from 'vitest'
 import { getWagmiConfigChains } from './wagmiChains'
 
@@ -27,6 +27,11 @@ describe('getWagmiConfigChains', () => {
     const tenderlyBase = { ...base, id: 84531, name: 'Base Tenderly' } as Chain
 
     expect(getWagmiConfigChains([tenderlyBase], [base]).map((chain) => chain.id)).toEqual([84531, 8453])
+  })
+
+  it('keeps Robinhood available alongside its Tenderly execution chain', () => {
+    const tenderlyRobinhood = { ...robinhood, id: 14663, name: 'Robinhood Tenderly' } as Chain
+    expect(getWagmiConfigChains([tenderlyRobinhood], [robinhood]).map((chain) => chain.id)).toEqual([14663, 4663])
   })
 
   it('drops Tenderly-overridden canonical mainnet in favor of the real mainnet entry', () => {

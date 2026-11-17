@@ -1,36 +1,24 @@
-import { getDefaultConfig } from '@rainbow-me/rainbowkit'
+import { RPC_URL } from '@ybold/lib/rpc'
 import { deduplicateWalletAnnouncements } from '@yearn/wallet-ui/discovery'
-import { getYearnWallets } from '@yearn/wallet-ui/rainbowkit'
-import { createConfig, http, type Config } from 'wagmi'
+import { getYearnConnectors } from '@yearn/wallet-ui/wallets'
+import { createConfig, http } from 'wagmi'
 import { mainnet } from 'wagmi/chains'
-import { injected } from 'wagmi/connectors'
 
 deduplicateWalletAnnouncements()
 
 const projectId = process.env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID?.trim()
-const rpcUrl = process.env.NEXT_PUBLIC_RPC_URL?.trim() || 'https://ethereum-rpc.publicnode.com'
 const transports = {
-  [mainnet.id]: http(rpcUrl)
+  [mainnet.id]: http(RPC_URL)
 }
 
-function createWagmiConfig(): Config {
-  if (projectId) {
-    return getDefaultConfig({
-      appName: 'yBOLD by Yearn',
-      projectId,
-      wallets: getYearnWallets(),
-      chains: [mainnet],
-      transports,
-      ssr: true
-    })
-  }
-
-  return createConfig({
-    chains: [mainnet],
-    connectors: [injected()],
-    transports,
-    ssr: true
-  })
-}
-
-export const wagmiConfig = createWagmiConfig()
+export const wagmiConfig = createConfig({
+  chains: [mainnet],
+  connectors: getYearnConnectors({
+    projectId,
+    appName: 'yBOLD by Yearn',
+    appUrl: 'https://ybold.yearn.fi',
+    appIcon: 'https://yearn.fi/favicons/android-icon-192x192.png'
+  }),
+  transports,
+  ssr: true
+})

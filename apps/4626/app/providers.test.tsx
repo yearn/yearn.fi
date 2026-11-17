@@ -6,25 +6,25 @@ import type { ReactNode } from 'react'
 import type { Hash, TransactionReceipt, WaitForTransactionReceiptParameters } from 'viem'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 
-const mocks = vi.hoisted(() => ({ waitForReceipt: vi.fn() }))
+const mocks = vi.hoisted(() => ({ waitForReceipt: vi.fn(), connectorId: 'io.rabby' }))
 vi.mock('@erc4626/lib/wagmiConfig', () => ({ wagmiConfig: {} }))
 vi.mock('@yearn/vault-widget/wagmi', () => ({ createWagmiVaultWidgetExecutionAdapter: () => ({}) }))
 vi.mock('@yearn/vault-widget', async () => {
   const { VaultWidgetRuntimeProvider } = await import('@yearn/vault-widget/runtime')
   return { VaultWidgetRuntimeProvider }
 })
-vi.mock('@yearn/site-header/theme', () => ({ useThemePreference: () => 'light' }))
-vi.mock('@rainbow-me/rainbowkit', () => ({
-  RainbowKitProvider: ({ children }: { children: ReactNode }) => children
-}))
 vi.mock('@yearn/wallet-ui', () => ({
   WalletProvider: ({ children }: { children: ReactNode }) => children,
   WalletDrawerProvider: ({ children }: { children: ReactNode }) => children,
   useWalletDrawer: () => ({ openWalletDrawer: vi.fn(), isConnecting: false })
 }))
-vi.mock('@yearn/wallet-ui/rainbowkit', () => ({ getYearnRainbowTheme: () => ({}) }))
 vi.mock('wagmi', () => ({
-  useAccount: () => ({ address: '0x1111111111111111111111111111111111111111', isConnected: true, chainId: 1 }),
+  useAccount: () => ({
+    address: '0x1111111111111111111111111111111111111111',
+    isConnected: true,
+    chainId: 1,
+    connector: { id: mocks.connectorId }
+  }),
   usePublicClient: () => ({ waitForTransactionReceipt: mocks.waitForReceipt }),
   useWaitForTransactionReceipt: () => ({})
 }))
@@ -55,7 +55,27 @@ function SubmitApproval({ chainId = 1 }: { chainId?: number }) {
 }
 
 afterEach(cleanup)
-beforeEach(() => vi.clearAllMocks())
+beforeEach(() => {
+  vi.clearAllMocks()
+  mocks.connectorId = 'io.rabby'
+})
+
+function SafeMode() {
+  const { safe } = useVaultWidgetRuntime()
+  return <output>{safe.isSafe ? 'Safe execution' : 'Standard execution'}</output>
+}
+
+it.each(['safepal', 'safeheron', 'io.rabby', 'safe', 'SAFE'])('selects the correct execution path for %s', (id) => {
+  mocks.connectorId = id
+  render(
+    <Providers>
+      <SafeMode />
+    </Providers>
+  )
+  expect(screen.getByRole('status').textContent).toBe(
+    id.toLowerCase() === 'safe' ? 'Safe execution' : 'Standard execution'
+  )
+})
 
 describe('session transaction receipts', () => {
   it('marks a reverted approval failed after its originating widget unmounts', async () => {

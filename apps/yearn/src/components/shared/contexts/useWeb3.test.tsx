@@ -31,7 +31,8 @@ vi.mock('@yearn/wallet-ui/useWalletDisconnect', () => ({
 }))
 vi.mock('wagmi', () => ({
   useAccount: () => mocks.account,
-  useConnect: () => ({ connectors: mocks.connectors, connectAsync: mocks.connectAsync }),
+  useConnectors: () => mocks.connectors,
+  useConnect: () => ({ mutateAsync: mocks.connectAsync }),
   useEnsName: () => ({ data: 'example.eth', isLoading: false })
 }))
 vi.mock('@shared/utils', () => ({

@@ -56,13 +56,13 @@ jobs:
               - 'apps/4626/**'
 
   yearn:
-    uses: yearn/yearn-gha/.github/workflows/vercel-deploy.yml@d50baefb52f5e6cf12284eeb4e547489befbe208
+    uses: yearn/yearn-gha/.github/workflows/vercel-deploy.yml@d7047bb766f85ae4dfe0c4ab080bee3ebb1a7d31
     with:
       project: yearn-fi
       identity-id: ${{ github.event_name == 'pull_request' && vars.DOPPLER_PREVIEW_IDENTITY_ID || vars.DOPPLER_PRODUCTION_IDENTITY_ID }}
 
   ybold:
-    uses: yearn/yearn-gha/.github/workflows/vercel-deploy.yml@d50baefb52f5e6cf12284eeb4e547489befbe208
+    uses: yearn/yearn-gha/.github/workflows/vercel-deploy.yml@d7047bb766f85ae4dfe0c4ab080bee3ebb1a7d31
     with:
       project: yearn-bold
       identity-id: ${{ github.event_name == 'pull_request' && vars.DOPPLER_PREVIEW_IDENTITY_ID || vars.DOPPLER_PRODUCTION_IDENTITY_ID }}
@@ -70,7 +70,7 @@ jobs:
   erc4626:
     needs: changes
     if: needs.changes.outputs.erc4626 == 'true'
-    uses: yearn/yearn-gha/.github/workflows/vercel-deploy.yml@e6b4d914d9256b6becdf7c30605238894fa54638
+    uses: yearn/yearn-gha/.github/workflows/vercel-deploy.yml@d7047bb766f85ae4dfe0c4ab080bee3ebb1a7d31
     with:
       project: yearn-4626
       identity-id: ${{ github.event_name == 'pull_request' && vars.DOPPLER_PREVIEW_IDENTITY_ID || vars.DOPPLER_PRODUCTION_IDENTITY_ID }}

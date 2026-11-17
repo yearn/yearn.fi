@@ -1,7 +1,8 @@
-import { RainbowKitProvider, useConnectModal } from '@rainbow-me/rainbowkit'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
+import { useWalletDrawer } from '@yearn/wallet-ui/context'
 import { useWalletDisconnect } from '@yearn/wallet-ui/useWalletDisconnect'
+import { WalletDrawerProvider } from '@yearn/wallet-ui/WalletDrawer'
 import { cancelWalletReconnect, WalletProvider } from '@yearn/wallet-ui/WalletProvider'
 import { type ReactNode, StrictMode } from 'react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
@@ -56,12 +57,12 @@ const createBrowserWalletConfig = (
 }
 
 function WalletControls() {
-  const { openConnectModal } = useConnectModal()
+  const { openWalletDrawer } = useWalletDrawer()
   const { disconnect: disconnectWallet } = useWalletDisconnect()
   const { status } = useAccount()
   return (
     <>
-      <button type="button" onClick={openConnectModal}>
+      <button type="button" onClick={openWalletDrawer}>
         More wallets
       </button>
       <span data-testid="status">{status}</span>
@@ -85,10 +86,10 @@ function Providers({
   return (
     <WalletProvider config={config} reconnectOnMount={reconnectOnMount}>
       <QueryClientProvider client={client}>
-        <RainbowKitProvider>
+        <WalletDrawerProvider>
           <WalletControls />
           {children}
-        </RainbowKitProvider>
+        </WalletDrawerProvider>
       </QueryClientProvider>
     </WalletProvider>
   )
@@ -112,7 +113,7 @@ afterEach(() => {
   vi.unstubAllGlobals()
 })
 
-it('mounts, unmounts and remounts one detected wallet without duplicating its RainbowKit menu entry', async () => {
+it('mounts, unmounts and remounts one detected wallet without duplicating its picker entry', async () => {
   const { config } = createBrowserWalletConfig()
   const first = render(<Providers config={config} />)
   await waitFor(() => expect(config.connectors.filter(({ id }) => id === 'com.walletchan')).toHaveLength(1))
@@ -190,6 +191,31 @@ it('restores a saved EIP-6963 wallet announced after hydration', async () => {
   act(announce)
   await waitFor(() => expect(screen.getByTestId('status').textContent).toBe('connected'))
   expect(getAccount(config).connector?.id).toBe('com.walletchan')
+})
+
+it('restores an older curated connector ID through its discovered provider', async () => {
+  const { config, provider } = createBrowserWalletConfig(true)
+  await config.storage?.setItem('recentConnectorId', 'trust')
+  render(<Providers config={config} />)
+  await act(async () => {})
+  expect(provider.request).not.toHaveBeenCalled()
+  act(() =>
+    window.dispatchEvent(
+      new CustomEvent('eip6963:announceProvider', {
+        detail: {
+          info: {
+            uuid: crypto.randomUUID(),
+            rdns: 'com.trustwallet.app',
+            name: 'Trust Wallet',
+            icon: 'data:image/svg+xml,<svg />'
+          },
+          provider
+        }
+      })
+    )
+  )
+  await waitFor(() => expect(getAccount(config).connector?.id).toBe('com.trustwallet.app'))
+  expect(getAccount(config).address).toBe(account)
 })
 
 it.each([true, false])('handles an early wallet connection with reconnectOnMount=%s', async (reconnectOnMount) => {

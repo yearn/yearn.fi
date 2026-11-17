@@ -41,7 +41,7 @@ Configure the project root as `apps/4626`. `vercel.json` disables automatic GitH
 
 The app uses `@yearn/site-header`, the same masthead and navigation consumed by `apps/yearn`, with Yearn links resolved against `https://yearn.fi`. Its wallet controls remain connected to this app's providers. Theme preferences and tokens are shared with the main app; the mobile menu exposes navigation, theme and wallet access.
 
-Connected wallets open the shared Yearn account dropdown (or the same account content in the mobile menu), with address copying, disconnect, theme settings, network switching and this session's activity for the connected account. No USD portfolio total is shown. RainbowKit still provides the initial wallet connection and network-selection dialogs.
+Connected wallets open the shared Yearn account dropdown (or the same account content in the mobile menu), with address copying, disconnect, theme settings, network switching and this session's activity for the connected account. No USD portfolio total is shown. The shared wallet package owns the connection picker, QR codes and wallet app links; Wagmi provides the connectors and network switching.
 
 ## Vault selection
 

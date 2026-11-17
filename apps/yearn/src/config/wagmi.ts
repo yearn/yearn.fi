@@ -1,7 +1,6 @@
 import { env } from '@/env'
 import { registerConfig } from '@shared/utils/wagmi'
-import { connectorsForWallets, type WalletList } from '@rainbow-me/rainbowkit'
-import { getYearnWallets } from '@yearn/wallet-ui/rainbowkit'
+import { getYearnConnectors } from '@yearn/wallet-ui/wallets'
 import { deduplicateWalletAnnouncements } from '@yearn/wallet-ui/discovery'
 import { cookieStorage, createConfig, createStorage } from 'wagmi'
 import { agentWallet, isAgentWalletEnabled } from '@/config/agentWallet'
@@ -13,20 +12,15 @@ deduplicateWalletAnnouncements()
 
 const projectId = env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_ID as string
 const appName = (env.NEXT_PUBLIC_WALLETCONNECT_PROJECT_NAME as string) || 'Yearn Finance'
-const agentWallets = isAgentWalletEnabled() ? [agentWallet] : []
-const walletGroups: WalletList = [
-  ...(agentWallets.length > 0
-    ? [
-        {
-          groupName: 'Development',
-          wallets: agentWallets
-        }
-      ]
-    : []),
-  ...getYearnWallets()
+const connectors = [
+  ...(isAgentWalletEnabled() ? [agentWallet()] : []),
+  ...getYearnConnectors({
+    projectId,
+    appName,
+    appUrl: 'https://yearn.fi',
+    appIcon: 'https://yearn.fi/favicons/android-icon-192x192.png'
+  })
 ]
-
-const connectors = connectorsForWallets(walletGroups, { projectId, appName })
 
 const wagmiChains = getWagmiConfigChains(supportedWalletChains, supportedAppChains)
 

@@ -2,6 +2,7 @@
 
 import { hydrate } from '@wagmi/core'
 import { restorePreviousAccount } from '@yearn/wallet-ui/connectionCleanup'
+import { CURATED_WALLETS, rememberWalletApp } from '@yearn/wallet-ui/wallets'
 import { type PropsWithChildren, useEffect } from 'react'
 import { type Config, type Connector, WagmiContext, type WagmiProviderProps } from 'wagmi'
 import { getAccount, reconnect, watchAccount, watchConnectors } from 'wagmi/actions'
@@ -32,6 +33,17 @@ export function WalletProvider({
   initialState,
   reconnectOnMount = true
 }: PropsWithChildren<WagmiProviderProps>) {
+  // A wallet can disconnect outside our controls; clear its app handoff preference with the session.
+  useEffect(
+    () =>
+      watchAccount(config, {
+        onChange(account) {
+          if (account.isDisconnected) rememberWalletApp()
+        }
+      }),
+    [config]
+  )
+
   // Hydration/discovery is a Wagmi lifecycle. Restore only the last wallet, without probing every SDK/extension.
   useEffect(() => {
     const startup: TStartup = startups.get(config) ?? {
@@ -53,6 +65,9 @@ export function WalletProvider({
         if (!reconnectOnMount || startup.reconnected) return
         const recentId = await config.storage?.getItem('recentConnectorId')
         const connectorId =
+          config.connectors.find(({ id }) => id === recentId)?.id ??
+          // Earlier configured extensions used catalogue IDs; discovered providers use EIP-6963 rdns.
+          CURATED_WALLETS.find(({ id }) => id === recentId)?.rdns ??
           recentId ??
           (window.self !== window.top ? config.connectors.find(({ type }) => type === 'safe')?.id : undefined)
         if (!connectorId || lifecycle.cancelled) return

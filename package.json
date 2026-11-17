@@ -4,7 +4,7 @@
   "private": true,
   "engines": {
     "bun": ">=1.4.4",
-    "node": "^22.23.4"
+    "node": "^22.23.5"
   },
   "workspaces": [
     "apps/*",
@@ -55,9 +55,6 @@
     "test:wallet-ui": "bun run --cwd packages/wallet-ui test",
     "tslint:wallet-ui": "bun run --cwd packages/wallet-ui typecheck",
     "check:wallet-ui": "bun run tslint:wallet-ui && bun run test:wallet-ui"
-  },
-  "overrides": {
-    "qr": "0.5.5"
   },
   "devDependencies": {
     "@biomejs/biome": "2.5.14",

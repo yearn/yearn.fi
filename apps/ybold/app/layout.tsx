@@ -13,10 +13,26 @@ const geistMono = Geist_Mono({
   subsets: ['latin']
 })
 
+const title = 'yBOLD — Earn BOLD yield automatically | Yearn'
+const description =
+  'Deposit BOLD once and earn across Liquity V2 Stability Pools automatically. Auto-compounded, rebalanced, and withdrawable anytime. By Yearn.'
+const ogImage = 'https://og.yearn.fi/api/og/yearn/vault/1/0x9f4330700a36b29952869fac9b33f45eedd8a3d8'
+
 export const metadata: Metadata = {
-  title: 'yBOLD — Earn BOLD yield automatically | Yearn',
-  description:
-    'Deposit BOLD once and earn across Liquity V2 Stability Pools automatically. Auto-compounded, rebalanced, and withdrawable anytime. By Yearn.'
+  title,
+  description,
+  openGraph: {
+    type: 'website',
+    title,
+    description,
+    images: [{ url: ogImage, width: 1200, height: 630, alt: 'yBOLD — Earn on BOLD by Yearn' }]
+  },
+  twitter: {
+    card: 'summary_large_image',
+    title,
+    description,
+    images: [ogImage]
+  }
 }
 
 export default function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {

@@ -1,6 +1,7 @@
 import { fileURLToPath } from 'node:url'
 import { loadEnvConfig } from '@next/env'
 import type { NextConfig } from 'next'
+import { canonicalChains } from '@/config/chainDefinitions'
 
 const WORKSPACE_ROOT = fileURLToPath(new URL('../..', import.meta.url))
 loadEnvConfig(WORKSPACE_ROOT, process.env.NODE_ENV !== 'production', console, true)
@@ -27,6 +28,40 @@ const FRAME_ANCESTORS = [
   'https://dapps.coin98.com'
 ]
 
+/**
+ * Script sources are enforced. Connection sources remain report-only while integrations are verified.
+ *
+ * RPC origins come from the build env plus viem's chain defaults, because `buildTransports` always appends a
+ * bare `http()` fallback. Set `NEXT_PUBLIC_RPC_URI_FOR_<chainId>` per deployment so the list stays explicit.
+ * Owner: whoever bumps viem, wagmi, or WalletConnect must re-check this list.
+ */
+const SCRIPT_SRC = ["'self'", "'unsafe-inline'", "'unsafe-eval'", 'blob:']
+
+const toOrigin = (value: string | undefined): string[] => (value?.trim() ? [new URL(value.trim()).origin] : [])
+
+const RPC_ORIGINS = canonicalChains.flatMap((chain) => [
+  ...toOrigin(process.env[`NEXT_PUBLIC_RPC_URI_FOR_${chain.id}`]),
+  ...toOrigin(process.env[`NEXT_PUBLIC_TENDERLY_RPC_URI_FOR_${chain.id}`]),
+  ...toOrigin(chain.rpcUrls.default.http[0])
+])
+
+const CONNECT_SRC = [
+  ...new Set([
+    "'self'",
+    ...RPC_ORIGINS,
+    ...toOrigin(process.env.NEXT_PUBLIC_KONG_REST_URL || 'https://kong.yearn.fi'),
+    ...toOrigin(process.env.NEXT_PUBLIC_CLUSTERS_API_URL || 'https://api.clusters.xyz'),
+    'https://api.llama.fi',
+    'https://api.curve.finance',
+    'https://cdn.jsdelivr.net',
+    'wss://relay.walletconnect.org',
+    'https://pulse.walletconnect.org',
+    'https://verify.walletconnect.org',
+    'https://verify.walletconnect.com',
+    'https://rpc.walletconnect.org'
+  ])
+]
+
 const securityHeaders = [
   {
     key: 'Strict-Transport-Security',
@@ -44,7 +79,15 @@ const securityHeaders = [
     // X-Frame-Options is intentionally omitted: it cannot express a multi-origin allowlist and
     // would break the Safe App and Blockscout embeds.
     key: 'Content-Security-Policy',
-    value: [`frame-ancestors ${FRAME_ANCESTORS.join(' ')}`, `report-uri ${CSP_REPORT_URI}`].join('; ')
+    value: [
+      `frame-ancestors ${FRAME_ANCESTORS.join(' ')}`,
+      `script-src ${SCRIPT_SRC.join(' ')}`,
+      `report-uri ${CSP_REPORT_URI}`
+    ].join('; ')
+  },
+  {
+    key: 'Content-Security-Policy-Report-Only',
+    value: [`connect-src ${CONNECT_SRC.join(' ')}`, `report-uri ${CSP_REPORT_URI}`].join('; ')
   }
 ]
 
@@ -93,14 +136,6 @@ const nextConfig: NextConfig = {
       { source: '/snapshot', destination: 'https://snapshot.org/#/styfi.eth', permanent: false },
       { source: '/github', destination: 'https://github.com/yearn/yearn.fi', permanent: false },
       { source: '/security.txt', destination: '/.well-known/security.txt', permanent: false }
-    ]
-  },
-  async rewrites() {
-    return [
-      {
-        source: '/proxy/plausible/:path*',
-        destination: 'https://plausible.io/:path*'
-      }
     ]
   }
 }
