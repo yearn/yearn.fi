@@ -91,7 +91,7 @@ import { formatUnits, isAddressEqual, zeroAddress } from 'viem'
 import { VaultsListChip } from '@/components/pages/vaults/components/list/VaultsListChip'
 import { isRouteChainAddressMatch, resolveRouteVaultFromMap } from '@/components/pages/vaults/utils/routeVault'
 import { deriveListKind } from '@/components/pages/vaults/utils/vaultListFacets'
-import { EXPANDED_VAULT_LOGO_SIZE_PX, getVaultPrimaryLogoSrc } from '@/components/pages/vaults/utils/vaultLogo'
+import { getVaultPrimaryLogoSrc } from '@/components/pages/vaults/utils/vaultLogo'
 import { getCategoryDescription, getProductTypeDescription } from '@/components/pages/vaults/utils/vaultTagCopy'
 import { useWeb3 } from '@/components/shared/contexts/useWeb3'
 import { useDevFlags } from '@/contexts/useDevFlags'
@@ -1936,13 +1936,13 @@ function Index(): ReactElement | null {
             ]}
           />
           {isYvUsd ? <YvUsdHeaderBanner className={'mb-3 md:min-h-26'} /> : null}
-          <div className="flex items-center gap-4">
-            <div className="shrink-0">
+          <div className="flex items-center gap-3">
+            <div className="flex items-center justify-center size-10 rounded-full bg-surface/70">
               <TokenLogo
                 src={getVaultPrimaryLogoSrc(currentVault)}
                 tokenSymbol={currentVault.token.symbol || ''}
-                width={EXPANDED_VAULT_LOGO_SIZE_PX}
-                height={EXPANDED_VAULT_LOGO_SIZE_PX}
+                width={40}
+                height={40}
               />
             </div>
             <div className="flex-1 min-w-0">
@@ -1954,7 +1954,7 @@ function Index(): ReactElement | null {
               >
                 {getVaultName(currentVault)}
               </h1>
-              <div className="flex flex-wrap items-center gap-1 mt-1">
+              <div className="flex items-center gap-1 mt-1">
                 {currentVault.category ? (
                   <VaultsListChip
                     label={currentVault.category}

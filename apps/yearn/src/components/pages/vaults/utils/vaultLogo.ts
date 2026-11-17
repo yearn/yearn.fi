@@ -10,8 +10,6 @@ import { env } from '@/env'
 import { isYvBtcVault } from './yvBtc'
 import { isYvUsdVault } from './yvUsd'
 
-export const EXPANDED_VAULT_LOGO_SIZE_PX = 85
-
 function getBaseUrl(): string {
   return env.BASE_URL || '/'
 }

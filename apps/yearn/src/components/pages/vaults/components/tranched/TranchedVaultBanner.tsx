@@ -1,5 +1,4 @@
 import { type TTranchedProduct, YVUSD_JUNIOR_COOLDOWN_DAYS } from '@pages/vaults/constants/tranchedProducts'
-import { EXPANDED_VAULT_LOGO_SIZE_PX } from '@pages/vaults/utils/vaultLogo'
 import type { ReactElement } from 'react'
 import { env } from '@/env'
 
@@ -14,10 +13,9 @@ export function TranchedVaultBanner({ apyLabel, asset, kind, name }: TTranchedVa
     <aside
       aria-label={`${label} tranche banner`}
       className={
-        'flex w-full items-center overflow-hidden rounded-lg border border-border bg-[#f8f8f9] px-5 py-2 text-[#264D95] md:px-8'
+        'flex min-h-[85px] w-full items-center overflow-hidden rounded-lg border border-border bg-[#f8f8f9] px-5 py-2 text-[#264D95] md:px-8'
       }
       style={{
-        minHeight: EXPANDED_VAULT_LOGO_SIZE_PX,
         backgroundImage: `url(${env.BASE_URL || '/'}ytranche/${kind}-banner.png)`,
         backgroundSize: 'cover',
         backgroundPosition: 'center'
