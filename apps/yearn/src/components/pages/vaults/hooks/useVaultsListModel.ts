@@ -45,6 +45,7 @@ type TVaultsListModelArgs = {
   listShowLegacyVaults: boolean
   listShowHiddenVaults: boolean
   searchValue: string
+  selectedSortBy: TPossibleSortBy
   sortBy: TPossibleSortBy
   sortDirection: TSortDirection
   isAvailablePinned: boolean
@@ -154,6 +155,7 @@ export function useVaultsListModel({
   listShowLegacyVaults,
   listShowHiddenVaults,
   searchValue,
+  selectedSortBy,
   sortBy,
   sortDirection,
   isAvailablePinned
@@ -348,7 +350,7 @@ export function useVaultsListModel({
   )
 
   const pinnedSections = useMemo(() => {
-    const sections: TVaultsPinnedSection[] = [...getProductPinnedSections({ shouldShowYvUsd, sortBy, yvUsdVault })]
+    const sections = getProductPinnedSections({ shouldShowYvUsd, sortBy: selectedSortBy, yvUsdVault })
     const seen = new Set(sections.flatMap((section) => section.vaults.map((vault) => getVaultKey(vault))))
     const takeUnseenVaults = (vaults: TKongVaultInput[]): TKongVaultInput[] =>
       vaults.filter((vault) => {
@@ -371,7 +373,7 @@ export function useVaultsListModel({
     }
 
     return sections
-  }, [isAvailablePinned, sortBy, sortedAvailableVaults, shouldShowYvUsd, yvUsdVault])
+  }, [isAvailablePinned, selectedSortBy, sortedAvailableVaults, shouldShowYvUsd, yvUsdVault])
 
   const pinnedVaults = useMemo(() => pinnedSections.flatMap((section) => section.vaults), [pinnedSections])
 
