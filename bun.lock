@@ -47,6 +47,33 @@
         "vitest": "4.1.11",
       },
     },
+    "apps/wrapped": {
+      "name": "@yearn/wrapped",
+      "version": "0.1.0",
+      "dependencies": {
+        "@tanstack/react-query": "5.103.2",
+        "@wagmi/core": "3.6.7",
+        "@yearn/site-header": "workspace:*",
+        "@yearn/wallet-ui": "workspace:*",
+        "@yearn/wrapped-contract": "workspace:*",
+        "next": "16.4.1",
+        "react": "19.3.0",
+        "react-dom": "19.3.0",
+        "viem": "2.56.9",
+        "wagmi": "3.7.9",
+      },
+      "devDependencies": {
+        "@biomejs/biome": "2.5.14",
+        "@tailwindcss/postcss": "4.3.3",
+        "@types/node": "26.6.3",
+        "@types/react": "19.3.0",
+        "@types/react-dom": "19.3.0",
+        "postcss": "8.5.28",
+        "tailwindcss": "4.3.3",
+        "typescript": "7.0.2",
+        "vitest": "4.1.11",
+      },
+    },
     "apps/ybold": {
       "name": "@yearn/ybold",
       "version": "0.1.0",
@@ -95,6 +122,7 @@
         "@yearn/site-header": "workspace:*",
         "@yearn/vault-widget": "workspace:*",
         "@yearn/wallet-ui": "workspace:*",
+        "@yearn/wrapped-contract": "workspace:*",
         "dayjs": "1.11.23",
         "framer-motion": "12.42.2",
         "next": "16.4.1",
@@ -194,6 +222,13 @@
         "react-dom": "19.3.0",
         "viem": "2.56.9",
         "wagmi": "3.7.9",
+      },
+    },
+    "packages/wrapped-contract": {
+      "name": "@yearn/wrapped-contract",
+      "version": "0.0.0",
+      "dependencies": {
+        "zod": "4.6.5",
       },
     },
   },
@@ -647,6 +682,10 @@
     "@yearn/wallet-ui": ["@yearn/wallet-ui@workspace:packages/wallet-ui"],
 
     "@yearn/web": ["@yearn/web@workspace:apps/yearn"],
+
+    "@yearn/wrapped": ["@yearn/wrapped@workspace:apps/wrapped"],
+
+    "@yearn/wrapped-contract": ["@yearn/wrapped-contract@workspace:packages/wrapped-contract"],
 
     "@yearn/ybold": ["@yearn/ybold@workspace:apps/ybold"],
 

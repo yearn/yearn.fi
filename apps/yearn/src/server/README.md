@@ -14,6 +14,7 @@ There is no standalone Bun API mirror and no catch-all pathname dispatcher. Loca
 
 | Route | Method | Runtime | Purpose |
 |-------|--------|---------|---------|
+| `/api/holdings/wrapped` | `GET` | Next Node | 2026 recap from settled holdings and calendar-year Growth Index |
 | `/api/holdings/history` | `GET` | Next Node | Daily holdings chart, USD or ETH-denominated |
 | `/api/holdings/progress` | `GET` | Next Node | Durable progress state for long holdings requests |
 | `/api/holdings/breakdown` | `GET` | Next Node | Per-vault breakdown for a settled UTC day |
