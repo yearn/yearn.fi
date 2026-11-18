@@ -3,7 +3,7 @@ import * as viem from 'viem'
 import { describe, expect, it, vi } from 'vitest'
 import type { VaultMetadata } from '../types'
 import type { TransactionActivityEvents } from './graphql'
-import { mergeAddressScopedRawPnlEventsWithTransactionActivity } from './pnlEvents'
+import { mergeAddressScopedRawPnlEventsWithTransactionActivity, projectBundleGrowthEvents } from './pnlEvents'
 import { toVaultKey } from './pnlShared'
 import {
   buildExitPriceRequests,
@@ -191,6 +191,119 @@ function materializeVault(args: {
 }
 
 describe('pnl simple protocol return', () => {
+  it('keeps the original basis and growth index when bundle members transfer shares to one another', () => {
+    const identity = 'bundle-growth:test'
+    const members = new Set([USER, OTHER])
+    const deposit = baseEvent({ kind: 'deposit', id: 'deposit', owner: USER, assets: 100n * ONE })
+    const internal = baseEvent({ id: 'internal', sender: USER, receiver: OTHER, blockTimestamp: 200 })
+    const withdrawal = baseEvent({
+      kind: 'withdrawal',
+      id: 'withdrawal',
+      owner: OTHER,
+      blockTimestamp: 300,
+      shares: 50n * ONE,
+      assets: 75n * ONE
+    })
+    const events = projectBundleGrowthEvents([deposit, internal, withdrawal], members, identity)
+    const args = {
+      userAddress: identity,
+      metadata,
+      ppsData: new Map([
+        [
+          VAULT_KEY,
+          new Map([
+            [100, 1],
+            [200, 1.25],
+            [300, 1.5],
+            [400, 1.6]
+          ])
+        ]
+      ]),
+      priceData: new Map([
+        [
+          ASSET_PRICE_KEY,
+          new Map([
+            [100, 1],
+            [300, 1]
+          ])
+        ]
+      ]),
+      timestamps: [100, 200, 300, 400]
+    }
+    const history = buildProtocolReturnHistorySeries({ ...args, events })
+    const withoutTransfer = buildProtocolReturnHistorySeries({
+      ...args,
+      events: projectBundleGrowthEvents([deposit, withdrawal], members, identity)
+    })
+
+    expect(events.map(({ id }) => id)).toEqual(['deposit', 'withdrawal'])
+    expect(history).toEqual(withoutTransfer)
+    expect(history.at(-1)?.growthWeightUsd).toBeCloseTo(55)
+    expect(history.at(-1)?.growthIndex).toBeCloseTo(160)
+  })
+
+  it('keeps unrelated receipts and exits from different bundle wallets in the same transaction', () => {
+    const identity = 'bundle-growth:test'
+    const members = new Set([USER, OTHER])
+    const deposit = baseEvent({ kind: 'deposit', id: 'deposit', owner: USER, assets: 100n * ONE })
+    const transfer = baseEvent({
+      id: 'receipt',
+      transactionHash: '0xshared',
+      sender: ASSET,
+      receiver: OTHER,
+      blockTimestamp: 200,
+      logIndex: 1,
+      shares: 50n * ONE
+    })
+    const withdrawal = baseEvent({
+      kind: 'withdrawal',
+      id: 'withdrawal',
+      transactionHash: '0xshared',
+      owner: USER,
+      blockTimestamp: 200,
+      logIndex: 2,
+      shares: 50n * ONE,
+      assets: 75n * ONE
+    })
+    const args = {
+      userAddress: identity,
+      metadata,
+      ppsData: new Map([
+        [
+          VAULT_KEY,
+          new Map([
+            [100, 1],
+            [200, 1.5],
+            [300, 2]
+          ])
+        ]
+      ]),
+      priceData: new Map([
+        [
+          ASSET_PRICE_KEY,
+          new Map([
+            [100, 1],
+            [200, 1]
+          ])
+        ]
+      ]),
+      timestamps: [100, 200, 300]
+    }
+    const history = buildProtocolReturnHistorySeries({
+      ...args,
+      events: projectBundleGrowthEvents([deposit, transfer, withdrawal], members, identity)
+    })
+    const separateTransactions = buildProtocolReturnHistorySeries({
+      ...args,
+      events: projectBundleGrowthEvents(
+        [deposit, transfer, { ...withdrawal, transactionHash: '0xseparate' }],
+        members,
+        identity
+      )
+    })
+    expect(history).toEqual(separateTransactions)
+  })
+
   it.each([
     {
       wallet: '0x0893 crvUSD',

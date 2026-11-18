@@ -1,3 +1,4 @@
+import type { Address } from 'viem'
 import { z } from 'zod'
 
 const portfolioHistorySimpleDataPointSchema = z.object({
@@ -130,6 +131,10 @@ export const portfolioResponseSchema = z.object({
   })
 })
 
+export const portfolioBundleGrowthSchema = portfolioResponseSchema.pick({ protocolReturn: true, growth: true }).extend({
+  addresses: z.array(z.string()).min(1)
+})
+
 export const portfolioHistoryProgressResponseSchema = z.object({
   id: z.string(),
   route: z.string(),
@@ -164,7 +169,8 @@ export const portfolioBreakdownResponseSchema = z.object({
     totalUsdValue: z.number(),
     missingMetadata: z.number(),
     missingPps: z.number(),
-    missingPrice: z.number()
+    missingPrice: z.number(),
+    hasIncompleteShares: z.literal(true).optional()
   }),
   vaults: z.array(portfolioBreakdownVaultSchema),
   issues: z.object({
@@ -231,7 +237,7 @@ export type TPortfolioBreakdownResponse = z.infer<typeof portfolioBreakdownRespo
 export type TPortfolioBreakdownVault = z.infer<typeof portfolioBreakdownVaultSchema>
 export type TPortfolioActivityResponse = z.infer<typeof portfolioActivityResponseSchema>
 export type TPortfolioActivityFacetsResponse = z.infer<typeof portfolioActivityFacetsResponseSchema>
-export type TPortfolioActivityEntry = z.infer<typeof portfolioActivityEntrySchema>
+export type TPortfolioActivityEntry = z.infer<typeof portfolioActivityEntrySchema> & { wallet?: Address }
 export type TPortfolioActivityTypeFilter = TPortfolioActivityEntry['action'] | 'all'
 export type TPortfolioHistoryDenomination = z.infer<typeof portfolioHistorySimpleResponseSchema>['denomination']
 export type TPortfolioHistoryTimeframe = z.infer<typeof portfolioHistorySimpleResponseSchema>['timeframe']

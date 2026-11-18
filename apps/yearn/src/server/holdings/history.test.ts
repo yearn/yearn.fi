@@ -103,4 +103,28 @@ describe('holdings history route', () => {
       timeframe: 'all'
     })
   })
+
+  it('returns nullable valuations with explicit day coverage, including confirmed zero', async () => {
+    getHistoricalHoldingsChartMock.mockResolvedValue({
+      address: TEST_WALLET_ADDRESS,
+      hasActivity: true,
+      dataPoints: [
+        { date: '2026-04-19', value: 0, coverage: 'complete' },
+        { date: '2026-04-20', value: 8, coverage: 'partial' },
+        { date: '2026-04-21', value: 0, coverage: 'unavailable' }
+      ]
+    })
+
+    const { GET: handler } = await import('./history')
+    const response = await handler(createRequest({ address: TEST_WALLET_ADDRESS, coverage: '1' }))
+
+    expect(response.status).toBe(200)
+    await expect(response.json()).resolves.toMatchObject({
+      dataPoints: [
+        { date: '2026-04-19', value: 0, coverage: 'complete' },
+        { date: '2026-04-20', value: 8, coverage: 'partial' },
+        { date: '2026-04-21', value: null, coverage: 'unavailable' }
+      ]
+    })
+  })
 })

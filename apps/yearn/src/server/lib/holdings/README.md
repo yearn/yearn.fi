@@ -128,6 +128,12 @@ debug=true                                 optional
 
 Returns `404` when the wallet has no indexed holdings activity.
 
+For the saved-wallet viewer, `coverage=1` on an unfiltered request adds daily coverage. `complete` includes confirmed zero, `partial` is the value of priced positions, and `unavailable` has a `null` value. Successfully indexed wallets with no activity return a complete zero series in this mode.
+
+### `POST /api/holdings/bundle-growth`
+
+Accepts a JSON object with `addresses` and an optional `timeframe` (`1y` or `all`). The response includes the normalized member addresses and the same protocol-return and per-vault growth data as the single-wallet portfolio. Transfers between included wallets preserve the bundle's existing exposure and lot basis.
+
 ### `GET /api/holdings/protocol-return/history`
 
 Standalone settled protocol-return chart.

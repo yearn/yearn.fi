@@ -1,6 +1,6 @@
 'use client'
 
-import { DropdownPanel } from '@yearn/site-header/DropdownPanel'
+import { DropdownPanel, getDropdownStyles } from '@yearn/site-header/DropdownPanel'
 import { IconChevron } from '@yearn/site-header/icons/IconChevron'
 import { IconDiscord } from '@yearn/site-header/icons/IconDiscord'
 import { IconLinkOut } from '@yearn/site-header/icons/IconLinkOut'
@@ -40,6 +40,7 @@ function isExternalHref(href: string): boolean {
 }
 
 function NavTile({ item, isDark }: { item: TNavTile; isDark: boolean }): ReactElement {
+  const styles = getDropdownStyles(isDark)
   const hasIcon = Boolean(item.icon)
   const iconWrapperClass =
     item.iconWrapperClass ?? cl(isDark ? 'bg-[#0a0a0a] text-neutral-200' : 'bg-white text-neutral-700')
@@ -51,21 +52,13 @@ function NavTile({ item, isDark }: { item: TNavTile; isDark: boolean }): ReactEl
       target={isExternalHref(item.href) ? '_blank' : undefined}
       rel={isExternalHref(item.href) ? 'noopener noreferrer' : undefined}
     >
-      <div
-        className={cl(
-          'group/nav-item flex items-center rounded-lg p-2 transition-colors',
-          hasIcon ? 'gap-3' : 'gap-0',
-          isDark ? 'hover:bg-white/10' : 'hover:bg-neutral-100'
-        )}
-      >
+      <div className={cl('group/nav-item', styles.item, hasIcon ? 'gap-3' : 'gap-0')}>
         {hasIcon && (
           <div className={cl('flex size-8 items-center justify-center rounded-lg', iconWrapperClass)}>{item.icon}</div>
         )}
         <div className={cl('flex-1', hasIcon ? '' : 'pl-1')}>
           <div className={'flex w-full items-center justify-between gap-2'}>
-            <span className={cl('truncate text-sm font-semibold', isDark ? 'text-white' : 'text-neutral-900')}>
-              {item.name}
-            </span>
+            <span className={cl('truncate', styles.itemLabel)}>{item.name}</span>
             {isExternalHref(item.href) && (
               <IconLinkOut
                 className={cl(
@@ -95,6 +88,7 @@ export function HeaderNavMenu({
   const [pinnedMenu, setPinnedMenu] = useState<TMenuKey | null>(null)
   const closeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const isDarkMenu = isHomePage || isDarkTheme
+  const dropdownHeadingClass = getDropdownStyles(isDarkMenu).heading
   const neutralImageClass = cl('size-5 grayscale', isDarkMenu ? 'invert brightness-125' : 'opacity-90')
   const neutralIconForeground = isDarkMenu ? 'text-white' : 'text-neutral-700'
   const products: TNavTile[] = [
@@ -371,14 +365,7 @@ export function HeaderNavMenu({
         >
           <div className={'grid grid-cols-1 gap-3 md:grid-cols-2'}>
             <div className={'flex flex-2 flex-col gap-3'}>
-              <p
-                className={cl(
-                  'text-xs pl-4 font-semibold uppercase tracking-[0.2em]',
-                  isDarkMenu ? 'text-neutral-400' : 'text-neutral-500'
-                )}
-              >
-                {'Products'}
-              </p>
+              <p className={dropdownHeadingClass}>{'Products'}</p>
               <div className={'flex flex-col gap-0'}>
                 {products.map((item) => (
                   <div key={item.href} onClick={closeMenu}>
@@ -389,14 +376,7 @@ export function HeaderNavMenu({
             </div>
 
             <div className={'flex flex-col gap-3 flex-1'}>
-              <p
-                className={cl(
-                  'text-xs pl-4 font-semibold uppercase tracking-[0.2em]',
-                  isDarkMenu ? 'text-neutral-400' : 'text-neutral-500'
-                )}
-              >
-                {'Tools'}
-              </p>
+              <p className={dropdownHeadingClass}>{'Tools'}</p>
               <div className={'flex flex-col gap-0'}>
                 {toolItems.map((item) => (
                   <div key={item.href} onClick={closeMenu}>
@@ -434,14 +414,7 @@ export function HeaderNavMenu({
         >
           <div className={'grid grid-cols-1 gap-3 md:grid-cols-2'}>
             <div className={'flex flex-col gap-3'}>
-              <p
-                className={cl(
-                  'text-xs pl-4 font-semibold uppercase tracking-[0.2em]',
-                  isDarkMenu ? 'text-neutral-400' : 'text-neutral-500'
-                )}
-              >
-                {'Information'}
-              </p>
+              <p className={dropdownHeadingClass}>{'Information'}</p>
               <div className={'flex flex-col gap-0'}>
                 {infoItems.map((item) => (
                   <div key={item.href} onClick={closeMenu}>
@@ -452,14 +425,7 @@ export function HeaderNavMenu({
             </div>
 
             <div className={'flex flex-col gap-3'}>
-              <p
-                className={cl(
-                  'text-xs pl-4 font-semibold uppercase tracking-[0.2em]',
-                  isDarkMenu ? 'text-neutral-400' : 'text-neutral-500'
-                )}
-              >
-                {'Community'}
-              </p>
+              <p className={dropdownHeadingClass}>{'Community'}</p>
               <div className={'flex flex-col gap-1'}>
                 {communityItems.map((item) => (
                   <div key={item.href} onClick={closeMenu}>

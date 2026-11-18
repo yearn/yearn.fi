@@ -2,6 +2,10 @@
 
 import { setThemePreference, useThemePreference } from '@hooks/useThemePreference'
 import { AccountDropdown } from '@shared/components/AccountDropdown'
+import {
+  compactActionButtonClassName,
+  compactActionButtonContentClassName
+} from '@shared/components/CompactActionButton'
 import { HeaderNavMenu } from '@shared/components/HeaderNavMenu'
 import { MobileNavMenu } from '@shared/components/MobileNavMenu'
 import { HeaderSiteStatus } from '@shared/components/SiteStatus'
@@ -85,9 +89,7 @@ function WalletSelector({ onAccountClick, isAccountOpen, notificationStatus }: T
       title={walletIdentity}
       onMouseDown={(e) => e.stopPropagation()}
       onClick={handleClick}
-      className={
-        'relative flex h-11 w-11 shrink-0 cursor-pointer items-center rounded-lg focus-visible:outline-2 focus-visible:outline-primary md:w-36'
-      }
+      className={cl(compactActionButtonClassName, 'w-11 md:w-36')}
     >
       {walletIdentity && notificationStatus && (
         <span className={cl('absolute -right-0.5 -top-0.5 size-2 rounded-full', notificationDotColor)} />
@@ -95,7 +97,7 @@ function WalletSelector({ onAccountClick, isAccountOpen, notificationStatus }: T
       <span
         suppressHydrationWarning
         className={cl(
-          'inline-flex h-8 w-full items-center justify-center gap-2 rounded-lg px-3 text-sm font-normal transition-colors duration-150 motion-reduce:transition-none',
+          compactActionButtonContentClassName,
           walletIdentity
             ? 'bg-surface-secondary text-text-secondary hover:text-text-primary'
             : 'text-text-secondary md:bg-text-primary md:text-surface md:hover:bg-text-primary/90'

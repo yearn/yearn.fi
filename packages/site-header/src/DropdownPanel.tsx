@@ -2,6 +2,21 @@ import { cl } from '@yearn/site-header/utils'
 import type { ReactElement, ReactNode, RefObject } from 'react'
 import { useEffect, useRef } from 'react'
 
+export function getDropdownStyles(isDark: boolean) {
+  return {
+    panel: cl('rounded-lg border p-4', isDark ? 'border-white/10 bg-[#0a0a0a]' : 'border-neutral-200 bg-white'),
+    item: cl(
+      'flex items-center rounded-lg p-2 transition-colors',
+      isDark ? 'hover:bg-white/10' : 'hover:bg-neutral-100'
+    ),
+    itemLabel: cl('text-sm font-semibold', isDark ? 'text-white' : 'text-neutral-900'),
+    heading: cl(
+      'pl-4 text-xs font-semibold uppercase tracking-[0.2em]',
+      isDark ? 'text-neutral-400' : 'text-neutral-500'
+    )
+  }
+}
+
 type TDropdownPanelProps = {
   isOpen: boolean
   onClose: () => void
@@ -61,11 +76,11 @@ export function DropdownPanel({
     <div
       ref={dropdownRef}
       className={cl(
-        inline ? 'mt-3 rounded-lg border p-4' : 'absolute top-full mt-2 rounded-lg border p-4 shadow-xl z-100',
+        getDropdownStyles(isDarkTheme).panel,
+        inline ? 'mt-3' : 'absolute top-full z-100 mt-2 shadow-xl',
         !inline &&
           'max-md:fixed max-md:inset-x-0 max-md:top-(--header-height) max-md:mt-0 max-md:rounded-none max-md:border-x-0 max-md:border-t',
         !inline && (anchor === 'left' ? 'left-0' : 'right-0'),
-        isDarkTheme ? 'border-white/10 bg-[#0a0a0a]' : 'border-neutral-200 bg-white',
         className
       )}
     >

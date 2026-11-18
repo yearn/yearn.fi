@@ -12,8 +12,14 @@ import { mergeChainMerkleData } from '@pages/portfolio/claimRewards.helpers'
 import { EmptySectionCard } from '@pages/portfolio/components/EmptySectionCard'
 import { GovernancePositionRow } from '@pages/portfolio/components/GovernancePositionRow'
 import { GovernanceRewardRow } from '@pages/portfolio/components/GovernanceRewardRow'
+import { PortfolioDropdown } from '@pages/portfolio/components/PortfolioDropdown'
+import { PortfolioHeaderSection } from '@pages/portfolio/components/PortfolioHeaderSection'
 import { PortfolioHistoryChart, PortfolioHistoryChartControls } from '@pages/portfolio/components/PortfolioHistoryChart'
+import { PortfolioOverview } from '@pages/portfolio/components/PortfolioOverview'
+import { PortfolioWalletDialog } from '@pages/portfolio/components/PortfolioWalletEditor'
+import { PortfolioWalletLabel, usePortfolioWalletName } from '@pages/portfolio/components/PortfolioWalletLabel'
 import { ProtocolPositionRow } from '@pages/portfolio/components/ProtocolPositionRow'
+import { SavedWalletPortfolio } from '@pages/portfolio/components/SavedWalletPortfolio'
 import { YcrvRewardRow } from '@pages/portfolio/components/YcrvRewardRow'
 import { GOVERNANCE_CHAIN_ID } from '@pages/portfolio/governance/constants'
 import type { TGovernanceReward } from '@pages/portfolio/governance/types'
@@ -29,6 +35,13 @@ import {
   usePortfolioModel
 } from '@pages/portfolio/hooks/usePortfolioModel'
 import { useVaultWithStakingRewards } from '@pages/portfolio/hooks/useVaultWithStakingRewards'
+import {
+  findBundleBySnapshot,
+  normalizeSavedWallet,
+  parseBundleShare,
+  parsePortfolioBundles,
+  type TPortfolioBundle
+} from '@pages/portfolio/utils/savedWalletPortfolio'
 import { YCRV_CHAIN_ID } from '@pages/portfolio/ycrv/constants'
 import type { TYcrvReward } from '@pages/portfolio/ycrv/types'
 import { useYcrvPosition } from '@pages/portfolio/ycrv/useYcrvPosition'
@@ -39,6 +52,7 @@ import { VaultsListRow } from '@pages/vaults/components/list/VaultsListRow'
 import { VirtualizedVaultsList } from '@pages/vaults/components/list/VirtualizedVaultsList'
 import { SuggestedVaultCard } from '@pages/vaults/components/SuggestedVaultCard'
 import { MerkleRewardRow } from '@pages/vaults/components/widget/rewards/MerkleRewardRow'
+import { RewardRow } from '@pages/vaults/components/widget/rewards/RewardRow'
 import { StakingRewardRow } from '@pages/vaults/components/widget/rewards/StakingRewardRow'
 import type { TGroupedMerkleReward, TStakingReward } from '@pages/vaults/components/widget/rewards/types'
 import {
@@ -50,11 +64,13 @@ import {
   getVaultToken,
   type TKongVault
 } from '@pages/vaults/domain/kongVaultSelectors'
-import { useMerkleRewards } from '@pages/vaults/hooks/rewards/useMerkleRewards'
+import { supportsYearnMerkleRewards, useMerkleRewards } from '@pages/vaults/hooks/rewards/useMerkleRewards'
 import { useStakingRewards } from '@pages/vaults/hooks/rewards/useStakingRewards'
 import { resolveNextSingleChainSelection } from '@pages/vaults/utils/chainSelection'
+import { useLocalStorageValue } from '@react-hookz/web'
 import { Breadcrumbs } from '@shared/components/Breadcrumbs'
-import { METRIC_VALUE_CLASS, MetricHeader, type TMetricBlock } from '@shared/components/MetricsCard'
+import { CompactActionButton } from '@shared/components/CompactActionButton'
+import { EmptyState } from '@shared/components/EmptyState'
 import { SearchBar } from '@shared/components/SearchBar'
 import { SwitchChainPrompt } from '@shared/components/SwitchChainPrompt'
 import { TokenLogo } from '@shared/components/TokenLogo'
@@ -84,16 +100,18 @@ import { IconUnstake } from '@shared/icons/IconUnstake'
 import { IconWithdraw } from '@shared/icons/IconWithdraw'
 import { LogoYearn } from '@shared/icons/LogoYearn'
 import type { TSortDirection } from '@shared/types'
-import { cl, formatPercent, isZeroAddress, SUPPORTED_NETWORKS, toAddress, truncateHex } from '@shared/utils'
+import { cl, isZeroAddress, SUPPORTED_NETWORKS, toAddress, toNormalizedValue, truncateHex } from '@shared/utils'
 import { formatUSD } from '@shared/utils/format'
 import { copyToClipboard } from '@shared/utils/helpers'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import { getNetwork } from '@shared/utils/wagmi'
 import { TransactionOverlay, type TransactionStep } from '@yearn/vault-widget/advanced'
+import { useWalletDrawer } from '@yearn/wallet-ui'
 import Link from 'next/link'
 import { usePathname, useRouter, useSearchParams } from 'next/navigation'
 import type { CSSProperties, ReactElement } from 'react'
-import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import { Fragment, useCallback, useEffect, useId, useMemo, useRef, useState } from 'react'
+import { type Address, keccak256 } from 'viem'
 import { env } from '@/env'
 import Image from '/src/components/Image'
 import {
@@ -126,17 +144,9 @@ import type {
   TPortfolioHistoryTimeframe
 } from './types/api'
 
-const currencyFormatter = new Intl.NumberFormat('en-US', {
-  style: 'currency',
-  currency: 'USD',
-  minimumFractionDigits: 2,
-  maximumFractionDigits: 2
-})
-
 const headingTooltipClassName =
   'rounded-lg border border-border bg-surface-secondary px-2 py-1 text-xs text-text-primary'
-const metricTooltipContentClassName = 'flex max-w-[280px] flex-col gap-1 leading-relaxed'
-const metricCardClassName = 'bg-surface px-5 py-3 md:px-5 md:py-2.5'
+const WALLET_PORTFOLIO_HREF = '/portfolio?view=saved-wallets'
 const PORTFOLIO_TABS = [
   { key: 'positions', label: 'Account Overview' },
   { key: 'activity', label: 'Activity' },
@@ -144,15 +154,6 @@ const PORTFOLIO_TABS = [
 ] as const
 
 type TPortfolioTabKey = (typeof PORTFOLIO_TABS)[number]['key']
-
-type TPortfolioHeaderProps = Pick<
-  TPortfolioModel,
-  'blendedMetrics' | 'hasKatanaHoldings' | 'isHoldingsLoading' | 'isSearchingBalances' | 'totalPortfolioValue'
-> & {
-  isProtocolReturnLoading: boolean
-  annualizedProtocolReturnPct: number | null | undefined
-  annualizedIsPartial: boolean
-}
 
 type TPortfolioHoldingsProps = Pick<
   TPortfolioModel,
@@ -173,9 +174,11 @@ type TPortfolioHoldingsProps = Pick<
 
 type TPortfolioSuggestedProps = Pick<TPortfolioModel, 'hasHoldings' | 'isActive' | 'suggestedRows'>
 
-type TPortfolioActivityProps = Pick<TPortfolioModel, 'isActive' | 'openLoginModal'>
+type TPortfolioActivityProps = Pick<TPortfolioModel, 'isActive' | 'openLoginModal'> & {
+  savedWallets?: readonly Address[]
+}
 
-type TPortfolioClaimRewardsProps = Pick<TPortfolioModel, 'isActive' | 'openLoginModal'>
+type TPortfolioClaimRewardsProps = Pick<TPortfolioModel, 'isActive' | 'openLoginModal'> & { wallet?: Address }
 
 const ACTIVITY_ACTION_LABELS: Record<TPortfolioActivityEntry['action'], string> = {
   deposit: 'Deposit',
@@ -444,6 +447,7 @@ function getActivityEntryTitle(entry: TPortfolioActivityEntry): string {
 
 function getActivityEntryKey(entry: TPortfolioActivityEntry, index: number): string {
   return [
+    entry.wallet,
     entry.chainId,
     entry.txHash,
     entry.vaultAddress,
@@ -1316,6 +1320,7 @@ function IndexedActivityRow({
                 </div>
               </div>
               <div className="mt-1 hidden w-full flex-wrap items-center justify-start gap-2 text-left text-xs text-text-primary/70 md:flex">
+                {entry.wallet ? <PortfolioWalletLabel wallet={entry.wallet} className="wrap-anywhere" /> : null}
                 <VaultsListChip
                   label={displayName}
                   isActive={isVaultFilterActive}
@@ -1352,6 +1357,7 @@ function IndexedActivityRow({
         </div>
 
         <div className="z-10 flex w-full flex-wrap items-center justify-start gap-1.5 pl-11 text-left text-xs text-text-primary/70 md:hidden">
+          {entry.wallet ? <PortfolioWalletLabel wallet={entry.wallet} className="wrap-anywhere" /> : null}
           <VaultsListChip
             label={chainName}
             isActive={isChainFilterActive}
@@ -1555,151 +1561,6 @@ function PortfolioPageLayout({ children }: { children: ReactElement }): ReactEle
   )
 }
 
-function PortfolioHeaderSection({
-  blendedMetrics,
-  hasKatanaHoldings,
-  isHoldingsLoading,
-  isSearchingBalances,
-  isProtocolReturnLoading,
-  annualizedProtocolReturnPct,
-  annualizedIsPartial,
-  totalPortfolioValue
-}: TPortfolioHeaderProps): ReactElement {
-  const annualizedProtocolReturnTooltip = (
-    <div className={metricTooltipContentClassName}>
-      <p>{'All-time annualized protocol return while funds were actually held in your wallet.'}</p>
-
-      <p>{'Time-weighted by baseline vault exposure. Price moves are excluded.'}</p>
-      {annualizedIsPartial ? (
-        <p>{'Some vaults could not be valued. This return covers only the included vaults.'}</p>
-      ) : null}
-    </div>
-  )
-
-  const katanaTooltipContent = (
-    <div className={headingTooltipClassName}>
-      <p>{'*One or more vaults are receiving extra incentives.'}</p>
-      <p>{'*There may be conditions to earn this rate.'}</p>
-    </div>
-  )
-
-  const metricSpinner = (
-    <span className="inline-flex h-6 w-20 items-center justify-center">
-      <IconSpinner className="size-4 text-text-secondary" />
-    </span>
-  )
-
-  function renderApyValue(value: string, shouldShowAsterisk: boolean): ReactElement {
-    if (!shouldShowAsterisk) {
-      return <span>{value}</span>
-    }
-    return (
-      <span className="relative inline-flex items-center">
-        {value}
-        <Tooltip
-          className="ml-1 cursor-default !h-auto !w-auto !gap-0 !justify-start"
-          openDelayMs={150}
-          side="top"
-          tooltip={katanaTooltipContent}
-        >
-          <span className="text-md text-text-secondary transition-colors hover:text-accent-500">{'*'}</span>
-        </Tooltip>
-      </span>
-    )
-  }
-
-  function renderApyMetric(apyValue: number | null): ReactElement {
-    if (isHoldingsLoading) return metricSpinner
-    if (apyValue === null) return <span>{'—'}</span>
-    return renderApyValue(formatPercent(apyValue, 2, 2), hasKatanaHoldings)
-  }
-
-  function renderCurrencyMetric(value: number | null): ReactElement {
-    if (isHoldingsLoading) return metricSpinner
-    if (value === null) return <span>{'—'}</span>
-    return <span>{currencyFormatter.format(value)}</span>
-  }
-
-  function renderSignedPercentMetric(value: number | null | undefined): ReactElement {
-    if (isProtocolReturnLoading) return metricSpinner
-    if (value === null || value === undefined) return <span>{'—'}</span>
-
-    const absoluteValue = formatPercent(Math.abs(value), 2, 2, 10_000)
-    const signedValue = value > 0 ? `+${absoluteValue}` : value < 0 ? `-${absoluteValue}` : absoluteValue
-
-    return <span className={'text-text-primary'}>{signedValue}</span>
-  }
-
-  const metrics: TMetricBlock[] = [
-    {
-      key: 'total-balance',
-      header: <MetricHeader label="Total Vault Balance" tooltip="Total USD value of all your vault deposits." />,
-      value: (
-        <span className={METRIC_VALUE_CLASS}>
-          {isSearchingBalances || isHoldingsLoading ? metricSpinner : currencyFormatter.format(totalPortfolioValue)}
-        </span>
-      )
-    },
-    {
-      key: 'est-annual',
-      header: (
-        <MetricHeader
-          label="Est. Annual Return"
-          tooltip="Projects potential returns based on your blended current APY."
-        />
-      ),
-      value: <span className={METRIC_VALUE_CLASS}>{renderCurrencyMetric(blendedMetrics.estimatedAnnualReturn)}</span>
-    },
-    {
-      key: 'current-apy',
-      header: <MetricHeader label="Current APY" tooltip="Weighted by your total deposits across all Yearn vaults." />,
-      value: <span className={METRIC_VALUE_CLASS}>{renderApyMetric(blendedMetrics.blendedCurrentAPY)}</span>
-    },
-    {
-      key: '30-day-apy',
-      header: <MetricHeader label="30-day APY" tooltip="Blended 30-day performance using your current positions." />,
-      value: <span className={METRIC_VALUE_CLASS}>{renderApyMetric(blendedMetrics.blendedHistoricalAPY)}</span>
-    },
-    {
-      key: 'annualized-protocol-return',
-      header: (
-        <MetricHeader
-          label="All-Time Annualized Return"
-          mobileLabel="All-Time Ann."
-          tooltip={annualizedProtocolReturnTooltip}
-        />
-      ),
-      value: <span className={METRIC_VALUE_CLASS}>{renderSignedPercentMetric(annualizedProtocolReturnPct)}</span>
-    }
-  ]
-  const mobileMetrics = [metrics[0], metrics[2], metrics[1], metrics[4]]
-
-  return (
-    <section className="h-full bg-surface">
-      <div className="grid grid-cols-2 gap-px bg-border md:hidden">
-        {mobileMetrics.map((item) => (
-          <div key={item.key} className={metricCardClassName}>
-            <div className="flex items-center justify-between">{item.header}</div>
-            <div className="pt-0.5">{item.value}</div>
-            {item.secondaryLabel ? <div>{item.secondaryLabel}</div> : null}
-            {item.footnote ? <div className="pt-1.5">{item.footnote}</div> : null}
-          </div>
-        ))}
-      </div>
-      <div className="hidden h-full grid-rows-5 gap-px bg-border md:grid">
-        {metrics.map((item) => (
-          <div key={item.key} className={metricCardClassName}>
-            <div className="flex items-center justify-between">{item.header}</div>
-            <div className="pt-0.5">{item.value}</div>
-            {item.secondaryLabel ? <div>{item.secondaryLabel}</div> : null}
-            {item.footnote ? <div className="pt-1.5">{item.footnote}</div> : null}
-          </div>
-        ))}
-      </div>
-    </section>
-  )
-}
-
 function PortfolioTabSelector({
   activeTab,
   hasClaimableRewards,
@@ -1744,16 +1605,21 @@ function PortfolioTabSelector({
   )
 }
 
-function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivityProps): ReactElement {
+function PortfolioActivitySection({ isActive, openLoginModal, savedWallets }: TPortfolioActivityProps): ReactElement {
   const trackEvent = usePlausible()
   const { allVaults } = useYearn()
   const { getToken } = useTokenList()
-  const { cachedEntries, isLoading: notificationsLoading, error: notificationsError } = useNotifications()
+  const { cachedEntries, isLoading, error } = useNotifications()
+  const notificationsLoading = !savedWallets && isLoading
+  const notificationsError = !savedWallets ? error : null
   const localActivityNotifications = useMemo(
-    () => cachedEntries.filter((entry) => Boolean(getNotificationActivityAction(entry))),
-    [cachedEntries]
+    () => (savedWallets ? [] : cachedEntries.filter((entry) => Boolean(getNotificationActivityAction(entry)))),
+    [cachedEntries, savedWallets]
   )
-  const localActivityReceiptStatuses = useLocalActivityReceiptStatuses(localActivityNotifications, isActive)
+  const localActivityReceiptStatuses = useLocalActivityReceiptStatuses(
+    localActivityNotifications,
+    isActive && !savedWallets
+  )
   const receiptValidatedCachedEntries = useMemo(
     () => getReceiptValidatedLocalActivityNotifications(localActivityNotifications, localActivityReceiptStatuses),
     [localActivityNotifications, localActivityReceiptStatuses]
@@ -1787,12 +1653,17 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
     hasMore: indexedHasMore,
     availableChainIds: activityAvailableChainIds,
     loadMore: loadMoreIndexedActivity
-  } = usePortfolioActivity(10, isActive, {
-    type: apiActivityType,
-    chainId: activityChainId,
-    startTimestamp: activityStartTimestamp,
-    endTimestamp: activityEndTimestamp
-  })
+  } = usePortfolioActivity(
+    10,
+    isActive || Boolean(savedWallets?.length),
+    {
+      type: apiActivityType,
+      chainId: activityChainId,
+      startTimestamp: activityStartTimestamp,
+      endTimestamp: activityEndTimestamp
+    },
+    savedWallets
+  )
   const selectedActivityChains = useMemo(() => (activityChainId === null ? null : [activityChainId]), [activityChainId])
   const activityChainOptions = useChainOptions(selectedActivityChains)
   useEffect(() => {
@@ -2324,7 +2195,7 @@ function PortfolioActivitySection({ isActive, openLoginModal }: TPortfolioActivi
 
   return (
     <section className={'flex flex-col'}>
-      {!isActive ? (
+      {!isActive && !savedWallets?.length ? (
         <EmptySectionCard
           title="Connect a wallet to view activity"
           description="Review your recent Yearn transactions."
@@ -2464,16 +2335,24 @@ function ChainMerkleRewardsFetcher({
   return null
 }
 
-function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioClaimRewardsProps): ReactElement {
-  const { address: userAddress } = useWeb3()
+function PortfolioClaimRewardsSection({ isActive, openLoginModal, wallet }: TPortfolioClaimRewardsProps): ReactElement {
+  const { address: connectedAddress } = useWeb3()
+  const headingId = useId()
+  const userAddress = wallet ? toAddress(wallet) : connectedAddress
+  const canReadRewards = Boolean(userAddress && (wallet || isActive))
+  const canClaim = Boolean(isActive && connectedAddress && userAddress === toAddress(connectedAddress))
   const { vaults } = useYearn()
   const {
     governanceReward,
     isLoading: isGovernanceLoading,
     refetch: refetchGovernance
-  } = useGovernancePositions(isActive)
+  } = useGovernancePositions(canReadRewards, userAddress)
   const governanceRewards = useMemo(() => (governanceReward ? [governanceReward] : []), [governanceReward])
-  const { reward: ycrvReward, isLoading: isYcrvLoading, refetch: refetchYcrv } = useYcrvPosition(isActive)
+  const {
+    reward: ycrvReward,
+    isLoading: isYcrvLoading,
+    refetch: refetchYcrv
+  } = useYcrvPosition(canReadRewards, userAddress)
   const ycrvRewards = useMemo(() => (ycrvReward ? [ycrvReward] : []), [ycrvReward])
   const trackEvent = usePlausible()
   const stakingVaults = useMemo(
@@ -2574,7 +2453,7 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
 
       const hasStakingVaultsOnChain = stakingVaults.some((v) => getVaultChainID(v) === chainId)
       const stakingIsLoading = hasStakingVaultsOnChain ? (staking?.isLoading ?? false) : false
-      const merkleIsLoading = merkle?.isLoading ?? false
+      const merkleIsLoading = merkle?.isLoading ?? (canReadRewards && supportsYearnMerkleRewards(chainId))
       const governanceIsLoading = chainId === GOVERNANCE_CHAIN_ID && isGovernanceLoading
       const ycrvIsLoading = chainId === YCRV_CHAIN_ID && isYcrvLoading
 
@@ -2594,6 +2473,7 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
       }
     })
   }, [
+    canReadRewards,
     chainIds,
     chainMerkleData,
     chainStakingData,
@@ -2627,13 +2507,17 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
     return selectedChainData && selectedChainData.rewardCount > 0 ? [selectedChainData] : []
   }, [selectedChainId, chainRewardsData, selectedChainData])
 
-  const handleStartClaim = useCallback((step: TransactionStep, merkleRewardKeys: string[] = [], chainId?: number) => {
-    setActiveStep(step)
-    setActiveMerkleClaim(
-      chainId !== undefined && merkleRewardKeys.length > 0 ? { chainId, keys: merkleRewardKeys } : undefined
-    )
-    setIsOverlayOpen(true)
-  }, [])
+  const handleStartClaim = useCallback(
+    (step: TransactionStep, merkleRewardKeys: string[] = [], chainId?: number) => {
+      if (!canClaim) return
+      setActiveStep(step)
+      setActiveMerkleClaim(
+        chainId !== undefined && merkleRewardKeys.length > 0 ? { chainId, keys: merkleRewardKeys } : undefined
+      )
+      setIsOverlayOpen(true)
+    },
+    [canClaim]
+  )
 
   const handleBeforeSuccess = useCallback(async () => {
     if (activeMerkleClaim) {
@@ -2679,10 +2563,60 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
     setActiveMerkleClaim(undefined)
     setActiveStep(undefined)
     setIsOverlayOpen(false)
-  }, [userAddress])
+  }, [canClaim, userAddress])
 
   function getChainLogoUrl(chainId: number): string {
     return `${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/chains/${chainId}/logo.svg`
+  }
+
+  function renderReadOnlyRewards(chain: TChainRewardData): ReactElement[] {
+    const walletRewards: Array<{
+      key: string
+      tokenAddress: Address
+      symbol: string
+      amount: number
+      usdValue: number
+      usdValueUnavailable?: boolean
+    }> = [
+      ...chain.governanceRewards.map((reward) => ({
+        ...reward,
+        key: `governance-${reward.tokenAddress}`,
+        amount: reward.amountNormalized
+      })),
+      ...chain.ycrvRewards.map((reward) => ({
+        ...reward,
+        key: `ycrv-${reward.tokenAddress}`,
+        amount: reward.amountNormalized
+      })),
+      ...chain.stakingRewards.flatMap(({ vault, rewards }) =>
+        rewards.map((reward) => ({
+          ...reward,
+          key: `staking-${getVaultAddress(vault)}-${reward.tokenAddress}`,
+          amount: toNormalizedValue(reward.amount, reward.decimals)
+        }))
+      ),
+      ...chain.merkleRewards.map((reward) => ({
+        key: `merkle-${reward.token.address}`,
+        tokenAddress: reward.token.address,
+        symbol: reward.token.symbol,
+        amount: toNormalizedValue(reward.totalUnclaimed, reward.token.decimals),
+        usdValue: reward.totalUsdValue
+      }))
+    ]
+    return walletRewards.map((reward, index) => (
+      <RewardRow
+        key={reward.key}
+        chainId={chain.chainId}
+        currentChainId={currentChainId}
+        tokenAddress={reward.tokenAddress}
+        symbol={reward.symbol}
+        amount={reward.amount.toString()}
+        usdValue={reward.usdValue}
+        usdValueUnavailable={reward.usdValueUnavailable}
+        isFirst={index === 0}
+        onConnect={openLoginModal}
+      />
+    ))
   }
 
   function renderRewardsContent(): ReactElement {
@@ -2698,7 +2632,7 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
       return <p className="py-8 text-center text-sm text-text-secondary">No rewards found!</p>
     }
     const isAllChainsView = selectedChainId === null
-    const showChainHeader = isAllChainsView && displayedRewards.length > 1
+    const showChainHeader = isAllChainsView && (Boolean(wallet) || displayedRewards.length > 1)
     const needsSwitchChain = (chainData: TChainRewardData): boolean =>
       !isAllChainsView && currentChainId !== chainData.chainId && chainData.rewardCount > 0
 
@@ -2716,73 +2650,81 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
                 <span className="text-sm font-semibold text-text-primary">{chainData.chainName}</span>
               </div>
             )}
-            {chainData.governanceRewards.map((reward, rewardIdx) => (
-              <GovernanceRewardRow
-                key={`governance-${reward.tokenAddress}`}
-                reward={reward}
-                userAddress={userAddress}
-                onStartClaim={handleStartClaim}
-                isFirst={rewardIdx === 0}
-                isAllChainsView={isAllChainsView}
-                onSwitchChain={() => switchChainAsync({ chainId: chainData.chainId })}
-              />
-            ))}
-            {chainData.ycrvRewards.map((reward, rewardIdx) => (
-              <YcrvRewardRow
-                key={`ycrv-${reward.tokenAddress}`}
-                reward={reward}
-                userAddress={userAddress}
-                onStartClaim={handleStartClaim}
-                isFirst={chainData.governanceRewards.length === 0 && rewardIdx === 0}
-                isAllChainsView={isAllChainsView}
-                onSwitchChain={() => switchChainAsync({ chainId: chainData.chainId })}
-              />
-            ))}
-            {chainData.stakingRewards.flatMap((sr, srIdx) =>
-              sr.rewards.map((reward, rewardIdx) => (
-                <StakingRewardRow
-                  key={`${getVaultAddress(sr.vault)}-${reward.tokenAddress}`}
-                  reward={reward}
-                  stakingAddress={sr.stakingAddress}
-                  stakingSource={sr.stakingSource}
-                  chainId={chainData.chainId}
-                  onStartClaim={(step, merkleRewardRoots) =>
-                    handleStartClaim(step, merkleRewardRoots, chainData.chainId)
-                  }
-                  isFirst={
-                    chainData.governanceRewards.length === 0 &&
-                    chainData.ycrvRewards.length === 0 &&
-                    srIdx === 0 &&
-                    rewardIdx === 0
-                  }
-                  isAllChainsView={isAllChainsView}
-                  onSwitchChain={() => switchChainAsync({ chainId: chainData.chainId })}
-                />
-              ))
-            )}
-            {chainData.merkleRewards.map((groupedReward, idx) => (
-              <MerkleRewardRow
-                key={groupedReward.token.address}
-                groupedReward={groupedReward}
-                userAddress={userAddress!}
-                chainId={chainData.chainId}
-                onStartClaim={(step, merkleRewardRoots) => handleStartClaim(step, merkleRewardRoots, chainData.chainId)}
-                isFirst={
-                  idx === 0 &&
-                  chainData.governanceRewards.length === 0 &&
-                  chainData.ycrvRewards.length === 0 &&
-                  chainData.stakingRewards.length === 0
-                }
-                isAllChainsView={isAllChainsView}
-                onSwitchChain={() => switchChainAsync({ chainId: chainData.chainId })}
-              />
-            ))}
-            {needsSwitchChain(chainData) && (
-              <SwitchChainPrompt
-                chainId={chainData.chainId}
-                onSwitchChain={() => switchChainAsync({ chainId: chainData.chainId })}
-                isSwitching={isSwitchingChain}
-              />
+            {!canClaim ? (
+              renderReadOnlyRewards(chainData)
+            ) : (
+              <>
+                {chainData.governanceRewards.map((reward, rewardIdx) => (
+                  <GovernanceRewardRow
+                    key={`governance-${reward.tokenAddress}`}
+                    reward={reward}
+                    userAddress={userAddress}
+                    onStartClaim={handleStartClaim}
+                    isFirst={rewardIdx === 0}
+                    isAllChainsView={isAllChainsView}
+                    onSwitchChain={() => switchChainAsync({ chainId: chainData.chainId })}
+                  />
+                ))}
+                {chainData.ycrvRewards.map((reward, rewardIdx) => (
+                  <YcrvRewardRow
+                    key={`ycrv-${reward.tokenAddress}`}
+                    reward={reward}
+                    userAddress={userAddress}
+                    onStartClaim={handleStartClaim}
+                    isFirst={chainData.governanceRewards.length === 0 && rewardIdx === 0}
+                    isAllChainsView={isAllChainsView}
+                    onSwitchChain={() => switchChainAsync({ chainId: chainData.chainId })}
+                  />
+                ))}
+                {chainData.stakingRewards.flatMap((sr, srIdx) =>
+                  sr.rewards.map((reward, rewardIdx) => (
+                    <StakingRewardRow
+                      key={`${getVaultAddress(sr.vault)}-${reward.tokenAddress}`}
+                      reward={reward}
+                      stakingAddress={sr.stakingAddress}
+                      stakingSource={sr.stakingSource}
+                      chainId={chainData.chainId}
+                      onStartClaim={(step, merkleRewardRoots) =>
+                        handleStartClaim(step, merkleRewardRoots, chainData.chainId)
+                      }
+                      isFirst={
+                        chainData.governanceRewards.length === 0 &&
+                        chainData.ycrvRewards.length === 0 &&
+                        srIdx === 0 &&
+                        rewardIdx === 0
+                      }
+                      isAllChainsView={isAllChainsView}
+                      onSwitchChain={() => switchChainAsync({ chainId: chainData.chainId })}
+                    />
+                  ))
+                )}
+                {chainData.merkleRewards.map((groupedReward, idx) => (
+                  <MerkleRewardRow
+                    key={groupedReward.token.address}
+                    groupedReward={groupedReward}
+                    userAddress={userAddress!}
+                    chainId={chainData.chainId}
+                    onStartClaim={(step, merkleRewardRoots) =>
+                      handleStartClaim(step, merkleRewardRoots, chainData.chainId)
+                    }
+                    isFirst={
+                      idx === 0 &&
+                      chainData.governanceRewards.length === 0 &&
+                      chainData.ycrvRewards.length === 0 &&
+                      chainData.stakingRewards.length === 0
+                    }
+                    isAllChainsView={isAllChainsView}
+                    onSwitchChain={() => switchChainAsync({ chainId: chainData.chainId })}
+                  />
+                ))}
+                {needsSwitchChain(chainData) && (
+                  <SwitchChainPrompt
+                    chainId={chainData.chainId}
+                    onSwitchChain={() => switchChainAsync({ chainId: chainData.chainId })}
+                    isSwitching={isSwitchingChain}
+                  />
+                )}
+              </>
             )}
           </div>
         ))}
@@ -2790,7 +2732,7 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
     )
   }
 
-  if (!isActive) {
+  if (!canReadRewards) {
     return (
       <section className="flex flex-col gap-2">
         <div>
@@ -2810,103 +2752,124 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
   }
 
   return (
-    <section className="relative flex flex-col gap-2 sm:gap-2">
+    <section
+      aria-labelledby={wallet ? headingId : undefined}
+      className={wallet ? 'min-w-0 bg-surface' : 'relative flex flex-col gap-2'}
+    >
       {stakingVaults.map((vault) => (
         <ChainStakingRewardsFetcher
           key={getVaultKey(vault)}
           vault={vault}
           userAddress={userAddress}
-          isActive={isActive}
+          isActive={canReadRewards}
           onRewards={handleStakingRewards}
         />
       ))}
-      {chainIds.map((chainId) => (
+      {chainIds.filter(supportsYearnMerkleRewards).map((chainId) => (
         <ChainMerkleRewardsFetcher
           key={`merkle-${chainId}`}
           chainId={chainId}
           userAddress={userAddress}
-          isActive={isActive}
+          isActive={canReadRewards}
           onRewards={handleMerkleRewards}
           hiddenRewardKeys={hiddenMerkleRewardKeys[chainId] ?? []}
         />
       ))}
 
-      <div className="overflow-hidden rounded-lg border border-border bg-surface">
-        <div className="flex flex-col md:flex-row">
-          {/* Left sidebar - Chain selector (hidden on mobile, defaults to All Chains view) */}
-          <div className="hidden bg-surface-secondary md:block md:w-64 md:shrink-0 md:border-r md:border-border">
-            {/* All chains option */}
-            <div className="border-b border-border">
-              <button
-                type="button"
-                onClick={() => setSelectedChainId(null)}
-                className={cl(
-                  'flex w-full items-center justify-between px-4 py-4 transition-colors',
-                  selectedChainId === null
-                    ? 'bg-surface text-text-primary'
-                    : 'text-text-secondary hover:bg-surface/50 hover:text-text-primary'
-                )}
-              >
-                <div className="flex items-center gap-3">
-                  <div className="flex size-8 items-center justify-center rounded-full bg-surface-secondary">
-                    <span className="text-sm font-bold text-text-primary">All</span>
-                  </div>
-                  <span className="font-medium">All Chains</span>
-                  {selectedChainId === null && <span className="size-2 rounded-full bg-green-500" />}
-                </div>
-                <span className="text-sm font-medium">{totalRewardCount || '-'}</span>
-              </button>
-            </div>
-
-            {/* Chain list */}
-            {[...chainRewardsData]
-              .sort((a, b) => b.rewardCount - a.rewardCount)
-              .map((chainData, index) => {
-                const chainId = chainData.chainId
-                const isSelected = selectedChainId === chainId
-                return (
-                  <button
-                    key={chainId}
-                    type="button"
-                    onClick={() => setSelectedChainId(chainId)}
-                    className={cl(
-                      'flex w-full items-center justify-between px-4 py-3 transition-colors',
-                      index > 0 ? 'border-t border-border' : '',
-                      isSelected
-                        ? 'bg-surface text-text-primary'
-                        : 'text-text-secondary hover:bg-surface/50 hover:text-text-primary'
-                    )}
-                  >
-                    <div className="flex items-center gap-3">
-                      <Image src={getChainLogoUrl(chainId)} alt={chainData.chainName} className="size-8 rounded-full" />
-                      <span className="font-medium">{chainData.chainName}</span>
-                      {isSelected && <span className="size-2 rounded-full bg-green-500" />}
-                    </div>
-                    <span className="text-sm font-medium">{chainData.rewardCount || '-'}</span>
-                  </button>
-                )
-              })}
+      {wallet ? (
+        <>
+          <div className="flex flex-wrap items-center justify-between gap-2 border-border border-b bg-surface-secondary px-4 py-2.5 md:px-6">
+            <h3 id={headingId} className="min-w-0 font-semibold text-sm">
+              <PortfolioWalletLabel wallet={wallet} className="wrap-anywhere" />
+            </h3>
+            {!isLoading && totalRewardCount > 0 ? (
+              <span className="text-sm font-semibold">{totalUsdUnavailable ? '—' : formatUSD(totalUsd, 2, 2)}</span>
+            ) : null}
           </div>
+          <div className="px-4 pt-2 pb-4 md:px-6">{renderRewardsContent()}</div>
+        </>
+      ) : (
+        <div className="overflow-hidden rounded-lg border border-border bg-surface">
+          <div className="flex flex-col md:flex-row">
+            {/* Left sidebar - Chain selector (hidden on mobile, defaults to All Chains view) */}
+            <div className="hidden bg-surface-secondary md:block md:w-64 md:shrink-0 md:border-r md:border-border">
+              {/* All chains option */}
+              <div className="border-b border-border">
+                <button
+                  type="button"
+                  onClick={() => setSelectedChainId(null)}
+                  className={cl(
+                    'flex w-full items-center justify-between px-4 py-4 transition-colors',
+                    selectedChainId === null
+                      ? 'bg-surface text-text-primary'
+                      : 'text-text-secondary hover:bg-surface/50 hover:text-text-primary'
+                  )}
+                >
+                  <div className="flex items-center gap-3">
+                    <div className="flex size-8 items-center justify-center rounded-full bg-surface-secondary">
+                      <span className="text-sm font-bold text-text-primary">All</span>
+                    </div>
+                    <span className="font-medium">All Chains</span>
+                    {selectedChainId === null && <span className="size-2 rounded-full bg-green-500" />}
+                  </div>
+                  <span className="text-sm font-medium">{totalRewardCount || '-'}</span>
+                </button>
+              </div>
 
-          {/* Right content - Rewards panel */}
-          <div className="flex-1">
-            {/* Header - stacked on mobile for prominent total display */}
-            <div className="flex min-h-[64px] flex-col items-center justify-center gap-1 border-b border-border px-6 py-4 md:flex-row md:justify-between md:gap-0 md:py-0">
-              <h3 className="text-lg font-semibold text-text-primary">Claimable Rewards</h3>
-              <span className="text-2xl font-bold text-text-primary md:text-xl">
-                {totalUsdUnavailable
-                  ? '—'
-                  : formatUSD(selectedChainId === null ? totalUsd : (selectedChainData?.totalUsd ?? 0), 2, 2)}
-              </span>
+              {/* Chain list */}
+              {[...chainRewardsData]
+                .sort((a, b) => b.rewardCount - a.rewardCount)
+                .map((chainData, index) => {
+                  const chainId = chainData.chainId
+                  const isSelected = selectedChainId === chainId
+                  return (
+                    <button
+                      key={chainId}
+                      type="button"
+                      onClick={() => setSelectedChainId(chainId)}
+                      className={cl(
+                        'flex w-full items-center justify-between px-4 py-3 transition-colors',
+                        index > 0 ? 'border-t border-border' : '',
+                        isSelected
+                          ? 'bg-surface text-text-primary'
+                          : 'text-text-secondary hover:bg-surface/50 hover:text-text-primary'
+                      )}
+                    >
+                      <div className="flex items-center gap-3">
+                        <Image
+                          src={getChainLogoUrl(chainId)}
+                          alt={chainData.chainName}
+                          className="size-8 rounded-full"
+                        />
+                        <span className="font-medium">{chainData.chainName}</span>
+                        {isSelected && <span className="size-2 rounded-full bg-green-500" />}
+                      </div>
+                      <span className="text-sm font-medium">{chainData.rewardCount || '-'}</span>
+                    </button>
+                  )
+                })}
             </div>
 
-            {/* Content */}
-            <div className="px-6 pb-6 pt-2">{renderRewardsContent()}</div>
+            {/* Right content - Rewards panel */}
+            <div className="flex-1">
+              {/* Header - stacked on mobile for prominent total display */}
+              <div className="flex min-h-[64px] flex-col items-center justify-center gap-1 border-b border-border px-6 py-4 md:flex-row md:justify-between md:gap-0 md:py-0">
+                <h3 className="text-lg font-semibold text-text-primary">Claimable Rewards</h3>
+                <span className="text-2xl font-bold text-text-primary md:text-xl">
+                  {totalUsdUnavailable
+                    ? '—'
+                    : formatUSD(selectedChainId === null ? totalUsd : (selectedChainData?.totalUsd ?? 0), 2, 2)}
+                </span>
+              </div>
+
+              {/* Content */}
+              <div className="px-6 pb-6 pt-2">{renderRewardsContent()}</div>
+            </div>
           </div>
         </div>
-      </div>
+      )}
 
-      {isOverlayOpen && (
+      {canClaim && isOverlayOpen && (
         <TransactionOverlay
           isOpen={isOverlayOpen}
           onClose={handleOverlayClose}
@@ -2918,6 +2881,33 @@ function PortfolioClaimRewardsSection({ isActive, openLoginModal }: TPortfolioCl
           contentAlign="center"
         />
       )}
+    </section>
+  )
+}
+
+function SavedWalletRewards({
+  wallets,
+  connected,
+  openLoginModal
+}: {
+  wallets: Address[]
+  connected: Address | null
+  openLoginModal: TPortfolioModel['openLoginModal']
+}): ReactElement {
+  const { openWalletDrawer } = useWalletDrawer()
+  return (
+    <section aria-label="Claimable Rewards" className="flex flex-col gap-2">
+      <h2 className="font-semibold text-lg text-text-primary">Claimable Rewards</h2>
+      <div className="flex flex-col gap-px overflow-hidden rounded-lg border border-border bg-border">
+        {wallets.map((wallet) => (
+          <PortfolioClaimRewardsSection
+            key={wallet}
+            wallet={wallet}
+            isActive={Boolean(connected)}
+            openLoginModal={connected ? openWalletDrawer : openLoginModal}
+          />
+        ))}
+      </div>
     </section>
   )
 }
@@ -3112,11 +3102,11 @@ function PortfolioHoldingsSection({
       {!isActive ? (
         <div className="flex flex-col gap-2">
           <EmptySectionCard
-            title="Connect a wallet to view your portfolio."
+            title="Connect a wallet or view wallets"
             ctaLabel="Connect wallet"
             onClick={openLoginModal}
-            secondaryCtaLabel="Explore Vaults"
-            secondaryCtaHref="/vaults"
+            secondaryCtaLabel="View wallets"
+            secondaryCtaHref={WALLET_PORTFOLIO_HREF}
           />
         </div>
       ) : (
@@ -3205,6 +3195,16 @@ function PortfolioSuggestedSection({
 
 function PortfolioPage(): ReactElement {
   const model = usePortfolioModel()
+  const { address } = useWeb3()
+  const connected = model.isActive && address ? normalizeSavedWallet(address) : null
+  const { value: savedBundles, set: setSavedBundles } = useLocalStorageValue<
+    TPortfolioBundle[],
+    TPortfolioBundle[],
+    false
+  >('yearn.fi/saved-portfolio-wallets', { defaultValue: [], initializeWithValue: false, parse: parsePortfolioBundles })
+  const bundles = savedBundles ?? []
+  const [isWalletManagerOpen, setIsWalletManagerOpen] = useState(false)
+  const [shareError, setShareError] = useState(false)
   const trackEvent = usePlausible()
   const [historyDenomination, setHistoryDenomination] = useState<TPortfolioHistoryDenomination>('usd')
   const [historyTimeframe, setHistoryTimeframe] = useState<TPortfolioHistoryChartTimeframe>('1y')
@@ -3213,6 +3213,54 @@ function PortfolioPage(): ReactElement {
     null
   )
   const searchParams = useSearchParams()
+  const requestedBundle = searchParams.get('bundle')
+  const requestedWallet = searchParams.get('wallet')
+  const view = searchParams.get('view')
+  const savedWalletOptions = useMemo(
+    () =>
+      [...new Set(savedBundles?.flatMap(({ wallets }) => wallets))].map((wallet) => ({
+        id: keccak256(wallet),
+        wallet
+      })),
+    [savedBundles]
+  )
+  const activeWallet = savedWalletOptions.find(({ id }) => id === requestedWallet)
+  const activeWalletName = usePortfolioWalletName(activeWallet?.wallet)
+  const isSavedViewRequested = Boolean(requestedWallet || requestedBundle) || view === 'saved-wallets'
+  const activeBundle = activeWallet
+    ? undefined
+    : (bundles.find(({ id }) => id === requestedBundle) ??
+      (isSavedViewRequested || (!connected && view !== 'connected') ? bundles[0] : undefined))
+  const isViewingWallets = Boolean(activeBundle) || isSavedViewRequested
+  const savedWallets = useMemo(
+    () => (activeWallet ? [activeWallet.wallet] : activeBundle?.wallets),
+    [activeWallet, activeBundle]
+  )
+  const portfolioSelection = activeWallet
+    ? `wallet:${activeWallet.id}`
+    : activeBundle
+      ? `bundle:${activeBundle.id}`
+      : ''
+  const portfolioSelectionLabel = activeWallet
+    ? (activeWalletName ?? truncateHex(activeWallet.wallet, 6))
+    : (activeBundle?.name ?? 'Connected wallet')
+  const portfolioOptionGroups = [
+    {
+      label: undefined,
+      options: connected || !isViewingWallets ? [{ value: '', label: 'Connected wallet' }] : []
+    },
+    {
+      label: 'Saved wallets',
+      options: savedWalletOptions.map(({ id, wallet }) => ({
+        value: `wallet:${id}`,
+        label: <PortfolioWalletLabel wallet={wallet} />
+      }))
+    },
+    {
+      label: 'Bundles',
+      options: bundles.map(({ id, name }) => ({ value: `bundle:${id}`, label: name }))
+    }
+  ].filter(({ options }) => options.length > 0)
   const pathname = usePathname() || '/portfolio'
   const router = useRouter()
   const varsRef = useRef<HTMLDivElement>(null)
@@ -3221,7 +3269,60 @@ function PortfolioPage(): ReactElement {
   const historyFetchTimeframe: TPortfolioHistoryTimeframe = historyTimeframe === 'all' ? 'all' : '1y'
   const { onRefresh } = useWalletActions()
 
-  usePortfolioEntryRefresh({ isActive: model.isActive, onRefresh })
+  usePortfolioEntryRefresh({ isActive: model.isActive && !isViewingWallets, onRefresh })
+
+  useEffect(() => {
+    if (!savedBundles) return
+
+    function openSharedBundle(bundles: TPortfolioBundle[]) {
+      const url = new URL(window.location.href)
+      const shared = new URLSearchParams(url.hash.slice(1)).get('bundle')
+      if (shared === null) return
+
+      const snapshot = parseBundleShare(shared)
+      setShareError(snapshot === null)
+      if (snapshot) {
+        const existing = findBundleBySnapshot(bundles, snapshot)
+        const bundle = existing ?? { id: crypto.randomUUID(), ...snapshot }
+        if (!existing) setSavedBundles((current) => [...(current ?? []), bundle])
+        url.searchParams.delete('wallet')
+        url.searchParams.delete('view')
+        url.searchParams.set('bundle', bundle.id)
+      }
+      window.history.replaceState(null, '', `${url.pathname}${url.search}`)
+    }
+
+    const onHashChange = () => openSharedBundle(savedBundles)
+    onHashChange()
+    window.addEventListener('hashchange', onHashChange)
+    return () => window.removeEventListener('hashchange', onHashChange)
+  }, [savedBundles, setSavedBundles])
+
+  function selectPortfolio(selection: string): void {
+    const query = new URLSearchParams({ view: 'connected' })
+    if (selection.startsWith('wallet:')) {
+      query.delete('view')
+      query.set('wallet', selection.slice('wallet:'.length))
+    } else if (selection.startsWith('bundle:')) {
+      query.delete('view')
+      query.set('bundle', selection.slice('bundle:'.length))
+    }
+    if (activeTab !== 'positions') query.set('tab', activeTab)
+    router.push(`${pathname}?${query}`, { scroll: false })
+  }
+
+  function saveBundle(bundleId: string | null, name: string, wallets: Address[]): void {
+    const bundle = { id: bundleId ?? crypto.randomUUID(), name, wallets }
+    setSavedBundles((current) => {
+      const previous = current ?? []
+      if (previous.some(({ id }) => id === bundle.id)) {
+        return previous.map((entry) => (entry.id === bundle.id ? bundle : entry))
+      }
+      return [...previous, bundle]
+    })
+    setIsWalletManagerOpen(false)
+    selectPortfolio(`bundle:${bundle.id}`)
+  }
 
   const replaceSearchParams = useCallback(
     (nextParams: URLSearchParams): void => {
@@ -3239,7 +3340,7 @@ function PortfolioPage(): ReactElement {
     return 'positions'
   }, [searchParams])
   const shouldLoadPositionsHistory = shouldLoadPortfolioHistory({
-    isActive: model.isActive,
+    isActive: model.isActive && !isViewingWallets,
     isPositionsTab: activeTab === 'positions'
   })
   const portfolioHistory = usePortfolioHistoryCoordinator(
@@ -3310,10 +3411,20 @@ function PortfolioPage(): ReactElement {
         nextParams.delete('tab')
       } else {
         nextParams.set('tab', tab)
+        if (activeBundle && !requestedBundle) nextParams.set('bundle', activeBundle.id)
       }
       replaceSearchParams(nextParams)
     },
-    [activeTab, model.hasHoldings, model.isActive, replaceSearchParams, searchParams, trackEvent]
+    [
+      activeBundle,
+      activeTab,
+      model.hasHoldings,
+      model.isActive,
+      replaceSearchParams,
+      requestedBundle,
+      searchParams,
+      trackEvent
+    ]
   )
 
   useEffect(() => {
@@ -3371,6 +3482,33 @@ function PortfolioPage(): ReactElement {
   )
 
   function renderTabContent(): ReactElement | null {
+    if (isViewingWallets) {
+      if (savedBundles === undefined) return <PortfolioPositionsLoadingState />
+      if (!savedWallets?.length) return <EmptyState title="Add wallets to view a portfolio" />
+      switch (activeTab) {
+        case 'activity':
+          return (
+            <PortfolioActivitySection
+              key={portfolioSelection}
+              isActive={false}
+              savedWallets={savedWallets}
+              openLoginModal={model.openLoginModal}
+            />
+          )
+        case 'claim-rewards':
+          return (
+            <SavedWalletRewards
+              key={portfolioSelection}
+              wallets={savedWallets}
+              connected={connected}
+              openLoginModal={model.openLoginModal}
+            />
+          )
+        default:
+          return <SavedWalletPortfolio key={portfolioSelection} wallets={savedWallets} />
+      }
+    }
+
     switch (activeTab) {
       case 'positions':
         if (model.isActive && model.isHoldingsLoading) {
@@ -3380,13 +3518,9 @@ function PortfolioPage(): ReactElement {
         return (
           <div className="flex flex-col gap-6 sm:gap-4">
             {model.isActive ? (
-              <div
-                className={cl(
-                  'flex flex-col rounded-lg border border-border bg-surface shadow-[0_1px_0_rgba(15,23,42,0.02)]',
-                  historyChartTab === 'growth' ? 'overflow-visible' : 'overflow-hidden'
-                )}
-              >
-                <div className="grid items-stretch min-[920px]:grid-cols-[minmax(640px,1fr)_minmax(200px,340px)]">
+              <PortfolioOverview
+                allowOverflow={historyChartTab === 'growth'}
+                chart={
                   <PortfolioHistoryChartControls
                     activeTab={historyChartTab}
                     onActiveTabChange={setHistoryChartTab}
@@ -3396,26 +3530,26 @@ function PortfolioPage(): ReactElement {
                     onTimeframeChange={setHistoryTimeframe}
                     resolvedGrowthDisplayMode={resolvedGrowthDisplayMode}
                     onGrowthDisplayModeOverrideChange={setHistoryGrowthDisplayModeOverride}
-                    className="h-full rounded-t-lg bg-linear-to-b from-surface to-surface-secondary/20 min-[920px]:rounded-tr-none min-[920px]:rounded-bl-lg"
+                    className="h-full"
                   >
                     {historyChartElement}
                   </PortfolioHistoryChartControls>
-                  <div className="overflow-hidden rounded-b-lg border-t border-border bg-linear-to-b from-surface to-surface-secondary/25 min-[920px]:rounded-tr-lg min-[920px]:rounded-bl-none min-[920px]:border-t-0 min-[920px]:border-l">
-                    <PortfolioHeaderSection
-                      blendedMetrics={model.blendedMetrics}
-                      isHoldingsLoading={model.isHoldingsLoading}
-                      isSearchingBalances={model.isSearchingBalances}
-                      hasKatanaHoldings={model.hasKatanaHoldings}
-                      isProtocolReturnLoading={
-                        model.isHoldingsLoading || (protocolReturnHistoryLoading && !hasProtocolReturnSnapshot)
-                      }
-                      annualizedProtocolReturnPct={annualizedProtocolReturnPct}
-                      annualizedIsPartial={Boolean(protocolReturnHistorySummary?.growthIsPartial?.usd)}
-                      totalPortfolioValue={model.totalPortfolioValue}
-                    />
-                  </div>
-                </div>
-              </div>
+                }
+                metrics={
+                  <PortfolioHeaderSection
+                    blendedMetrics={model.blendedMetrics}
+                    isHoldingsLoading={model.isHoldingsLoading}
+                    isSearchingBalances={model.isSearchingBalances}
+                    hasKatanaHoldings={model.hasKatanaHoldings}
+                    isProtocolReturnLoading={
+                      model.isHoldingsLoading || (protocolReturnHistoryLoading && !hasProtocolReturnSnapshot)
+                    }
+                    annualizedProtocolReturnPct={annualizedProtocolReturnPct}
+                    annualizedIsPartial={Boolean(protocolReturnHistorySummary?.growthIsPartial?.usd)}
+                    totalPortfolioValue={model.totalPortfolioValue}
+                  />
+                }
+              />
             ) : null}
             <PortfolioHoldingsSection
               growthVaultsByKey={portfolioHistory.growth.vaultsByKey}
@@ -3464,9 +3598,29 @@ function PortfolioPage(): ReactElement {
             ]}
           />
         </div>
-        <div className="hidden flex-col gap-3 md:flex">
+        <div className="flex flex-wrap items-center justify-between gap-2 pb-2">
           <div className="px-1">{overviewHeading}</div>
+          <div className="flex flex-wrap items-center gap-2">
+            {bundles.length ? (
+              <PortfolioDropdown
+                label={portfolioSelectionLabel}
+                ariaLabel={`Portfolio selection, ${portfolioSelectionLabel}`}
+                value={portfolioSelection}
+                onChange={selectPortfolio}
+                groups={portfolioOptionGroups}
+                align="start"
+              />
+            ) : null}
+            {connected || isViewingWallets ? (
+              <CompactActionButton onClick={() => setIsWalletManagerOpen(true)}>Manage wallets</CompactActionButton>
+            ) : null}
+          </div>
         </div>
+        {shareError ? (
+          <p role="status" className="px-1 pb-2 text-sm text-text-secondary">
+            This bundle link is invalid.
+          </p>
+        ) : null}
         <div
           ref={tabsRef}
           className="sticky z-30 bg-app pb-2"
@@ -3474,13 +3628,28 @@ function PortfolioPage(): ReactElement {
         >
           <PortfolioTabSelector
             activeTab={activeTab}
-            hasClaimableRewards={model.hasClaimableRewards}
+            hasClaimableRewards={
+              model.hasClaimableRewards &&
+              (!isViewingWallets || Boolean(connected && savedWallets?.includes(connected)))
+            }
             onSelectTab={handleTabSelect}
           />
         </div>
         <div className={'pt-4'} key={activeTab}>
           {renderTabContent()}
         </div>
+        {isWalletManagerOpen ? (
+          <PortfolioWalletDialog
+            connected={connected}
+            bundles={bundles}
+            initialBundleId={
+              activeBundle?.id ??
+              (activeWallet && bundles.find(({ wallets }) => wallets.includes(activeWallet.wallet))?.id)
+            }
+            onSave={saveBundle}
+            onClose={() => setIsWalletManagerOpen(false)}
+          />
+        ) : null}
       </div>
     </PortfolioPageLayout>
   )

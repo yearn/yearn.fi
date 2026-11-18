@@ -1,10 +1,18 @@
 import type { TVaultUserHistoryChartData } from '@pages/vaults/types/charts'
+import type { TUserHistoryVault } from '@pages/vaults/utils/vaultUserHistoryVaults'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { useFetch } from '@shared/hooks/useFetch'
+import { useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
+import type { Address } from 'viem'
 import { z } from 'zod'
 
 type TVaultUserHistoryTimeframe = '30d' | '90d' | '1y' | 'all'
+
+export type TSavedVaultPosition = {
+  wallets: readonly Address[]
+  vault: TUserHistoryVault
+}
 
 type TUseVaultUserHistoryParams = {
   chainId?: number
@@ -13,6 +21,7 @@ type TUseVaultUserHistoryParams = {
   timeframe: TVaultUserHistoryTimeframe
   enabled?: boolean
   valueMode?: 'underlying' | 'usd'
+  savedPosition?: TSavedVaultPosition
 }
 
 const vaultUserHistoryPointSchema = z.object({
@@ -42,16 +51,26 @@ const vaultUserBalanceHistoryResponseSchema = z.object({
   dataPoints: z.array(vaultUserBalanceHistoryPointSchema)
 })
 
+const savedVaultHistoryResponseSchema = z.object({
+  addresses: z.array(z.string()),
+  protocolReturn: vaultUserHistoryResponseSchema,
+  balanceData: z.array(z.object({ date: z.string(), value: z.number().nullable() })).optional()
+})
+
 export function useVaultUserHistory({
   chainId,
   vaultAddress,
   vaults,
   timeframe,
   enabled = true,
-  valueMode = 'underlying'
+  valueMode = 'underlying',
+  savedPosition
 }: TUseVaultUserHistoryParams) {
   const { address } = useWeb3()
   const apiTimeframe = timeframe === 'all' ? 'all' : '1y'
+  const useConnectedWallet = enabled && !savedPosition
+  const members = [...new Set(savedPosition?.wallets.map((wallet) => wallet.toLowerCase()))].sort()
+  const requestedVault = savedPosition?.vault
   const vaultFilter = useMemo(() => {
     if (vaults?.length) {
       return `vaults=${vaults
@@ -68,23 +87,23 @@ export function useVaultUserHistory({
   }, [chainId, vaultAddress, vaults])
 
   const pnlEndpoint = useMemo(() => {
-    if (!enabled || !address || !vaultFilter) {
+    if (!useConnectedWallet || !address || !vaultFilter) {
       return null
     }
 
     return `/api/holdings/protocol-return/history?address=${address}&${vaultFilter}&timeframe=${apiTimeframe}`
-  }, [address, apiTimeframe, enabled, vaultFilter])
+  }, [address, apiTimeframe, useConnectedWallet, vaultFilter])
 
   const balanceEndpoint = useMemo(() => {
-    if (valueMode !== 'usd' || !enabled || !address || !vaultFilter) {
+    if (valueMode !== 'usd' || !useConnectedWallet || !address || !vaultFilter) {
       return null
     }
 
     return `/api/holdings/history?address=${address}&${vaultFilter}&denomination=usd&timeframe=${apiTimeframe}`
-  }, [address, apiTimeframe, enabled, valueMode, vaultFilter])
+  }, [address, apiTimeframe, useConnectedWallet, valueMode, vaultFilter])
 
   const {
-    data: pnlData,
+    data: connectedPnlData,
     isLoading: isPnlLoading,
     isFetching: isPnlFetching,
     error: pnlError
@@ -92,7 +111,7 @@ export function useVaultUserHistory({
     endpoint: pnlEndpoint,
     schema: vaultUserHistoryResponseSchema,
     config: {
-      enabled,
+      enabled: useConnectedWallet,
       cacheDuration: 5 * 60 * 1000,
       keepPreviousData: false,
       timeout: 2 * 60 * 1000
@@ -107,23 +126,43 @@ export function useVaultUserHistory({
     endpoint: balanceEndpoint,
     schema: vaultUserBalanceHistoryResponseSchema,
     config: {
-      enabled: enabled && valueMode === 'usd',
+      enabled: useConnectedWallet && valueMode === 'usd',
       cacheDuration: 5 * 60 * 1000,
       keepPreviousData: false,
       timeout: 2 * 60 * 1000
     }
   })
 
+  const savedHistory = useQuery({
+    queryKey: ['saved-vault-history', members, requestedVault, apiTimeframe, valueMode],
+    enabled: enabled && Boolean(requestedVault) && members.length > 0,
+    staleTime: 5 * 60 * 1000,
+    retry: false,
+    queryFn: async ({ signal }) => {
+      const response = await fetch('/api/holdings/bundle-growth', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ addresses: members, timeframe: apiTimeframe, vault: { ...requestedVault, valueMode } }),
+        signal: AbortSignal.any([signal, AbortSignal.timeout(2 * 60 * 1000)])
+      })
+      if (!response.ok) throw new Error('Saved vault history is temporarily unavailable.')
+      const data = savedVaultHistoryResponseSchema.parse(await response.json())
+      if (
+        data.addresses.join(',') !== members.join(',') ||
+        data.protocolReturn.timeframe !== apiTimeframe ||
+        (valueMode === 'usd' && !data.balanceData)
+      ) {
+        throw new Error('Saved vault history did not match the requested position.')
+      }
+      return data
+    }
+  })
+  const pnlData = savedPosition ? savedHistory.data?.protocolReturn : connectedPnlData
+  const savedBalanceData = savedHistory.data?.balanceData
+
   const balanceData = useMemo<TVaultUserHistoryChartData | null>(() => {
     if (valueMode === 'usd') {
-      if (!usdBalanceData?.dataPoints) {
-        return null
-      }
-
-      return usdBalanceData.dataPoints.map((point) => ({
-        date: point.date,
-        value: point.value
-      }))
+      return savedPosition ? (savedBalanceData ?? null) : (usdBalanceData?.dataPoints ?? null)
     }
 
     if (!pnlData?.dataPoints) {
@@ -134,7 +173,7 @@ export function useVaultUserHistory({
       date: point.date,
       value: point.currentUnderlying
     }))
-  }, [pnlData, usdBalanceData, valueMode])
+  }, [pnlData, savedBalanceData, savedPosition, usdBalanceData, valueMode])
 
   const growthData = useMemo<TVaultUserHistoryChartData | null>(() => {
     if (!pnlData?.dataPoints) {
@@ -147,17 +186,21 @@ export function useVaultUserHistory({
     }))
   }, [pnlData, valueMode])
 
-  const isLoadingState =
-    isPnlLoading || isPnlFetching || (valueMode === 'usd' && (isBalanceLoading || isBalanceFetching))
-  const error = pnlError ?? (valueMode === 'usd' ? balanceError : null)
+  const isLoadingState = savedPosition
+    ? savedHistory.isFetching
+    : isPnlLoading || isPnlFetching || (valueMode === 'usd' && (isBalanceLoading || isBalanceFetching))
+  const error = savedPosition ? savedHistory.error : (pnlError ?? (valueMode === 'usd' ? balanceError : null))
   const errorStatus =
     (error as { response?: { status?: number }; status?: number } | null)?.response?.status ??
     (error as { status?: number } | null)?.status
   const isEmpty =
     enabled &&
     !isLoadingState &&
-    Boolean(address) &&
-    (errorStatus === 404 || Boolean(balanceData && balanceData.length === 0))
+    (savedPosition
+      ? savedHistory.isSuccess &&
+        !balanceData?.some(({ value }) => value !== null) &&
+        !growthData?.some(({ value }) => value !== null)
+      : Boolean(address) && (errorStatus === 404 || Boolean(balanceData && balanceData.length === 0)))
   const visibleError = isEmpty ? null : error
 
   return {

@@ -142,7 +142,7 @@ function findClosestPpsTimestamp(
     : findClosestPpsTimestamp(timestamps, targetTimestamp, low, middle - 1, closest)
 }
 
-export function getPPS(timeline: PPSTimeline, timestamp: number): number | null {
+export function getPPS(timeline: PPSTimeline, timestamp: number, requirePriorObservation = false): number | null {
   // Exact match
   if (timeline.has(timestamp)) {
     return timeline.get(timestamp)!
@@ -164,7 +164,7 @@ export function getPPS(timeline: PPSTimeline, timestamp: number): number | null 
 
   // If target is before all data, use earliest
   if (timestamp < timestamps[0]) {
-    return timeline.get(timestamps[0])!
+    return requirePriorObservation ? null : timeline.get(timestamps[0])!
   }
 
   // Find the latest timestamp that's <= target (most recent PPS before/at this time)
