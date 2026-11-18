@@ -1058,8 +1058,8 @@ export function useVaultsPageModel(
   const listHeadProps: TListHead = {
     containerClassName: 'rounded-t-xl bg-surface shrink-0',
     wrapperClassName: 'relative z-10 border border-border rounded-t-lg bg-transparent',
-    sortBy: effectiveSortBy,
-    sortDirection: effectiveSortDirection,
+    sortBy: selectedSortBy,
+    sortDirection: isDefaultSort ? '' : sortDirection,
     onSort: (newSortBy: string, newSortDirection: TSortDirection): void => {
       let targetSortBy = newSortBy as TPossibleSortBy
       let targetSortDirection = newSortDirection as TSortDirection
