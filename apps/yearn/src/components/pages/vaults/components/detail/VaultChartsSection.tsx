@@ -1,5 +1,6 @@
 import { KATANA_CHAIN_ID } from '@pages/vaults/constants/addresses'
 import { useVaultChartTimeseries } from '@pages/vaults/hooks/useVaultChartTimeseries'
+import { useVaultSnapshot } from '@pages/vaults/hooks/useVaultSnapshot'
 import { useVaultUserHistory } from '@pages/vaults/hooks/useVaultUserHistory'
 import { transformVaultChartData } from '@pages/vaults/utils/charts'
 import { IconChevron } from '@shared/icons/IconChevron'
@@ -115,7 +116,9 @@ export function VaultChartsSection({
     address: vaultAddress
   })
 
-  const transformed = useMemo(() => transformVaultChartData(data), [data])
+  const { data: snapshot, isLoading: isSnapshotLoading } = useVaultSnapshot({ chainId, address: vaultAddress })
+  const deploymentTime = snapshot?.inceptTime
+  const transformed = useMemo(() => transformVaultChartData(data, deploymentTime), [data, deploymentTime])
 
   const [uncontrolledTab, setUncontrolledTab] = useState<TVaultChartTab>('historical-apy')
   const [uncontrolledTimeframe, setUncontrolledTimeframe] =
@@ -157,7 +160,8 @@ export function VaultChartsSection({
     setActiveTab(resolvedActiveTab)
   }, [activeTab, resolvedActiveTab, setActiveTab])
 
-  const vaultChartsLoading = isLoading || !transformed.aprApyData || !transformed.ppsData || !transformed.tvlData
+  const vaultChartsLoading =
+    isLoading || isSnapshotLoading || !transformed.aprApyData || !transformed.ppsData || !transformed.tvlData
   const chartsLoading = shouldOverlayUserPositionOnTvlTab
     ? isUserHistoryLoading
     : activeTabIsUserChart
