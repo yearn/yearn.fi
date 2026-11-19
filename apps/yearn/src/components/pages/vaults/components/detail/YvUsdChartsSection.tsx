@@ -1,4 +1,4 @@
-import { useVaultUserHistory } from '@pages/vaults/hooks/useVaultUserHistory'
+import { type TSavedVaultPosition, useVaultUserHistory } from '@pages/vaults/hooks/useVaultUserHistory'
 import { type TYvUsdSeriesPoint, useYvUsdCharts } from '@pages/vaults/hooks/useYvUsdCharts'
 import { YVUSD_CHAIN_ID, YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import { cl, SELECTOR_BAR_STYLES } from '@shared/utils'
@@ -29,6 +29,7 @@ type YvUsdChartsSectionProps = {
   chartHeightPx?: number
   chartHeightMdPx?: number
   enableUserPositionChart?: boolean
+  savedPosition?: TSavedVaultPosition
 }
 
 function getActiveChartData({
@@ -83,7 +84,8 @@ export function YvUsdChartsSection({
   shouldRenderSelectors = true,
   chartHeightPx,
   chartHeightMdPx,
-  enableUserPositionChart = false
+  enableUserPositionChart = false,
+  savedPosition
 }: YvUsdChartsSectionProps): ReactElement {
   const { apyData, performanceData, tvlData, isLoading, error } = useYvUsdCharts()
 
@@ -118,6 +120,7 @@ export function YvUsdChartsSection({
       { chainId: YVUSD_CHAIN_ID, vaultAddress: YVUSD_LOCKED_ADDRESS }
     ],
     timeframe: activeTimeframe,
+    savedPosition,
     enabled: enableUserPositionChart && activeTabIsUserChart,
     valueMode: 'usd'
   })

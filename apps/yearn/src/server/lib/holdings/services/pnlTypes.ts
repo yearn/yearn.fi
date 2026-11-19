@@ -9,7 +9,7 @@ export type TRawScopes = {
   tx: boolean
 }
 
-export type TRawPnlEvent =
+export type TRawPnlEvent = { scopeOwner?: string } & (
   | {
       kind: 'deposit'
       id: string
@@ -62,3 +62,4 @@ export type TRawPnlEvent =
       shares: bigint
       scopes: TRawScopes
     }
+)

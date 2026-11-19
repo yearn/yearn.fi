@@ -57,6 +57,10 @@ const MERKL_REWARD_TOKEN_ALLOWLIST_BY_CHAIN: Record<number, `0x${string}`[]> = {
   ].map(normalizeAddress)
 }
 
+export function supportsYearnMerkleRewards(chainId: number): boolean {
+  return Boolean(MERKL_REWARD_TOKEN_ALLOWLIST_BY_CHAIN[chainId]?.length)
+}
+
 export const buildMerklRewardsEndpoint = (userAddress: `0x${string}`, chainId: number): string => {
   const params = new URLSearchParams({
     userAddress,

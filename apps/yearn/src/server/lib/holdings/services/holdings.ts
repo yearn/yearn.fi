@@ -144,7 +144,8 @@ export function getIndexedShareBalanceAtTimestamp(
   index: TPositionTimelineIndex,
   vaultAddress: string,
   chainId: number,
-  timestamp: number
+  timestamp: number,
+  includeNegative = false
 ): bigint {
   const entry = index.get(getPositionTimelineVaultKey(chainId, vaultAddress))
   if (!entry) {
@@ -153,7 +154,7 @@ export function getIndexedShareBalanceAtTimestamp(
 
   const balanceIndex = findLastTimestampIndex(entry.timestamps, timestamp)
   const balance = balanceIndex >= 0 ? (entry.balances[balanceIndex] ?? BigInt(0)) : BigInt(0)
-  return balance < BigInt(0) ? BigInt(0) : balance
+  return !includeNegative && balance < BigInt(0) ? BigInt(0) : balance
 }
 
 export function getUniqueVaults(timeline: TimelineEvent[]): Array<{ vaultAddress: string; chainId: number }> {

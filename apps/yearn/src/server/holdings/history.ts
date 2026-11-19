@@ -100,6 +100,7 @@ export async function GET(request: Request): Promise<Response> {
   const vaultsParam = queryValue(request, 'vaults')
   const denominationParam = queryValue(request, 'denomination')
   const timeframeParam = queryValue(request, 'timeframe')
+  const coverage = queryValue(request, 'coverage') === '1'
   const debugParam = queryValue(request, 'debug')
   const progressIdParam = queryValue(request, 'progressId')
 
@@ -123,6 +124,12 @@ export async function GET(request: Request): Promise<Response> {
 
   const denomination = parseHoldingsHistoryDenomination(denominationParam)
   const timeframe = parseHoldingsHistoryTimeframe(timeframeParam)
+  if (coverage && vaultFilters !== undefined) {
+    return json(
+      { error: 'Coverage is available for unfiltered wallet history.' },
+      { status: 400, headers: GET_CORS_HEADERS }
+    )
+  }
   const progressId = typeof progressIdParam === 'string' ? progressIdParam : null
   const debugEnabled = isHoldingsDebugRequested(typeof debugParam === 'string' ? debugParam : null)
 
@@ -145,7 +152,17 @@ export async function GET(request: Request): Promise<Response> {
         })
 
         try {
-          const response = await getHistoricalHoldingsChart(address, denomination, timeframe, vaultFilters)
+          const response = coverage
+            ? await getHistoricalHoldingsChart(
+                address.toLowerCase(),
+                denomination,
+                timeframe,
+                undefined,
+                undefined,
+                undefined,
+                true
+              )
+            : await getHistoricalHoldingsChart(address, denomination, timeframe, vaultFilters)
           debugLog('route', 'completed holdings history request', {
             denomination,
             timeframe,
@@ -159,7 +176,7 @@ export async function GET(request: Request): Promise<Response> {
       }
     )
 
-    if (!holdings.hasActivity) {
+    if (!holdings.hasActivity && !coverage) {
       await updateHoldingsProgress(activeProgressId, {
         status: 'complete',
         progress: 100,
@@ -184,7 +201,8 @@ export async function GET(request: Request): Promise<Response> {
         timeframe,
         dataPoints: holdings.dataPoints.map((dp) => ({
           date: dp.date,
-          value: dp.value
+          value: coverage && (!dp.coverage || dp.coverage === 'unavailable') ? null : dp.value,
+          ...(coverage ? { coverage: dp.coverage ?? 'unavailable' } : {})
         }))
       },
       {

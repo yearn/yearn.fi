@@ -95,9 +95,9 @@ async function fetchYcrvRawAccount({
   }
 }
 
-export function useYcrvPosition(enabled: boolean): TUseYcrvPositionReturn {
+export function useYcrvPosition(enabled: boolean, wallet?: TAddress): TUseYcrvPositionReturn {
   const { address } = useWeb3()
-  const account = address ? toAddress(address) : undefined
+  const account = wallet ? toAddress(wallet) : address ? toAddress(address) : undefined
   const publicClient = usePublicClient({ chainId: YCRV_CHAIN_ID })
   const spotPricesQuery = useFetch({
     endpoint: YCRV_SPOT_ENDPOINT,

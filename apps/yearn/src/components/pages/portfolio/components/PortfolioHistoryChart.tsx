@@ -287,7 +287,7 @@ function PortfolioChartDropdown<TValue extends string>({
         value={value}
         onChange={(event) => onChange(event.target.value as TValue)}
         className={cl(
-          'h-10 w-full appearance-none rounded-lg border border-border bg-surface-secondary py-2 pr-8 pl-3 md:h-8 md:py-1',
+          'h-10 w-full appearance-none rounded-lg border border-border bg-surface-secondary py-2 pr-6 pl-2 md:h-8 md:py-1 md:pr-8 md:pl-3',
           'text-xs font-semibold uppercase text-text-primary shadow-inner transition-colors',
           'hover:border-text-tertiary focus:border-primary focus:outline-none'
         )}
@@ -420,7 +420,7 @@ export function PortfolioHistoryChartControls({
           value={activeTab}
           options={CHART_TABS}
           onChange={handleChartTabChange}
-          className={'min-w-[140px] flex-1 md:hidden'}
+          className={'min-w-0 flex-1 md:hidden'}
         />
         <div className={cl('hidden items-center gap-1 md:flex md:w-auto', SELECTOR_BAR_STYLES.container)}>
           {CHART_TABS.map((tab) => (
@@ -445,7 +445,7 @@ export function PortfolioHistoryChartControls({
             value={timeframe}
             options={TIMEFRAME_OPTIONS}
             onChange={onTimeframeChange}
-            className={'min-w-[76px]'}
+            className={'min-w-[64px] md:min-w-[76px]'}
           />
           {shouldShowValueTypeSelector ? (
             <PortfolioChartDropdown
@@ -453,6 +453,7 @@ export function PortfolioHistoryChartControls({
               value={activeUnitValue}
               options={valueTypeOptions}
               onChange={handleValueTypeChange}
+              className={'min-w-[68px] md:min-w-[92px]'}
             />
           ) : null}
         </div>
