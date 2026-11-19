@@ -280,26 +280,7 @@ function SettingsView({ onBack }: { onBack: () => void }) {
         <span aria-hidden className="size-10" />
       </header>
 
-      <div className="divide-y divide-line overflow-hidden rounded-xl border border-line">
-        <div className="flex items-center justify-between gap-4 px-4 py-3.5">
-          <span>
-            <span className="block text-sm font-medium text-navy">Auto-stake deposits</span>
-            <span className="block text-xs text-navy/60">Receive staked yBOLD by default</span>
-          </span>
-          <button
-            type="button"
-            role="switch"
-            aria-checked={settings.autoStake}
-            aria-label="Auto-stake deposits"
-            onClick={() => settings.setAutoStake(!settings.autoStake)}
-            className={`relative h-6 w-11 shrink-0 rounded-full transition-colors focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-yearn ${settings.autoStake ? 'bg-yearn' : 'bg-navy/20'}`}
-          >
-            <span
-              className={`absolute top-1 left-1 size-4 rounded-full bg-white transition-transform ${settings.autoStake ? 'translate-x-5' : 'translate-x-0'}`}
-            />
-          </button>
-        </div>
-
+      <div className="overflow-hidden rounded-xl border border-line">
         <div className="px-4 py-3.5">
           <p className="mb-2.5 text-sm font-medium text-navy">Slippage tolerance</p>
           <div className="grid grid-cols-3 gap-2">
