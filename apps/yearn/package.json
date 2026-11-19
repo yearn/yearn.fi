@@ -24,7 +24,7 @@
     "@yearn/vault-widget": "workspace:*",
     "dayjs": "1.11.23",
     "framer-motion": "12.42.2",
-    "next": "16.4.1",
+    "next": "16.4.5",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "react-hot-toast": "2.6.1",

@@ -63,7 +63,7 @@
     "bump": "0.2.5",
     "husky": "9.1.7",
     "lint-staged": "17.6.0",
-    "next": "16.4.1",
+    "next": "16.4.5",
     "typescript": "7.0.2",
     "vitest": "4.1.11"
   }

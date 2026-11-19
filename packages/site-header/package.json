@@ -16,7 +16,7 @@
     "./mobile": "./src/MobileNavMenu.tsx"
   },
   "peerDependencies": {
-    "next": "16.4.1",
+    "next": "16.4.5",
     "react": "19.3.0"
   },
   "devDependencies": {
