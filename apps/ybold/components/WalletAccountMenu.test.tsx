@@ -153,16 +153,17 @@ describe('yBOLD wallet account', () => {
     expect(screen.getByLabelText('yBOLD position value $25.00')).toBeTruthy()
   })
 
-  it('uses runtime settings and restores focus when navigating back', async () => {
+  it('only exposes slippage settings and restores focus when navigating back', async () => {
     render(<WalletAccountMenu />)
     openAccount()
     fireEvent.click(screen.getByRole('button', { name: 'Open wallet settings' }))
     await waitFor(() =>
       expect(document.activeElement).toBe(screen.getByRole('button', { name: 'Back to wallet account' }))
     )
-    fireEvent.click(screen.getByRole('switch', { name: 'Auto-stake deposits' }))
+    expect(screen.queryByRole('switch', { name: 'Auto-stake deposits' })).toBeNull()
+    expect(screen.queryByText('Receive staked yBOLD by default')).toBeNull()
     fireEvent.click(screen.getByRole('button', { name: '1%' }))
-    expect(wallet.setAutoStake).toHaveBeenCalledWith(false)
+    expect(wallet.setAutoStake).not.toHaveBeenCalled()
     expect(wallet.setSlippagePercent).toHaveBeenCalledWith(1)
     fireEvent.click(screen.getByRole('button', { name: 'Back to wallet account' }))
     await waitFor(() =>
