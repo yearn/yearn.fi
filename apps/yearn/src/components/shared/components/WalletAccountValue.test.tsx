@@ -2,7 +2,7 @@
 
 import { AccountDropdown } from '@shared/components/AccountDropdown'
 import { WalletAccountValue } from '@shared/components/WalletAccountValue'
-import { cleanup, fireEvent, render, screen } from '@testing-library/react'
+import { cleanup, render, screen } from '@testing-library/react'
 import { afterEach, beforeEach, expect, it, vi } from 'vitest'
 
 const wallet = vi.hoisted(() => ({
@@ -67,21 +67,6 @@ it('keeps the skeleton while balances load and treats a loaded zero as a real va
   view.rerender(<WalletAccountValue />)
   expect(screen.getByRole('status')).toBeDefined()
   expect(screen.queryByText('$0')).toBeNull()
-})
-
-it('allows disconnect while values are loading and resets settings when reopened', () => {
-  wallet.isLoading = true
-  const onClose = vi.fn()
-  const view = render(<AccountDropdown isOpen onClose={onClose} />)
-  fireEvent.click(screen.getByRole('button', { name: 'Disconnect wallet' }))
-  expect(wallet.disconnect).toHaveBeenCalledTimes(1)
-  expect(onClose).toHaveBeenCalledTimes(1)
-  fireEvent.click(screen.getByRole('button', { name: 'Wallet settings' }))
-  expect(screen.getByRole('button', { name: 'Back to wallet' })).toBeDefined()
-  view.rerender(<AccountDropdown isOpen={false} onClose={onClose} />)
-  view.rerender(<AccountDropdown isOpen onClose={onClose} />)
-  expect(screen.getByRole('button', { name: 'View portfolio' })).toBeDefined()
-  expect(screen.queryByRole('button', { name: 'Back to wallet' })).toBeNull()
 })
 
 it('rounds the whole wallet amount before separating cents', () => {

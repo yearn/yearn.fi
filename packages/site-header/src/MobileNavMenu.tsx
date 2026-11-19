@@ -425,7 +425,11 @@ function OpenMobileNavMenu({
                     <IconWallet className={'size-5'} />
                     <span>{walletIdentity || 'Wallet'}</span>
                     {notificationStatus && (
-                      <div className={cl('absolute right-4 size-2.5 rounded-full', notificationDotColor)} />
+                      <span
+                        role="img"
+                        aria-label="Unread transaction activity"
+                        className={cl('absolute right-4 size-2.5 rounded-full', notificationDotColor)}
+                      />
                     )}
                   </button>
 

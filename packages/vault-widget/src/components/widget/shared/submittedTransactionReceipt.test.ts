@@ -1,6 +1,6 @@
+import { getConfirmedTransactionReceipt } from '@yearn/vault-widget/headless'
 import { type TransactionReceipt, TransactionReceiptNotFoundError } from 'viem'
 import { describe, expect, it, vi } from 'vitest'
-import { getConfirmedTransactionReceipt } from './submittedTransactionReceipt'
 
 const HASH = `0x${'a'.repeat(64)}` as const
 const receipt = { blockNumber: 10n, status: 'success', transactionHash: HASH } as TransactionReceipt

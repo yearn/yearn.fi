@@ -23,6 +23,7 @@
     "./internal/components/widget/withdraw/withdrawBatch": "./src/components/widget/withdraw/withdrawBatch.ts",
     "./internal/components/widget/withdraw/types": "./src/components/widget/withdraw/types.ts",
     "./internal/components/widget/shared/valueDisplay": "./src/components/widget/shared/valueDisplay.ts",
+    "./internal/components/widget/shared/transactionOverlay.helpers": "./src/components/widget/shared/transactionOverlay.helpers.ts",
     "./internal/components/widget/shared/*": "./src/components/widget/shared/*.tsx",
     "./internal/components/widget/tokenLogo.utils": "./src/components/widget/tokenLogo.utils.ts",
     "./internal/components/widget/tokenSelectorList.utils": "./src/components/widget/tokenSelectorList.utils.ts",
@@ -36,6 +37,9 @@
     "./types": "./src/types.ts",
     "./wagmi": "./src/adapters/wagmiExecutionAdapter.ts",
     "./ybold": "./src/ybold.ts",
+    "./lifecycle": "./src/lifecycle/index.ts",
+    "./lifecycle/*": "./src/lifecycle/*.ts",
+    "./internal/components/widget/deposit/ApprovalOverlay": "./src/components/widget/deposit/ApprovalOverlay.tsx",
     "./erc4626/*": "./src/erc4626/*.ts",
     "./erc4626": "./src/components/Erc4626VaultWidget.tsx"
   },
