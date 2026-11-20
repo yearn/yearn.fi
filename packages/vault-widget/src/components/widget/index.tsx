@@ -41,6 +41,8 @@ export const Widget = forwardRef<VaultWidgetRef, VaultWidgetProps>(function Widg
     mode,
     onModeChange,
     showTabs = true,
+    hideActionHeader,
+    hideContainerBorder,
     onOpenSettings,
     isSettingsOpen,
     depositPrefill,
@@ -95,6 +97,8 @@ export const Widget = forwardRef<VaultWidgetRef, VaultWidgetProps>(function Widg
             onOpenSettings={onOpenSettings}
             isSettingsOpen={isSettingsOpen}
             hideSettings={hideTabSelector}
+            hideHeader={hideActionHeader}
+            hideContainerBorder={hideContainerBorder}
             disableBorderRadius={disableBorderRadius}
             collapseDetails={collapseDetails}
             disableTokenSelector={disableTokenSelector}
@@ -117,6 +121,8 @@ export const Widget = forwardRef<VaultWidgetRef, VaultWidgetProps>(function Widg
             onOpenSettings={onOpenSettings}
             isSettingsOpen={isSettingsOpen}
             hideSettings={hideTabSelector}
+            hideHeader={hideActionHeader}
+            hideContainerBorder={hideContainerBorder}
             disableBorderRadius={disableBorderRadius}
             collapseDetails={collapseDetails}
             disableTokenSelector={disableTokenSelector}

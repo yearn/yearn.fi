@@ -84,6 +84,7 @@ interface Props {
   onUserTokenSelectionChange?: (address: `0x${string}`, chainId: number) => void
   forceStake?: boolean
   hideSettings?: boolean
+  hideHeader?: boolean
   disableBorderRadius?: boolean
   collapseDetails?: boolean
   detailsContent?: ReactNode
@@ -173,6 +174,7 @@ export function WidgetDeposit({
   onUserTokenSelectionChange,
   forceStake = false,
   hideSettings: _hideSettings,
+  hideHeader,
   disableBorderRadius,
   collapseDetails,
   detailsContent,
@@ -377,10 +379,17 @@ export function WidgetDeposit({
     setIsDetailsPanelOpen(false)
   }
 
-  const availableDeposit = vaultUserData.erc4626 ? vaultUserData.availableToDeposit : inputToken?.balance.raw
+  const availableDeposit =
+    (vaultUserData.erc4626 || vaultUserData.yearnV2) &&
+    sourceChainId === chainId &&
+    isAddressEqual(depositToken, assetAddress)
+      ? vaultUserData.availableToDeposit
+      : inputToken?.balance.raw
   const { routeType, activeFlow } = useDepositFlow({
-    directDepositLimit: vaultUserData.erc4626?.maxDeposit,
-    directDepositDisabled: !!vaultUserData.error || (!!vaultUserData.erc4626 && depositAmount.isDebouncing),
+    directDepositLimit: vaultUserData.erc4626?.maxDeposit ?? vaultUserData.yearnV2?.maxDeposit,
+    yearnV2PricePerShare: vaultUserData.yearnV2 ? pricePerShare : undefined,
+    directDepositDisabled:
+      !!vaultUserData.error || (!!(vaultUserData.erc4626 || vaultUserData.yearnV2) && depositAmount.isDebouncing),
     depositToken,
     assetAddress,
     directDepositTokenAddress,
@@ -1193,6 +1202,7 @@ export function WidgetDeposit({
     return (
       <WidgetLoadingSkeleton
         title={titleOverride ?? 'Deposit'}
+        hideHeader={hideHeader}
         actions={headerActions}
         disableBorderRadius={disableBorderRadius}
       />
@@ -1431,8 +1441,8 @@ export function WidgetDeposit({
       })}
       data-tour="vault-detail-deposit-widget"
     >
-      <WidgetHeader title={titleOverride ?? 'Deposit'} actions={headerActions} />
-      <div className="flex flex-col flex-1 p-6 pt-2 gap-3">
+      {!hideHeader && <WidgetHeader title={titleOverride ?? 'Deposit'} actions={headerActions} />}
+      <div data-widget-part="form-layout" className={cl('flex flex-col flex-1 p-6 gap-3', !hideHeader && 'pt-2')}>
         {/* Amount Section */}
         <InputTokenAmount
           input={depositInput}
@@ -1457,28 +1467,30 @@ export function WidgetDeposit({
 
         {contentBelowInput}
 
-        {shouldCollapseDetails ? (
-          <>
-            <button
-              type="button"
-              onClick={() => setIsDetailsPanelOpen(true)}
-              aria-expanded={isDetailsPanelOpen}
-              className="flex w-full items-center justify-between gap-3 border border-border rounded-lg bg-surface-secondary px-4 py-3 text-sm font-semibold text-text-primary transition-colors hover:bg-surface"
-            >
-              <span>Your Transaction Details</span>
-              <IconChevron className="size-4 text-text-secondary" direction="right" />
-            </button>
-            {actionRow}
-          </>
-        ) : (
-          <>
-            {/* Details Section */}
-            {detailsSection}
+        <div data-widget-part="transaction-footer" className="flex flex-col gap-3">
+          {shouldCollapseDetails ? (
+            <>
+              <button
+                type="button"
+                onClick={() => setIsDetailsPanelOpen(true)}
+                aria-expanded={isDetailsPanelOpen}
+                className="flex w-full items-center justify-between gap-3 border border-border rounded-lg bg-surface-secondary px-4 py-3 text-sm font-semibold text-text-primary transition-colors hover:bg-surface"
+              >
+                <span>Your Transaction Details</span>
+                <IconChevron className="size-4 text-text-secondary" direction="right" />
+              </button>
+              {actionRow}
+            </>
+          ) : (
+            <>
+              {/* Details Section */}
+              {detailsSection}
 
-            {/* Action Button */}
-            {actionRow}
-          </>
-        )}
+              {/* Action Button */}
+              {actionRow}
+            </>
+          )}
+        </div>
       </div>
 
       {shouldCollapseDetails && isDetailsPanelOpen ? (

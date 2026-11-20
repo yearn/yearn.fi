@@ -4,18 +4,30 @@ import { useYearnAllocators } from '@erc4626/lib/useVaultDiscovery'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import type { Erc4626VaultWidgetProps } from '@yearn/vault-widget/erc4626'
+import { WidgetActionType } from '@yearn/vault-widget/types'
 import { afterEach, describe, expect, it, vi } from 'vitest'
 
 vi.mock('@erc4626/components/Header', () => ({ Header: () => null }))
+vi.mock('@erc4626/components/VaultZapRuntime', () => ({
+  VaultZapRuntime: ({ children }: { children: import('react').ReactNode }) => children
+}))
 vi.mock('@erc4626/lib/wagmiConfig', () => ({ wagmiConfig: {} }))
 vi.mock('wagmi', () => ({ useAccount: () => ({}) }))
 vi.mock('@yearn/vault-widget', () => ({
-  Erc4626VaultWidget: ({ isRetired, isCheckingRetirement, onSelectVault }: Erc4626VaultWidgetProps) => (
+  Erc4626VaultWidget: ({
+    isRetired,
+    isCheckingRetirement,
+    onSelectVault,
+    vaultSelector,
+    contractKind
+  }: Erc4626VaultWidgetProps) => (
     <>
       <div data-testid="retirement">{isCheckingRetirement ? 'checking' : isRetired ? 'retired' : 'active'}</div>
+      <div data-testid="contract-kind">{contractKind}</div>
       <button type="button" onClick={onSelectVault}>
         Select vault
       </button>
+      {typeof vaultSelector === 'function' ? vaultSelector(WidgetActionType.Deposit) : vaultSelector}
     </>
   )
 }))
@@ -37,6 +49,39 @@ afterEach(() => {
 })
 
 describe('catalog retirement status', () => {
+  it.each(['deep link', 'pasted address'])('resolves hidden retired factory metadata for a %s', async (entry) => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn().mockResolvedValue({
+        ok: true,
+        json: async () => [
+          {
+            address,
+            chainId: 1,
+            name: 'Hidden factory',
+            origin: 'yearn',
+            kind: 'Legacy',
+            type: 'Automated Yearn Vault',
+            apiVersion: '0.4.6',
+            isHidden: true,
+            isRetired: true,
+            asset: { address: '0x2222222222222222222222222222222222222222' }
+          }
+        ]
+      })
+    )
+    render(
+      <QueryClientProvider client={new QueryClient({ defaultOptions: { queries: { retry: false } } })}>
+        <VaultApp initialChain="1" initialAddress={entry === 'deep link' ? address : undefined} />
+      </QueryClientProvider>
+    )
+    if (entry === 'pasted address') {
+      fireEvent.click(screen.getByRole('button', { name: 'Select vault' }))
+      fireEvent.click(screen.getByRole('button', { name: 'Use address' }))
+    }
+    await waitFor(() => expect(screen.getByTestId('retirement').textContent).toBe('retired'))
+    expect(screen.getByTestId('contract-kind').textContent).toBe('yearn-v2')
+  })
   it.each(['deep link', 'pasted address'])('retains hidden allocator retirement for a %s', async (entry) => {
     vi.stubGlobal(
       'fetch',

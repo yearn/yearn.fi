@@ -17,13 +17,16 @@ export async function readErc4626Vault({
   client,
   address,
   chainId,
-  account
+  account,
+  contractKind
 }: {
   client: TErc4626Client
   address: Address
   chainId: number
   account?: Address
+  contractKind?: VaultWidgetVault['contractKind']
 }): Promise<TErc4626Snapshot> {
+  if (contractKind === 'yearn-v2') return readFactoryVault({ client, address, chainId, account })
   const blockNumber = await client.getBlockNumber({ cacheTime: 0 })
   const code = await client.getCode({ address, blockNumber })
   if (!code || code === '0x') throw new InvalidErc4626VaultError('No vault contract at this address on this network.')
@@ -97,5 +100,7 @@ export async function readErc4626Vault({
 export function getErc4626ReadMessage(error: unknown): string {
   return error instanceof InvalidErc4626VaultError
     ? error.message
-    : 'Unable to read this ERC-4626 vault. Check the network and address, then retry.'
+    : 'Unable to read this vault. Check the network and address, then retry.'
 }
+
+import { readFactoryVault } from '@yearn/vault-widget/erc4626/factoryReader'

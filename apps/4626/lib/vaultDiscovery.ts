@@ -1,4 +1,5 @@
 import { getChain } from '@erc4626/lib/chains'
+import { vaultAbi } from '@yearn/vault-widget/internal/contracts/abi/vaultV2.abi'
 import {
   AbiDecodingZeroDataError,
   type Address,
@@ -22,11 +23,99 @@ export type TVaultChoice = {
   retired?: boolean
   shares?: bigint
   decimals?: number
+  assetDecimals?: number
+  product?: 'single' | 'lp' | 'legacy' | 'other'
+  strategy?: boolean
+  legacy?: boolean
+  factory?: boolean
+  hidden?: boolean
+  origin?: string
+  category?: string
+  tvlUsd?: number
 }
 export type TWalletCandidate = { address: Address; chainId: number }
 const key = (vault: TWalletCandidate) => `${vault.chainId}:${vault.address.toLowerCase()}`
 const record = (value: unknown): Record<string, unknown> =>
   value && typeof value === 'object' ? (value as Record<string, unknown>) : {}
+const isStbDepositor = (name: unknown) => typeof name === 'string' && /stb[\s_-]*depositor\b/i.test(name)
+
+/** Prioritize same-chain wallet positions, then known TVL descending. Missing TVL stays unavailable. */
+export function sortVaultChoices(
+  vaults: readonly TVaultChoice[],
+  holdings: readonly TWalletCandidate[] = []
+): TVaultChoice[] {
+  const held = new Set(holdings.map(key))
+  return [...vaults].sort(
+    (a, b) =>
+      Number(held.has(key(b))) - Number(held.has(key(a))) ||
+      (b.tvlUsd ?? -1) - (a.tvlUsd ?? -1) ||
+      a.name.localeCompare(b.name) ||
+      a.chainId - b.chainId ||
+      a.address.localeCompare(b.address)
+  )
+}
+
+/** Kong's unfiltered catalog includes external ERC-4626 candidates and legacy Yearn contracts. */
+export function parseIndexedVaults(payload: unknown, { includeHidden = false } = {}): TVaultChoice[] {
+  if (!Array.isArray(payload)) throw new Error('The vault catalog returned an invalid response.')
+  const choices = payload.flatMap((value): TVaultChoice[] => {
+    const item = record(value)
+    const asset = record(item.asset)
+    if (
+      (!includeHidden && (item.isHidden === true || isStbDepositor(item.name))) ||
+      !getChain(Number(item.chainId)) ||
+      typeof item.address !== 'string' ||
+      !isAddress(item.address) ||
+      item.address === zeroAddress ||
+      typeof asset.address !== 'string' ||
+      !isAddress(asset.address)
+    )
+      return []
+    const v3 =
+      item.v3 === true ||
+      String(item.apiVersion ?? '')
+        .replace(/^~/, '')
+        .startsWith('3.')
+    const yearn = item.origin === 'yearn'
+    const factory =
+      item.type === 'Automated Yearn Vault' ||
+      item.type === 'Automated' ||
+      String(item.name ?? '')
+        .toLowerCase()
+        .includes('factory')
+    const legacy = !v3 && (item.kind === 'Legacy' || factory)
+    return [
+      {
+        address: getAddress(item.address),
+        chainId: Number(item.chainId),
+        name: typeof item.name === 'string' ? item.name : 'ERC-4626 vault',
+        symbol: typeof item.symbol === 'string' ? item.symbol : 'Shares',
+        assetAddress: getAddress(asset.address),
+        assetSymbol: typeof asset.symbol === 'string' ? asset.symbol : undefined,
+        decimals:
+          Number.isInteger(item.decimals) && Number(item.decimals) >= 0 && Number(item.decimals) <= 255
+            ? Number(item.decimals)
+            : undefined,
+        assetDecimals:
+          Number.isInteger(asset.decimals) && Number(asset.decimals) >= 0 && Number(asset.decimals) <= 255
+            ? Number(asset.decimals)
+            : undefined,
+        retired: item.isRetired === true,
+        legacy,
+        factory: yearn && factory && !v3,
+        hidden: item.isHidden === true || isStbDepositor(item.name),
+        origin: typeof item.origin === 'string' ? item.origin : undefined,
+        product: yearn ? (v3 ? 'single' : factory ? 'lp' : 'legacy') : 'other',
+        strategy: v3 && item.kind !== 'Multi Strategy',
+        category: typeof item.category === 'string' ? item.category : undefined,
+        tvlUsd: typeof item.tvl === 'number' && Number.isFinite(item.tvl) && item.tvl >= 0 ? item.tvl : undefined
+      }
+    ]
+  })
+  return Array.from(new Map(choices.map((vault) => [key(vault), vault])).values()).sort(
+    (a, b) => Number(a.retired) - Number(b.retired) || a.name.localeCompare(b.name)
+  )
+}
 
 /** Price is deliberately irrelevant: an unpriced share token is still a candidate. */
 export function parseWalletCandidates(payload: unknown): TWalletCandidate[] {
@@ -69,12 +158,12 @@ export function parseHiddenYearnVaultTokens(payload: unknown): TWalletCandidate[
   })
 }
 
-export function filterVisibleWalletVaults<T extends TWalletCandidate>(
+export function filterVisibleWalletVaults<T extends TWalletCandidate & { name?: string }>(
   vaults: T[],
   hiddenTokens: TWalletCandidate[]
 ): T[] {
   const hidden = new Set(hiddenTokens.map(key))
-  return vaults.filter((vault) => !hidden.has(key(vault)))
+  return vaults.filter((vault) => !hidden.has(key(vault)) && !isStbDepositor(vault.name))
 }
 
 /** Only synchronous V3 allocator candidates on this app's supported networks. */
@@ -122,16 +211,21 @@ function isContractMismatch(error: unknown): boolean {
 export async function inspectWalletCandidate(
   client: Pick<PublicClient, 'multicall'>,
   candidate: TWalletCandidate,
-  owner: Address
+  owner: Address,
+  factory = false
 ): Promise<{ vault?: TVaultChoice; unreadable: boolean }> {
   const address = candidate.address
   try {
     const [asset, balance, conversion, decimals, name, symbol] = await client.multicall({
       allowFailure: true,
       contracts: [
-        { address, abi: erc4626Abi, functionName: 'asset' },
+        factory
+          ? { address, abi: vaultAbi, functionName: 'token' }
+          : { address, abi: erc4626Abi, functionName: 'asset' },
         { address, abi: erc20Abi, functionName: 'balanceOf', args: [owner] },
-        { address, abi: erc4626Abi, functionName: 'convertToAssets', args: [0n] },
+        factory
+          ? { address, abi: vaultAbi, functionName: 'pricePerShare' }
+          : { address, abi: erc4626Abi, functionName: 'convertToAssets', args: [0n] },
         { address, abi: erc20Abi, functionName: 'decimals' },
         { address, abi: erc20Abi, functionName: 'name' },
         { address, abi: erc20Abi, functionName: 'symbol' }
@@ -146,6 +240,7 @@ export async function inspectWalletCandidate(
       unreadable: false,
       vault: {
         ...candidate,
+        factory,
         assetAddress: asset.result,
         name: name.status === 'success' ? name.result : 'ERC-4626 vault',
         symbol: symbol.status === 'success' ? symbol.result : 'Shares',
@@ -162,9 +257,11 @@ export async function discoverWalletVaults(
   candidates: TWalletCandidate[],
   owner: Address,
   getClient: (chainId: number) => Pick<PublicClient, 'multicall'> | undefined,
-  signal?: AbortSignal
+  signal?: AbortSignal,
+  factoryVaults: TVaultChoice[] = []
 ) {
   const bounded = candidates.slice(0, 500)
+  const factories = new Set(factoryVaults.filter((vault) => vault.factory).map(key))
   const batches = Array.from({ length: Math.ceil(bounded.length / 8) }, (_, i) => bounded.slice(i * 8, i * 8 + 8))
   const results = await batches.reduce(
     async (previous, batch) => {
@@ -174,7 +271,7 @@ export async function discoverWalletVaults(
         batch.map((candidate) => {
           const client = getClient(candidate.chainId)
           return client
-            ? inspectWalletCandidate(client, candidate, owner)
+            ? inspectWalletCandidate(client, candidate, owner, factories.has(key(candidate)))
             : Promise.resolve<Awaited<ReturnType<typeof inspectWalletCandidate>>>({ unreadable: true })
         })
       )
