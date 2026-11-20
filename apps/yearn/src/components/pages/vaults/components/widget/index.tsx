@@ -6,6 +6,8 @@ import {
 import type { TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import type { VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { WidgetActionType as ActionType } from '@pages/vaults/types'
+import { resolveRouteVaultFromMap } from '@pages/vaults/utils/routeVault'
+import { useYearn } from '@shared/contexts/useYearn'
 import type { TAddress } from '@shared/types'
 import { isZeroAddress, toAddress } from '@shared/utils'
 import {
@@ -111,6 +113,10 @@ export const Widget = forwardRef<TWidgetRef, VaultWidgetProps>(function Widget(
     () => normalizeVaultUserDataForWidget(vaultUserData, chainId),
     [chainId, vaultUserData]
   )
+  const { vaults: catalogVaults, isLoadingVaultList } = useYearn()
+  const isMigrationTargetCatalogVault = Boolean(
+    resolveRouteVaultFromMap(catalogVaults, { routeChainId: chainId, routeAddress: normalizedVault.migration?.address })
+  )
   const sharedActions = useMemo(() => actions.map(toSharedAction), [actions])
   const resolvedVaultAddress = toAddress(vaultAddress ?? normalizedVault.address)
   const resolvedStakingAddress = resolveOptionalAddress(gaugeAddress ?? normalizedVault.staking?.address)
@@ -150,6 +156,17 @@ export const Widget = forwardRef<TWidgetRef, VaultWidgetProps>(function Widget(
       renderAction={(action) => {
         if (action !== SharedActionType.Migrate) {
           return null
+        }
+
+        if (!isMigrationTargetCatalogVault) {
+          if (isLoadingVaultList || Object.keys(catalogVaults).length === 0) {
+            return null
+          }
+          return (
+            <div className="p-6 text-sm text-text-secondary">
+              {'Migration is unavailable: the destination is not a listed Yearn vault.'}
+            </div>
+          )
         }
 
         return (

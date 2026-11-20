@@ -4,13 +4,39 @@ import { ERC_4626_ROUTER_ABI } from '@shared/contracts/abi/erc4626Router.abi'
 import { type AppUseSimulateContractReturnType, usePublicClient, useSimulateContract } from '@shared/hooks/useAppWagmi'
 import { detectPermitType, type PermitType, type TPermitSignature } from '@shared/hooks/usePermit'
 import { getMigratorConfig, type MigratorConfig } from '@shared/utils/migratorRegistry'
+import { useQuery } from '@tanstack/react-query'
 import { useEffect, useMemo, useState } from 'react'
-import { type Address, encodeFunctionData, erc20Abi } from 'viem'
+import { type Address, encodeFunctionData, erc20Abi, erc4626Abi, type PublicClient, parseAbi } from 'viem'
 import { YEARN_4626_ROUTER } from '@/components/shared/utils'
 
 // Default permit deadline: 20 minutes from now
 const DEFAULT_PERMIT_DEADLINE_MINUTES = 20
 const DEFAULT_MIGRATION_MIN_SHARES_OUT = 0n
+const MIGRATION_MIN_SHARES_OUT_BPS = 9950n
+const V2_VAULT_PRICE_ABI = parseAbi([
+  'function pricePerShare() view returns (uint256)',
+  'function decimals() view returns (uint256)'
+])
+
+export function getMigrationMinSharesOut(expectedShares: bigint): bigint {
+  return (expectedShares * MIGRATION_MIN_SHARES_OUT_BPS) / 10_000n || 1n
+}
+
+async function quoteMigrationShares(
+  client: PublicClient,
+  vaultFrom: Address,
+  vaultTo: Address,
+  shares: bigint,
+  isSourceV2: boolean
+): Promise<bigint> {
+  const assets = isSourceV2
+    ? await Promise.all([
+        client.readContract({ address: vaultFrom, abi: V2_VAULT_PRICE_ABI, functionName: 'pricePerShare' }),
+        client.readContract({ address: vaultFrom, abi: V2_VAULT_PRICE_ABI, functionName: 'decimals' })
+      ]).then(([pricePerShare, decimals]) => (shares * pricePerShare) / 10n ** decimals)
+    : await client.readContract({ address: vaultFrom, abi: erc4626Abi, functionName: 'previewRedeem', args: [shares] })
+  return client.readContract({ address: vaultTo, abi: erc4626Abi, functionName: 'previewDeposit', args: [assets] })
+}
 
 type VaultMigratorArgs = readonly [Address, Address, bigint]
 type Erc4626RouterMigrateArgs = readonly [Address, Address, bigint, bigint]
@@ -45,11 +71,12 @@ export function getMigrateArgs(
   vaultFrom: Address,
   vaultTo: Address,
   shares: bigint,
-  recipient: Address
+  recipient: Address,
+  minSharesOut?: bigint
 ): MigrateArgs {
   switch (migratorConfig.argumentType) {
     case 'erc4626-router':
-      return getErc4626RouterMigrateArgs(vaultFrom, vaultTo, shares)
+      return getErc4626RouterMigrateArgs(vaultFrom, vaultTo, shares, minSharesOut)
     case 'yearn-vecrv-zap':
       return getYearnVeCrvZapArgs(vaultFrom, vaultTo, shares, recipient)
     default:
@@ -138,6 +165,19 @@ export const useMigrateFlow = ({
   // Check if this is a V2 vault (V2 vaults have non-standard permit that doesn't work with router's selfPermit)
   const isV2Vault = !vaultVersion?.startsWith('3') && !vaultVersion?.startsWith('~3')
 
+  // The ERC-4626 router enforces minSharesOut on-chain; never sign it as 0.
+  const usesMinSharesOut = migratorConfig.argumentType === 'erc4626-router'
+  const { data: minSharesOut, isError: isQuoteError } = useQuery({
+    queryKey: ['migration-min-shares-out', chainId, vaultFrom, vaultTo, balance.toString(), isV2Vault],
+    queryFn: async () =>
+      getMigrationMinSharesOut(
+        await quoteMigrationShares(client as PublicClient, vaultFrom, vaultTo, balance, isV2Vault)
+      ),
+    enabled: enabled && !!client && usesMinSharesOut && balance > 0n,
+    refetchInterval: 30_000
+  })
+  const hasMinSharesOut = !usesMinSharesOut || minSharesOut !== undefined
+
   // Only use permit flow for V3 vaults with EIP-2612 style permits
   // V2 vaults have a different permit signature (Bytes[65] instead of v,r,s) that's incompatible with selfPermit
   const supportsPermit = migratorConfig.argumentType === 'erc4626-router' && permitType === 'eip2612' && !isV2Vault
@@ -161,12 +201,16 @@ export const useMigrateFlow = ({
     query: { enabled: prepareApproveEnabled }
   })
 
-  const prepareMigrateEnabled = routeType === 'approve' && hasBalance && !!account && enabled && isAllowanceSufficient
+  const prepareMigrateEnabled =
+    routeType === 'approve' && hasBalance && !!account && enabled && isAllowanceSufficient && hasMinSharesOut
   const prepareMigrate: AppUseSimulateContractReturnType = useSimulateContract({
     abi: migratorConfig.abi,
     functionName: migratorConfig.functionName,
     address: effectiveRouter,
-    args: balance > 0n && account ? getMigrateArgs(migratorConfig, vaultFrom, vaultTo, balance, account) : undefined,
+    args:
+      balance > 0n && account
+        ? getMigrateArgs(migratorConfig, vaultFrom, vaultTo, balance, account, minSharesOut)
+        : undefined,
     account,
     chainId,
     query: { enabled: prepareMigrateEnabled }
@@ -175,7 +219,7 @@ export const useMigrateFlow = ({
   // Prepare multicall transaction (for permit flow: selfPermit + migrate)
   const hasValidPermitSignature = !!permitSignature && permitSignature.deadline > BigInt(Math.floor(Date.now() / 1000))
   const prepareMulticallEnabled =
-    routeType === 'permit' && hasBalance && !!account && enabled && hasValidPermitSignature
+    routeType === 'permit' && hasBalance && !!account && enabled && hasValidPermitSignature && hasMinSharesOut
 
   // Encode multicall data: selfPermit + migrate
   const multicallData = useMemo(() => {
@@ -193,7 +237,7 @@ export const useMigrateFlow = ({
     const migrateData = encodeFunctionData({
       abi: migratorConfig.abi,
       functionName: migratorConfig.functionName,
-      args: getErc4626RouterMigrateArgs(vaultFrom, vaultTo, balance)
+      args: getErc4626RouterMigrateArgs(vaultFrom, vaultTo, balance, minSharesOut)
     })
 
     return [selfPermitData, migrateData]
@@ -203,6 +247,7 @@ export const useMigrateFlow = ({
     balance,
     vaultFrom,
     vaultTo,
+    minSharesOut,
     migratorConfig.abi,
     migratorConfig.functionName
   ])
@@ -219,11 +264,12 @@ export const useMigrateFlow = ({
 
   // Determine error state
   const error = useMemo(() => {
+    if (isQuoteError) return 'Migration quote failed'
     if (isCheckingPermit) return undefined
     if (routeType === 'approve' && prepareMigrate.isError) return 'Migration simulation failed'
     if (routeType === 'permit' && prepareMulticall.isError) return 'Migration simulation failed'
     return undefined
-  }, [isCheckingPermit, routeType, prepareMigrate.isError, prepareMulticall.isError])
+  }, [isQuoteError, isCheckingPermit, routeType, prepareMigrate.isError, prepareMulticall.isError])
 
   return {
     actions: {
