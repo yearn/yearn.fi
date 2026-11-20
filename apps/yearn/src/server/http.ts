@@ -71,8 +71,9 @@ export async function readJsonBody<T>(request: Request): Promise<T> {
 }
 
 export function getRequestIp(request: Request): string | undefined {
-  const forwardedFor = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
-  const realIp = request.headers.get('x-real-ip')?.trim()
+  if (process.env.VERCEL) {
+    return request.headers.get('x-vercel-forwarded-for')?.split(',')[0]?.trim() || undefined
+  }
 
-  return forwardedFor || realIp || (process.env.NODE_ENV === 'development' ? '127.0.0.1' : undefined)
+  return process.env.NODE_ENV === 'development' ? '127.0.0.1' : undefined
 }
