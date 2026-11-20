@@ -18,6 +18,7 @@ vi.mock('@shared/utils/fetchQuery', () => ({
 }))
 
 const BASE_SNAPSHOT = {
+  origin: 'yearn',
   meta: {
     displayName: 'yBOLD',
     displaySymbol: 'yBOLD',
@@ -143,5 +144,27 @@ describe('yBOLD vault metadata', () => {
     expect(metadata.description).not.toContain('Est. APY')
     expect(structuredData.name).toBe('yBOLD (yBOLD)')
     expect(structuredData.annualPercentageRate).toBeUndefined()
+  })
+})
+
+describe('non-Yearn vault metadata', () => {
+  const address = '0x1111111111111111111111111111111111111111'
+  const snapshot = { ...BASE_SNAPSHOT, origin: null, meta: { displayName: 'Other Vault' } }
+
+  it('does not label an origin-null snapshot as a Yearn vault', () => {
+    const metadata = buildVaultMetadataFromInput({ chainID: '1', address, snapshot })
+
+    expect(metadata.description).toBe('Other Vault is an ERC-4626 vault on Ethereum. It is not a Yearn vault.')
+    expect(metadata.openGraph?.images).toBeUndefined()
+    expect(buildVaultStructuredDataFromInput({ chainID: '1', address, snapshot })).toBeNull()
+  })
+
+  it('keeps Yearn metadata for origin=yearn snapshots', () => {
+    const yearnSnapshot = { ...snapshot, origin: 'yearn' }
+
+    expect(buildVaultMetadataFromInput({ chainID: '1', address, snapshot: yearnSnapshot }).description).toContain(
+      'a Yearn vault on Ethereum'
+    )
+    expect(buildVaultStructuredDataFromInput({ chainID: '1', address, snapshot: yearnSnapshot })).not.toBeNull()
   })
 })

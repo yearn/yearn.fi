@@ -1,5 +1,6 @@
 import { mergeYBoldSnapshot, stripYBoldBaseMetrics } from '@pages/vaults/domain/normalizeVault'
 import { isYBoldProductAddress, isYBoldVaultAddress, YBOLD_STAKING_ADDRESS } from '@pages/vaults/domain/yBoldProduct'
+import { isYvBtcAddress, YVBTC_CHAIN_ID } from '@pages/vaults/utils/yvBtc'
 import landingManifest from '@shared/data/landing-manifest.json'
 import { buildVaultSnapshotEndpoint } from '@shared/data/publicQueryEndpoints'
 import vaultsManifest from '@shared/data/vaults-manifest.json'
@@ -127,6 +128,16 @@ function resolveVaultMetadataApy(address: string, snapshot?: TKongVaultSnapshot 
   )
 }
 
+function isNonYearnVaultSnapshot(chainID: string, address: string, snapshot?: TKongVaultSnapshot | null): boolean {
+  if (!snapshot) {
+    return false
+  }
+  if (snapshot.inclusion?.isYearn === false) {
+    return true
+  }
+  return snapshot.origin !== 'yearn' && !(Number(chainID) === YVBTC_CHAIN_ID && isYvBtcAddress(address))
+}
+
 function buildVaultDescription({
   assetSymbol,
   chainName,
@@ -197,9 +208,13 @@ export function buildVaultMetadataFromInput({ chainID, address, snapshot }: TVau
   const title = symbol ? `${name} (${symbol})` : name
   const apy = resolveVaultMetadataApy(address, snapshot)
   const tvl = pickFirstNumber(snapshot?.tvl?.close)
-  const description = snapshot
-    ? buildVaultDescription({ assetSymbol, chainName, name, apy, tvl })
-    : genericVaultDescription
+  const isNonYearn = isNonYearnVaultSnapshot(chainID, address, snapshot)
+  const description = isNonYearn
+    ? `${name} is an ERC-4626 vault on ${chainName}. It is not a Yearn vault.`
+    : snapshot
+      ? buildVaultDescription({ assetSymbol, chainName, name, apy, tvl })
+      : genericVaultDescription
+  const images = ogImage && !isNonYearn ? [ogImage] : undefined
 
   return {
     title,
@@ -219,14 +234,14 @@ export function buildVaultMetadataFromInput({ chainID, address, snapshot }: TVau
       title,
       description,
       url: canonicalPath,
-      images: ogImage ? [ogImage] : undefined,
+      images,
       type: 'website'
     },
     twitter: {
       card: 'summary_large_image',
       title,
       description,
-      images: ogImage ? [ogImage] : undefined
+      images
     },
     ...(discoveryUrls
       ? {
@@ -246,7 +261,7 @@ export function buildVaultStructuredDataFromInput({
   address,
   snapshot
 }: TVaultMetadataInput): Record<string, unknown> | null {
-  if (!isValidVaultMetadataParams(chainID, address)) {
+  if (!isValidVaultMetadataParams(chainID, address) || isNonYearnVaultSnapshot(chainID, address, snapshot)) {
     return null
   }
 
