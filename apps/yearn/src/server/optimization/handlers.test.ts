@@ -87,6 +87,9 @@ describe('optimization handlers', () => {
   })
 
   it('keeps CORS headers on vault-state POST responses', async () => {
+    readOptimizationsMock.mockResolvedValue([
+      { vault: '0x1111111111111111111111111111111111111111', source: { chainId: 1 } }
+    ])
     fetchVaultOnChainStateMock.mockResolvedValue({
       totalAssets: 1000n,
       strategyDebts: new Map([['0x2222222222222222222222222222222222222222', 400n]]),
@@ -102,7 +105,8 @@ describe('optimization handlers', () => {
 
     expect(response.status).toBe(200)
     expect(response.headers.get('Access-Control-Allow-Origin')).toBe('*')
-    expectPublicCdnCacheHeaders(response, 'public, s-maxage=60, stale-while-revalidate=30')
+    expect(response.headers.get('Cache-Control')).toBe('no-store')
+    expect(response.headers.get('Vercel-CDN-Cache-Control')).toBeNull()
     await expect(response.json()).resolves.toEqual({
       totalAssets: '1000',
       strategyDebts: {
@@ -110,6 +114,31 @@ describe('optimization handlers', () => {
       },
       unallocatedBps: 6000
     })
+  })
+
+  it('rejects vault-state requests for unknown vaults or oversized strategy lists without RPC calls', async () => {
+    const vault = '0x1111111111111111111111111111111111111111'
+    const strategy = '0x2222222222222222222222222222222222222222'
+    readOptimizationsMock.mockResolvedValue([{ vault, source: { chainId: 1 } }])
+
+    const unknown = await vaultStateHandler(
+      createPostRequest('/api/optimization/vault-state', { chainId: 10, strategies: [strategy], vault })
+    )
+    const oversized = await vaultStateHandler(
+      createPostRequest('/api/optimization/vault-state', { chainId: 1, strategies: Array(51).fill(strategy), vault })
+    )
+    const malformed = await vaultStateHandler(
+      createPostRequest('/api/optimization/vault-state', {
+        chainId: 1,
+        strategies: [strategy, 'not-an-address'],
+        vault
+      })
+    )
+
+    expect(unknown.status).toBe(404)
+    expect(oversized.status).toBe(400)
+    expect(malformed.status).toBe(400)
+    expect(fetchVaultOnChainStateMock).not.toHaveBeenCalled()
   })
 
   it('returns a validation error for malformed vault-state JSON bodies', async () => {

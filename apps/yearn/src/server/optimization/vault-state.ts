@@ -1,12 +1,10 @@
 import { json, noContent, POST_CORS_HEADERS, readJsonBody } from '../http'
-import { getVercelCdnCacheHeaders } from '../lib/cacheHeaders'
+import { readOptimizations } from './_lib/redis'
 import { fetchVaultOnChainState } from './_lib/rpc'
 
-const CDN_CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=30'
-const RESPONSE_HEADERS = {
-  ...POST_CORS_HEADERS,
-  ...getVercelCdnCacheHeaders(CDN_CACHE_CONTROL)
-}
+const ADDRESS_PATTERN = /^0x[a-fA-F0-9]{40}$/
+const MAX_STRATEGIES = 50
+const RESPONSE_HEADERS = { ...POST_CORS_HEADERS, 'Cache-Control': 'no-store' }
 
 export function OPTIONS(): Response {
   return noContent(POST_CORS_HEADERS)
@@ -26,11 +24,9 @@ export async function POST(request: Request): Promise<Response> {
   const payload = await readVaultStatePayload(request)
   const vault = typeof payload.vault === 'string' ? payload.vault : null
   const chainId = typeof payload.chainId === 'number' ? payload.chainId : null
-  const strategies = Array.isArray(payload.strategies)
-    ? payload.strategies.filter((s: unknown): s is string => typeof s === 'string')
-    : []
+  const strategies: unknown[] = Array.isArray(payload.strategies) ? payload.strategies : []
 
-  if (!vault || !/^0x[a-fA-F0-9]{40}$/.test(vault)) {
+  if (!vault || !ADDRESS_PATTERN.test(vault)) {
     return json({ error: 'Invalid vault address' }, { status: 400, headers: POST_CORS_HEADERS })
   }
   if (chainId === null || !Number.isFinite(chainId)) {
@@ -39,8 +35,26 @@ export async function POST(request: Request): Promise<Response> {
   if (strategies.length === 0) {
     return json({ error: 'No strategy addresses provided' }, { status: 400, headers: POST_CORS_HEADERS })
   }
+  if (strategies.length > MAX_STRATEGIES) {
+    return json({ error: 'Too many strategy addresses' }, { status: 400, headers: POST_CORS_HEADERS })
+  }
+  if (!strategies.every((s): s is string => typeof s === 'string' && ADDRESS_PATTERN.test(s))) {
+    return json({ error: 'Invalid strategy address' }, { status: 400, headers: POST_CORS_HEADERS })
+  }
 
   try {
+    const isKnownVault = ((await readOptimizations()) ?? []).some(
+      (optimization) =>
+        optimization.vault.toLowerCase() === vault.toLowerCase() &&
+        (optimization.source.chainId === null || optimization.source.chainId === chainId)
+    )
+    if (!isKnownVault) {
+      return json(
+        { error: `Vault not found in optimization payload: ${vault}` },
+        { status: 404, headers: POST_CORS_HEADERS }
+      )
+    }
+
     const state = await fetchVaultOnChainState(chainId, vault, strategies)
 
     const strategyDebts = Object.fromEntries(
