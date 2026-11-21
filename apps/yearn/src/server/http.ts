@@ -78,5 +78,9 @@ export function getRequestIp(request: Request): string | undefined {
   }
 
   const isLocalHost = LOCAL_HOST_PATTERN.test(request.headers.get('host') ?? '')
-  return process.env.NODE_ENV === 'development' && isLocalHost ? '127.0.0.1' : undefined
+  if (process.env.NODE_ENV !== 'development' || !isLocalHost) {
+    return undefined
+  }
+
+  return request.headers.get('x-forwarded-for')?.split(',').at(-1)?.trim() || undefined
 }
