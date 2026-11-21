@@ -70,10 +70,13 @@ export async function readJsonBody<T>(request: Request): Promise<T> {
   }
 }
 
+const LOCAL_HOST_PATTERN = /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/
+
 export function getRequestIp(request: Request): string | undefined {
   if (process.env.VERCEL) {
     return request.headers.get('x-vercel-forwarded-for')?.split(',')[0]?.trim() || undefined
   }
 
-  return process.env.NODE_ENV === 'development' ? '127.0.0.1' : undefined
+  const isLocalHost = LOCAL_HOST_PATTERN.test(request.headers.get('host') ?? '')
+  return process.env.NODE_ENV === 'development' && isLocalHost ? '127.0.0.1' : undefined
 }
