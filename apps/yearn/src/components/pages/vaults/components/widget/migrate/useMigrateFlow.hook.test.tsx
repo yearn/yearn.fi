@@ -1,0 +1,128 @@
+// @vitest-environment jsdom
+
+import { useTokenAllowance } from '@pages/vaults/hooks/useTokenAllowance'
+import { usePublicClient, useSimulateContract } from '@shared/hooks/useAppWagmi'
+import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
+import { renderHook, waitFor } from '@testing-library/react'
+import type { ReactNode } from 'react'
+import type { Address } from 'viem'
+import { beforeEach, describe, expect, it, vi } from 'vitest'
+import { YEARN_4626_ROUTER } from '@/components/shared/utils'
+import { useMigrateFlow } from './useMigrateFlow'
+
+vi.mock('@shared/hooks/useAppWagmi', () => ({
+  usePublicClient: vi.fn(),
+  useSimulateContract: vi.fn()
+}))
+
+vi.mock('@pages/vaults/hooks/useTokenAllowance', () => ({
+  useTokenAllowance: vi.fn()
+}))
+
+vi.mock('@shared/hooks/usePermit', () => ({
+  detectPermitType: vi.fn().mockResolvedValue('none')
+}))
+
+const FROM_VAULT = '0x1111111111111111111111111111111111111111' as Address
+const TO_VAULT = '0x2222222222222222222222222222222222222222' as Address
+const ACCOUNT = '0x3333333333333333333333333333333333333333' as Address
+const UNKNOWN_ROUTER = '0x4444444444444444444444444444444444444444' as Address
+const BALANCE = 10n ** 18n
+
+type TReadContractCall = { address: Address; functionName: string; args?: readonly bigint[] }
+
+const useSimulateContractMock = vi.mocked(useSimulateContract)
+const readContract = vi.fn<(call: TReadContractCall) => Promise<bigint>>()
+
+function renderMigrateFlow(vaultVersion: string) {
+  const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+  return renderHook(
+    () =>
+      useMigrateFlow({
+        vaultFrom: FROM_VAULT,
+        vaultTo: TO_VAULT,
+        router: UNKNOWN_ROUTER,
+        vaultVersion,
+        balance: BALANCE,
+        account: ACCOUNT,
+        chainId: 1,
+        enabled: true
+      }),
+    {
+      wrapper: ({ children }: { children: ReactNode }) => (
+        <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
+      )
+    }
+  )
+}
+
+function lastMigrateSimulation(functionName: string) {
+  return useSimulateContractMock.mock.calls
+    .map(([parameters]) => parameters)
+    .findLast((parameters) => parameters?.functionName === functionName)
+}
+
+describe('useMigrateFlow quote', () => {
+  beforeEach(() => {
+    vi.clearAllMocks()
+    vi.mocked(usePublicClient).mockReturnValue({ readContract } as never)
+    vi.mocked(useTokenAllowance).mockReturnValue({ allowance: BALANCE } as never)
+    useSimulateContractMock.mockReturnValue({ isError: false } as never)
+  })
+
+  it('prepares a V3 migration with the minimum quoted through previewRedeem', async () => {
+    readContract.mockImplementation(async ({ address, functionName, args }) => {
+      if (address === FROM_VAULT && functionName === 'previewRedeem' && args?.[0] === BALANCE) return 3_000n
+      if (address === TO_VAULT && functionName === 'previewDeposit' && args?.[0] === 3_000n) return 10_000n
+      throw new Error(`unexpected read ${functionName}`)
+    })
+
+    const { result } = renderMigrateFlow('3.0.2')
+
+    await waitFor(() => expect(result.current.periphery.prepareMigrateEnabled).toBe(true))
+    expect(lastMigrateSimulation('migrate')).toMatchObject({
+      address: YEARN_4626_ROUTER,
+      args: [FROM_VAULT, TO_VAULT, BALANCE, 9_950n],
+      query: { enabled: true }
+    })
+  })
+
+  it('prepares a V2 migration with the minimum quoted through pricePerShare', async () => {
+    readContract.mockImplementation(async ({ address, functionName, args }) => {
+      if (address === FROM_VAULT && functionName === 'pricePerShare') return 2n * 10n ** 6n
+      if (address === FROM_VAULT && functionName === 'decimals') return 6n
+      if (address === TO_VAULT && functionName === 'previewDeposit' && args?.[0] === 2n * BALANCE) return 20_000n
+      throw new Error(`unexpected read ${functionName}`)
+    })
+
+    const { result } = renderMigrateFlow('0.4.6')
+
+    await waitFor(() => expect(result.current.periphery.prepareMigrateEnabled).toBe(true))
+    expect(lastMigrateSimulation('migrateFromV2')).toMatchObject({
+      address: YEARN_4626_ROUTER,
+      args: [FROM_VAULT, TO_VAULT, BALANCE, 19_900n],
+      query: { enabled: true }
+    })
+  })
+
+  it.each(['3.0.2', '0.4.6'])('does not prepare a %s migration while the quote is pending', async (vaultVersion) => {
+    readContract.mockReturnValue(new Promise(() => undefined))
+
+    const { result } = renderMigrateFlow(vaultVersion)
+
+    await waitFor(() => expect(result.current.periphery.isCheckingPermit).toBe(false))
+    expect(readContract).toHaveBeenCalled()
+    expect(result.current.periphery.prepareMigrateEnabled).toBe(false)
+    expect(useSimulateContractMock.mock.calls.some(([parameters]) => parameters?.query?.enabled)).toBe(false)
+  })
+
+  it.each(['3.0.2', '0.4.6'])('does not prepare a %s migration when the quote fails', async (vaultVersion) => {
+    readContract.mockRejectedValue(new Error('rpc down'))
+
+    const { result } = renderMigrateFlow(vaultVersion)
+
+    await waitFor(() => expect(result.current.periphery.error).toBe('Migration quote failed'))
+    expect(result.current.periphery.prepareMigrateEnabled).toBe(false)
+    expect(useSimulateContractMock.mock.calls.some(([parameters]) => parameters?.query?.enabled)).toBe(false)
+  })
+})
