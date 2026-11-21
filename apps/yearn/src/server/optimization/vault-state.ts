@@ -1,18 +1,35 @@
-import { json, noContent, POST_CORS_HEADERS, readJsonBody } from '../http'
+import { json, noContent, POST_CORS_HEADERS } from '../http'
 import { readOptimizations } from './_lib/redis'
 import { fetchVaultOnChainState } from './_lib/rpc'
 
 const ADDRESS_PATTERN = /^0x[a-fA-F0-9]{40}$/
 const MAX_STRATEGIES = 50
+const MAX_BODY_BYTES = 10 * 1024
 const RESPONSE_HEADERS = { ...POST_CORS_HEADERS, 'Cache-Control': 'no-store' }
 
 export function OPTIONS(): Response {
   return noContent(POST_CORS_HEADERS)
 }
 
-async function readVaultStatePayload(request: Request): Promise<Record<string, unknown>> {
+async function readBodyText(
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+  chunks: Uint8Array[] = [],
+  size = 0
+): Promise<string | null> {
+  const { done, value } = await reader.read()
+  if (done) {
+    return Buffer.concat(chunks).toString('utf8')
+  }
+  if (size + value.byteLength > MAX_BODY_BYTES) {
+    await reader.cancel()
+    return null
+  }
+  return readBodyText(reader, [...chunks, value], size + value.byteLength)
+}
+
+function parseVaultStatePayload(text: string): Record<string, unknown> {
   try {
-    const payload = await readJsonBody<unknown>(request)
+    const payload: unknown = JSON.parse(text)
 
     return payload && typeof payload === 'object' ? (payload as Record<string, unknown>) : {}
   } catch (_error) {
@@ -21,7 +38,12 @@ async function readVaultStatePayload(request: Request): Promise<Record<string, u
 }
 
 export async function POST(request: Request): Promise<Response> {
-  const payload = await readVaultStatePayload(request)
+  const text = request.body ? await readBodyText(request.body.getReader()) : ''
+  if (text === null) {
+    return json({ error: 'Request body too large' }, { status: 413, headers: POST_CORS_HEADERS })
+  }
+
+  const payload = parseVaultStatePayload(text)
   const vault = typeof payload.vault === 'string' ? payload.vault : null
   const chainId = typeof payload.chainId === 'number' ? payload.chainId : null
   const strategies: unknown[] = Array.isArray(payload.strategies) ? payload.strategies : []
@@ -45,8 +67,7 @@ export async function POST(request: Request): Promise<Response> {
   try {
     const isKnownVault = ((await readOptimizations()) ?? []).some(
       (optimization) =>
-        optimization.vault.toLowerCase() === vault.toLowerCase() &&
-        (optimization.source.chainId === null || optimization.source.chainId === chainId)
+        optimization.vault.toLowerCase() === vault.toLowerCase() && optimization.source.chainId === chainId
     )
     if (!isKnownVault) {
       return json(
@@ -70,8 +91,8 @@ export async function POST(request: Request): Promise<Response> {
       { headers: RESPONSE_HEADERS }
     )
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error)
-    return json({ error: message }, { status: 503, headers: POST_CORS_HEADERS })
+    console.error('Error reading vault state:', error)
+    return json({ error: 'Vault state unavailable' }, { status: 503, headers: POST_CORS_HEADERS })
   }
 }
 

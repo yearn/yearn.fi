@@ -141,6 +141,64 @@ describe('optimization handlers', () => {
     expect(fetchVaultOnChainStateMock).not.toHaveBeenCalled()
   })
 
+  it('rejects a vault-state record with no chain ID instead of reading the vault on any chain', async () => {
+    const vault = '0x1111111111111111111111111111111111111111'
+    readOptimizationsMock.mockResolvedValue([{ vault, source: { chainId: null } }])
+
+    const response = await vaultStateHandler(
+      createPostRequest('/api/optimization/vault-state', {
+        chainId: 1,
+        strategies: ['0x2222222222222222222222222222222222222222'],
+        vault
+      })
+    )
+
+    expect(response.status).toBe(404)
+    expect(fetchVaultOnChainStateMock).not.toHaveBeenCalled()
+  })
+
+  it('rejects vault-state bodies over 10 KB before parsing, with no Content-Length', async () => {
+    const parseSpy = vi.spyOn(JSON, 'parse')
+    const chunk = new TextEncoder().encode('a'.repeat(4096))
+    const body = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        controller.enqueue(chunk)
+      }
+    })
+    const request = new Request('https://yearn.fi/api/optimization/vault-state', {
+      method: 'POST',
+      body,
+      duplex: 'half'
+    } as RequestInit)
+
+    const response = await vaultStateHandler(request)
+
+    expect(request.headers.get('content-length')).toBeNull()
+    expect(response.status).toBe(413)
+    expect(parseSpy).not.toHaveBeenCalled()
+    expect(readOptimizationsMock).not.toHaveBeenCalled()
+    parseSpy.mockRestore()
+  })
+
+  it('returns a generic 503 body when the vault-state Redis or RPC read fails', async () => {
+    const vault = '0x1111111111111111111111111111111111111111'
+    const payload = { chainId: 1, strategies: ['0x2222222222222222222222222222222222222222'], vault }
+    vi.spyOn(console, 'error').mockImplementation(() => undefined)
+
+    readOptimizationsMock.mockRejectedValueOnce(new Error('redis://secret-host:6379 refused'))
+    const redisFailure = await vaultStateHandler(createPostRequest('/api/optimization/vault-state', payload))
+
+    readOptimizationsMock.mockResolvedValue([{ vault, source: { chainId: 1 } }])
+    fetchVaultOnChainStateMock.mockRejectedValueOnce(new Error('https://rpc.example/key-123 timed out'))
+    const rpcFailure = await vaultStateHandler(createPostRequest('/api/optimization/vault-state', payload))
+
+    expect(redisFailure.status).toBe(503)
+    expect(rpcFailure.status).toBe(503)
+    await expect(redisFailure.json()).resolves.toEqual({ error: 'Vault state unavailable' })
+    await expect(rpcFailure.json()).resolves.toEqual({ error: 'Vault state unavailable' })
+    vi.restoreAllMocks()
+  })
+
   it('returns a validation error for malformed vault-state JSON bodies', async () => {
     const response = await vaultStateHandler(
       new Request('https://yearn.fi/api/optimization/vault-state', {
