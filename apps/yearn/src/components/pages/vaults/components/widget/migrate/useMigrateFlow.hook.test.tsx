@@ -116,6 +116,33 @@ describe('useMigrateFlow quote', () => {
     expect(useSimulateContractMock.mock.calls.some(([parameters]) => parameters?.query?.enabled)).toBe(false)
   })
 
+  it('keeps migrate args empty across the approval receipt until the quote resolves', async () => {
+    const quote = Promise.withResolvers<bigint>()
+    readContract.mockImplementation(({ functionName }) =>
+      functionName === 'previewRedeem' ? quote.promise : Promise.resolve(10_000n)
+    )
+    vi.mocked(useTokenAllowance).mockReturnValue({ allowance: 0n } as never)
+
+    const { result, rerender } = renderMigrateFlow('3.0.2')
+    await waitFor(() => expect(result.current.periphery.isCheckingPermit).toBe(false))
+
+    vi.mocked(useTokenAllowance).mockReturnValue({ allowance: BALANCE } as never)
+    rerender()
+
+    expect(result.current.periphery.isAllowanceSufficient).toBe(true)
+    expect(
+      useSimulateContractMock.mock.calls
+        .map(([parameters]) => parameters)
+        .filter((parameters) => parameters?.functionName === 'migrate')
+        .every((parameters) => parameters?.args === undefined)
+    ).toBe(true)
+
+    quote.resolve(3_000n)
+
+    await waitFor(() => expect(result.current.periphery.prepareMigrateEnabled).toBe(true))
+    expect(lastMigrateSimulation('migrate')).toMatchObject({ args: [FROM_VAULT, TO_VAULT, BALANCE, 9_950n] })
+  })
+
   it.each(['3.0.2', '0.4.6'])('does not prepare a %s migration when the quote fails', async (vaultVersion) => {
     readContract.mockRejectedValue(new Error('rpc down'))
 

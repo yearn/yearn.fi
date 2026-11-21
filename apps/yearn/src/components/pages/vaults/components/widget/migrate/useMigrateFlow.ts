@@ -208,7 +208,7 @@ export const useMigrateFlow = ({
     functionName: migratorConfig.functionName,
     address: effectiveRouter,
     args:
-      balance > 0n && account
+      balance > 0n && account && hasMinSharesOut
         ? getMigrateArgs(migratorConfig, vaultFrom, vaultTo, balance, account, minSharesOut)
         : undefined,
     account,
