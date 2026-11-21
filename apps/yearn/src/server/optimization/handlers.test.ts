@@ -180,6 +180,25 @@ describe('optimization handlers', () => {
     parseSpy.mockRestore()
   })
 
+  it('returns a CORS 400 when the vault-state body read fails mid-upload', async () => {
+    const body = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        controller.error(new Error('connection reset'))
+      }
+    })
+    const request = new Request('https://yearn.fi/api/optimization/vault-state', {
+      method: 'POST',
+      body,
+      duplex: 'half'
+    } as RequestInit)
+
+    const response = await vaultStateHandler(request)
+
+    expect(response.status).toBe(400)
+    expect(response.headers.get('access-control-allow-origin')).toBe('*')
+    expect(readOptimizationsMock).not.toHaveBeenCalled()
+  })
+
   it('returns a generic 503 body when the vault-state Redis or RPC read fails', async () => {
     const vault = '0x1111111111111111111111111111111111111111'
     const payload = { chainId: 1, strategies: ['0x2222222222222222222222222222222222222222'], vault }

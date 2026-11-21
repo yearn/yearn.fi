@@ -38,7 +38,10 @@ function parseVaultStatePayload(text: string): Record<string, unknown> {
 }
 
 export async function POST(request: Request): Promise<Response> {
-  const text = request.body ? await readBodyText(request.body.getReader()) : ''
+  const text = request.body ? await readBodyText(request.body.getReader()).catch(() => undefined) : ''
+  if (text === undefined) {
+    return json({ error: 'Failed to read request body' }, { status: 400, headers: POST_CORS_HEADERS })
+  }
   if (text === null) {
     return json({ error: 'Request body too large' }, { status: 413, headers: POST_CORS_HEADERS })
   }
