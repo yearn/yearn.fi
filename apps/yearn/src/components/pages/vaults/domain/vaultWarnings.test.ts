@@ -76,4 +76,10 @@ describe('isNonYearnErc4626Vault', () => {
       })
     ).toBe(true)
   })
+
+  it('warns on snapshot-only pages unless the snapshot origin is yearn', () => {
+    expect(isNonYearnErc4626Vault({ snapshot: { origin: null, inclusion: {} } as any })).toBe(true)
+    expect(isNonYearnErc4626Vault({ snapshot: { inclusion: { isYearn: true } } as any })).toBe(true)
+    expect(isNonYearnErc4626Vault({ snapshot: { origin: 'yearn' } as any })).toBe(false)
+  })
 })

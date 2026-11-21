@@ -87,6 +87,9 @@ describe('optimization handlers', () => {
   })
 
   it('keeps CORS headers on vault-state POST responses', async () => {
+    readOptimizationsMock.mockResolvedValue([
+      { vault: '0x1111111111111111111111111111111111111111', source: { chainId: 1 } }
+    ])
     fetchVaultOnChainStateMock.mockResolvedValue({
       totalAssets: 1000n,
       strategyDebts: new Map([['0x2222222222222222222222222222222222222222', 400n]]),
@@ -102,7 +105,8 @@ describe('optimization handlers', () => {
 
     expect(response.status).toBe(200)
     expect(response.headers.get('Access-Control-Allow-Origin')).toBe('*')
-    expectPublicCdnCacheHeaders(response, 'public, s-maxage=60, stale-while-revalidate=30')
+    expect(response.headers.get('Cache-Control')).toBe('no-store')
+    expect(response.headers.get('Vercel-CDN-Cache-Control')).toBeNull()
     await expect(response.json()).resolves.toEqual({
       totalAssets: '1000',
       strategyDebts: {
@@ -110,6 +114,108 @@ describe('optimization handlers', () => {
       },
       unallocatedBps: 6000
     })
+  })
+
+  it('rejects vault-state requests for unknown vaults or oversized strategy lists without RPC calls', async () => {
+    const vault = '0x1111111111111111111111111111111111111111'
+    const strategy = '0x2222222222222222222222222222222222222222'
+    readOptimizationsMock.mockResolvedValue([{ vault, source: { chainId: 1 } }])
+
+    const unknown = await vaultStateHandler(
+      createPostRequest('/api/optimization/vault-state', { chainId: 10, strategies: [strategy], vault })
+    )
+    const oversized = await vaultStateHandler(
+      createPostRequest('/api/optimization/vault-state', { chainId: 1, strategies: Array(51).fill(strategy), vault })
+    )
+    const malformed = await vaultStateHandler(
+      createPostRequest('/api/optimization/vault-state', {
+        chainId: 1,
+        strategies: [strategy, 'not-an-address'],
+        vault
+      })
+    )
+
+    expect(unknown.status).toBe(404)
+    expect(oversized.status).toBe(400)
+    expect(malformed.status).toBe(400)
+    expect(fetchVaultOnChainStateMock).not.toHaveBeenCalled()
+  })
+
+  it('rejects a vault-state record with no chain ID instead of reading the vault on any chain', async () => {
+    const vault = '0x1111111111111111111111111111111111111111'
+    readOptimizationsMock.mockResolvedValue([{ vault, source: { chainId: null } }])
+
+    const response = await vaultStateHandler(
+      createPostRequest('/api/optimization/vault-state', {
+        chainId: 1,
+        strategies: ['0x2222222222222222222222222222222222222222'],
+        vault
+      })
+    )
+
+    expect(response.status).toBe(404)
+    expect(fetchVaultOnChainStateMock).not.toHaveBeenCalled()
+  })
+
+  it('rejects vault-state bodies over 10 KB before parsing, with no Content-Length', async () => {
+    const parseSpy = vi.spyOn(JSON, 'parse')
+    const chunk = new TextEncoder().encode('a'.repeat(4096))
+    const body = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        controller.enqueue(chunk)
+      }
+    })
+    const request = new Request('https://yearn.fi/api/optimization/vault-state', {
+      method: 'POST',
+      body,
+      duplex: 'half'
+    } as RequestInit)
+
+    const response = await vaultStateHandler(request)
+
+    expect(request.headers.get('content-length')).toBeNull()
+    expect(response.status).toBe(413)
+    expect(parseSpy).not.toHaveBeenCalled()
+    expect(readOptimizationsMock).not.toHaveBeenCalled()
+    parseSpy.mockRestore()
+  })
+
+  it('returns a CORS 400 when the vault-state body read fails mid-upload', async () => {
+    const body = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        controller.error(new Error('connection reset'))
+      }
+    })
+    const request = new Request('https://yearn.fi/api/optimization/vault-state', {
+      method: 'POST',
+      body,
+      duplex: 'half'
+    } as RequestInit)
+
+    const response = await vaultStateHandler(request)
+
+    expect(response.status).toBe(400)
+    expect(response.headers.get('access-control-allow-origin')).toBe('*')
+    expect(readOptimizationsMock).not.toHaveBeenCalled()
+  })
+
+  it('returns a generic 503 body when the vault-state Redis or RPC read fails', async () => {
+    const vault = '0x1111111111111111111111111111111111111111'
+    const payload = { chainId: 1, strategies: ['0x2222222222222222222222222222222222222222'], vault }
+    vi.spyOn(console, 'error').mockImplementation(() => undefined)
+
+    readOptimizationsMock.mockRejectedValueOnce(new Error('redis://secret-host:6379 refused'))
+    const redisFailure = await vaultStateHandler(createPostRequest('/api/optimization/vault-state', payload))
+
+    readOptimizationsMock.mockResolvedValue([{ vault, source: { chainId: 1 } }])
+    fetchVaultOnChainStateMock.mockRejectedValueOnce(new Error('https://rpc.example/key-123 timed out'))
+    const rpcFailure = await vaultStateHandler(createPostRequest('/api/optimization/vault-state', payload))
+
+    expect(redisFailure.status).toBe(503)
+    expect(rpcFailure.status).toBe(503)
+    await expect(redisFailure.json()).resolves.toEqual({ error: 'Vault state unavailable' })
+    await expect(rpcFailure.json()).resolves.toEqual({ error: 'Vault state unavailable' })
+    vi.restoreAllMocks()
   })
 
   it('returns a validation error for malformed vault-state JSON bodies', async () => {

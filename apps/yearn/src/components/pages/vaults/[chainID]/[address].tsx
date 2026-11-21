@@ -331,14 +331,14 @@ const buildSnapshotBackedVault = (snapshot: TKongVaultSnapshot): TKongVault => {
     type: snapshot.meta?.type ?? null,
     kind: snapshot.meta?.kind ?? null,
     v3: isSnapshotLikelyV3Vault(snapshot),
-    yearn: true,
+    yearn: snapshot.origin === 'yearn',
     isRetired: snapshot.meta?.isRetired ?? false,
     isHidden: snapshot.meta?.isHidden ?? false,
     isBoosted: snapshot.meta?.isBoosted ?? false,
     isHighlighted: snapshot.meta?.isHighlighted ?? false,
     inclusion: snapshot.inclusion,
     migration: snapshot.meta?.migration?.available,
-    origin: null,
+    origin: snapshot.origin ?? null,
     strategiesCount: snapshot.composition?.length ?? snapshot.debts?.length ?? 0,
     riskLevel: snapshot.risk?.riskLevel ?? null,
     staking: snapshot.staking
@@ -689,9 +689,9 @@ function Index(): ReactElement | null {
   }, [isYBold, snapshotVault, yBoldSnapshot])
 
   const snapshotBackedVault = useMemo(() => {
-    if (!mergedSnapshot) return undefined
-    return buildSnapshotBackedVault(mergedSnapshot)
-  }, [mergedSnapshot])
+    if (!mergedSnapshot || !Number.isInteger(chainId) || !params.address) return undefined
+    return { ...buildSnapshotBackedVault(mergedSnapshot), chainId, address: toAddress(params.address) }
+  }, [mergedSnapshot, chainId, params.address])
 
   const vaultViewInput = useMemo(() => {
     if (!mergedBaseVault) return snapshotBackedVault

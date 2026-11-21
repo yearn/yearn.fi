@@ -1,20 +1,35 @@
-import { json, noContent, POST_CORS_HEADERS, readJsonBody } from '../http'
-import { getVercelCdnCacheHeaders } from '../lib/cacheHeaders'
+import { json, noContent, POST_CORS_HEADERS } from '../http'
+import { readOptimizations } from './_lib/redis'
 import { fetchVaultOnChainState } from './_lib/rpc'
 
-const CDN_CACHE_CONTROL = 'public, s-maxage=60, stale-while-revalidate=30'
-const RESPONSE_HEADERS = {
-  ...POST_CORS_HEADERS,
-  ...getVercelCdnCacheHeaders(CDN_CACHE_CONTROL)
-}
+const ADDRESS_PATTERN = /^0x[a-fA-F0-9]{40}$/
+const MAX_STRATEGIES = 50
+const MAX_BODY_BYTES = 10 * 1024
+const RESPONSE_HEADERS = { ...POST_CORS_HEADERS, 'Cache-Control': 'no-store' }
 
 export function OPTIONS(): Response {
   return noContent(POST_CORS_HEADERS)
 }
 
-async function readVaultStatePayload(request: Request): Promise<Record<string, unknown>> {
+async function readBodyText(
+  reader: ReadableStreamDefaultReader<Uint8Array>,
+  chunks: Uint8Array[] = [],
+  size = 0
+): Promise<string | null> {
+  const { done, value } = await reader.read()
+  if (done) {
+    return Buffer.concat(chunks).toString('utf8')
+  }
+  if (size + value.byteLength > MAX_BODY_BYTES) {
+    await reader.cancel()
+    return null
+  }
+  return readBodyText(reader, [...chunks, value], size + value.byteLength)
+}
+
+function parseVaultStatePayload(text: string): Record<string, unknown> {
   try {
-    const payload = await readJsonBody<unknown>(request)
+    const payload: unknown = JSON.parse(text)
 
     return payload && typeof payload === 'object' ? (payload as Record<string, unknown>) : {}
   } catch (_error) {
@@ -23,14 +38,20 @@ async function readVaultStatePayload(request: Request): Promise<Record<string, u
 }
 
 export async function POST(request: Request): Promise<Response> {
-  const payload = await readVaultStatePayload(request)
+  const text = request.body ? await readBodyText(request.body.getReader()).catch(() => undefined) : ''
+  if (text === undefined) {
+    return json({ error: 'Failed to read request body' }, { status: 400, headers: POST_CORS_HEADERS })
+  }
+  if (text === null) {
+    return json({ error: 'Request body too large' }, { status: 413, headers: POST_CORS_HEADERS })
+  }
+
+  const payload = parseVaultStatePayload(text)
   const vault = typeof payload.vault === 'string' ? payload.vault : null
   const chainId = typeof payload.chainId === 'number' ? payload.chainId : null
-  const strategies = Array.isArray(payload.strategies)
-    ? payload.strategies.filter((s: unknown): s is string => typeof s === 'string')
-    : []
+  const strategies: unknown[] = Array.isArray(payload.strategies) ? payload.strategies : []
 
-  if (!vault || !/^0x[a-fA-F0-9]{40}$/.test(vault)) {
+  if (!vault || !ADDRESS_PATTERN.test(vault)) {
     return json({ error: 'Invalid vault address' }, { status: 400, headers: POST_CORS_HEADERS })
   }
   if (chainId === null || !Number.isFinite(chainId)) {
@@ -39,8 +60,25 @@ export async function POST(request: Request): Promise<Response> {
   if (strategies.length === 0) {
     return json({ error: 'No strategy addresses provided' }, { status: 400, headers: POST_CORS_HEADERS })
   }
+  if (strategies.length > MAX_STRATEGIES) {
+    return json({ error: 'Too many strategy addresses' }, { status: 400, headers: POST_CORS_HEADERS })
+  }
+  if (!strategies.every((s): s is string => typeof s === 'string' && ADDRESS_PATTERN.test(s))) {
+    return json({ error: 'Invalid strategy address' }, { status: 400, headers: POST_CORS_HEADERS })
+  }
 
   try {
+    const isKnownVault = ((await readOptimizations()) ?? []).some(
+      (optimization) =>
+        optimization.vault.toLowerCase() === vault.toLowerCase() && optimization.source.chainId === chainId
+    )
+    if (!isKnownVault) {
+      return json(
+        { error: `Vault not found in optimization payload: ${vault}` },
+        { status: 404, headers: POST_CORS_HEADERS }
+      )
+    }
+
     const state = await fetchVaultOnChainState(chainId, vault, strategies)
 
     const strategyDebts = Object.fromEntries(
@@ -56,8 +94,8 @@ export async function POST(request: Request): Promise<Response> {
       { headers: RESPONSE_HEADERS }
     )
   } catch (error) {
-    const message = error instanceof Error ? error.message : String(error)
-    return json({ error: message }, { status: 503, headers: POST_CORS_HEADERS })
+    console.error('Error reading vault state:', error)
+    return json({ error: 'Vault state unavailable' }, { status: 503, headers: POST_CORS_HEADERS })
   }
 }
 

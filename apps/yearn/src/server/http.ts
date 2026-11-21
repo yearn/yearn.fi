@@ -70,9 +70,17 @@ export async function readJsonBody<T>(request: Request): Promise<T> {
   }
 }
 
-export function getRequestIp(request: Request): string | undefined {
-  const forwardedFor = request.headers.get('x-forwarded-for')?.split(',')[0]?.trim()
-  const realIp = request.headers.get('x-real-ip')?.trim()
+const LOCAL_HOST_PATTERN = /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/
 
-  return forwardedFor || realIp || (process.env.NODE_ENV === 'development' ? '127.0.0.1' : undefined)
+export function getRequestIp(request: Request): string | undefined {
+  if (process.env.VERCEL) {
+    return request.headers.get('x-vercel-forwarded-for')?.split(',')[0]?.trim() || undefined
+  }
+
+  const isLocalHost = LOCAL_HOST_PATTERN.test(request.headers.get('host') ?? '')
+  if (process.env.NODE_ENV !== 'development' || !isLocalHost) {
+    return undefined
+  }
+
+  return request.headers.get('x-forwarded-for')?.split(',').at(-1)?.trim() || undefined
 }
