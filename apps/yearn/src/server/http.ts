@@ -1,3 +1,5 @@
+import { isLoopbackAddress } from '@/server/tenderlyAccess'
+
 export type TQueryValue = string | string[] | undefined
 
 export const GET_CORS_HEADERS = {
@@ -82,5 +84,9 @@ export function getRequestIp(request: Request): string | undefined {
     return undefined
   }
 
-  return request.headers.get('x-forwarded-for')?.split(',').at(-1)?.trim() || undefined
+  const hops = (request.headers.get('x-forwarded-for') ?? '')
+    .split(',')
+    .map((hop) => hop.trim())
+    .filter(Boolean)
+  return hops.find((hop) => !isLoopbackAddress(hop)) ?? hops.at(-1)
 }

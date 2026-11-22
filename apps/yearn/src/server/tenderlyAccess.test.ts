@@ -92,4 +92,22 @@ describe('Tenderly admin gate with getRequestIp', () => {
     expect(spoofed.status).toBe(403)
     expect(proxied.status).toBe(403)
   })
+
+  it.each([
+    ['fund', fundPOST],
+    ['increase-time', increaseTimePOST],
+    ['revert', revertPOST],
+    ['snapshot', snapshotPOST]
+  ])('denies a remote %s request forwarded through one, two or three proxies', async (_route, POST) => {
+    vi.stubEnv('VERCEL', '')
+    vi.stubEnv('NODE_ENV', 'development')
+
+    const statuses = await Promise.all(
+      ['203.0.113.5', '203.0.113.5, 127.0.0.1', '203.0.113.5, 127.0.0.1, ::1', '127.0.0.1, 203.0.113.5, ::1'].map(
+        async (forwardedFor) => (await POST(requestWithHost('localhost:3000', forwardedFor))).status
+      )
+    )
+
+    expect(statuses).toEqual([403, 403, 403, 403])
+  })
 })
