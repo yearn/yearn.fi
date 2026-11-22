@@ -5,6 +5,8 @@ import type { TKongVaultSnapshot } from '@shared/utils/schemas/kongVaultSnapshot
 export const NON_YEARN_ERC4626_WARNING_MESSAGE =
   'This is a non-Yearn ERC-4626 Vault. Please be careful when interacting with it.'
 
+type TVaultOriginInput = Pick<TKongVaultSnapshot, 'chainId' | 'address' | 'origin' | 'inclusion'>
+
 export function isNonYearnErc4626Vault({
   vault,
   snapshot
@@ -12,25 +14,12 @@ export function isNonYearnErc4626Vault({
   vault?: TKongVault
   snapshot?: TKongVaultSnapshot
 }): boolean {
-  if (vault) {
-    if (isYvBtcAddress(vault.address) && vault.inclusion?.isYearn !== false) {
-      return false
-    }
-
-    return vault.origin !== 'yearn' || vault.inclusion?.isYearn === false
+  const item: TVaultOriginInput | undefined = vault ?? snapshot
+  if (!item) {
+    return false
   }
-
-  if (snapshot) {
-    if (
-      snapshot.chainId === YVBTC_CHAIN_ID &&
-      isYvBtcAddress(snapshot.address) &&
-      snapshot.inclusion?.isYearn !== false
-    ) {
-      return false
-    }
-
-    return snapshot.origin !== 'yearn' || snapshot.inclusion?.isYearn === false
+  if (item.inclusion?.isYearn === false) {
+    return true
   }
-
-  return false
+  return item.origin !== 'yearn' && !(item.chainId === YVBTC_CHAIN_ID && isYvBtcAddress(item.address))
 }

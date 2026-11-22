@@ -167,4 +167,12 @@ describe('non-Yearn vault metadata', () => {
     )
     expect(buildVaultStructuredDataFromInput({ chainID: '1', address, snapshot: yearnSnapshot })).not.toBeNull()
   })
+
+  it('does not fall back to Yearn branding when a non-Yearn snapshot has no name', () => {
+    const unnamedSnapshot = { ...BASE_SNAPSHOT, origin: null, name: '', symbol: '', meta: {} }
+    const metadata = buildVaultMetadataFromInput({ chainID: '1', address, snapshot: unnamedSnapshot })
+
+    expect(metadata.title).toBe('ERC-4626 Vault')
+    expect(metadata.description).toBe('ERC-4626 Vault is an ERC-4626 vault on Ethereum. It is not a Yearn vault.')
+  })
 })
