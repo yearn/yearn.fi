@@ -25,7 +25,7 @@ interface UseWithdrawNotificationsProps {
   routeType: WithdrawRouteType
   routerAddress?: string
   isCrossChain: boolean
-  bridgeProtocol?: 'stargate' | 'ccip' | 'relay'
+  bridgeProtocol?: string
   // Source info
   withdrawalSource: WithdrawalSource
 }

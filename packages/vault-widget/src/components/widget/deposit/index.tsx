@@ -2,7 +2,10 @@ import type { VaultWidgetTransactionPlan } from '@yearn/vault-widget/headless'
 import { Button } from '@yearn/vault-widget/internal/components/shared/Button'
 import { buildDepositBatch } from '@yearn/vault-widget/internal/components/widget/deposit/depositBatch'
 import { InputTokenAmount } from '@yearn/vault-widget/internal/components/widget/InputTokenAmount'
-import { buildEligibleStyledWidgetPlan } from '@yearn/vault-widget/internal/components/widget/shared/plannedTransaction'
+import {
+  buildDirectApprovalPlan,
+  buildEligibleStyledWidgetPlan
+} from '@yearn/vault-widget/internal/components/widget/shared/plannedTransaction'
 import { useReadContract } from '@yearn/vault-widget/internal/hooks/useAppWagmi'
 import { useAtomicBatchCapability } from '@yearn/vault-widget/internal/hooks/useAtomicBatchCapability'
 import { useDebouncedInput } from '@yearn/vault-widget/internal/hooks/useDebouncedInput'
@@ -216,6 +219,7 @@ export function WidgetDeposit({
   const [showApprovalOverlay, setShowApprovalOverlay] = useState(false)
   const [disableApprovalOverlaySetUnlimited, setDisableApprovalOverlaySetUnlimited] = useState(false)
   const [showTransactionOverlay, setShowTransactionOverlay] = useState(false)
+  const [batchFallbackKey, setBatchFallbackKey] = useState<string>()
   const [activeTransactionPlan, setActiveTransactionPlan] = useState<VaultWidgetTransactionPlan | undefined>()
   const [isDetailsPanelOpen, setIsDetailsPanelOpen] = useState(false)
   const [isYBoldAutoStakeWarningDismissing, setIsYBoldAutoStakeWarningDismissing] = useState(false)
@@ -244,10 +248,16 @@ export function WidgetDeposit({
   // Derived token values
   const depositToken = selectedToken || assetAddress
   const sourceChainId = selectedChainId || chainId
-  const { supported: supportsAtomicBatch, status: batchCapability } = useAtomicBatchCapability({
+  const isCrossChain = sourceChainId !== chainId
+  const {
+    supported: supportsAtomicBatch,
+    status: batchCapability,
+    capabilityKey,
+    disableBatch
+  } = useAtomicBatchCapability({
     account,
     chainId: sourceChainId,
-    enabled: !isWalletSafe
+    enabled: !isWalletSafe && !isCrossChain
   })
   const isNativeToken = toAddress(depositToken) === toAddress(ETH_TOKEN_ADDRESS)
   const selectedExtraToken = useMemo(
@@ -402,7 +412,6 @@ export function WidgetDeposit({
     stakingSource
   })
 
-  const isCrossChain = sourceChainId !== chainId
   const isEnsoRoute = routeType === 'ENSO'
   const ensoRouteHasSwap = isEnsoRoute && Boolean(activeFlow.periphery.routeHasSwap)
   const { approveNotificationParams, depositNotificationParams } = useDepositNotifications({
@@ -775,11 +784,27 @@ export function WidgetDeposit({
       ].join(':'),
     [account, chainId, depositAmount.debouncedBn, depositToken, destinationToken, routeType, sourceChainId]
   )
+  const depositIntentKey = `deposit:${approvalFlowKey}:${zapSlippage}`
   const [completedApprovalFlowKey, setCompletedApprovalFlowKey] = useState<string | null>(null)
   const hasCompletedApprovalInActiveFlow = completedApprovalFlowKey === approvalFlowKey
   const effectiveNeedsApproval = needsApproval && !hasCompletedApprovalInActiveFlow
+  const currentBatchKey = `${depositIntentKey}:${capabilityKey}`
+  const batchFallbackContext = useRef({ key: currentBatchKey, ready: false })
+  batchFallbackContext.current = {
+    key: currentBatchKey,
+    ready:
+      showTransactionOverlay &&
+      runtime.wallet.connected &&
+      !isWalletSafe &&
+      runtime.chains.isConnectedToExecutionChain(runtime.wallet.chainId, sourceChainId)
+  }
   const depositBatch = useMemo(() => {
-    if ((!isWalletSafe && !supportsAtomicBatch) || !effectiveNeedsApproval) {
+    if (
+      isCrossChain ||
+      batchFallbackKey === currentBatchKey ||
+      (!isWalletSafe && !supportsAtomicBatch) ||
+      !effectiveNeedsApproval
+    ) {
       return undefined
     }
 
@@ -804,6 +829,8 @@ export function WidgetDeposit({
         : undefined
     })
   }, [
+    batchFallbackKey,
+    currentBatchKey,
     account,
     activeFlow.periphery.allowance,
     activeFlow.periphery.routerAddress,
@@ -812,6 +839,7 @@ export function WidgetDeposit({
     chainId,
     depositAmount.debouncedBn,
     depositToken,
+    isCrossChain,
     isWalletSafe,
     effectiveNeedsApproval,
     executableEnsoTx,
@@ -823,9 +851,27 @@ export function WidgetDeposit({
     vaultAddress
   ])
 
-  const currentStep: TransactionStep | undefined = useMemo(() => {
-    const { actionLabel, progressLabel, pastTenseLabel } = getDepositActionCopy(routeType)
+  const { actionLabel, progressLabel, pastTenseLabel } = getDepositActionCopy(routeType)
+  const depositActionStep: TransactionStep = {
+    id: 'deposit',
+    prepare: activeFlow.actions.prepareDeposit,
+    label: actionLabel,
+    confirmMessage: `${progressLabel} ${formattedDepositAmount} ${inputToken?.symbol || ''}`,
+    successTitle: isCrossChain ? 'Transaction Submitted' : `${actionLabel} successful!`,
+    successMessage: isCrossChain
+      ? `Your cross-chain ${actionLabel.toLowerCase()} has been submitted.\nIt may take a few minutes to complete on the destination chain.`
+      : `You have ${pastTenseLabel} ${formattedDepositAmount} ${inputToken?.symbol || ''} into ${vaultSymbol}.`,
+    isEnabled: isProtectedEnsoTransactionStepEnabled({
+      canExecute: canExecuteProtectedEnsoQuote,
+      prepareEnabled: activeFlow.periphery.prepareDepositEnabled
+    }),
+    completesFlow: true,
+    showConfetti: true,
+    notification: depositNotificationParams,
+    settlement: activeFlow.periphery.bridgeSettlement
+  }
 
+  const currentStep = useMemo((): TransactionStep => {
     if (depositBatch) {
       return {
         id: 'deposit-batch',
@@ -843,7 +889,8 @@ export function WidgetDeposit({
           depositBatch.calls.length > 0,
         completesFlow: true,
         showConfetti: true,
-        notification: depositNotificationParams
+        notification: depositNotificationParams,
+        settlement: activeFlow.periphery.bridgeSettlement
       }
     }
 
@@ -861,39 +908,7 @@ export function WidgetDeposit({
       }
     }
 
-    if (isCrossChain) {
-      return {
-        id: 'deposit',
-        prepare: activeFlow.actions.prepareDeposit,
-        label: actionLabel,
-        confirmMessage: `${progressLabel} ${formattedDepositAmount} ${inputToken?.symbol || ''}`,
-        successTitle: 'Transaction Submitted',
-        successMessage: `Your cross-chain ${actionLabel.toLowerCase()} has been submitted.\nIt may take a few minutes to complete on the destination chain.`,
-        isEnabled: isProtectedEnsoTransactionStepEnabled({
-          canExecute: canExecuteProtectedEnsoQuote,
-          prepareEnabled: activeFlow.periphery.prepareDepositEnabled
-        }),
-        completesFlow: true,
-        showConfetti: true,
-        notification: depositNotificationParams
-      }
-    }
-
-    return {
-      id: 'deposit',
-      prepare: activeFlow.actions.prepareDeposit,
-      label: actionLabel,
-      confirmMessage: `${progressLabel} ${formattedDepositAmount} ${inputToken?.symbol || ''}`,
-      successTitle: `${actionLabel} successful!`,
-      successMessage: `You have ${pastTenseLabel} ${formattedDepositAmount} ${inputToken?.symbol || ''} into ${vaultSymbol}.`,
-      isEnabled: isProtectedEnsoTransactionStepEnabled({
-        canExecute: canExecuteProtectedEnsoQuote,
-        prepareEnabled: activeFlow.periphery.prepareDepositEnabled
-      }),
-      completesFlow: true,
-      showConfetti: true,
-      notification: depositNotificationParams
-    }
+    return depositActionStep
   }, [
     effectiveNeedsApproval,
     activeFlow.actions.prepareApprove,
@@ -912,37 +927,54 @@ export function WidgetDeposit({
     canExecuteProtectedEnsoQuote
   ])
 
-  const eligibleTransactionPlan = useMemo(
-    () =>
-      buildEligibleStyledWidgetPlan({
-        canonicalChainId: chainId,
-        connectedCanonicalChainId: runtime.chains.resolveCanonicalChainId(runtime.wallet.chainId),
-        hasBatch: Boolean(currentStep?.batch),
-        id: `deposit:${approvalFlowKey}`,
-        isCrossChain,
-        isEnabled: currentStep?.isEnabled,
-        isExecutionConfigured: isVaultWidgetExecutionConfigured(runtime),
-        isPermit: Boolean(currentStep?.isPermit),
-        isWalletSafe,
-        label: currentStep?.label ?? 'Deposit',
-        mode: 'deposit',
-        needsApproval: effectiveNeedsApproval,
-        prepare: currentStep?.prepare,
-        routeType
-      }),
-    [
-      approvalFlowKey,
+  const eligibleTransactionPlan =
+    buildDirectApprovalPlan({
+      id: depositIntentKey,
+      label: getDepositActionCopy(routeType).actionLabel,
+      tokenSymbol: inputToken?.symbol ?? 'Token',
+      account,
+      depositToken: toAddress(depositToken),
+      amount: depositAmount.debouncedBn,
       chainId,
-      currentStep,
-      effectiveNeedsApproval,
-      isCrossChain,
-      isWalletSafe,
+      vaultAddress,
+      stakingAddress: stakingDepositAddress,
+      stakingSource,
+      approvalSpenderAddress: approvalWarning ? undefined : approvalSpenderAddress,
+      routerAddress: activeFlow.periphery.routerAddress ? toAddress(activeFlow.periphery.routerAddress) : undefined,
       routeType,
-      runtime.chains,
-      runtime.execution,
-      runtime.wallet.chainId
-    ]
-  )
+      connectedCanonicalChainId: runtime.chains.resolveCanonicalChainId(runtime.wallet.chainId),
+      isExecutionConfigured: isVaultWidgetExecutionConfigured(runtime),
+      isWalletSafe,
+      isEnabled: Boolean(
+        currentStep?.isEnabled &&
+          !currentStep.batch &&
+          currentStep.prepare.isSuccess &&
+          !shouldBlockApprovalForAllowanceReset
+      ),
+      isCrossChain,
+      needsApproval: effectiveNeedsApproval
+    }) ??
+    buildEligibleStyledWidgetPlan({
+      canonicalChainId: chainId,
+      connectedCanonicalChainId: runtime.chains.resolveCanonicalChainId(runtime.wallet.chainId),
+      hasBatch: Boolean(currentStep?.batch),
+      id: depositIntentKey,
+      isCrossChain,
+      isEnabled: currentStep?.isEnabled,
+      isExecutionConfigured: isVaultWidgetExecutionConfigured(runtime),
+      isPermit: Boolean(currentStep?.isPermit),
+      isWalletSafe,
+      label: currentStep?.label ?? 'Deposit',
+      mode: 'deposit',
+      needsApproval: effectiveNeedsApproval,
+      prepare: currentStep?.prepare,
+      routeType
+    })
+
+  const directPlanSteps = {
+    'approve-0': { ...currentStep, id: 'approve-0' },
+    deposit: depositActionStep
+  }
 
   const analyticsContext: TWidgetAnalyticsContext = {
     action: routeType === 'DIRECT_STAKE' ? 'stake' : 'deposit',
@@ -1505,10 +1537,39 @@ export function WidgetDeposit({
 
       {/* Transaction Overlay */}
       <TransactionOverlay
+        key={batchFallbackKey ?? 'default'}
         analyticsContext={analyticsContext}
         isOpen={showTransactionOverlay}
         onClose={handleCloseTransactionOverlay}
+        onBatchUnsupported={async () => {
+          await disableBatch()
+          if (batchFallbackContext.current.key !== currentBatchKey || !batchFallbackContext.current.ready)
+            throw new Error('Your wallet or transaction changed. Close and review again.')
+          setActiveTransactionPlan(undefined)
+          setBatchFallbackKey(currentBatchKey)
+        }}
         plan={activeTransactionPlan}
+        lifecycleRecipe={{
+          id: depositIntentKey,
+          previousIntentIds: [`deposit:${approvalFlowKey}`],
+          chainId: sourceChainId,
+          settlement: isCrossChain
+            ? (activeFlow.periphery.bridgeSettlement ?? {
+                provider: 'enso',
+                destinationChainId: chainId,
+                protocols: [],
+                coverage: 'incomplete',
+                legs: []
+              })
+            : undefined,
+          steps: depositBatch
+            ? [{ id: 'deposit-batch', label: currentStep.label }]
+            : [
+                ...(effectiveNeedsApproval ? [{ id: 'approve', label: 'Approve' }] : []),
+                { id: 'deposit', label: actionLabel }
+              ]
+        }}
+        planSteps={activeTransactionPlan?.steps.some((step) => step.kind === 'approve') ? directPlanSteps : undefined}
         step={currentStep}
         isLastStep={!effectiveNeedsApproval}
         deferOnAllCompleteUntilClose={deferSuccessEffectsUntilClose}

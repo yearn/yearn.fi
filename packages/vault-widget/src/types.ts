@@ -1,3 +1,4 @@
+import type { TSettlementRequirement } from '@yearn/vault-widget/lifecycle/settlement'
 import type { ReactNode } from 'react'
 import type { Hash, Hex, TransactionReceipt } from 'viem'
 
@@ -206,6 +207,7 @@ export type TRawTransaction = {
 
 export type TRawTransactionPreparation = {
   kind: 'raw'
+  validate?: (expected: TRawTransaction) => Promise<void>
   transaction?: TRawTransaction
   chainId: number
   execute: () => Promise<Hash>
@@ -265,7 +267,8 @@ export type UseWidgetDepositFlowReturn = WidgetFlow<
     isLoadingRoute: boolean
     isCrossChain: boolean
     routeHasSwap?: boolean
-    bridgeProtocol?: 'stargate' | 'ccip' | 'relay'
+    bridgeSettlement?: TSettlementRequirement
+    bridgeProtocol?: string
     tx?: {
       to: TAddress
       data: Hex
@@ -298,7 +301,8 @@ export type UseWidgetWithdrawFlowReturn = WidgetFlow<
     isLoadingRoute: boolean
     isCrossChain: boolean
     routeHasSwap?: boolean
-    bridgeProtocol?: 'stargate' | 'ccip' | 'relay'
+    bridgeSettlement?: TSettlementRequirement
+    bridgeProtocol?: string
     routerAddress?: TAddress
     tx?: {
       to: TAddress
@@ -343,7 +347,7 @@ export type TCreateNotificationParams = {
   toSymbol?: string
   toAmount?: string
   toChainId?: number
-  bridgeProtocol?: 'stargate' | 'ccip' | 'relay'
+  bridgeProtocol?: string
 }
 
 export type TCreateSubmittedNotificationParams = TCreateNotificationParams & {

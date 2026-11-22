@@ -1,6 +1,11 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
 import { GET, normalizeRelayBridgeStatusResponse } from '@/server/enso/bridgeStatus'
 
+vi.mock('@/server/enso/bridgeGateway', () => ({
+  bridgeGateway: (key: string, run: (signal: AbortSignal, identity: string) => Promise<Response>) =>
+    run(new AbortController().signal, key)
+}))
+
 const TX_HASH = `0x${'a'.repeat(64)}`
 const REQUEST_ID = `0x${'c'.repeat(64)}`
 
@@ -14,11 +19,11 @@ afterEach(() => {
 })
 
 describe('Enso bridge status proxy', () => {
-  it('rejects protocols outside the documented allowlist', async () => {
-    const response = await GET(request({ protocol: 'across', chainId: '1', txHash: TX_HASH }))
+  it('rejects unsafe protocol path fragments', async () => {
+    const response = await GET(request({ protocol: '../across', chainId: '1', txHash: TX_HASH }))
 
     expect(response.status).toBe(400)
-    await expect(response.json()).resolves.toEqual({ error: 'Unsupported bridge protocol' })
+    await expect(response.json()).resolves.toEqual({ error: 'Invalid bridge protocol' })
   })
 
   it('validates the source chain and transaction hash', async () => {
@@ -46,8 +51,8 @@ describe('Enso bridge status proxy', () => {
       `https://api.enso.finance/api/v1/ccip/bridge/check?chainId=1&txHash=${TX_HASH}`,
       {
         headers: { Authorization: 'Bearer test-key' },
-        cache: 'force-cache',
-        next: { revalidate: 10 }
+        cache: 'no-store',
+        signal: expect.any(AbortSignal)
       }
     )
   })
@@ -165,11 +170,13 @@ describe('Enso bridge status proxy', () => {
       `https://api.relay.link/requests/v3?depositTxHash=${TX_HASH}&originChainId=8453&limit=1`,
       {
         headers: { 'x-api-key': 'relay-key' },
+        signal: expect.any(AbortSignal),
         cache: 'no-store'
       }
     )
     expect(fetchMock).toHaveBeenNthCalledWith(2, `https://api.relay.link/intents/status/v3?requestId=${REQUEST_ID}`, {
-      cache: 'no-store'
+      cache: 'no-store',
+      signal: expect.any(AbortSignal)
     })
   })
 

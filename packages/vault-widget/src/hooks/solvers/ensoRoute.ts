@@ -1,3 +1,4 @@
+import { isBridgeProtocol, type TSettlementRequirement } from '@yearn/vault-widget/lifecycle/settlement'
 import type { Address, Hex } from 'viem'
 
 export interface EnsoError {
@@ -21,6 +22,7 @@ export interface EnsoRouteResponse {
   priceImpact?: number | null
   gas: string
   route: EnsoRouteStep[]
+  bridgingEstimates?: { protocol?: string; estimatedSeconds?: number }[]
 }
 
 export interface EnsoRouteStep {
@@ -29,7 +31,7 @@ export interface EnsoRouteStep {
   [key: string]: unknown
 }
 
-export type EnsoBridgeProtocol = 'stargate' | 'ccip' | 'relay'
+export type EnsoBridgeProtocol = string
 
 type EnsoRouteErrorPayload = {
   error?: string | string[]
@@ -157,7 +159,63 @@ export function routeHasSwapStep(route: EnsoRouteResponse | undefined): boolean 
   return route.route.some((step) => typeof step.action === 'string' && step.action.toLowerCase().includes('swap'))
 }
 
+const protocolName = (value: unknown): string | undefined =>
+  typeof value === 'string' && isBridgeProtocol(value.toLowerCase()) ? value.toLowerCase() : undefined
+const bridgeHops = (route: EnsoRouteResponse | undefined) =>
+  route?.route.filter((step) => typeof step?.action === 'string' && step.action.toLowerCase() === 'bridge') ?? []
 export function getEnsoBridgeProtocol(route: EnsoRouteResponse | undefined): EnsoBridgeProtocol | undefined {
-  const protocol = route?.route.find((step) => step.action?.toLowerCase() === 'bridge')?.protocol?.toLowerCase()
-  return protocol === 'stargate' || protocol === 'ccip' || protocol === 'relay' ? protocol : undefined
+  return protocolName(bridgeHops(route)[0]?.protocol)
+}
+
+/** Snapshot available route metadata without using response positions as persistent leg identities. */
+export function getEnsoSettlement(
+  route: EnsoRouteResponse | undefined,
+  destinationChainId: number
+): TSettlementRequirement {
+  const hops = bridgeHops(route)
+  const hints = Array.isArray(route?.bridgingEstimates) ? route.bridgingEstimates : []
+  const protocols = [
+    ...new Set(
+      [...hops.map((step) => protocolName(step.protocol)), ...hints.map((item) => protocolName(item?.protocol))].filter(
+        isBridgeProtocol
+      )
+    )
+  ].slice(0, 16)
+  const identified = hops.flatMap((step) =>
+    typeof step.id === 'string' && step.id.length > 0 && step.id.length <= 128 && protocolName(step.protocol)
+      ? [
+          {
+            id: step.id,
+            protocol: protocolName(step.protocol)!,
+            sourceChainId:
+              typeof step.chainId === 'number' && Number.isSafeInteger(step.chainId) && step.chainId > 0
+                ? step.chainId
+                : undefined,
+            destinationChainId:
+              typeof step.destinationChainId === 'number' &&
+              Number.isSafeInteger(step.destinationChainId) &&
+              step.destinationChainId > 0
+                ? step.destinationChainId
+                : undefined
+          }
+        ]
+      : []
+  )
+  const legs = identified
+    .filter((leg, index) => identified.findIndex((other) => other.id === leg.id) === index)
+    .slice(0, 32)
+  const estimates = hints
+    .map((item) => item?.estimatedSeconds)
+    .filter(
+      (value): value is number => typeof value === 'number' && Number.isFinite(value) && value >= 0 && value <= 604800
+    )
+  return {
+    provider: 'enso',
+    destinationChainId,
+    protocols,
+    bridgeCount: hops.length || undefined,
+    coverage: hops.length > 0 && hops.length === legs.length ? 'complete' : 'incomplete',
+    legs,
+    estimatedSeconds: estimates.length ? Math.max(...estimates) : undefined
+  }
 }

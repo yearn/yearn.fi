@@ -5,7 +5,6 @@ import { toNormalizedValue } from '@shared/utils'
 import type { TransactionStep } from '@yearn/vault-widget/advanced'
 import type { ReactElement } from 'react'
 import { useCallback, useMemo } from 'react'
-import { useWriteContract } from 'wagmi'
 import { RewardRow } from './RewardRow'
 import type { TGroupedMerkleReward } from './types'
 
@@ -33,7 +32,6 @@ export function MerkleRewardRow(props: TMerkleRewardRowProps): ReactElement {
   } = props
 
   const currentChainId = useChainId()
-  const { isPending } = useWriteContract()
 
   const { prepare } = useClaimMerkleRewards({
     groupedReward,
@@ -55,9 +53,16 @@ export function MerkleRewardRow(props: TMerkleRewardRowProps): ReactElement {
       confirmMessage: `Claim ${formattedAmount} ${groupedReward.token.symbol}`,
       successTitle: 'Rewards Claimed',
       successMessage: `You claimed ${formattedAmount} ${groupedReward.token.symbol}`,
+      notification: {
+        type: 'claim',
+        amount: formattedAmount,
+        fromChainId: chainId,
+        fromAddress: groupedReward.token.address,
+        fromSymbol: groupedReward.token.symbol
+      },
       showConfetti: true
     }
-  }, [prepare, formattedAmount, groupedReward.token.symbol])
+  }, [prepare, formattedAmount, groupedReward.token.symbol, groupedReward.token.address, chainId])
 
   const handleClaim = useCallback(() => {
     if (!step) return
@@ -76,7 +81,6 @@ export function MerkleRewardRow(props: TMerkleRewardRowProps): ReactElement {
       amount={normalizedAmount.toString()}
       usdValue={groupedReward.totalUsdValue}
       onClaim={handleClaim}
-      isClaimPending={isPending}
       isClaimReady={prepare.isSuccess}
       isFirst={isFirst}
       isAllChainsView={isAllChainsView}

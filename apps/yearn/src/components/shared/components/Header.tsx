@@ -90,7 +90,11 @@ function WalletSelector({ onAccountClick, isAccountOpen, notificationStatus }: T
       }
     >
       {walletIdentity && notificationStatus && (
-        <span className={cl('absolute -right-0.5 -top-0.5 size-2 rounded-full', notificationDotColor)} />
+        <span
+          role="img"
+          aria-label="Unread transaction activity"
+          className={cl('absolute -right-0.5 -top-0.5 size-2 rounded-full', notificationDotColor)}
+        />
       )}
       <span
         suppressHydrationWarning
@@ -230,7 +234,7 @@ function AppHeader(): ReactElement {
   const pathname = usePathname() || '/'
   const [isAccountSidebarOpen, setIsAccountSidebarOpen] = useState(false)
   const [isMobileMenuOpen, setIsMobileMenuOpen] = useState(false)
-  const { notificationStatus } = useNotifications()
+  const { notificationStatus, acknowledge } = useNotifications()
   const { address, ens, clusters } = useWeb3()
   const themePreference = useThemePreference()
   const isDarkTheme = themePreference !== 'light'
@@ -289,7 +293,10 @@ function AppHeader(): ReactElement {
               <div className={'relative'}>
                 <WalletSelector
                   isAccountOpen={isAccountSidebarOpen}
-                  onAccountClick={() => setIsAccountSidebarOpen(!isAccountSidebarOpen)}
+                  onAccountClick={() => {
+                    acknowledge()
+                    setIsAccountSidebarOpen(!isAccountSidebarOpen)
+                  }}
                   notificationStatus={notificationStatus}
                 />
                 <AccountDropdown isOpen={isAccountSidebarOpen} onClose={() => setIsAccountSidebarOpen(false)} />
