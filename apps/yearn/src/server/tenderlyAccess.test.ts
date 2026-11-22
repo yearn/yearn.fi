@@ -1,4 +1,4 @@
-import { afterEach, describe, expect, it, vi } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { getRequestIp } from './http'
 import { POST as fundPOST } from './tenderly/fund'
 import { POST as increaseTimePOST } from './tenderly/increase-time'
@@ -44,6 +44,10 @@ describe('isTenderlyAdminRequestAllowed', () => {
 })
 
 describe('Tenderly admin gate with getRequestIp', () => {
+  beforeEach(() => {
+    vi.stubEnv('__NEXT_PRIVATE_ORIGIN', 'http://127.0.0.1:3000')
+  })
+
   afterEach(() => {
     vi.unstubAllEnvs()
   })
@@ -109,5 +113,24 @@ describe('Tenderly admin gate with getRequestIp', () => {
     )
 
     expect(statuses).toEqual([403, 403, 403, 403])
+  })
+
+  it.each([
+    ['fund', fundPOST],
+    ['increase-time', increaseTimePOST],
+    ['revert', revertPOST],
+    ['snapshot', snapshotPOST]
+  ])('denies a spoofed lone loopback %s request unless the dev server is bound to loopback', async (_route, POST) => {
+    vi.stubEnv('VERCEL', '')
+    vi.stubEnv('NODE_ENV', 'development')
+
+    const statuses = await Promise.all(
+      ['http://localhost:3000', 'http://192.168.1.5:3000', ''].map(async (origin) => {
+        vi.stubEnv('__NEXT_PRIVATE_ORIGIN', origin)
+        return (await POST(requestWithHost('localhost:3000', '127.0.0.1'))).status
+      })
+    )
+
+    expect(statuses).toEqual([403, 403, 403])
   })
 })

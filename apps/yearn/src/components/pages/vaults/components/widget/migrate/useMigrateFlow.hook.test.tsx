@@ -3,11 +3,11 @@
 import { useTokenAllowance } from '@pages/vaults/hooks/useTokenAllowance'
 import { usePublicClient, useSimulateContract } from '@shared/hooks/useAppWagmi'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
-import { renderHook, waitFor } from '@testing-library/react'
+import { act, renderHook, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
 import type { Address } from 'viem'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { YEARN_4626_ROUTER } from '@/components/shared/utils'
+import { YEARN_4626_ROUTER, ZAP_YEARN_VE_CRV_ADDRESS } from '@/components/shared/utils'
 import { useMigrateFlow } from './useMigrateFlow'
 
 vi.mock('@shared/hooks/useAppWagmi', () => ({
@@ -29,19 +29,19 @@ const ACCOUNT = '0x3333333333333333333333333333333333333333' as Address
 const UNKNOWN_ROUTER = '0x4444444444444444444444444444444444444444' as Address
 const BALANCE = 10n ** 18n
 
-type TReadContractCall = { address: Address; functionName: string; args?: readonly bigint[] }
+type TReadContractCall = { address: Address; functionName: string; args?: readonly unknown[] }
 
 const useSimulateContractMock = vi.mocked(useSimulateContract)
 const readContract = vi.fn<(call: TReadContractCall) => Promise<bigint>>()
 
-function renderMigrateFlow(vaultVersion: string) {
+function renderMigrateFlow(vaultVersion: string, router: Address = UNKNOWN_ROUTER) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
-  return renderHook(
+  const rendered = renderHook(
     () =>
       useMigrateFlow({
         vaultFrom: FROM_VAULT,
         vaultTo: TO_VAULT,
-        router: UNKNOWN_ROUTER,
+        router,
         vaultVersion,
         balance: BALANCE,
         account: ACCOUNT,
@@ -54,6 +54,7 @@ function renderMigrateFlow(vaultVersion: string) {
       )
     }
   )
+  return { ...rendered, queryClient }
 }
 
 function lastMigrateSimulation(functionName: string) {
@@ -151,5 +152,42 @@ describe('useMigrateFlow quote', () => {
     await waitFor(() => expect(result.current.periphery.error).toBe('Migration quote failed'))
     expect(result.current.periphery.prepareMigrateEnabled).toBe(false)
     expect(useSimulateContractMock.mock.calls.some(([parameters]) => parameters?.query?.enabled)).toBe(false)
+  })
+
+  it('prepares a veCRV zap migration with the minimum quoted through calc_expected_out', async () => {
+    readContract.mockImplementation(async ({ address, functionName, args }) => {
+      if (
+        address === ZAP_YEARN_VE_CRV_ADDRESS &&
+        functionName === 'calc_expected_out' &&
+        args?.[0] === FROM_VAULT &&
+        args?.[1] === TO_VAULT &&
+        args?.[2] === BALANCE
+      ) {
+        return 10_000n
+      }
+      throw new Error(`unexpected read ${functionName}`)
+    })
+
+    const { result } = renderMigrateFlow('0.4.6', ZAP_YEARN_VE_CRV_ADDRESS)
+
+    await waitFor(() => expect(result.current.periphery.prepareMigrateEnabled).toBe(true))
+    expect(lastMigrateSimulation('zap')).toMatchObject({
+      address: ZAP_YEARN_VE_CRV_ADDRESS,
+      args: [FROM_VAULT, TO_VAULT, BALANCE, 9_950n, ACCOUNT],
+      query: { enabled: true }
+    })
+  })
+
+  it('stops preparing the migration when a quote refetch fails after a success', async () => {
+    readContract.mockImplementation(async ({ functionName }) => (functionName === 'previewRedeem' ? 3_000n : 10_000n))
+
+    const { result, queryClient } = renderMigrateFlow('3.0.2')
+    await waitFor(() => expect(result.current.periphery.prepareMigrateEnabled).toBe(true))
+
+    readContract.mockRejectedValue(new Error('rpc down'))
+    await act(() => queryClient.refetchQueries({ queryKey: ['migration-min-shares-out'] }))
+
+    await waitFor(() => expect(result.current.periphery.error).toBe('Migration quote failed'))
+    expect(result.current.periphery.prepareMigrateEnabled).toBe(false)
   })
 })

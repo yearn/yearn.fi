@@ -73,6 +73,13 @@ export async function readJsonBody<T>(request: Request): Promise<T> {
 }
 
 const LOCAL_HOST_PATTERN = /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/
+const LOOPBACK_BIND_HOSTNAMES = new Set(['127.0.0.1', '[::1]'])
+
+function isDevServerBoundToLoopback(): boolean {
+  return URL.canParse(process.env.__NEXT_PRIVATE_ORIGIN ?? '')
+    ? LOOPBACK_BIND_HOSTNAMES.has(new URL(process.env.__NEXT_PRIVATE_ORIGIN as string).hostname)
+    : false
+}
 
 export function getRequestIp(request: Request): string | undefined {
   if (process.env.VERCEL) {
@@ -80,7 +87,7 @@ export function getRequestIp(request: Request): string | undefined {
   }
 
   const isLocalHost = LOCAL_HOST_PATTERN.test(request.headers.get('host') ?? '')
-  if (process.env.NODE_ENV !== 'development' || !isLocalHost) {
+  if (process.env.NODE_ENV !== 'development' || !isLocalHost || !isDevServerBoundToLoopback()) {
     return undefined
   }
 

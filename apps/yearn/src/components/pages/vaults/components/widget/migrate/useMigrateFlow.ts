@@ -1,6 +1,7 @@
 import { useTokenAllowance } from '@pages/vaults/hooks/useTokenAllowance'
 import type { MigrateRouteType, UseMigrateFlowReturn } from '@pages/vaults/types'
 import { ERC_4626_ROUTER_ABI } from '@shared/contracts/abi/erc4626Router.abi'
+import { ZAP_VE_CRV_ABI } from '@shared/contracts/abi/zapVeCRV.abi'
 import { type AppUseSimulateContractReturnType, usePublicClient, useSimulateContract } from '@shared/hooks/useAppWagmi'
 import { detectPermitType, type PermitType, type TPermitSignature } from '@shared/hooks/usePermit'
 import { getMigratorConfig, type MigratorConfig } from '@shared/utils/migratorRegistry'
@@ -78,7 +79,7 @@ export function getMigrateArgs(
     case 'erc4626-router':
       return getErc4626RouterMigrateArgs(vaultFrom, vaultTo, shares, minSharesOut)
     case 'yearn-vecrv-zap':
-      return getYearnVeCrvZapArgs(vaultFrom, vaultTo, shares, recipient)
+      return getYearnVeCrvZapArgs(vaultFrom, vaultTo, shares, recipient, minSharesOut)
     default:
       return getVaultMigratorArgs(vaultFrom, vaultTo, shares)
   }
@@ -165,18 +166,34 @@ export const useMigrateFlow = ({
   // Check if this is a V2 vault (V2 vaults have non-standard permit that doesn't work with router's selfPermit)
   const isV2Vault = !vaultVersion?.startsWith('3') && !vaultVersion?.startsWith('~3')
 
-  // The ERC-4626 router enforces minSharesOut on-chain; never sign it as 0.
-  const usesMinSharesOut = migratorConfig.argumentType === 'erc4626-router'
+  // The ERC-4626 router and the veCRV zap enforce a minimum out on-chain; never sign it as 0.
+  const usesMinSharesOut = migratorConfig.argumentType !== 'vault-migrator'
   const { data: minSharesOut, isError: isQuoteError } = useQuery({
-    queryKey: ['migration-min-shares-out', chainId, vaultFrom, vaultTo, balance.toString(), isV2Vault],
+    queryKey: [
+      'migration-min-shares-out',
+      chainId,
+      migratorConfig.argumentType,
+      effectiveRouter,
+      vaultFrom,
+      vaultTo,
+      balance.toString(),
+      isV2Vault
+    ],
     queryFn: async () =>
       getMigrationMinSharesOut(
-        await quoteMigrationShares(client as PublicClient, vaultFrom, vaultTo, balance, isV2Vault)
+        migratorConfig.argumentType === 'yearn-vecrv-zap'
+          ? await (client as PublicClient).readContract({
+              address: effectiveRouter,
+              abi: ZAP_VE_CRV_ABI,
+              functionName: 'calc_expected_out',
+              args: [vaultFrom, vaultTo, balance]
+            })
+          : await quoteMigrationShares(client as PublicClient, vaultFrom, vaultTo, balance, isV2Vault)
       ),
     enabled: enabled && !!client && usesMinSharesOut && balance > 0n,
     refetchInterval: 30_000
   })
-  const hasMinSharesOut = !usesMinSharesOut || minSharesOut !== undefined
+  const hasMinSharesOut = !usesMinSharesOut || (minSharesOut !== undefined && !isQuoteError)
 
   // Only use permit flow for V3 vaults with EIP-2612 style permits
   // V2 vaults have a different permit signature (Bytes[65] instead of v,r,s) that's incompatible with selfPermit
