@@ -6,8 +6,8 @@ import { HeaderNavMenu } from '@shared/components/HeaderNavMenu'
 import { MobileNavMenu } from '@shared/components/MobileNavMenu'
 import { HeaderSiteStatus } from '@shared/components/SiteStatus'
 import { toast } from '@shared/components/yToast'
+import { useTenderlyPanel } from '@shared/contexts/useLocalForkPanel'
 import { useNotifications } from '@shared/contexts/useNotifications'
-import { useTenderlyPanel } from '@shared/contexts/useTenderlyPanel'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { IconBurgerPlain } from '@shared/icons/IconBurgerPlain'
 import { IconMoon } from '@shared/icons/IconMoon'
@@ -30,7 +30,7 @@ import {
   persistTenderlyModeEnabled,
   resolveConnectedTenderlyExecutionChain,
   tenderlyConfiguredRuntime
-} from '@/config/tenderly'
+} from '@/config/localForkRuntime'
 
 type TWalletSelectorProps = {
   onAccountClick: () => void
@@ -165,7 +165,7 @@ function TenderlyBadge(): ReactElement | null {
         await switchChainAsync({ chainId: connectedTenderlyExecutionChain.canonicalChainId })
       } catch {
         toast({
-          content: `Switch to ${connectedTenderlyExecutionChain.canonicalChainName} was cancelled. Tenderly is still on.`,
+          content: `Switch to ${connectedTenderlyExecutionChain.canonicalChainName} was cancelled. Local Fork is still on.`,
           type: 'warning'
         })
         return
@@ -184,8 +184,8 @@ function TenderlyBadge(): ReactElement | null {
       tabIndex={canToggleControls ? 0 : undefined}
       title={
         canToggleControls
-          ? `Tenderly mode enabled${configuredMappings ? ` (${configuredMappings})` : ''}. Click to ${isOpen ? 'hide' : 'show'} controls.`
-          : `Use ${isTenderlyActive ? 'Tenderly RPCs and vnets' : 'normal RPCs'}${configuredMappings ? ` (${configuredMappings})` : ''}`
+          ? `Local Fork mode enabled${configuredMappings ? ` (${configuredMappings})` : ''}. Click to ${isOpen ? 'hide' : 'show'} controls.`
+          : `Use ${isTenderlyActive ? 'the local fork' : 'normal RPCs'}${configuredMappings ? ` (${configuredMappings})` : ''}`
       }
       className={cl(
         'inline-flex min-h-[32px] items-center gap-2 rounded-md border px-2.5 py-1 text-[10px] font-semibold uppercase tracking-[0.12em] transition-all',
@@ -194,7 +194,7 @@ function TenderlyBadge(): ReactElement | null {
       )}
     >
       <span className={cl('transition-colors', isTenderlyActive ? 'text-text-primary' : 'text-text-tertiary')}>
-        {'Tenderly'}
+        {'Local Fork'}
       </span>
       {canToggleMode && (
         <button
@@ -206,7 +206,7 @@ function TenderlyBadge(): ReactElement | null {
           role="switch"
           aria-checked={isTenderlyActive}
           aria-busy={isSwitchingChain}
-          aria-label={isTenderlyActive ? 'Disable Tenderly mode' : 'Enable Tenderly mode'}
+          aria-label={`${isTenderlyActive ? 'Disable' : 'Enable'} Local Fork mode`}
           disabled={isSwitchingChain}
           className={cl(
             'relative inline-flex h-5 w-9 shrink-0 items-center rounded-full border transition-colors',

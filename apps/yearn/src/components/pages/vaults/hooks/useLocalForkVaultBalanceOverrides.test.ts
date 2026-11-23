@@ -1,5 +1,12 @@
 // @vitest-environment jsdom
 
+import {
+  fetchTenderlyVaultBalanceOverrides,
+  getTenderlyVaultBalanceOverrideScopeId,
+  getTenderlyVaultOverrideRefreshKey,
+  getVaultTenderlyOverrideTokens,
+  useTenderlyVaultBalanceOverrides
+} from '@pages/vaults/hooks/useLocalForkVaultBalanceOverrides'
 import { YVBTC_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvBtc'
 import { YVUSD_CHAIN_ID, YVUSD_DECIMALS, YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import { useWalletActions } from '@shared/contexts/useWallet'
@@ -8,13 +15,6 @@ import type { TAddress } from '@shared/types'
 import { toAddress } from '@shared/utils'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import {
-  fetchTenderlyVaultBalanceOverrides,
-  getTenderlyVaultBalanceOverrideScopeId,
-  getTenderlyVaultOverrideRefreshKey,
-  getVaultTenderlyOverrideTokens,
-  useTenderlyVaultBalanceOverrides
-} from './useTenderlyVaultBalanceOverrides'
 
 vi.mock('@shared/contexts/useWallet', () => ({
   useWalletActions: vi.fn()
@@ -24,8 +24,8 @@ vi.mock('@shared/hooks/useBalancesQueries', () => ({
   fetchTokenBalances: vi.fn()
 }))
 
-vi.mock('@/config/tenderly', async (importOriginal) => ({
-  ...(await importOriginal<typeof import('@/config/tenderly')>()),
+vi.mock('@/config/localForkRuntime', async (importOriginal) => ({
+  ...(await importOriginal<typeof import('@/config/localForkRuntime')>()),
   isTenderlyModeEnabled: () => true
 }))
 

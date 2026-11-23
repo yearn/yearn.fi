@@ -4,11 +4,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 describe('getNetwork', () => {
   afterEach(() => {
     vi.resetModules()
-    vi.doUnmock('@/config/tenderly')
+    vi.doUnmock('@/config/localForkRuntime')
   })
 
   it('leaves the default block explorer empty for Tenderly execution chains without explicit explorer URIs', async () => {
-    vi.doMock('@/config/tenderly', () => ({
+    vi.doMock('@/config/localForkRuntime', () => ({
       resolveExecutionChainId: (chainId?: number) => chainId,
       resolveTenderlyExplorerUriForExecutionChainId: () => undefined,
       resolveTenderlyRpcUriForExecutionChainId: (chainId?: number) =>

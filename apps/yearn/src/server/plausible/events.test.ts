@@ -57,16 +57,23 @@ describe('Plausible event relay', () => {
     await expect(response.text()).resolves.toBe('')
   })
 
-  it.each(['1', ''])('never forwards a client-supplied IP header (VERCEL=%s)', async (vercel) => {
-    const fetchStub = vi.fn().mockResolvedValue(new Response(null, { status: 202 }))
-    vi.stubGlobal('fetch', fetchStub)
-    vi.stubEnv('VERCEL', vercel)
-    vi.stubEnv('NODE_ENV', 'production')
+  it.each([
+    { vercel: '1', platformIp: '', nodeEnv: 'production' },
+    { vercel: '', platformIp: '203.0.113.42', nodeEnv: 'production' },
+    { vercel: '', platformIp: '203.0.113.42', nodeEnv: 'development' }
+  ])(
+    'only trusts the Vercel IP header on Vercel (VERCEL=$vercel, NODE_ENV=$nodeEnv)',
+    async ({ vercel, platformIp, nodeEnv }) => {
+      const fetchStub = vi.fn().mockResolvedValue(new Response(null, { status: 202 }))
+      vi.stubGlobal('fetch', fetchStub)
+      vi.stubEnv('VERCEL', vercel)
+      vi.stubEnv('NODE_ENV', nodeEnv)
 
-    await POST(eventRequest(JSON.stringify(EVENT), { 'X-Vercel-Forwarded-For': '' }))
+      await POST(eventRequest(JSON.stringify(EVENT), { 'X-Vercel-Forwarded-For': platformIp }))
 
-    expect(fetchStub.mock.calls[0][1].headers.get('x-forwarded-for')).toBeNull()
-  })
+      expect(fetchStub.mock.calls[0][1].headers.get('x-forwarded-for')).toBeNull()
+    }
+  )
 
   it.each(['application/javascript', 'text/html'])('discards upstream %s content and headers', async (contentType) => {
     const upstream = new Response('<script>globalThis.untrusted = true</script>', {

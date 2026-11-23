@@ -1,7 +1,9 @@
+import { getLocalAnvilRpcUri } from '@shared/utils/anvilPanel'
 import { getNetwork, getRpcUriFor } from '@shared/utils/wagmi'
 import type { Chain, Transport } from 'viem'
 import { mainnet } from 'viem/chains'
 import { fallback, http } from 'wagmi'
+import { resolveTenderlyRpcUriForExecutionChainId } from '@/config/localForkRuntime'
 import { env } from '@/env'
 
 function getLegacyRpcUri(chainId: number): string {
@@ -33,6 +35,12 @@ export function buildTransports(chains: readonly Chain[]): Record<number, Transp
   const transports: Record<number, Transport> = {}
 
   for (const chain of chains) {
+    const localRpc = env.DEV && getLocalAnvilRpcUri(resolveTenderlyRpcUriForExecutionChainId(chain.id) || '')
+    if (localRpc) {
+      transports[chain.id] = http(localRpc, { batch: true, fetchOptions: { redirect: 'error' } })
+      continue
+    }
+
     const availableTransports = getTransportRpcUrlsForChain(chain).map((rpcUrl) => http(rpcUrl, { batch: true }))
     availableTransports.push(http())
     transports[chain.id] = fallback(availableTransports)

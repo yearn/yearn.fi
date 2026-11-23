@@ -8,9 +8,16 @@ import type {
   TTenderlyFundRequest,
   TTenderlyIncreaseTimeRequest,
   TTenderlyPanelStatus,
-  TTenderlySnapshotRecord,
-  TTenderlySnapshotRequest
-} from '@shared/types/tenderly'
+  TTenderlySnapshotRecord
+} from '@shared/types/localFork'
+import {
+  createAnvilSnapshot,
+  fundAnvilWallet,
+  getLocalAnvilRpcUri,
+  increaseAnvilTime,
+  readAnvilInstance,
+  revertAnvilSnapshot
+} from '@shared/utils/anvilPanel'
 import {
   buildTenderlyFundableAssets,
   clearTenderlySnapshotBucket,
@@ -20,11 +27,10 @@ import {
   reconcileTenderlySnapshotStorageAfterRevert,
   resolveDefaultTenderlyCanonicalChainId,
   sortTenderlySnapshotRecords,
-  TENDERLY_SNAPSHOT_STORAGE_KEY,
   type TTenderlySnapshotStorage,
   upsertTenderlySnapshotRecord
-} from '@shared/utils/tenderlyPanel'
-import { useQueryClient } from '@tanstack/react-query'
+} from '@shared/utils/localForkPanel'
+import { useQuery, useQueryClient } from '@tanstack/react-query'
 import {
   createContext,
   type ReactElement,
@@ -35,8 +41,10 @@ import {
   useMemo,
   useState
 } from 'react'
-import { isTenderlyModeEnabled } from '@/config/tenderly'
+import { canonicalChains } from '@/config/chainDefinitions'
+import { isTenderlyModeEnabled, tenderlyRuntime } from '@/config/localForkRuntime'
 import { useChains } from '@/context/chainsContext'
+import { env } from '@/env'
 
 type TTenderlyPanelContext = {
   isTenderlyMode: boolean
@@ -87,25 +95,26 @@ const TenderlyPanelContext = createContext<TTenderlyPanelContext>({
   fundWallet: async (): Promise<void> => undefined
 })
 
-async function fetchTenderlyApi<TResponse, TRequest = undefined>(
-  path: string,
-  options?: {
-    method?: 'GET' | 'POST'
-    body?: TRequest
-  }
-): Promise<TResponse> {
-  const response = await fetch(path, {
-    method: options?.method || 'GET',
-    headers: options?.body ? { 'content-type': 'application/json' } : undefined,
-    body: options?.body ? JSON.stringify(options.body) : undefined
-  })
-  const payload = (await response.json().catch(() => undefined)) as { error?: string } & TResponse
+const ANVIL_INSTANCES_QUERY_KEY = ['local-anvil-instances']
+const ANVIL_SNAPSHOT_STORAGE_KEY = 'yearn.fi/anvil/snapshots'
 
-  if (!response.ok) {
-    throw new Error(payload?.error || `Tenderly API request failed with status ${response.status}`)
-  }
+const localForkChains = Object.values(tenderlyRuntime.configuredByCanonicalId).flatMap((chain) => {
+  const rpcUri = getLocalAnvilRpcUri(chain.rpcUri)
+  const canonicalChain = canonicalChains.find((entry) => entry.id === chain.canonicalChainId)
+  return rpcUri && canonicalChain
+    ? [{ ...chain, rpcUri, canonicalChainName: canonicalChain.name, hasAdminRpc: true }]
+    : []
+})
 
-  return payload
+async function readLocalAnvilInstances(): Promise<Record<number, string | undefined>> {
+  return Object.fromEntries(
+    await Promise.all(
+      localForkChains.map(async (chain) => [
+        chain.canonicalChainId,
+        await readAnvilInstance(chain.rpcUri, chain.executionChainId).catch(() => undefined)
+      ])
+    )
+  )
 }
 
 export function TenderlyPanelProvider({ children }: { children: ReactNode }): ReactElement {
@@ -114,81 +123,76 @@ export function TenderlyPanelProvider({ children }: { children: ReactNode }): Re
   const { chainID, address } = useWeb3()
   const { allVaults, enableVaultListFetch } = useYearn()
   const { tokenLists } = useTokenList()
-  const [status, setStatus] = useState<TTenderlyPanelStatus | undefined>(undefined)
-  const [isStatusLoading, setIsStatusLoading] = useState(false)
   const [isOpen, setIsOpen] = useState(false)
-  const [selectedCanonicalChainId, setSelectedCanonicalChainIdState] = useState<number | undefined>(undefined)
+  const [selectedCanonicalChainIdPreference, setSelectedCanonicalChainIdState] = useState<number | undefined>(undefined)
   const [pendingAction, setPendingAction] = useState<string | null>(null)
   const [stateRevision, setStateRevision] = useState(0)
-  const { value: snapshotStorageValue, set: setSnapshotStorage } = useLocalStorageValue<TTenderlySnapshotStorage>(
-    TENDERLY_SNAPSHOT_STORAGE_KEY,
-    {
-      defaultValue: {}
-    }
-  )
-  const snapshotStorage = snapshotStorageValue || {}
-  const isTenderlyMode = isTenderlyModeEnabled()
+  const { value: snapshotStorage = {}, set: setSnapshotStorage } = useLocalStorageValue<
+    Record<string, TTenderlySnapshotStorage>
+  >(ANVIL_SNAPSHOT_STORAGE_KEY, { defaultValue: {} })
+  const isTenderlyMode =
+    env.DEV &&
+    isTenderlyModeEnabled() &&
+    typeof window !== 'undefined' &&
+    Boolean(getLocalAnvilRpcUri(window.location.origin))
+  const {
+    data: anvilInstances,
+    isFetching: isStatusLoading,
+    refetch
+  } = useQuery({
+    queryKey: ANVIL_INSTANCES_QUERY_KEY,
+    queryFn: readLocalAnvilInstances,
+    enabled: isTenderlyMode && localForkChains.length > 0
+  })
+  const isPanelAvailable = isTenderlyMode && localForkChains.length > 0 && anvilInstances !== undefined
 
   const refetchStatus = useCallback(async (): Promise<void> => {
-    if (!isTenderlyMode) {
-      setStatus(undefined)
-      return
-    }
-
-    setIsStatusLoading(true)
-    try {
-      const nextStatus = await fetchTenderlyApi<TTenderlyPanelStatus>('/api/tenderly/status')
-      setStatus(nextStatus)
-    } catch (error) {
-      console.error('Failed to fetch Tenderly status:', error)
-      setStatus(undefined)
-    } finally {
-      setIsStatusLoading(false)
-    }
-  }, [isTenderlyMode])
-
-  useEffect(() => {
-    void refetchStatus()
-  }, [refetchStatus])
+    if (isPanelAvailable) await refetch()
+  }, [isPanelAvailable, refetch])
 
   useEffect(() => {
     if (isOpen) {
       enableVaultListFetch()
+      void refetchStatus()
     }
-  }, [enableVaultListFetch, isOpen])
+  }, [enableVaultListFetch, isOpen, refetchStatus])
 
-  const availableConfiguredChains = useMemo(
-    () => (status?.configuredChains || []).filter((chain) => chain.hasAdminRpc),
-    [status?.configuredChains]
+  const status = useMemo<TTenderlyPanelStatus | undefined>(
+    () =>
+      isPanelAvailable
+        ? {
+            isTenderlyModeEnabled: true,
+            configuredChains: localForkChains.map(
+              ({ canonicalChainId, canonicalChainName, executionChainId, hasAdminRpc }) => ({
+                canonicalChainId,
+                canonicalChainName,
+                executionChainId,
+                hasAdminRpc
+              })
+            )
+          }
+        : undefined,
+    [isPanelAvailable]
   )
-
-  useEffect(() => {
-    const defaultCanonicalChainId = resolveDefaultTenderlyCanonicalChainId(availableConfiguredChains, [
-      chainID,
-      chainIdIntent
-    ])
-    const canKeepSelectedChain = availableConfiguredChains.some(
-      (chain) => chain.canonicalChainId === selectedCanonicalChainId
-    )
-
-    if (canKeepSelectedChain) {
-      return
-    }
-
-    setSelectedCanonicalChainIdState(defaultCanonicalChainId)
-  }, [availableConfiguredChains, chainID, chainIdIntent, selectedCanonicalChainId])
+  const selectedCanonicalChainId =
+    selectedCanonicalChainIdPreference ??
+    resolveDefaultTenderlyCanonicalChainId(localForkChains, [chainID, chainIdIntent])
 
   const selectedChain = useMemo(
-    () => availableConfiguredChains.find((chain) => chain.canonicalChainId === selectedCanonicalChainId),
-    [availableConfiguredChains, selectedCanonicalChainId]
+    () => localForkChains.find((chain) => chain.canonicalChainId === selectedCanonicalChainId),
+    [selectedCanonicalChainId]
   )
   const snapshotBucketKey =
     selectedChain && selectedCanonicalChainId !== undefined
       ? getTenderlySnapshotBucketKey(selectedCanonicalChainId, selectedChain.executionChainId)
       : undefined
+  const selectedInstanceId = selectedChain && anvilInstances?.[selectedChain.canonicalChainId]
   const snapshotRecords = useMemo(
-    () => (snapshotBucketKey ? sortTenderlySnapshotRecords(snapshotStorage[snapshotBucketKey] || []) : []),
-    [snapshotBucketKey, snapshotStorage]
+    () =>
+      selectedInstanceId && snapshotBucketKey
+        ? sortTenderlySnapshotRecords(snapshotStorage[selectedInstanceId]?.[snapshotBucketKey] || [])
+        : [],
+    [selectedInstanceId, snapshotBucketKey, snapshotStorage]
   )
   const baselineSnapshot = useMemo(() => getValidBaselineSnapshot(snapshotRecords), [snapshotRecords])
   const fundableAssets = useMemo(
@@ -203,42 +207,44 @@ export function TenderlyPanelProvider({ children }: { children: ReactNode }): Re
     [allVaults, selectedCanonicalChainId, tokenLists]
   )
 
-  const isPanelAvailable = isTenderlyMode && availableConfiguredChains.length > 0
-
   const refreshTenderlyDependentState = useCallback(async (): Promise<void> => {
     await queryClient.invalidateQueries()
     setStateRevision((currentRevision) => currentRevision + 1)
   }, [queryClient])
 
   const updateSnapshotStorage = useCallback(
-    (updater: (snapshotStorage: TTenderlySnapshotStorage) => TTenderlySnapshotStorage): void => {
-      setSnapshotStorage(updater(snapshotStorage))
+    (instanceId: string, updater: (storage: TTenderlySnapshotStorage) => TTenderlySnapshotStorage): void => {
+      setSnapshotStorage((currentStorage = {}) => ({
+        ...currentStorage,
+        [instanceId]: updater(currentStorage?.[instanceId] || {})
+      }))
     },
-    [setSnapshotStorage, snapshotStorage]
+    [setSnapshotStorage]
   )
 
-  const requestSnapshotRecord = useCallback(
-    async (request: TTenderlySnapshotRequest): Promise<TTenderlySnapshotRecord> =>
-      await fetchTenderlyApi<TTenderlySnapshotRecord, TTenderlySnapshotRequest>('/api/tenderly/snapshot', {
-        method: 'POST',
-        body: request
-      }),
-    []
-  )
+  const getLocalFork = useCallback(async () => {
+    if (!isPanelAvailable || !selectedChain) {
+      throw new Error('Select a local Anvil chain')
+    }
+
+    const instanceId = await readAnvilInstance(selectedChain.rpcUri, selectedChain.executionChainId)
+    queryClient.setQueryData<Record<number, string | undefined>>(ANVIL_INSTANCES_QUERY_KEY, (instances) => ({
+      ...instances,
+      [selectedChain.canonicalChainId]: instanceId
+    }))
+    return { ...selectedChain, instanceId }
+  }, [isPanelAvailable, queryClient, selectedChain])
 
   const createSnapshotWithKind = useCallback(
     async (isBaseline: boolean): Promise<void> => {
-      if (!selectedCanonicalChainId) {
-        throw new Error('No Tenderly chain selected')
-      }
-
       setPendingAction(isBaseline ? 'create-baseline' : 'create-snapshot')
       try {
-        const snapshotRecord = await requestSnapshotRecord({
-          canonicalChainId: selectedCanonicalChainId,
+        const fork = await getLocalFork()
+        const snapshotRecord = await createAnvilSnapshot(fork.rpcUri, fork.executionChainId, {
+          canonicalChainId: fork.canonicalChainId,
           isBaseline
         })
-        updateSnapshotStorage((currentStorage) => upsertTenderlySnapshotRecord(currentStorage, snapshotRecord))
+        updateSnapshotStorage(fork.instanceId, (storage) => upsertTenderlySnapshotRecord(storage, snapshotRecord))
         toast({
           content: isBaseline ? 'Baseline snapshot created' : 'Snapshot created',
           type: 'success'
@@ -247,45 +253,40 @@ export function TenderlyPanelProvider({ children }: { children: ReactNode }): Re
         setPendingAction(null)
       }
     },
-    [requestSnapshotRecord, selectedCanonicalChainId, updateSnapshotStorage]
+    [getLocalFork, updateSnapshotStorage]
   )
 
   const revertToSnapshot = useCallback(
     async (snapshotRecord: TTenderlySnapshotRecord): Promise<void> => {
       setPendingAction('revert-snapshot')
       try {
+        const fork = await getLocalFork()
+        if (
+          fork.instanceId !== selectedInstanceId ||
+          fork.canonicalChainId !== snapshotRecord.canonicalChainId ||
+          fork.executionChainId !== snapshotRecord.executionChainId
+        ) {
+          throw new Error('This snapshot belongs to a different Anvil session')
+        }
+
         try {
-          await fetchTenderlyApi('/api/tenderly/revert', {
-            method: 'POST',
-            body: {
-              canonicalChainId: snapshotRecord.canonicalChainId,
-              snapshotId: snapshotRecord.snapshotId
-            }
-          })
+          await revertAnvilSnapshot(fork.rpcUri, snapshotRecord.snapshotId)
         } catch (error) {
-          updateSnapshotStorage((currentStorage) =>
-            markTenderlySnapshotInvalid(currentStorage, {
-              canonicalChainId: snapshotRecord.canonicalChainId,
-              executionChainId: snapshotRecord.executionChainId,
-              snapshotId: snapshotRecord.snapshotId
-            })
-          )
+          updateSnapshotStorage(fork.instanceId, (storage) => markTenderlySnapshotInvalid(storage, snapshotRecord))
           throw error
         }
 
-        let replacementSnapshotRecord: TTenderlySnapshotRecord | undefined
-        try {
-          replacementSnapshotRecord = await requestSnapshotRecord({
-            canonicalChainId: snapshotRecord.canonicalChainId,
-            isBaseline: snapshotRecord.kind === 'baseline',
-            label: snapshotRecord.label
-          })
-        } catch (error) {
-          console.error('Failed to create replacement Tenderly snapshot after revert:', error)
-        }
+        const replacementSnapshotRecord = await createAnvilSnapshot(fork.rpcUri, fork.executionChainId, {
+          canonicalChainId: snapshotRecord.canonicalChainId,
+          isBaseline: snapshotRecord.kind === 'baseline',
+          label: snapshotRecord.label
+        }).catch((error) => {
+          console.error('Failed to create replacement Anvil snapshot after revert:', error)
+          return undefined
+        })
 
-        updateSnapshotStorage((currentStorage) =>
-          reconcileTenderlySnapshotStorageAfterRevert(currentStorage, {
+        updateSnapshotStorage(fork.instanceId, (storage) =>
+          reconcileTenderlySnapshotStorageAfterRevert(storage, {
             revertedSnapshotRecord: snapshotRecord,
             replacementSnapshotRecord
           })
@@ -294,7 +295,7 @@ export function TenderlyPanelProvider({ children }: { children: ReactNode }): Re
         try {
           await refreshTenderlyDependentState()
         } catch (error) {
-          console.error('Failed to refresh state after Tenderly revert:', error)
+          console.error('Failed to refresh state after Anvil revert:', error)
         }
 
         toast({
@@ -311,55 +312,46 @@ export function TenderlyPanelProvider({ children }: { children: ReactNode }): Re
         setPendingAction(null)
       }
     },
-    [refreshTenderlyDependentState, requestSnapshotRecord, updateSnapshotStorage]
+    [getLocalFork, refreshTenderlyDependentState, selectedInstanceId, updateSnapshotStorage]
   )
 
   const increaseTime = useCallback(
     async (params: Omit<TTenderlyIncreaseTimeRequest, 'canonicalChainId'>): Promise<void> => {
-      if (!selectedCanonicalChainId) {
-        throw new Error('No Tenderly chain selected')
-      }
-
       setPendingAction('increase-time')
       try {
-        await fetchTenderlyApi('/api/tenderly/increase-time', {
-          method: 'POST',
-          body: {
-            canonicalChainId: selectedCanonicalChainId,
-            seconds: params.seconds,
-            mineBlock: params.mineBlock
-          }
-        })
+        const fork = await getLocalFork()
+        if (fork.instanceId !== selectedInstanceId || !baselineSnapshot) {
+          throw new Error('Create a baseline snapshot for this Anvil session first')
+        }
+        await increaseAnvilTime(fork.rpcUri, params)
         await refreshTenderlyDependentState()
         toast({
-          content: `Fast-forwarded Tenderly by ${params.seconds} seconds`,
+          content: `Fast-forwarded Anvil by ${params.seconds} seconds`,
           type: 'success'
         })
       } finally {
         setPendingAction(null)
       }
     },
-    [refreshTenderlyDependentState, selectedCanonicalChainId]
+    [baselineSnapshot, getLocalFork, refreshTenderlyDependentState, selectedInstanceId]
   )
 
   const fundWallet = useCallback(
     async (params: Omit<TTenderlyFundRequest, 'canonicalChainId' | 'walletAddress'>): Promise<void> => {
-      if (!selectedCanonicalChainId) {
-        throw new Error('No Tenderly chain selected')
-      }
       if (!address) {
-        throw new Error('Connect a wallet before using the Tenderly faucet')
+        throw new Error('Connect a wallet before using the Anvil faucet')
       }
 
       setPendingAction('fund-wallet')
       try {
-        await fetchTenderlyApi('/api/tenderly/fund', {
-          method: 'POST',
-          body: {
-            canonicalChainId: selectedCanonicalChainId,
-            walletAddress: address,
-            ...params
-          }
+        const fork = await getLocalFork()
+        if (fork.instanceId !== selectedInstanceId || !baselineSnapshot) {
+          throw new Error('Create a baseline snapshot for this Anvil session first')
+        }
+        await fundAnvilWallet(fork.rpcUri, {
+          canonicalChainId: fork.canonicalChainId,
+          walletAddress: address,
+          ...params
         })
         await refreshTenderlyDependentState()
         toast({
@@ -370,7 +362,7 @@ export function TenderlyPanelProvider({ children }: { children: ReactNode }): Re
         setPendingAction(null)
       }
     },
-    [address, refreshTenderlyDependentState, selectedCanonicalChainId]
+    [address, baselineSnapshot, getLocalFork, refreshTenderlyDependentState, selectedInstanceId]
   )
 
   const createBaselineSnapshot = useCallback(async (): Promise<void> => {
@@ -396,21 +388,21 @@ export function TenderlyPanelProvider({ children }: { children: ReactNode }): Re
   }, [createSnapshotWithKind])
 
   const clearSnapshotHistory = useCallback((): void => {
-    if (!selectedCanonicalChainId || !selectedChain?.executionChainId) {
+    if (!selectedCanonicalChainId || !selectedChain?.executionChainId || !selectedInstanceId) {
       return
     }
 
-    updateSnapshotStorage((currentStorage) =>
+    updateSnapshotStorage(selectedInstanceId, (currentStorage) =>
       clearTenderlySnapshotBucket(currentStorage, {
         canonicalChainId: selectedCanonicalChainId,
         executionChainId: selectedChain.executionChainId
       })
     )
     toast({
-      content: 'Cleared local Tenderly snapshot history for this chain',
+      content: 'Cleared local Anvil snapshot history for this chain',
       type: 'success'
     })
-  }, [selectedCanonicalChainId, selectedChain?.executionChainId, updateSnapshotStorage])
+  }, [selectedCanonicalChainId, selectedChain?.executionChainId, selectedInstanceId, updateSnapshotStorage])
 
   const revertToSnapshotWithToast = useCallback(
     async (snapshotRecord: TTenderlySnapshotRecord): Promise<void> => {
@@ -432,7 +424,7 @@ export function TenderlyPanelProvider({ children }: { children: ReactNode }): Re
         await increaseTime(params)
       } catch (error) {
         toast({
-          content: error instanceof Error ? error.message : 'Failed to fast-forward Tenderly',
+          content: error instanceof Error ? error.message : 'Failed to fast-forward Anvil',
           type: 'error'
         })
       }
@@ -446,7 +438,7 @@ export function TenderlyPanelProvider({ children }: { children: ReactNode }): Re
         await fundWallet(params)
       } catch (error) {
         toast({
-          content: error instanceof Error ? error.message : 'Failed to fund wallet on Tenderly',
+          content: error instanceof Error ? error.message : 'Failed to fund wallet on Anvil',
           type: 'error'
         })
       }

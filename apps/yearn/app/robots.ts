@@ -26,7 +26,7 @@ export default function robots(): MetadataRoute.Robots {
         '/api/vaults/markdown',
         '/api/vault/markdown'
       ],
-      disallow: ['/api/enso/', '/api/holdings/', '/api/optimization/', '/api/tenderly/']
+      disallow: ['/api/enso/', '/api/holdings/', '/api/optimization/']
     },
     sitemap: `${SITE_URL}/sitemap.xml`
   }

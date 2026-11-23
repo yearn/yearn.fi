@@ -11,7 +11,7 @@ import { createContext, useCallback, useContext, useEffect, useMemo, useRef, use
 import { mainnet } from 'viem/chains'
 import { useAccount, useConnect, useConnectors, useEnsName } from 'wagmi'
 import { AGENT_WALLET_ID, shouldAutoConnectAgentWallet } from '@/config/agentWallet'
-import { resolveConnectedCanonicalChainId, resolveExecutionChainId } from '@/config/tenderly'
+import { resolveConnectedCanonicalChainId, resolveExecutionChainId } from '@/config/localForkRuntime'
 
 type TWeb3Context = {
   address: TAddress | undefined

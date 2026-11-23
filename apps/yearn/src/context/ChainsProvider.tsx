@@ -2,8 +2,8 @@ import { usePathname } from 'next/navigation'
 import type { FC, PropsWithChildren } from 'react'
 import { useMemo } from 'react'
 import { useAccount, useChainId, useSwitchChain } from 'wagmi'
+import { getCanonicalChain, resolveConnectedCanonicalChainId, resolveExecutionChainId } from '@/config/localForkRuntime'
 import { supportedAppChains, type TSupportedChainId } from '@/config/supportedChains'
-import { getCanonicalChain, resolveConnectedCanonicalChainId, resolveExecutionChainId } from '@/config/tenderly'
 import { chainsContext, type TChainsContext } from '@/context/chainsContext'
 
 const DEFAULT_CHAIN_ID = 1 as TSupportedChainId

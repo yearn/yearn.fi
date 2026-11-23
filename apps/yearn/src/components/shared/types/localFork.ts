@@ -31,25 +31,10 @@ export type TTenderlySnapshotRequest = {
   isBaseline?: boolean
 }
 
-export type TTenderlyRevertRequest = {
-  canonicalChainId: number
-  snapshotId: string
-}
-
-export type TTenderlyRevertResponse = {
-  success: boolean
-  revertedSnapshotId: string
-}
-
 export type TTenderlyIncreaseTimeRequest = {
   canonicalChainId: number
   seconds: number
   mineBlock?: boolean
-}
-
-export type TTenderlyIncreaseTimeResponse = {
-  timeResult: unknown
-  mineResult?: unknown
 }
 
 export type TTenderlyFundAssetKind = 'native' | 'erc20'
@@ -75,9 +60,4 @@ export type TTenderlyFundRequest = {
   decimals: number
   amount: string
   mode?: 'set' | 'add'
-}
-
-export type TTenderlyFundResponse = {
-  method: string
-  result: unknown
 }

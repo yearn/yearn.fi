@@ -1,5 +1,3 @@
-import { isLoopbackAddress } from '@/server/tenderlyAccess'
-
 export type TQueryValue = string | string[] | undefined
 
 export const GET_CORS_HEADERS = {
@@ -72,28 +70,8 @@ export async function readJsonBody<T>(request: Request): Promise<T> {
   }
 }
 
-const LOCAL_HOST_PATTERN = /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/
-const LOOPBACK_BIND_HOSTNAMES = new Set(['127.0.0.1', '[::1]'])
-
-function isDevServerBoundToLoopback(): boolean {
-  return URL.canParse(process.env.__NEXT_PRIVATE_ORIGIN ?? '')
-    ? LOOPBACK_BIND_HOSTNAMES.has(new URL(process.env.__NEXT_PRIVATE_ORIGIN as string).hostname)
-    : false
-}
-
 export function getRequestIp(request: Request): string | undefined {
-  if (process.env.VERCEL) {
-    return request.headers.get('x-vercel-forwarded-for')?.split(',')[0]?.trim() || undefined
-  }
-
-  const isLocalHost = LOCAL_HOST_PATTERN.test(request.headers.get('host') ?? '')
-  if (process.env.NODE_ENV !== 'development' || !isLocalHost || !isDevServerBoundToLoopback()) {
-    return undefined
-  }
-
-  const hops = (request.headers.get('x-forwarded-for') ?? '')
-    .split(',')
-    .map((hop) => hop.trim())
-    .filter(Boolean)
-  return hops.find((hop) => !isLoopbackAddress(hop)) ?? hops.at(-1)
+  return process.env.VERCEL
+    ? request.headers.get('x-vercel-forwarded-for')?.split(',')[0]?.trim() || undefined
+    : undefined
 }
