@@ -24,7 +24,11 @@ import {
   useSwitchChain as useWagmiSwitchChain,
   useWaitForTransactionReceipt as useWagmiWaitForTransactionReceipt
 } from 'wagmi'
-import { isTenderlyModeEnabled, resolveConnectedCanonicalChainId, resolveExecutionChainId } from '@/config/tenderly'
+import {
+  isTenderlyModeEnabled,
+  resolveConnectedCanonicalChainId,
+  resolveExecutionChainId
+} from '@/config/localForkRuntime'
 
 const DISABLED_CHAIN_ID = Number.MAX_SAFE_INTEGER
 

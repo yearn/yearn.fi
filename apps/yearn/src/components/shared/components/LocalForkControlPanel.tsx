@@ -1,7 +1,7 @@
 import { BottomDrawer } from '@pages/vaults/components/detail/BottomDrawer'
 import { useMediaQuery } from '@react-hookz/web'
-import { useTenderlyPanel } from '@shared/contexts/useTenderlyPanel'
-import type { TTenderlyFundableAsset, TTenderlySnapshotRecord } from '@shared/types/tenderly'
+import { useTenderlyPanel } from '@shared/contexts/useLocalForkPanel'
+import type { TTenderlyFundableAsset, TTenderlySnapshotRecord } from '@shared/types/localFork'
 import {
   addTenderlyTimeIncrement,
   cl,
@@ -10,7 +10,7 @@ import {
   getLastRestorableTenderlySnapshot,
   truncateHex
 } from '@shared/utils'
-import type { TTenderlyFastForwardUnit } from '@shared/utils/tenderlyPanel'
+import type { TTenderlyFastForwardUnit } from '@shared/utils/localForkPanel'
 import type { ReactElement } from 'react'
 import { useEffect, useMemo, useRef, useState } from 'react'
 
@@ -116,7 +116,7 @@ function BaselineGateCard(props: {
     <div className="rounded-3xl border border-border bg-surface-secondary p-4">
       <p className="text-sm font-semibold text-text-primary">{'Create a baseline snapshot first'}</p>
       <p className="mt-1 text-xs text-text-secondary">
-        {'All Tenderly mutations stay locked until this chain has a baseline snapshot you can return to.'}
+        {'Create a baseline before funding a wallet or advancing time.'}
       </p>
       <div className="mt-4">
         <ActionButton
@@ -136,7 +136,7 @@ function SnapshotList(props: {
   onRevert: (snapshotRecord: TTenderlySnapshotRecord) => Promise<void>
 }): ReactElement {
   if (props.snapshotRecords.length === 0) {
-    return <p className="text-xs text-text-secondary">{'No snapshots stored for this Tenderly chain yet.'}</p>
+    return <p className="text-xs text-text-secondary">{'No snapshots saved for this Anvil session.'}</p>
   }
 
   return (
@@ -354,7 +354,7 @@ function SnapshotPanel(props: { state: TTenderlyControlState; onClose?: () => vo
       subtitle={
         state.selectedCanonicalChainId && state.selectedExecutionChainId
           ? `Canonical ${state.selectedCanonicalChainId} -> execution ${state.selectedExecutionChainId}`
-          : 'Select a configured Tenderly chain'
+          : 'Select a local Anvil chain'
       }
       onClose={props.onClose}
     >
@@ -456,8 +456,8 @@ function FastForwardPanel(props: { state: TTenderlyControlState; onClose?: () =>
             </div>
             <p className="text-xs text-text-secondary">
               {state.customSeconds > 0
-                ? `Ready to move Tenderly forward by ${state.customSeconds.toLocaleString('en-US')} seconds and mine one block.`
-                : 'Enter a positive amount to fast-forward Tenderly.'}
+                ? `Ready to move Anvil forward by ${state.customSeconds.toLocaleString('en-US')} seconds and mine one block.`
+                : 'Enter a positive amount to fast-forward Anvil.'}
             </p>
           </>
         )}
@@ -474,7 +474,7 @@ function WalletFaucetPanel(props: { state: TTenderlyControlState; onClose?: () =
       title={'Wallet Faucet'}
       subtitle={
         state.connectedWalletAddress
-          ? `Funding ${truncateHex(state.connectedWalletAddress, 4)} on Tenderly`
+          ? `Funding ${truncateHex(state.connectedWalletAddress, 4)} on Anvil`
           : 'Connect a wallet to fund the currently connected address'
       }
       onClose={props.onClose}
@@ -568,11 +568,11 @@ function MobileTenderlyPanelContent(props: { state: TTenderlyControlState }): Re
     <div className="space-y-4 p-4">
       <div className="flex flex-col gap-3 md:flex-row md:items-center md:justify-between">
         <div>
-          <p className="text-sm font-semibold text-text-primary">{'Tenderly Control Panel'}</p>
+          <p className="text-sm font-semibold text-text-primary">{'Local Fork'}</p>
           <p className="text-xs text-text-secondary">
             {state.selectedCanonicalChainId && state.selectedExecutionChainId
               ? `Canonical ${state.selectedCanonicalChainId} -> execution ${state.selectedExecutionChainId}`
-              : 'Select a configured Tenderly chain'}
+              : 'Select a local Anvil chain'}
           </p>
         </div>
         <div className="flex items-center gap-2">
@@ -583,7 +583,7 @@ function MobileTenderlyPanelContent(props: { state: TTenderlyControlState }): Re
           />
           {state.availableChains.length <= 1 ? (
             <span className="rounded-full border border-border bg-surface-secondary px-3 py-2 text-xs text-text-secondary">
-              {state.selectedChain?.canonicalChainName || 'No Tenderly chains'}
+              {state.selectedChain?.canonicalChainName || 'No local chains'}
             </span>
           ) : null}
         </div>
@@ -658,7 +658,7 @@ function DesktopTenderlyPanel(props: { state: TTenderlyControlState }): ReactEle
     return () => document.removeEventListener('pointerdown', handlePointerDown)
   }, [activePanel])
 
-  const selectedChainLabel = state.selectedChain?.canonicalChainName || 'Tenderly chain'
+  const selectedChainLabel = state.selectedChain?.canonicalChainName || 'Local chain'
   const statusLabel = state.selectedExecutionChainId
     ? `${selectedChainLabel} · execution ${state.selectedExecutionChainId}`
     : selectedChainLabel
@@ -726,7 +726,7 @@ function TenderlyControlPanelBody(props: { isOpen: boolean; closePanel: () => vo
   }
 
   return (
-    <BottomDrawer isOpen={props.isOpen} onClose={props.closePanel} title={'Tenderly Controls'}>
+    <BottomDrawer isOpen={props.isOpen} onClose={props.closePanel} title={'Local Fork Controls'}>
       <MobileTenderlyPanelContent state={state} />
     </BottomDrawer>
   )

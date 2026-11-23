@@ -4,11 +4,11 @@ import { afterEach, describe, expect, it, vi } from 'vitest'
 describe('supportedChains exports', () => {
   afterEach(() => {
     vi.resetModules()
-    vi.doUnmock('./tenderly')
+    vi.doUnmock('@/config/localForkRuntime')
   })
 
   it('keeps app chains canonical while wallet chains can use execution IDs', async () => {
-    vi.doMock('./tenderly', () => ({
+    vi.doMock('@/config/localForkRuntime', () => ({
       supportedCanonicalChains: [{ id: 1, name: 'Ethereum' } satisfies Partial<Chain> as Chain],
       supportedExecutionChains: [{ id: 73571, name: 'Ethereum Tenderly' } satisfies Partial<Chain> as Chain]
     }))

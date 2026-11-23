@@ -49,7 +49,7 @@ import {
   isConnectedToExecutionChain,
   resolveCanonicalChainId,
   resolveExecutionChainId
-} from '@/config/tenderly'
+} from '@/config/localForkRuntime'
 import { env } from '@/env'
 
 const DEFAULT_YEARN_ASSETS_BASE_URI = 'https://cdn.jsdelivr.net/gh/yearn/tokenassets@main'

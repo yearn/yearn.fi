@@ -1,7 +1,6 @@
 import type { TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import type { TDict, TToken } from '@shared/types'
-import type { TTenderlyConfiguredChainStatus, TTenderlySnapshotRecord } from '@shared/types/tenderly'
-import { describe, expect, it } from 'vitest'
+import type { TTenderlyConfiguredChainStatus, TTenderlySnapshotRecord } from '@shared/types/localFork'
 import {
   addTenderlyTimeIncrement,
   buildTenderlyFundableAssets,
@@ -14,7 +13,8 @@ import {
   reconcileTenderlySnapshotStorageAfterRevert,
   resolveDefaultTenderlyCanonicalChainId,
   upsertTenderlySnapshotRecord
-} from './tenderlyPanel'
+} from '@shared/utils/localForkPanel'
+import { describe, expect, it } from 'vitest'
 
 const configuredChains: TTenderlyConfiguredChainStatus[] = [
   {

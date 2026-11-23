@@ -1,6 +1,6 @@
 import type { Chain } from 'viem'
+import { supportedCanonicalChains, supportedExecutionChains } from '@/config/localForkRuntime'
 import type { TCanonicalChainId } from './chainDefinitions'
-import { supportedCanonicalChains, supportedExecutionChains } from './tenderly'
 
 export const supportedChains = supportedCanonicalChains
 export const supportedAppChains = supportedCanonicalChains

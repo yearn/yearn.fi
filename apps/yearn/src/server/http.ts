@@ -70,65 +70,8 @@ export async function readJsonBody<T>(request: Request): Promise<T> {
   }
 }
 
-const LOOPBACK_ADDRESSES = new Set(['localhost', '::1'])
-
-function isLoopbackIpv4(address: string): boolean {
-  const octets = address.split('.')
-  if (octets.length !== 4) {
-    return false
-  }
-
-  return (
-    octets[0] === '127' &&
-    octets.every((octet) => {
-      if (!/^\d+$/.test(octet)) {
-        return false
-      }
-
-      const value = Number(octet)
-      return value >= 0 && value <= 255
-    })
-  )
-}
-
-export function isLoopbackAddress(address: string | null | undefined): boolean {
-  if (typeof address !== 'string') {
-    return false
-  }
-
-  if (LOOPBACK_ADDRESSES.has(address) || isLoopbackIpv4(address)) {
-    return true
-  }
-
-  if (address.startsWith('::ffff:')) {
-    return isLoopbackIpv4(address.slice('::ffff:'.length))
-  }
-
-  return false
-}
-
-const LOCAL_HOST_PATTERN = /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/
-const LOOPBACK_BIND_HOSTNAMES = new Set(['127.0.0.1', '[::1]'])
-
-function isDevServerBoundToLoopback(): boolean {
-  return URL.canParse(process.env.__NEXT_PRIVATE_ORIGIN ?? '')
-    ? LOOPBACK_BIND_HOSTNAMES.has(new URL(process.env.__NEXT_PRIVATE_ORIGIN as string).hostname)
-    : false
-}
-
 export function getRequestIp(request: Request): string | undefined {
-  if (process.env.VERCEL) {
-    return request.headers.get('x-vercel-forwarded-for')?.split(',')[0]?.trim() || undefined
-  }
-
-  const isLocalHost = LOCAL_HOST_PATTERN.test(request.headers.get('host') ?? '')
-  if (process.env.NODE_ENV !== 'development' || !isLocalHost || !isDevServerBoundToLoopback()) {
-    return undefined
-  }
-
-  const hops = (request.headers.get('x-forwarded-for') ?? '')
-    .split(',')
-    .map((hop) => hop.trim())
-    .filter(Boolean)
-  return hops.find((hop) => !isLoopbackAddress(hop)) ?? hops.at(-1)
+  return process.env.VERCEL
+    ? request.headers.get('x-vercel-forwarded-for')?.split(',')[0]?.trim() || undefined
+    : undefined
 }

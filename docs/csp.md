@@ -36,9 +36,8 @@ bootstrap and the theme script in `app/layout.tsx`. Nonces are out of scope.
 `CONNECT_SRC` contains:
 
 - RPC origins. For each chain in `canonicalChains`, the list contains the origins of
-  `NEXT_PUBLIC_RPC_URI_FOR_<chainId>` and `NEXT_PUBLIC_TENDERLY_RPC_URI_FOR_<chainId>`, read at
-  build time. It also contains viem's `rpcUrls.default.http[0]`, because `buildTransports` always
-  appends a bare `http()` fallback. Set the env var for every chain in each deployment.
+  `NEXT_PUBLIC_RPC_URI_FOR_<chainId>` and viem's default RPC fallback. Development also includes
+  `NEXT_PUBLIC_LOCAL_FORK_RPC_URI_FOR_<chainId>` for the configured local fork.
 - Kong, Clusters, DefiLlama, Curve, jsDelivr (token lists), and WalletConnect relay, pulse, verify, and rpc.
 
 `apps/ybold` and `apps/4626` serve the same report-only header. Their `connect-src` contains the RPC
