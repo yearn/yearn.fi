@@ -26,6 +26,7 @@ import {
   getChainDescription,
   getKindDescription,
   getProductTypeDescription,
+  getProductTypeLabel,
   MIGRATABLE_TAG_DESCRIPTION,
   RETIRED_TAG_DESCRIPTION
 } from '@pages/vaults/utils/vaultTagCopy'
@@ -102,18 +103,6 @@ type TDualCooldownMetric = {
   amountSymbol: string
 }
 
-function getVaultProductTypeLabel(listKind: ReturnType<typeof deriveListKind>): string {
-  if (listKind === 'allocator' || listKind === 'strategy') {
-    return 'Single Asset'
-  }
-
-  if (listKind === 'legacy') {
-    return 'Legacy'
-  }
-
-  return 'LP Token'
-}
-
 function getVaultKindType(
   kind: string | null | undefined,
   listKind: ReturnType<typeof deriveListKind>
@@ -168,11 +157,13 @@ function getYvUsdHistoricalValue(monthAgo: number, weekAgo: number): number {
 function VaultHeaderIdentity({
   currentVault: currentVaultInput,
   isCompressed,
+  isNonYearnVault = false,
   className,
   includeTourAttributes = true
 }: {
   currentVault: TKongVaultInput
   isCompressed: boolean
+  isNonYearnVault?: boolean
   className?: string
   includeTourAttributes?: boolean
 }): ReactElement {
@@ -185,12 +176,12 @@ function VaultHeaderIdentity({
   const showChainChip = !isCompressed
   const showCategoryChip = Boolean(currentVault.category)
   const listKind = deriveListKind(currentVault)
-  const productTypeLabel = getVaultProductTypeLabel(listKind)
+  const productTypeLabel = getProductTypeLabel(listKind, isNonYearnVault)
   const kindType = getVaultKindType(currentVault.kind, listKind)
-  const kindLabel = getVaultKindLabel(kindType, currentVault.kind)
+  const kindLabel = isNonYearnVault ? undefined : getVaultKindLabel(kindType, currentVault.kind)
   const chainDescription = getChainDescription(currentVault.chainID)
   const categoryDescription = getCategoryDescription(currentVault.category)
-  const productTypeDescription = getProductTypeDescription(listKind)
+  const productTypeDescription = getProductTypeDescription(listKind, isNonYearnVault)
   const kindDescription = getKindDescription(kindType, kindLabel)
   const isMigratable = Boolean(currentVault.migration?.available)
   const isRetired = Boolean(currentVault.info?.isRetired)
@@ -1115,6 +1106,7 @@ type TVaultDetailsHeaderBaseProps = {
   onWidgetCloseOverlays?: () => void
   hideBreadcrumbs?: boolean
   hasActionFooter?: boolean
+  isNonYearnVault?: boolean
 }
 
 type TVaultDetailsHeaderPresentationProps = TVaultDetailsHeaderBaseProps & {
@@ -1139,6 +1131,7 @@ export function VaultDetailsHeaderPresentation({
   onWidgetCloseOverlays,
   hideBreadcrumbs = false,
   hasActionFooter = false,
+  isNonYearnVault = false,
   isCompressed,
   includeTourAttributes = true
 }: TVaultDetailsHeaderPresentationProps): ReactElement {
@@ -1186,6 +1179,7 @@ export function VaultDetailsHeaderPresentation({
                 <VaultHeaderIdentity
                   currentVault={currentVault}
                   isCompressed={isCompressed}
+                  isNonYearnVault={isNonYearnVault}
                   className={'min-w-0 flex-[5] pl-6'}
                   includeTourAttributes={includeTourAttributes}
                 />
@@ -1222,6 +1216,7 @@ export function VaultDetailsHeaderPresentation({
               <VaultHeaderIdentity
                 currentVault={currentVault}
                 isCompressed={isCompressed}
+                isNonYearnVault={isNonYearnVault}
                 className={'md:w-[20%] md:min-w-[300px] md:max-w-[420px] md:flex-none'}
                 includeTourAttributes={includeTourAttributes}
               />
@@ -1233,6 +1228,7 @@ export function VaultDetailsHeaderPresentation({
             <VaultHeaderIdentity
               currentVault={currentVault}
               isCompressed={isCompressed}
+              isNonYearnVault={isNonYearnVault}
               className={'md:row-start-2 min-[1101px]:col-span-2'}
               includeTourAttributes={includeTourAttributes}
             />

@@ -89,7 +89,11 @@ import { VaultsListChip } from '@/components/pages/vaults/components/list/Vaults
 import { isRouteChainAddressMatch, resolveRouteVaultFromMap } from '@/components/pages/vaults/utils/routeVault'
 import { deriveListKind } from '@/components/pages/vaults/utils/vaultListFacets'
 import { getVaultPrimaryLogoSrc } from '@/components/pages/vaults/utils/vaultLogo'
-import { getCategoryDescription, getProductTypeDescription } from '@/components/pages/vaults/utils/vaultTagCopy'
+import {
+  getCategoryDescription,
+  getProductTypeDescription,
+  getProductTypeLabel
+} from '@/components/pages/vaults/utils/vaultTagCopy'
 import { useWeb3 } from '@/components/shared/contexts/useWeb3'
 import { useDevFlags } from '@/contexts/useDevFlags'
 
@@ -1138,6 +1142,7 @@ function Index(): ReactElement | null {
             currentVault={currentVault}
             vaultAddresses={vaultAddresses}
             additionalFeaturesContent={additionalFeaturesContent}
+            isNonYearnVault={shouldShowNonYearnVaultAlert}
           />
         )
       },
@@ -1169,6 +1174,7 @@ function Index(): ReactElement | null {
     pendingTimelockItems,
     sectionRefs,
     shouldRenderDesktopCharts,
+    shouldShowNonYearnVaultAlert,
     snapshotVault?.inceptTime,
     detailUserHistoryVaults,
     vaultAddresses
@@ -1496,11 +1502,6 @@ function Index(): ReactElement | null {
 
   const resolvedCurrentVault = currentVault
 
-  function getMobileProductTypeLabel(): string {
-    if (mobileListKind === 'allocator' || mobileListKind === 'strategy') return 'Single Asset'
-    if (mobileListKind === 'legacy') return 'Legacy'
-    return 'LP Token'
-  }
   function getWidgetModeLabel(mode: WidgetActionType): string {
     switch (mode) {
       case WidgetActionType.Deposit:
@@ -1516,7 +1517,7 @@ function Index(): ReactElement | null {
   const resolvedWidgetMode = widgetActions.includes(widgetMode) ? widgetMode : widgetActions[0]
   const shouldCollapseWidgetDetails = isCompactWidget
   const mobileListKind = deriveListKind(resolvedCurrentVault)
-  const mobileProductTypeLabel = getMobileProductTypeLabel()
+  const mobileProductTypeLabel = getProductTypeLabel(mobileListKind, shouldShowNonYearnVaultAlert)
   const widgetModeLabel = getWidgetModeLabel(resolvedWidgetMode)
   const collapsedWidgetTitle = isWidgetWalletOpen ? 'My Info' : widgetModeLabel
   const liveYBoldStakePrefillAmount = isYBold
@@ -1733,6 +1734,7 @@ function Index(): ReactElement | null {
               <div ref={compressedHeaderMeasureRef}>
                 <VaultDetailsHeaderPresentation
                   currentVault={currentVault}
+                  isNonYearnVault={shouldShowNonYearnVaultAlert}
                   depositedValue={vaultUserData.depositedValue}
                   yvUsdApyVariant={yvUsdApyVariant}
                   isCompressed={true}
@@ -1777,6 +1779,7 @@ function Index(): ReactElement | null {
           >
             <VaultDetailsHeader
               currentVault={currentVault}
+              isNonYearnVault={shouldShowNonYearnVaultAlert}
               depositedValue={vaultUserData.depositedValue}
               yvUsdApyVariant={yvUsdApyVariant}
               isCollapsibleMode={isCollapsibleMode}
@@ -1847,7 +1850,7 @@ function Index(): ReactElement | null {
                 ) : null}
                 <VaultsListChip
                   label={mobileProductTypeLabel}
-                  tooltipDescription={getProductTypeDescription(mobileListKind)}
+                  tooltipDescription={getProductTypeDescription(mobileListKind, shouldShowNonYearnVaultAlert)}
                 />
               </div>
             </div>
