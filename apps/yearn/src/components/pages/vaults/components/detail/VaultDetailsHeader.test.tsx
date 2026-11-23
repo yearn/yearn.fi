@@ -408,4 +408,32 @@ describe('VaultDetailsHeaderPresentation', () => {
 
     expect(html).toContain('Projected APY based on underlying markets')
   })
+
+  it('labels a non-Yearn ERC-4626 vault as ERC-4626 and hides the Yearn kind chip', () => {
+    const externalVault = {
+      ...YVUSD_VAULT,
+      address: '0xa3931d71877C0E7a3148CB7Eb4463524FEc27fbD',
+      name: 'Savings USDS',
+      symbol: 'sUSDS',
+      version: '0.0.0',
+      kind: 'Legacy'
+    }
+
+    const yearnHtml = renderToStaticMarkup(
+      <VaultDetailsHeaderPresentation currentVault={externalVault as never} depositedValue={0n} isCompressed={false} />
+    )
+    const externalHtml = renderToStaticMarkup(
+      <VaultDetailsHeaderPresentation
+        currentVault={externalVault as never}
+        depositedValue={0n}
+        isCompressed={false}
+        isNonYearnVault
+      />
+    )
+
+    const chipLabels = (html: string) => html.match(/>(Legacy|Single Asset|LP Token|ERC-4626)</g)
+
+    expect(chipLabels(yearnHtml)).toEqual(['>LP Token<', '>Legacy<'])
+    expect(chipLabels(externalHtml)).toEqual(['>ERC-4626<'])
+  })
 })

@@ -17,6 +17,7 @@ import {
 } from '../../utils/ensoRouters'
 import { useTokenAllowance } from '../useTokenAllowance'
 import {
+  bindEnsoRouteToRequest,
   type EnsoError,
   type EnsoRouteResponse,
   getEnsoBridgeProtocol,
@@ -156,7 +157,17 @@ export const useSolverEnso = ({
       })
       const response = await fetch(`${routeEndpoint}?${params}`, { signal })
       const data = await response.json()
-      return normalizeEnsoRouteResponse(data, response.status, chainId)
+      const normalized = normalizeEnsoRouteResponse(data, response.status, chainId)
+      return normalized.route
+        ? bindEnsoRouteToRequest(normalized.route, {
+            fromAddress,
+            receiver,
+            tokenIn,
+            tokenOut,
+            amountIn,
+            isCrossChain
+          })
+        : normalized
     }
   })
   const requestedRoute = routeQuery.data?.route
