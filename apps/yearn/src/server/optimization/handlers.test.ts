@@ -146,6 +146,17 @@ describe('optimization handlers', () => {
     expect(fetchVaultOnChainStateMock).not.toHaveBeenCalled()
   })
 
+  it('rejects a vault-state POST with no body as an invalid vault', async () => {
+    const response = await vaultStateHandler(
+      new Request('https://yearn.fi/api/optimization/vault-state', { method: 'POST' })
+    )
+
+    expect(response.status).toBe(400)
+    await expect(response.json()).resolves.toEqual({ error: 'Invalid vault address' })
+    expect(response.headers.get('Cache-Control')).toBe('no-store')
+    expect(readOptimizationsMock).not.toHaveBeenCalled()
+  })
+
   it('answers 404 when Redis has no optimization payload and a generic 503 when it fails', async () => {
     const body = {
       chainId: 1,
