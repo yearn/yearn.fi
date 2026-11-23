@@ -109,7 +109,8 @@ Next proxy returns `404` for `/api/tenderly/*` when `VERCEL_ENV=production`, so 
 these handlers. POST handlers also keep a localhost-only guard for local use: off Vercel, a request passes only in
 `NODE_ENV=development`, with a `localhost`, `127.0.0.1` or `[::1]` `Host`, on a dev server bound to `127.0.0.1` or
 `::1` (`bun run dev` does this; `0.0.0.0`, `localhost` or no `--hostname` is denied), and with no remote address in
-`X-Forwarded-For`. On Vercel the client IP comes only from `x-vercel-forwarded-for`.
+`X-Forwarded-For`. On Vercel the client IP comes only from `x-vercel-forwarded-for`. `getRequestIp` returns no IP
+outside Vercel and local development, so a self-hosted production deployment relays Plausible events without a client IP.
 
 Required env for a configured chain:
 

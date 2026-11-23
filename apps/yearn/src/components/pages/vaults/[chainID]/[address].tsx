@@ -10,6 +10,7 @@ import { MobileKeyMetrics, YvUsdApyStatBox } from '@pages/vaults/components/deta
 import { type TVaultAddressItem, VaultAboutSection } from '@pages/vaults/components/detail/VaultAboutSection'
 import { VaultChartsSection } from '@pages/vaults/components/detail/VaultChartsSection'
 import { VaultDetailsHeader, VaultDetailsHeaderPresentation } from '@pages/vaults/components/detail/VaultDetailsHeader'
+import { VaultDrawerActionButtons } from '@pages/vaults/components/detail/VaultDrawerActionButtons'
 import { VaultInfoSection } from '@pages/vaults/components/detail/VaultInfoSection'
 import { VaultRiskSection } from '@pages/vaults/components/detail/VaultRiskSection'
 import { VaultStrategiesSection } from '@pages/vaults/components/detail/VaultStrategiesSection'
@@ -1706,27 +1707,11 @@ function Index(): ReactElement | null {
 
   function renderDrawerActionButtons({ isCompactHeader }: { isCompactHeader: boolean }): ReactElement {
     return (
-      <div className={'flex w-full gap-3'}>
-        <button
-          type={'button'}
-          onClick={() => handleFloatingButtonClick(widgetActions[0])}
-          className={'yearn--button--nextgen flex-1'}
-          data-variant={'filled'}
-        >
-          {widgetActions[0] === WidgetActionType.Migrate ? 'Migrate' : 'Deposit'}
-        </button>
-        <button
-          type={'button'}
-          onClick={() => handleFloatingButtonClick(widgetActions[1])}
-          className={cl(
-            'yearn--button flex-1',
-            isCompactHeader ? 'border-border! bg-surface! hover:border-border-hover! hover:bg-surface-tertiary!' : ''
-          )}
-          data-variant={'light'}
-        >
-          {'Withdraw'}
-        </button>
-      </div>
+      <VaultDrawerActionButtons
+        actions={widgetActions}
+        onSelect={handleFloatingButtonClick}
+        isCompactHeader={isCompactHeader}
+      />
     )
   }
 

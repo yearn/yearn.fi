@@ -77,6 +77,19 @@ describe('Tenderly admin gate with getRequestIp', () => {
     expect(buildTenderlyAdminAccessDeniedResponse(getRequestIp(requestWithHost(host, socketIp)))).toBeUndefined()
   })
 
+  it('allows a dev server bound to [::1] and still denies a remote hop behind it', () => {
+    vi.stubEnv('VERCEL', '')
+    vi.stubEnv('NODE_ENV', 'development')
+    vi.stubEnv('__NEXT_PRIVATE_ORIGIN', 'http://[::1]:3000')
+
+    expect(getRequestIp(requestWithHost('[::1]:3000', '::1'))).toBe('::1')
+    expect(getRequestIp(requestWithHost('[::1]:3000', '::ffff:127.0.0.1, ::1'))).toBe('::1')
+    expect(buildTenderlyAdminAccessDeniedResponse(getRequestIp(requestWithHost('[::1]:3000', '::1')))).toBeUndefined()
+    expect(
+      buildTenderlyAdminAccessDeniedResponse(getRequestIp(requestWithHost('[::1]:3000', '::1, 2001:db8::5')))?.status
+    ).toBe(403)
+  })
+
   it.each([
     ['fund', fundPOST],
     ['increase-time', increaseTimePOST],
