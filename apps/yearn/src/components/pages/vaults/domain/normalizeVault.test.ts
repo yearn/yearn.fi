@@ -54,6 +54,14 @@ describe('yBOLD product helpers', () => {
     expect(merged.apy?.weeklyNet).toBe(0.046)
   })
 
+  it('keeps the base snapshot origin through the merge and the base-only strip', () => {
+    const base = { origin: 'yearn', inclusion: { isYearn: true } } as any
+    const staked = { origin: 'other', inclusion: { isYearn: false } } as any
+
+    expect(mergeYBoldSnapshot(base, staked)).toMatchObject({ origin: 'yearn', inclusion: { isYearn: true } })
+    expect(stripYBoldBaseMetrics(base)).toMatchObject({ origin: 'yearn', inclusion: { isYearn: true } })
+  })
+
   it('does not fall back to vanilla metrics when staked snapshot fields are missing', () => {
     const merged = mergeYBoldSnapshot(
       {

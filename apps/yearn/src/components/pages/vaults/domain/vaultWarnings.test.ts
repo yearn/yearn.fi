@@ -1,4 +1,4 @@
-import { YVBTC_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvBtc'
+import { YVBTC_CHAIN_ID, YVBTC_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvBtc'
 import { describe, expect, it } from 'vitest'
 import { isNonYearnErc4626Vault, NON_YEARN_ERC4626_WARNING_MESSAGE } from './vaultWarnings'
 
@@ -37,6 +37,7 @@ describe('isNonYearnErc4626Vault', () => {
     expect(
       isNonYearnErc4626Vault({
         vault: {
+          chainId: YVBTC_CHAIN_ID,
           address: YVBTC_UNLOCKED_ADDRESS,
           origin: null,
           inclusion: {}
@@ -67,13 +68,14 @@ describe('isNonYearnErc4626Vault', () => {
     ).toBe(true)
   })
 
-  it('returns true from snapshot metadata when list metadata is unavailable', () => {
-    expect(
-      isNonYearnErc4626Vault({
-        snapshot: {
-          inclusion: { isYearn: false }
-        } as any
-      })
-    ).toBe(true)
+  it('returns false when no vault is known yet', () => {
+    expect(isNonYearnErc4626Vault({})).toBe(false)
+  })
+
+  it('flags the yvBTC address on any other chain', () => {
+    const otherChainId = YVBTC_CHAIN_ID === 1 ? 10 : 1
+    const item = { chainId: otherChainId, address: YVBTC_UNLOCKED_ADDRESS, origin: null, inclusion: {} } as any
+
+    expect(isNonYearnErc4626Vault({ vault: item })).toBe(true)
   })
 })
