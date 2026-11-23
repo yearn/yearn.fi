@@ -46,10 +46,10 @@ function parseVaultStatePayload(text: string): Record<string, unknown> {
 export async function POST(request: Request): Promise<Response> {
   const text = request.body ? await readBodyText(request.body).catch(() => undefined) : ''
   if (text === undefined) {
-    return json({ error: 'Failed to read request body' }, { status: 400, headers: POST_CORS_HEADERS })
+    return json({ error: 'Failed to read request body' }, { status: 400, headers: RESPONSE_HEADERS })
   }
   if (text === null) {
-    return json({ error: 'Request body too large' }, { status: 413, headers: POST_CORS_HEADERS })
+    return json({ error: 'Request body too large' }, { status: 413, headers: RESPONSE_HEADERS })
   }
 
   const payload = parseVaultStatePayload(text)
@@ -58,19 +58,19 @@ export async function POST(request: Request): Promise<Response> {
   const strategies: unknown[] = Array.isArray(payload.strategies) ? payload.strategies : []
 
   if (!vault || !ADDRESS_PATTERN.test(vault)) {
-    return json({ error: 'Invalid vault address' }, { status: 400, headers: POST_CORS_HEADERS })
+    return json({ error: 'Invalid vault address' }, { status: 400, headers: RESPONSE_HEADERS })
   }
   if (chainId === null || !Number.isFinite(chainId)) {
-    return json({ error: 'Invalid chainId' }, { status: 400, headers: POST_CORS_HEADERS })
+    return json({ error: 'Invalid chainId' }, { status: 400, headers: RESPONSE_HEADERS })
   }
   if (strategies.length === 0) {
-    return json({ error: 'No strategy addresses provided' }, { status: 400, headers: POST_CORS_HEADERS })
+    return json({ error: 'No strategy addresses provided' }, { status: 400, headers: RESPONSE_HEADERS })
   }
   if (strategies.length > MAX_STRATEGIES) {
-    return json({ error: 'Too many strategy addresses' }, { status: 400, headers: POST_CORS_HEADERS })
+    return json({ error: 'Too many strategy addresses' }, { status: 400, headers: RESPONSE_HEADERS })
   }
   if (!strategies.every((s): s is string => typeof s === 'string' && ADDRESS_PATTERN.test(s))) {
-    return json({ error: 'Invalid strategy address' }, { status: 400, headers: POST_CORS_HEADERS })
+    return json({ error: 'Invalid strategy address' }, { status: 400, headers: RESPONSE_HEADERS })
   }
 
   try {
@@ -81,7 +81,7 @@ export async function POST(request: Request): Promise<Response> {
     if (!isKnownVault) {
       return json(
         { error: `Vault not found in optimization payload: ${vault}` },
-        { status: 404, headers: POST_CORS_HEADERS }
+        { status: 404, headers: RESPONSE_HEADERS }
       )
     }
 
@@ -101,7 +101,7 @@ export async function POST(request: Request): Promise<Response> {
     )
   } catch (error) {
     console.error('Error reading vault state:', error)
-    return json({ error: 'Vault state unavailable' }, { status: 503, headers: POST_CORS_HEADERS })
+    return json({ error: 'Vault state unavailable' }, { status: 503, headers: RESPONSE_HEADERS })
   }
 }
 

@@ -1,11 +1,13 @@
 // @vitest-environment jsdom
 
 import { useTokenAllowance } from '@pages/vaults/hooks/useTokenAllowance'
+import { ERC_4626_ROUTER_ABI } from '@shared/contracts/abi/erc4626Router.abi'
 import { usePublicClient, useSimulateContract } from '@shared/hooks/useAppWagmi'
+import { detectPermitType, type TPermitSignature } from '@shared/hooks/usePermit'
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import type { ReactNode } from 'react'
-import type { Address } from 'viem'
+import { type Address, decodeFunctionData, type Hex } from 'viem'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import { YEARN_4626_ROUTER, ZAP_YEARN_VE_CRV_ADDRESS } from '@/components/shared/utils'
 import { useMigrateFlow } from './useMigrateFlow'
@@ -34,21 +36,23 @@ type TReadContractCall = { address: Address; functionName: string; args?: readon
 const useSimulateContractMock = vi.mocked(useSimulateContract)
 const readContract = vi.fn<(call: TReadContractCall) => Promise<bigint>>()
 
-function renderMigrateFlow(vaultVersion: string, router: Address = UNKNOWN_ROUTER) {
+function renderMigrateFlow(vaultVersion: string, router: Address = UNKNOWN_ROUTER, permitSignature?: TPermitSignature) {
   const queryClient = new QueryClient({ defaultOptions: { queries: { retry: false } } })
   const rendered = renderHook(
-    () =>
+    ({ balance }: { balance: bigint }) =>
       useMigrateFlow({
         vaultFrom: FROM_VAULT,
         vaultTo: TO_VAULT,
         router,
         vaultVersion,
-        balance: BALANCE,
+        balance,
         account: ACCOUNT,
         chainId: 1,
-        enabled: true
+        enabled: true,
+        permitSignature
       }),
     {
+      initialProps: { balance: BALANCE },
       wrapper: ({ children }: { children: ReactNode }) => (
         <QueryClientProvider client={queryClient}>{children}</QueryClientProvider>
       )
@@ -128,7 +132,7 @@ describe('useMigrateFlow quote', () => {
     await waitFor(() => expect(result.current.periphery.isCheckingPermit).toBe(false))
 
     vi.mocked(useTokenAllowance).mockReturnValue({ allowance: BALANCE } as never)
-    rerender()
+    rerender({ balance: BALANCE })
 
     expect(result.current.periphery.isAllowanceSufficient).toBe(true)
     expect(
@@ -189,5 +193,43 @@ describe('useMigrateFlow quote', () => {
 
     await waitFor(() => expect(result.current.periphery.error).toBe('Migration quote failed'))
     expect(result.current.periphery.prepareMigrateEnabled).toBe(false)
+  })
+
+  it('encodes the quoted minimum into the permit multicall', async () => {
+    vi.mocked(detectPermitType).mockResolvedValueOnce('eip2612')
+    readContract.mockImplementation(async ({ functionName }) => (functionName === 'previewRedeem' ? 3_000n : 10_000n))
+    const permitSignature = {
+      r: `0x${'11'.repeat(32)}` as Hex,
+      s: `0x${'22'.repeat(32)}` as Hex,
+      v: 27,
+      deadline: BigInt(Math.floor(Date.now() / 1000) + 600),
+      signature: '0x' as Hex
+    }
+
+    const { result } = renderMigrateFlow('3.0.2', UNKNOWN_ROUTER, permitSignature)
+
+    await waitFor(() => expect(result.current.periphery.prepareMulticallEnabled).toBe(true))
+    const calls = lastMigrateSimulation('multicall')?.args?.[0] as readonly Hex[]
+    expect(result.current.periphery.routeType).toBe('permit')
+    expect(decodeFunctionData({ abi: ERC_4626_ROUTER_ABI, data: calls[1] })).toMatchObject({
+      functionName: 'migrate',
+      args: [FROM_VAULT, TO_VAULT, BALANCE, 9_950n]
+    })
+  })
+
+  it('re-quotes the minimum when the share balance changes', async () => {
+    readContract.mockImplementation(async ({ functionName, args }) =>
+      functionName === 'previewRedeem' ? (args?.[0] as bigint) / 10n ** 14n : (args?.[0] as bigint) * 2n
+    )
+
+    const { result, rerender } = renderMigrateFlow('3.0.2')
+    await waitFor(() => expect(result.current.periphery.prepareMigrateEnabled).toBe(true))
+    expect(lastMigrateSimulation('migrate')).toMatchObject({ args: [FROM_VAULT, TO_VAULT, BALANCE, 19_900n] })
+
+    rerender({ balance: 2n * BALANCE })
+
+    await waitFor(() =>
+      expect(lastMigrateSimulation('migrate')).toMatchObject({ args: [FROM_VAULT, TO_VAULT, 2n * BALANCE, 39_800n] })
+    )
   })
 })

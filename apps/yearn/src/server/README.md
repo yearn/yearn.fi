@@ -63,6 +63,11 @@ The holdings implementation is the largest API surface here. See [`lib/holdings/
 - Required params are `userAddress=0x...` and `chainId=<id>`.
 - The route sets `Cache-Control: private, no-store, max-age=0, must-revalidate`.
 
+## Plausible relay
+
+On Vercel, the relay gets the client IP from `x-vercel-forwarded-for`.
+Self-hosted deployments relay events without a client IP.
+
 ## Optimization APIs
 
 The optimization routes expose the current DOA optimization payloads and the local verification data used by optimization UI flows.

@@ -45,4 +45,20 @@ describe('Enso route proxy', () => {
     expect(response.headers.get('Cache-Control')).toContain('private, no-store')
     expect(new URL(fetchStub.mock.calls[0][0]).searchParams.get('routingStrategy')).toBe('router')
   })
+
+  it('forwards a cross-chain request whose receiver is the sender', async () => {
+    const fetchStub = vi.fn().mockResolvedValue(Response.json({ tx: {} }))
+    vi.stubGlobal('fetch', fetchStub)
+    vi.stubEnv('ENSO_API_KEY', 'key')
+
+    const response = await GET(
+      routeRequest({ destinationChainId: '8453', receiver: ACCOUNT, routingStrategy: 'router' })
+    )
+    const upstream = new URL(fetchStub.mock.calls[0][0]).searchParams
+
+    expect(response.status).toBe(200)
+    expect(upstream.get('destinationChainId')).toBe('8453')
+    expect(upstream.get('receiver')).toBe(ACCOUNT)
+    expect(upstream.get('routingStrategy')).toBe('router')
+  })
 })
