@@ -15,7 +15,7 @@ vi.mock('wagmi', async (importOriginal) => ({
   ...(await importOriginal<typeof import('wagmi')>()),
   useSwitchChain: () => ({ mutate: mocks.mutate, mutateAsync: mocks.mutateAsync })
 }))
-vi.mock('@/config/tenderly', () => ({
+vi.mock('@/config/localForkRuntime', () => ({
   resolveExecutionChainId: mocks.resolveExecutionChainId
 }))
 vi.mock('@yearn/vault-widget/runtime', () => ({

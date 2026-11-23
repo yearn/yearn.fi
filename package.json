@@ -16,7 +16,6 @@
     "dev:yearn": "bun run --cwd apps/yearn dev",
     "dev:ybold": "bun run --cwd apps/ybold dev",
     "dev:ts": "bun run --cwd apps/yearn dev:ts",
-    "tenderly": "bun scripts/tenderly.ts",
     "build": "bun run build:yearn",
     "build:yearn": "bun run --cwd apps/yearn build",
     "build:ybold": "bun run --cwd apps/ybold build",
@@ -63,7 +62,7 @@
     "bump": "0.2.5",
     "husky": "9.1.7",
     "lint-staged": "17.6.0",
-    "next": "16.4.1",
+    "next": "16.4.5",
     "typescript": "7.0.2",
     "vitest": "4.1.11"
   }

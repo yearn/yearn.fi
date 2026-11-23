@@ -15,7 +15,7 @@
     "@tanstack/react-query": "5.103.2",
     "@wagmi/core": "3.6.7",
     "@yearn/vault-widget": "workspace:*",
-    "next": "16.4.1",
+    "next": "16.4.5",
     "react": "19.3.0",
     "react-dom": "19.3.0",
     "react-rewards": "2.1.0",

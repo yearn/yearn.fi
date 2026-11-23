@@ -12,7 +12,7 @@ import { fetchTokenBalances } from '@shared/hooks/useBalancesQueries'
 import type { TAddress, TChainTokens } from '@shared/types'
 import { isZeroAddress, toAddress } from '@shared/utils'
 import { useCallback, useEffect, useMemo, useRef } from 'react'
-import { isTenderlyModeEnabled } from '@/config/tenderly'
+import { isTenderlyModeEnabled } from '@/config/localForkRuntime'
 import type { TKongVaultView } from '../domain/kongVaultSelectors'
 
 type TTenderlyVaultBalanceOverrideVault = Pick<

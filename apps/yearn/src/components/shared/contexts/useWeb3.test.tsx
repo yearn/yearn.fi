@@ -44,7 +44,7 @@ vi.mock('@shared/utils', () => ({
 vi.mock('@shared/utils/helpers', () => ({ isIframe: () => false }))
 vi.mock('@shared/utils/tools.address', () => ({ toAddress: (address: string) => address }))
 vi.mock('@/config/agentWallet', () => ({ AGENT_WALLET_ID: 'agent', shouldAutoConnectAgentWallet: () => false }))
-vi.mock('@/config/tenderly', () => ({
+vi.mock('@/config/localForkRuntime', () => ({
   resolveConnectedCanonicalChainId: (chainId: number) => chainId,
   resolveExecutionChainId: (chainId: number) => chainId
 }))

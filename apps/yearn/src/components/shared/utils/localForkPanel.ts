@@ -8,14 +8,14 @@ import {
   getVaultToken,
   type TKongVaultInput
 } from '@pages/vaults/domain/kongVaultSelectors'
-import { canonicalChains } from '@/config/chainDefinitions'
-import type { TDict, TNDict, TToken } from '../types'
 import type {
   TTenderlyConfiguredChainStatus,
   TTenderlyFundableAsset,
   TTenderlyFundTokenType,
   TTenderlySnapshotRecord
-} from '../types/tenderly'
+} from '@shared/types/localFork'
+import { canonicalChains } from '@/config/chainDefinitions'
+import type { TDict, TNDict, TToken } from '../types'
 import { ETH_TOKEN_ADDRESS } from './constants'
 import { toAddress } from './tools.address'
 import { isZeroAddress } from './tools.is'
@@ -83,8 +83,6 @@ const COMMON_TENDERLY_PREFERRED_ADDRESSES: Record<number, Partial<Record<string,
     SDAI: '0x83F20F44975D03b1b09e64809B757c47f942BEeA'
   }
 }
-
-export const TENDERLY_SNAPSHOT_STORAGE_KEY = 'yearn.fi/tenderly/snapshots'
 
 export function getTenderlySnapshotBucketKey(canonicalChainId: number, executionChainId: number): string {
   return `${canonicalChainId}:${executionChainId}`

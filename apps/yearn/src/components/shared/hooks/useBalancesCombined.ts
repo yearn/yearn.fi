@@ -1,6 +1,6 @@
 import { useQueryClient } from '@tanstack/react-query'
 import { useCallback, useMemo } from 'react'
-import { isTenderlyModeEnabled, resolveExecutionChainId } from '@/config/tenderly'
+import { isTenderlyModeEnabled, resolveExecutionChainId } from '@/config/localForkRuntime'
 import { useWeb3 } from '../contexts/useWeb3'
 import type { TChainTokens, TDict, TNDict, TToken } from '../types/mixed'
 import { toAddress } from '../utils/tools.address'

@@ -23,7 +23,7 @@ describe('yvUSD APR route', () => {
     expect(response.headers.get('Access-Control-Allow-Origin')).toBe('*')
     expect(response.headers.get('Vercel-CDN-Cache-Control')).toBe('public, s-maxage=30, stale-while-revalidate=120')
     expect(response.headers.get('Cache-Control')).toBe('public, max-age=0, must-revalidate')
-    expect(fetchMock).toHaveBeenCalledWith('https://yearn-yvusd-apr-service.vercel.app/api/aprs?vault=0x1234', {
+    expect(fetchMock).toHaveBeenCalledWith('https://yvusd-api.yearn.fi/api/aprs?vault=0x1234', {
       headers: {
         Accept: 'application/json'
       }

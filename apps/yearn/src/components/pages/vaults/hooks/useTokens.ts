@@ -4,7 +4,7 @@ import { useQuery } from '@tanstack/react-query'
 import { type Address, erc20Abi, getContract } from 'viem'
 import { useConfig } from 'wagmi'
 import { getClient } from 'wagmi/actions'
-import { resolveExecutionChainId } from '@/config/tenderly'
+import { resolveExecutionChainId } from '@/config/localForkRuntime'
 
 export interface Token {
   address?: Address

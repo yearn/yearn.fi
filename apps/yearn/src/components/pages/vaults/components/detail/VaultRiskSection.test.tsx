@@ -51,4 +51,26 @@ describe('VaultRiskSection', () => {
     expect(html).toContain('Duration and PT Strategies')
     expect(html).toContain('Cross-Chain Routing')
   })
+  it('shows no risk data for unrated multi strategy vaults', () => {
+    const html = renderToStaticMarkup(
+      <VaultRiskSection
+        currentVault={
+          {
+            address: '0xcE918671E6D9e56E19c5Cbc4DC45655d80C65265',
+            chainID: 1,
+            version: '3.0.4',
+            kind: 'Multi Strategy',
+            info: {
+              riskLevel: -1,
+              riskScore: [],
+              riskScoreComment: ''
+            }
+          } as never
+        }
+      />
+    )
+
+    expect(html).toContain('No risk data available for this vault.')
+    expect(html).not.toContain('Overall Risk Score')
+  })
 })

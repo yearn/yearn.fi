@@ -6,11 +6,7 @@ export interface RpcConfig {
 const RPC_CONFIG: Record<number, RpcConfig> = {
   1: {
     primary: 'https://ethereum-rpc.publicnode.com',
-    fallbacks: [
-      'https://1rpc.io/eth',
-      'https://rpc.ankr.com/eth',
-      'https://eth-mainnet.nodereal.io/v1/1659dfb40aa24bbb8153a677b98064d7'
-    ]
+    fallbacks: ['https://1rpc.io/eth', 'https://rpc.ankr.com/eth']
   },
   10: {
     primary: 'https://optimism.public.blockpi.network/v1/rpc/public',
