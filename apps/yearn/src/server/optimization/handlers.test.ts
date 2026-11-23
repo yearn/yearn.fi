@@ -180,6 +180,36 @@ describe('optimization handlers', () => {
     parseSpy.mockRestore()
   })
 
+  it('reads a vault-state body delivered one byte per chunk', async () => {
+    const vault = '0x1111111111111111111111111111111111111111'
+    const bytes = new TextEncoder().encode(
+      JSON.stringify({ chainId: 1, strategies: [vault], vault, pad: 'a'.repeat(9_000) })
+    )
+    const chunks = Array.from(bytes, (byte) => Uint8Array.of(byte))
+    const body = new ReadableStream<Uint8Array>({
+      pull(controller) {
+        const chunk = chunks.shift()
+        if (chunk) {
+          controller.enqueue(chunk)
+          return
+        }
+        controller.close()
+      }
+    })
+    readOptimizationsMock.mockResolvedValue([])
+    const request = new Request('https://yearn.fi/api/optimization/vault-state', {
+      method: 'POST',
+      body,
+      duplex: 'half'
+    } as RequestInit)
+
+    const response = await vaultStateHandler(request)
+
+    expect(bytes.length).toBeGreaterThan(9_000)
+    expect(response.status).toBe(404)
+    expect(readOptimizationsMock).toHaveBeenCalled()
+  })
+
   it('returns a CORS 400 when the vault-state body read fails mid-upload', async () => {
     const body = new ReadableStream<Uint8Array>({
       pull(controller) {

@@ -11,20 +11,26 @@ export function OPTIONS(): Response {
   return noContent(POST_CORS_HEADERS)
 }
 
-async function readBodyText(
-  reader: ReadableStreamDefaultReader<Uint8Array>,
-  chunks: Uint8Array[] = [],
-  size = 0
-): Promise<string | null> {
-  const { done, value } = await reader.read()
-  if (done) {
-    return Buffer.concat(chunks).toString('utf8')
-  }
-  if (size + value.byteLength > MAX_BODY_BYTES) {
-    await reader.cancel()
-    return null
-  }
-  return readBodyText(reader, [...chunks, value], size + value.byteLength)
+async function readBodyText(body: ReadableStream<Uint8Array>): Promise<string | null> {
+  const read = { bytes: 0 }
+  const limited = body.pipeThrough(
+    new TransformStream<Uint8Array, Uint8Array>({
+      transform(chunk, controller) {
+        read.bytes += chunk.byteLength
+        if (read.bytes > MAX_BODY_BYTES) {
+          controller.error(new Error('Request body too large'))
+          return
+        }
+        controller.enqueue(chunk)
+      }
+    })
+  )
+  return new Response(limited).text().catch((error: unknown) => {
+    if (read.bytes > MAX_BODY_BYTES) {
+      return null
+    }
+    throw error
+  })
 }
 
 function parseVaultStatePayload(text: string): Record<string, unknown> {
@@ -38,7 +44,7 @@ function parseVaultStatePayload(text: string): Record<string, unknown> {
 }
 
 export async function POST(request: Request): Promise<Response> {
-  const text = request.body ? await readBodyText(request.body.getReader()).catch(() => undefined) : ''
+  const text = request.body ? await readBodyText(request.body).catch(() => undefined) : ''
   if (text === undefined) {
     return json({ error: 'Failed to read request body' }, { status: 400, headers: POST_CORS_HEADERS })
   }

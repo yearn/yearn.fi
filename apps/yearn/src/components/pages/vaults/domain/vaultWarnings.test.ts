@@ -68,20 +68,8 @@ describe('isNonYearnErc4626Vault', () => {
     ).toBe(true)
   })
 
-  it('returns true from snapshot metadata when list metadata is unavailable', () => {
-    expect(
-      isNonYearnErc4626Vault({
-        snapshot: {
-          inclusion: { isYearn: false }
-        } as any
-      })
-    ).toBe(true)
-  })
-
-  it('warns on snapshot-only pages unless the snapshot origin is yearn', () => {
-    expect(isNonYearnErc4626Vault({ snapshot: { origin: null, inclusion: {} } as any })).toBe(true)
-    expect(isNonYearnErc4626Vault({ snapshot: { inclusion: { isYearn: true } } as any })).toBe(true)
-    expect(isNonYearnErc4626Vault({ snapshot: { origin: 'yearn' } as any })).toBe(false)
+  it('returns false when no vault is known yet', () => {
+    expect(isNonYearnErc4626Vault({})).toBe(false)
   })
 
   it('flags the yvBTC address on any other chain', () => {
@@ -89,6 +77,5 @@ describe('isNonYearnErc4626Vault', () => {
     const item = { chainId: otherChainId, address: YVBTC_UNLOCKED_ADDRESS, origin: null, inclusion: {} } as any
 
     expect(isNonYearnErc4626Vault({ vault: item })).toBe(true)
-    expect(isNonYearnErc4626Vault({ snapshot: item })).toBe(true)
   })
 })

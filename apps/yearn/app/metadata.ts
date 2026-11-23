@@ -129,6 +129,12 @@ function resolveVaultMetadataApy(address: string, snapshot?: TKongVaultSnapshot 
   )
 }
 
+function toRouteVaultOrigin(chainID: string, address: string, snapshot?: TKongVaultSnapshot | null) {
+  return snapshot
+    ? { chainId: Number(chainID), address, origin: snapshot.origin, inclusion: snapshot.inclusion }
+    : undefined
+}
+
 function buildVaultDescription({
   assetSymbol,
   chainName,
@@ -193,7 +199,7 @@ export function buildVaultMetadataFromInput({ chainID, address, snapshot }: TVau
     : vaultsManifest.og
   const chainIdNumber = Number(chainID)
   const chainName = Number.isInteger(chainIdNumber) ? getNetwork(chainIdNumber).name : 'Yearn'
-  const isNonYearn = isNonYearnErc4626Vault({ snapshot: snapshot ?? undefined })
+  const isNonYearn = isNonYearnErc4626Vault({ vault: toRouteVaultOrigin(chainID, address, snapshot) })
   const name = pickFirstText(
     snapshot?.meta?.displayName,
     snapshot?.meta?.name,
@@ -257,7 +263,10 @@ export function buildVaultStructuredDataFromInput({
   address,
   snapshot
 }: TVaultMetadataInput): Record<string, unknown> | null {
-  if (!isValidVaultMetadataParams(chainID, address) || isNonYearnErc4626Vault({ snapshot: snapshot ?? undefined })) {
+  if (
+    !isValidVaultMetadataParams(chainID, address) ||
+    isNonYearnErc4626Vault({ vault: toRouteVaultOrigin(chainID, address, snapshot) })
+  ) {
     return null
   }
 

@@ -1,4 +1,5 @@
 import { YBOLD_STAKING_ADDRESS, YBOLD_VAULT_ADDRESS } from '@pages/vaults/domain/yBoldProduct'
+import { YVBTC_CHAIN_ID, YVBTC_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvBtc'
 import { buildVaultSnapshotEndpoint } from '@shared/data/publicQueryEndpoints'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
@@ -174,5 +175,14 @@ describe('non-Yearn vault metadata', () => {
 
     expect(metadata.title).toBe('ERC-4626 Vault')
     expect(metadata.description).toBe('ERC-4626 Vault is an ERC-4626 vault on Ethereum. It is not a Yearn vault.')
+  })
+
+  it('ignores a snapshot body that claims the yvBTC chain and address', () => {
+    const spoofedSnapshot = { ...snapshot, chainId: YVBTC_CHAIN_ID, address: YVBTC_UNLOCKED_ADDRESS }
+
+    expect(buildVaultMetadataFromInput({ chainID: '1', address, snapshot: spoofedSnapshot }).description).toBe(
+      'Other Vault is an ERC-4626 vault on Ethereum. It is not a Yearn vault.'
+    )
+    expect(buildVaultStructuredDataFromInput({ chainID: '1', address, snapshot: spoofedSnapshot })).toBeNull()
   })
 })

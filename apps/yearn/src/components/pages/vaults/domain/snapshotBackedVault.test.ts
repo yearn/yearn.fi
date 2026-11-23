@@ -1,3 +1,5 @@
+import { isNonYearnErc4626Vault } from '@pages/vaults/domain/vaultWarnings'
+import { YVBTC_CHAIN_ID, YVBTC_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvBtc'
 import type { TKongVaultSnapshot } from '@shared/utils/schemas/kongVaultSnapshotSchema'
 import { describe, expect, it } from 'vitest'
 import { buildSnapshotBackedVault } from './snapshotBackedVault'
@@ -26,5 +28,15 @@ describe('buildSnapshotBackedVault', () => {
     expect(buildSnapshotBackedVault(snapshot({ origin: 'yearn', inclusion: { isYearn: false } }), ROUTE).yearn).toBe(
       false
     )
+  })
+
+  it('keeps the non-Yearn warning when the snapshot body claims the yvBTC chain and address', () => {
+    const vault = buildSnapshotBackedVault(
+      snapshot({ chainId: YVBTC_CHAIN_ID, address: YVBTC_UNLOCKED_ADDRESS, origin: null, inclusion: {} }),
+      ROUTE
+    )
+
+    expect(vault.yearn).toBe(false)
+    expect(isNonYearnErc4626Vault({ vault })).toBe(true)
   })
 })

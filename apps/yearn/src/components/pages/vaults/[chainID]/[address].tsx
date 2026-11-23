@@ -751,11 +751,8 @@ function Index(): ReactElement | null {
       ? 'You have unstaked yBOLD. Click the button to the right to stake your yBOLD to earn yield.'
       : null
   const shouldShowNonYearnVaultAlert = useMemo(() => {
-    return isNonYearnErc4626Vault({
-      vault: metadataVault,
-      snapshot: mergedSnapshot
-    })
-  }, [metadataVault, mergedSnapshot])
+    return isNonYearnErc4626Vault({ vault: metadataVault ?? snapshotBackedVault })
+  }, [metadataVault, snapshotBackedVault])
   const vaultAddresses = useMemo((): TVaultAddressItem[] => {
     if (!currentVault) {
       return []
