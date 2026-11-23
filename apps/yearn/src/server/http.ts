@@ -1,5 +1,3 @@
-import { isLoopbackAddress } from '@/server/tenderlyAccess'
-
 export type TQueryValue = string | string[] | undefined
 
 export const GET_CORS_HEADERS = {
@@ -70,6 +68,43 @@ export async function readJsonBody<T>(request: Request): Promise<T> {
   } catch (_error) {
     throw new Error('Invalid JSON body')
   }
+}
+
+const LOOPBACK_ADDRESSES = new Set(['localhost', '::1'])
+
+function isLoopbackIpv4(address: string): boolean {
+  const octets = address.split('.')
+  if (octets.length !== 4) {
+    return false
+  }
+
+  return (
+    octets[0] === '127' &&
+    octets.every((octet) => {
+      if (!/^\d+$/.test(octet)) {
+        return false
+      }
+
+      const value = Number(octet)
+      return value >= 0 && value <= 255
+    })
+  )
+}
+
+export function isLoopbackAddress(address: string | null | undefined): boolean {
+  if (typeof address !== 'string') {
+    return false
+  }
+
+  if (LOOPBACK_ADDRESSES.has(address) || isLoopbackIpv4(address)) {
+    return true
+  }
+
+  if (address.startsWith('::ffff:')) {
+    return isLoopbackIpv4(address.slice('::ffff:'.length))
+  }
+
+  return false
 }
 
 const LOCAL_HOST_PATTERN = /^(localhost|127\.0\.0\.1|\[::1\])(:\d+)?$/

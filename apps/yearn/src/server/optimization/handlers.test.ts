@@ -138,6 +138,31 @@ describe('optimization handlers', () => {
     expect(unknown.status).toBe(404)
     expect(oversized.status).toBe(400)
     expect(malformed.status).toBe(400)
+    expect([unknown, oversized, malformed].map((response) => response.headers.get('Cache-Control'))).toEqual([
+      'no-store',
+      'no-store',
+      'no-store'
+    ])
+    expect(fetchVaultOnChainStateMock).not.toHaveBeenCalled()
+  })
+
+  it('answers 404 when Redis has no optimization payload and a generic 503 when it fails', async () => {
+    const body = {
+      chainId: 1,
+      strategies: ['0x2222222222222222222222222222222222222222'],
+      vault: '0x1111111111111111111111111111111111111111'
+    }
+    vi.spyOn(console, 'error').mockImplementation(() => undefined)
+    readOptimizationsMock.mockResolvedValueOnce(null).mockRejectedValueOnce(new Error('redis://secret-host down'))
+
+    const missing = await vaultStateHandler(createPostRequest('/api/optimization/vault-state', body))
+    const failed = await vaultStateHandler(createPostRequest('/api/optimization/vault-state', body))
+
+    expect(missing.status).toBe(404)
+    expect(failed.status).toBe(503)
+    await expect(failed.json()).resolves.toEqual({ error: 'Vault state unavailable' })
+    expect(failed.headers.get('Cache-Control')).toBe('no-store')
+    expect(failed.headers.get('Access-Control-Allow-Origin')).toBe('*')
     expect(fetchVaultOnChainStateMock).not.toHaveBeenCalled()
   })
 

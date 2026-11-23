@@ -1,14 +1,10 @@
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
-import { getRequestIp } from './http'
+import { getRequestIp, isLoopbackAddress } from './http'
 import { POST as fundPOST } from './tenderly/fund'
 import { POST as increaseTimePOST } from './tenderly/increase-time'
 import { POST as revertPOST } from './tenderly/revert'
 import { POST as snapshotPOST } from './tenderly/snapshot'
-import {
-  buildTenderlyAdminAccessDeniedResponse,
-  isLoopbackAddress,
-  isTenderlyAdminRequestAllowed
-} from './tenderlyAccess'
+import { buildTenderlyAdminAccessDeniedResponse, isTenderlyAdminRequestAllowed } from './tenderlyAccess'
 
 describe('isLoopbackAddress', () => {
   it('accepts loopback addresses', () => {
@@ -132,5 +128,24 @@ describe('Tenderly admin gate with getRequestIp', () => {
     )
 
     expect(statuses).toEqual([403, 403, 403])
+  })
+
+  it.each([
+    ['fund', fundPOST],
+    ['increase-time', increaseTimePOST],
+    ['revert', revertPOST],
+    ['snapshot', snapshotPOST]
+  ])('denies a %s request on Vercel that only spoofs X-Forwarded-For', async (_route, POST) => {
+    vi.stubEnv('VERCEL', '1')
+    vi.stubEnv('NODE_ENV', 'development')
+
+    const spoofed = requestWithHost('localhost:3000', '127.0.0.1')
+    const remote = requestWithHost('localhost:3000', '127.0.0.1')
+    remote.headers.set('x-vercel-forwarded-for', '203.0.113.5')
+
+    expect(getRequestIp(spoofed)).toBeUndefined()
+    expect(getRequestIp(remote)).toBe('203.0.113.5')
+    expect((await POST(spoofed)).status).toBe(403)
+    expect((await POST(remote)).status).toBe(403)
   })
 })
