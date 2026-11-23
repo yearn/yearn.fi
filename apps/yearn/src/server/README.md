@@ -81,7 +81,7 @@ The optimization routes expose the current DOA optimization payloads and the loc
 
 `/api/yvusd/aprs` forwards query params to `YVUSD_APR_SERVICE_API`.
 
-- Default upstream: `https://yearn-yvusd-apr-service.vercel.app/api/aprs`.
+- Default upstream: `https://yvusd-api.yearn.fi/api/aprs`.
 - CDN cache header: `Vercel-CDN-Cache-Control: public, s-maxage=30, stale-while-revalidate=120`. Browser-facing `Cache-Control` stays `public, max-age=0, must-revalidate`.
 
 ## Machine-Readable Vault Routes
