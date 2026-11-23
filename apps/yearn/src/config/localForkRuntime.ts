@@ -1,20 +1,11 @@
 import type { Chain } from 'viem'
+import { parseLocalForkChains, type TLocalForkChain, type TLocalForkEnv } from '@/config/localFork'
 import { env } from '@/env'
 import { canonicalChains, type TCanonicalChainId } from './chainDefinitions'
 
-type TEnvValue = boolean | string | undefined
+const LOCAL_FORK_MODE_STORAGE_KEY = 'dev-local-fork-mode-enabled'
 
-type TTenderlyEnv = Record<string, TEnvValue>
-
-const TENDERLY_MODE_STORAGE_KEY = 'dev-tenderly-mode-enabled'
-const LOOPBACK_HOSTNAMES = new Set(['localhost', '127.0.0.1', '0.0.0.0', '::1', '[::1]'])
-
-export type TTenderlyChainConfig = {
-  canonicalChainId: TCanonicalChainId
-  executionChainId: number
-  rpcUri: string
-  explorerUri?: string
-}
+type TTenderlyChainConfig = TLocalForkChain<TCanonicalChainId>
 
 export type TTenderlyRuntime = {
   isEnabled: boolean
@@ -24,37 +15,9 @@ export type TTenderlyRuntime = {
   executionToCanonicalChainId: ReadonlyMap<number, TCanonicalChainId>
 }
 
-function isLoopbackHostname(hostname: string | undefined): boolean {
-  if (!hostname) {
-    return false
-  }
-
-  return LOOPBACK_HOSTNAMES.has(hostname.trim().toLowerCase())
-}
-
-function canToggleTenderlyModeForRuntime({ isDev, hostname }: { isDev: boolean; hostname?: string }): boolean {
-  return isDev || isLoopbackHostname(hostname)
-}
-
 // Legacy localhost fork support is intentionally limited to 1337.
 // The older 5402 alias is retired unless we explicitly revive that workflow.
 const LOCAL_EXECUTION_CHAIN_ALIASES = new Map<number, TCanonicalChainId>([[1337, 1]])
-
-function readEnvString(value: TEnvValue): string {
-  if (typeof value === 'string') {
-    return value.trim()
-  }
-
-  if (typeof value === 'boolean') {
-    return value ? 'true' : 'false'
-  }
-
-  return ''
-}
-
-function isTruthyEnvValue(value: TEnvValue): boolean {
-  return ['1', 'on', 'true', 'yes'].includes(readEnvString(value).toLowerCase())
-}
 
 function withTenderlyOverrides(chain: Chain, config?: TTenderlyChainConfig): Chain {
   if (!config) {
@@ -96,13 +59,13 @@ function buildExecutionChain(chain: Chain, config: TTenderlyChainConfig): Chain 
   return {
     ...withTenderlyOverrides(chain, config),
     id: config.executionChainId,
-    name: `${chain.name} Tenderly`,
+    name: `${chain.name} Local Fork`,
     blockExplorers:
       config.explorerUri && chain.blockExplorers
         ? {
             ...chain.blockExplorers,
             default: {
-              name: `${chain.name} Tenderly Explorer`,
+              name: `${chain.name} Local Fork Explorer`,
               url: config.explorerUri
             }
           }
@@ -131,10 +94,10 @@ export function resolveInitialTenderlyModeEnabled({
   return storedPreference !== 'false'
 }
 
-export function parseTenderlyRuntime(env: TTenderlyEnv): TTenderlyRuntime {
-  const isEnabled = isTruthyEnvValue(env.NEXT_PUBLIC_TENDERLY_MODE)
+export function parseTenderlyRuntime(env: TLocalForkEnv): TTenderlyRuntime {
+  const configuredChains = parseLocalForkChains(env, canonicalChains)
 
-  if (!isEnabled) {
+  if (configuredChains.length === 0) {
     return {
       isEnabled: false,
       configuredByCanonicalId: {},
@@ -144,46 +107,11 @@ export function parseTenderlyRuntime(env: TTenderlyEnv): TTenderlyRuntime {
     }
   }
 
-  const configuredChains = canonicalChains.reduce<TTenderlyChainConfig[]>((accumulator, chain) => {
-    const rawExecutionChainId = readEnvString(env[`NEXT_PUBLIC_TENDERLY_CHAIN_ID_FOR_${chain.id}`])
-    const rawRpcUri = readEnvString(env[`NEXT_PUBLIC_TENDERLY_RPC_URI_FOR_${chain.id}`])
-    const rawExplorerUri = readEnvString(env[`NEXT_PUBLIC_TENDERLY_EXPLORER_URI_FOR_${chain.id}`])
-    const hasAnyConfig = Boolean(rawExecutionChainId || rawRpcUri || rawExplorerUri)
-
-    if (!hasAnyConfig) {
-      return accumulator
-    }
-
-    if (!rawExecutionChainId || !rawRpcUri) {
-      throw new Error(
-        `Tenderly chain ${chain.id} requires both NEXT_PUBLIC_TENDERLY_CHAIN_ID_FOR_${chain.id} and NEXT_PUBLIC_TENDERLY_RPC_URI_FOR_${chain.id}`
-      )
-    }
-
-    const executionChainId = Number(rawExecutionChainId)
-    if (!Number.isInteger(executionChainId) || executionChainId <= 0) {
-      throw new Error(`Invalid Tenderly execution chain ID for canonical chain ${chain.id}: ${rawExecutionChainId}`)
-    }
-
-    accumulator.push({
-      canonicalChainId: chain.id,
-      executionChainId,
-      rpcUri: rawRpcUri,
-      explorerUri: rawExplorerUri || undefined
-    })
-
-    return accumulator
-  }, [])
-
-  if (configuredChains.length === 0) {
-    throw new Error('Tenderly mode is enabled but no Tenderly execution chains are configured')
-  }
-
   const executionToCanonicalChainId = configuredChains.reduce<Map<number, TCanonicalChainId>>((accumulator, chain) => {
     const existingCanonicalChainId = accumulator.get(chain.executionChainId)
     if (existingCanonicalChainId !== undefined) {
       throw new Error(
-        `Duplicate Tenderly execution chain ID ${chain.executionChainId} configured for canonical chains ${existingCanonicalChainId} and ${chain.canonicalChainId}`
+        `Duplicate local fork execution chain ID ${chain.executionChainId} configured for canonical chains ${existingCanonicalChainId} and ${chain.canonicalChainId}`
       )
     }
 
@@ -216,22 +144,17 @@ function readStoredTenderlyModePreference(): string | null | undefined {
   }
 
   try {
-    return window.localStorage.getItem(TENDERLY_MODE_STORAGE_KEY)
+    return window.localStorage.getItem(LOCAL_FORK_MODE_STORAGE_KEY)
   } catch {
     return undefined
   }
 }
 
 const disabledTenderlyRuntime = parseTenderlyRuntime({})
-const tenderlyModeCanToggle = canToggleTenderlyModeForRuntime({
-  isDev: env.DEV,
-  hostname: typeof window === 'undefined' ? undefined : window.location.hostname
-})
-
-export const tenderlyConfiguredRuntime = parseTenderlyRuntime(env)
+export const tenderlyConfiguredRuntime = env.DEV ? parseTenderlyRuntime(env) : disabledTenderlyRuntime
 export const tenderlyRuntime = resolveInitialTenderlyModeEnabled({
   isConfigured: tenderlyConfiguredRuntime.isEnabled,
-  canToggle: tenderlyModeCanToggle,
+  canToggle: env.DEV,
   storedPreference: readStoredTenderlyModePreference()
 })
   ? tenderlyConfiguredRuntime
@@ -289,7 +212,7 @@ export function isTenderlyModeConfigured(): boolean {
 }
 
 export function canToggleTenderlyMode(): boolean {
-  return tenderlyModeCanToggle && tenderlyConfiguredRuntime.isEnabled
+  return env.DEV && tenderlyConfiguredRuntime.isEnabled
 }
 
 export function persistTenderlyModeEnabled(value: boolean): void {
@@ -298,7 +221,7 @@ export function persistTenderlyModeEnabled(value: boolean): void {
   }
 
   try {
-    window.localStorage.setItem(TENDERLY_MODE_STORAGE_KEY, value ? 'true' : 'false')
+    window.localStorage.setItem(LOCAL_FORK_MODE_STORAGE_KEY, value ? 'true' : 'false')
   } catch {
     // If storage is unavailable, the app will stay on the current mode after reload.
   }

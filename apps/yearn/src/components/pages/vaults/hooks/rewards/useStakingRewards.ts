@@ -7,7 +7,7 @@ import { useReadContract } from '@shared/hooks/useAppWagmi'
 import { toNormalizedValue } from '@shared/utils'
 import { useCallback, useMemo } from 'react'
 import { useReadContracts } from 'wagmi'
-import { resolveExecutionChainId } from '@/config/tenderly'
+import { resolveExecutionChainId } from '@/config/localForkRuntime'
 
 export type TRewardToken = {
   address: `0x${string}`

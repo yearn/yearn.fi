@@ -11,7 +11,7 @@ import {
   waitForTransactionReceipt,
   writeContract
 } from 'wagmi/actions'
-import { resolveExecutionChainId } from '@/config/tenderly'
+import { resolveExecutionChainId } from '@/config/localForkRuntime'
 import type { TAddress } from '../../types/address'
 import { assert, assertAddress } from '../assert'
 import { toBigInt } from '../format'

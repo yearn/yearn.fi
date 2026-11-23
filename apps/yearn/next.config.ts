@@ -1,7 +1,9 @@
 import { fileURLToPath } from 'node:url'
 import { loadEnvConfig } from '@next/env'
 import type { NextConfig } from 'next'
+import { PHASE_DEVELOPMENT_SERVER } from 'next/constants'
 import { canonicalChains } from '@/config/chainDefinitions'
+import { parseLocalForkChains, readAnvilInstance } from '@/config/localFork'
 
 const WORKSPACE_ROOT = fileURLToPath(new URL('../..', import.meta.url))
 loadEnvConfig(WORKSPACE_ROOT, process.env.NODE_ENV !== 'production', console, true)
@@ -31,8 +33,8 @@ const FRAME_ANCESTORS = [
 /**
  * Script sources are enforced. Connection sources remain report-only while integrations are verified.
  *
- * RPC origins come from the build env plus viem's chain defaults, because `buildTransports` always appends a
- * bare `http()` fallback. Set `NEXT_PUBLIC_RPC_URI_FOR_<chainId>` per deployment so the list stays explicit.
+ * RPC origins come from the build env plus viem's chain defaults for the normal transport fallback.
+ * Development also includes the configured local fork RPC origins.
  * Owner: whoever bumps viem, wagmi, or WalletConnect must re-check this list.
  */
 const SCRIPT_SRC = ["'self'", "'unsafe-inline'", "'unsafe-eval'", 'blob:']
@@ -41,7 +43,9 @@ const toOrigin = (value: string | undefined): string[] => (value?.trim() ? [new 
 
 const RPC_ORIGINS = canonicalChains.flatMap((chain) => [
   ...toOrigin(process.env[`NEXT_PUBLIC_RPC_URI_FOR_${chain.id}`]),
-  ...toOrigin(process.env[`NEXT_PUBLIC_TENDERLY_RPC_URI_FOR_${chain.id}`]),
+  ...(process.env.NODE_ENV === 'development'
+    ? toOrigin(process.env[`NEXT_PUBLIC_LOCAL_FORK_RPC_URI_FOR_${chain.id}`])
+    : []),
   ...toOrigin(chain.rpcUrls.default.http[0])
 ])
 
@@ -140,4 +144,20 @@ const nextConfig: NextConfig = {
   }
 }
 
-export default nextConfig
+export default async function configureNext(phase: string): Promise<NextConfig> {
+  if (phase === PHASE_DEVELOPMENT_SERVER) {
+    const configuredChains = parseLocalForkChains(process.env, canonicalChains)
+    await Promise.all(
+      configuredChains.map(({ rpcUri, executionChainId }) =>
+        readAnvilInstance(rpcUri, executionChainId).catch((cause: unknown) => {
+          throw new Error(
+            `Local Fork mode requires Anvil at ${rpcUri} with chain ID ${executionChainId}. Start Anvil or set NEXT_PUBLIC_LOCAL_FORK_MODE=false.`,
+            { cause }
+          )
+        })
+      )
+    )
+  }
+
+  return nextConfig
+}

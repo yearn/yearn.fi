@@ -16,7 +16,6 @@
     "dev:yearn": "bun run --cwd apps/yearn dev",
     "dev:ybold": "bun run --cwd apps/ybold dev",
     "dev:ts": "bun run --cwd apps/yearn dev:ts",
-    "tenderly": "bun scripts/tenderly.ts",
     "build": "bun run build:yearn",
     "build:yearn": "bun run --cwd apps/yearn build",
     "build:ybold": "bun run --cwd apps/ybold build",
