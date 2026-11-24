@@ -12,6 +12,21 @@ const YBOLD = '0x9F4330700a36B29952869fac9b33f45EEdd8A3d8' as Address
 const YSYBOLD = '0x23346B04a7f55b8760E5860AA5A77383D63491cD' as Address
 
 describe('resolveDepositRouteType', () => {
+  it.each([true, false])(
+    'routes identical token addresses on different chains through Enso only when available (%s)',
+    (ensoEnabled) => {
+      expect(
+        resolveDepositRouteType({
+          depositToken: ASSET,
+          assetAddress: ASSET,
+          destinationToken: VAULT,
+          vaultAddress: VAULT,
+          isCrossChain: true,
+          ensoEnabled
+        })
+      ).toBe(ensoEnabled ? 'ENSO' : 'NO_ROUTE')
+    }
+  )
   it('returns DIRECT_DEPOSIT for asset-to-vault deposits', () => {
     const route = resolveDepositRouteType({
       depositToken: ASSET,

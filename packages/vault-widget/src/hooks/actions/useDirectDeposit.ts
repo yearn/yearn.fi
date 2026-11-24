@@ -20,6 +20,8 @@ interface UseDirectDepositParams {
   decimals: number
   enabled: boolean
   maxDeposit?: bigint
+  yearnV2PricePerShare?: bigint
+  vaultDecimals?: number
 }
 
 export function useDirectDeposit(params: UseDirectDepositParams): UseWidgetDepositFlowReturn {
@@ -34,7 +36,7 @@ export function useDirectDeposit(params: UseDirectDepositParams): UseWidgetDepos
 
   // Use previewDeposit to get expected shares (standard ERC4626 method)
   const {
-    data: expectedOut = 0n,
+    data: previewOut = 0n,
     isError: isPreviewError,
     isFetching: isPreviewFetching
   } = useReadContract({
@@ -43,8 +45,14 @@ export function useDirectDeposit(params: UseDirectDepositParams): UseWidgetDepos
     functionName: 'previewDeposit',
     args: [params.amount],
     chainId: params.chainId,
-    query: { enabled: params.enabled && params.amount > 0n }
+    query: { enabled: params.yearnV2PricePerShare === undefined && params.enabled && params.amount > 0n }
   })
+  const expectedOut =
+    params.yearnV2PricePerShare === undefined
+      ? previewOut
+      : params.yearnV2PricePerShare > 0n
+        ? (params.amount * 10n ** BigInt(params.vaultDecimals ?? params.decimals)) / params.yearnV2PricePerShare
+        : 0n
 
   const isValidInput =
     params.enabled &&

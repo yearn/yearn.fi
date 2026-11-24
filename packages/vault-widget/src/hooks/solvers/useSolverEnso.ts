@@ -155,7 +155,7 @@ export const useSolverEnso = ({
         destinationChainId,
         receiver
       })
-      const response = await fetch(`${routeEndpoint}?${params}`, { signal })
+      const response = await (runtime.routing.fetchRoute ?? fetch)(`${routeEndpoint}?${params}`, { signal })
       const data = await response.json()
       const normalized = normalizeEnsoRouteResponse(data, response.status, chainId)
       return normalized.route

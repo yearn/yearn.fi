@@ -2,6 +2,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { cleanup, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { buildTransactionPlan } from '@yearn/vault-widget/headless'
+import { TokenSelectorCardContext } from '@yearn/vault-widget/internal/components/widget/shared/TokenSelectorOverlay'
 import {
   TransactionOverlay,
   type TransactionStep
@@ -83,6 +84,38 @@ beforeEach(() => {
 })
 
 describe('frozen generic deposit retry', () => {
+  it('covers the host card outside its inert form and restores focus on dismissal', async () => {
+    const card = document.createElement('div')
+    const content = document.createElement('div')
+    content.setAttribute('data-erc4626-content', '')
+    const trigger = document.createElement('button')
+    const mount = document.createElement('div')
+    content.append(trigger, mount)
+    card.append(content)
+    document.body.append(card)
+    trigger.focus()
+    const client = new QueryClient({ defaultOptions: { queries: { retry: false } } })
+    const view = render(
+      <QueryClientProvider client={client}>
+        <VaultWidgetRuntimeProvider value={runtime}>
+          <TokenSelectorCardContext.Provider value={card}>
+            <FrozenDeposit />
+          </TokenSelectorCardContext.Provider>
+        </VaultWidgetRuntimeProvider>
+      </QueryClientProvider>,
+      { container: mount }
+    )
+    const dialog = await screen.findByRole('dialog', { name: 'Transaction progress' })
+    expect(dialog.parentElement).toBe(card)
+    expect(content.contains(dialog)).toBe(false)
+    expect(content.inert).toBe(true)
+    expect(document.activeElement).toBe(dialog)
+    expect(dialog.firstElementChild?.nextElementSibling?.classList.contains('border')).toBe(true)
+    view.unmount()
+    expect(content.inert).toBe(false)
+    expect(document.activeElement).toBe(trigger)
+    card.remove()
+  })
   it.each(['critical read failure', 'zero-share preview'])(
     'blocks a retry after %s until reads recover',
     async (failure) => {

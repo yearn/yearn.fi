@@ -3,7 +3,7 @@
 import { useQuery } from '@tanstack/react-query'
 import { getErc4626ReadMessage, readErc4626Vault } from '@yearn/vault-widget/erc4626/reader'
 import { useVaultWidgetRuntime } from '@yearn/vault-widget/runtime'
-import type { WidgetAddress } from '@yearn/vault-widget/types'
+import type { VaultWidgetVault, WidgetAddress } from '@yearn/vault-widget/types'
 import { useCallback } from 'react'
 import { isAddress, zeroAddress } from 'viem'
 import { usePublicClient } from 'wagmi'
@@ -11,23 +11,34 @@ import { usePublicClient } from 'wagmi'
 export function useErc4626Vault({
   address,
   chainId,
-  account
+  account,
+  contractKind,
+  enabled = true
 }: {
   address?: string
   chainId: number
   account?: WidgetAddress
+  contractKind?: VaultWidgetVault['contractKind']
+  enabled?: boolean
 }) {
   const runtime = useVaultWidgetRuntime()
   const executionChainId = runtime.chains.resolveExecutionChainId(chainId)
   const client = usePublicClient({ chainId: executionChainId })
   const validAddress = !!address && isAddress(address) && address.toLowerCase() !== zeroAddress
   const query = useQuery({
-    queryKey: ['erc4626-vault', chainId, executionChainId, address?.toLowerCase(), account?.toLowerCase()],
+    queryKey: [
+      'erc4626-vault',
+      chainId,
+      executionChainId,
+      address?.toLowerCase(),
+      account?.toLowerCase(),
+      contractKind ?? 'erc4626'
+    ],
     queryFn: () => {
       if (!client || !validAddress) throw new Error('Vault reader is not configured.')
-      return readErc4626Vault({ client, address: address as WidgetAddress, chainId, account })
+      return readErc4626Vault({ client, address: address as WidgetAddress, chainId, account, contractKind })
     },
-    enabled: validAddress && executionChainId !== undefined && !!client,
+    enabled: enabled && validAddress && executionChainId !== undefined && !!client,
     refetchInterval: 15_000,
     staleTime: 10_000,
     retry: 1
