@@ -12,7 +12,6 @@ export const env: TClientEnv = {
   DEV: process.env.NODE_ENV !== 'production',
   MODE: process.env.NODE_ENV || 'development',
   PROD: process.env.NODE_ENV === 'production',
-  NEXT_PUBLIC_ALCHEMY_KEY: process.env.NEXT_PUBLIC_ALCHEMY_KEY,
   NEXT_PUBLIC_BALANCE_SOURCE: process.env.NEXT_PUBLIC_BALANCE_SOURCE,
   NEXT_PUBLIC_BASE_YEARN_ASSETS_URI: process.env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI,
   NEXT_PUBLIC_CLUSTERS_API_KEY: process.env.NEXT_PUBLIC_CLUSTERS_API_KEY,

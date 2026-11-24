@@ -1,7 +1,13 @@
+import { toBasisPoints, ZAP_SLIPPAGE_HARD_CAP } from '@shared/utils/slippage'
 import { GET_CORS_HEADERS as CORS_HEADERS, json, noContent, queryString, WALLET_SCOPED_CACHE_CONTROL } from '../http'
 
 const ENSO_API_BASE = 'https://api.enso.build'
 const GET_CORS_HEADERS = { ...CORS_HEADERS, 'Cache-Control': WALLET_SCOPED_CACHE_CONTROL }
+const MAX_SLIPPAGE_BPS = toBasisPoints(ZAP_SLIPPAGE_HARD_CAP)
+
+function isValidSlippage(slippage: string): boolean {
+  return /^\d+$/.test(slippage) && Number(slippage) <= MAX_SLIPPAGE_BPS
+}
 
 export function OPTIONS(): Response {
   return noContent(GET_CORS_HEADERS)
@@ -32,6 +38,10 @@ export async function GET(request: Request): Promise<Response> {
   }
   if (!amountIn) {
     return json({ error: 'Missing or invalid amountIn' }, { status: 400, headers: GET_CORS_HEADERS })
+  }
+
+  if (slippage !== undefined && !isValidSlippage(slippage)) {
+    return json({ error: 'Missing or invalid slippage' }, { status: 400, headers: GET_CORS_HEADERS })
   }
 
   if (receiver && receiver.toLowerCase() !== fromAddress.toLowerCase()) {

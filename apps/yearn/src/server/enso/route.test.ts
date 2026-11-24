@@ -22,7 +22,16 @@ afterEach(() => {
 })
 
 describe('Enso route proxy', () => {
-  it.each([{ receiver: OTHER }, { routingStrategy: 'delegate' }])('rejects %o without calling Enso', async (extra) => {
+  it.each([
+    { receiver: OTHER },
+    { routingStrategy: 'delegate' },
+    { slippage: '501' },
+    { slippage: '10000' },
+    { slippage: '-1' },
+    { slippage: '1.5' },
+    { slippage: '1e3' },
+    { slippage: '' }
+  ])('rejects %o without calling Enso', async (extra) => {
     const fetchStub = vi.fn()
     vi.stubGlobal('fetch', fetchStub)
     vi.stubEnv('ENSO_API_KEY', 'key')
@@ -32,6 +41,17 @@ describe('Enso route proxy', () => {
     expect(response.status).toBe(400)
     expect(response.headers.get('Cache-Control')).toContain('no-store')
     expect(fetchStub).not.toHaveBeenCalled()
+  })
+
+  it.each(['0', '1', '100', '500'])('forwards slippage %s bps up to the UI hard cap', async (slippage) => {
+    const fetchStub = vi.fn().mockResolvedValue(Response.json({ tx: {} }))
+    vi.stubGlobal('fetch', fetchStub)
+    vi.stubEnv('ENSO_API_KEY', 'key')
+
+    const response = await GET(routeRequest({ slippage }))
+
+    expect(response.status).toBe(200)
+    expect(new URL(fetchStub.mock.calls[0][0]).searchParams.get('slippage')).toBe(slippage)
   })
 
   it('pins routingStrategy=router and never caches the quote', async () => {
