@@ -16,10 +16,10 @@ export function NonYearnVaultAcknowledgement({
       )}
       data-testid={'non-yearn-vault-acknowledgement'}
     >
-      <p className={'text-base font-semibold'}>{'This is not a Yearn vault.'}</p>
+      <p className={'text-base font-semibold'}>{'This vault is not endorsed by Yearn.'}</p>
       <p className={'text-text-secondary'}>
         {
-          'This vault was deployed by a third party. Yearn has not reviewed it, its strategies or its manager. Its name is chosen by whoever deployed it. Check the contract address before depositing.'
+          "It is not on Yearn's list of endorsed vaults. Anyone can deploy a vault and choose its name, so check the contract address and who manages it before depositing."
         }
       </p>
       <button
