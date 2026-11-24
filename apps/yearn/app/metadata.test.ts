@@ -169,6 +169,16 @@ describe('non-Yearn vault metadata', () => {
     expect(buildVaultStructuredDataFromInput({ chainID: '1', address, snapshot: yearnSnapshot })).not.toBeNull()
   })
 
+  it('marks non-Yearn vault pages noindex and keeps Yearn vault pages indexable', () => {
+    expect(buildVaultMetadataFromInput({ chainID: '1', address, snapshot }).robots).toEqual({
+      index: false,
+      follow: false
+    })
+    expect(
+      buildVaultMetadataFromInput({ chainID: '1', address, snapshot: { ...snapshot, origin: 'yearn' } }).robots
+    ).toBeUndefined()
+  })
+
   it('does not fall back to Yearn branding when a non-Yearn snapshot has no name', () => {
     const unnamedSnapshot = { ...BASE_SNAPSHOT, origin: null, name: '', symbol: '', meta: {} }
     const metadata = buildVaultMetadataFromInput({ chainID: '1', address, snapshot: unnamedSnapshot })
