@@ -8,6 +8,7 @@ import { useAtomicBatchCapability } from '@yearn/vault-widget/internal/hooks/use
 import { useDebouncedInput } from '@yearn/vault-widget/internal/hooks/useDebouncedInput'
 import type { VaultUserData } from '@yearn/vault-widget/internal/hooks/useVaultUserData'
 import { useVaultWidgetSpotPrices } from '@yearn/vault-widget/internal/hooks/useVaultWidgetSpotPrices'
+import { useVerifiedStakingAddress } from '@yearn/vault-widget/internal/hooks/useVerifiedStakingAddress'
 import { useVerifiedTokenDecimals } from '@yearn/vault-widget/internal/hooks/useVerifiedTokenDecimals'
 import { IconChevron } from '@yearn/vault-widget/internal/icons/IconChevron'
 import { IconCross } from '@yearn/vault-widget/internal/icons/IconCross'
@@ -312,7 +313,11 @@ export function WidgetDeposit({
   const canOpenTokenSelector = ensoEnabled && !disableTokenSelector
 
   const shouldStakeDeposit = forceStake || isAutoStakingEnabled
-  const stakingDepositAddress = disableDepositStaking ? undefined : stakingAddress
+  const { verifiedStakingAddress: stakingDepositAddress, isVerifyingStaking } = useVerifiedStakingAddress({
+    stakingAddress: disableDepositStaking ? undefined : stakingAddress,
+    vaultAddress,
+    chainId
+  })
 
   const destinationToken = useMemo(() => {
     if (shouldStakeDeposit && stakingDepositAddress) return stakingDepositAddress
@@ -1371,6 +1376,8 @@ export function WidgetDeposit({
     depositAmount.bn === 0n ||
     isPreparingEnsoQuote ||
     depositAmount.isDebouncing ||
+    (shouldStakeDeposit && isVerifyingStaking) ||
+    (forceStake && !stakingDepositAddress) ||
     shouldBlockApprovalForAllowanceReset ||
     isCurrentStepWaitingForPrepare ||
     (effectiveNeedsApproval && !activeFlow.periphery.prepareApproveEnabled) ||
