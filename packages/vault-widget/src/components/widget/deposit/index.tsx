@@ -8,6 +8,7 @@ import { useAtomicBatchCapability } from '@yearn/vault-widget/internal/hooks/use
 import { useDebouncedInput } from '@yearn/vault-widget/internal/hooks/useDebouncedInput'
 import type { VaultUserData } from '@yearn/vault-widget/internal/hooks/useVaultUserData'
 import { useVaultWidgetSpotPrices } from '@yearn/vault-widget/internal/hooks/useVaultWidgetSpotPrices'
+import { useVerifiedTokenDecimals } from '@yearn/vault-widget/internal/hooks/useVerifiedTokenDecimals'
 import { IconChevron } from '@yearn/vault-widget/internal/icons/IconChevron'
 import { IconCross } from '@yearn/vault-widget/internal/icons/IconCross'
 import { IconSettings } from '@yearn/vault-widget/internal/icons/IconSettings'
@@ -320,6 +321,10 @@ export function WidgetDeposit({
 
   const depositInput = useDebouncedInput(inputToken?.decimals ?? 18)
   const [depositAmount, , setDepositInput] = depositInput
+  // Transactions only see an amount once the input token's decimals are confirmed on-chain.
+  const verifiedInputDecimals = useVerifiedTokenDecimals({ token: inputToken, chainId: sourceChainId })
+  const inputDecimals = verifiedInputDecimals.decimals
+  const hasVerifiedInputDecimals = inputDecimals !== undefined
   const shouldCollapseDetails = Boolean(collapseDetails && !hideDetails && !hideActionButton)
   const [ensoQuoteRequest, setEnsoQuoteRequest] = useState<ProtectedEnsoQuoteRequest>({
     purpose: 'calibration',
@@ -387,13 +392,13 @@ export function WidgetDeposit({
     destinationToken,
     vaultAddress,
     stakingAddress: stakingDepositAddress,
-    amount: depositAmount.debouncedBn,
-    currentAmount: depositAmount.bn,
+    amount: hasVerifiedInputDecimals ? depositAmount.debouncedBn : 0n,
+    currentAmount: hasVerifiedInputDecimals ? depositAmount.bn : 0n,
     account,
     chainId,
     sourceChainId,
     destinationChainId: vault?.chainId,
-    inputDecimals: inputToken?.decimals ?? 18,
+    inputDecimals: inputDecimals ?? 0,
     vaultDecimals: vault?.decimals ?? 18,
     slippage: ensoQuoteSlippage,
     ensoQuotePurpose: ensoQuoteRequest.purpose,
@@ -732,6 +737,7 @@ export function WidgetDeposit({
     (vaultUserData.erc4626 && typeof activeFlow.periphery.error === 'string'
       ? activeFlow.periphery.error
       : undefined) ||
+    verifiedInputDecimals.error ||
     depositError ||
     protectedEnsoDepositError
 
@@ -1562,7 +1568,7 @@ export function WidgetDeposit({
         }
       />
 
-      {approvalSpenderAddress ? (
+      {approvalSpenderAddress && hasVerifiedInputDecimals ? (
         <ApprovalOverlay
           isOpen={showApprovalOverlay}
           onClose={closeApprovalOverlay}
@@ -1570,11 +1576,11 @@ export function WidgetDeposit({
           disableSetUnlimited={disableApprovalOverlaySetUnlimited}
           tokenSymbol={inputToken?.symbol || ''}
           tokenAddress={toAddress(depositToken)}
-          tokenDecimals={inputToken?.decimals ?? 18}
+          tokenDecimals={inputDecimals}
           spenderAddress={approvalSpenderAddress}
           spenderName={approvalSpenderName || 'Vault'}
           chainId={sourceChainId}
-          currentAllowance={formatWidgetAllowance(activeFlow.periphery.allowance, inputToken?.decimals ?? 18) || '0'}
+          currentAllowance={formatWidgetAllowance(activeFlow.periphery.allowance, inputDecimals) || '0'}
           approvalWarning={approvalWarning}
         />
       ) : null}
