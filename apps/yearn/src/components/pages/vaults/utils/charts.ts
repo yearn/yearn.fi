@@ -301,7 +301,10 @@ export function calculateApyFromApr(series: TTimeseriesPoint[], compoundingPerio
   })
 }
 
-export function transformVaultChartData(timeseries?: TChartTimeseriesResponse | null): TTransformedChartData {
+export function transformVaultChartData(
+  timeseries?: TChartTimeseriesResponse | null,
+  deploymentTime?: number | null
+): TTransformedChartData {
   if (!timeseries || typeof timeseries !== 'object') {
     return {
       aprApyData: null,
@@ -310,10 +313,18 @@ export function transformVaultChartData(timeseries?: TChartTimeseriesResponse | 
     }
   }
 
-  const apyWeekly = normalizeSeries(timeseries.apyWeekly)
-  const apyMonthly = normalizeSeries(timeseries.apyMonthly)
-  const tvl = normalizeSeries(timeseries.tvl)
-  const pps = normalizeSeries(timeseries.pps)
+  const deploymentSeconds =
+    deploymentTime && deploymentTime > 1_000_000_000_000 ? deploymentTime / 1000 : deploymentTime
+  const deploymentDay =
+    deploymentSeconds && Number.isFinite(deploymentSeconds) && deploymentSeconds > 0
+      ? Math.floor(deploymentSeconds / DAY_IN_SECONDS) * DAY_IN_SECONDS
+      : 0
+  const normalize = (series: TChartTimeseriesResponse[keyof TChartTimeseriesResponse]) =>
+    normalizeSeries(series).filter((point) => point.time >= deploymentDay)
+  const apyWeekly = normalize(timeseries.apyWeekly)
+  const apyMonthly = normalize(timeseries.apyMonthly)
+  const tvl = normalize(timeseries.tvl)
+  const pps = normalize(timeseries.pps)
 
   const bounds = findTimestampBounds([apyWeekly, apyMonthly, tvl, pps])
   if (!bounds) {
@@ -359,9 +370,15 @@ export function transformVaultChartData(timeseries?: TChartTimeseriesResponse | 
         : null
   }))
 
+  const firstApyIndex = aprApyData.findIndex((point) =>
+    [point.sevenDayApy, point.thirtyDayApy, point.derivedApr, point.derivedApy].some((value) => value !== null)
+  )
+  const firstTvlIndex = tvlData.findIndex((point) => point.TVL !== null)
+  const firstPpsIndex = ppsData.findIndex((point) => point.PPS !== null)
+
   return {
-    aprApyData,
-    tvlData,
-    ppsData
+    aprApyData: firstApyIndex < 0 ? [] : aprApyData.slice(firstApyIndex),
+    tvlData: firstTvlIndex < 0 ? [] : tvlData.slice(firstTvlIndex),
+    ppsData: firstPpsIndex < 0 ? [] : ppsData.slice(firstPpsIndex)
   }
 }
