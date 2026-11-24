@@ -1,9 +1,17 @@
+import { createHash, timingSafeEqual } from 'node:crypto'
 import { ADMIN_POST_CORS_HEADERS, json, noContent, readJsonBody } from '../http'
 import { isHoldingsStorageEnabled } from '../lib/holdings'
 import { invalidateVaults, type VaultIdentifier } from '../lib/holdings/services/cache'
 
 function isValidAddress(address: string): boolean {
   return /^0x[a-fA-F0-9]{40}$/.test(address)
+}
+
+function isAdminSecretMatch(provided: string | null, expected: string): boolean {
+  if (provided === null) return false
+  const providedDigest = createHash('sha256').update(provided).digest()
+  const expectedDigest = createHash('sha256').update(expected).digest()
+  return timingSafeEqual(providedDigest, expectedDigest)
 }
 
 interface InvalidateRequestBody {
@@ -38,7 +46,7 @@ export async function POST(request: Request): Promise<Response> {
   }
 
   const providedSecret = request.headers.get('x-admin-secret')
-  if (providedSecret !== adminSecret) {
+  if (!isAdminSecretMatch(providedSecret, adminSecret)) {
     return json({ error: 'Unauthorized' }, { status: 401, headers: ADMIN_POST_CORS_HEADERS })
   }
 

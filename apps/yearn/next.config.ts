@@ -86,6 +86,9 @@ const securityHeaders = [
     value: [
       `frame-ancestors ${FRAME_ANCESTORS.join(' ')}`,
       `script-src ${SCRIPT_SRC.join(' ')}`,
+      "object-src 'none'",
+      "base-uri 'none'",
+      "form-action 'self'",
       `report-uri ${CSP_REPORT_URI}`
     ].join('; ')
   },
