@@ -13,6 +13,7 @@ import { YvUsdApyTooltipContent, YvUsdTvlTooltipContent } from '@pages/vaults/co
 import { YvUsdHeaderBanner } from '@pages/vaults/components/yvUSD/YvUsdHeaderBanner'
 import { getVaultView, type TKongVaultInput } from '@pages/vaults/domain/kongVaultSelectors'
 import { isYBoldProductAddress } from '@pages/vaults/domain/normalizeVault'
+import { getVaultHeadingName } from '@pages/vaults/domain/vaultWarnings'
 import { useHeaderCompression } from '@pages/vaults/hooks/useHeaderCompression'
 import { useVaultUserData, type VaultUserData } from '@pages/vaults/hooks/useVaultUserData'
 import { useYvBtcVaults } from '@pages/vaults/hooks/useYvBtcVaults'
@@ -192,7 +193,11 @@ function VaultHeaderIdentity({
   const [isTitleClipped, setIsTitleClipped] = useState(false)
   const titleSlotRef = useRef<HTMLDivElement>(null)
   const titleMeasureRef = useRef<HTMLSpanElement>(null)
-  const vaultName = getVaultName(currentVault)
+  const vaultName = getVaultHeadingName({
+    name: getVaultName(currentVault),
+    address: toAddress(currentVault.address),
+    isNonYearnVault
+  })
   const tokenLogoSize = getVaultLogoSize({ isCompressed })
   const tokenLogoContainerSizeClassName = getVaultLogoContainerSizeClassName({ isCompressed })
 

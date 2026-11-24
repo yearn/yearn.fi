@@ -19,6 +19,7 @@ import { resolveForwardApyDisplayConfig } from '@pages/vaults/components/table/a
 import { VaultDetailsWelcomeTour } from '@pages/vaults/components/tour/VaultDetailsWelcomeTour'
 import { type TWidgetRef, Widget } from '@pages/vaults/components/widget'
 import { MobileDrawerSettingsButton } from '@pages/vaults/components/widget/MobileDrawerSettingsButton'
+import { NonYearnVaultAcknowledgement } from '@pages/vaults/components/widget/NonYearnVaultAcknowledgement'
 import { WidgetRewards } from '@pages/vaults/components/widget/rewards'
 import { WalletPanel } from '@pages/vaults/components/widget/WalletPanel'
 import { YvBtcWidget } from '@pages/vaults/components/widget/yvBTC/YvBtcWidget'
@@ -35,7 +36,13 @@ import {
 } from '@pages/vaults/domain/normalizeVault'
 import { buildSnapshotBackedVault } from '@pages/vaults/domain/snapshotBackedVault'
 import { getVaultWidgetActions, isListedMigrationTarget } from '@pages/vaults/domain/vaultMigration'
-import { isNonYearnErc4626Vault, NON_YEARN_ERC4626_WARNING_MESSAGE } from '@pages/vaults/domain/vaultWarnings'
+import {
+  getNonYearnAcknowledgementStorageKey,
+  getVaultHeadingName,
+  isNonYearnErc4626Vault,
+  NON_YEARN_ERC4626_WARNING_MESSAGE,
+  requiresNonYearnAcknowledgement
+} from '@pages/vaults/domain/vaultWarnings'
 import { useEnsureVaultListFetch } from '@pages/vaults/hooks/useEnsureVaultListFetch'
 import { useTenderlyVaultBalanceOverrides } from '@pages/vaults/hooks/useLocalForkVaultBalanceOverrides'
 import { usePendingTimelockStrategies } from '@pages/vaults/hooks/usePendingTimelockStrategies'
@@ -65,6 +72,7 @@ import { Tooltip } from '@shared/components/Tooltip'
 import { useTenderlyPanel } from '@shared/contexts/useLocalForkPanel'
 import { useWalletActions, useWalletStatus, useWalletTokens } from '@shared/contexts/useWallet'
 import { useYearn } from '@shared/contexts/useYearn'
+import { useSessionStorage } from '@shared/hooks/useSessionStorage'
 import { useYearnSpotPrices } from '@shared/hooks/useYearnSpotPrices'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { IconInfo } from '@shared/icons/IconInfo'
@@ -758,6 +766,17 @@ function Index(): ReactElement | null {
   const shouldShowNonYearnVaultAlert = useMemo(() => {
     return isNonYearnErc4626Vault({ vault: metadataVault ?? snapshotBackedVault })
   }, [metadataVault, snapshotBackedVault])
+  const [hasAcknowledgedNonYearnVault, setHasAcknowledgedNonYearnVault] = useSessionStorage(
+    getNonYearnAcknowledgementStorageKey(chainId, params.address ?? ''),
+    false
+  )
+  const isWidgetActionGated = (action: WidgetActionType): boolean =>
+    requiresNonYearnAcknowledgement({
+      action,
+      isNonYearnVault: shouldShowNonYearnVaultAlert,
+      hasAcknowledged: hasAcknowledgedNonYearnVault
+    })
+  const acknowledgeNonYearnVault = (): void => setHasAcknowledgedNonYearnVault(true)
   const vaultAddresses = useMemo((): TVaultAddressItem[] => {
     if (!currentVault) {
       return []
@@ -1515,6 +1534,7 @@ function Index(): ReactElement | null {
 
   const headerStickyTop = 'var(--header-height)'
   const resolvedWidgetMode = widgetActions.includes(widgetMode) ? widgetMode : widgetActions[0]
+  const ungatedWidgetActions = widgetActions.filter((action) => !isWidgetActionGated(action))
   const shouldCollapseWidgetDetails = isCompactWidget
   const mobileListKind = deriveListKind(resolvedCurrentVault)
   const mobileProductTypeLabel = getProductTypeLabel(mobileListKind, shouldShowNonYearnVaultAlert)
@@ -1629,6 +1649,10 @@ function Index(): ReactElement | null {
       )
     }
 
+    if (isWidgetActionGated(resolvedWidgetMode)) {
+      return <NonYearnVaultAcknowledgement onAcknowledge={acknowledgeNonYearnVault} />
+    }
+
     return (
       <Widget
         ref={widgetRef}
@@ -1636,7 +1660,7 @@ function Index(): ReactElement | null {
         currentVault={resolvedCurrentVault}
         gaugeAddress={resolvedCurrentVault.staking.address}
         disableDepositStaking={shouldForceYBoldStakeDeposit ? false : disableDepositStaking}
-        actions={widgetActions}
+        actions={ungatedWidgetActions}
         chainId={chainId}
         vaultUserData={vaultUserData}
         handleSuccess={handleWidgetSuccess}
@@ -1681,6 +1705,10 @@ function Index(): ReactElement | null {
       )
     }
 
+    if (isWidgetActionGated(mobileDrawerAction)) {
+      return <NonYearnVaultAcknowledgement onAcknowledge={acknowledgeNonYearnVault} disableBorderRadius />
+    }
+
     return (
       <Widget
         ref={mobileWidgetRef}
@@ -1688,7 +1716,7 @@ function Index(): ReactElement | null {
         currentVault={resolvedCurrentVault}
         gaugeAddress={resolvedCurrentVault.staking.address}
         disableDepositStaking={shouldForceYBoldStakeDeposit ? false : disableDepositStaking}
-        actions={widgetActions}
+        actions={ungatedWidgetActions}
         chainId={chainId}
         vaultUserData={vaultUserData}
         handleSuccess={handleWidgetSuccess}
@@ -1839,7 +1867,11 @@ function Index(): ReactElement | null {
             </div>
             <div className="flex-1 min-w-0">
               <h1 className={'text-lg font-black leading-tight truncate-safe text-text-primary'}>
-                {getVaultName(currentVault)}
+                {getVaultHeadingName({
+                  name: getVaultName(currentVault),
+                  address: toAddress(currentVault.address),
+                  isNonYearnVault: shouldShowNonYearnVaultAlert
+                })}
               </h1>
               <div className="flex items-center gap-1 mt-1">
                 {currentVault.category ? (

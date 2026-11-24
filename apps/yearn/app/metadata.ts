@@ -221,6 +221,7 @@ export function buildVaultMetadataFromInput({ chainID, address, snapshot }: TVau
   return {
     title,
     description,
+    ...(isNonYearn ? { robots: { index: false, follow: false } } : {}),
     alternates: {
       canonical: canonicalPath,
       ...(discoveryUrls
