@@ -1,6 +1,6 @@
 import { KATANA_CHAIN_ID } from '@pages/vaults/constants/addresses'
 import { useVaultChartTimeseries } from '@pages/vaults/hooks/useVaultChartTimeseries'
-import { useVaultUserHistory } from '@pages/vaults/hooks/useVaultUserHistory'
+import { type TSavedVaultPosition, useVaultUserHistory } from '@pages/vaults/hooks/useVaultUserHistory'
 import { transformVaultChartData } from '@pages/vaults/utils/charts'
 import { IconChevron } from '@shared/icons/IconChevron'
 import { cl, SELECTOR_BAR_STYLES } from '@shared/utils'
@@ -32,6 +32,7 @@ type VaultChartsSectionProps = {
   userUnitLabel?: string
   overlayUserPositionOnTvlTab?: boolean
   userHistoryVaults?: Array<{ chainId: number; vaultAddress: string }>
+  savedPosition?: TSavedVaultPosition
 }
 
 export const VAULT_CHART_TIMEFRAME_OPTIONS = [
@@ -108,7 +109,8 @@ export function VaultChartsSection({
   enableUserCharts = false,
   userUnitLabel = 'assets',
   overlayUserPositionOnTvlTab = false,
-  userHistoryVaults
+  userHistoryVaults,
+  savedPosition
 }: VaultChartsSectionProps): ReactElement {
   const { data, error, isLoading } = useVaultChartTimeseries({
     chainId,
@@ -145,6 +147,7 @@ export function VaultChartsSection({
     chainId,
     vaultAddress,
     vaults: userHistoryVaults,
+    savedPosition,
     timeframe: activeTimeframe,
     enabled: (enableUserCharts && activeTabIsUserChart) || shouldOverlayUserPositionOnTvlTab
   })

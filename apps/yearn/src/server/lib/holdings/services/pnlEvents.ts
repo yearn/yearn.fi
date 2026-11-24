@@ -13,6 +13,10 @@ function compareRawEvents(a: TRawPnlEvent, b: TRawPnlEvent): number {
   )
 }
 
+function rawEventKey(event: Pick<TRawPnlEvent, 'chainId' | 'kind' | 'id'>): string {
+  return `${event.chainId}:${event.kind}:${event.id}`
+}
+
 function normalizeDeposit(event: DepositEvent): Omit<Extract<TRawPnlEvent, { kind: 'deposit' }>, 'scopes'> {
   return {
     kind: 'deposit',
@@ -76,7 +80,7 @@ function mergeRawEvent(
   event: Omit<TRawPnlEvent, 'scopes'>,
   scope: keyof TRawScopes
 ): void {
-  const eventKey = `${event.kind}:${event.id}`
+  const eventKey = rawEventKey(event)
   const existing = merged.get(eventKey)
 
   if (existing) {
@@ -119,7 +123,7 @@ export function mergeAddressScopedRawPnlEventsWithTransactionActivity(
   const merged = new Map<string, TRawPnlEvent>()
 
   addressEvents.forEach((event) => {
-    merged.set(`${event.kind}:${event.id}`, {
+    merged.set(rawEventKey(event), {
       ...event,
       scopes: { ...event.scopes }
     })
@@ -140,4 +144,23 @@ export function mergeAddressScopedRawPnlEventsWithTransactionActivity(
     })
 
   return Array.from(merged.values()).sort(compareRawEvents)
+}
+
+export function projectBundleGrowthEvents(
+  events: TRawPnlEvent[],
+  members: ReadonlySet<string>,
+  bundleIdentity: string
+): TRawPnlEvent[] {
+  const project = (address: string) => (members.has(address) ? bundleIdentity : address)
+  return events.flatMap((event): TRawPnlEvent[] => {
+    if (event.kind === 'transfer') {
+      const sender = project(event.sender)
+      const receiver = project(event.receiver)
+      // Moving shares inside the bundle keeps the shares and their original lot basis open.
+      return sender === bundleIdentity && receiver === bundleIdentity
+        ? []
+        : [{ ...event, sender, receiver, scopeOwner: event.receiver }]
+    }
+    return [{ ...event, owner: project(event.owner), scopeOwner: event.owner }]
+  })
 }

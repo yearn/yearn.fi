@@ -21,6 +21,7 @@ There is no standalone Bun API mirror and no catch-all pathname dispatcher. Loca
 | `/api/holdings/activity-facets` | `GET` | Next Node | Chain facets for holdings activity filters |
 | `/api/holdings/protocol-return/history` | `GET` | Next Node | Protocol-return history for vault exposure |
 | `/api/holdings/portfolio` | `GET` | Next Node | Combined balance, protocol-return, and growth history |
+| `/api/holdings/bundle-growth` | `POST` | Next Node | Protocol-return history and per-vault growth for a set of wallet addresses |
 | `/api/admin/invalidate-cache` | `POST` | Next Node | Lazy vault cache invalidation, admin-protected |
 | `/sitemap.xml` | `GET` | Next Node | XML sitemap for public pages and vault detail URLs |
 | `/api/sitemap` | `GET` | Next Node | Compatibility alias for the sitemap XML response |

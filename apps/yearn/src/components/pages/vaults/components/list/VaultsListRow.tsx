@@ -66,6 +66,7 @@ import Link from 'next/link'
 import { useRouter } from 'next/navigation'
 import type { MouseEvent, ReactElement } from 'react'
 import { lazy, memo, Suspense, useCallback, useEffect, useMemo, useState } from 'react'
+import type { Address } from 'viem'
 import { TokenLogoV2 } from '@/components/shared/components/TokenLogoV2'
 import { env } from '@/env'
 import type { TVaultsExpandedView } from './VaultsExpandedSelector'
@@ -73,9 +74,9 @@ import { VaultsListChip } from './VaultsListChip'
 
 const VaultsListRowExpandedContent = lazy(() => import('./VaultsListRowExpandedContent'))
 
-function ExpandedRowFallback(): ReactElement {
+function ExpandedRowFallback({ showOnMobile }: { showOnMobile: boolean }): ReactElement {
   return (
-    <div className={'hidden md:block bg-surface'}>
+    <div className={cl('bg-surface', showOnMobile ? undefined : 'hidden md:block')}>
       <div className={'px-6 pb-6 pt-3'}>
         <div className={'flex min-h-60 items-center justify-center'}>
           <span className={'loader'} />
@@ -297,9 +298,12 @@ type TVaultsListRowProps = {
 }
 
 type TVaultsListRowPresentationProps = TVaultsListRowProps & {
+  estimatedApyOverride?: number | null
   hasWalletAddress?: boolean
   isWalletLoading?: boolean
-  holdingsValue?: number
+  holdingsValue?: number | null
+  holdingsBreakdown?: ReactElement
+  portfolioWallets?: readonly Address[]
 }
 
 function VaultsListRowPresentationComponent({
@@ -333,9 +337,12 @@ function VaultsListRowPresentationComponent({
   isPortfolioGrowthLoading,
   portfolioGrowth,
   clickEventName = PLAUSIBLE_EVENTS.VAULT_CLICK_LIST_ROW,
+  estimatedApyOverride,
   hasWalletAddress = false,
   isWalletLoading = false,
-  holdingsValue: resolvedHoldingsValue = 0
+  holdingsValue: resolvedHoldingsValue = 0,
+  holdingsBreakdown,
+  portfolioWallets
 }: TVaultsListRowPresentationProps): ReactElement {
   const router = useRouter()
   const trackEvent = usePlausible()
@@ -420,6 +427,12 @@ function VaultsListRowPresentationComponent({
     yvUsdPositionApy?.blendedApy === null || yvUsdPositionApy?.blendedApy === undefined
       ? '—'
       : formatApyDisplay(yvUsdPositionApy.blendedApy)
+  const estimatedApyOverrideValue =
+    estimatedApyOverride === undefined ? null : (
+      <b className="yearn--table-data-section-item-value font-semibold text-lg text-text-primary md:text-base">
+        {estimatedApyOverride === null ? '—' : formatApyDisplay(estimatedApyOverride)}
+      </b>
+    )
 
   const yvUsdTvlTooltip = resolvedYvUsdMetrics ? (
     <YvUsdTvlTooltipContent
@@ -632,7 +645,8 @@ function VaultsListRowPresentationComponent({
           handleExpandedChange(!isExpanded)
         }}
         className={cl(
-          'absolute top-6.5 right-5 z-20 hidden md:flex size-9 items-center justify-center rounded-full border border-white/30 bg-app text-text-secondary transition-colors duration-150',
+          'absolute z-20 size-9 items-center justify-center rounded-full border border-white/30 bg-app text-text-secondary transition-colors duration-150',
+          holdingsBreakdown ? 'top-3 right-4 flex md:top-6.5 md:right-5' : 'top-6.5 right-5 hidden md:flex',
           'hover:text-text-primary focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-blue-400'
         )}
       >
@@ -762,9 +776,10 @@ function VaultsListRowPresentationComponent({
             <div className={'min-w-0 flex-1'}>
               <strong
                 title={vaultName}
-                className={
-                  'block truncate-safe whitespace-nowrap font-black text-text-primary md:mb-0 text-lg leading-tight'
-                }
+                className={cl(
+                  'block truncate-safe whitespace-nowrap font-black text-text-primary md:mb-0 text-lg leading-tight',
+                  holdingsBreakdown ? 'max-md:mr-9' : undefined
+                )}
               >
                 {getVaultName(currentVault)}
               </strong>
@@ -889,7 +904,7 @@ function VaultsListRowPresentationComponent({
                     aria-label={'Holdings'}
                   >
                     <span className={'flex size-4 items-center justify-center text-primary'}>{holdingsIcon}</span>
-                    {formatTvlDisplay(holdingsValue, holdingsFormatOptions)}
+                    {holdingsValue === null ? 'Unavailable' : formatTvlDisplay(holdingsValue, holdingsFormatOptions)}
                   </span>
                 ) : null}
               </div>
@@ -899,7 +914,9 @@ function VaultsListRowPresentationComponent({
             <div className={'grid w-full grid-cols-2 gap-2 text-sm text-text-secondary'}>
               <div className={'flex items-center justify-center gap-2 whitespace-nowrap'}>
                 <span className={'text-text-primary/60'}>{'Est. APY:'}</span>
-                {yvUsdPositionApy ? (
+                {estimatedApyOverrideValue ? (
+                  estimatedApyOverrideValue
+                ) : yvUsdPositionApy ? (
                   <Tooltip
                     className={'apy-subline-tooltip gap-0 h-auto md:justify-end'}
                     openDelayMs={150}
@@ -978,7 +995,11 @@ function VaultsListRowPresentationComponent({
                 </span>
                 {mobileSecondaryMetric === 'holdings' ? (
                   <span className={'text-lg font-semibold text-text-primary'}>
-                    {showHoldingsValue ? formatTvlDisplay(holdingsValue, holdingsFormatOptions) : '—'}
+                    {holdingsValue === null
+                      ? 'Unavailable'
+                      : showHoldingsValue
+                        ? formatTvlDisplay(holdingsValue, holdingsFormatOptions)
+                        : '—'}
                   </span>
                 ) : (
                   renderMobileTvl()
@@ -1012,7 +1033,9 @@ function VaultsListRowPresentationComponent({
           className={cl(rightColumnSpan, 'z-10 gap-4 mt-4', 'hidden md:mt-0 md:grid md:items-center', rightGridColumns)}
         >
           <div className={cl('yearn--table-data-section-item', apyColumnSpan)} datatype={'number'}>
-            {yvUsdPositionApy ? (
+            {estimatedApyOverrideValue ? (
+              estimatedApyOverrideValue
+            ) : yvUsdPositionApy ? (
               <div
                 className={'flex justify-end text-right'}
                 onMouseEnter={() => handleInteractiveHoverChange(true)}
@@ -1138,14 +1161,24 @@ function VaultsListRowPresentationComponent({
           {!showHoldingsColumn ? <div className={'col-span-1'} /> : null}
           {showHoldingsColumn ? (
             <div className={cl('yearn--table-data-section-item', holdingsColumnSpan)} datatype={'number'}>
-              <VaultHoldingsAmount value={holdingsValue} formatOptions={holdingsFormatOptions} />
+              {holdingsValue === null ? (
+                <span className="yearn--table-data-section-item-value font-semibold text-text-secondary">
+                  Unavailable
+                </span>
+              ) : holdingsBreakdown ? (
+                <span className="yearn--table-data-section-item-value font-semibold text-text-primary">
+                  {formatTvlDisplay(holdingsValue, holdingsFormatOptions)}
+                </span>
+              ) : (
+                <VaultHoldingsAmount value={holdingsValue} formatOptions={holdingsFormatOptions} />
+              )}
             </div>
           ) : null}
         </div>
       </Link>
 
       {isExpanded ? (
-        <Suspense fallback={<ExpandedRowFallback />}>
+        <Suspense fallback={<ExpandedRowFallback showOnMobile={Boolean(portfolioWallets)} />}>
           <VaultsListRowExpandedContent
             currentVault={currentVault}
             expandedView={expandedView}
@@ -1159,9 +1192,11 @@ function VaultsListRowPresentationComponent({
             apyDisplayVariant={apyDisplayVariant}
             showBoostDetails={showBoostDetails}
             expandedApyTooltip={isYvUsd ? (yvUsdPositionApyTooltip ?? yvUsdApyTooltip) : undefined}
+            portfolioWallets={portfolioWallets}
           />
         </Suspense>
       ) : null}
+      {isExpanded ? holdingsBreakdown : null}
     </div>
   )
 }

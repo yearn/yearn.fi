@@ -1,8 +1,10 @@
 import { formatUnits } from 'viem'
+import { getBundleGrowthIdentity, loadBundleGrowthContext } from '@/server/lib/holdings/services/bundleGrowthContext'
 import { normalizeTokenDecimals } from '@/server/lib/holdings/services/pnlShared'
 import { selectProtocolReturnFamilySeriesCandidates } from '@/server/lib/holdings/services/protocolReturnFamilySeries'
 import { holdingsConfig } from '../config'
 import type { VaultMetadata } from '../types'
+import { getHistoricalHoldingsChart } from './aggregator'
 import {
   type CachedProtocolReturnHistory,
   getCachedProtocolReturnHistorySnapshot,
@@ -35,7 +37,7 @@ import {
   resolveNestedVaultValuation,
   type TNestedVaultValuation
 } from './nestedVaultPrices'
-import { mergeAddressScopedRawPnlEventsWithTransactionActivity } from './pnlEvents'
+import { mergeAddressScopedRawPnlEventsWithTransactionActivity, projectBundleGrowthEvents } from './pnlEvents'
 import { lowerCaseAddress, toVaultKey, ZERO } from './pnlShared'
 import type { TRawPnlEvent } from './pnlTypes'
 import {
@@ -51,6 +53,7 @@ import {
   getVaultIdentifiers,
   resolveSettledAddressScopedContext,
   selectEvents,
+  type TSettledAddressScopedContext,
   type TSettledAddressScopedContextSource
 } from './settledHoldingsContext'
 import { getStakingVaultAddress } from './staking'
@@ -1556,30 +1559,27 @@ function buildEffectiveSimpleFamilyEvents(txFamilyEvents: TRawPnlEvent[], userAd
       lowerCaseAddress(event.owner) === normalizedUserAddress &&
       lowerCaseAddress(event.vaultAddress) === lowerCaseAddress(firstEvent.familyVaultAddress)
   )
-  const matchedSameTxTransferInWithdrawalShares = minBigInt(
-    addressScopedTransferIns.reduce((total, event) => total + event.shares, ZERO),
-    addressScopedWithdrawals.reduce((total, event) => total + event.shares, ZERO)
-  )
-
-  addressEvents = stripMatchedShares(
-    addressEvents,
-    (event) =>
-      event.kind === 'transfer' &&
-      lowerCaseAddress(event.sender) !== ZERO_ADDRESS &&
-      lowerCaseAddress(event.sender) !== normalizedUserAddress &&
-      lowerCaseAddress(event.receiver) === normalizedUserAddress &&
-      lowerCaseAddress(event.vaultAddress) === lowerCaseAddress(firstEvent.familyVaultAddress),
-    matchedSameTxTransferInWithdrawalShares
-  )
-  addressEvents = stripMatchedShares(
-    addressEvents,
-    (event) =>
-      event.kind === 'withdrawal' &&
-      !event.isStakingVault &&
-      lowerCaseAddress(event.owner) === normalizedUserAddress &&
-      lowerCaseAddress(event.vaultAddress) === lowerCaseAddress(firstEvent.familyVaultAddress),
-    matchedSameTxTransferInWithdrawalShares
-  )
+  // Same-transaction reconciliation pairs receipts and withdrawals belonging to the same wallet.
+  new Set(addressScopedTransferIns.map((event) => event.scopeOwner)).forEach((owner) => {
+    const transfers = addressScopedTransferIns.filter((event) => event.scopeOwner === owner)
+    const withdrawals = addressScopedWithdrawals.filter((event) => event.scopeOwner === owner)
+    const matchedShares = minBigInt(
+      transfers.reduce((total, event) => total + event.shares, ZERO),
+      withdrawals.reduce((total, event) => total + event.shares, ZERO)
+    )
+    const transferIds = new Set(transfers.map((event) => event.id))
+    const withdrawalIds = new Set(withdrawals.map((event) => event.id))
+    addressEvents = stripMatchedShares(
+      addressEvents,
+      (event) => event.kind === 'transfer' && transferIds.has(event.id),
+      matchedShares
+    )
+    addressEvents = stripMatchedShares(
+      addressEvents,
+      (event) => event.kind === 'withdrawal' && withdrawalIds.has(event.id),
+      matchedShares
+    )
+  })
 
   const addressScopedTransferOuts = addressEvents.filter(
     (event): event is Extract<TRawPnlEvent, { kind: 'transfer' }> =>
@@ -2873,7 +2873,8 @@ async function calculateHoldingsProtocolReturnHistory(
   timeframe: '1y' | 'all' = '1y',
   requestedVaultFilters?: Array<{ chainId: number; vaultAddress: string }>,
   settledAddressContext?: TSettledAddressScopedContextSource,
-  cached?: CachedProtocolReturnHistory<HoldingsProtocolReturnPortfolioResponse> | null
+  cached?: CachedProtocolReturnHistory<HoldingsProtocolReturnPortfolioResponse> | null,
+  bundleMembers?: ReadonlySet<string>
 ): Promise<TProtocolReturnHistoryCalculation> {
   debugLog('protocol-return-history', 'starting holdings protocol return history calculation', {
     timeframe
@@ -2906,7 +2907,10 @@ async function calculateHoldingsProtocolReturnHistory(
     maxTimestamp: baseContext.maxTimestamp
   })
   reportHoldingsProgress(40, 'Enriched historical wallet events', `${rawEvents.length} events`)
-  const settledEvents = rawEvents.filter((event) => event.blockTimestamp <= baseContext.maxTimestamp)
+  const effectiveRawEvents = bundleMembers
+    ? projectBundleGrowthEvents(rawEvents, bundleMembers, userAddress)
+    : rawEvents
+  const settledEvents = effectiveRawEvents.filter((event) => event.blockTimestamp <= baseContext.maxTimestamp)
   const timestamps = getProtocolReturnTimestamps(settledEvents, timeframe)
   const latestTimestamp = timestamps[timestamps.length - 1] ?? baseContext.maxTimestamp
   const filteredVaultIdentifiers = filterVaultIdentifiersByRequestedVaults(
@@ -3167,7 +3171,8 @@ export async function getHoldingsProtocolReturnPortfolio(
   userAddress: string,
   timeframe: '1y' | 'all' = '1y',
   requestedVaultFilters?: Array<{ chainId: number; vaultAddress: string }>,
-  settledAddressContext?: TSettledAddressScopedContextSource
+  settledAddressContext?: TSettledAddressScopedContextSource,
+  bundleMembers?: ReadonlySet<string>
 ): Promise<HoldingsProtocolReturnPortfolioResponse> {
   const requestedVaults = normalizeProtocolReturnVaultFilters(requestedVaultFilters)
   const cacheIdentity = getProtocolReturnHistoryCacheIdentity({
@@ -3224,7 +3229,8 @@ export async function getHoldingsProtocolReturnPortfolio(
       timeframe,
       requestedVaultFilters,
       settledAddressContext,
-      cached
+      cached,
+      bundleMembers
     )
 
     const compactProtocolReturn = {
@@ -3269,6 +3275,46 @@ export async function getHoldingsProtocolReturnPortfolio(
     subscribe: progressBroadcaster.subscribe
   })
   return request
+}
+
+export async function getHoldingsBundleGrowth(
+  addresses: string[],
+  timeframe: '1y' | 'all',
+  vault?: TProtocolReturnVaultFilter & { valueMode: 'underlying' | 'usd' }
+): Promise<HoldingsProtocolReturnPortfolioResponse & { balanceData?: Array<{ date: string; value: number | null }> }> {
+  const members = [...new Set(addresses.map(lowerCaseAddress))].sort()
+  const first = members[0]
+  if (!first) throw new Error('Bundle growth requires a wallet.')
+  const isBundle = members.length > 1
+  const identity = isBundle ? getBundleGrowthIdentity(members) : first
+  const requestedVaults = vault
+    ? [{ chainId: vault.chainId, vaultAddress: lowerCaseAddress(vault.vaultAddress) }]
+    : undefined
+  const context: { promise?: Promise<TSettledAddressScopedContext> } = {}
+  const loadContext = () =>
+    (context.promise ??= isBundle
+      ? loadBundleGrowthContext(members, identity)
+      : getSettledAddressScopedContext({ userAddress: first }))
+  const growth = getHoldingsProtocolReturnPortfolio(
+    identity,
+    timeframe,
+    requestedVaults,
+    isBundle || vault?.valueMode === 'usd' ? loadContext : undefined,
+    isBundle ? new Set(members) : undefined
+  )
+  if (vault?.valueMode !== 'usd') return growth
+
+  const [result, balances] = await Promise.all([
+    growth,
+    getHistoricalHoldingsChart(identity, 'usd', timeframe, requestedVaults, loadContext, undefined, true)
+  ])
+  return {
+    ...result,
+    balanceData: balances.dataPoints.map(({ date, value, coverage }) => ({
+      date,
+      value: coverage === 'complete' ? value : null
+    }))
+  }
 }
 
 export async function getHoldingsProtocolReturnHistory(

@@ -23,6 +23,7 @@ import {
 } from '@pages/vaults/domain/kongVaultSelectors'
 import { useVaultApyData } from '@pages/vaults/hooks/useVaultApyData'
 import { useVaultSnapshot } from '@pages/vaults/hooks/useVaultSnapshot'
+import type { TSavedVaultPosition } from '@pages/vaults/hooks/useVaultUserHistory'
 import { getVaultUserHistoryVaults } from '@pages/vaults/utils/vaultUserHistoryVaults'
 import { isYvUsdAddress, YVUSD_LOCKED_ADDRESS, YVUSD_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvUsd'
 import {
@@ -33,11 +34,12 @@ import {
   useDarkMode
 } from '@shared/components/AllocationChart'
 import { useYearn } from '@shared/contexts/useYearn'
-import { formatCounterValue, toAddress, toBigInt, toNormalizedBN } from '@shared/utils'
+import { cl, formatCounterValue, toAddress, toBigInt, toNormalizedBN } from '@shared/utils'
 import { PLAUSIBLE_EVENTS } from '@shared/utils/plausible'
 import type { TKongVaultSnapshot } from '@shared/utils/schemas/kongVaultSnapshotSchema'
 import type { MouseEvent, ReactElement, ReactNode } from 'react'
 import { cloneElement, isValidElement, useMemo } from 'react'
+import type { Address } from 'viem'
 import { type TVaultsExpandedView, VaultsExpandedSelector } from './VaultsExpandedSelector'
 
 const EXPANDED_VIEW_TO_CHART_TAB: Record<
@@ -68,6 +70,7 @@ type TVaultsListRowExpandedContentProps = {
   apyDisplayVariant?: TVaultForwardAPYVariant
   showBoostDetails?: boolean
   expandedApyTooltip?: ReactNode
+  portfolioWallets?: readonly Address[]
 }
 
 export default function VaultsListRowExpandedContent({
@@ -82,12 +85,16 @@ export default function VaultsListRowExpandedContent({
   chartVariant = 'default',
   apyDisplayVariant = 'default',
   showBoostDetails = true,
-  expandedApyTooltip
+  expandedApyTooltip,
+  portfolioWallets
 }: TVaultsListRowExpandedContentProps): ReactElement {
   const trackEvent = usePlausible()
   const chartTimeframe: TVaultChartTimeframe = '1y'
   const chainID = getVaultChainID(currentVault)
   const vaultAddress = getVaultAddress(currentVault)
+  const savedPosition: TSavedVaultPosition | undefined = portfolioWallets
+    ? { vault: { chainId: chainID, vaultAddress }, wallets: portfolioWallets }
+    : undefined
   const { data: snapshotVault } = useVaultSnapshot({
     chainId: chainID,
     address: vaultAddress
@@ -180,10 +187,10 @@ export default function VaultsListRowExpandedContent({
   }
 
   return (
-    <div className={'hidden md:block bg-surface'} data-tour="vaults-row-expanded">
-      <div className={'px-6 pb-6 md'}>
+    <div className={cl('bg-surface', savedPosition ? undefined : 'hidden md:block')} data-tour="vaults-row-expanded">
+      <div className={'px-4 pb-4 md:px-6 md:pb-6'}>
         <div className={'grid gap-6 md:grid-cols-24'}>
-          <div className={'col-span-12 border-r border-border'}>
+          <div className={'min-w-0 md:col-span-12 md:border-r md:border-border'}>
             <VaultAboutSection
               currentVault={snapshotMergedVault}
               className={'md:pl-16 md:pr-15 md:pb-2'}
@@ -195,11 +202,12 @@ export default function VaultsListRowExpandedContent({
               isHidden={isHidden}
             />
           </div>
-          <div className={'col-span-12 flex flex-col gap-4'} data-tour="vaults-row-expanded-strategy">
+          <div className={'flex min-w-0 flex-col gap-4 md:col-span-12'} data-tour="vaults-row-expanded-strategy">
             <VaultsExpandedSelector
               activeView={expandedView}
               onViewChange={onExpandedViewChange}
               viewOptions={viewOptions}
+              className={savedPosition ? 'max-sm:flex-col' : undefined}
               rightElement={
                 <button
                   type={'button'}
@@ -221,6 +229,7 @@ export default function VaultsListRowExpandedContent({
                   chartHeightPx={200}
                   chartHeightMdPx={200}
                   enableUserPositionChart={shouldUsePortfolioUserTvlOverlay}
+                  savedPosition={savedPosition}
                 />
               ) : (
                 <VaultChartsSection
@@ -235,6 +244,7 @@ export default function VaultsListRowExpandedContent({
                   userUnitLabel={snapshotMergedVault.token?.symbol || snapshotMergedVault.symbol || 'assets'}
                   overlayUserPositionOnTvlTab={shouldUsePortfolioUserTvlOverlay}
                   userHistoryVaults={vaultUserHistoryVaults}
+                  savedPosition={savedPosition}
                 />
               )
             ) : (

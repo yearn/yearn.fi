@@ -13,9 +13,10 @@ type TRewardRowProps = {
   amount: string
   usdValue: number
   usdValueUnavailable?: boolean
-  onClaim: () => void
-  isClaimPending: boolean
-  isClaimReady: boolean
+  onClaim?: () => void
+  onConnect?: () => void
+  isClaimPending?: boolean
+  isClaimReady?: boolean
   isFirst?: boolean
   isAllChainsView?: boolean
   onSwitchChain?: () => void
@@ -36,6 +37,7 @@ export function RewardRow(props: TRewardRowProps): ReactElement {
     usdValue,
     usdValueUnavailable,
     onClaim,
+    onConnect,
     isClaimPending,
     isClaimReady,
     isFirst,
@@ -71,17 +73,20 @@ export function RewardRow(props: TRewardRowProps): ReactElement {
           </div>
         </div>
 
-        <div className="w-full md:w-auto md:shrink-0">
-          <Button
-            onClick={showSwitchChainButton ? onSwitchChain : onClaim}
-            isDisabled={!showSwitchChainButton && !canClaim}
-            isBusy={isClaimPending}
-            variant={buttonVariant}
-            classNameOverride={cl('yearn--button--nextgen w-full md:w-auto', claimButtonClassName)}
-          >
-            {showSwitchChainButton ? 'Switch Chain' : 'Claim'}
-          </Button>
-        </div>
+        {onClaim || onConnect ? (
+          <div className="w-full md:w-auto md:shrink-0">
+            <Button
+              onClick={onConnect ?? (showSwitchChainButton ? onSwitchChain : onClaim)}
+              data-wallet-entry={onConnect ? 'portfolio' : undefined}
+              isDisabled={!onConnect && !showSwitchChainButton && !canClaim}
+              isBusy={isClaimPending}
+              variant={buttonVariant}
+              classNameOverride={cl('yearn--button--nextgen w-full md:w-auto', claimButtonClassName)}
+            >
+              {onConnect ? 'Connect wallet' : showSwitchChainButton ? 'Switch Chain' : 'Claim'}
+            </Button>
+          </div>
+        ) : null}
       </div>
     </div>
   )

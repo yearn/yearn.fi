@@ -6,16 +6,16 @@ import { debugError, debugLog } from './debug'
 export interface CachedTotal {
   date: string
   usdValue: number
+  verified?: true
 }
 
 interface CachedTotalPayload {
   usdValue: number
   updatedAt: number
+  verified?: true
 }
 
-interface ParsedCachedTotal {
-  date: string
-  usdValue: number
+interface ParsedCachedTotal extends CachedTotal {
   updatedAt: Date
 }
 
@@ -165,7 +165,7 @@ function parseCachedTotalPayload(value: unknown): CachedTotalPayload | null {
     return null
   }
 
-  return { usdValue, updatedAt }
+  return { usdValue, updatedAt, ...(payload.verified === true ? { verified: true as const } : {}) }
 }
 
 function parseVaultIdentifier(value: unknown): VaultIdentifier | null {
@@ -226,7 +226,8 @@ function parseCachedTotalsByDate(
         ? {
             date,
             usdValue: payload.usdValue,
-            updatedAt: new Date(payload.updatedAt)
+            updatedAt: new Date(payload.updatedAt),
+            ...(payload.verified ? { verified: payload.verified } : {})
           }
         : null
     })
@@ -258,7 +259,8 @@ export async function saveCachedTotals(userAddress: string, totals: CachedTotal[
         total.date,
         JSON.stringify({
           usdValue: total.usdValue,
-          updatedAt
+          updatedAt,
+          ...(total.verified ? { verified: total.verified } : {})
         } satisfies CachedTotalPayload)
       ])
     )
@@ -535,10 +537,7 @@ export async function getCachedTotalsWithTimestamp(
     })
     const valuesByDate = await redis.hgetall<Record<string, unknown>>(getTotalsKey(userAddressHash))
     const parsedTotals = parseCachedTotalsByDate(valuesByDate, startDate, endDate)
-    const totals = parsedTotals.map((total) => ({
-      date: total.date,
-      usdValue: total.usdValue
-    }))
+    const totals = parsedTotals.map(({ updatedAt: _updatedAt, ...total }) => total)
     const oldestUpdatedAt =
       parsedTotals.length > 0
         ? parsedTotals.reduce(

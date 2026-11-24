@@ -1,7 +1,13 @@
+import {
+  getBundleActivityPage,
+  initialBundleActivityCursor,
+  mapActivityWallets
+} from '@pages/portfolio/hooks/bundleActivity'
 import { useWeb3 } from '@shared/contexts/useWeb3'
 import { fetchWithSchema } from '@shared/hooks/useFetch'
 import { useInfiniteQuery, useQuery } from '@tanstack/react-query'
 import { useMemo } from 'react'
+import type { Address } from 'viem'
 import {
   portfolioActivityFacetsResponseSchema,
   portfolioActivityResponseSchema,
@@ -19,9 +25,17 @@ type TPortfolioActivityFilters = {
 const MAX_ACTIVITY_RETRIES = 3
 const DEFAULT_ACTIVITY_RETRY_DELAY = 1000
 
-export function usePortfolioActivity(limit = 10, enabled = true, filters: TPortfolioActivityFilters = {}) {
+export function usePortfolioActivity(
+  limit = 10,
+  enabled = true,
+  filters: TPortfolioActivityFilters = {},
+  savedWallets?: readonly Address[]
+) {
   const { address } = useWeb3()
-  const isEnabled = Boolean(address) && enabled
+  const wallets = useMemo(() => savedWallets?.toSorted() ?? (address ? [address] : []), [address, savedWallets])
+  const isEnabled = wallets.length > 0 && enabled
+  const initialPageParam: number | ReturnType<typeof initialBundleActivityCursor> =
+    wallets.length > 1 ? initialBundleActivityCursor(wallets) : 0
   const type = filters.type ?? 'all'
   const chainId = filters.chainId ?? null
   const startTimestamp = filters.startTimestamp ?? null
@@ -54,34 +68,34 @@ export function usePortfolioActivity(limit = 10, enabled = true, filters: TPortf
   }
 
   const query = useInfiniteQuery({
-    queryKey: ['portfolio-activity', address, limit, type, chainId, startTimestamp, endTimestamp],
+    queryKey: ['portfolio-activity', wallets, limit, type, chainId, startTimestamp, endTimestamp],
     enabled: isEnabled,
-    initialPageParam: 0,
-    queryFn: ({ pageParam }) => {
-      const params = new URLSearchParams({
-        address: address ?? '',
-        limit: String(limit),
-        offset: String(Number(pageParam) || 0),
-        type
-      })
+    initialPageParam,
+    queryFn: async ({ pageParam, signal }) => {
+      async function fetchPage(wallet: Address, offset: number) {
+        signal.throwIfAborted()
+        const params = new URLSearchParams({ address: wallet, limit: String(limit), offset: String(offset), type })
 
-      if (chainId !== null) {
-        params.set('chainId', String(chainId))
+        if (chainId !== null) params.set('chainId', String(chainId))
+        if (startTimestamp !== null) params.set('startTimestamp', String(startTimestamp))
+        if (endTimestamp !== null) params.set('endTimestamp', String(endTimestamp))
+
+        const page = await fetchWithSchema(`/api/holdings/activity?${params}`, portfolioActivityResponseSchema, {
+          timeout: 30 * 1000
+        })
+        if (page.address.toLowerCase() !== wallet.toLowerCase())
+          throw new Error('Activity scope did not match the wallet.')
+        return page
       }
 
-      if (startTimestamp !== null) {
-        params.set('startTimestamp', String(startTimestamp))
-      }
+      if (typeof pageParam !== 'number') return getBundleActivityPage(pageParam, limit, fetchPage)
 
-      if (endTimestamp !== null) {
-        params.set('endTimestamp', String(endTimestamp))
-      }
-
-      return fetchWithSchema(`/api/holdings/activity?${params}`, portfolioActivityResponseSchema, {
-        timeout: 30 * 1000
-      })
+      const wallet = wallets[0]
+      if (!wallet) throw new Error('No wallet selected.')
+      const page = await fetchPage(wallet, pageParam)
+      return { entries: page.entries, nextPage: page.pageInfo.nextOffset ?? undefined }
     },
-    getNextPageParam: (lastPage) => lastPage.pageInfo.nextOffset ?? undefined,
+    getNextPageParam: (lastPage) => lastPage.nextPage,
     staleTime: 60 * 1000,
     refetchOnWindowFocus: false,
     retry: shouldRetryActivityRequest,
@@ -89,14 +103,17 @@ export function usePortfolioActivity(limit = 10, enabled = true, filters: TPortf
   })
 
   const facetsQuery = useQuery({
-    queryKey: ['portfolio-activity-facets', address],
+    queryKey: ['portfolio-activity-facets', wallets],
     enabled: isEnabled && shouldFetchFacets,
-    queryFn: () => {
-      const params = new URLSearchParams({ address: address ?? '' })
-
-      return fetchWithSchema(`/api/holdings/activity-facets?${params}`, portfolioActivityFacetsResponseSchema, {
-        timeout: 30 * 1000
+    queryFn: async ({ signal }) => {
+      const facets = await mapActivityWallets(wallets, (wallet) => {
+        signal.throwIfAborted()
+        const params = new URLSearchParams({ address: wallet })
+        return fetchWithSchema(`/api/holdings/activity-facets?${params}`, portfolioActivityFacetsResponseSchema, {
+          timeout: 30 * 1000
+        })
       })
+      return [...new Set(facets.flatMap(({ facets }) => facets.chainIds))].sort((a, b) => a - b)
     },
     staleTime: 5 * 60 * 1000,
     refetchOnWindowFocus: false,
@@ -109,7 +126,7 @@ export function usePortfolioActivity(limit = 10, enabled = true, filters: TPortf
     [query.data]
   )
   const availableChainIds = useMemo(() => {
-    const facetChainIds = facetsQuery.data?.facets.chainIds
+    const facetChainIds = facetsQuery.data
 
     if (facetChainIds) {
       return facetChainIds
@@ -122,7 +139,7 @@ export function usePortfolioActivity(limit = 10, enabled = true, filters: TPortf
       : null
   }, [entries, facetsQuery.data, query.data, shouldFetchFacets])
   const isInitialLoading = query.isLoading || (query.isFetching && entries.length === 0)
-  const isEmpty = !isInitialLoading && !query.error && Boolean(address) && entries.length === 0
+  const isEmpty = isEnabled && !isInitialLoading && !query.error && entries.length === 0
   const error = query.error instanceof Error ? query.error : query.error ? new Error('Failed to fetch activity') : null
 
   return {

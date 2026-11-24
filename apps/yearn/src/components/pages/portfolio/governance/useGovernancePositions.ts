@@ -262,10 +262,10 @@ function getYfiPriceFromGlobalData(globalData: TGovernanceGlobalData | null | un
   return Number.isFinite(parsed) ? parsed / 100 : 0
 }
 
-export function useGovernancePositions(enabled: boolean): TUseGovernancePositionsReturn {
+export function useGovernancePositions(enabled: boolean, wallet?: TAddress): TUseGovernancePositionsReturn {
   const { address } = useWeb3()
   const { allVaults } = useYearn()
-  const account = address ? toAddress(address) : undefined
+  const account = wallet ? toAddress(wallet) : address ? toAddress(address) : undefined
   const governanceRewardVault = allVaults[YVUSDC_REWARD_ADDRESS]
   const publicClient = usePublicClient({ chainId: GOVERNANCE_CHAIN_ID })
   const rawQuery = useQuery({
