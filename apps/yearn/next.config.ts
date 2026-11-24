@@ -130,7 +130,6 @@ const nextConfig: NextConfig = {
       { source: '/v2', destination: '/vaults?type=lp', permanent: false },
       { source: '/v2/:path*', destination: '/vaults?type=lp', permanent: false },
       { source: '/v3', destination: '/vaults', permanent: false },
-      { source: '/ybribe/:path*', destination: 'https://ybribe.yearn.fi/:path*', permanent: false },
       { source: '/ycrv/:path*', destination: 'https://ycrv.yearn.fi/:path*', permanent: false },
       { source: '/veyfi/:path*', destination: 'https://veyfi.yearn.fi/:path*', permanent: false },
       { source: '/twitter', destination: 'https://twitter.com/yearnfi', permanent: false },
