@@ -68,6 +68,7 @@
       "**",
       "!**/dist",
       "!**/build",
+      "!output/playwright",
       "!**/node_modules",
       "!**/.next",
       "!.codex",
