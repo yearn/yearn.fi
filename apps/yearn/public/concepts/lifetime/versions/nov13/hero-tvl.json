@@ -12,9 +12,7 @@
     "asOfTimestamp": 1793750399,
     "totalTvlUsd": 171537470.2521514,
     "completeness": {
-      "issues": [
-        "ValueError"
-      ],
+      "issues": ["ValueError"],
       "scope": "network",
       "status": "incomplete",
       "totals": "known-subtotals",
