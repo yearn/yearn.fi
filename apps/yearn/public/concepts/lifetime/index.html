@@ -8,8 +8,8 @@
     <title>Yearn | Curating Vaults since 2020</title>
     <meta name="description" content="A new Yearn landing concept. Years of yield. One simple idea." />
     <link rel="icon" href="/favicons/favicon-32x32.png" />
-    <link rel="stylesheet" href="/concepts/lifetime/style.css?v=final-view-142" />
-    <script src="/concepts/lifetime/concept.js?v=final-view-142" type="module"></script>
+    <link rel="stylesheet" href="/concepts/lifetime/style.css?v=asked-answered" />
+    <script src="/concepts/lifetime/concept.js?v=asked-answered" type="module"></script>
   </head>
   <body>
     <a class="skip" href="#main">Skip to content</a>
@@ -32,23 +32,70 @@
     </dialog>
     <main id="main">
       <div class="hero-stage">
-        <div class="hero-stats-stop" aria-hidden="true"></div>
-      <section class="hero" aria-labelledby="earnings-label">
+      <section class="hero" aria-labelledby="hero-headline">
         <div class="hero-main">
-          <div class="counter" role="img" aria-label="Loading estimated total value locked"><span class="currency" aria-hidden="true">$</span><span id="earnings" aria-hidden="true"><span id="earnings-whole">—</span><span id="earnings-decimals" class="counter-decimals"></span></span></div>
-          <h1 id="earnings-label" class="counter-caption">Currently deposited, and growing.</h1>
-          <a class="tagline secondary-button" id="tagline" href="https://yearn.fi/vaults"><span>Deposit once. Earn forever.</span><span class="tagline-arrow" aria-hidden="true">→</span><svg class="hero-outline" aria-hidden="true" focusable="false"><defs id="hero-outline-gradients"></defs><g class="hero-outline-stroke"></g></svg></a>
+          <h1 id="hero-headline" class="hero-promise">We do our best to keep your funds <strong>liquid, secure, and earning the best possible yield.</strong></h1>
+          <figure class="hero-tvl">
+            <div class="counter" role="img" aria-label="Loading estimated total value locked"><span class="currency" aria-hidden="true">$</span><span id="earnings" aria-hidden="true"><span id="earnings-whole">—</span><span id="earnings-decimals" class="counter-decimals"></span></span></div>
+            <figcaption>Managed by <span class="yearn-word"><img src="/concepts/lifetime/navigation/YearnWordmark.svg" alt="Yearn" /></span> and counting</figcaption>
+          </figure>
+          <a class="tagline secondary-button" id="tagline" href="https://yearn.fi/vaults"><span>Explore vaults</span><span class="tagline-arrow" aria-hidden="true">→</span><svg class="hero-outline" aria-hidden="true" focusable="false"><defs id="hero-outline-gradients"></defs><g class="hero-outline-stroke"></g></svg></a>
         </div>
-        <div class="hero-bottom"><a class="scroll-link" href="#capital" aria-label="Scroll to Yearn statistics"><span aria-hidden="true">↓</span><span class="sr-only">Scroll to <span class="yearn-word"><img src="/concepts/lifetime/navigation/YearnWordmark.svg" alt="Yearn" /></span> statistics</span></a></div>
-        <dl class="statistics-grid hero-statistics" id="capital" aria-label="Yearn statistics" inert>
-          <div class="stat" id="assets-secured"><dt>Total assets secured</dt><dd id="assets-secured-value">—</dd><dd class="stat-detail">Across Yearn vaults and partner contracts</dd></div>
-          <div class="stat"><dt>Total yield earned</dt><dd id="yield-earned">—</dd><dd class="stat-detail">Lifetime reported earnings</dd></div>
-          <div class="stat"><dt>Vaults deployed</dt><dd id="vaults-deployed">—</dd><dd class="stat-detail">Indexed V2 + V3 vaults</dd></div>
-          <div class="stat"><dt>Harvests</dt><dd id="harvest-count">—</dd><dd class="stat-detail">Recorded across V2 + V3 vaults</dd></div>
-        </dl>
+        <div class="hero-bottom"><a class="scroll-link" href="#how-we-work" aria-label="How Yearn manages vaults"><span aria-hidden="true">↓</span></a></div>
       </section>
       </div>
-      <section class="partners-section" aria-label="Teams building with Yearn">
+      <section class="vault-method" id="how-we-work" aria-label="How Yearn manages vaults">
+        <div class="vault-method-steps">
+          <div class="vault-method-track" aria-hidden="true"><span class="vault-method-dot"></span></div>
+          <div class="vault-method-step">
+            <div class="vault-method-copy">
+              <h2>We allocate</h2>
+              <p>Markets move quickly. Our systems regularly compare yields across approved markets and rebalance when the expected additional earnings justify the gas cost.</p>
+              <p>This keeps the vaults optimized for the best risk-adjusted yield.</p>
+            </div>
+          </div>
+          <div class="vault-method-step vault-method-step--right">
+            <div class="vault-method-copy">
+              <h2>We curate</h2>
+              <p>We choose which markets a vault can use and how much it can allocate to each.</p>
+              <p>Our monitoring tools flag changes that could affect those decisions, from a proposed protocol upgrade to an asset losing its peg, rising bad debt, or a lending market running low on liquidity.</p>
+              <p>Those signals help us decide when to tighten a market’s cap or reduce the vault’s exposure.</p>
+            </div>
+          </div>
+          <div class="vault-method-step">
+            <div class="vault-method-copy">
+              <h2>We automate</h2>
+              <p>Some strategies earn rewards in tokens other than the asset you deposited. Yearn’s compounding strategies collect those rewards, convert them into the vault’s underlying asset, and reinvest the proceeds.</p>
+              <p>Your rewards can then earn alongside your original deposit.</p>
+            </div>
+          </div>
+        </div>
+      </section>
+      <section class="vault-track-record" id="track-record" aria-label="Yearn’s track record">
+        <dl class="track-record-metrics" data-reveal="early">
+          <div>
+            <dt>Total assets secured</dt>
+            <dd title="Preliminary estimate: $369,349,929">$369M</dd>
+            <dd class="stat-detail">Preliminary estimate across vaults and partner contracts</dd>
+          </div>
+          <div>
+            <dt>Vaults deployed</dt>
+            <dd>732</dd>
+            <dd class="stat-detail">Indexed V2 + V3 vaults</dd>
+          </div>
+          <div>
+            <dt>Total yield earned</dt>
+            <dd title="$331,084,603">$331M</dd>
+            <dd class="stat-detail">Lifetime reported earnings</dd>
+          </div>
+          <div>
+            <dt>Harvests</dt>
+            <dd title="97,278">97K</dd>
+            <dd class="stat-detail">Recorded across V2 + V3 vaults</dd>
+          </div>
+        </dl>
+      </section>
+      <section class="partners-section" aria-label="Teams building with Yearn" data-reveal="early">
         <section class="integrations" aria-labelledby="integrations-title">
           <div class="integrations-heading"><h2 id="integrations-title">Teams building with <span class="yearn-word"><img src="/concepts/lifetime/navigation/YearnWordmark.svg" alt="Yearn" /></span></h2></div>
           <section class="integrations-window" aria-label="Teams building with Yearn">
@@ -92,13 +139,11 @@
         </section>
       </section>
       <section class="paths-section" id="your-way" aria-labelledby="paths-title">
-        <div class="paths-heading reveal"><h2 id="paths-title"><span class="yearn-word"><img src="/concepts/lifetime/navigation/YearnWordmark.svg" alt="Yearn" /></span> builds vault infrastructure to last.</h2><p>Whether you are looking to deposit your onchain assets and earn, or you are building a protocol that needs flexible yield generation infrastructure, Yearn is engineered for you.</p></div>
-        <div class="benefits-grid infrastructure-grid" id="build">
-          <article class="reveal"><a class="infrastructure-card" href="https://ethereum.org/developers/docs/standards/tokens/erc-4626/" target="_blank" rel="noopener noreferrer"><h3>Built on tried and true ERC-4626 code</h3><p>A shared standard for tokenized vaults, built on a codebase we helped create.</p><span class="card-read-more">Read more <span aria-hidden="true">→</span></span></a></article>
-          <article class="reveal"><a class="infrastructure-card" href="https://docs.yearn.fi/developers/v3/vault_management" target="_blank" rel="noopener noreferrer"><h3>Verifiable roles and accounting rules</h3><p>Clear permission and accounting rules with consistent code patterns you can verify.</p><span class="card-read-more">Read more <span aria-hidden="true">→</span></span></a></article>
-          <article class="reveal"><a class="infrastructure-card" href="https://github.com/yearn" target="_blank" rel="noopener noreferrer"><h3>Open source. Extendable. Flexible.</h3><p>Inspect the code, extend the foundation, and adapt vault infrastructure to your needs.</p><span class="card-read-more">Read more <span aria-hidden="true">→</span></span></a></article>
+        <div class="paths-heading reveal"><h2 id="paths-title"><span class="yearn-word"><img src="/concepts/lifetime/navigation/YearnWordmark.svg" alt="Yearn" /></span> builds vault infrastructure to last.</h2><p>Whether you are looking to deposit your onchain assets and earn or are building a protocol that needs flexible yield generation infrastructure, Yearn is engineered for you.</p></div>
+        <div class="paths">
+          <article class="path reveal" aria-labelledby="earn-title"><span class="eyebrow">For Depositors</span><h3 id="earn-title">Yield made easy.</h3><p>Find a vault for the assets you hold.<br />Deposit. Let the strategy take it from there.</p><a class="path-cta" href="https://yearn.fi/vaults">Explore vaults <span aria-hidden="true">↗</span></a></article>
+          <article class="path reveal" id="build" aria-labelledby="build-title"><span class="eyebrow">For Builders</span><h3 id="build-title">Make it part of yours.</h3><p>Bring Yearn vaults into your app, wallet or protocol.<br />Your experience. Yearn under the hood.</p><a class="path-cta" href="https://partners.yearn.fi"><span>Build with Yearn </span><span aria-hidden="true">↗</span></a></article>
         </div>
-
       </section>
       <section class="security-section feature-section" id="security" aria-labelledby="security-title">
         <div class="security-heading"><h2 id="security-title">Security is built in at every layer.</h2></div>
@@ -2406,13 +2451,55 @@ PERMIT_TYPE_HASH: constant(bytes32) = keccak256(<span class="syntax-string">&quo
         </div>
       </section>
       <section class="benefits-section feature-section" id="integrators" aria-labelledby="benefits-title">
-        <div class="benefits-intro reveal"><h2 id="benefits-title">Your product.<br />Powered by <span class="yearn-word"><img src="/concepts/lifetime/navigation/YearnWordmark.svg" alt="Yearn" /></span>.</h2><p>Keep your focus on what you’re building.<br />Make vault infrastructure part of the foundation.</p></div>
-        <div class="benefits-grid">
-          <article class="reveal"><div class="product-info"><h3>Seamless Yield Automation</h3><p>Connect your product to vaults that put assets to work. Bring yield into your experience without building every strategy yourself.</p></div></article>
-          <article class="reveal"><div class="product-info"><h3>Institutional Curation and Risk controls</h3><p>Choose vault infrastructure with configurable allocations and risk parameters to suit your product’s requirements.</p></div></article>
-          <article class="reveal"><div class="product-info"><h3>Generous Fee Sharing agreements</h3><p>Build a business around the value you bring. Explore partner fee sharing arrangements for your integration.</p></div></article>
+        <div class="independence-layout">
+          <h2 id="benefits-title">Backed by ourselves.</h2>
+          <div class="independence-story">
+            <p>We launched without a venture round or a private token sale. All 30,000 of the first YFI went to people who supplied liquidity.</p>
+            <p>Today, our treasury funds the people who build and maintain Yearn. Teams publish their budgets, and people who stake YFI vote on what to fund.</p>
+            <h3>We don’t care who you are</h3>
+            <p>Anyone can use a vault, build one, or join the DAO discussion.</p>
+          </div>
+          <section class="staking-cta" id="stake-yfi" aria-labelledby="staking-title">
+            <h3 id="staking-title">Have a say in what Yearn funds.</h3>
+            <p>Stake YFI for stYFI to vote on proposals and earn a share of Yearn’s revenue.</p>
+            <div class="staking-quote">
+              <p class="staking-label">Estimated staking APR</p>
+              <p class="staking-range">14.77–36.92%</p>
+              <p class="staking-note">Base rate to full voting participation.<br /><time datetime="2026-11-25T14:45:35Z">Nov 25, 2026</time></p>
+            </div>
+            <a class="feature-link primary-button" href="https://styfi.yearn.fi/?focus=stake" target="_blank" rel="noopener noreferrer">Stake YFI <span aria-hidden="true">↗</span></a>
+          </section>
         </div>
-        <div class="integrator-actions"><a class="feature-link primary-button" href="https://yearn.fi/vaults"><span>Browse Yearn Vaults </span><span aria-hidden="true">→</span></a><a class="feature-link secondary-button" href="https://partners.yearn.fi"><span>Start building with Yearn </span><span aria-hidden="true">→</span></a></div>
+      </section>
+      <section class="vault-faq" id="faq" aria-labelledby="faq-title">
+        <h2 id="faq-title">Asked? Answered</h2>
+        <div class="faq-questions">
+          <details>
+            <summary>Where do my assets go, and where does the yield come from?</summary>
+            <p>Each vault puts your assets to work through its strategies. A lending strategy, for example, earns interest paid by borrowers. In a multi-strategy vault, you can see how much goes to each strategy, what the vault charges, and how returns have changed over time.</p>
+            <a href="https://powerglove.yearn.fi/vaults/1/0xc56413869c6CDf96496f2b1eF801fEDBdFA7dDB0">See the WETH vault’s allocations and fees <span aria-hidden="true">↗</span></a>
+          </details>
+          <details>
+            <summary>What do I receive when I deposit?</summary>
+            <p>You receive vault shares in your wallet. They represent your portion of the vault’s assets. As its strategies earn yield or take losses, the amount of the underlying asset you can redeem for each share changes.</p>
+          </details>
+          <details>
+            <summary>When can I get my assets back?</summary>
+            <p>We do our best to keep our vaults safe and liquid. You can redeem your shares for the vault’s underlying asset. How much you can withdraw at once depends on the liquidity available.</p>
+            <p>With yvUSD, you can keep your shares unlocked and withdraw without a cooldown, or lock them for potentially higher yield. If you lock your shares, you’ll need to start a 14-day cooldown before you can withdraw.</p>
+            <a href="https://yearn.fi/vaults/1/0x696d02Db93291651ED510704c9b286841d506987">Explore yvUSD <span aria-hidden="true">↗</span></a>
+          </details>
+          <details>
+            <summary>Why use a vault if I can run the strategy myself?</summary>
+            <p>In a vault we curate, we choose which markets it can use and set a limit on how much it can put into each one. If liquidity falls or risk rises, we can lower that limit or move funds out.</p>
+            <p>Automation handles the recurring work. When a strategy collects and reinvests rewards, depositors share the gas cost. In a multi-strategy vault, you keep the same shares when the vault rebalances.</p>
+          </details>
+          <details>
+            <summary>What does a vault integration save my team from building?</summary>
+            <p>Your app can use one standard interface to deposit assets and redeem shares. When a Yearn V3 vault changes its allocation, your integration stays the same. Your team can offer yield without building and maintaining each underlying strategy.</p>
+            <a href="https://docs.yearn.fi/developers/v3/Integrating_v3/">Read the V3 integration guide <span aria-hidden="true">↗</span></a>
+          </details>
+        </div>
       </section>
     </main>
     <details class="version-menu"><summary>Older versions</summary><nav aria-label="Older landing page versions"><a href="/concepts/lifetime/versions/nov13/">November 13 layout</a><a href="/concepts/lifetime/versions/original/">Original earnings layout</a><a href="/concepts/lifetime/versions/previous/">Previous earnings layout</a></nav></details>

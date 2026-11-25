@@ -1,20 +1,6 @@
 import { counterValueAt } from './counter-model.mjs'
 
 const select = (selector) => document.querySelector(selector)
-const money = new Intl.NumberFormat('en-US', { maximumFractionDigits: 0 })
-const usd = (value) => `$${money.format(value)}`
-const compactNumber = new Intl.NumberFormat('en-US', {
-  notation: 'compact',
-  maximumFractionDigits: 0,
-  roundingMode: 'trunc'
-})
-const renderStat = (selector, value, currency = false) => {
-  const element = select(selector)
-  element.textContent = `${currency ? '$' : ''}${compactNumber.format(value)}`
-  const fullValue = currency ? usd(value) : money.format(value)
-  element.title = fullValue
-  element.setAttribute('aria-label', fullValue)
-}
 const earningsMoney = new Intl.NumberFormat('en-US', { minimumFractionDigits: 2, maximumFractionDigits: 2 })
 const earningsUsd = (value) => `$${earningsMoney.format(value)}`
 const date = (timestamp) =>
@@ -113,7 +99,7 @@ window.setInterval(() => {
   )
     resumeCounter()
 }, 1000)
-const load = async () => {
+const loadSourceNotes = async () => {
   try {
     const response = await fetch(new URL('./data.json', import.meta.url), { cache: 'no-store' })
     if (!response.ok) throw new Error('Snapshot unavailable')
@@ -122,15 +108,8 @@ const load = async () => {
       ![data.earningsUsd, data.feesUsd, data.tvlUsd].every((value) => value !== null && Number.isFinite(Number(value)))
     )
       throw new Error('Invalid snapshot')
-    renderStat('#yield-earned', Number(data.earningsUsd), true)
     select('#yield-note').textContent =
       `${data.methodology.earnings} Snapshot captured ${new Date(data.capturedAt).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric', timeZone: 'UTC' })}.`
-    if (Number.isFinite(data.assetsSecured?.usd)) renderStat('#assets-secured-value', data.assetsSecured.usd, true)
-    else select('#assets-secured-value').textContent = 'Unavailable'
-    if (Number.isInteger(data.vaultsDeployed)) renderStat('#vaults-deployed', data.vaultsDeployed)
-    else select('#vaults-deployed').textContent = 'Unavailable'
-    if (Number.isInteger(data.harvestCount)) renderStat('#harvest-count', data.harvestCount)
-    else select('#harvest-count').textContent = 'Unavailable'
     select('#fees-note').textContent = data.methodology.fees
     select('#vaults-note').textContent =
       data.methodology.vaults ?? 'Vault inventory metadata is unavailable in this snapshot.'
@@ -144,9 +123,6 @@ const load = async () => {
     select('#fees-note').textContent = 'Unavailable. No zero value has been substituted.'
     select('#vaults-note').textContent = 'Unavailable. No zero value has been substituted.'
     select('#harvests-note').textContent = 'Unavailable. No zero value has been substituted.'
-    ;['#yield-earned', '#assets-secured-value', '#vaults-deployed', '#harvest-count'].forEach((selector) => {
-      select(selector).textContent = 'Unavailable'
-    })
   }
 }
 select('#replay').addEventListener('click', () => {
@@ -158,7 +134,7 @@ select('#replay').addEventListener('click', () => {
 document.querySelectorAll('.reveal').forEach((element) => {
   element.classList.remove('reveal')
 })
-const revealElements = [...document.querySelectorAll('.partners-section, #your-way, #security, #integrators')]
+const revealElements = [...document.querySelectorAll('[data-reveal="early"], #your-way, #security, #integrators')]
 revealElements.forEach((element) => {
   element.classList.add('reveal')
 })
@@ -170,9 +146,9 @@ const paintReveals = () => {
   const revealInset = window.innerHeight * 0.45
   const measurements = revealElements.map((element) => {
     const bounds = element.getBoundingClientRect()
-    const isPartners = element.classList.contains('partners-section')
-    const inset = isPartners ? revealInset / 2 : revealInset
-    const distance = isPartners ? (Math.min(180, window.innerHeight * 0.2) + fadeDistance) / 2 : fadeDistance
+    const earlyReveal = element.dataset.reveal === 'early'
+    const inset = earlyReveal ? revealInset / 2 : revealInset
+    const distance = earlyReveal ? (Math.min(180, window.innerHeight * 0.2) + fadeDistance) / 2 : fadeDistance
     const entering = (window.innerHeight - inset - bounds.top) / distance
     return { element, progress: Math.max(0, Math.min(1, entering)) }
   })
@@ -196,7 +172,7 @@ new MutationObserver(scheduleReveals).observe(select('main'), {
 document.fonts.ready.then(scheduleReveals)
 paintReveals()
 
-load()
+loadSourceNotes()
 loadHero()
 
 const headerMenus = [...document.querySelectorAll('.header-menu')]
@@ -254,39 +230,24 @@ document.addEventListener('keydown', (event) => {
 
 const securityChoices = [...document.querySelectorAll('[data-security]')]
 const mobileSecurity = matchMedia('(max-width: 760px)')
+const securityLayers = document.querySelector('.security-layers')
 const securityDisplay = document.querySelector('.security-display')
 const securityPin = { choice: null }
-const securityTransition = { outgoing: null, incoming: null }
+const securityTransition = { incoming: null }
+const securityRotation = { elapsed: 0, resumeAt: 0 }
 const selectSecurity = (choice) => {
-  const previous = securityDisplay.querySelector('.security-panel:not([hidden]):not(.security-panel-outgoing)')
+  const previous = securityDisplay.querySelector('.security-panel:not([hidden])')
   const next = choice ? document.getElementById(choice.getAttribute('aria-controls')) : null
-  const crossfade = !mobileSecurity.matches && !motion.matches && previous && next && previous !== next
   if (previous !== next || mobileSecurity.matches) {
     securityTransition.incoming?.cancel()
-    securityTransition.outgoing?.remove()
-    securityTransition.outgoing = null
-  }
-  const outgoing = crossfade ? previous.cloneNode(true) : null
-  if (outgoing) {
-    outgoing.classList.add('security-panel-outgoing')
-    outgoing.removeAttribute('id')
-    outgoing.removeAttribute('aria-labelledby')
-    outgoing.querySelectorAll('[id]').forEach((element) => {
-      element.removeAttribute('id')
-    })
-    outgoing.setAttribute('aria-hidden', 'true')
-    outgoing.inert = true
-    const originals = [...previous.querySelectorAll('[data-auto-scroll], .vault-code')]
-    outgoing.querySelectorAll('[data-auto-scroll], .vault-code').forEach((element, index) => {
-      element.scrollTop = originals[index].scrollTop
-    })
+    securityTransition.incoming = null
+    securityRotation.elapsed = 0
   }
   securityChoices.forEach((item) => {
     const selected = item === choice
     item.dataset.selected = String(selected)
     if (mobileSecurity.matches) item.removeAttribute('aria-pressed')
     else item.setAttribute('aria-pressed', String(item === securityPin.choice))
-    item.classList.toggle('is-pinned', !mobileSecurity.matches && item === securityPin.choice)
     const expand = item.parentElement.querySelector('.security-expand')
     if (expand) {
       expand.setAttribute('aria-expanded', String(selected))
@@ -296,18 +257,10 @@ const selectSecurity = (choice) => {
     else item.removeAttribute('aria-expanded')
     document.getElementById(item.getAttribute('aria-controls')).hidden = !selected
   })
-  if (outgoing) {
-    securityDisplay.append(outgoing)
-    securityTransition.outgoing = outgoing
-    const fade = outgoing.animate([{ opacity: 1 }, { opacity: 0 }], { duration: 180, easing: 'ease-in' })
-    fade.onfinish = () => {
-      outgoing.remove()
-    }
-    securityTransition.incoming = next.animate([{ opacity: 0 }, { opacity: 1 }], {
-      duration: 320,
-      delay: 90,
-      fill: 'backwards',
-      easing: 'ease-in-out'
+  if (!mobileSecurity.matches && !motion.matches && previous && next && previous !== next) {
+    securityTransition.incoming = next.animate([{ opacity: 0.72 }, { opacity: 1 }], {
+      duration: 160,
+      easing: 'ease-out'
     })
   }
 }
@@ -340,10 +293,37 @@ securityChoices.forEach((choice) => {
     const collapse = mobileSecurity.matches && choice.getAttribute('aria-expanded') === 'true'
     selectSecurity(collapse ? null : choice)
   })
+  choice.addEventListener('pointerleave', (event) => {
+    if (event.pointerType === 'mouse') securityRotation.resumeAt = performance.now() + 1000
+  })
 })
-// One clock drives both the selected panel and its travelling underline.
-const securitySection = document.getElementById('security')
-const securityRotation = { elapsed: 0, lastTimestamp: null, index: 0, pieces: [], resumeAt: 0, returning: false }
+securityDisplay.addEventListener('pointerleave', (event) => {
+  if (event.pointerType === 'mouse') securityRotation.resumeAt = performance.now() + 1000
+})
+
+const securityTickMs = 250
+window.setInterval(() => {
+  if (
+    mobileSecurity.matches ||
+    document.hidden ||
+    motion.matches ||
+    securityPin.choice !== null ||
+    performance.now() < securityRotation.resumeAt ||
+    securityChoices.some((choice) => choice.matches(':hover, :focus-visible')) ||
+    securityDisplay.matches(':hover') ||
+    securityDisplay.contains(document.activeElement)
+  )
+    return
+
+  const bounds = securityLayers.getBoundingClientRect()
+  if (bounds.top >= window.innerHeight || bounds.bottom <= 0) return
+
+  securityRotation.elapsed += securityTickMs
+  if (securityRotation.elapsed < 4000) return
+
+  const selected = securityChoices.findIndex((choice) => choice.dataset.selected === 'true')
+  selectSecurity(securityChoices[(selected + 1) % securityChoices.length])
+}, securityTickMs)
 
 const alertContainer = document.getElementById('security-alerts')
 const renderSecurityAlerts = (data) => {
@@ -498,33 +478,7 @@ matchMedia('(max-width: 900px)').addEventListener('change', (event) => {
   if (!event.matches && mobileNavigation.open) closeMobileNavigation()
 })
 
-const hero = select('.hero')
-const heroStatistics = select('.hero-statistics')
-const statsBarObserver = new ResizeObserver(([entry]) => {
-  heroStatistics.style.setProperty('--stats-bar-height', `${entry.borderBoxSize[0].blockSize}px`)
-})
-statsBarObserver.observe(heroStatistics)
-const updateHeroStatistics = () => {
-  const progress = Math.min(1, Math.max(0, window.scrollY / 120))
-  hero.style.setProperty('--stats-progress', String(progress))
-  const visible = progress > 0
-  hero.classList.toggle('has-scrolled', window.scrollY > 12)
-  hero.classList.toggle('stats-visible', visible)
-  heroStatistics.inert = !visible
-}
-window.addEventListener('scroll', updateHeroStatistics, { passive: true })
-window.addEventListener('pageshow', updateHeroStatistics)
-select('.scroll-link').addEventListener('click', (event) => {
-  event.preventDefault()
-  const stop = select('.hero-stats-stop')
-  window.scrollTo({
-    top: stop.getBoundingClientRect().top + window.scrollY,
-    behavior: motion.matches ? 'instant' : 'smooth'
-  })
-})
-updateHeroStatistics()
-
-// Reuse the same perimeter-based fade for hero and card outlines.
+// Animate the perimeter of the hero vaults link.
 const svgElement = (tag, attributes) => {
   const element = document.createElementNS('http://www.w3.org/2000/svg', tag)
   Object.entries(attributes).forEach(([key, value]) => {
@@ -532,20 +486,8 @@ const svgElement = (tag, attributes) => {
   })
   return element
 }
-const createTravellingOutline = (
-  target,
-  instance,
-  hoverOnly = false,
-  coverage = hoverOnly ? 0.6 : 0.95,
-  direction = 1
-) => {
-  const outline =
-    target.querySelector('.hero-outline') ??
-    svgElement('svg', { class: 'hero-outline', 'aria-hidden': 'true', focusable: 'false' })
-  if (!outline.parentElement) {
-    outline.append(svgElement('defs', {}), svgElement('g', { class: 'hero-outline-stroke' }))
-    target.append(outline)
-  }
+const createHeroOutline = (target) => {
+  const outline = target.querySelector('.hero-outline')
   const outlineStroke = outline.querySelector('.hero-outline-stroke')
   const outlineDefinitions = outline.querySelector('defs')
   const outlineMotion = { frame: null, length: 0, elapsed: 0, lastTimestamp: null, pieces: [], hoverProgress: 0 }
@@ -574,7 +516,7 @@ const createTravellingOutline = (
     outlineStroke.replaceChildren()
     outlineMotion.length = geometry.reduce((total, piece) => total + piece.length, 0)
     outlineMotion.pieces = geometry.map((piece, index) => {
-      const id = `outline-${instance}-edge-${index}`
+      const id = `outline-hero-edge-${index}`
       const gradient = svgElement('linearGradient', {
         id,
         gradientUnits: 'userSpaceOnUse',
@@ -590,27 +532,18 @@ const createTravellingOutline = (
       return { ...piece, start: geometry.slice(0, index).reduce((total, part) => total + part.length, 0), stops }
     })
   }
-  new ResizeObserver(buildOutline).observe(target)
-  const paintOutline = (timestamp) => {
-    const delta = outlineMotion.lastTimestamp === null ? 0 : timestamp - outlineMotion.lastTimestamp
-    outlineMotion.elapsed += delta
-    outlineMotion.lastTimestamp = timestamp
-    const hovered = target.matches(':hover, :focus-visible, .is-pinned')
-    outlineMotion.hoverProgress = Math.max(
-      0,
-      Math.min(1, outlineMotion.hoverProgress + ((hovered ? 1 : -1) * delta) / 450)
-    )
+  const paintStroke = (position, coverage, blueMix) => {
     const total = outlineMotion.length
-    const head = (((((direction * outlineMotion.elapsed) % 10666.667) + 10666.667) % 10666.667) / 10666.667) * total
+    const head = position * total
     const trail = 0.18 * total
-    const blueTrail = typeof coverage === 'function' ? coverage(total) : coverage * total
-    const blueTail = (head - direction * blueTrail + total) % total
-    const tail = (head - direction * trail + total) % total
+    const blueTrail = coverage * total
+    const blueTail = (head - blueTrail + total) % total
+    const tail = (head - trail + total) % total
     const alphaAt = (distance) => {
-      const behind = (direction * (head - distance) + total) % total
-      const greyAlpha = !hoverOnly && behind <= trail ? 1 - behind / trail : 0
+      const behind = (head - distance + total) % total
+      const greyAlpha = behind <= trail ? 1 - behind / trail : 0
       const blueAlpha = behind <= blueTrail ? 1 - behind / blueTrail : 0
-      return greyAlpha + (blueAlpha - greyAlpha) * outlineMotion.hoverProgress
+      return greyAlpha + (blueAlpha - greyAlpha) * blueMix
     }
     if (total > 0)
       outlineMotion.pieces.forEach((piece) => {
@@ -624,8 +557,8 @@ const createTravellingOutline = (
             : []),
           ...(head > piece.start && head < end
             ? [
-                { offset: (head - piece.start) / piece.length, alpha: direction === 1 ? alphaAt(head) : 0 },
-                { offset: (head - piece.start) / piece.length, alpha: direction === 1 ? 0 : alphaAt(head) }
+                { offset: (head - piece.start) / piece.length, alpha: alphaAt(head) },
+                { offset: (head - piece.start) / piece.length, alpha: 0 }
               ]
             : [])
         ].sort((a, b) => a.offset - b.offset)
@@ -636,10 +569,19 @@ const createTravellingOutline = (
           stop.setAttribute('stop-opacity', value.alpha)
         })
       })
-    outlineMotion.frame =
-      document.hidden || (hoverOnly && !hovered && outlineMotion.hoverProgress === 0)
-        ? null
-        : requestAnimationFrame(paintOutline)
+  }
+  new ResizeObserver(buildOutline).observe(target)
+  const paintOutline = (timestamp) => {
+    const delta = outlineMotion.lastTimestamp === null ? 0 : timestamp - outlineMotion.lastTimestamp
+    outlineMotion.elapsed += delta
+    outlineMotion.lastTimestamp = timestamp
+    const hovered = target.matches(':hover, :focus-visible')
+    outlineMotion.hoverProgress = Math.max(
+      0,
+      Math.min(1, outlineMotion.hoverProgress + ((hovered ? 1 : -1) * delta) / 450)
+    )
+    paintStroke((outlineMotion.elapsed % 10666.667) / 10666.667, 0.95, outlineMotion.hoverProgress)
+    outlineMotion.frame = document.hidden ? null : requestAnimationFrame(paintOutline)
   }
   const resumeOutline = () => {
     if (!document.hidden && outlineMotion.frame === null) {
@@ -649,157 +591,9 @@ const createTravellingOutline = (
   }
   document.addEventListener('visibilitychange', resumeOutline)
   window.addEventListener('pageshow', resumeOutline)
-  if (hoverOnly) {
-    ;['pointerenter', 'pointerleave', 'focus', 'blur', 'click'].forEach((event) => {
-      target.addEventListener(event, resumeOutline)
-    })
-  } else resumeOutline()
+  resumeOutline()
 }
-createTravellingOutline(select('#tagline'), 'hero')
-document.querySelectorAll('.infrastructure-card').forEach((card, index) => {
-  createTravellingOutline(card, `infrastructure-${index}`, true)
-})
-
-const securityTrailLength = 180
-securityChoices.forEach((choice, index) => {
-  createTravellingOutline(choice, `security-${index}`, true, () => securityTrailLength, index % 2 === 0 ? -1 : 1)
-  choice.addEventListener('pointerleave', (event) => {
-    if (event.pointerType === 'mouse') securityRotation.resumeAt = performance.now() + 1000
-  })
-})
-securityDisplay.addEventListener('pointerleave', (event) => {
-  if (event.pointerType === 'mouse') securityRotation.resumeAt = performance.now() + 1000
-})
-const securityLayers = select('.security-layers')
-const securitySnake = svgElement('svg', { class: 'security-snake', 'aria-hidden': 'true', focusable: 'false' })
-const snakeDefinitions = svgElement('defs', {})
-const snakeStroke = svgElement('g', { class: 'security-snake-stroke' })
-securitySnake.append(snakeDefinitions, snakeStroke)
-securityLayers.append(securitySnake)
-const buildSecuritySnake = () => {
-  if (mobileSecurity.matches) return
-  const origin = securityLayers.getBoundingClientRect()
-  snakeDefinitions.replaceChildren()
-  snakeStroke.replaceChildren()
-  const cards = securityChoices.map((choice) => choice.getBoundingClientRect())
-  securityRotation.pieces = [...cards, cards[0]].map((card, index) => {
-    const left = card.left - origin.left
-    const right = card.right - origin.left
-    const bottom = card.bottom - origin.top
-    const top = index === 0 ? card.top - origin.top : cards[index - 1].bottom - origin.top
-    const startX = index % 2 === 0 ? left : right
-    const endX = index % 2 === 0 ? right : left
-    const vertical = bottom - top
-    const horizontal = right - left
-    const geometry =
-      index === cards.length
-        ? [{ from: [left, top], to: [left, card.top - origin.top], start: 0, length: top - (card.top - origin.top) }]
-        : [
-            { from: [startX, top], to: [startX, bottom], start: 0, length: vertical },
-            { from: [startX, bottom], to: [endX, bottom], start: vertical, length: horizontal }
-          ]
-    return {
-      length: geometry.reduce((sum, edge) => sum + edge.length, 0),
-      edges: geometry.map((edge, edgeIndex) => {
-        const id = `security-snake-${index}-${edgeIndex}`
-        const gradient = svgElement('linearGradient', {
-          id,
-          gradientUnits: 'userSpaceOnUse',
-          x1: edge.from[0],
-          y1: edge.from[1],
-          x2: edge.to[0],
-          y2: edge.to[1]
-        })
-        const stops = Array.from({ length: 5 }, () => svgElement('stop', { 'stop-color': '#0657f9' }))
-        gradient.append(...stops)
-        snakeDefinitions.append(gradient)
-        snakeStroke.append(svgElement('path', { d: `M${edge.from}L${edge.to}`, stroke: `url(#${id})` }))
-        return { ...edge, stops }
-      })
-    }
-  })
-}
-new ResizeObserver(buildSecuritySnake).observe(securityLayers)
-const paintSecuritySnake = (timestamp) => {
-  const bounds = securitySection.getBoundingClientRect()
-  const interacting =
-    securityPin.choice !== null ||
-    securityChoices.some((choice) => choice.matches(':hover, :focus-visible')) ||
-    securityDisplay.matches(':hover') ||
-    securityDisplay.contains(document.activeElement)
-  const running =
-    !mobileSecurity.matches &&
-    !document.hidden &&
-    !motion.matches &&
-    !interacting &&
-    timestamp >= securityRotation.resumeAt &&
-    bounds.top < window.innerHeight &&
-    bounds.bottom > 0
-  const selected = securityChoices.findIndex((choice) => choice.dataset.selected === 'true')
-  if (selected >= 0 && selected !== securityRotation.index) {
-    securityRotation.index = selected
-    securityRotation.elapsed = 0
-    securityRotation.returning = false
-  }
-  const delta = securityRotation.lastTimestamp === null ? 0 : Math.min(100, timestamp - securityRotation.lastTimestamp)
-  securityRotation.lastTimestamp = timestamp
-  const duration = securityRotation.returning ? 2550 : 4000
-  if (running) {
-    securityRotation.elapsed += delta
-    if (securityRotation.elapsed >= duration) {
-      securityRotation.elapsed %= duration
-      if (securityRotation.returning) {
-        securityRotation.returning = false
-        securityRotation.index = 0
-      } else if (securityRotation.index === securityChoices.length - 1) {
-        securityRotation.returning = true
-      } else securityRotation.index += 1
-      selectSecurity(securityChoices[securityRotation.index])
-    }
-  }
-  securitySnake.classList.toggle('is-running', running)
-  securitySnake.dataset.phase = securityRotation.returning ? 'return' : 'carousel'
-  const routeIndex = securityRotation.returning ? securityChoices.length : securityRotation.index
-  const current = securityRotation.pieces[routeIndex]
-  const progress = securityRotation.returning
-    ? Math.min(1, Math.max(0, securityRotation.elapsed - 250) / 1800)
-    : securityRotation.elapsed / 4000
-  // After the final card, follow the left edge upwards without changing its panel.
-  const head =
-    securityRotation.pieces.slice(0, routeIndex).reduce((sum, piece) => sum + piece.length, 0) +
-    (current?.length ?? 0) * progress
-  snakeStroke.style.opacity = securityRotation.returning
-    ? String(1 - 0.75 * Math.min(1, securityRotation.elapsed / 250))
-    : '1'
-  const trail = securityTrailLength
-  securityRotation.pieces.forEach((piece, index) => {
-    const base = securityRotation.pieces.slice(0, index).reduce((sum, part) => sum + part.length, 0)
-    piece.edges.forEach((edge) => {
-      const start = base + edge.start
-      const alpha = (distance) => Math.max(0, Math.min(1, 1 - (head - distance) / trail)) * (distance <= head ? 1 : 0)
-      const boundaries = [
-        { offset: 0, alpha: alpha(start) },
-        ...(head - trail > start && head - trail < start + edge.length
-          ? [{ offset: (head - trail - start) / edge.length, alpha: 0 }]
-          : []),
-        ...(head >= start && head < start + edge.length
-          ? [
-              { offset: (head - start) / edge.length, alpha: 1 },
-              { offset: (head - start) / edge.length, alpha: 0 }
-            ]
-          : []),
-        { offset: 1, alpha: alpha(start + edge.length) }
-      ]
-      edge.stops.forEach((stop, stopIndex) => {
-        const value = boundaries[Math.min(stopIndex, boundaries.length - 1)]
-        stop.setAttribute('offset', value.offset)
-        stop.setAttribute('stop-opacity', value.alpha)
-      })
-    })
-  })
-  requestAnimationFrame(paintSecuritySnake)
-}
-requestAnimationFrame(paintSecuritySnake)
+createHeroOutline(select('#tagline'))
 
 const partnerSweep = select('.partners-section')
 partnerSweep.addEventListener('pointerenter', (event) => {
@@ -810,19 +604,3 @@ partnerSweep.addEventListener('pointerenter', (event) => {
 partnerSweep.addEventListener('animationend', (event) => {
   if (event.animationName === 'partner-border-sweep') partnerSweep.classList.remove('is-sweeping')
 })
-
-// Let the final content group occupy its own view even on tall screens.
-const finalSection = select('#integrators')
-const finalFooter = select('footer')
-const measureFinalView = () => {
-  const first = finalSection.firstElementChild.getBoundingClientRect()
-  const last = finalSection.lastElementChild.getBoundingClientRect()
-  finalSection.style.setProperty('--final-content-height', `${last.bottom - first.top}px`)
-  finalSection.style.setProperty('--final-footer-height', `${finalFooter.getBoundingClientRect().height}px`)
-}
-const finalViewObserver = new ResizeObserver(measureFinalView)
-;[...finalSection.children, finalFooter].forEach((element) => {
-  finalViewObserver.observe(element)
-})
-window.addEventListener('resize', measureFinalView)
-measureFinalView()
