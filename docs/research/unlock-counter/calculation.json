@@ -1,0 +1,831 @@
+{
+  "timestamp": "1793802839",
+  "blockNumber": "26342075",
+  "rows": [
+    {
+      "name": "USDC-1 yVault",
+      "address": "0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204",
+      "kind": "Multi Strategy",
+      "apiVersion": "3.0.2",
+      "assetSymbol": "USDC",
+      "status": "valued",
+      "inventoryTvlUsd": 18244824.593776055,
+      "holderValueUsd": 18229742.725018222,
+      "currentUsdPerSecond": 0.033921301274516126,
+      "remainingSeconds": 398713,
+      "remainingUnlockUsd": 13534.90550353378,
+      "afterOneMinute": {
+        "assets": "18239188292572",
+        "usd": 18229744.76029589,
+        "increaseUsd": 2.0352776683866978
+      },
+      "afterOneHour": {
+        "assets": "18239308437002",
+        "usd": 18229864.842519842,
+        "increaseUsd": 122.11750162020326
+      },
+      "afterOneDay": {
+        "assets": "18242119046414",
+        "usd": 18232673.99670915,
+        "increaseUsd": 2931.271690927446
+      },
+      "final": {
+        "assets": "18252728173214",
+        "usd": 18243277.630521756,
+        "increaseUsd": 13534.90550353378
+      }
+    },
+    {
+      "name": "yvUSD",
+      "address": "0x696d02Db93291651ED510704c9b286841d506987",
+      "kind": "Multi Strategy",
+      "apiVersion": "3.0.4",
+      "assetSymbol": "USDC",
+      "status": "valued",
+      "inventoryTvlUsd": 15411057.826800287,
+      "holderValueUsd": 15403133.950437171,
+      "currentUsdPerSecond": 0.025722430825721867,
+      "remainingSeconds": 277223,
+      "remainingUnlockUsd": 7134.152183910832,
+      "afterOneMinute": {
+        "assets": "15411114761135",
+        "usd": 15403135.493783673,
+        "increaseUsd": 1.5433465018868446
+      },
+      "afterOneHour": {
+        "assets": "15411205866267",
+        "usd": 15403226.55174503,
+        "increaseUsd": 92.60130785778165
+      },
+      "afterOneDay": {
+        "assets": "15413337107161",
+        "usd": 15405356.689166559,
+        "increaseUsd": 2222.7387293875217
+      },
+      "final": {
+        "assets": "15418251064869",
+        "usd": 15410268.102621082,
+        "increaseUsd": 7134.152183910832
+      }
+    },
+    {
+      "name": "WETH-2 yVault",
+      "address": "0xAc37729B76db6438CE62042AE1270ee574CA7571",
+      "kind": "Multi Strategy",
+      "apiVersion": "3.0.2",
+      "assetSymbol": "WETH",
+      "status": "valued",
+      "inventoryTvlUsd": 11743918.155596258,
+      "holderValueUsd": 11826774.372396933,
+      "currentUsdPerSecond": 0.002578757375611829,
+      "remainingSeconds": 357457,
+      "remainingUnlockUsd": 921.8667267616838,
+      "afterOneMinute": {
+        "assets": "5102448454942068507217",
+        "usd": 11826774.527122378,
+        "increaseUsd": 0.1547254454344511
+      },
+      "afterOneHour": {
+        "assets": "5102452393401720616282",
+        "usd": 11826783.655930774,
+        "increaseUsd": 9.283533841371536
+      },
+      "afterOneDay": {
+        "assets": "5102544515039722551218",
+        "usd": 11826997.181231683,
+        "increaseUsd": 222.80883475020528
+      },
+      "final": {
+        "assets": "5102846110952693313932",
+        "usd": 11827696.239123695,
+        "increaseUsd": 921.8667267616838
+      }
+    },
+    {
+      "name": "WETH-1 yVault",
+      "address": "0xc56413869c6CDf96496f2b1eF801fEDBdFA7dDB0",
+      "kind": "Multi Strategy",
+      "apiVersion": "3.0.2",
+      "assetSymbol": "WETH",
+      "status": "valued",
+      "inventoryTvlUsd": 10673861.254663888,
+      "holderValueUsd": 10741878.3375747,
+      "currentUsdPerSecond": 0.01697675120571987,
+      "remainingSeconds": 525648,
+      "remainingUnlockUsd": 8931.214907845482,
+      "afterOneMinute": {
+        "assets": "4634390010430856029094",
+        "usd": 10741879.356179867,
+        "increaseUsd": 1.0186051670461893
+      },
+      "afterOneHour": {
+        "assets": "4634415938648717262612",
+        "usd": 10741939.454226764,
+        "increaseUsd": 61.1166520640254
+      },
+      "afterOneDay": {
+        "assets": "4635022478034635949076",
+        "usd": 10743345.329194915,
+        "increaseUsd": 1466.991620214656
+      },
+      "final": {
+        "assets": "4638242782479772366477",
+        "usd": 10750809.552482545,
+        "increaseUsd": 8931.214907845482
+      }
+    },
+    {
+      "name": "USDS-1 yVault",
+      "address": "0x182863131F9a4630fF9E27830d945B1413e347E8",
+      "kind": "Multi Strategy",
+      "apiVersion": "3.0.3",
+      "assetSymbol": "USDS",
+      "status": "valued",
+      "inventoryTvlUsd": 8830534.608671272,
+      "holderValueUsd": 8822032.280826997,
+      "currentUsdPerSecond": 0.01103610442756912,
+      "remainingSeconds": 218388,
+      "remainingUnlockUsd": 2410.8114001769572,
+      "afterOneMinute": {
+        "assets": "8821619010354841729013825",
+        "usd": 8822032.942993313,
+        "increaseUsd": 0.662166316062212
+      },
+      "afterOneHour": {
+        "assets": "8821658076510307509822102",
+        "usd": 8822072.010981862,
+        "increaseUsd": 39.73015486449003
+      },
+      "afterOneDay": {
+        "assets": "8822571925969074765602690",
+        "usd": 8822985.903320754,
+        "increaseUsd": 953.622493756935
+      },
+      "final": {
+        "assets": "8824029046503720665963250",
+        "usd": 8824443.092227174,
+        "increaseUsd": 2410.8114001769572
+      }
+    },
+    {
+      "name": "Morpho Yearn OG USDC Compounder",
+      "address": "0x0e297dE4005883C757c9F09fdF7cF1363C20e626",
+      "kind": "Single Strategy",
+      "apiVersion": "3.0.4",
+      "assetSymbol": "USDC",
+      "status": "valued",
+      "inventoryTvlUsd": 7470461.678435479,
+      "holderValueUsd": 7466729.03152747,
+      "currentUsdPerSecond": 0.01600779147962704,
+      "remainingSeconds": 194700,
+      "remainingUnlockUsd": 3118.0185067038983,
+      "afterOneMinute": {
+        "assets": "7470597972956",
+        "usd": 7466729.99199392,
+        "increaseUsd": 0.9604664500802755
+      },
+      "afterOneHour": {
+        "assets": "7470654670339",
+        "usd": 7466786.660021252,
+        "increaseUsd": 57.628493782132864
+      },
+      "afterOneDay": {
+        "assets": "7471981058015",
+        "usd": 7468112.360946031,
+        "increaseUsd": 1383.3294185614213
+      },
+      "final": {
+        "assets": "7473716645722",
+        "usd": 7469847.050034174,
+        "increaseUsd": 3118.0185067038983
+      }
+    },
+    {
+      "name": "Yearn BOLD",
+      "address": "0x9F4330700a36B29952869fac9b33f45EEdd8A3d8",
+      "kind": "Multi Strategy",
+      "apiVersion": "3.0.4",
+      "assetSymbol": "BOLD",
+      "status": "valued",
+      "inventoryTvlUsd": 7466057.003542972,
+      "holderValueUsd": 7577251.940499272,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "7607517097079790070979508",
+        "usd": 7577251.940499272,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "7607517097079790070979508",
+        "usd": 7577251.940499272,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "7607517097079790070979508",
+        "usd": 7577251.940499272,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "7607517097079790070979508",
+        "usd": 7577251.940499272,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Staked yBOLD",
+      "address": "0x23346B04a7f55b8760E5860AA5A77383D63491cD",
+      "kind": "Single Strategy",
+      "apiVersion": "3.0.4",
+      "assetSymbol": "yBOLD",
+      "status": "valued",
+      "inventoryTvlUsd": 7391805.31596317,
+      "holderValueUsd": 7500138.911529964,
+      "currentUsdPerSecond": 0.02614295667028195,
+      "remainingSeconds": 1056,
+      "remainingUnlockUsd": 27.6070638615638,
+      "afterOneMinute": {
+        "assets": "7529858510029028558804147",
+        "usd": 7500140.480107692,
+        "increaseUsd": 1.5685777282342315
+      },
+      "afterOneHour": {
+        "assets": "7529884651688230681674388",
+        "usd": 7500166.518593825,
+        "increaseUsd": 27.6070638615638
+      },
+      "afterOneDay": {
+        "assets": "7529884651688230681674388",
+        "usd": 7500166.518593825,
+        "increaseUsd": 27.6070638615638
+      },
+      "final": {
+        "assets": "7529884651688230681674388",
+        "usd": 7500166.518593825,
+        "increaseUsd": 27.6070638615638
+      }
+    },
+    {
+      "name": "DAI-1 yVault",
+      "address": "0x028eC7330ff87667b6dfb0D94b954c820195336c",
+      "kind": "Multi Strategy",
+      "apiVersion": "3.0.2",
+      "assetSymbol": "DAI",
+      "status": "valued",
+      "inventoryTvlUsd": 5732244.564777473,
+      "holderValueUsd": 5729164.968979444,
+      "currentUsdPerSecond": 0.0068869512332928595,
+      "remainingSeconds": 587348,
+      "remainingUnlockUsd": 4047.8950210651383,
+      "afterOneMinute": {
+        "assets": "5728970960343632967692919",
+        "usd": 5729165.382196548,
+        "increaseUsd": 0.41321710404008627
+      },
+      "afterOneHour": {
+        "assets": "5728995339430917995202609",
+        "usd": 5729189.762111177,
+        "increaseUsd": 24.79313173238188
+      },
+      "afterOneDay": {
+        "assets": "5729565621338968240284923",
+        "usd": 5729760.063372661,
+        "increaseUsd": 595.0943932170048
+      },
+      "final": {
+        "assets": "5733018304794444568100241",
+        "usd": 5733212.8640005095,
+        "increaseUsd": 4047.8950210651383
+      }
+    },
+    {
+      "name": "USDT-1 yVault",
+      "address": "0x310B7Ea7475A0B449Cfd73bE81522F1B88eFAFaa",
+      "kind": "Multi Strategy",
+      "apiVersion": "3.0.2",
+      "assetSymbol": "USDT",
+      "status": "valued",
+      "inventoryTvlUsd": 5664397.89547711,
+      "holderValueUsd": 5660444.174945534,
+      "currentUsdPerSecond": 0.007198966513292243,
+      "remainingSeconds": 464016,
+      "remainingUnlockUsd": 3342.4081247374415,
+      "afterOneMinute": {
+        "assets": "5666167278529",
+        "usd": 5660444.6068848455,
+        "increaseUsd": 0.4319393113255501
+      },
+      "afterOneHour": {
+        "assets": "5666192788753",
+        "usd": 5660470.091344228,
+        "increaseUsd": 25.916398693807423
+      },
+      "afterOneDay": {
+        "assets": "5666789534111",
+        "usd": 5661066.234005983,
+        "increaseUsd": 622.0590604487807
+      },
+      "final": {
+        "assets": "5669512633430",
+        "usd": 5663786.583070272,
+        "increaseUsd": 3342.4081247374415
+      }
+    },
+    {
+      "name": "WBTC-1 yVault",
+      "address": "0x751F0cC6115410A3eE9eC92d08f46Ff6Da98b708",
+      "kind": "Multi Strategy",
+      "apiVersion": "3.0.4",
+      "assetSymbol": "WBTC",
+      "status": "valued",
+      "inventoryTvlUsd": 3681677.8681651,
+      "holderValueUsd": 3717062.940867617,
+      "currentUsdPerSecond": 0.000029104448970041166,
+      "remainingSeconds": 144252,
+      "remainingUnlockUsd": 4.199303589295596,
+      "afterOneMinute": {
+        "assets": "4748892825",
+        "usd": 3717062.942433061,
+        "increaseUsd": 0.0015654442831873894
+      },
+      "afterOneHour": {
+        "assets": "4748892957",
+        "usd": 3717063.0457523665,
+        "increaseUsd": 0.10488474974408746
+      },
+      "afterOneDay": {
+        "assets": "4748896036",
+        "usd": 3717065.4557534386,
+        "increaseUsd": 2.5148858218453825
+      },
+      "final": {
+        "assets": "4748898188",
+        "usd": 3717067.140171206,
+        "increaseUsd": 4.199303589295596
+      }
+    },
+    {
+      "name": "Morpho Steakhouse USDC Compounder",
+      "address": "0x074134A2784F4F66b6ceD6f68849382990Ff3215",
+      "kind": "Single Strategy",
+      "apiVersion": "3.0.4",
+      "assetSymbol": "USDC",
+      "status": "valued",
+      "inventoryTvlUsd": 2399895.2662479044,
+      "holderValueUsd": 2399780.3616332915,
+      "currentUsdPerSecond": 0.00378592761717128,
+      "remainingSeconds": 237396,
+      "remainingUnlockUsd": 899.1008039158769,
+      "afterOneMinute": {
+        "assets": "2401023744178",
+        "usd": 2399780.5887886183,
+        "increaseUsd": 0.22715532686561346
+      },
+      "afterOneHour": {
+        "assets": "2401037153382",
+        "usd": 2399793.9910498615,
+        "increaseUsd": 13.629416570067406
+      },
+      "afterOneDay": {
+        "assets": "2401350835116",
+        "usd": 2400107.5103718326,
+        "increaseUsd": 327.1487385411747
+      },
+      "final": {
+        "assets": "2401923083469",
+        "usd": 2400679.4624372073,
+        "increaseUsd": 899.1008039158769
+      }
+    },
+    {
+      "name": "crvUSD-2 yVault",
+      "address": "0xBF319dDC2Edc1Eb6FDf9910E39b37Be221C8805F",
+      "kind": "Multi Strategy",
+      "apiVersion": "3.0.2",
+      "assetSymbol": "crvUSD",
+      "status": "valued",
+      "inventoryTvlUsd": 1445943.7544300265,
+      "holderValueUsd": 1445556.2464989226,
+      "currentUsdPerSecond": 0.003928651859430275,
+      "remainingSeconds": 388474,
+      "remainingUnlockUsd": 1527.7921039320063,
+      "afterOneMinute": {
+        "assets": "1446877960322687483473944",
+        "usd": 1445556.4822180725,
+        "increaseUsd": 0.23571914993226528
+      },
+      "afterOneHour": {
+        "assets": "1446891880602426876809682",
+        "usd": 1445570.3897839927,
+        "increaseUsd": 14.14328507008031
+      },
+      "afterOneDay": {
+        "assets": "1447217550004505874756407",
+        "usd": 1445895.7617421988,
+        "increaseUsd": 339.5152432762552
+      },
+      "final": {
+        "assets": "1448406913147069637900807",
+        "usd": 1447084.0386028546,
+        "increaseUsd": 1527.7921039320063
+      }
+    },
+    {
+      "name": "Flex USDC yVault",
+      "address": "0x863687e4E9751b57F38b4B0ebA04744C72d0f7B8",
+      "kind": "Multi Strategy",
+      "apiVersion": "3.0.4",
+      "assetSymbol": "USDC",
+      "status": "valued",
+      "inventoryTvlUsd": 1118703.1837779037,
+      "holderValueUsd": 1118674.237420499,
+      "currentUsdPerSecond": 0.0009253105503469328,
+      "remainingSeconds": 294619,
+      "remainingUnlockUsd": 272.68052064510994,
+      "afterOneMinute": {
+        "assets": "1119253798408",
+        "usd": 1118674.292938739,
+        "increaseUsd": 0.05551823996938765
+      },
+      "afterOneHour": {
+        "assets": "1119257075715",
+        "usd": 1118677.568548879,
+        "increaseUsd": 3.3311283797957003
+      },
+      "afterOneDay": {
+        "assets": "1119333736825",
+        "usd": 1118754.18996678,
+        "increaseUsd": 79.95254628080875
+      },
+      "final": {
+        "assets": "1119526564638",
+        "usd": 1118946.9179411442,
+        "increaseUsd": 272.68052064510994
+      }
+    },
+    {
+      "name": "Flex WETH yVault",
+      "address": "0xfaC55fAFD0b55BFb8dD41F735EfCc195adA9891F",
+      "kind": "Multi Strategy",
+      "apiVersion": "3.1.0",
+      "assetSymbol": "WETH",
+      "status": "valued",
+      "inventoryTvlUsd": 712611.5165341953,
+      "holderValueUsd": 718995.0463613393,
+      "currentUsdPerSecond": 0.000510212766404955,
+      "remainingSeconds": 311952,
+      "remainingUnlockUsd": 159.19713392318226,
+      "afterOneMinute": {
+        "assets": "310197451655494967455",
+        "usd": 718995.0769741065,
+        "increaseUsd": 0.030612767208367586
+      },
+      "afterOneHour": {
+        "assets": "310198230889721819391",
+        "usd": 718996.8831319906,
+        "increaseUsd": 1.8367706512799487
+      },
+      "afterOneDay": {
+        "assets": "310216458162972591250",
+        "usd": 719039.131447262,
+        "increaseUsd": 44.08508592273574
+      },
+      "final": {
+        "assets": "310266121178879258465",
+        "usd": 719154.2434952625,
+        "increaseUsd": 159.19713392318226
+      }
+    },
+    {
+      "name": "Spark USDS Compounder",
+      "address": "0xc9f01b5c6048B064E6d925d1c2d7206d4fEeF8a3",
+      "kind": "Single Strategy",
+      "apiVersion": "3.0.4",
+      "assetSymbol": "USDS",
+      "status": "valued",
+      "inventoryTvlUsd": 454022.62556548597,
+      "holderValueUsd": 454014.952257944,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "453993649729569017723965",
+        "usd": 454014.952257944,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "453993649729569017723965",
+        "usd": 454014.952257944,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "453993649729569017723965",
+        "usd": 454014.952257944,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "453993649729569017723965",
+        "usd": 454014.952257944,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Curve Boosted crvUSD-sreUSD Lender",
+      "address": "0x09AcE8B2f2fE2189A5B37046BBaFa29Dce31c920",
+      "kind": "Single Strategy",
+      "apiVersion": "3.0.4",
+      "assetSymbol": "crvUSD",
+      "status": "valued",
+      "inventoryTvlUsd": 370118.55348812975,
+      "holderValueUsd": 370167.2605570872,
+      "currentUsdPerSecond": 0.0004336285072446694,
+      "remainingSeconds": 339720,
+      "remainingUnlockUsd": 147.3709244186757,
+      "afterOneMinute": {
+        "assets": "370505680798941263209582",
+        "usd": 370167.28657479945,
+        "increaseUsd": 0.026017712254542857
+      },
+      "afterOneHour": {
+        "assets": "370507217253729767818124",
+        "usd": 370168.8216262966,
+        "increaseUsd": 1.5610692094196565
+      },
+      "afterOneDay": {
+        "assets": "370543158305969728656556",
+        "usd": 370204.72985246906,
+        "increaseUsd": 37.46929538185941
+      },
+      "final": {
+        "assets": "370653160403302465439933",
+        "usd": 370314.6314815059,
+        "increaseUsd": 147.3709244186757
+      }
+    },
+    {
+      "name": "USDC-2 yVault",
+      "address": "0xAe7d8Db82480E6d8e3873ecbF22cf17b3D8A7308",
+      "kind": "Multi Strategy",
+      "apiVersion": "3.0.2",
+      "assetSymbol": "USDC",
+      "status": "valued",
+      "inventoryTvlUsd": 266829.2399887064,
+      "holderValueUsd": 266427.1924439038,
+      "currentUsdPerSecond": 0.0006736252998418927,
+      "remainingSeconds": 563448,
+      "remainingUnlockUsd": 380.0943122105673,
+      "afterOneMinute": {
+        "assets": "266565249833",
+        "usd": 266427.23286096664,
+        "increaseUsd": 0.040417062817141414
+      },
+      "afterOneHour": {
+        "assets": "266567635724",
+        "usd": 266429.61751664634,
+        "increaseUsd": 2.4250727425096557
+      },
+      "afterOneDay": {
+        "assets": "266623453494",
+        "usd": 266485.40638640674,
+        "increaseUsd": 58.213942502916325
+      },
+      "final": {
+        "assets": "266945500607",
+        "usd": 266807.2867561144,
+        "increaseUsd": 380.0943122105673
+      }
+    },
+    {
+      "name": "yYB yVault",
+      "address": "0x1F6f16945e395593d8050d6Cc33e4328a515B648",
+      "kind": "Multi Strategy",
+      "apiVersion": "3.0.4",
+      "assetSymbol": "yYB",
+      "status": "valued",
+      "inventoryTvlUsd": 144332.19035207178,
+      "holderValueUsd": 146777.33378215032,
+      "currentUsdPerSecond": 0.0003558950009439789,
+      "remainingSeconds": 279084,
+      "remainingUnlockUsd": 99.39185917095165,
+      "afterOneMinute": {
+        "assets": "2591121148086326346073849",
+        "usd": 146777.35513585346,
+        "increaseUsd": 0.021353703137720004
+      },
+      "afterOneHour": {
+        "assets": "2591143389258150029924596",
+        "usd": 146778.6150153376,
+        "increaseUsd": 1.281233187270118
+      },
+      "afterOneDay": {
+        "assets": "2591663715428210125485513",
+        "usd": 146808.0895534563,
+        "increaseUsd": 30.755771305965027
+      },
+      "final": {
+        "assets": "2592875376577331321774158",
+        "usd": 146876.72564132127,
+        "increaseUsd": 99.39185917095165
+      }
+    },
+    {
+      "name": "Morpho Gauntlet WETH Prime Compounder",
+      "address": "0xeEB6Be70fF212238419cD638FAB17910CF61CBE7",
+      "kind": "Single Strategy",
+      "apiVersion": "3.0.4",
+      "assetSymbol": "WETH",
+      "status": "valued",
+      "inventoryTvlUsd": 144152.9990589583,
+      "holderValueUsd": 145449.31916696733,
+      "currentUsdPerSecond": 0.0004178856403967124,
+      "remainingSeconds": 575280,
+      "remainingUnlockUsd": 240.799248537136,
+      "afterOneMinute": {
+        "assets": "62751494931125716525",
+        "usd": 145449.34424011008,
+        "increaseUsd": 0.02507314275135286
+      },
+      "afterOneHour": {
+        "assets": "62752133161671462959",
+        "usd": 145450.82357083287,
+        "increaseUsd": 1.5044038655469194
+      },
+      "afterOneDay": {
+        "assets": "62767064969955847021",
+        "usd": 145485.4334510543,
+        "increaseUsd": 36.114284086972475
+      },
+      "final": {
+        "assets": "62855372604316633766",
+        "usd": 145690.11841550446,
+        "increaseUsd": 240.799248537136
+      }
+    },
+    {
+      "name": "Morpho Gauntlet USDC Prime Compounder",
+      "address": "0x694E47AFD14A64661a04eee674FB331bCDEF3737",
+      "kind": "Single Strategy",
+      "apiVersion": "3.0.4",
+      "assetSymbol": "USDC",
+      "status": "valued",
+      "inventoryTvlUsd": 74939.9258004726,
+      "holderValueUsd": 74936.04365439269,
+      "currentUsdPerSecond": 0.00011760993479884851,
+      "remainingSeconds": 239784,
+      "remainingUnlockUsd": 28.211598580266582,
+      "afterOneMinute": {
+        "assets": "74974869741",
+        "usd": 74936.05071073731,
+        "increaseUsd": 0.007056344620650634
+      },
+      "afterOneHour": {
+        "assets": "74975286298",
+        "usd": 74936.46705206053,
+        "increaseUsd": 0.42339766783697996
+      },
+      "afterOneDay": {
+        "assets": "74985030822",
+        "usd": 74946.20653073036,
+        "increaseUsd": 10.162876337664784
+      },
+      "final": {
+        "assets": "75003088894",
+        "usd": 74964.25525297296,
+        "increaseUsd": 28.211598580266582
+      }
+    },
+    {
+      "name": "SKY-1 yVault",
+      "address": "0xaF71a4f5d93fb88B24C67760BCF9688a6C3A54D4",
+      "kind": "Multi Strategy",
+      "apiVersion": "3.0.4",
+      "assetSymbol": "SKY",
+      "status": "valued",
+      "inventoryTvlUsd": 40143.41247239188,
+      "holderValueUsd": 40021.47621802291,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "609465674913191569787933",
+        "usd": 40021.47621802291,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "609465674913191569787933",
+        "usd": 40021.47621802291,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "609465674913191569787933",
+        "usd": 40021.47621802291,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "609465674913191569787933",
+        "usd": 40021.47621802291,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Sturdy pxETH Compounder",
+      "address": "0xC40dC53931cd184F782f3602d95C7e3609706004",
+      "kind": "Single Strategy",
+      "apiVersion": "3.0.2",
+      "assetSymbol": "pxETH",
+      "status": "price-unavailable",
+      "inventoryTvlUsd": 15997.595684857499,
+      "holderValueUsd": null,
+      "currentUsdPerSecond": null,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": null,
+      "afterOneMinute": {
+        "assets": "6442590384332753635",
+        "usd": null,
+        "increaseUsd": null
+      },
+      "afterOneHour": {
+        "assets": "6442590384332753635",
+        "usd": null,
+        "increaseUsd": null
+      },
+      "afterOneDay": {
+        "assets": "6442590384332753635",
+        "usd": null,
+        "increaseUsd": null
+      },
+      "final": {
+        "assets": "6442590384332753635",
+        "usd": null,
+        "increaseUsd": null
+      }
+    },
+    {
+      "name": "Compound V3 USD Lender",
+      "address": "0x7eE351aA702C8fC735D77Fb229b7676AC15D7c79",
+      "kind": "Single Strategy",
+      "apiVersion": "3.0.2",
+      "assetSymbol": "USDC",
+      "status": "valued",
+      "inventoryTvlUsd": 15542.988938476516,
+      "holderValueUsd": 15541.710219953566,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "15549761273",
+        "usd": 15541.710219953566,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "15549761273",
+        "usd": 15541.710219953566,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "15549761273",
+        "usd": 15541.710219953566,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "15549761273",
+        "usd": 15541.710219953566,
+        "increaseUsd": 0
+      }
+    },
+    {
+      "name": "Sturdy crvUSD Compounder",
+      "address": "0x05329AAb081B125eEF7FbbC8b857428D478E692B",
+      "kind": "Single Strategy",
+      "apiVersion": "3.0.2",
+      "assetSymbol": "crvUSD",
+      "status": "valued",
+      "inventoryTvlUsd": 15508.518815099063,
+      "holderValueUsd": 15510.452900870723,
+      "currentUsdPerSecond": 0,
+      "remainingSeconds": 0,
+      "remainingUnlockUsd": 0,
+      "afterOneMinute": {
+        "assets": "15524632024380106873306",
+        "usd": 15510.452900870723,
+        "increaseUsd": 0
+      },
+      "afterOneHour": {
+        "assets": "15524632024380106873306",
+        "usd": 15510.452900870723,
+        "increaseUsd": 0
+      },
+      "afterOneDay": {
+        "assets": "15524632024380106873306",
+        "usd": 15510.452900870723,
+        "increaseUsd": 0
+      },
+      "final": {
+        "assets": "15524632024380106873306",
+        "usd": 15510.452900870723,
+        "increaseUsd": 0
+      }
+    }
+  ]
+}

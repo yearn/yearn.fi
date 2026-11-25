@@ -1,0 +1,2383 @@
+{
+  "capturedAt": "2026-11-04T14:50:17.988Z",
+  "blockNumber": "26342075",
+  "blockHash": "0x8ebbd85fc01dd9d549c5e439952f896e209edc7d678363344dd53b6e2fef9598",
+  "timestamp": "1793802839",
+  "chainId": 1,
+  "sources": {
+    "inventory": "https://kong.yearn.fi/api/rest/list/vaults",
+    "prices": "https://coins.llama.fi/prices/historical/1793802839/...",
+    "rpc": "Configured Ethereum read-only RPC (endpoint omitted)"
+  },
+  "selection": {
+    "cutoffUsd": 10000,
+    "criteria": "V3, inclusion.isYearn, type=Yearn Vault, not hidden, not retired; Ethereum pilot",
+    "thresholds": [
+      {
+        "cutoffUsd": 1000,
+        "count": 48,
+        "grossInventoryTvlUsd": 128456981.8738724,
+        "byChain": {
+          "1": 31,
+          "137": 5,
+          "8453": 4,
+          "42161": 2,
+          "747474": 6
+        },
+        "vaults": [
+          {
+            "chainId": 1,
+            "address": "0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204",
+            "name": "USDC-1 yVault",
+            "tvl": 18244824.593776055,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.2"
+          },
+          {
+            "chainId": 1,
+            "address": "0x696d02Db93291651ED510704c9b286841d506987",
+            "name": "yvUSD",
+            "tvl": 15411057.826800287,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0xAc37729B76db6438CE62042AE1270ee574CA7571",
+            "name": "WETH-2 yVault",
+            "tvl": 11743918.155596258,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.2"
+          },
+          {
+            "chainId": 1,
+            "address": "0xc56413869c6CDf96496f2b1eF801fEDBdFA7dDB0",
+            "name": "WETH-1 yVault",
+            "tvl": 10673861.254663888,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.2"
+          },
+          {
+            "chainId": 1,
+            "address": "0x182863131F9a4630fF9E27830d945B1413e347E8",
+            "name": "USDS-1 yVault",
+            "tvl": 8830534.608671272,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.3"
+          },
+          {
+            "chainId": 1,
+            "address": "0x0e297dE4005883C757c9F09fdF7cF1363C20e626",
+            "name": "Morpho Yearn OG USDC Compounder",
+            "tvl": 7470461.678435479,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0x9F4330700a36B29952869fac9b33f45EEdd8A3d8",
+            "name": "Yearn BOLD",
+            "tvl": 7466057.003542972,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0x23346B04a7f55b8760E5860AA5A77383D63491cD",
+            "name": "Staked yBOLD",
+            "tvl": 7391805.31596317,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 747474,
+            "address": "0xE007CA01894c863d7898045ed5A3B4Abf0b18f37",
+            "name": "vbETH yVault",
+            "tvl": 6051727.390658708,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 747474,
+            "address": "0x80c34BD3A3569E126e7055831036aa7b212cB159",
+            "name": "vbUSDC yVault",
+            "tvl": 5996324.208762144,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0x028eC7330ff87667b6dfb0D94b954c820195336c",
+            "name": "DAI-1 yVault",
+            "tvl": 5732244.564777473,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.2"
+          },
+          {
+            "chainId": 1,
+            "address": "0x310B7Ea7475A0B449Cfd73bE81522F1B88eFAFaa",
+            "name": "USDT-1 yVault",
+            "tvl": 5664397.89547711,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.2"
+          },
+          {
+            "chainId": 1,
+            "address": "0x751F0cC6115410A3eE9eC92d08f46Ff6Da98b708",
+            "name": "WBTC-1 yVault",
+            "tvl": 3681677.8681651,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0x074134A2784F4F66b6ceD6f68849382990Ff3215",
+            "name": "Morpho Steakhouse USDC Compounder",
+            "tvl": 2399895.2662479044,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 8453,
+            "address": "0xF115C134c23C7A05FBD489A8bE3116EbF54B0D9f",
+            "name": "Morpho Yearn Morpho Vault 1 Compounder",
+            "tvl": 1963097.7942998204,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0xBF319dDC2Edc1Eb6FDf9910E39b37Be221C8805F",
+            "name": "crvUSD-2 yVault",
+            "tvl": 1445943.7544300265,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.2"
+          },
+          {
+            "chainId": 747474,
+            "address": "0x9A6bd7B6Fd5C4F87eb66356441502fc7dCdd185B",
+            "name": "vbUSDT yVault",
+            "tvl": 1413767.983215802,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 8453,
+            "address": "0xb13CF163d916917d9cD6E836905cA5f12a1dEF4B",
+            "name": "True Yield Dollar",
+            "tvl": 1292856.096722979,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0x863687e4E9751b57F38b4B0ebA04744C72d0f7B8",
+            "name": "Flex USDC yVault",
+            "tvl": 1118703.1837779037,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 747474,
+            "address": "0xAa0362eCC584B985056E47812931270b99C91f9d",
+            "name": "vbWBTC yVault",
+            "tvl": 866051.3311853397,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 8453,
+            "address": "0xc3BD0A2193c8F027B82ddE3611D18589ef3f62a9",
+            "name": "USDC Horizon yVault",
+            "tvl": 734659.604443658,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0xfaC55fAFD0b55BFb8dD41F735EfCc195adA9891F",
+            "name": "Flex WETH yVault",
+            "tvl": 712611.5165341953,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.1.0"
+          },
+          {
+            "chainId": 747474,
+            "address": "0x0432337365d89c0D73f1D0Cb263791F8f1B98D43",
+            "name": "Morpho vbWBTC/yvUSDC Lender Borrower",
+            "tvl": 518497.27644106286,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0xc9f01b5c6048B064E6d925d1c2d7206d4fEeF8a3",
+            "name": "Spark USDS Compounder",
+            "tvl": 454022.62556548597,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0x09AcE8B2f2fE2189A5B37046BBaFa29Dce31c920",
+            "name": "Curve Boosted crvUSD-sreUSD Lender",
+            "tvl": 370118.55348812975,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0xAe7d8Db82480E6d8e3873ecbF22cf17b3D8A7308",
+            "name": "USDC-2 yVault",
+            "tvl": 266829.2399887064,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.2"
+          },
+          {
+            "chainId": 1,
+            "address": "0x1F6f16945e395593d8050d6Cc33e4328a515B648",
+            "name": "yYB yVault",
+            "tvl": 144332.19035207178,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0xeEB6Be70fF212238419cD638FAB17910CF61CBE7",
+            "name": "Morpho Gauntlet WETH Prime Compounder",
+            "tvl": 144152.9990589583,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0x694E47AFD14A64661a04eee674FB331bCDEF3737",
+            "name": "Morpho Gauntlet USDC Prime Compounder",
+            "tvl": 74939.9258004726,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0xaF71a4f5d93fb88B24C67760BCF9688a6C3A54D4",
+            "name": "SKY-1 yVault",
+            "tvl": 40143.41247239188,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 42161,
+            "address": "0xCACc53bAcCe744ac7b5C1eC7eb7e3Ab01330733b",
+            "name": "USDC CompoundV3 Lender",
+            "tvl": 22736.927364147305,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.1"
+          },
+          {
+            "chainId": 8453,
+            "address": "0x0dE119f5790c4EcF6eEd80Aac7c25D2dCAD10f0f",
+            "name": "EURC Fluid Lender",
+            "tvl": 19376.809819049795,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0xC40dC53931cd184F782f3602d95C7e3609706004",
+            "name": "Sturdy pxETH Compounder",
+            "tvl": 15997.595684857499,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.2"
+          },
+          {
+            "chainId": 1,
+            "address": "0x7eE351aA702C8fC735D77Fb229b7676AC15D7c79",
+            "name": "Compound V3 USD Lender",
+            "tvl": 15542.988938476516,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.2"
+          },
+          {
+            "chainId": 1,
+            "address": "0x05329AAb081B125eEF7FbbC8b857428D478E692B",
+            "name": "Sturdy crvUSD Compounder",
+            "tvl": 15508.518815099063,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.2"
+          },
+          {
+            "chainId": 747474,
+            "address": "0x78EC25FBa1bAf6b7dc097Ebb8115A390A2a4Ee12",
+            "name": "Morpho Yearn OG USDC Compounder",
+            "tvl": 10991.294508765748,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0x6D2981FF9b8d7edbb7604de7A65BAC8694ac849F",
+            "name": "Morpho Gauntlet USDT Prime Compounder",
+            "tvl": 7845.397801319959,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 137,
+            "address": "0x12c3Ad898e8eB1C0ec0Bb74f9748F36C46593F68",
+            "name": "Aave V3 WMATIC Lender",
+            "tvl": 7777.403516237087,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.1"
+          },
+          {
+            "chainId": 137,
+            "address": "0x06eD7C67755344548FAFe1822bEE365C4208a57F",
+            "name": "yearn-V3-Stargate-DAI",
+            "tvl": 4366.947335587294,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.1"
+          },
+          {
+            "chainId": 137,
+            "address": "0xdB92B89Ca415c0dab40Dc96E99Fc411C08F20780",
+            "name": "Aave V3 USDC Lender",
+            "tvl": 3818.726443152883,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.1"
+          },
+          {
+            "chainId": 137,
+            "address": "0x4987d1856F93DFf29e08aa605A805FaF43dC3103",
+            "name": "yvAjnaUSDC-compounder",
+            "tvl": 2415.1581372863407,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.1"
+          },
+          {
+            "chainId": 137,
+            "address": "0x3bd8C987286D8Ad00c05fdb2Ae3E8C9a0f054734",
+            "name": "AaveV3 USDT Lender",
+            "tvl": 1956.6815589669209,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.1"
+          },
+          {
+            "chainId": 1,
+            "address": "0x84E750c4B79482050Ab25C7B3D77fFF334663A53",
+            "name": "Morpho LlamaRisk crvUSD Vault Compounder",
+            "tvl": 1912.6094193037682,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 42161,
+            "address": "0xb739AE19620f7ECB4fb84727f205453aa5bc1AD2",
+            "name": "Silo Lender ARB/USDC.e",
+            "tvl": 1822.2559993585262,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.2"
+          },
+          {
+            "chainId": 1,
+            "address": "0x09580f2305a335218bdB2EB828387d52ED8Fc2F4",
+            "name": "Morpho Gauntlet DAI Core Compounder",
+            "tvl": 1485.957838421611,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0xe5baF8b6Be442811211e9339d9fbC1B8fb7D66dF",
+            "name": "Aave V3 USDT Lender",
+            "tvl": 1452.963029117531,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.3"
+          },
+          {
+            "chainId": 1,
+            "address": "0x70E75D8053e3Fb0Dda35e80EB16f208c7e4D54F4",
+            "name": "Morpho Gauntlet LRT Core Compounder",
+            "tvl": 1346.9666377395129,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0x206db0A0Af10Bec57784045e089A418771D20227",
+            "name": "USDT CompoundV3 Lender",
+            "tvl": 1111.5517106771872,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.2"
+          }
+        ]
+      },
+      {
+        "cutoffUsd": 10000,
+        "count": 36,
+        "grossInventoryTvlUsd": 128419669.25444523,
+        "byChain": {
+          "1": 25,
+          "8453": 4,
+          "42161": 1,
+          "747474": 6
+        },
+        "vaults": [
+          {
+            "chainId": 1,
+            "address": "0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204",
+            "name": "USDC-1 yVault",
+            "tvl": 18244824.593776055,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.2"
+          },
+          {
+            "chainId": 1,
+            "address": "0x696d02Db93291651ED510704c9b286841d506987",
+            "name": "yvUSD",
+            "tvl": 15411057.826800287,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0xAc37729B76db6438CE62042AE1270ee574CA7571",
+            "name": "WETH-2 yVault",
+            "tvl": 11743918.155596258,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.2"
+          },
+          {
+            "chainId": 1,
+            "address": "0xc56413869c6CDf96496f2b1eF801fEDBdFA7dDB0",
+            "name": "WETH-1 yVault",
+            "tvl": 10673861.254663888,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.2"
+          },
+          {
+            "chainId": 1,
+            "address": "0x182863131F9a4630fF9E27830d945B1413e347E8",
+            "name": "USDS-1 yVault",
+            "tvl": 8830534.608671272,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.3"
+          },
+          {
+            "chainId": 1,
+            "address": "0x0e297dE4005883C757c9F09fdF7cF1363C20e626",
+            "name": "Morpho Yearn OG USDC Compounder",
+            "tvl": 7470461.678435479,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0x9F4330700a36B29952869fac9b33f45EEdd8A3d8",
+            "name": "Yearn BOLD",
+            "tvl": 7466057.003542972,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0x23346B04a7f55b8760E5860AA5A77383D63491cD",
+            "name": "Staked yBOLD",
+            "tvl": 7391805.31596317,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 747474,
+            "address": "0xE007CA01894c863d7898045ed5A3B4Abf0b18f37",
+            "name": "vbETH yVault",
+            "tvl": 6051727.390658708,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 747474,
+            "address": "0x80c34BD3A3569E126e7055831036aa7b212cB159",
+            "name": "vbUSDC yVault",
+            "tvl": 5996324.208762144,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0x028eC7330ff87667b6dfb0D94b954c820195336c",
+            "name": "DAI-1 yVault",
+            "tvl": 5732244.564777473,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.2"
+          },
+          {
+            "chainId": 1,
+            "address": "0x310B7Ea7475A0B449Cfd73bE81522F1B88eFAFaa",
+            "name": "USDT-1 yVault",
+            "tvl": 5664397.89547711,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.2"
+          },
+          {
+            "chainId": 1,
+            "address": "0x751F0cC6115410A3eE9eC92d08f46Ff6Da98b708",
+            "name": "WBTC-1 yVault",
+            "tvl": 3681677.8681651,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0x074134A2784F4F66b6ceD6f68849382990Ff3215",
+            "name": "Morpho Steakhouse USDC Compounder",
+            "tvl": 2399895.2662479044,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 8453,
+            "address": "0xF115C134c23C7A05FBD489A8bE3116EbF54B0D9f",
+            "name": "Morpho Yearn Morpho Vault 1 Compounder",
+            "tvl": 1963097.7942998204,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0xBF319dDC2Edc1Eb6FDf9910E39b37Be221C8805F",
+            "name": "crvUSD-2 yVault",
+            "tvl": 1445943.7544300265,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.2"
+          },
+          {
+            "chainId": 747474,
+            "address": "0x9A6bd7B6Fd5C4F87eb66356441502fc7dCdd185B",
+            "name": "vbUSDT yVault",
+            "tvl": 1413767.983215802,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 8453,
+            "address": "0xb13CF163d916917d9cD6E836905cA5f12a1dEF4B",
+            "name": "True Yield Dollar",
+            "tvl": 1292856.096722979,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0x863687e4E9751b57F38b4B0ebA04744C72d0f7B8",
+            "name": "Flex USDC yVault",
+            "tvl": 1118703.1837779037,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 747474,
+            "address": "0xAa0362eCC584B985056E47812931270b99C91f9d",
+            "name": "vbWBTC yVault",
+            "tvl": 866051.3311853397,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 8453,
+            "address": "0xc3BD0A2193c8F027B82ddE3611D18589ef3f62a9",
+            "name": "USDC Horizon yVault",
+            "tvl": 734659.604443658,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0xfaC55fAFD0b55BFb8dD41F735EfCc195adA9891F",
+            "name": "Flex WETH yVault",
+            "tvl": 712611.5165341953,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.1.0"
+          },
+          {
+            "chainId": 747474,
+            "address": "0x0432337365d89c0D73f1D0Cb263791F8f1B98D43",
+            "name": "Morpho vbWBTC/yvUSDC Lender Borrower",
+            "tvl": 518497.27644106286,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0xc9f01b5c6048B064E6d925d1c2d7206d4fEeF8a3",
+            "name": "Spark USDS Compounder",
+            "tvl": 454022.62556548597,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0x09AcE8B2f2fE2189A5B37046BBaFa29Dce31c920",
+            "name": "Curve Boosted crvUSD-sreUSD Lender",
+            "tvl": 370118.55348812975,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0xAe7d8Db82480E6d8e3873ecbF22cf17b3D8A7308",
+            "name": "USDC-2 yVault",
+            "tvl": 266829.2399887064,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.2"
+          },
+          {
+            "chainId": 1,
+            "address": "0x1F6f16945e395593d8050d6Cc33e4328a515B648",
+            "name": "yYB yVault",
+            "tvl": 144332.19035207178,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0xeEB6Be70fF212238419cD638FAB17910CF61CBE7",
+            "name": "Morpho Gauntlet WETH Prime Compounder",
+            "tvl": 144152.9990589583,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0x694E47AFD14A64661a04eee674FB331bCDEF3737",
+            "name": "Morpho Gauntlet USDC Prime Compounder",
+            "tvl": 74939.9258004726,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0xaF71a4f5d93fb88B24C67760BCF9688a6C3A54D4",
+            "name": "SKY-1 yVault",
+            "tvl": 40143.41247239188,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 42161,
+            "address": "0xCACc53bAcCe744ac7b5C1eC7eb7e3Ab01330733b",
+            "name": "USDC CompoundV3 Lender",
+            "tvl": 22736.927364147305,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.1"
+          },
+          {
+            "chainId": 8453,
+            "address": "0x0dE119f5790c4EcF6eEd80Aac7c25D2dCAD10f0f",
+            "name": "EURC Fluid Lender",
+            "tvl": 19376.809819049795,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0xC40dC53931cd184F782f3602d95C7e3609706004",
+            "name": "Sturdy pxETH Compounder",
+            "tvl": 15997.595684857499,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.2"
+          },
+          {
+            "chainId": 1,
+            "address": "0x7eE351aA702C8fC735D77Fb229b7676AC15D7c79",
+            "name": "Compound V3 USD Lender",
+            "tvl": 15542.988938476516,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.2"
+          },
+          {
+            "chainId": 1,
+            "address": "0x05329AAb081B125eEF7FbbC8b857428D478E692B",
+            "name": "Sturdy crvUSD Compounder",
+            "tvl": 15508.518815099063,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.2"
+          },
+          {
+            "chainId": 747474,
+            "address": "0x78EC25FBa1bAf6b7dc097Ebb8115A390A2a4Ee12",
+            "name": "Morpho Yearn OG USDC Compounder",
+            "tvl": 10991.294508765748,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.4"
+          }
+        ]
+      },
+      {
+        "cutoffUsd": 25000,
+        "count": 30,
+        "grossInventoryTvlUsd": 128319515.11931483,
+        "byChain": {
+          "1": 22,
+          "8453": 3,
+          "747474": 5
+        },
+        "vaults": [
+          {
+            "chainId": 1,
+            "address": "0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204",
+            "name": "USDC-1 yVault",
+            "tvl": 18244824.593776055,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.2"
+          },
+          {
+            "chainId": 1,
+            "address": "0x696d02Db93291651ED510704c9b286841d506987",
+            "name": "yvUSD",
+            "tvl": 15411057.826800287,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0xAc37729B76db6438CE62042AE1270ee574CA7571",
+            "name": "WETH-2 yVault",
+            "tvl": 11743918.155596258,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.2"
+          },
+          {
+            "chainId": 1,
+            "address": "0xc56413869c6CDf96496f2b1eF801fEDBdFA7dDB0",
+            "name": "WETH-1 yVault",
+            "tvl": 10673861.254663888,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.2"
+          },
+          {
+            "chainId": 1,
+            "address": "0x182863131F9a4630fF9E27830d945B1413e347E8",
+            "name": "USDS-1 yVault",
+            "tvl": 8830534.608671272,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.3"
+          },
+          {
+            "chainId": 1,
+            "address": "0x0e297dE4005883C757c9F09fdF7cF1363C20e626",
+            "name": "Morpho Yearn OG USDC Compounder",
+            "tvl": 7470461.678435479,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0x9F4330700a36B29952869fac9b33f45EEdd8A3d8",
+            "name": "Yearn BOLD",
+            "tvl": 7466057.003542972,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0x23346B04a7f55b8760E5860AA5A77383D63491cD",
+            "name": "Staked yBOLD",
+            "tvl": 7391805.31596317,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 747474,
+            "address": "0xE007CA01894c863d7898045ed5A3B4Abf0b18f37",
+            "name": "vbETH yVault",
+            "tvl": 6051727.390658708,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 747474,
+            "address": "0x80c34BD3A3569E126e7055831036aa7b212cB159",
+            "name": "vbUSDC yVault",
+            "tvl": 5996324.208762144,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0x028eC7330ff87667b6dfb0D94b954c820195336c",
+            "name": "DAI-1 yVault",
+            "tvl": 5732244.564777473,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.2"
+          },
+          {
+            "chainId": 1,
+            "address": "0x310B7Ea7475A0B449Cfd73bE81522F1B88eFAFaa",
+            "name": "USDT-1 yVault",
+            "tvl": 5664397.89547711,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.2"
+          },
+          {
+            "chainId": 1,
+            "address": "0x751F0cC6115410A3eE9eC92d08f46Ff6Da98b708",
+            "name": "WBTC-1 yVault",
+            "tvl": 3681677.8681651,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0x074134A2784F4F66b6ceD6f68849382990Ff3215",
+            "name": "Morpho Steakhouse USDC Compounder",
+            "tvl": 2399895.2662479044,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 8453,
+            "address": "0xF115C134c23C7A05FBD489A8bE3116EbF54B0D9f",
+            "name": "Morpho Yearn Morpho Vault 1 Compounder",
+            "tvl": 1963097.7942998204,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0xBF319dDC2Edc1Eb6FDf9910E39b37Be221C8805F",
+            "name": "crvUSD-2 yVault",
+            "tvl": 1445943.7544300265,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.2"
+          },
+          {
+            "chainId": 747474,
+            "address": "0x9A6bd7B6Fd5C4F87eb66356441502fc7dCdd185B",
+            "name": "vbUSDT yVault",
+            "tvl": 1413767.983215802,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 8453,
+            "address": "0xb13CF163d916917d9cD6E836905cA5f12a1dEF4B",
+            "name": "True Yield Dollar",
+            "tvl": 1292856.096722979,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0x863687e4E9751b57F38b4B0ebA04744C72d0f7B8",
+            "name": "Flex USDC yVault",
+            "tvl": 1118703.1837779037,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 747474,
+            "address": "0xAa0362eCC584B985056E47812931270b99C91f9d",
+            "name": "vbWBTC yVault",
+            "tvl": 866051.3311853397,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 8453,
+            "address": "0xc3BD0A2193c8F027B82ddE3611D18589ef3f62a9",
+            "name": "USDC Horizon yVault",
+            "tvl": 734659.604443658,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0xfaC55fAFD0b55BFb8dD41F735EfCc195adA9891F",
+            "name": "Flex WETH yVault",
+            "tvl": 712611.5165341953,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.1.0"
+          },
+          {
+            "chainId": 747474,
+            "address": "0x0432337365d89c0D73f1D0Cb263791F8f1B98D43",
+            "name": "Morpho vbWBTC/yvUSDC Lender Borrower",
+            "tvl": 518497.27644106286,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0xc9f01b5c6048B064E6d925d1c2d7206d4fEeF8a3",
+            "name": "Spark USDS Compounder",
+            "tvl": 454022.62556548597,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0x09AcE8B2f2fE2189A5B37046BBaFa29Dce31c920",
+            "name": "Curve Boosted crvUSD-sreUSD Lender",
+            "tvl": 370118.55348812975,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0xAe7d8Db82480E6d8e3873ecbF22cf17b3D8A7308",
+            "name": "USDC-2 yVault",
+            "tvl": 266829.2399887064,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.2"
+          },
+          {
+            "chainId": 1,
+            "address": "0x1F6f16945e395593d8050d6Cc33e4328a515B648",
+            "name": "yYB yVault",
+            "tvl": 144332.19035207178,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0xeEB6Be70fF212238419cD638FAB17910CF61CBE7",
+            "name": "Morpho Gauntlet WETH Prime Compounder",
+            "tvl": 144152.9990589583,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0x694E47AFD14A64661a04eee674FB331bCDEF3737",
+            "name": "Morpho Gauntlet USDC Prime Compounder",
+            "tvl": 74939.9258004726,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0xaF71a4f5d93fb88B24C67760BCF9688a6C3A54D4",
+            "name": "SKY-1 yVault",
+            "tvl": 40143.41247239188,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.4"
+          }
+        ]
+      },
+      {
+        "cutoffUsd": 100000,
+        "count": 28,
+        "grossInventoryTvlUsd": 128204431.78104196,
+        "byChain": {
+          "1": 20,
+          "8453": 3,
+          "747474": 5
+        },
+        "vaults": [
+          {
+            "chainId": 1,
+            "address": "0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204",
+            "name": "USDC-1 yVault",
+            "tvl": 18244824.593776055,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.2"
+          },
+          {
+            "chainId": 1,
+            "address": "0x696d02Db93291651ED510704c9b286841d506987",
+            "name": "yvUSD",
+            "tvl": 15411057.826800287,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0xAc37729B76db6438CE62042AE1270ee574CA7571",
+            "name": "WETH-2 yVault",
+            "tvl": 11743918.155596258,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.2"
+          },
+          {
+            "chainId": 1,
+            "address": "0xc56413869c6CDf96496f2b1eF801fEDBdFA7dDB0",
+            "name": "WETH-1 yVault",
+            "tvl": 10673861.254663888,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.2"
+          },
+          {
+            "chainId": 1,
+            "address": "0x182863131F9a4630fF9E27830d945B1413e347E8",
+            "name": "USDS-1 yVault",
+            "tvl": 8830534.608671272,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.3"
+          },
+          {
+            "chainId": 1,
+            "address": "0x0e297dE4005883C757c9F09fdF7cF1363C20e626",
+            "name": "Morpho Yearn OG USDC Compounder",
+            "tvl": 7470461.678435479,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0x9F4330700a36B29952869fac9b33f45EEdd8A3d8",
+            "name": "Yearn BOLD",
+            "tvl": 7466057.003542972,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0x23346B04a7f55b8760E5860AA5A77383D63491cD",
+            "name": "Staked yBOLD",
+            "tvl": 7391805.31596317,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 747474,
+            "address": "0xE007CA01894c863d7898045ed5A3B4Abf0b18f37",
+            "name": "vbETH yVault",
+            "tvl": 6051727.390658708,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 747474,
+            "address": "0x80c34BD3A3569E126e7055831036aa7b212cB159",
+            "name": "vbUSDC yVault",
+            "tvl": 5996324.208762144,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0x028eC7330ff87667b6dfb0D94b954c820195336c",
+            "name": "DAI-1 yVault",
+            "tvl": 5732244.564777473,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.2"
+          },
+          {
+            "chainId": 1,
+            "address": "0x310B7Ea7475A0B449Cfd73bE81522F1B88eFAFaa",
+            "name": "USDT-1 yVault",
+            "tvl": 5664397.89547711,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.2"
+          },
+          {
+            "chainId": 1,
+            "address": "0x751F0cC6115410A3eE9eC92d08f46Ff6Da98b708",
+            "name": "WBTC-1 yVault",
+            "tvl": 3681677.8681651,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0x074134A2784F4F66b6ceD6f68849382990Ff3215",
+            "name": "Morpho Steakhouse USDC Compounder",
+            "tvl": 2399895.2662479044,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 8453,
+            "address": "0xF115C134c23C7A05FBD489A8bE3116EbF54B0D9f",
+            "name": "Morpho Yearn Morpho Vault 1 Compounder",
+            "tvl": 1963097.7942998204,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0xBF319dDC2Edc1Eb6FDf9910E39b37Be221C8805F",
+            "name": "crvUSD-2 yVault",
+            "tvl": 1445943.7544300265,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.2"
+          },
+          {
+            "chainId": 747474,
+            "address": "0x9A6bd7B6Fd5C4F87eb66356441502fc7dCdd185B",
+            "name": "vbUSDT yVault",
+            "tvl": 1413767.983215802,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 8453,
+            "address": "0xb13CF163d916917d9cD6E836905cA5f12a1dEF4B",
+            "name": "True Yield Dollar",
+            "tvl": 1292856.096722979,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0x863687e4E9751b57F38b4B0ebA04744C72d0f7B8",
+            "name": "Flex USDC yVault",
+            "tvl": 1118703.1837779037,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 747474,
+            "address": "0xAa0362eCC584B985056E47812931270b99C91f9d",
+            "name": "vbWBTC yVault",
+            "tvl": 866051.3311853397,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 8453,
+            "address": "0xc3BD0A2193c8F027B82ddE3611D18589ef3f62a9",
+            "name": "USDC Horizon yVault",
+            "tvl": 734659.604443658,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0xfaC55fAFD0b55BFb8dD41F735EfCc195adA9891F",
+            "name": "Flex WETH yVault",
+            "tvl": 712611.5165341953,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.1.0"
+          },
+          {
+            "chainId": 747474,
+            "address": "0x0432337365d89c0D73f1D0Cb263791F8f1B98D43",
+            "name": "Morpho vbWBTC/yvUSDC Lender Borrower",
+            "tvl": 518497.27644106286,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0xc9f01b5c6048B064E6d925d1c2d7206d4fEeF8a3",
+            "name": "Spark USDS Compounder",
+            "tvl": 454022.62556548597,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0x09AcE8B2f2fE2189A5B37046BBaFa29Dce31c920",
+            "name": "Curve Boosted crvUSD-sreUSD Lender",
+            "tvl": 370118.55348812975,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0xAe7d8Db82480E6d8e3873ecbF22cf17b3D8A7308",
+            "name": "USDC-2 yVault",
+            "tvl": 266829.2399887064,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.2"
+          },
+          {
+            "chainId": 1,
+            "address": "0x1F6f16945e395593d8050d6Cc33e4328a515B648",
+            "name": "yYB yVault",
+            "tvl": 144332.19035207178,
+            "kind": "Multi Strategy",
+            "apiVersion": "3.0.4"
+          },
+          {
+            "chainId": 1,
+            "address": "0xeEB6Be70fF212238419cD638FAB17910CF61CBE7",
+            "name": "Morpho Gauntlet WETH Prime Compounder",
+            "tvl": 144152.9990589583,
+            "kind": "Single Strategy",
+            "apiVersion": "3.0.4"
+          }
+        ]
+      }
+    ],
+    "missingInventoryPrices": []
+  },
+  "rows": [
+    {
+      "address": "0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204",
+      "name": "USDC-1 yVault",
+      "kind": "Multi Strategy",
+      "apiVersion": "3.0.2",
+      "inventoryTvlUsd": 18244824.593776055,
+      "assetMetadata": {
+        "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "name": "USD Coin",
+        "symbol": "USDC",
+        "decimals": 6
+      },
+      "reads": {
+        "totalAssets": "18252728173214",
+        "totalSupply": "16237798729693",
+        "balanceOf": "12047016761",
+        "unlockedShares": "6185927811",
+        "profitUnlockingRate": "30214757885142805",
+        "fullProfitUnlockDate": "1794201552",
+        "profitMaxUnlockTime": "864000",
+        "lastProfitUpdate": "1793598107",
+        "lastReport": null,
+        "apiVersion": "3.0.2",
+        "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "decimals": 6,
+        "get_default_queue": [
+          "0x39c0aEc5738ED939876245224aFc7E09C8480a52",
+          "0x7130570BCEfCedBe9d15B5b11A33006156460f8f",
+          "0x68Aea7b82Df6CcdF76235D46445Ed83f85F845A3",
+          "0x654a7c4Ae5ac3C853a99F8dbEAD2bC85090F753a"
+        ]
+      },
+      "lockedRemaining": "12047016761",
+      "holderShares": "16225751712932",
+      "holderAssets": "18239186256240",
+      "conversionAtSupply": "18252728173214",
+      "price": {
+        "decimals": 6,
+        "symbol": "USDC",
+        "price": 0.999482239443739,
+        "timestamp": 1793802836,
+        "confidence": 0.99
+      },
+      "validated": true
+    },
+    {
+      "address": "0x696d02Db93291651ED510704c9b286841d506987",
+      "name": "yvUSD",
+      "kind": "Multi Strategy",
+      "apiVersion": "3.0.4",
+      "inventoryTvlUsd": 15411057.826800287,
+      "assetMetadata": {
+        "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "name": "USD Coin",
+        "symbol": "USDC",
+        "decimals": 6
+      },
+      "reads": {
+        "totalAssets": "15418251064869",
+        "totalSupply": "14857867735927",
+        "balanceOf": "6878419560",
+        "unlockedShares": "1419635648",
+        "profitUnlockingRate": "24811864668893280",
+        "fullProfitUnlockDate": "1794080062",
+        "profitMaxUnlockTime": "432000",
+        "lastProfitUpdate": "1793745623",
+        "lastReport": null,
+        "apiVersion": "3.0.4",
+        "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "decimals": 6,
+        "get_default_queue": [
+          "0xcaDf62b59406a05754581c31C04f8f7B54AF1e6e",
+          "0xdA2f1B3CBa732d779cfF56f0cF9d3Bc8AEA6Cd8D",
+          "0x9e0A5943dFc1A85B48C191aa7c10487297aA675b",
+          "0x0e297dE4005883C757c9F09fdF7cF1363C20e626",
+          "0x908244B6ef0e52911a380a5454aEC0743598Fb20",
+          "0xF0FEC2602Dff25497D6a14b3113D0687b4c56741"
+        ]
+      },
+      "lockedRemaining": "6878419560",
+      "holderShares": "14850989316367",
+      "holderAssets": "15411113216989",
+      "conversionAtSupply": "15418251064869",
+      "price": {
+        "decimals": 6,
+        "symbol": "USDC",
+        "price": 0.999482239443739,
+        "timestamp": 1793802836,
+        "confidence": 0.99
+      },
+      "validated": true
+    },
+    {
+      "address": "0xAc37729B76db6438CE62042AE1270ee574CA7571",
+      "name": "WETH-2 yVault",
+      "kind": "Multi Strategy",
+      "apiVersion": "3.0.2",
+      "inventoryTvlUsd": 11743918.155596258,
+      "assetMetadata": {
+        "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        "name": "Wrapped Ether",
+        "symbol": "WETH",
+        "decimals": 18
+      },
+      "reads": {
+        "totalAssets": "5102846110952693313932",
+        "totalSupply": "4673030485368272645592",
+        "balanceOf": "364222349856041936",
+        "unlockedShares": "165567377538579371",
+        "profitUnlockingRate": "1018926331995294359639118",
+        "fullProfitUnlockDate": "1794160296",
+        "profitMaxUnlockTime": "864000",
+        "lastProfitUpdate": "1793640347",
+        "lastReport": null,
+        "apiVersion": "3.0.2",
+        "asset": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        "decimals": 18,
+        "get_default_queue": [
+          "0xc56413869c6CDf96496f2b1eF801fEDBdFA7dDB0",
+          "0xd9BA99D93ea94a65b5BC838a0106cA3AbC82Ec4F",
+          "0x13f6Cb609959a43c3bE29407766A683b42e26D28",
+          "0x5E8A9Acd00AdCED69b30D36929CbF7D4d4F9AE1F"
+        ]
+      },
+      "lockedRemaining": "364222349856041936",
+      "holderShares": "4672666263018416603656",
+      "holderAssets": "5102448388188567480407",
+      "conversionAtSupply": "5102846110952693313932",
+      "price": {
+        "decimals": 18,
+        "symbol": "WETH",
+        "price": 2317.8626166556064,
+        "timestamp": 1793802836,
+        "confidence": 0.99
+      },
+      "validated": true
+    },
+    {
+      "address": "0xc56413869c6CDf96496f2b1eF801fEDBdFA7dDB0",
+      "name": "WETH-1 yVault",
+      "kind": "Multi Strategy",
+      "apiVersion": "3.0.2",
+      "inventoryTvlUsd": 10673861.254663888,
+      "assetMetadata": {
+        "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        "name": "Wrapped Ether",
+        "symbol": "WETH",
+        "decimals": 18
+      },
+      "reads": {
+        "totalAssets": "4638242782479772366477",
+        "totalSupply": "4387316553567643801404",
+        "balanceOf": "3644755012855959554",
+        "unlockedShares": "220911892958007775",
+        "profitUnlockingRate": "6933832170684487628877074",
+        "fullProfitUnlockDate": "1794328487",
+        "profitMaxUnlockTime": "864000",
+        "lastProfitUpdate": "1793770979",
+        "lastReport": null,
+        "apiVersion": "3.0.2",
+        "asset": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        "decimals": 18,
+        "get_default_queue": [
+          "0x470e0e048F85CFD72EEf325895e02c8D297E7435",
+          "0xE89371eAaAC6D46d4C3ED23453241987916224FC",
+          "0xfca3F21D60d5bC8B4C5c35F169bb5B6402510151"
+        ]
+      },
+      "lockedRemaining": "3644755012855959554",
+      "holderShares": "4383671798554787841850",
+      "holderAssets": "4634389570972036678202",
+      "conversionAtSupply": "4638242782479772366477",
+      "price": {
+        "decimals": 18,
+        "symbol": "WETH",
+        "price": 2317.8626166556064,
+        "timestamp": 1793802836,
+        "confidence": 0.99
+      },
+      "validated": true
+    },
+    {
+      "address": "0x182863131F9a4630fF9E27830d945B1413e347E8",
+      "name": "USDS-1 yVault",
+      "kind": "Multi Strategy",
+      "apiVersion": "3.0.3",
+      "inventoryTvlUsd": 8830534.608671272,
+      "assetMetadata": {
+        "address": "0xdC035D45d973E3EC169d2276DDab16f1e407384F",
+        "name": "USDS Stablecoin",
+        "symbol": "USDS",
+        "decimals": 18
+      },
+      "reads": {
+        "totalAssets": "8824029046503720665963250",
+        "totalSupply": "7902896641527543463957158",
+        "balanceOf": "2159047672321314627890",
+        "unlockedShares": "403479374337314745285",
+        "profitUnlockingRate": "9886292618281749124903549382",
+        "fullProfitUnlockDate": "1794021227",
+        "profitMaxUnlockTime": "259200",
+        "lastProfitUpdate": "1793762027",
+        "lastReport": null,
+        "apiVersion": "3.0.3",
+        "asset": "0xdC035D45d973E3EC169d2276DDab16f1e407384F",
+        "decimals": 18,
+        "get_default_queue": [
+          "0x0868076663Bbc6638ceDd27704cc8F0Fa53d5b81",
+          "0xc9f01b5c6048B064E6d925d1c2d7206d4fEeF8a3",
+          "0x3F2dE801629116A83B9734bB72012A554e01CfC1",
+          "0xe060B80438771f13078048c3b0d930efECA6E622"
+        ]
+      },
+      "lockedRemaining": "2159047672321314627890",
+      "holderShares": "7900737593855222149329268",
+      "holderAssets": "8821618348219595431466286",
+      "conversionAtSupply": "8824029046503720665963250",
+      "price": {
+        "decimals": 18,
+        "symbol": "USDS",
+        "price": 1.0000469225249906,
+        "timestamp": 1793802836,
+        "confidence": 0.99
+      },
+      "validated": true
+    },
+    {
+      "address": "0x0e297dE4005883C757c9F09fdF7cF1363C20e626",
+      "name": "Morpho Yearn OG USDC Compounder",
+      "kind": "Single Strategy",
+      "apiVersion": "3.0.4",
+      "inventoryTvlUsd": 7470461.678435479,
+      "assetMetadata": {
+        "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "name": "USD Coin",
+        "symbol": "USDC",
+        "decimals": 6
+      },
+      "reads": {
+        "totalAssets": "7473716645722",
+        "totalSupply": "3453728981966",
+        "balanceOf": "1441634723",
+        "unlockedShares": "477583151",
+        "profitUnlockingRate": "7404389945987654",
+        "fullProfitUnlockDate": "1793997539",
+        "profitMaxUnlockTime": "259200",
+        "lastProfitUpdate": null,
+        "lastReport": "1793738339",
+        "apiVersion": "3.0.4",
+        "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "decimals": 6,
+        "get_default_queue": null
+      },
+      "lockedRemaining": "1441634723",
+      "holderShares": "3452287347243",
+      "holderAssets": "7470597011992",
+      "conversionAtSupply": "7473716645722",
+      "price": {
+        "decimals": 6,
+        "symbol": "USDC",
+        "price": 0.999482239443739,
+        "timestamp": 1793802836,
+        "confidence": 0.99
+      },
+      "validated": true
+    },
+    {
+      "address": "0x9F4330700a36B29952869fac9b33f45EEdd8A3d8",
+      "name": "Yearn BOLD",
+      "kind": "Multi Strategy",
+      "apiVersion": "3.0.4",
+      "inventoryTvlUsd": 7466057.003542972,
+      "assetMetadata": {
+        "address": "0x6440f144b7e50D6a8439336510312d2F54beB01D",
+        "name": "BOLD Stablecoin",
+        "symbol": "BOLD",
+        "decimals": 18
+      },
+      "reads": {
+        "totalAssets": "7607517097079790070979508",
+        "totalSupply": "7607517097079790070979508",
+        "balanceOf": "0",
+        "unlockedShares": "0",
+        "profitUnlockingRate": "0",
+        "fullProfitUnlockDate": "0",
+        "profitMaxUnlockTime": "0",
+        "lastProfitUpdate": "0",
+        "lastReport": null,
+        "apiVersion": "3.0.4",
+        "asset": "0x6440f144b7e50D6a8439336510312d2F54beB01D",
+        "decimals": 18,
+        "get_default_queue": [
+          "0xc5e7D3F76a03006540f17668A0267C668FFb5b75",
+          "0x3589b93CaDb464b6E1974Cc9fc0c9be698Ee49a5",
+          "0x6ED566B76838A08d04cBd6323231B08a2eC69005"
+        ]
+      },
+      "lockedRemaining": "0",
+      "holderShares": "7607517097079790070979508",
+      "holderAssets": "7607517097079790070979508",
+      "conversionAtSupply": "7607517097079790070979508",
+      "price": {
+        "decimals": 18,
+        "symbol": "BOLD",
+        "price": 0.9960216774810621,
+        "timestamp": 1793802178,
+        "confidence": 0.99
+      },
+      "validated": true
+    },
+    {
+      "address": "0x23346B04a7f55b8760E5860AA5A77383D63491cD",
+      "name": "Staked yBOLD",
+      "kind": "Single Strategy",
+      "apiVersion": "3.0.4",
+      "inventoryTvlUsd": 7391805.31596317,
+      "assetMetadata": {
+        "address": "0x9F4330700a36B29952869fac9b33f45EEdd8A3d8",
+        "name": "Yearn BOLD",
+        "symbol": "yBOLD",
+        "decimals": 18
+      },
+      "reads": {
+        "totalAssets": "7529884651688230681674388",
+        "totalSupply": "6831176136891671804363637",
+        "balanceOf": "25144603842219603104",
+        "unlockedShares": "6146712702884410249474",
+        "profitUnlockingRate": "23811177880889775665810185185",
+        "fullProfitUnlockDate": "1793803895",
+        "profitMaxUnlockTime": "259200",
+        "lastProfitUpdate": null,
+        "lastReport": "1793544695",
+        "apiVersion": "3.0.4",
+        "asset": "0x9F4330700a36B29952869fac9b33f45EEdd8A3d8",
+        "decimals": 18,
+        "get_default_queue": null
+      },
+      "lockedRemaining": "25144603842219603104",
+      "holderShares": "6831150992287829584760533",
+      "holderAssets": "7529856935236078056880155",
+      "conversionAtSupply": "7529884651688230681674388",
+      "price": {
+        "decimals": 18,
+        "symbol": "yBOLD",
+        "price": 0.9960533083215634,
+        "timestamp": 1793802086,
+        "confidence": 1
+      },
+      "validated": true
+    },
+    {
+      "address": "0x028eC7330ff87667b6dfb0D94b954c820195336c",
+      "name": "DAI-1 yVault",
+      "kind": "Multi Strategy",
+      "apiVersion": "3.0.2",
+      "inventoryTvlUsd": 5732244.564777473,
+      "assetMetadata": {
+        "address": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+        "name": "Dai Stablecoin",
+        "symbol": "DAI",
+        "decimals": 18
+      },
+      "reads": {
+        "totalAssets": "5733018304794444568100241",
+        "totalSupply": "5051378751684613841002435",
+        "balanceOf": "3566490793818493985374",
+        "unlockedShares": "1285944881657391158642",
+        "profitUnlockingRate": "6072193646387650907764001581",
+        "fullProfitUnlockDate": "1794390187",
+        "profitMaxUnlockTime": "864000",
+        "lastProfitUpdate": "1793591063",
+        "lastReport": null,
+        "apiVersion": "3.0.2",
+        "asset": "0x6B175474E89094C44Da98b954EedeAC495271d0F",
+        "decimals": 18,
+        "get_default_queue": [
+          "0xAeDF7d5F3112552E110e5f9D08c9997Adce0b78d",
+          "0xfF03Dce6d95aa7a30B75EFbaFD11384221B9f9B5"
+        ]
+      },
+      "lockedRemaining": "3566490793818493985374",
+      "holderShares": "5047812260890795347017061",
+      "holderAssets": "5728970547140551878556535",
+      "conversionAtSupply": "5733018304794444568100241",
+      "price": {
+        "decimals": 18,
+        "symbol": "DAI",
+        "price": 1.0000339366099533,
+        "timestamp": 1793802836,
+        "confidence": 0.99
+      },
+      "validated": true
+    },
+    {
+      "address": "0x310B7Ea7475A0B449Cfd73bE81522F1B88eFAFaa",
+      "name": "USDT-1 yVault",
+      "kind": "Multi Strategy",
+      "apiVersion": "3.0.2",
+      "inventoryTvlUsd": 5664397.89547711,
+      "assetMetadata": {
+        "address": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+        "name": "Tether USD",
+        "symbol": "USDT",
+        "decimals": 6
+      },
+      "reads": {
+        "totalAssets": "5669512633430",
+        "totalSupply": "5167051860870",
+        "balanceOf": "3049266752",
+        "unlockedShares": "1936822195",
+        "profitUnlockingRate": "6571468981796327",
+        "fullProfitUnlockDate": "1794266855",
+        "profitMaxUnlockTime": "864000",
+        "lastProfitUpdate": "1793508107",
+        "lastReport": null,
+        "apiVersion": "3.0.2",
+        "asset": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+        "decimals": 6,
+        "get_default_queue": [
+          "0x0963232eB842BAF53E8e517691f81745C1F228a0",
+          "0x176Caf15f1793fc16898458E0ba295ec6523E9E2"
+        ]
+      },
+      "lockedRemaining": "3049266752",
+      "holderShares": "5164002594118",
+      "holderAssets": "5666166846153",
+      "conversionAtSupply": "5669512633430",
+      "price": {
+        "decimals": 6,
+        "symbol": "USDT",
+        "price": 0.9989900277625338,
+        "timestamp": 1793802836,
+        "confidence": 0.99
+      },
+      "validated": true
+    },
+    {
+      "address": "0x751F0cC6115410A3eE9eC92d08f46Ff6Da98b708",
+      "name": "WBTC-1 yVault",
+      "kind": "Multi Strategy",
+      "apiVersion": "3.0.4",
+      "inventoryTvlUsd": 3681677.8681651,
+      "assetMetadata": {
+        "address": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+        "name": "Wrapped BTC",
+        "symbol": "WBTC",
+        "decimals": 8
+      },
+      "reads": {
+        "totalAssets": "4748898188",
+        "totalSupply": "4746725817",
+        "balanceOf": "5362",
+        "unlockedShares": "10694",
+        "profitUnlockingRate": "37166666666",
+        "fullProfitUnlockDate": "1793947091",
+        "profitMaxUnlockTime": "432000",
+        "lastProfitUpdate": "1793515091",
+        "lastReport": null,
+        "apiVersion": "3.0.4",
+        "asset": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+        "decimals": 8,
+        "get_default_queue": ["0x2bB005127069A0F0325Fb7370967E8A2b64FB77E"]
+      },
+      "lockedRemaining": "5362",
+      "holderShares": "4746720455",
+      "holderAssets": "4748892823",
+      "conversionAtSupply": "4748898188",
+      "price": {
+        "decimals": 8,
+        "symbol": "WBTC",
+        "price": 78272.20110896188,
+        "timestamp": 1793802836,
+        "confidence": 0.99
+      },
+      "validated": true
+    },
+    {
+      "address": "0x074134A2784F4F66b6ceD6f68849382990Ff3215",
+      "name": "Morpho Steakhouse USDC Compounder",
+      "kind": "Single Strategy",
+      "apiVersion": "3.0.4",
+      "inventoryTvlUsd": 2399895.2662479044,
+      "assetMetadata": {
+        "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "name": "USD Coin",
+        "symbol": "USDC",
+        "decimals": 6
+      },
+      "reads": {
+        "totalAssets": "2401923083469",
+        "totalSupply": "2121853297749",
+        "balanceOf": "794675022",
+        "unlockedShares": "72988147",
+        "profitUnlockingRate": "3347465929783950",
+        "fullProfitUnlockDate": "1794040235",
+        "profitMaxUnlockTime": "259200",
+        "lastProfitUpdate": null,
+        "lastReport": "1793781035",
+        "apiVersion": "3.0.4",
+        "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "decimals": 6,
+        "get_default_queue": null
+      },
+      "lockedRemaining": "794675022",
+      "holderShares": "2121058622727",
+      "holderAssets": "2401023516905",
+      "conversionAtSupply": "2401923083469",
+      "price": {
+        "decimals": 6,
+        "symbol": "USDC",
+        "price": 0.999482239443739,
+        "timestamp": 1793802836,
+        "confidence": 0.99
+      },
+      "validated": true
+    },
+    {
+      "address": "0xBF319dDC2Edc1Eb6FDf9910E39b37Be221C8805F",
+      "name": "crvUSD-2 yVault",
+      "kind": "Multi Strategy",
+      "apiVersion": "3.0.2",
+      "inventoryTvlUsd": 1445943.7544300265,
+      "assetMetadata": {
+        "address": "0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E",
+        "name": "Curve.Fi USD Stablecoin",
+        "symbol": "crvUSD",
+        "decimals": 18
+      },
+      "reads": {
+        "totalAssets": "1448406913147069637900807",
+        "totalSupply": "1241341693955872329509239",
+        "balanceOf": "1310574913215407673312",
+        "unlockedShares": "139669067703676121632",
+        "profitUnlockingRate": "3373648978349664773733698711",
+        "fullProfitUnlockDate": "1794191313",
+        "profitMaxUnlockTime": "864000",
+        "lastProfitUpdate": "1793761439",
+        "lastReport": null,
+        "apiVersion": "3.0.2",
+        "asset": "0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E",
+        "decimals": 18,
+        "get_default_queue": [
+          "0x0655977FEb2f289A4aB78af67BAB0d17aAb84367",
+          "0x6AbBda8243F4BF130a97beae759A6e91522520b9",
+          "0xEC1b4489a2DA2b0F7Fb240604f305804Da2CEB1c",
+          "0x2d45C2835CEA592F75E72e656932aa60d474dDF3",
+          "0x8589462548984c5C0f2C0140FB276351B5a77fe1",
+          "0x09AcE8B2f2fE2189A5B37046BBaFa29Dce31c920",
+          "0x6c7150b9eb23eE563b28905791aD5B6C9cB6B21a",
+          "0x3745a317E08Bd12dFD31088729FC0081C66CD40C",
+          "0x896557783d9067ce9C9459668982a8776356E760",
+          "0x8824f63f990FdE4b46c6F2ec26356472Db680563"
+        ]
+      },
+      "lockedRemaining": "1310574913215407673312",
+      "holderShares": "1240031119042656921835927",
+      "holderAssets": "1446877724388051126396799",
+      "conversionAtSupply": "1448406913147069637900807",
+      "price": {
+        "decimals": 18,
+        "symbol": "crvUSD",
+        "price": 0.9990866692693832,
+        "timestamp": 1793802404,
+        "confidence": 0.99
+      },
+      "validated": true
+    },
+    {
+      "address": "0x863687e4E9751b57F38b4B0ebA04744C72d0f7B8",
+      "name": "Flex USDC yVault",
+      "kind": "Multi Strategy",
+      "apiVersion": "3.0.4",
+      "inventoryTvlUsd": 1118703.1837779037,
+      "assetMetadata": {
+        "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "name": "USD Coin",
+        "symbol": "USDC",
+        "decimals": 6
+      },
+      "reads": {
+        "totalAssets": "1119526564638",
+        "totalSupply": "1100691301303",
+        "balanceOf": "268231738",
+        "unlockedShares": "37692049",
+        "profitUnlockingRate": "910435978322654",
+        "fullProfitUnlockDate": "1794097458",
+        "profitMaxUnlockTime": "345600",
+        "lastProfitUpdate": "1793761439",
+        "lastReport": null,
+        "apiVersion": "3.0.4",
+        "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "decimals": 6,
+        "get_default_queue": [
+          "0xfb4F83c3923eab7B6254cD2399C206109970F95e",
+          "0x7501EAE6b5C2Cb0A6EDAC908E3A679B20eDd737b",
+          "0xDd58AeFE74585DA2C7Ad3D3dF0F3aeEAb05b5176",
+          "0xC818A0Be1BB2cE820CfdefAD5f890667e885f39d"
+        ]
+      },
+      "lockedRemaining": "268231738",
+      "holderShares": "1100423069565",
+      "holderAssets": "1119253742861",
+      "conversionAtSupply": "1119526564638",
+      "price": {
+        "decimals": 6,
+        "symbol": "USDC",
+        "price": 0.999482239443739,
+        "timestamp": 1793802836,
+        "confidence": 0.99
+      },
+      "validated": true
+    },
+    {
+      "address": "0xfaC55fAFD0b55BFb8dD41F735EfCc195adA9891F",
+      "name": "Flex WETH yVault",
+      "kind": "Multi Strategy",
+      "apiVersion": "3.1.0",
+      "inventoryTvlUsd": 712611.5165341953,
+      "assetMetadata": {
+        "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        "name": "Wrapped Ether",
+        "symbol": "WETH",
+        "decimals": 18
+      },
+      "reads": {
+        "totalAssets": "310266121178879258465",
+        "totalSupply": "310072313092093524908",
+        "balanceOf": "68639827964183710",
+        "unlockedShares": "7403680474364176",
+        "profitUnlockingRate": "220033299880057540509259",
+        "fullProfitUnlockDate": "1794114791",
+        "profitMaxUnlockTime": "345600",
+        "lastProfitUpdate": "1793769191",
+        "lastReport": null,
+        "apiVersion": "3.1.0",
+        "asset": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        "decimals": 18,
+        "get_default_queue": [
+          "0xc56413869c6CDf96496f2b1eF801fEDBdFA7dDB0",
+          "0x7E4a6A89583e117C641aB3ce8897209800A3F2E3"
+        ]
+      },
+      "lockedRemaining": "68639827964183710",
+      "holderShares": "310003673264129341198",
+      "holderAssets": "310197438448168930215",
+      "conversionAtSupply": "310266121178879258465",
+      "price": {
+        "decimals": 18,
+        "symbol": "WETH",
+        "price": 2317.8626166556064,
+        "timestamp": 1793802836,
+        "confidence": 0.99
+      },
+      "validated": true
+    },
+    {
+      "address": "0xc9f01b5c6048B064E6d925d1c2d7206d4fEeF8a3",
+      "name": "Spark USDS Compounder",
+      "kind": "Single Strategy",
+      "apiVersion": "3.0.4",
+      "inventoryTvlUsd": 454022.62556548597,
+      "assetMetadata": {
+        "address": "0xdC035D45d973E3EC169d2276DDab16f1e407384F",
+        "name": "USDS Stablecoin",
+        "symbol": "USDS",
+        "decimals": 18
+      },
+      "reads": {
+        "totalAssets": "453993649729569017723965",
+        "totalSupply": "377579353486048573567829",
+        "balanceOf": "0",
+        "unlockedShares": "0",
+        "profitUnlockingRate": "0",
+        "fullProfitUnlockDate": "0",
+        "profitMaxUnlockTime": "0",
+        "lastProfitUpdate": null,
+        "lastReport": "1793710175",
+        "apiVersion": "3.0.4",
+        "asset": "0xdC035D45d973E3EC169d2276DDab16f1e407384F",
+        "decimals": 18,
+        "get_default_queue": null
+      },
+      "lockedRemaining": "0",
+      "holderShares": "377579353486048573567829",
+      "holderAssets": "453993649729569017723965",
+      "conversionAtSupply": "453993649729569017723965",
+      "price": {
+        "decimals": 18,
+        "symbol": "USDS",
+        "price": 1.0000469225249906,
+        "timestamp": 1793802836,
+        "confidence": 0.99
+      },
+      "validated": true
+    },
+    {
+      "address": "0x09AcE8B2f2fE2189A5B37046BBaFa29Dce31c920",
+      "name": "Curve Boosted crvUSD-sreUSD Lender",
+      "kind": "Single Strategy",
+      "apiVersion": "3.0.4",
+      "inventoryTvlUsd": 370118.55348812975,
+      "assetMetadata": {
+        "address": "0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E",
+        "name": "Curve.Fi USD Stablecoin",
+        "symbol": "crvUSD",
+        "decimals": 18
+      },
+      "reads": {
+        "totalAssets": "370653160403302465439933",
+        "totalSupply": "344526808186883478466398",
+        "balanceOf": "137108366489289562316",
+        "unlockedShares": "2373122556684983593",
+        "profitUnlockingRate": "403592271545065237005208333",
+        "fullProfitUnlockDate": "1794142559",
+        "profitMaxUnlockTime": "345600",
+        "lastProfitUpdate": null,
+        "lastReport": "1793796959",
+        "apiVersion": "3.0.4",
+        "asset": "0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E",
+        "decimals": 18,
+        "get_default_queue": null
+      },
+      "lockedRemaining": "137108366489289562316",
+      "holderShares": "344389699820394188904082",
+      "holderAssets": "370505654757444500574471",
+      "conversionAtSupply": "370653160403302465439933",
+      "price": {
+        "decimals": 18,
+        "symbol": "crvUSD",
+        "price": 0.9990866692693832,
+        "timestamp": 1793802404,
+        "confidence": 0.99
+      },
+      "validated": true
+    },
+    {
+      "address": "0xAe7d8Db82480E6d8e3873ecbF22cf17b3D8A7308",
+      "name": "USDC-2 yVault",
+      "kind": "Multi Strategy",
+      "apiVersion": "3.0.2",
+      "inventoryTvlUsd": 266829.2399887064,
+      "assetMetadata": {
+        "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "name": "USD Coin",
+        "symbol": "USDC",
+        "decimals": 6
+      },
+      "reads": {
+        "totalAssets": "266945500607",
+        "totalSupply": "232949025891",
+        "balanceOf": "331859751",
+        "unlockedShares": "20178463",
+        "profitUnlockingRate": "588980261264697",
+        "fullProfitUnlockDate": "1794366287",
+        "profitMaxUnlockTime": "864000",
+        "lastProfitUpdate": "1793768579",
+        "lastReport": null,
+        "apiVersion": "3.0.2",
+        "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "decimals": 6,
+        "get_default_queue": [
+          "0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204",
+          "0xa08CEb657D9A8035A44A1b44b8d4C42eC31Dd4D4",
+          "0x0e297dE4005883C757c9F09fdF7cF1363C20e626"
+        ]
+      },
+      "lockedRemaining": "331859751",
+      "holderShares": "232617166140",
+      "holderAssets": "266565209395",
+      "conversionAtSupply": "266945500607",
+      "price": {
+        "decimals": 6,
+        "symbol": "USDC",
+        "price": 0.999482239443739,
+        "timestamp": 1793802836,
+        "confidence": 0.99
+      },
+      "validated": true
+    },
+    {
+      "address": "0x1F6f16945e395593d8050d6Cc33e4328a515B648",
+      "name": "yYB yVault",
+      "kind": "Multi Strategy",
+      "apiVersion": "3.0.4",
+      "inventoryTvlUsd": 144332.19035207178,
+      "assetMetadata": {
+        "address": "0x22222222aEA0076fCA927a3f44dc0B4FdF9479D6",
+        "name": "Yearn YB Token",
+        "symbol": "yYB",
+        "decimals": 18
+      },
+      "reads": {
+        "totalAssets": "2592875376577331321774158",
+        "totalSupply": "1856117105852146604448167",
+        "balanceOf": "1256039234154804129165",
+        "unlockedShares": "1465910174685636517087",
+        "profitUnlockingRate": "4500577726257342338379629629",
+        "fullProfitUnlockDate": "1794081923",
+        "profitMaxUnlockTime": "604800",
+        "lastProfitUpdate": "1793477123",
+        "lastReport": null,
+        "apiVersion": "3.0.4",
+        "asset": "0x22222222aEA0076fCA927a3f44dc0B4FdF9479D6",
+        "decimals": 18,
+        "get_default_queue": ["0x206CeFd7820d907f9d2c1332349001F7294bf802"]
+      },
+      "lockedRemaining": "1256039234154804129165",
+      "holderShares": "1854861066617991800319002",
+      "holderAssets": "2591120771120602954676990",
+      "conversionAtSupply": "2592875376577331321774158",
+      "price": {
+        "decimals": 18,
+        "symbol": "yYB",
+        "price": 0.05664627269329184,
+        "timestamp": 1793794773,
+        "confidence": 0.95
+      },
+      "validated": true
+    },
+    {
+      "address": "0xeEB6Be70fF212238419cD638FAB17910CF61CBE7",
+      "name": "Morpho Gauntlet WETH Prime Compounder",
+      "kind": "Single Strategy",
+      "apiVersion": "3.0.4",
+      "inventoryTvlUsd": 144152.9990589583,
+      "assetMetadata": {
+        "address": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        "name": "Wrapped Ether",
+        "symbol": "WETH",
+        "decimals": 18
+      },
+      "reads": {
+        "totalAssets": "62855372604316633766",
+        "totalSupply": "59409692991805986255",
+        "balanceOf": "98193409298009874",
+        "unlockedShares": "5038710614791495",
+        "profitUnlockingRate": "170688028956351469907407",
+        "fullProfitUnlockDate": "1794378119",
+        "profitMaxUnlockTime": "604800",
+        "lastProfitUpdate": null,
+        "lastReport": "1793773319",
+        "apiVersion": "3.0.4",
+        "asset": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+        "decimals": 18,
+        "get_default_queue": null
+      },
+      "lockedRemaining": "98193409298009874",
+      "holderShares": "59311499582507976381",
+      "holderAssets": "62751484113770724973",
+      "conversionAtSupply": "62855372604316633766",
+      "price": {
+        "decimals": 18,
+        "symbol": "WETH",
+        "price": 2317.8626166556064,
+        "timestamp": 1793802836,
+        "confidence": 0.99
+      },
+      "validated": true
+    },
+    {
+      "address": "0x694E47AFD14A64661a04eee674FB331bCDEF3737",
+      "name": "Morpho Gauntlet USDC Prime Compounder",
+      "kind": "Single Strategy",
+      "apiVersion": "3.0.4",
+      "inventoryTvlUsd": 74939.9258004726,
+      "assetMetadata": {
+        "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "name": "USD Coin",
+        "symbol": "USDC",
+        "decimals": 6
+      },
+      "reads": {
+        "totalAssets": "75003088894",
+        "totalSupply": "61326844990",
+        "balanceOf": "23079377",
+        "unlockedShares": "1868803",
+        "profitUnlockingRate": "96250694444444",
+        "fullProfitUnlockDate": "1794042623",
+        "profitMaxUnlockTime": "259200",
+        "lastProfitUpdate": null,
+        "lastReport": "1793783423",
+        "apiVersion": "3.0.4",
+        "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "decimals": 6,
+        "get_default_queue": null
+      },
+      "lockedRemaining": "23079377",
+      "holderShares": "61303765613",
+      "holderAssets": "74974862681",
+      "conversionAtSupply": "75003088894",
+      "price": {
+        "decimals": 6,
+        "symbol": "USDC",
+        "price": 0.999482239443739,
+        "timestamp": 1793802836,
+        "confidence": 0.99
+      },
+      "validated": true
+    },
+    {
+      "address": "0xaF71a4f5d93fb88B24C67760BCF9688a6C3A54D4",
+      "name": "SKY-1 yVault",
+      "kind": "Multi Strategy",
+      "apiVersion": "3.0.4",
+      "inventoryTvlUsd": 40143.41247239188,
+      "assetMetadata": {
+        "address": "0x56072C95FAA701256059aa122697B133aDEd9279",
+        "name": "SKY Governance Token",
+        "symbol": "SKY",
+        "decimals": 18
+      },
+      "reads": {
+        "totalAssets": "609465674913191569787933",
+        "totalSupply": "538423021619159201580509",
+        "balanceOf": "0",
+        "unlockedShares": "783341724104313709560",
+        "profitUnlockingRate": "1998412488594664320198376456",
+        "fullProfitUnlockDate": "1793689321",
+        "profitMaxUnlockTime": "432000",
+        "lastProfitUpdate": "1793297339",
+        "lastReport": null,
+        "apiVersion": "3.0.4",
+        "asset": "0x56072C95FAA701256059aa122697B133aDEd9279",
+        "decimals": 18,
+        "get_default_queue": [
+          "0x4d5B04bd899Ed72f70Ad31E3B74c3Da1D6e73d92",
+          "0x1364c892035a93beB9971fda6B3D6A35459fc314",
+          "0xd8c69a9c9077650b1C76FFD974b1653CCC165ce9"
+        ]
+      },
+      "lockedRemaining": "0",
+      "holderShares": "538423021619159201580509",
+      "holderAssets": "609465674913191569787933",
+      "conversionAtSupply": "609465674913191569787933",
+      "price": {
+        "decimals": 18,
+        "symbol": "SKY",
+        "price": 0.0656664975,
+        "timestamp": 1793802845,
+        "confidence": 0.999
+      },
+      "validated": true
+    },
+    {
+      "address": "0xC40dC53931cd184F782f3602d95C7e3609706004",
+      "name": "Sturdy pxETH Compounder",
+      "kind": "Single Strategy",
+      "apiVersion": "3.0.2",
+      "inventoryTvlUsd": 15997.595684857499,
+      "assetMetadata": {
+        "address": "0x04C154b66CB340F3Ae24111CC767e0184Ed00Cc6",
+        "name": "Pirex Ether",
+        "symbol": "pxETH",
+        "decimals": 18
+      },
+      "reads": {
+        "totalAssets": "6442590384332753635",
+        "totalSupply": "6220655600806949184",
+        "balanceOf": "0",
+        "unlockedShares": "0",
+        "profitUnlockingRate": "16699691436042824074",
+        "fullProfitUnlockDate": "0",
+        "profitMaxUnlockTime": "864000",
+        "lastProfitUpdate": null,
+        "lastReport": "1791308387",
+        "apiVersion": "3.0.2",
+        "asset": "0x04C154b66CB340F3Ae24111CC767e0184Ed00Cc6",
+        "decimals": 18,
+        "get_default_queue": null
+      },
+      "lockedRemaining": "0",
+      "holderShares": "6220655600806949184",
+      "holderAssets": "6442590384332753635",
+      "conversionAtSupply": "6442590384332753635",
+      "price": null,
+      "validated": true
+    },
+    {
+      "address": "0x7eE351aA702C8fC735D77Fb229b7676AC15D7c79",
+      "name": "Compound V3 USD Lender",
+      "kind": "Single Strategy",
+      "apiVersion": "3.0.2",
+      "inventoryTvlUsd": 15542.988938476516,
+      "assetMetadata": {
+        "address": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "name": "USD Coin",
+        "symbol": "USDC",
+        "decimals": 6
+      },
+      "reads": {
+        "totalAssets": "15549761273",
+        "totalSupply": "11952186034",
+        "balanceOf": "0",
+        "unlockedShares": "14225021",
+        "profitUnlockingRate": "54880482253086",
+        "fullProfitUnlockDate": "1762338827",
+        "profitMaxUnlockTime": "259200",
+        "lastProfitUpdate": null,
+        "lastReport": "1762079627",
+        "apiVersion": "3.0.2",
+        "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+        "decimals": 6,
+        "get_default_queue": null
+      },
+      "lockedRemaining": "0",
+      "holderShares": "11952186034",
+      "holderAssets": "15549761273",
+      "conversionAtSupply": "15549761273",
+      "price": {
+        "decimals": 6,
+        "symbol": "USDC",
+        "price": 0.999482239443739,
+        "timestamp": 1793802836,
+        "confidence": 0.99
+      },
+      "validated": true
+    },
+    {
+      "address": "0x05329AAb081B125eEF7FbbC8b857428D478E692B",
+      "name": "Sturdy crvUSD Compounder",
+      "kind": "Single Strategy",
+      "apiVersion": "3.0.2",
+      "inventoryTvlUsd": 15508.518815099063,
+      "assetMetadata": {
+        "address": "0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E",
+        "name": "Curve.Fi USD Stablecoin",
+        "symbol": "crvUSD",
+        "decimals": 18
+      },
+      "reads": {
+        "totalAssets": "15524632024380106873306",
+        "totalSupply": "12664740393251588180116",
+        "balanceOf": "0",
+        "unlockedShares": "0",
+        "profitUnlockingRate": "39822666470890649355324074",
+        "fullProfitUnlockDate": "0",
+        "profitMaxUnlockTime": "864000",
+        "lastProfitUpdate": null,
+        "lastReport": "1760545247",
+        "apiVersion": "3.0.2",
+        "asset": "0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E",
+        "decimals": 18,
+        "get_default_queue": null
+      },
+      "lockedRemaining": "0",
+      "holderShares": "12664740393251588180116",
+      "holderAssets": "15524632024380106873306",
+      "conversionAtSupply": "15524632024380106873306",
+      "price": {
+        "decimals": 18,
+        "symbol": "crvUSD",
+        "price": 0.9990866692693832,
+        "timestamp": 1793802404,
+        "confidence": 0.99
+      },
+      "validated": true
+    }
+  ],
+  "directCandidateHoldings": [
+    {
+      "parent": "0x696d02Db93291651ED510704c9b286841d506987",
+      "child": "0x0e297dE4005883C757c9F09fdF7cF1363C20e626",
+      "shares": "3279796415477"
+    },
+    {
+      "parent": "0xAc37729B76db6438CE62042AE1270ee574CA7571",
+      "child": "0xc56413869c6CDf96496f2b1eF801fEDBdFA7dDB0",
+      "shares": "615850735900320158559"
+    },
+    {
+      "parent": "0x23346B04a7f55b8760E5860AA5A77383D63491cD",
+      "child": "0x9F4330700a36B29952869fac9b33f45EEdd8A3d8",
+      "shares": "7529884651688230681674388"
+    },
+    {
+      "parent": "0xBF319dDC2Edc1Eb6FDf9910E39b37Be221C8805F",
+      "child": "0x09AcE8B2f2fE2189A5B37046BBaFa29Dce31c920",
+      "shares": "343545103898361818920376"
+    },
+    {
+      "parent": "0xfaC55fAFD0b55BFb8dD41F735EfCc195adA9891F",
+      "child": "0xc56413869c6CDf96496f2b1eF801fEDBdFA7dDB0",
+      "shares": "1"
+    },
+    {
+      "parent": "0xAe7d8Db82480E6d8e3873ecbF22cf17b3D8A7308",
+      "child": "0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204",
+      "shares": "1"
+    },
+    {
+      "parent": "0xAe7d8Db82480E6d8e3873ecbF22cf17b3D8A7308",
+      "child": "0x0e297dE4005883C757c9F09fdF7cF1363C20e626",
+      "shares": "123457341577"
+    }
+  ],
+  "pricePayload": {
+    "coins": {
+      "ethereum:0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48": {
+        "decimals": 6,
+        "symbol": "USDC",
+        "price": 0.999482239443739,
+        "timestamp": 1793802836,
+        "confidence": 0.99
+      },
+      "ethereum:0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2": {
+        "decimals": 18,
+        "symbol": "WETH",
+        "price": 2317.8626166556064,
+        "timestamp": 1793802836,
+        "confidence": 0.99
+      },
+      "ethereum:0xdC035D45d973E3EC169d2276DDab16f1e407384F": {
+        "decimals": 18,
+        "symbol": "USDS",
+        "price": 1.0000469225249906,
+        "timestamp": 1793802836,
+        "confidence": 0.99
+      },
+      "ethereum:0x6440f144b7e50D6a8439336510312d2F54beB01D": {
+        "decimals": 18,
+        "symbol": "BOLD",
+        "price": 0.9960216774810621,
+        "timestamp": 1793802178,
+        "confidence": 0.99
+      },
+      "ethereum:0x9F4330700a36B29952869fac9b33f45EEdd8A3d8": {
+        "decimals": 18,
+        "symbol": "yBOLD",
+        "price": 0.9960533083215634,
+        "timestamp": 1793802086,
+        "confidence": 1
+      },
+      "ethereum:0x6B175474E89094C44Da98b954EedeAC495271d0F": {
+        "decimals": 18,
+        "symbol": "DAI",
+        "price": 1.0000339366099533,
+        "timestamp": 1793802836,
+        "confidence": 0.99
+      },
+      "ethereum:0xdAC17F958D2ee523a2206206994597C13D831ec7": {
+        "decimals": 6,
+        "symbol": "USDT",
+        "price": 0.9989900277625338,
+        "timestamp": 1793802836,
+        "confidence": 0.99
+      },
+      "ethereum:0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599": {
+        "decimals": 8,
+        "symbol": "WBTC",
+        "price": 78272.20110896188,
+        "timestamp": 1793802836,
+        "confidence": 0.99
+      },
+      "ethereum:0xf939E0A03FB07F59A73314E73794Be0E57ac1b4E": {
+        "decimals": 18,
+        "symbol": "crvUSD",
+        "price": 0.9990866692693832,
+        "timestamp": 1793802404,
+        "confidence": 0.99
+      },
+      "ethereum:0x22222222aEA0076fCA927a3f44dc0B4FdF9479D6": {
+        "decimals": 18,
+        "symbol": "yYB",
+        "price": 0.05664627269329184,
+        "timestamp": 1793794773,
+        "confidence": 0.95
+      },
+      "ethereum:0x56072C95FAA701256059aa122697B133aDEd9279": {
+        "decimals": 18,
+        "symbol": "SKY",
+        "price": 0.0656664975,
+        "timestamp": 1793802845,
+        "confidence": 0.999
+      }
+    }
+  }
+}

@@ -1,0 +1,131 @@
+{
+  "blockNumber": "26244424",
+  "rows": [
+    {
+      "vault": "0xf165a634296800812b8b0607a75deddcd4d3cc88",
+      "pool": "0xc522a6606bba746d7960404f22a3db936b6f4f50",
+      "target": "0x0655977FEb2f289A4aB78af67BAB0d17aAb84367",
+      "name": "Curve reUSD-scrvUSD Factory yVault",
+      "assets": "1544391678742081893393056",
+      "supply": "15598916088424751626006830",
+      "ownedUsd": 373985.6872363372
+    },
+    {
+      "vault": "0xbf319ddc2edc1eb6fdf9910e39b37be221c8805f",
+      "pool": "0xf939e0a03fb07f59a73314e73794be0e57ac1b4e",
+      "target": "0x0655977FEb2f289A4aB78af67BAB0d17aAb84367",
+      "name": "crvUSD-2 yVault",
+      "assets": "1377182035828439148923224",
+      "supply": "2104809204981834354272443571",
+      "ownedUsd": 0.007261064017341294
+    },
+    {
+      "vault": "0x09ace8b2f2fe2189a5b37046bbafa29dce31c920",
+      "pool": "0xf939e0a03fb07f59a73314e73794be0e57ac1b4e",
+      "target": "0x0655977FEb2f289A4aB78af67BAB0d17aAb84367",
+      "name": "Curve Boosted crvUSD-sreUSD Lender",
+      "assets": "371046094352433561461487",
+      "supply": "2104809204981834354272443571",
+      "ownedUsd": 0.001956305974363656
+    },
+    {
+      "vault": "0x05329aab081b125eef7fbbc8b857428d478e692b",
+      "pool": "0xf939e0a03fb07f59a73314e73794be0e57ac1b4e",
+      "target": "0x0655977FEb2f289A4aB78af67BAB0d17aAb84367",
+      "name": "Sturdy crvUSD Compounder",
+      "assets": "15524632024380106873306",
+      "supply": "2104809204981834354272443571",
+      "ownedUsd": 0.00008185217643133223
+    },
+    {
+      "vault": "0x84e750c4b79482050ab25c7b3d77fff334663a53",
+      "pool": "0xf939e0a03fb07f59a73314e73794be0e57ac1b4e",
+      "target": "0x0655977FEb2f289A4aB78af67BAB0d17aAb84367",
+      "name": "Morpho LlamaRisk crvUSD Vault Compounder",
+      "assets": "1914596623577964900202",
+      "supply": "2104809204981834354272443571",
+      "ownedUsd": 0.000010094532378083473
+    },
+    {
+      "vault": "0xf9a7084ec30238495b3f5c51f05ba7cd1c358dcf",
+      "pool": "0xf939e0a03fb07f59a73314e73794be0e57ac1b4e",
+      "target": "0x0655977FEb2f289A4aB78af67BAB0d17aAb84367",
+      "name": "crvUSD-2 yVault Liquid Locker Compounder",
+      "assets": "42061023949343134146",
+      "supply": "2104809204981834354272443571",
+      "ownedUsd": 2.2176283133651885e-7
+    },
+    {
+      "vault": "0xbf2e5bed692c09af8b39677e315f36adf39bd685",
+      "pool": "0xf939e0a03fb07f59a73314e73794be0e57ac1b4e",
+      "target": "0x0655977FEb2f289A4aB78af67BAB0d17aAb84367",
+      "name": "Gearbox crvUSD Lender ",
+      "assets": "109661688680151993",
+      "supply": "2104809204981834354272443571",
+      "ownedUsd": 5.781810400085177e-10
+    },
+    {
+      "vault": "0xb0154f71912866bb69fe26ffc44779d99b9cae85",
+      "pool": "0xf939e0a03fb07f59a73314e73794be0e57ac1b4e",
+      "target": "0x0655977FEb2f289A4aB78af67BAB0d17aAb84367",
+      "name": "Aave V3 crvUSD Lender",
+      "assets": "771089697531822",
+      "supply": "2104809204981834354272443571",
+      "ownedUsd": 4.065498613277275e-12
+    },
+    {
+      "vault": "0x27ffa71dbb25a7c52a3da74c6eed8c94c9a43e0d",
+      "pool": "0xf939e0a03fb07f59a73314e73794be0e57ac1b4e",
+      "target": "0x0655977FEb2f289A4aB78af67BAB0d17aAb84367",
+      "name": "Aave V3 crvUSD Lender",
+      "assets": "0",
+      "supply": "2104809204981834354272443571",
+      "ownedUsd": 0
+    },
+    {
+      "vault": "0xe3bf2d04cd3b6e74613d36368c7d21b2d6c26d72",
+      "pool": "0x3be454c4391690ab4ddae3fb987c8147b8ecc08a",
+      "target": "0x0655977FEb2f289A4aB78af67BAB0d17aAb84367",
+      "name": "Curve USDaf-scrvUSD Factory yVault",
+      "assets": "8179311922005831429918",
+      "supply": "42602750204191076293358",
+      "ownedUsd": 1716.2180530207427
+    },
+    {
+      "vault": "0x08c0833af1331831759b8e0bfef1bc5738436325",
+      "pool": "0x76a962ba6770068bcf454d34dde17175611e6637",
+      "target": "0x0655977FEb2f289A4aB78af67BAB0d17aAb84367",
+      "name": "Curve sDOLA-scrvUSD Factory yVault",
+      "assets": "409923105942046110976",
+      "supply": "4914254388183232314610768",
+      "ownedUsd": 107.86148280431468
+    },
+    {
+      "vault": "0xbce40f1840a449caaaf374df0a1fee1e212784cb",
+      "pool": "0xff17dab22f1e61078aba2623c89ce6110e878b3c",
+      "target": "0x0655977FEb2f289A4aB78af67BAB0d17aAb84367",
+      "name": "Curve DOLA-scrvUSD Factory yVault",
+      "assets": "186407718850145710",
+      "supply": "22846628789728998669223",
+      "ownedUsd": 0.04996102756158322
+    },
+    {
+      "vault": "0x8257a895a1380f42c33ece9cd9e6bff35be69d55",
+      "pool": "0xe99810cd5adcd7b13455ae1be678b382d61f2d1e",
+      "target": "0x0655977FEb2f289A4aB78af67BAB0d17aAb84367",
+      "name": "Curve USD3-scrvUSD Factory yVault",
+      "assets": "0",
+      "supply": "838241577188337684219263",
+      "ownedUsd": 0
+    },
+    {
+      "vault": "0xd5497a68c3a77e7de0fa7fa0880387e6ec55d014",
+      "pool": "0x4d968a5db8da0822a2f08840f553de4129aae5f3",
+      "target": "0x0655977FEb2f289A4aB78af67BAB0d17aAb84367",
+      "name": "Curve frxUSD-scrvUSD Factory yVault",
+      "assets": "0",
+      "supply": "212023129689775484454",
+      "ownedUsd": 0
+    }
+  ]
+}

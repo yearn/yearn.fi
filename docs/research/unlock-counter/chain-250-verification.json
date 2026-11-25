@@ -1,0 +1,102 @@
+{
+  "chainId": 250,
+  "blockNumber": "123951333",
+  "blockHash": "0x0005729b000002f45e0eebe45c10d785227a20c0e74b1a77c19d2adff0e0681d",
+  "method": "Snapshot contract comparison without overrides; all schedules exhausted and constant future model verified separately. RPC timestamp overrides unsupported.",
+  "futureValidation": {
+    "mode": "exhausted-schedule-proof",
+    "allSchedulesExhausted": true,
+    "contractTimestampOverrides": "unavailable"
+  },
+  "passed": 9,
+  "failed": 0,
+  "unsupported": [],
+  "frames": [
+    {
+      "timestamp": "1793802825",
+      "checks": [
+        {
+          "chainId": 250,
+          "address": "0xEF0210eB96c7EB36AF8ed1c20306462764935607",
+          "name": "USDC yVault",
+          "version": "v2",
+          "expected": "1060959",
+          "actual": "1060959",
+          "matched": true
+        },
+        {
+          "chainId": 250,
+          "address": "0xd817A100AB8A29fE3DBd925c2EB489D67F758DA9",
+          "name": "WBTC yVault",
+          "version": "v2",
+          "expected": "102949630",
+          "actual": "102949630",
+          "matched": true
+        },
+        {
+          "chainId": 250,
+          "address": "0x637eC617c86D24E421328e6CAEa1d92114892439",
+          "name": "DAI yVault",
+          "version": "v2",
+          "expected": "1103034957534938024",
+          "actual": "1103034957534938024",
+          "matched": true
+        },
+        {
+          "chainId": 250,
+          "address": "0xCe2Fc0bDc18BD6a4d9A725791A3DEe33F3a23BB7",
+          "name": "WETH yVault",
+          "version": "v2",
+          "expected": "1033965668639920407",
+          "actual": "1033965668639920407",
+          "matched": true
+        },
+        {
+          "chainId": 250,
+          "address": "0xF137D22d7B23eeB1950B3e19d1f578c053ed9715",
+          "name": "Curve Geist Pool yVault",
+          "version": "v2",
+          "expected": "1014904201072111382",
+          "actual": "1014904201072111382",
+          "matched": true
+        },
+        {
+          "chainId": 250,
+          "address": "0x0DEC85e74A92c52b7F708c4B10207D9560CEFaf0",
+          "name": "WFTM yVault",
+          "version": "v2",
+          "expected": "1962782776185799071",
+          "actual": "1962782776185799071",
+          "matched": true
+        },
+        {
+          "chainId": 250,
+          "address": "0x2C850cceD00ce2b14AA9D658b7Cad5dF659493Db",
+          "name": "YFI yVault",
+          "version": "v2",
+          "expected": "1045299082354470328",
+          "actual": "1045299082354470328",
+          "matched": true
+        },
+        {
+          "chainId": 250,
+          "address": "0x148c05caf1Bb09B5670f00D511718f733C54bC4c",
+          "name": "USDT yVault",
+          "version": "v2",
+          "expected": "1035187",
+          "actual": "1035187",
+          "matched": true
+        },
+        {
+          "chainId": 250,
+          "address": "0xCbCaF8cB8cbeAFA927ECEE0c5C56560F83E9B7D9",
+          "name": "Curve Tricrypto Pool yVault",
+          "version": "v2",
+          "expected": "1146634912570816934",
+          "actual": "1146634912570816934",
+          "matched": true
+        }
+      ]
+    }
+  ]
+}

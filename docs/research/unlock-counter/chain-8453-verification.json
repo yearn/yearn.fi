@@ -1,0 +1,247 @@
+{
+  "chainId": 8453,
+  "blockNumber": "53506746",
+  "blockHash": "0x7af9fb300f8ea1dc6a0abbaf242d82c4b08cfe136b7d7720048d431f624c0c0c",
+  "method": "Read-only pinned-state contract calls with timestamp overrides at snapshot, one hour, one day and seven days",
+  "passed": 24,
+  "failed": 0,
+  "unsupported": [],
+  "frames": [
+    {
+      "timestamp": "1793802839",
+      "checks": [
+        {
+          "chainId": 8453,
+          "address": "0xF115C134c23C7A05FBD489A8bE3116EbF54B0D9f",
+          "name": "Morpho Yearn Morpho Vault 1 Compounder",
+          "version": "v3",
+          "expected": "1967295058317",
+          "actual": "1967295058317",
+          "matched": true
+        },
+        {
+          "chainId": 8453,
+          "address": "0xb13CF163d916917d9cD6E836905cA5f12a1dEF4B",
+          "name": "True Yield Dollar",
+          "version": "v3",
+          "expected": "1293581603060",
+          "actual": "1293581603060",
+          "matched": true
+        },
+        {
+          "chainId": 8453,
+          "address": "0xc3BD0A2193c8F027B82ddE3611D18589ef3f62a9",
+          "name": "USDC Horizon yVault",
+          "version": "v3",
+          "expected": "735011249544",
+          "actual": "735011249544",
+          "matched": true
+        },
+        {
+          "chainId": 8453,
+          "address": "0x4d3ceBA4349ADB06d2De8EBD2F9320A61303aD81",
+          "name": "Aerodrome hyUSD-eUSD Factory yVault",
+          "version": "v2",
+          "expected": "1575795363377779223",
+          "actual": "1575795363377779223",
+          "matched": true
+        },
+        {
+          "chainId": 8453,
+          "address": "0x31Ce9aB5A358E5c802Cc01080F29a65a14EB45b8",
+          "name": "Aerodrome BMX-wBLT Factory yVault",
+          "version": "v2",
+          "expected": "1986712997936592727",
+          "actual": "1986712997936592727",
+          "matched": true
+        },
+        {
+          "chainId": 8453,
+          "address": "0x0dE119f5790c4EcF6eEd80Aac7c25D2dCAD10f0f",
+          "name": "EURC Fluid Lender",
+          "version": "v3",
+          "expected": "17303690790",
+          "actual": "17303690790",
+          "matched": true
+        }
+      ]
+    },
+    {
+      "timestamp": "1793806439",
+      "checks": [
+        {
+          "chainId": 8453,
+          "address": "0xF115C134c23C7A05FBD489A8bE3116EbF54B0D9f",
+          "name": "Morpho Yearn Morpho Vault 1 Compounder",
+          "version": "v3",
+          "expected": "1967309031037",
+          "actual": "1967309031037",
+          "matched": true
+        },
+        {
+          "chainId": 8453,
+          "address": "0xb13CF163d916917d9cD6E836905cA5f12a1dEF4B",
+          "name": "True Yield Dollar",
+          "version": "v3",
+          "expected": "1293588378885",
+          "actual": "1293588378885",
+          "matched": true
+        },
+        {
+          "chainId": 8453,
+          "address": "0xc3BD0A2193c8F027B82ddE3611D18589ef3f62a9",
+          "name": "USDC Horizon yVault",
+          "version": "v3",
+          "expected": "735015834030",
+          "actual": "735015834030",
+          "matched": true
+        },
+        {
+          "chainId": 8453,
+          "address": "0x4d3ceBA4349ADB06d2De8EBD2F9320A61303aD81",
+          "name": "Aerodrome hyUSD-eUSD Factory yVault",
+          "version": "v2",
+          "expected": "1575795363377779223",
+          "actual": "1575795363377779223",
+          "matched": true
+        },
+        {
+          "chainId": 8453,
+          "address": "0x31Ce9aB5A358E5c802Cc01080F29a65a14EB45b8",
+          "name": "Aerodrome BMX-wBLT Factory yVault",
+          "version": "v2",
+          "expected": "1986712997936592727",
+          "actual": "1986712997936592727",
+          "matched": true
+        },
+        {
+          "chainId": 8453,
+          "address": "0x0dE119f5790c4EcF6eEd80Aac7c25D2dCAD10f0f",
+          "name": "EURC Fluid Lender",
+          "version": "v3",
+          "expected": "17303739963",
+          "actual": "17303739963",
+          "matched": true
+        }
+      ]
+    },
+    {
+      "timestamp": "1793889239",
+      "checks": [
+        {
+          "chainId": 8453,
+          "address": "0xF115C134c23C7A05FBD489A8bE3116EbF54B0D9f",
+          "name": "Morpho Yearn Morpho Vault 1 Compounder",
+          "version": "v3",
+          "expected": "1967630458389",
+          "actual": "1967630458389",
+          "matched": true
+        },
+        {
+          "chainId": 8453,
+          "address": "0xb13CF163d916917d9cD6E836905cA5f12a1dEF4B",
+          "name": "True Yield Dollar",
+          "version": "v3",
+          "expected": "1293744242442",
+          "actual": "1293744242442",
+          "matched": true
+        },
+        {
+          "chainId": 8453,
+          "address": "0xc3BD0A2193c8F027B82ddE3611D18589ef3f62a9",
+          "name": "USDC Horizon yVault",
+          "version": "v3",
+          "expected": "735121292998",
+          "actual": "735121292998",
+          "matched": true
+        },
+        {
+          "chainId": 8453,
+          "address": "0x4d3ceBA4349ADB06d2De8EBD2F9320A61303aD81",
+          "name": "Aerodrome hyUSD-eUSD Factory yVault",
+          "version": "v2",
+          "expected": "1575795363377779223",
+          "actual": "1575795363377779223",
+          "matched": true
+        },
+        {
+          "chainId": 8453,
+          "address": "0x31Ce9aB5A358E5c802Cc01080F29a65a14EB45b8",
+          "name": "Aerodrome BMX-wBLT Factory yVault",
+          "version": "v2",
+          "expected": "1986712997936592727",
+          "actual": "1986712997936592727",
+          "matched": true
+        },
+        {
+          "chainId": 8453,
+          "address": "0x0dE119f5790c4EcF6eEd80Aac7c25D2dCAD10f0f",
+          "name": "EURC Fluid Lender",
+          "version": "v3",
+          "expected": "17304870993",
+          "actual": "17304870993",
+          "matched": true
+        }
+      ]
+    },
+    {
+      "timestamp": "1794407639",
+      "checks": [
+        {
+          "chainId": 8453,
+          "address": "0xF115C134c23C7A05FBD489A8bE3116EbF54B0D9f",
+          "name": "Morpho Yearn Morpho Vault 1 Compounder",
+          "version": "v3",
+          "expected": "1969015138964",
+          "actual": "1969015138964",
+          "matched": true
+        },
+        {
+          "chainId": 8453,
+          "address": "0xb13CF163d916917d9cD6E836905cA5f12a1dEF4B",
+          "name": "True Yield Dollar",
+          "version": "v3",
+          "expected": "1293896441419",
+          "actual": "1293896441419",
+          "matched": true
+        },
+        {
+          "chainId": 8453,
+          "address": "0xc3BD0A2193c8F027B82ddE3611D18589ef3f62a9",
+          "name": "USDC Horizon yVault",
+          "version": "v3",
+          "expected": "735224277151",
+          "actual": "735224277151",
+          "matched": true
+        },
+        {
+          "chainId": 8453,
+          "address": "0x4d3ceBA4349ADB06d2De8EBD2F9320A61303aD81",
+          "name": "Aerodrome hyUSD-eUSD Factory yVault",
+          "version": "v2",
+          "expected": "1575795363377779223",
+          "actual": "1575795363377779223",
+          "matched": true
+        },
+        {
+          "chainId": 8453,
+          "address": "0x31Ce9aB5A358E5c802Cc01080F29a65a14EB45b8",
+          "name": "Aerodrome BMX-wBLT Factory yVault",
+          "version": "v2",
+          "expected": "1986712997936592727",
+          "actual": "1986712997936592727",
+          "matched": true
+        },
+        {
+          "chainId": 8453,
+          "address": "0x0dE119f5790c4EcF6eEd80Aac7c25D2dCAD10f0f",
+          "name": "EURC Fluid Lender",
+          "version": "v3",
+          "expected": "17311955596",
+          "actual": "17311955596",
+          "matched": true
+        }
+      ]
+    }
+  ]
+}

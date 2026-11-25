@@ -143,6 +143,13 @@ const nextConfig: NextConfig = {
       { source: '/github', destination: 'https://github.com/yearn/yearn.fi', permanent: false },
       { source: '/security.txt', destination: '/.well-known/security.txt', permanent: false }
     ]
+  },
+  async rewrites() {
+    return {
+      beforeFiles: [{ source: '/', destination: '/concepts/lifetime/index.html' }],
+      afterFiles: [],
+      fallback: []
+    }
   }
 }
 

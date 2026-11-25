@@ -1,0 +1,247 @@
+{
+  "chainId": 747474,
+  "blockNumber": "47060028",
+  "blockHash": "0x7e62ae686025ea93d5a3adb9eb7d4d0c00d77643e440b67721f3f271e4ee4eeb",
+  "method": "Read-only pinned-state contract calls with timestamp overrides at snapshot, one hour, one day and seven days",
+  "passed": 24,
+  "failed": 0,
+  "unsupported": [],
+  "frames": [
+    {
+      "timestamp": "1793802839",
+      "checks": [
+        {
+          "chainId": 747474,
+          "address": "0xE007CA01894c863d7898045ed5A3B4Abf0b18f37",
+          "name": "vbETH yVault",
+          "version": "v3",
+          "expected": "2633669296508670904263",
+          "actual": "2633669296508670904263",
+          "matched": true
+        },
+        {
+          "chainId": 747474,
+          "address": "0x80c34BD3A3569E126e7055831036aa7b212cB159",
+          "name": "vbUSDC yVault",
+          "version": "v3",
+          "expected": "5997036056771",
+          "actual": "5997036056771",
+          "matched": true
+        },
+        {
+          "chainId": 747474,
+          "address": "0x9A6bd7B6Fd5C4F87eb66356441502fc7dCdd185B",
+          "name": "vbUSDT yVault",
+          "version": "v3",
+          "expected": "1414822244001",
+          "actual": "1414822244001",
+          "matched": true
+        },
+        {
+          "chainId": 747474,
+          "address": "0xAa0362eCC584B985056E47812931270b99C91f9d",
+          "name": "vbWBTC yVault",
+          "version": "v3",
+          "expected": "1117027212",
+          "actual": "1117027212",
+          "matched": true
+        },
+        {
+          "chainId": 747474,
+          "address": "0x0432337365d89c0D73f1D0Cb263791F8f1B98D43",
+          "name": "Morpho vbWBTC/yvUSDC Lender Borrower",
+          "version": "v3",
+          "expected": "668753898",
+          "actual": "668753898",
+          "matched": true
+        },
+        {
+          "chainId": 747474,
+          "address": "0x78EC25FBa1bAf6b7dc097Ebb8115A390A2a4Ee12",
+          "name": "Morpho Yearn OG USDC Compounder",
+          "version": "v3",
+          "expected": "10996277974",
+          "actual": "10996277974",
+          "matched": true
+        }
+      ]
+    },
+    {
+      "timestamp": "1793806439",
+      "checks": [
+        {
+          "chainId": 747474,
+          "address": "0xE007CA01894c863d7898045ed5A3B4Abf0b18f37",
+          "name": "vbETH yVault",
+          "version": "v3",
+          "expected": "2633670546318227617159",
+          "actual": "2633670546318227617159",
+          "matched": true
+        },
+        {
+          "chainId": 747474,
+          "address": "0x80c34BD3A3569E126e7055831036aa7b212cB159",
+          "name": "vbUSDC yVault",
+          "version": "v3",
+          "expected": "5997049494509",
+          "actual": "5997049494509",
+          "matched": true
+        },
+        {
+          "chainId": 747474,
+          "address": "0x9A6bd7B6Fd5C4F87eb66356441502fc7dCdd185B",
+          "name": "vbUSDT yVault",
+          "version": "v3",
+          "expected": "1414823934105",
+          "actual": "1414823934105",
+          "matched": true
+        },
+        {
+          "chainId": 747474,
+          "address": "0xAa0362eCC584B985056E47812931270b99C91f9d",
+          "name": "vbWBTC yVault",
+          "version": "v3",
+          "expected": "1117027214",
+          "actual": "1117027214",
+          "matched": true
+        },
+        {
+          "chainId": 747474,
+          "address": "0x0432337365d89c0D73f1D0Cb263791F8f1B98D43",
+          "name": "Morpho vbWBTC/yvUSDC Lender Borrower",
+          "version": "v3",
+          "expected": "668753898",
+          "actual": "668753898",
+          "matched": true
+        },
+        {
+          "chainId": 747474,
+          "address": "0x78EC25FBa1bAf6b7dc097Ebb8115A390A2a4Ee12",
+          "name": "Morpho Yearn OG USDC Compounder",
+          "version": "v3",
+          "expected": "10996277974",
+          "actual": "10996277974",
+          "matched": true
+        }
+      ]
+    },
+    {
+      "timestamp": "1793889239",
+      "checks": [
+        {
+          "chainId": 747474,
+          "address": "0xE007CA01894c863d7898045ed5A3B4Abf0b18f37",
+          "name": "vbETH yVault",
+          "version": "v3",
+          "expected": "2633699292265425669686",
+          "actual": "2633699292265425669686",
+          "matched": true
+        },
+        {
+          "chainId": 747474,
+          "address": "0x80c34BD3A3569E126e7055831036aa7b212cB159",
+          "name": "vbUSDC yVault",
+          "version": "v3",
+          "expected": "5997358579111",
+          "actual": "5997358579111",
+          "matched": true
+        },
+        {
+          "chainId": 747474,
+          "address": "0x9A6bd7B6Fd5C4F87eb66356441502fc7dCdd185B",
+          "name": "vbUSDT yVault",
+          "version": "v3",
+          "expected": "1414862807626",
+          "actual": "1414862807626",
+          "matched": true
+        },
+        {
+          "chainId": 747474,
+          "address": "0xAa0362eCC584B985056E47812931270b99C91f9d",
+          "name": "vbWBTC yVault",
+          "version": "v3",
+          "expected": "1117027254",
+          "actual": "1117027254",
+          "matched": true
+        },
+        {
+          "chainId": 747474,
+          "address": "0x0432337365d89c0D73f1D0Cb263791F8f1B98D43",
+          "name": "Morpho vbWBTC/yvUSDC Lender Borrower",
+          "version": "v3",
+          "expected": "668753898",
+          "actual": "668753898",
+          "matched": true
+        },
+        {
+          "chainId": 747474,
+          "address": "0x78EC25FBa1bAf6b7dc097Ebb8115A390A2a4Ee12",
+          "name": "Morpho Yearn OG USDC Compounder",
+          "version": "v3",
+          "expected": "10996277974",
+          "actual": "10996277974",
+          "matched": true
+        }
+      ]
+    },
+    {
+      "timestamp": "1794407639",
+      "checks": [
+        {
+          "chainId": 747474,
+          "address": "0xE007CA01894c863d7898045ed5A3B4Abf0b18f37",
+          "name": "vbETH yVault",
+          "version": "v3",
+          "expected": "2633820559854028843634",
+          "actual": "2633820559854028843634",
+          "matched": true
+        },
+        {
+          "chainId": 747474,
+          "address": "0x80c34BD3A3569E126e7055831036aa7b212cB159",
+          "name": "vbUSDC yVault",
+          "version": "v3",
+          "expected": "5998676398435",
+          "actual": "5998676398435",
+          "matched": true
+        },
+        {
+          "chainId": 747474,
+          "address": "0x9A6bd7B6Fd5C4F87eb66356441502fc7dCdd185B",
+          "name": "vbUSDT yVault",
+          "version": "v3",
+          "expected": "1415026813546",
+          "actual": "1415026813546",
+          "matched": true
+        },
+        {
+          "chainId": 747474,
+          "address": "0xAa0362eCC584B985056E47812931270b99C91f9d",
+          "name": "vbWBTC yVault",
+          "version": "v3",
+          "expected": "1117027503",
+          "actual": "1117027503",
+          "matched": true
+        },
+        {
+          "chainId": 747474,
+          "address": "0x0432337365d89c0D73f1D0Cb263791F8f1B98D43",
+          "name": "Morpho vbWBTC/yvUSDC Lender Borrower",
+          "version": "v3",
+          "expected": "668753898",
+          "actual": "668753898",
+          "matched": true
+        },
+        {
+          "chainId": 747474,
+          "address": "0x78EC25FBa1bAf6b7dc097Ebb8115A390A2a4Ee12",
+          "name": "Morpho Yearn OG USDC Compounder",
+          "version": "v3",
+          "expected": "10996277974",
+          "actual": "10996277974",
+          "matched": true
+        }
+      ]
+    }
+  ]
+}

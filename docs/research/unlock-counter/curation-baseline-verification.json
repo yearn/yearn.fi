@@ -1,0 +1,440 @@
+{
+  "method": "Authoritative fee-aware convertToAssets for exact requested share quantities, pinned state with future timestamp overrides; no state changes",
+  "asOfTimestamp": 1793802839,
+  "passed": 54,
+  "failed": 0,
+  "quotes": [
+    {
+      "address": "0x0963232eb842baf53e8e517691f81745c1f228a0",
+      "shares": "3795273795898073157723581",
+      "timestamp": 1793802839,
+      "value": "3858176618676",
+      "error": null,
+      "chainId": 1
+    },
+    {
+      "address": "0x0963232eb842baf53e8e517691f81745c1f228a0",
+      "shares": "1000000000000000000",
+      "timestamp": 1793802839,
+      "value": "1016573",
+      "error": null,
+      "chainId": 1
+    },
+    {
+      "address": "0x0963232eb842baf53e8e517691f81745c1f228a0",
+      "shares": "3794879175779357903097727",
+      "timestamp": 1793802839,
+      "value": "3857775458129",
+      "error": null,
+      "chainId": 1
+    },
+    {
+      "address": "0x2bb005127069a0f0325fb7370967e8a2b64fb77e",
+      "shares": "47466736866502016399",
+      "timestamp": 1793802839,
+      "value": "4748914820",
+      "error": null,
+      "chainId": 1
+    },
+    {
+      "address": "0x2bb005127069a0f0325fb7370967e8a2b64fb77e",
+      "shares": "1000000000000000000",
+      "timestamp": 1793802839,
+      "value": "100047214",
+      "error": null,
+      "chainId": 1
+    },
+    {
+      "address": "0x2bb005127069a0f0325fb7370967e8a2b64fb77e",
+      "shares": "47466733057090414327",
+      "timestamp": 1793802839,
+      "value": "4748914439",
+      "error": null,
+      "chainId": 1
+    },
+    {
+      "address": "0x3dfe70b05657949a5db340754ad664810ac63b21",
+      "shares": "167182408107399752382",
+      "timestamp": 1793802839,
+      "value": "169766788348919573525",
+      "error": null,
+      "chainId": 1
+    },
+    {
+      "address": "0x3dfe70b05657949a5db340754ad664810ac63b21",
+      "shares": "1000000000000000000",
+      "timestamp": 1793802839,
+      "value": "1015458446081597220",
+      "error": null,
+      "chainId": 1
+    },
+    {
+      "address": "0x5b8b9fa8e4145ee06025f642cadb1b47e5f39f04",
+      "shares": "4298430954770058495590175",
+      "timestamp": 1793802839,
+      "value": "4486837994228",
+      "error": null,
+      "chainId": 1
+    },
+    {
+      "address": "0x5b8b9fa8e4145ee06025f642cadb1b47e5f39f04",
+      "shares": "1000000000000000000",
+      "timestamp": 1793802839,
+      "value": "1043831",
+      "error": null,
+      "chainId": 1
+    },
+    {
+      "address": "0x5b8b9fa8e4145ee06025f642cadb1b47e5f39f04",
+      "shares": "4297582116414496978951616",
+      "timestamp": 1793802839,
+      "value": "4485951949943",
+      "error": null,
+      "chainId": 1
+    },
+    {
+      "address": "0x68aea7b82df6ccdf76235d46445ed83f85f845a3",
+      "shares": "5881786006388413702559052",
+      "timestamp": 1793802839,
+      "value": "6211341606227",
+      "error": null,
+      "chainId": 1
+    },
+    {
+      "address": "0x68aea7b82df6ccdf76235d46445ed83f85f845a3",
+      "shares": "1000000000000000000",
+      "timestamp": 1793802839,
+      "value": "1056029",
+      "error": null,
+      "chainId": 1
+    },
+    {
+      "address": "0x68aea7b82df6ccdf76235d46445ed83f85f845a3",
+      "shares": "5625249110967756721865419",
+      "timestamp": 1793802839,
+      "value": "5940430986506",
+      "error": null,
+      "chainId": 1
+    },
+    {
+      "address": "0xe89371eaaac6d46d4c3ed23453241987916224fc",
+      "shares": "613111569657918560769",
+      "timestamp": 1793802839,
+      "value": "638941269558424324139",
+      "error": null,
+      "chainId": 1
+    },
+    {
+      "address": "0xe89371eaaac6d46d4c3ed23453241987916224fc",
+      "shares": "1000000000000000000",
+      "timestamp": 1793802839,
+      "value": "1042128873729975882",
+      "error": null,
+      "chainId": 1
+    },
+    {
+      "address": "0xe89371eaaac6d46d4c3ed23453241987916224fc",
+      "shares": "598645947242831634316",
+      "timestamp": 1793802839,
+      "value": "623866226763186691795",
+      "error": null,
+      "chainId": 1
+    },
+    {
+      "address": "0xf9bddd4a9b3a45f980e11fdde96e16364ddbec49",
+      "shares": "9473434027851396033686540",
+      "timestamp": 1793802839,
+      "value": "10258709998219",
+      "error": null,
+      "chainId": 1
+    },
+    {
+      "address": "0xf9bddd4a9b3a45f980e11fdde96e16364ddbec49",
+      "shares": "1000000000000000000",
+      "timestamp": 1793802839,
+      "value": "1082892",
+      "error": null,
+      "chainId": 1
+    },
+    {
+      "address": "0xf9bddd4a9b3a45f980e11fdde96e16364ddbec49",
+      "shares": "6902590725649161862981085",
+      "timestamp": 1793802839,
+      "value": "7474763246638",
+      "error": null,
+      "chainId": 1
+    },
+    {
+      "address": "0xb885f6d448da7e2c642ec31190b629e40e87b069",
+      "shares": "2730246404016628427211426",
+      "timestamp": 1793802839,
+      "value": "2860894083801",
+      "error": null,
+      "chainId": 1
+    },
+    {
+      "address": "0xb885f6d448da7e2c642ec31190b629e40e87b069",
+      "shares": "1000000000000000000",
+      "timestamp": 1793802839,
+      "value": "1047851",
+      "error": null,
+      "chainId": 1
+    },
+    {
+      "address": "0xfb154c729a16802c4ad1e8f7ff539a8b9f49c960",
+      "shares": "4298305362610998360135065",
+      "timestamp": 1793802839,
+      "value": "4485951949942",
+      "error": null,
+      "chainId": 1
+    },
+    {
+      "address": "0xfb154c729a16802c4ad1e8f7ff539a8b9f49c960",
+      "shares": "1000000000000000000",
+      "timestamp": 1793802839,
+      "value": "1043655",
+      "error": null,
+      "chainId": 1
+    },
+    {
+      "address": "0x8c258f25fc6fbe3f01ccc828e2c3840a46a4a9a2",
+      "shares": "203378484609353875296946",
+      "timestamp": 1793802839,
+      "value": "203642169888",
+      "error": null,
+      "chainId": 4663
+    },
+    {
+      "address": "0x8c258f25fc6fbe3f01ccc828e2c3840a46a4a9a2",
+      "shares": "1000000000000000000",
+      "timestamp": 1793802839,
+      "value": "1001296",
+      "error": null,
+      "chainId": 4663
+    },
+    {
+      "address": "0x1d795e29044a62da42d927c4b179269139a28a6b",
+      "shares": "17015055349738596679",
+      "timestamp": 1793802839,
+      "value": "17689267360635014390",
+      "error": null,
+      "chainId": 8453
+    },
+    {
+      "address": "0x1d795e29044a62da42d927c4b179269139a28a6b",
+      "shares": "1000000000000000000",
+      "timestamp": 1793802839,
+      "value": "1039624438301152847",
+      "error": null,
+      "chainId": 8453
+    },
+    {
+      "address": "0x581cc9a73ec7431723a4a80699b8f801205841f1",
+      "shares": "1032679815411663597887464",
+      "timestamp": 1793802839,
+      "value": "1069977439090",
+      "error": null,
+      "chainId": 8453
+    },
+    {
+      "address": "0x581cc9a73ec7431723a4a80699b8f801205841f1",
+      "shares": "1000000000000000000",
+      "timestamp": 1793802839,
+      "value": "1036117",
+      "error": null,
+      "chainId": 8453
+    },
+    {
+      "address": "0x581cc9a73ec7431723a4a80699b8f801205841f1",
+      "shares": "1032462495866405424254731",
+      "timestamp": 1793802839,
+      "value": "1069752270546",
+      "error": null,
+      "chainId": 8453
+    },
+    {
+      "address": "0xef417a2512c5a41f69ae4e021648b69a7cde5d03",
+      "shares": "1856978317609421815479897",
+      "timestamp": 1793802839,
+      "value": "2030131102485",
+      "error": null,
+      "chainId": 8453
+    },
+    {
+      "address": "0xef417a2512c5a41f69ae4e021648b69a7cde5d03",
+      "shares": "1000000000000000000",
+      "timestamp": 1793802839,
+      "value": "1093244",
+      "error": null,
+      "chainId": 8453
+    },
+    {
+      "address": "0xef417a2512c5a41f69ae4e021648b69a7cde5d03",
+      "shares": "1801580112911231474733060",
+      "timestamp": 1793802839,
+      "value": "1969567326747",
+      "error": null,
+      "chainId": 8453
+    },
+    {
+      "address": "0x2ba14b2e1e7d2189d3550b708dfca01f899f33c1",
+      "shares": "1032476718398764769121957",
+      "timestamp": 1793802839,
+      "value": "1069752270545",
+      "error": null,
+      "chainId": 8453
+    },
+    {
+      "address": "0x2ba14b2e1e7d2189d3550b708dfca01f899f33c1",
+      "shares": "1000000000000000000",
+      "timestamp": 1793802839,
+      "value": "1036103",
+      "error": null,
+      "chainId": 8453
+    },
+    {
+      "address": "0xe7d0dbe3493830e2ab62619211a2bff0fc60db42",
+      "shares": "298804790442129382458907",
+      "timestamp": 1793802839,
+      "value": "310249572310",
+      "error": null,
+      "chainId": 8453
+    },
+    {
+      "address": "0xe7d0dbe3493830e2ab62619211a2bff0fc60db42",
+      "shares": "1000000000000000000",
+      "timestamp": 1793802839,
+      "value": "1038301",
+      "error": null,
+      "chainId": 8453
+    },
+    {
+      "address": "0xce2b8e464fc7b5e58710c24b7e5ebfb6027f29d7",
+      "shares": "12156800638537536777009",
+      "timestamp": 1793802839,
+      "value": "12535742760",
+      "error": null,
+      "chainId": 747474
+    },
+    {
+      "address": "0xce2b8e464fc7b5e58710c24b7e5ebfb6027f29d7",
+      "shares": "1000000000000000000",
+      "timestamp": 1793802839,
+      "value": "1031171",
+      "error": null,
+      "chainId": 747474
+    },
+    {
+      "address": "0x4284d4f9f4d61ea57b8f0943547c7c19c5b9b249",
+      "shares": "1206113075307782516067208",
+      "timestamp": 1793802839,
+      "value": "1221769980268",
+      "error": null,
+      "chainId": 747474
+    },
+    {
+      "address": "0x4284d4f9f4d61ea57b8f0943547c7c19c5b9b249",
+      "shares": "1000000000000000000",
+      "timestamp": 1793802839,
+      "value": "1012981",
+      "error": null,
+      "chainId": 747474
+    },
+    {
+      "address": "0x4284d4f9f4d61ea57b8f0943547c7c19c5b9b249",
+      "shares": "1201294685032696038017141",
+      "timestamp": 1793802839,
+      "value": "1216889041066",
+      "error": null,
+      "chainId": 747474
+    },
+    {
+      "address": "0x5920a6fc553af799542eda628adfcc9ea52e141c",
+      "shares": "1964618337665237854804",
+      "timestamp": 1793802839,
+      "value": "1976767274906432560716",
+      "error": null,
+      "chainId": 747474
+    },
+    {
+      "address": "0x5920a6fc553af799542eda628adfcc9ea52e141c",
+      "shares": "1000000000000000000",
+      "timestamp": 1793802839,
+      "value": "1006183866356267733",
+      "error": null,
+      "chainId": 747474
+    },
+    {
+      "address": "0x5920a6fc553af799542eda628adfcc9ea52e141c",
+      "shares": "1782194175772864893732",
+      "timestamp": 1793802839,
+      "value": "1793215026376763016156",
+      "error": null,
+      "chainId": 747474
+    },
+    {
+      "address": "0x9b1ae9548e4b46ceb6650f6cec702baf5cf2b8cc",
+      "shares": "97469467126408420901598272",
+      "timestamp": 1793802839,
+      "value": "99052019579137089955387492",
+      "error": null,
+      "chainId": 747474
+    },
+    {
+      "address": "0x9b1ae9548e4b46ceb6650f6cec702baf5cf2b8cc",
+      "shares": "1000000000000000000",
+      "timestamp": 1793802839,
+      "value": "1016236391758213394",
+      "error": null,
+      "chainId": 747474
+    },
+    {
+      "address": "0xa2d38c8a3d810ebcf4c2075821c5ec8f976bb692",
+      "shares": "1937943224774830063128411",
+      "timestamp": 1793802839,
+      "value": "1959572735723",
+      "error": null,
+      "chainId": 747474
+    },
+    {
+      "address": "0xa2d38c8a3d810ebcf4c2075821c5ec8f976bb692",
+      "shares": "1000000000000000000",
+      "timestamp": 1793802839,
+      "value": "1011161",
+      "error": null,
+      "chainId": 747474
+    },
+    {
+      "address": "0xa2d38c8a3d810ebcf4c2075821c5ec8f976bb692",
+      "shares": "1831553153644286982267189",
+      "timestamp": 1793802839,
+      "value": "1851995238058",
+      "error": null,
+      "chainId": 747474
+    },
+    {
+      "address": "0xca44cbe1fb03691d43d2d93aa460e2fcb03878fe",
+      "shares": "2831305265261514854007191",
+      "timestamp": 1793802839,
+      "value": "2873345724769",
+      "error": null,
+      "chainId": 747474
+    },
+    {
+      "address": "0xca44cbe1fb03691d43d2d93aa460e2fcb03878fe",
+      "shares": "1000000000000000000",
+      "timestamp": 1793802839,
+      "value": "1014848",
+      "error": null,
+      "chainId": 747474
+    },
+    {
+      "address": "0xca44cbe1fb03691d43d2d93aa460e2fcb03878fe",
+      "shares": "2820863819983790042925355",
+      "timestamp": 1793802839,
+      "value": "2862749240343",
+      "error": null,
+      "chainId": 747474
+    }
+  ]
+}

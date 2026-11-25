@@ -1,0 +1,24 @@
+{
+  "timestamp": "1793802839",
+  "blockNumber": "53506746",
+  "blockHash": "0x7af9fb300f8ea1dc6a0abbaf242d82c4b08cfe136b7d7720048d431f624c0c0c",
+  "rootCount": 6,
+  "holderCount": 11,
+  "checkedPairs": 60,
+  "zeroPairs": 58,
+  "coverage": "Closed pilot: 6 selected roots plus observed queue/direct holders. No ownership dollars or ratios reused from the older metrics publication.",
+  "positions": [
+    {
+      "holder": "0xb13cf163d916917d9cd6e836905ca5f12a1def4b",
+      "child": "0xf115c134c23c7a05fbd489a8be3116ebf54b0d9f",
+      "shares": "195398898486",
+      "status": "success"
+    },
+    {
+      "holder": "0xc3bd0a2193c8f027b82dde3611d18589ef3f62a9",
+      "child": "0xf115c134c23c7a05fbd489a8be3116ebf54b0d9f",
+      "shares": "117634044601",
+      "status": "success"
+    }
+  ]
+}

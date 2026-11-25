@@ -1,0 +1,550 @@
+{
+  "sourceBlock": {
+    "chainId": 747474,
+    "number": "47060028",
+    "hash": "0x7e62ae686025ea93d5a3adb9eb7d4d0c00d77643e440b67721f3f271e4ee4eeb",
+    "timestamp": 1793802839,
+    "secondsBeforeCommonTimestamp": 0
+  },
+  "schemaVersion": "depositor-value-curation-pilot-1",
+  "modelVersion": "global-share-conversion-curation-v1",
+  "asOfTimestamp": 1793802839,
+  "scope": {
+    "label": "Closed Katana V2/V3 pilot, $10k cutoff",
+    "selectedRootCount": 12,
+    "valuedRootCount": 12,
+    "definition": "Non-self holder share-conversion value minus attributed internal share positions. Exact direct ownership; canonical metrics budgets and caps allocate routed positions once at the snapshot. Not a complete holder census or immediately withdrawable liquidity.",
+    "excludedFromScope": [
+      "Other chains (combined separately using chain-scoped positions)",
+      "V1 and curation-only roots",
+      "Hidden and sub-cutoff roots; retired V3 roots"
+    ],
+    "dependencies": "Observed queue strategies are included for routing even when not selected roots",
+    "ownershipBoundary": "Selected roots across all screened chains in one canonical ledger. Updated DB mapping identities plus pinned queue/direct observations; cross-chain remote holders verified at destination block."
+  },
+  "aggregate": {
+    "completeValueUsd": null,
+    "knownSubtotalUsd": 14085976.961088778,
+    "unadjustedKnownSubtotalUsd": 25927499.434002288,
+    "observedOverlapUsd": 11841522.472913511,
+    "averageNextMinuteUsdPerSecond": 0.004918646967659394,
+    "unadjustedAverageNextMinuteUsdPerSecond": 0.01132366538028388,
+    "nextHourIncreaseUsd": 17.70852960087359,
+    "next24HoursIncreaseUsd": 424.84031390585005
+  },
+  "coverage": {
+    "unavailableRoots": [],
+    "cutoffUnknownCandidates": []
+  },
+  "projection": {
+    "fromTimestamp": 1793802839,
+    "validUntilTimestamp": 1793806439,
+    "interpolation": "Linear between published timestamps; values are recomputed from frozen external share positions, with base prices and contract state fixed.",
+    "points": [
+      {
+        "timestamp": 1793802839,
+        "knownSubtotalUsd": 14085976.961088778
+      },
+      {
+        "timestamp": 1793802840,
+        "knownSubtotalUsd": 14085976.966005666
+      },
+      {
+        "timestamp": 1793802899,
+        "knownSubtotalUsd": 14085977.256207597
+      },
+      {
+        "timestamp": 1793802959,
+        "knownSubtotalUsd": 14085977.551329266
+      },
+      {
+        "timestamp": 1793803019,
+        "knownSubtotalUsd": 14085977.846447792
+      },
+      {
+        "timestamp": 1793803079,
+        "knownSubtotalUsd": 14085978.141570162
+      },
+      {
+        "timestamp": 1793803139,
+        "knownSubtotalUsd": 14085978.43668939
+      },
+      {
+        "timestamp": 1793803199,
+        "knownSubtotalUsd": 14085978.73181047
+      },
+      {
+        "timestamp": 1793803259,
+        "knownSubtotalUsd": 14085979.026930405
+      },
+      {
+        "timestamp": 1793803319,
+        "knownSubtotalUsd": 14085979.32204919
+      },
+      {
+        "timestamp": 1793803379,
+        "knownSubtotalUsd": 14085979.617169827
+      },
+      {
+        "timestamp": 1793803439,
+        "knownSubtotalUsd": 14085979.912288312
+      },
+      {
+        "timestamp": 1793803499,
+        "knownSubtotalUsd": 14085980.208189847
+      },
+      {
+        "timestamp": 1793803559,
+        "knownSubtotalUsd": 14085980.503309045
+      },
+      {
+        "timestamp": 1793803619,
+        "knownSubtotalUsd": 14085980.798428096
+      },
+      {
+        "timestamp": 1793803679,
+        "knownSubtotalUsd": 14085981.093545996
+      },
+      {
+        "timestamp": 1793803739,
+        "knownSubtotalUsd": 14085981.388664747
+      },
+      {
+        "timestamp": 1793803799,
+        "knownSubtotalUsd": 14085981.683784353
+      },
+      {
+        "timestamp": 1793803859,
+        "knownSubtotalUsd": 14085981.978901813
+      },
+      {
+        "timestamp": 1793803894,
+        "knownSubtotalUsd": 14085982.151055178
+      },
+      {
+        "timestamp": 1793803895,
+        "knownSubtotalUsd": 14085982.155973017
+      },
+      {
+        "timestamp": 1793803896,
+        "knownSubtotalUsd": 14085982.16089086
+      },
+      {
+        "timestamp": 1793803919,
+        "knownSubtotalUsd": 14085982.274020124
+      },
+      {
+        "timestamp": 1793803979,
+        "knownSubtotalUsd": 14085982.569138288
+      },
+      {
+        "timestamp": 1793804039,
+        "knownSubtotalUsd": 14085982.864256307
+      },
+      {
+        "timestamp": 1793804099,
+        "knownSubtotalUsd": 14085983.159373175
+      },
+      {
+        "timestamp": 1793804159,
+        "knownSubtotalUsd": 14085983.454490898
+      },
+      {
+        "timestamp": 1793804219,
+        "knownSubtotalUsd": 14085983.749609472
+      },
+      {
+        "timestamp": 1793804279,
+        "knownSubtotalUsd": 14085984.044725904
+      },
+      {
+        "timestamp": 1793804339,
+        "knownSubtotalUsd": 14085984.339841181
+      },
+      {
+        "timestamp": 1793804399,
+        "knownSubtotalUsd": 14085984.634959316
+      },
+      {
+        "timestamp": 1793804459,
+        "knownSubtotalUsd": 14085984.9300763
+      },
+      {
+        "timestamp": 1793804519,
+        "knownSubtotalUsd": 14085985.225192139
+      },
+      {
+        "timestamp": 1793804579,
+        "knownSubtotalUsd": 14085985.52030883
+      },
+      {
+        "timestamp": 1793804639,
+        "knownSubtotalUsd": 14085985.815425372
+      },
+      {
+        "timestamp": 1793804699,
+        "knownSubtotalUsd": 14085986.11053977
+      },
+      {
+        "timestamp": 1793804759,
+        "knownSubtotalUsd": 14085986.40565702
+      },
+      {
+        "timestamp": 1793804819,
+        "knownSubtotalUsd": 14085986.700772122
+      },
+      {
+        "timestamp": 1793804879,
+        "knownSubtotalUsd": 14085986.995889071
+      },
+      {
+        "timestamp": 1793804939,
+        "knownSubtotalUsd": 14085987.291002885
+      },
+      {
+        "timestamp": 1793804999,
+        "knownSubtotalUsd": 14085987.58611954
+      },
+      {
+        "timestamp": 1793805059,
+        "knownSubtotalUsd": 14085987.881234054
+      },
+      {
+        "timestamp": 1793805119,
+        "knownSubtotalUsd": 14085988.176349416
+      },
+      {
+        "timestamp": 1793805179,
+        "knownSubtotalUsd": 14085988.471462635
+      },
+      {
+        "timestamp": 1793805239,
+        "knownSubtotalUsd": 14085988.766578712
+      },
+      {
+        "timestamp": 1793805299,
+        "knownSubtotalUsd": 14085989.06169363
+      },
+      {
+        "timestamp": 1793805359,
+        "knownSubtotalUsd": 14085989.356807407
+      },
+      {
+        "timestamp": 1793805419,
+        "knownSubtotalUsd": 14085989.651921032
+      },
+      {
+        "timestamp": 1793805479,
+        "knownSubtotalUsd": 14085989.947035516
+      },
+      {
+        "timestamp": 1793805539,
+        "knownSubtotalUsd": 14085990.242931042
+      },
+      {
+        "timestamp": 1793805599,
+        "knownSubtotalUsd": 14085990.538044227
+      },
+      {
+        "timestamp": 1793805659,
+        "knownSubtotalUsd": 14085990.833157273
+      },
+      {
+        "timestamp": 1793805719,
+        "knownSubtotalUsd": 14085991.12827116
+      },
+      {
+        "timestamp": 1793805779,
+        "knownSubtotalUsd": 14085991.423383905
+      },
+      {
+        "timestamp": 1793805839,
+        "knownSubtotalUsd": 14085991.718496505
+      },
+      {
+        "timestamp": 1793805899,
+        "knownSubtotalUsd": 14085992.013609953
+      },
+      {
+        "timestamp": 1793805959,
+        "knownSubtotalUsd": 14085992.30872126
+      },
+      {
+        "timestamp": 1793806019,
+        "knownSubtotalUsd": 14085992.60383541
+      },
+      {
+        "timestamp": 1793806079,
+        "knownSubtotalUsd": 14085992.898946421
+      },
+      {
+        "timestamp": 1793806139,
+        "knownSubtotalUsd": 14085993.194059283
+      },
+      {
+        "timestamp": 1793806199,
+        "knownSubtotalUsd": 14085993.489171995
+      },
+      {
+        "timestamp": 1793806259,
+        "knownSubtotalUsd": 14085993.78428456
+      },
+      {
+        "timestamp": 1793806319,
+        "knownSubtotalUsd": 14085994.079395982
+      },
+      {
+        "timestamp": 1793806379,
+        "knownSubtotalUsd": 14085994.374506252
+      },
+      {
+        "timestamp": 1793806439,
+        "knownSubtotalUsd": 14085994.66961838
+      }
+    ],
+    "comparisonAfter24Hours": {
+      "timestamp": 1793889239,
+      "knownSubtotalUsd": 14086401.801402684
+    }
+  },
+  "entries": [
+    {
+      "chainId": 747474,
+      "chainName": "Katana",
+      "address": "0xe007ca01894c863d7898045ed5a3b4abf0b18f37",
+      "name": "vbETH yVault",
+      "version": "v3",
+      "isFactory": false,
+      "isRetired": false,
+      "status": "valued",
+      "reason": null,
+      "growthFamily": "scheduled-yearn-unlock",
+      "nonSelfHolderSharesRaw": "2586949595234280729165",
+      "attributedInternalSharesRaw": "0",
+      "attributedExternalSharesRaw": "2586949595234280729165",
+      "unadjustedHolderValueUsd": 6100279.4565707045,
+      "adjustedHolderValueUsd": 6100279.4565707045,
+      "observedOverlapUsd": 0,
+      "averageNextMinuteUsdPerSecond": 0.0008041362278163433
+    },
+    {
+      "chainId": 747474,
+      "chainName": "Katana",
+      "address": "0x80c34bd3a3569e126e7055831036aa7b212cb159",
+      "name": "vbUSDC yVault",
+      "version": "v3",
+      "isFactory": false,
+      "isRetired": false,
+      "status": "valued",
+      "reason": null,
+      "growthFamily": "scheduled-yearn-unlock",
+      "nonSelfHolderSharesRaw": "5824483953965",
+      "attributedInternalSharesRaw": "1204795258132",
+      "attributedExternalSharesRaw": "4619688695833",
+      "unadjustedHolderValueUsd": 5993812.968255505,
+      "adjustedHolderValueUsd": 4753991.9816482095,
+      "observedOverlapUsd": 1239820.9866072955,
+      "averageNextMinuteUsdPerSecond": 0.0029589921701699494
+    },
+    {
+      "chainId": 747474,
+      "chainName": "Katana",
+      "address": "0x9a6bd7b6fd5c4f87eb66356441502fc7dcdd185b",
+      "name": "vbUSDT yVault",
+      "version": "v3",
+      "isFactory": false,
+      "isRetired": false,
+      "status": "valued",
+      "reason": null,
+      "growthFamily": "scheduled-yearn-unlock",
+      "nonSelfHolderSharesRaw": "1374745864713",
+      "attributedInternalSharesRaw": "0",
+      "attributedExternalSharesRaw": "1374745864713",
+      "unadjustedHolderValueUsd": 1413356.3631267364,
+      "adjustedHolderValueUsd": 1413356.3631267364,
+      "observedOverlapUsd": 0,
+      "averageNextMinuteUsdPerSecond": 0.00046898026096945007
+    },
+    {
+      "chainId": 747474,
+      "chainName": "Katana",
+      "address": "0xaa0362ecc584b985056e47812931270b99c91f9d",
+      "name": "vbWBTC yVault",
+      "version": "v3",
+      "isFactory": false,
+      "isRetired": false,
+      "status": "valued",
+      "reason": null,
+      "growthFamily": "scheduled-yearn-unlock",
+      "nonSelfHolderSharesRaw": "1114320268",
+      "attributedInternalSharesRaw": "0",
+      "attributedExternalSharesRaw": "1114320268",
+      "unadjustedHolderValueUsd": 872611.0392206366,
+      "adjustedHolderValueUsd": 872611.0392206366,
+      "observedOverlapUsd": 0,
+      "averageNextMinuteUsdPerSecond": 0
+    },
+    {
+      "chainId": 747474,
+      "chainName": "Katana",
+      "address": "0x0432337365d89c0d73f1d0cb263791f8f1b98d43",
+      "name": "Morpho vbWBTC/yvUSDC Lender Borrower",
+      "version": "v3",
+      "isFactory": false,
+      "isRetired": false,
+      "status": "valued",
+      "reason": null,
+      "growthFamily": "scheduled-yearn-unlock",
+      "nonSelfHolderSharesRaw": "547997405",
+      "attributedInternalSharesRaw": "547987389",
+      "attributedExternalSharesRaw": "10016",
+      "unadjustedHolderValueUsd": 522424.18774363,
+      "adjustedHolderValueUsd": 9.548491404517225,
+      "observedOverlapUsd": 522414.6392522255,
+      "averageNextMinuteUsdPerSecond": 0
+    },
+    {
+      "chainId": 747474,
+      "chainName": "Katana",
+      "address": "0x78ec25fba1baf6b7dc097ebb8115a390a2a4ee12",
+      "name": "Morpho Yearn OG USDC Compounder",
+      "version": "v3",
+      "isFactory": false,
+      "isRetired": false,
+      "status": "valued",
+      "reason": null,
+      "growthFamily": "scheduled-yearn-unlock",
+      "nonSelfHolderSharesRaw": "10006267094",
+      "attributedInternalSharesRaw": "0",
+      "attributedExternalSharesRaw": "10006267094",
+      "unadjustedHolderValueUsd": 10990.368058349057,
+      "adjustedHolderValueUsd": 10990.368058349057,
+      "observedOverlapUsd": 0,
+      "averageNextMinuteUsdPerSecond": 0
+    },
+    {
+      "chainId": 747474,
+      "chainName": "Katana",
+      "address": "0xce2b8e464fc7b5e58710c24b7e5ebfb6027f29d7",
+      "name": "Yearn OG USDC",
+      "version": "morpho-v1",
+      "isFactory": false,
+      "isRetired": false,
+      "status": "valued",
+      "reason": null,
+      "growthFamily": "projected-morpho-net-accrual",
+      "nonSelfHolderSharesRaw": "12156800638537536777009",
+      "attributedInternalSharesRaw": "0",
+      "attributedExternalSharesRaw": "12156800638537536777009",
+      "unadjustedHolderValueUsd": 12529.00546375224,
+      "adjustedHolderValueUsd": 12529.00546375224,
+      "observedOverlapUsd": 0,
+      "averageNextMinuteUsdPerSecond": 0
+    },
+    {
+      "chainId": 747474,
+      "chainName": "Katana",
+      "address": "0x4284d4f9f4d61ea57b8f0943547c7c19c5b9b249",
+      "name": "Yearn OG USDT",
+      "version": "morpho-v2",
+      "isFactory": false,
+      "isRetired": false,
+      "status": "valued",
+      "reason": null,
+      "growthFamily": "projected-morpho-net-accrual",
+      "nonSelfHolderSharesRaw": "1206113075307782516067208",
+      "attributedInternalSharesRaw": "1200970939806724909272466",
+      "attributedExternalSharesRaw": "5142135501057606794742",
+      "unadjustedHolderValueUsd": 1220504.1185992158,
+      "adjustedHolderValueUsd": 5203.4901916915005,
+      "observedOverlapUsd": 1215300.6284075242,
+      "averageNextMinuteUsdPerSecond": 0.000004328843624534784
+    },
+    {
+      "chainId": 747474,
+      "chainName": "Katana",
+      "address": "0x5920a6fc553af799542eda628adfcc9ea52e141c",
+      "name": "Yearn OG ETH",
+      "version": "morpho-v2",
+      "isFactory": false,
+      "isRetired": false,
+      "status": "valued",
+      "reason": null,
+      "growthFamily": "projected-morpho-net-accrual",
+      "nonSelfHolderSharesRaw": "1964618337665237854804",
+      "attributedInternalSharesRaw": "1781978007175548346685",
+      "attributedExternalSharesRaw": "182640330489689508119",
+      "unadjustedHolderValueUsd": 4578719.436612175,
+      "adjustedHolderValueUsd": 425659.6892586408,
+      "observedOverlapUsd": 4153059.747353534,
+      "averageNextMinuteUsdPerSecond": 0.0001275064190849662
+    },
+    {
+      "chainId": 747474,
+      "chainName": "Katana",
+      "address": "0x9b1ae9548e4b46ceb6650f6cec702baf5cf2b8cc",
+      "name": "Yearn KAT",
+      "version": "morpho-v2",
+      "isFactory": false,
+      "isRetired": false,
+      "status": "valued",
+      "reason": null,
+      "growthFamily": "projected-morpho-net-accrual",
+      "nonSelfHolderSharesRaw": "97469467126408420901598272",
+      "attributedInternalSharesRaw": "0",
+      "attributedExternalSharesRaw": "97469467126408420901598272",
+      "unadjustedHolderValueUsd": 371951.46696666046,
+      "adjustedHolderValueUsd": 371951.46696666046,
+      "observedOverlapUsd": 0,
+      "averageNextMinuteUsdPerSecond": 0.0004933527195438122
+    },
+    {
+      "chainId": 747474,
+      "chainName": "Katana",
+      "address": "0xa2d38c8a3d810ebcf4c2075821c5ec8f976bb692",
+      "name": "Yearn Degen USDC",
+      "version": "morpho-v2",
+      "isFactory": false,
+      "isRetired": false,
+      "status": "valued",
+      "reason": null,
+      "growthFamily": "projected-morpho-net-accrual",
+      "nonSelfHolderSharesRaw": "1937943224774830063128411",
+      "attributedInternalSharesRaw": "1831131572448556832306770",
+      "attributedExternalSharesRaw": "106811652326273230821641",
+      "unadjustedHolderValueUsd": 1958519.5694055066,
+      "adjustedHolderValueUsd": 107945.73785561963,
+      "observedOverlapUsd": 1850573.831549887,
+      "averageNextMinuteUsdPerSecond": 0.00005137237531016581
+    },
+    {
+      "chainId": 747474,
+      "chainName": "Katana",
+      "address": "0xca44cbe1fb03691d43d2d93aa460e2fcb03878fe",
+      "name": "Yearn OG USDC",
+      "version": "morpho-v2",
+      "isFactory": false,
+      "isRetired": false,
+      "status": "valued",
+      "reason": null,
+      "growthFamily": "projected-morpho-net-accrual",
+      "nonSelfHolderSharesRaw": "2831305265261514854007191",
+      "attributedInternalSharesRaw": "2820017894407902754563831",
+      "attributedExternalSharesRaw": "11287370853612099443360",
+      "unadjustedHolderValueUsd": 2871801.4539794168,
+      "adjustedHolderValueUsd": 11448.814236372917,
+      "observedOverlapUsd": 2860352.639743044,
+      "averageNextMinuteUsdPerSecond": 0.000009977967814241613
+    }
+  ],
+  "ownershipGraph": {
+    "datasetId": "4a8caca4b3901493b2f691a7c1b5174cb5fa46e223e2439175b4934cb5311505",
+    "mappingTimestamp": 1793750399,
+    "pilotTimestamp": 1793802839,
+    "mappingUse": "Identity discovery only; no historical dollar allocation or ownership ratio copied into the pilot",
+    "routeReads": "curation-ownership-routes.json",
+    "graph": "db-ownership-graph.json",
+    "ledgerInputs": "curation-ledger-inputs.json",
+    "ledgerAudit": "curation-ledger-audit.json"
+  }
+}

@@ -1,0 +1,3943 @@
+{
+  "activeVaultTvl": 235734971.81979203,
+  "asOfTimestamp": 1793750399,
+  "completeness": {
+    "issues": ["ValueError"],
+    "scope": "network",
+    "status": "incomplete",
+    "totals": "known-subtotals",
+    "unresolvedPositions": 4,
+    "valuedVaultCount": 815,
+    "vaultCount": 1022
+  },
+  "crossChainOverlapByCategory": {
+    "curation": 0,
+    "v1": 0,
+    "v2": 0,
+    "v3": 0
+  },
+  "crossChainOverlapByChain": {
+    "Arbitrum": 0,
+    "Base": 0,
+    "Ethereum": 0,
+    "Fantom": 0,
+    "Gnosis": 0,
+    "HyperEVM": 0,
+    "Katana": 0,
+    "Optimism": 0,
+    "Polygon": 0,
+    "Robinhood Chain": 0
+  },
+  "curationTvl": 58476608.53089011,
+  "datasetId": "4a8caca4b3901493b2f691a7c1b5174cb5fa46e223e2439175b4934cb5311505",
+  "overlapByChain": {
+    "Arbitrum": 9.99546811086481e-7,
+    "Base": 5058318.336612184,
+    "Ethereum": 87112888.04205261,
+    "Fantom": 0,
+    "Gnosis": 0,
+    "HyperEVM": 0,
+    "Katana": 11497840.26665505,
+    "Optimism": 0,
+    "Polygon": 9857.126118622526,
+    "Robinhood Chain": 0
+  },
+  "overlapExcluded": 103678903.77143948,
+  "retiredTvlByCategory": {
+    "curation": 0,
+    "v1": 0,
+    "v2": 38491824.43562468,
+    "v3": 989577.7681741678
+  },
+  "retiredVaultTvl": 39481402.203798845,
+  "retiredVaults": [
+    {
+      "address": "0x00cb87656196dd835b9e4d67018ae0477a1de8c1",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "yPT-uniETH (auto-rolling Pendle PT)",
+      "tvlUsd": 0.24532626762907384
+    },
+    {
+      "address": "0x015d78c7ad1289f5aa1dec25bd6b67ba31fac1cf",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "crvTETH yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x03c31f3444357087d5f568d24ae17f9177c8aa84",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "LINK yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x04aebe2e4301cdf5e9c57b01ebdfe4ac4b48dd13",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "mkUSD yVault-A",
+      "tvlUsd": 5301.709752251255
+    },
+    {
+      "address": "0x04d73c87b20d372cb3240c72eefb9d79ba5e4959",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve UST Wormhole Pool yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x054af22e1519b020516d72d749221c24756385c9",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve HUSD Pool yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x082a5743aadf3d0daf750eef24652b36a68b1e9c",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "yvAjnaDAI-harvester",
+      "tvlUsd": 11656.847950624866
+    },
+    {
+      "address": "0x0c7e3925e0986826b066ce77138b934f349a871b",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve CVG-ETH Factory yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x0ca8eb6546ac5ff2055320c2c6e629d55e2d4014",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve USPDUSDC Factory yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x0d4ea8536f9a13e4fba16042a46c30f092b06aa5",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve EURT Pool yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x0daa35a1735152edb928239c1712883dd8eb976f",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Yearn LQTY",
+      "tvlUsd": 2557.2814614205863
+    },
+    {
+      "address": "0x0e880118c29f095143dda28e64d95333a9e75a47",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "eCRV yVault",
+      "tvlUsd": 774.5304924596767
+    },
+    {
+      "address": "0x0e8a7717a4fd7694682e7005957dd5d7598bf14a",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "yExperimentalWBTC",
+      "tvlUsd": 5063.456989802876
+    },
+    {
+      "address": "0x0f6121fb28c7c42916d663171063c62684598f9f",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "HBTC yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x0ff3773a6984ad900f7fb23a9acbf07ac3adfb06",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve Y Pool yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x1017c97c03d6738c358576735de76028f2395625",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "USDS-1 yVault Liquid Locker Compounder",
+      "tvlUsd": 98.82428732977833
+    },
+    {
+      "address": "0x1025b1641d1f23c289412dd5e5701e9810103a93",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve ibAUD-USDC Pool yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x10856c8c8e41b8888868789080c7bea6267a2b08",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Kelp rsETH LP (27 JUN 2024)",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x1133b2e2f51beccf25b2f8d0ca48c1d93dd5ab12",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "OCEAN yVault",
+      "tvlUsd": 3.0236561044433476
+    },
+    {
+      "address": "0x11aae8bee9b1da827c641540d20e4e664677e06f",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "yPRISMA-1 yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x132d8d2c76db3812403431facb00f3453fc42125",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve ankrETH Pool yVault",
+      "tvlUsd": 7569.0244558174545
+    },
+    {
+      "address": "0x133cb5cf617a33f5d02cffff579435776ef29fb0",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve multiBTC Factory yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x133daa2fa268b36e088b2be1358857d41a8369eb",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve mkUSD-FRAXBP Factory yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x1635b506a88fbf428465ad65d00e8d6b6e5846c3",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve CVX-ETH Pool yVault",
+      "tvlUsd": 111581.1064192295
+    },
+    {
+      "address": "0x16825039dfe2a5b01f3e1e6a2bbf9a576c6f95c4",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve d3pool Pool yVault",
+      "tvlUsd": 1940.9957951712183
+    },
+    {
+      "address": "0x17f211915f87f0aac4b67d8b311e7c38c38830d4",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "yPT-ezETH-Zircuit (auto-rolling Pendle PT)",
+      "tvlUsd": 0.00250013221368
+    },
+    {
+      "address": "0x19b8bc5ccf9700e16f2780bea152f01c449f45d0",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "ALCX yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x19d3364a399d251e894ac732651be8b0e4e85001",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "DAI yVault",
+      "tvlUsd": 899032.3684976295
+    },
+    {
+      "address": "0x1a5ebff0e881aec34837845e4d0eb430a1b4b737",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve FRAXBP Factory yVault",
+      "tvlUsd": 1.0281769001824168
+    },
+    {
+      "address": "0x1ae8ccd120a05080d9a01c3b4f627f865685d091",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "WBTC yVault",
+      "tvlUsd": 1479.0066638896394
+    },
+    {
+      "address": "0x1b905331f7de2748f4d6a0678e1521e20347643f",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve ibAUD Pool yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x1bb04fcbc210baa384531079ed7f59d9149309ba",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Balancer USDC-DAI-USDT Factory yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x1c6a9783f812b3af3abbf7de64c3cd7cc7d1af44",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve UST Pool yVault",
+      "tvlUsd": 171.60031109122718
+    },
+    {
+      "address": "0x1d0bcbf0f80cc47e7766d48d61c5fe7ad8a19640",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "sDAI LP (26 SEP 2024)",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x1e6462678462c95e1f8afe2558d7ff8692affbd0",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve FEI Pool yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x1f6bdffbadd98e410f83c66d1278241375f5199f",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "WBTC yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x1f8ad2cec4a2595ff3cda9e8a39c0b1be1a02014",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "DAI-crosschain yVault",
+      "tvlUsd": 379.5009184329631
+    },
+    {
+      "address": "0x2027d3b2b58f522178ce4cc4e86e99b7c4de3876",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve USDM-sDAI Factory yVault",
+      "tvlUsd": 40898.50891758412
+    },
+    {
+      "address": "0x2090c495fb109725cadd6593e1e5488a64819ad7",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Balancer RZR-wstETH yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x2147935d9739da4e691b8ae2e1437492a394ebf5",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "WETH ubiVault",
+      "tvlUsd": 18750.663020537137
+    },
+    {
+      "address": "0x22028e652a2e937c876f2577f8e78f692d6daa93",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "USDC-1 yVault Liquid Locker Compounder",
+      "tvlUsd": 26.348712558692284
+    },
+    {
+      "address": "0x23d3d0f1c697247d5e0a9efb37d8b0ed0c464f7f",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve tBTC Pool yVault",
+      "tvlUsd": 412.30640224972404
+    },
+    {
+      "address": "0x2407b40c08e528a627ebd99cccea89d888d00906",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve Lend crvUSD-tBTC Factory yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x2478d5997324e8b47e9ff870166dba8d2e461993",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "yPT-eETH-Karak (auto-rolling Pendle PT)",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x25212df29073fffa7a67399acefc2dd75a831a1a",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve EURS Pool yVault",
+      "tvlUsd": 329629.54982390575
+    },
+    {
+      "address": "0x27b7b1ad7288079a66d12350c828d3c00a6f07d7",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve Iron Bank Pool yVault",
+      "tvlUsd": 502435.0489063849
+    },
+    {
+      "address": "0x27ffa71dbb25a7c52a3da74c6eed8c94c9a43e0d",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Aave V3 crvUSD Lender",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x2807387f1212cb2852ab97cdaa3627daca5e4661",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "MIM yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x28a5b95c101df3ded0c0d9074db80c438774b6a9",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve USDT Pool yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x2a38b9b0201ca39b17b460ed2f11e4929559071e",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve GUSD Pool yVault",
+      "tvlUsd": 5908.9523684089945
+    },
+    {
+      "address": "0x2a82dcdcbfb88e92021b8bcc3da22703a2e4459c",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve BUSD Factory yVault",
+      "tvlUsd": 474.120924246604
+    },
+    {
+      "address": "0x2d5d4869381c4fce34789bc1d38acce747e295ae",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve RAI Pool yVault",
+      "tvlUsd": 20572.722716023458
+    },
+    {
+      "address": "0x2dfb14e32e2f8156ec15a2c21c3a6c053af52be8",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve MIM Pool yVault",
+      "tvlUsd": 1390.2514486600746
+    },
+    {
+      "address": "0x2e2b268cbc86917d2809ce2715a19e58a210fcee",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve HBTC Factory yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x2e5c7e9b1da0d9cb2832ebb06241d18552a85400",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve ibCHF-USDC Pool yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x2e919d27d515868f3d5bc9110fa738f9449fc6ad",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve yveCRV Pool Vault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x2f194da57aa855caa02ea3ab991fa5d38178b9e6",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "UNI yVault",
+      "tvlUsd": 18.605372213385607
+    },
+    {
+      "address": "0x2f2bbc50db252eeadd2c9b9197beb6e5aef87e48",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "yPT-ENA (auto-rolling Pendle PT)",
+      "tvlUsd": 3650.4400891809296
+    },
+    {
+      "address": "0x2fb06235ab90812e5bae28404024c9498ff9414d",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve JPEG-pETH Factory yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x30fcf7c6cdfc46ec237783d94fc78553e79d4e9c",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve DUSD Pool yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x3149950258fbbce1638d6c23ac93a692604ef864",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "crvRenWBTC yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x32413274504908460f0c373c7f20f429fb80ed3a",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "saCRV yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x32651dd149a6ec22734882f790cbeb21402663f9",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "USDT yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x3408324dbb537886cadc180f6ffcf674ee215f67",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "\"renBTC yVault\"",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x341bb10d8f5947f3066502dc8125d9b8949fd3d6",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve STG-USDC Pool yVault",
+      "tvlUsd": 95.50649634388091
+    },
+    {
+      "address": "0x3466c90017f82dda939b01e8dbd9b0f97aef8dfc",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "sUSD yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x378cb52b00f9d0921cb46dfc099cff73b42419dc",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "LUSD yVault",
+      "tvlUsd": 2648.6060257254967
+    },
+    {
+      "address": "0x378ffd482c767f847d48818552f8438b17335c89",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "crvUSD LP (27 JUN 2024)",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x39caf13a104ff567f71fd2a4c68c026fdb6e740b",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve Aave Pool yVault",
+      "tvlUsd": 18481.29710214322
+    },
+    {
+      "address": "0x3b27f92c0e212c671ea351827edf93db27cc0c65",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "USDT yVault",
+      "tvlUsd": 4388222.293886069
+    },
+    {
+      "address": "0x3b96d491f067912d18563d56858ba7d6ec67a6fa",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve USDN Pool yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x3c26de7e22613a31b77e93f011d804d8a7821581",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "LOOKS yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x3c5df3077bcf800640b5dae8c91106575a4826e6",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve pBTC Pool yVault",
+      "tvlUsd": 2899.6006141671605
+    },
+    {
+      "address": "0x3c90033684f2504d55eeb652720785f70fa692d4",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "cDAI+cUSDC yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x3d27705c64213a5dcd9d26880c1bcfa72d5b6b0e",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve USDK Pool yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x3d980e50508cfd41a13837a60149927a11c03731",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve triCrypto Pool yVault",
+      "tvlUsd": 31629.877711347366
+    },
+    {
+      "address": "0x3e720ba935bf137d45a3c98938db1f4c8517298e",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve VEUR-agEUR Factory yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x3f540647b08e3e9bcd297e065e42e6cdaf37eba0",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Silo-LRT WETH yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x416ebadc07cc7efa94d9110a5b932089bbd49931",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "LINK yVault",
+      "tvlUsd": 0.007886237491058878
+    },
+    {
+      "address": "0x4213458c69c19e6792510e1153cb0c5834665fdc",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Balancer Boosted Aave USD Pool yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x429ea2d8d5b06ca40dd986fac0734ba0e0cac022",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve sdCRV Factory yVault",
+      "tvlUsd": 4.414207017839319
+    },
+    {
+      "address": "0x433853acba7ec9ffecf7d9732ea94f0668518e8e",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Swell rswETH LP (27 JUN 2024)",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x4560b99c904aad03027b5178cca81584744ac01f",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve cvxCRV Pool yVault",
+      "tvlUsd": 4375.102344683656
+    },
+    {
+      "address": "0x477faf103dadc5fe5baa40951cf7512dcbc18126",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "USDC yVault",
+      "tvlUsd": 282.0383805887969
+    },
+    {
+      "address": "0x4856a7efbbfcae92ab13c5e2e322fc77647bb856",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "RAI yVault",
+      "tvlUsd": 2729.452675622138
+    },
+    {
+      "address": "0x487afb967ba2827d393a93a730ff1951a81164d8",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve Lend crvUSD-WETH Factory yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x4907fd39d4691f03b3751590b8df6ed01e3c2b63",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve pxETH-mkUSD Factory yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x490bd0886f221a5f79713d3e84404355a9293c50",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve ibCHF Pool yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x4962b6c40b5e9433e029c5c423f6b1ce7ff28b0f",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "sUSD yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x497590d2d57f05cf8b42a36062fa53ebae283498",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "SUSHI yVault",
+      "tvlUsd": 0.13412642553928622
+    },
+    {
+      "address": "0x49b3e44e54b6220af892dba48ae45f1ea6bc4ae9",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "TUSD yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x4a3fe75762017db0ed73a71c9a06db7768db5e66",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "COMP yVault",
+      "tvlUsd": 1018.9294345792534
+    },
+    {
+      "address": "0x4b5bfd52124784745c1071dcb244c6688d2533d3",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve Y Pool yVault",
+      "tvlUsd": 12.223291039513981
+    },
+    {
+      "address": "0x4c4a6a22bce915c724a66b82128577f1b24831ed",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve EURT Pool yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x4cb5483d87028518c5f35a49c151612a062bfcd0",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Balancer GHO-bb-a-USD Factory yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x4ce9c93513dff543bc392870d57df8c04e89ba0a",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Sky Rewards USDS Compounder",
+      "tvlUsd": 262.6078562229284
+    },
+    {
+      "address": "0x4dd0fe8549641a04d7ab4f37dbb541ae7dbb2838",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Silo-LRT USDC yVault",
+      "tvlUsd": 31.663254950600553
+    },
+    {
+      "address": "0x4f86bf06bb97b6619fd6b55c0369fb4ed16cfb6e",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve Lend crvUSD-sUSDe Factory yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x503e0bab6acdae73ea7fb7cf6ae5792014dbe935",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Yearn-Ajna WETH Vault",
+      "tvlUsd": 7857.407448174127
+    },
+    {
+      "address": "0x5120feabd5c21883a4696dbcc5d123d6270637e9",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "WETH yVault",
+      "tvlUsd": 10.791102819287719
+    },
+    {
+      "address": "0x528d50dc9a333f01544177a924893fa1f5b9f748",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve ibKRW Pool yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x5331009b82853e9fb711bc0b300e1b374724adac",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve sdYFI Factory yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x5359680a80c1fb2175cd33eff32f762e43cd8c41",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve ibKRW Factory yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x5383c1ab5beac04d6a6e6872cc6a422f2dc25576",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve USDC+ Factory yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x560c0f86124472d6a649ac347a7c3415c34f2929",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "DAI-2 yVault Liquid Locker Compounder",
+      "tvlUsd": 0.4074595284891204
+    },
+    {
+      "address": "0x564f7b5d8389f5c4c99e50fed5fc95070e697903",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Lido stETH LP (25 DEC 2025)",
+      "tvlUsd": 159740.98899728362
+    },
+    {
+      "address": "0x56a5fd5104a4956898753dfb060ff32882ae0eb4",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "ALCX yVault",
+      "tvlUsd": 190.56329325439117
+    },
+    {
+      "address": "0x571b384636ba518697d745ac218ad4cee5ee0abc",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve sBTCv2 Factory yVault",
+      "tvlUsd": 86.28412688924863
+    },
+    {
+      "address": "0x5737022626c282a89d105fd2e89ed6928ebdae93",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "eCRV yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x57a8b4061aa598d2bb5f70c5f931a75c9f511fc8",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "yPT-LBTC (auto-rolling Pendle PT)",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x57fc2d9809f777cd5c8c433442264b6e8be7fce4",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "yPT-sUSDe (auto-rolling Pendle PT)",
+      "tvlUsd": 1446.6438389373673
+    },
+    {
+      "address": "0x58900d761ae3765b75ddfc235c1536b527f25d8f",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve yETH Factory yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x59518884eebfb03e90a18adbaaab770d4666471e",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve ibJPY Pool yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x595a68a8c9d5c230001848b69b1947ee2a607164",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve ibGBP Pool yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x5a770dbd3ee6baf2802d29a901ef11501c44797a",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve sUSD Pool yVault",
+      "tvlUsd": 43902.895503182765
+    },
+    {
+      "address": "0x5ab64c599fcc59f0f2726a300b03166a395578da",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve 3EUR Pool yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x5b189d92983e941273b26e3b46e5a16206c08827",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "eCRV yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x5b2384d566d2e4a0b29b8eccb642c63199cd393c",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve sUSD Factory yVault",
+      "tvlUsd": 995.5516338444472
+    },
+    {
+      "address": "0x5b707472eef1553646740a7e5becfd41b9b4ef4c",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "COMP yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x5c0a86a32c129538d62c106eb8115a8b02358d57",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve rETH-wstETH Pool yVault",
+      "tvlUsd": 26828.008357720057
+    },
+    {
+      "address": "0x5cbf567cb0c3d319a052c91efb3b3318899338df",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve pETH Factory yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x5d10dfa44adc63c41906af61eeffb9454860e999",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve mkUSD-PayPool Factory yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x5e69e8b51b71c8596817fd442849bd44219bb095",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve ibBTC Pool yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x5f18c75abdae578b483e5f43f12a39cf75b973a9",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "USDC yVault",
+      "tvlUsd": 1487793.5406235538
+    },
+    {
+      "address": "0x5fa5b62c8af877cb37031e0a3b2f34a78e3c56a6",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve LUSD Pool yVault",
+      "tvlUsd": 1302262.2023150965
+    },
+    {
+      "address": "0x5faf6a2d186448dfa667c51cb3d695c7a6e52d8e",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve stETH-WETH Pool yVault",
+      "tvlUsd": 6304.840631014316
+    },
+    {
+      "address": "0x602da189f5ada033e9ac7096fc39c7f44a77e942",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "USDC to yvUSDS Farmer",
+      "tvlUsd": 2.577471965409401
+    },
+    {
+      "address": "0x625b7df2fa8abe21b0a976736cda4775523aed1e",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve HBTC Pool yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x63739d137eefab1001245a8bd1f3895ef3e186e7",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "DAI yVault",
+      "tvlUsd": 17.779754430623367
+    },
+    {
+      "address": "0x63859212aa05d60295a2f18a9e0c707040605bad",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "DAI ubiVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x6601526470e7bad2760fb63507bf6965a0d4360b",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "yvBOOST-yswap yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x66017371c032cd5a67fec6913a9e37d5bd1c690c",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "yPT-pufETH (auto-rolling Pendle PT)",
+      "tvlUsd": 0.9594576370044541
+    },
+    {
+      "address": "0x66a7024fc367eba201df1381a9b6305d1e90919a",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve mkUSD-USDe Factory yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x671a912c10bba0cfa74cfc2d6fba9ba1ed9530b2",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "LINK yVault",
+      "tvlUsd": 125545.17088088514
+    },
+    {
+      "address": "0x67b9f46bcba2df84ecd41cc6511ca33507c9f4e9",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve DOLA Pool yVault - Unlisted",
+      "tvlUsd": 4.250145697593701e-18
+    },
+    {
+      "address": "0x67e019bfbd5a67207755d04467d6a70c0b75bf60",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve ibEUR Pool yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x68b9f74372b257fad2c9a160d2f12ee526ea9510",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "yPT-rsETH-Zircuit (auto-rolling Pendle PT)",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x6a5468752f8db94134b6508dabac54d3b45efce6",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve CRV-ETH Pool yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x6aceda98725505737c0f00a3da0d047304052948",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "DAI to yvUSDS Farmer",
+      "tvlUsd": 1.0403024507473349
+    },
+    {
+      "address": "0x6aefd381c0aef49baaff58ebc70534b3941c61bf",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve YFI-ETH Pool yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x6b5ce31af687a671a804d8070ddda99cab926dfe",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve ibGBP-USDC Pool yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x6d2f347dcfc55c6ac80e515a58344acd7fef0b84",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "bCRV yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x6d765cbe5bc922694afe112c140b8878b9fb0390",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "SUSHI yVault",
+      "tvlUsd": 5479.7538053127255
+    },
+    {
+      "address": "0x6ede7f19df5df6ef23bd5b9cedb651580bdf56ca",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve BUSD Pool yVault",
+      "tvlUsd": 2147.179413120012
+    },
+    {
+      "address": "0x6f0ace0f94f4b9890dfa99a4175b3ef0288c16b3",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve CRV-ETH Factory yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x6fafca7f49b4fd9dc38117469cd31a1e5aec91f5",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve USDM Pool yVault",
+      "tvlUsd": 2.5439419672444187e-20
+    },
+    {
+      "address": "0x7047f90229a057c13bf847c0744d646cfb6c9e1a",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve renBTC Pool yVault",
+      "tvlUsd": 97.12278546873138
+    },
+    {
+      "address": "0x708d1a6fdf342d53f4d006aa9b85e223c68a0edb",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve PRISMA-mkUSD Factory yVault",
+      "tvlUsd": 18.29732748421768
+    },
+    {
+      "address": "0x7158c1bee7a0fa5bd6affc77b2309991d7adcdd4",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "USDC yVault",
+      "tvlUsd": 2379.043999787842
+    },
+    {
+      "address": "0x718abe90777f5b778b52d553a5abaa148dd0dc5d",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve alETH Pool yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x71955515adf20cbdc699b8bc556fc7fd726b31b0",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "USDC yVault",
+      "tvlUsd": 96.99984703555512
+    },
+    {
+      "address": "0x722f76f34cb5c3b008a50e0664e55a53f4f461ab",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "yvUSDT MetaVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x72faea467bd88db6720a861e56a3a72b4aa579df",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve ibCHF Factory yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x7356f09c294cb9c6428ac7327b24b0f29419c181",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "SNX yVault",
+      "tvlUsd": 0.062125874750961485
+    },
+    {
+      "address": "0x75a3f32ba5e60a094729257ee44841f9552bafb9",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "AAVE yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x75f35498e0d053d0dbd2472bc06e7cba1f0c7d3a",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Morpho Y-DAI Compounder",
+      "tvlUsd": 10.528857468897858
+    },
+    {
+      "address": "0x76e9b1711d85bc9c88a437420787c34282956ec5",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "yPT-USDe-Zircuit (auto-rolling Pendle PT)",
+      "tvlUsd": 4711.938139753684
+    },
+    {
+      "address": "0x79ff6c5a23b492619661f7c5b73a961114a4c940",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "AAVE yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x7ab4a7be740131bde216521b54adddd672f44a05",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve agEUR-EUROC Pool yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x7da96a3891add058ada2e826306d812c638d87a7",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "USDT yVault",
+      "tvlUsd": 4316060.811961939
+    },
+    {
+      "address": "0x7e113c504263354ba99290dadad00d1e1f2b6476",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve sdFXS Factory yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x7f7df0e9a040dda05fc609143cc8da7cc6c59587",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "sUSD yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x801ab06154bf539dea4385a39f5fa8534fb53073",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve EURS-USDC Pool yVault",
+      "tvlUsd": 7605.542233300516
+    },
+    {
+      "address": "0x80bbee2fa460da291e796b9045e93d19ef948c6a",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve Pax Pool yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x8294bba6671d4094a7c0e9c98e615fbc11f96388",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "yPT-swETH (auto-rolling Pendle PT)",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x82c24073a19f4c46ab2646323b322427eb98f616",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "uniETH LP (27 JUN 2024)",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x82c83dda32db09f63f9a59a129278f3fdc3eee67",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve 3EUR Factory yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x8414db07a7f743debafb402070ab01a4e0d2e45e",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve sBTC Pool yVault",
+      "tvlUsd": 13875.15141433138
+    },
+    {
+      "address": "0x8472e9914c0813c4b465927f82e213ea34839173",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "sBTC yVault",
+      "tvlUsd": 1.3322157265537757
+    },
+    {
+      "address": "0x84ca3bf4822a342e9c1ad27bd5fbcf5fc5e37128",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "yvBOOST-yswap yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x84e13785b5a27879921d6f685f041421c7f482da",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve 3pool yVault",
+      "tvlUsd": 81612.49167089425
+    },
+    {
+      "address": "0x873fb544277fd7b977b196a826459a69e27ea4ea",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "RAI yVault",
+      "tvlUsd": 5780.73328900778
+    },
+    {
+      "address": "0x883a777f2594004419fc08b388d7d3bdc1c0d6c1",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Balancer bb-a-USD Factory yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x89e93172aef8261db8437b90c3dcb61545a05317",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Savings USDaf",
+      "tvlUsd": 4918.514713002685
+    },
+    {
+      "address": "0x8a878e3149051b810f078fd3f2e0924290be34a6",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "yPT-USDe (auto-rolling Pendle PT)",
+      "tvlUsd": 27.260731389029385
+    },
+    {
+      "address": "0x8b2335962111f3cba6cfc5b2acd8894635241c3b",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve ZUN-pxETH Factory yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x8b58aa42a4aa222b684078459ce03dd0a43342b1",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "USDP yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x8b9c0c24307344b6d7941ab654b2aeee25347473",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve EURN Pool yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x8bb5491c0872445ec15d9b67cc6117811e0d8498",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve deUSD-USDT Factory yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x8c6e6284ae2504fbde50a80d266e736e4b18d51c",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "yPT-rsENA (auto-rolling Pendle PT)",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x8c99c1ff4978790ea496c71bc6e769f1d8691e1c",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve zunETH-frxETH Factory yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x8cc94ccd0f3841a468184aca3cc478d2148e1757",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve mUSD Pool yVault",
+      "tvlUsd": 26554.97719831945
+    },
+    {
+      "address": "0x8cdf57760be305f32e03b3d231e5a81e550c6295",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve USDN Factory yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x8ee57c05741aa9db947a744e713c15d4d19d8822",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve yBUSD Pool yVault",
+      "tvlUsd": 1036.7441615824002
+    },
+    {
+      "address": "0x8fa3a9ecd9efb07a8ce90a6eb014cf3c0e3b32ef",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve BBTC Pool yVault",
+      "tvlUsd": 8035.7471288868555
+    },
+    {
+      "address": "0x902cf5373317bb3e42660e9f4e85aa21532c0e44",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "USDC yVault",
+      "tvlUsd": 0.6045505902583079
+    },
+    {
+      "address": "0x9068678b49b8d633952aef7bc0077fda71ca68b8",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve Lend crvUSD-USDe Factory yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x91f008870eef686b61a3775944d55a3fc53b7024",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Sky Savings Rate USDS Lender",
+      "tvlUsd": 0.38276498798362774
+    },
+    {
+      "address": "0x92545bce636e6ee91d88d2d017182cd0bd2fc22e",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "DAI-2 yVault",
+      "tvlUsd": 214111.91808419378
+    },
+    {
+      "address": "0x928db6676340e5206a91ad122a24e363131ffce7",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve USDaf-SR Factory yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x93b88b35283e1dc30981567843f5ba88485c16cc",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Lido stETH LP (30 DEC 2027)",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x95d69641ed7ecaa5e7d5539f56dc6194b5bcd7fa",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Aave V3 USDT Lender",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x9861708f2ad2bd1ed8d4d12436c0d8eb1ed36f1c",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Across WETH Lender",
+      "tvlUsd": 2.4424143518080585
+    },
+    {
+      "address": "0x986b4aff588a109c09b50a03f42e4110e29d353f",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve sETH Pool yVault",
+      "tvlUsd": 118582.13077596562
+    },
+    {
+      "address": "0x98b72debe9bedcc11af3f1f5bfac6994aac43786",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve dgnETH-ETH+ Factory yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x990200daca8c96f1b1d10af074d4054cd8916028",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve rUSDY-USDC yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x9a39f31dd5edf5919a5c0c2433ce053fad2e0336",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve ibJPY-USDC Pool yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x9d409a0a012cfba9b15f6d4b36ac57a46966ab9a",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Yearn Compounding veCRV yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x9e0e0af468fbd041cab7883c5eef16d1a99a47c3",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve sdANGLE Factory yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x9f8b5c0fc18b79ddfc05b21c43da7e324cf3b8eb",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve ibEUR-USDC Factory yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0xa258c4606ca8206d8aa700ce2143d7db854d168c",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "WETH yVault",
+      "tvlUsd": 8507936.746475613
+    },
+    {
+      "address": "0xa2619fdfb99abeb533a1147461f3f1109c5ade75",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "WETH yVault",
+      "tvlUsd": 41.419321036347554
+    },
+    {
+      "address": "0xa354f35829ae975e850e23e9615b11da1b3dc4de",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "USDC yVault",
+      "tvlUsd": 4701312.027093945
+    },
+    {
+      "address": "0xa442beb83babc33d93c8bec471070ce59b88fb7d",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "WETH yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xa540744dedbda9ef64cf753f0e851efe4a419ea9",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve MIM Factory yVault",
+      "tvlUsd": 3772.176077414033
+    },
+    {
+      "address": "0xa5ca62d95d24a4a350983d5b8ac4eb8638887396",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "sUSD yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xa696a63cc78dffa1a63e9e50587c197387ff6c7e",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "WBTC yVault",
+      "tvlUsd": 3677309.012347207
+    },
+    {
+      "address": "0xa6aebf9680fc87f7641c40edd95cf52512f228b0",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve deUSD-USDC Factory yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0xa74d4b67b3368e83797a35382afb776baae4f5c8",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve alUSD Pool yVault",
+      "tvlUsd": 78617.05909420847
+    },
+    {
+      "address": "0xa7b68f2184b283cb494a6788c06bc5bbc09275e3",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve sdeUSD-deUSD Factory yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0xa89a7420b19679b5a124cd1499787a6122e800d7",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "eETH LP (27 JUN 2024)",
+      "tvlUsd": 0.03624181995616876
+    },
+    {
+      "address": "0xa89e83e39c8a1cb173d7a0c0201cd3956b57db6d",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "WETH-2 yVault Liquid Locker Compounder",
+      "tvlUsd": 34864.967426871
+    },
+    {
+      "address": "0xa8e0c42f45c877e611c76f2d4bf57476f2014381",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve Iron Bank Factory yVault",
+      "tvlUsd": 29216.462103227044
+    },
+    {
+      "address": "0xa9412ffd7e0866755ae0dda3318470a61f62abe8",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Balancer FUD Auto-Compounding yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0xa9fe4601811213c340e850ea305481aff02f5b28",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "WETH yVault",
+      "tvlUsd": 496391.79166617
+    },
+    {
+      "address": "0xaaaee277f21bb7d2bf49e6b36d0d94dc229b0b25",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "LUSD yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xac1c90b9c76d56ba2e24f3995f7671c745f8f308",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "AAVE yVault",
+      "tvlUsd": 70.75889326281353
+    },
+    {
+      "address": "0xac333895ce1a73875cf7b4ecdc5a743c12f3d82b",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "WETH yVault",
+      "tvlUsd": 212.35786912227064
+    },
+    {
+      "address": "0xaca399117ac588e1f48398d34eca76cdb1e45fa5",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Ondo aggregator",
+      "tvlUsd": 695.9401387663518
+    },
+    {
+      "address": "0xaf322a2edf31490250fdeb0d712621484b09abb6",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "USDT yVault",
+      "tvlUsd": 0.9651235298085915
+    },
+    {
+      "address": "0xb09f2a67a731466182518fae980feae96479d80b",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "KP3RETH-f yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xb0d6d7c0ed4b9c2b8186a3ac3acad88683586e35",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "USDC yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xb2155ffa9807b2decb4a411f7330da5bb6e46c31",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "yPT-sfrxETH (auto-rolling Pendle PT)",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xb2b42be64f78eeb94a625fbaf2ea18ec35aa4b22",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Lido stETH LP (26 DEC 2024)",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xb32747b4045479b77a8b8eb44029ba12580214f8",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "SUSHI yVault",
+      "tvlUsd": 2.2352349181589304
+    },
+    {
+      "address": "0xb35b02e3353be80a5648f5299b0336579bcf64a0",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "WETH-1 yVault Liquid Locker Compounder",
+      "tvlUsd": 2.717885095979393
+    },
+    {
+      "address": "0xb364d19c3ff37e0fa4b94bf4cf626729533c1c26",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "FRAX yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xb4ada607b9d6b2c9ee07a275e9616b84ac560139",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve FRAX Pool yVault",
+      "tvlUsd": 87988.32456955302
+    },
+    {
+      "address": "0xb4d1be44bff40ad6e506edf43156577a3f8672ec",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve sAave Pool yVault",
+      "tvlUsd": 75400.36807315411
+    },
+    {
+      "address": "0xb5de7250128775a317b3f775a7afcec73571b732",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve sETH Factory yVault",
+      "tvlUsd": 148266.42525854474
+    },
+    {
+      "address": "0xb8c3b7a2a618c552c23b1e4701109a9e756bab67",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "1INCH yVault",
+      "tvlUsd": 5900.93537844961
+    },
+    {
+      "address": "0xb8deb48bd0a2bac798f19ba8a7ee492384423fea",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "aUSDT LP (26 SEP 2024)",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xb91302cb8a6b248a7ea89dc6c7dbf87e0ddddd58",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "pufETH LP (27 JUN 2024)",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xb974598227660befe79a23dfc473d859602254ac",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "yvAjnaWeth-compounder",
+      "tvlUsd": 6593.04491276571
+    },
+    {
+      "address": "0xb98df7163e61bf053564bde010985f67279bbcec",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "DAI yVault",
+      "tvlUsd": 5.16093693584918
+    },
+    {
+      "address": "0xb9ef23c587f3f3dea54f42de5b71e78f822c74e8",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "yPT-sUSDe-Karak (auto-rolling Pendle PT)",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xba4080a3603299fa82903f841aa602a61b389551",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve zunUSD-crvUSD Factory yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xba61baa1d96c2f4e25205b331306507bcaea4677",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "LP Yearn PRISMA Vault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0xba8e83cc28b54bb063984033df20f9a9f1220c24",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve Lend crvUSD-wstETH Factory yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0xbb12c45849831201617ca6bfc0ef6ea5990580ff",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve Lend crvUSD-WBTC Factory yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xbc2b808e385e933b5f6655fe311aebaa0d6fc80f",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve sDOLA-yUSD Factory yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xbcbb5b54fa51e7b7dc920340043b203447842a6b",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve EURT-USD Pool yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0xbd65955f752b2ef093b34b05e5ffb439ae8e5049",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "COMP yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xbd7c44d61c923ef6efb09697f9d64e0376a0b9cb",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve mkUSD-USDC Factory yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0xbda3a6cb2aaef41805f6317841d7b8654ec8b124",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "crvRenWBTC yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xbdac8353b03a883654d19ff60c8fcdc1a52f0be2",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "yPT-weETH (auto-rolling Pendle PT)",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xbdb97ec319c41c6fa383e94ece6bdf383dfc7be4",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Aave V3 USDC Lender",
+      "tvlUsd": 1.3162085126030734
+    },
+    {
+      "address": "0xbe4afe6737ccf34ca21cdef461e5c7547adc8c77",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve ibGBP Factory yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xbf5f9a383531c86192d0876b5c56cca0300be4da",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve USD3-USDM Factory yVault",
+      "tvlUsd": 2718.9020909227793
+    },
+    {
+      "address": "0xbfa4d8aa6d8a379abfe7793399d3ddacc5bbecbb",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "DAI yVault",
+      "tvlUsd": 2.098498025146673e-10
+    },
+    {
+      "address": "0xbfedbcbe27171c418cdabc2477042554b1904857",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve rETH Pool yVault",
+      "tvlUsd": 32002.00159031004
+    },
+    {
+      "address": "0xc116df49c02c5fd147de25baa105322ebf26bd97",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve RSV Pool yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0xc1f3c276bf73396c020e8354bca581846171649d",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "wstETH yVault",
+      "tvlUsd": 0.26088833357502117
+    },
+    {
+      "address": "0xc2adad1bd59a1da3d35bd86cdb555694372f488f",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve MIM-crvUSD Factory yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0xc4daf3b5e2a9e93861c3fbdd25f1e943b8d87417",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve USDP Pool yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0xc52d44aba4b7739173821aff175aeb53367e629e",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve ZUSD-FRAXBP Factory yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xc5ab829b2f7cb3e869949747bc8c6f66ef2250cc",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "DAI-1 yVault Liquid Locker Compounder",
+      "tvlUsd": 0.5919322630446818
+    },
+    {
+      "address": "0xc5f3d11580c41cd07104e9af154fc6428bb93c73",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Balancer Boosted Aave USD Pool yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0xc7c1b907bcd3194c0d9bfa2125251af98bddafbb",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve DOLA-deUSD Factory yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0xc8ca30aa2e486846f7304d3b9334f96d32000f8d",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve apeUSD-FRAXBP Factory yVault",
+      "tvlUsd": 83.94948914406494
+    },
+    {
+      "address": "0xc97232527b62efb0d8ed38cf3ea103a6cca4037e",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "LP Yearn CRV Vault",
+      "tvlUsd": 90265.0062672122
+    },
+    {
+      "address": "0xc97511a1ddb162c8742d39ff320cfdcd13fbcf7e",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve Paxos Pool yVault",
+      "tvlUsd": 889.0180929464468
+    },
+    {
+      "address": "0xc9fb833f11d2d8169953b144fa5242e8aec25c01",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "yPT-sDAI (auto-rolling Pendle PT)",
+      "tvlUsd": 0.0010008810079168693
+    },
+    {
+      "address": "0xca31dcb9d30e70bf709b41e3935c3f7cdbc6d255",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve EURT-USD Factory yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0xcae0347e9fafc1e08880c79c8331f15c786083e0",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "USDC yVault",
+      "tvlUsd": 345.18701499242644
+    },
+    {
+      "address": "0xcb550a6d4c8e3517a939bc79d0c7093eb7cf56b5",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "WBTC yVault",
+      "tvlUsd": 1272.8868482162254
+    },
+    {
+      "address": "0xcc209a1c5a3757597497c83d62d1d6b6a2c7395f",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "yPT-rsETH (auto-rolling Pendle PT)",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xcd68c3fc3e94c5acc10366556b836855d96bfa93",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve dETH Factory yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0xce0f1ef5aaab82547acc699d3ab93c069bb6e547",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "sUSD-hedging yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xd070f6216ef1f2609dfae2ae7e3d7208b1e993d5",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "AAVE yVault",
+      "tvlUsd": 293.5602461291286
+    },
+    {
+      "address": "0xd1a075c806e40d79e32ea09553e7080d5d9d4b29",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "SUSHI yVault",
+      "tvlUsd": 0.1578474573701854
+    },
+    {
+      "address": "0xd2c65e20c3fde3f18097e7414e65596e0c83b1a9",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "ICE yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0xd2efb90c569ebd5b83d5cfb8632322edfac203a5",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Aave V3 WETH Lender",
+      "tvlUsd": 98.06900368071088
+    },
+    {
+      "address": "0xd347e7a3ddf5ce4c42e19a4f30eeaa761795c72b",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve ibEUR Factory yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0xd395dec4f1733ff09b750d869eefa7e0d37c3ee6",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve DOLA-FRAXBP Pool yVault - Unlisted",
+      "tvlUsd": 149.60334573564006
+    },
+    {
+      "address": "0xd4108bb1185a5c30ea3f4264fd7783473018ce17",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "DOLA yVault - Unlisted",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xd631734272c437e1730de3cd2193c060e8dfb39e",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "crvSPELLETH yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xd6a4180c819324a9e432ca07c689ecbf00088cd6",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve EURS Factory yVault",
+      "tvlUsd": 327.3515873598733
+    },
+    {
+      "address": "0xd6a528faad34fe51c6f181acf43c1e20db4f84ac",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Balancer DOLA-USDC Factory yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xd6ea40597be05c201845c0bfd2e96a60bacde267",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve Compound Pool yVault",
+      "tvlUsd": 10273.586766694603
+    },
+    {
+      "address": "0xd789d846c1eed55161dbd135d7bf02450a836ffa",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "yPT-pzETH (auto-rolling Pendle PT)",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xd88dbba3f9c4391ee46f5ff548f289054db6e51c",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve DOLA Pool yVault",
+      "tvlUsd": 1807.5038128538163
+    },
+    {
+      "address": "0xd8c620991b8e626c099eaab29b1e3eea279763bb",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve MIM-UST Pool yVault",
+      "tvlUsd": 89.23604556735181
+    },
+    {
+      "address": "0xd901dcf4948a29d7d9d7e015aaf61591825ac267",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve mkUSD-crvUSD Factory yVault",
+      "tvlUsd": 217.0532557625864
+    },
+    {
+      "address": "0xd9788f3931ede4d5018184e198699dc6d66c1915",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "AAVE yVault",
+      "tvlUsd": 19362.43814736688
+    },
+    {
+      "address": "0xda816459f1ab5631232fe5e97a05bbbb94970c95",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "DAI yVault",
+      "tvlUsd": 2710671.7532351925
+    },
+    {
+      "address": "0xdc0b53cc326b692a4d89e5f4cadc29a6b7265749",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "yPT-rswETH-L2 (auto-rolling Pendle PT)",
+      "tvlUsd": 3676.7599316118676
+    },
+    {
+      "address": "0xdcd90c7f6324cfa40d7169ef80b12031770b4325",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve stETH Pool yVault",
+      "tvlUsd": 2863776.843411367
+    },
+    {
+      "address": "0xdda02a2fa0bb0ee45ba9179a3fd7e65e5d3b2c90",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "yPT-agETH (auto-rolling Pendle PT)",
+      "tvlUsd": 9.96171272392048e-15
+    },
+    {
+      "address": "0xddb166c6cb38cede52d12c405b6e906c1fb6f9d7",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "crvRenWSBTC yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xdf5110ef6bc751cbaf76d35b8a3f312b581b5173",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "DAI ubiVault",
+      "tvlUsd": 102.55388985435916
+    },
+    {
+      "address": "0xe11ba472f74869176652c35d30db89854b5ae84d",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "HEGIC yVault",
+      "tvlUsd": 2436.891515314033
+    },
+    {
+      "address": "0xe14d13d8b3b85af791b2aadd661cdbd5e6097db1",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "YFI yVault",
+      "tvlUsd": 96076.54423706884
+    },
+    {
+      "address": "0xe1747f4d30479d7a2dcfea5af69fb86b8f71ccec",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve TRYb Factory yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0xe22ef63f2bd31eb69bf5917589a5dae3445c27b2",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Balancer Boosted Aave USD Pool yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xe2f6b9773bf3a015e2aa70741bde1498bdb9425b",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Yearn USDC Vault",
+      "tvlUsd": 28.0367320689081
+    },
+    {
+      "address": "0xe403bbf2262643c2e996e7469be736e211d5b272",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "yPT-ezETH (auto-rolling Pendle PT)",
+      "tvlUsd": 0.00250013221368
+    },
+    {
+      "address": "0xe5175a2eb7c40bc5f0e9de4152caa14eab0ffcb7",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "yPT-weETHs (auto-rolling Pendle PT)",
+      "tvlUsd": 35.85143278493118
+    },
+    {
+      "address": "0xe537b5cc158eb71037d4125bdd7538421981e6aa",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve 3Crypto Pool yVault",
+      "tvlUsd": 175585.7265022994
+    },
+    {
+      "address": "0xe5edce53e39cbc6d819e2c340bcf295e0084ff7c",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve ibEUR-USDC Pool yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xe838ab2eb50db41bd713f27346690d3ead2d98f1",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "yPT-weETH-Zircuit (auto-rolling Pendle PT)",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xe92ae2cf5b373c1713eb5855d4d3af81d8a8acae",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve Stax Frax/Temple xLP + LP yVault - Unlisted",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xe9dc63083c464d6edccff23444ff3cfc6886f6fb",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve oBTC Pool yVault",
+      "tvlUsd": 19058.417022298992
+    },
+    {
+      "address": "0xebf3581407ae0ceb07b8149b4c3ac995a72cb589",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "yPT-wstETH (auto-rolling Pendle PT)",
+      "tvlUsd": 0.012108205289889519
+    },
+    {
+      "address": "0xec48e0b9579062770888aaf900d054a1bc10a3bf",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "yPT-USDe-Karak (auto-rolling Pendle PT)",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xed0244b688cf059f32f45e38a6ac6e479d6755f6",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "WETH yVault",
+      "tvlUsd": 74.22467104257069
+    },
+    {
+      "address": "0xeed00e00236cd7f36f2558d8b5fd05046449599d",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Aave V3 DAI Lender",
+      "tvlUsd": 82.17844048966982
+    },
+    {
+      "address": "0xf11b141be4d1985e41c3aea99417e27603f67c4c",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "wAAVE",
+      "tvlUsd": 15.839566830244786
+    },
+    {
+      "address": "0xf1ce36c9c0db95a052eb4b075bc334e1f5a21ef0",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "yPT-rswETH (auto-rolling Pendle PT)",
+      "tvlUsd": 14.3078480255408
+    },
+    {
+      "address": "0xf29ae508698bdef169b89834f76704c3b205aedf",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "SNX yVault",
+      "tvlUsd": 15942.570427743616
+    },
+    {
+      "address": "0xf2db9a7c0acd427a680d640f02d90f6186e71725",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve LINK Pool yVault",
+      "tvlUsd": 99917.36519564514
+    },
+    {
+      "address": "0xf45eec3b50658054755a5055173ceeb82c94aa4e",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "yPT-eBTC (auto-rolling Pendle PT)",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xf4fdbc7c66dc9832d672ffe6242b6a386cead5de",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "sUSD yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xf59d66c1d593fb10e2f8c2a6fd2c958792434b9c",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve OUSD Pool yVault",
+      "tvlUsd": 1906.894881220099
+    },
+    {
+      "address": "0xf68a6b53d907b5abc0bfdeceb8343e91fec052ee",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "eETH LP (26 DEC 2024)",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xf6b9dfe6bc42ed2eab44d6b829017f7b78b29f88",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve ibKRW-USDC Pool yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0xf8768814b88281de4f532a3beefa5b85b69b9324",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve TUSD Pool yVault",
+      "tvlUsd": 3027.711638977738
+    },
+    {
+      "address": "0xf962b098ecc4352aa2ad1d4164bd2b8367fd94c3",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "LINK yVault",
+      "tvlUsd": 5.96891934396521
+    },
+    {
+      "address": "0xf9a7084ec30238495b3f5c51f05ba7cd1c358dcf",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "crvUSD-2 yVault Liquid Locker Compounder",
+      "tvlUsd": 42.17782527180375
+    },
+    {
+      "address": "0xfa6dcb142e12b4f2cb15cabb344a618b7e8d6a62",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve MKULTRA Factory yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xfb7c06ddd70c74ac2f68d0f947be3b4c503e3d6c",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "sUSDC",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xfb9a680825f29972629b2295e050f74cb2f4992b",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Balancer GHO-LUSD Factory yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xfbeb78a723b8087fd2ea7ef1afec93d35e8bed42",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "UNI yVault",
+      "tvlUsd": 115054.52988441868
+    },
+    {
+      "address": "0xfd0877d9095789caf24c98f7cce092fa8e120775",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "TUSD yVault",
+      "tvlUsd": 7115.705406307106
+    },
+    {
+      "address": "0xfe4e8b0fdd1ba3c8eef19e8b32a919b8b80e5200",
+      "category": "v3",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "sfrxETH LP (26 DEC 2024)",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xfe8a3837cff919c800bdc5d1ac6136f84497d679",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "UNI yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xff11566c1bfe3c625804c9cd707dd2f36797bf1d",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve cvxPRISMA Factory yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xff8f8a38c80b9899a928152d58f219fdccd4306c",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "WETH yVault",
+      "tvlUsd": 12.196674596716568
+    },
+    {
+      "address": "0xffa0f0616229ee2ac08fa4c358d23b18d980134b",
+      "category": "v2",
+      "chainId": 1,
+      "isCrossChainOverlap": false,
+      "name": "Curve PRISMA-ETH Factory yVault",
+      "tvlUsd": 50.28043895942917
+    },
+    {
+      "address": "0x0a2f234ad2e5e9047067904a9d37d0cd02b80d12",
+      "category": "v2",
+      "chainId": 10,
+      "isCrossChainOverlap": false,
+      "name": "WBTC yVault",
+      "tvlUsd": 2236.0046797843897
+    },
+    {
+      "address": "0x0fbea11f39be912096cec5ce22f46908b5375c19",
+      "category": "v2",
+      "chainId": 10,
+      "isCrossChainOverlap": false,
+      "name": "sUSD yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x161e7411a291ccaf377279fce6a8c8d689dbebe8",
+      "category": "v2",
+      "chainId": 10,
+      "isCrossChainOverlap": false,
+      "name": "Velodrome USDC-sUSD yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x2a90f479002daae9934c3a70ebb6e8dbeb46292b",
+      "category": "v2",
+      "chainId": 10,
+      "isCrossChainOverlap": false,
+      "name": "sUSD yVault",
+      "tvlUsd": 297.17394704081437
+    },
+    {
+      "address": "0x3fc986cc3b44bad5baf1e47031055cf69466ad57",
+      "category": "v2",
+      "chainId": 10,
+      "isCrossChainOverlap": false,
+      "name": "USDC yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x4262150e8cd1c3d5739aef7fff0dc39d6d90ab70",
+      "category": "v2",
+      "chainId": 10,
+      "isCrossChainOverlap": false,
+      "name": "None",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x4c8b1958b09b3bde714f68864bcc3a74eaf1a23d",
+      "category": "v2",
+      "chainId": 10,
+      "isCrossChainOverlap": false,
+      "name": "USDC yVault",
+      "tvlUsd": 490.4991015911452
+    },
+    {
+      "address": "0x5b977577eb8a480f63e11fc615d6753adb8652ae",
+      "category": "v2",
+      "chainId": 10,
+      "isCrossChainOverlap": false,
+      "name": "WETH yVault",
+      "tvlUsd": 61363.69046551463
+    },
+    {
+      "address": "0x5e70e0ede43373bd9cf4bc85199d424acf0241ef",
+      "category": "v2",
+      "chainId": 10,
+      "isCrossChainOverlap": false,
+      "name": "Curve sUSD Pool yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x65343f414ffd6c97b0f6add33d16f6845ac22bac",
+      "category": "v2",
+      "chainId": 10,
+      "isCrossChainOverlap": false,
+      "name": "DAI yVault",
+      "tvlUsd": 10283.375768346856
+    },
+    {
+      "address": "0x6554aa3acf15cce6206470cc29416304f16b55d9",
+      "category": "v2",
+      "chainId": 10,
+      "isCrossChainOverlap": false,
+      "name": "WBTC yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x6759574667896a453304897993d61f00fdc7214d",
+      "category": "v2",
+      "chainId": 10,
+      "isCrossChainOverlap": false,
+      "name": "MAI yVault",
+      "tvlUsd": 24.458925518545797
+    },
+    {
+      "address": "0x682df61222a3fb64f3e88fef41ce21499adcc647",
+      "category": "v2",
+      "chainId": 10,
+      "isCrossChainOverlap": false,
+      "name": "Velodrome USDC-MAI yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x6884bd538db61a626da0a05e10807bfc5aea2b32",
+      "category": "v2",
+      "chainId": 10,
+      "isCrossChainOverlap": false,
+      "name": "None",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x7427c44d2824e4df3b518822f2b11154e937efea",
+      "category": "v2",
+      "chainId": 10,
+      "isCrossChainOverlap": false,
+      "name": "WETH yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x7d2382b1f8af621229d33464340541db362b4907",
+      "category": "v2",
+      "chainId": 10,
+      "isCrossChainOverlap": false,
+      "name": "OP yVault",
+      "tvlUsd": 15707.457238811781
+    },
+    {
+      "address": "0x7edf16076e56fa4c111055fba1ff5556b8757cfb",
+      "category": "v2",
+      "chainId": 10,
+      "isCrossChainOverlap": false,
+      "name": "WBTC yVault",
+      "tvlUsd": 2767.513168991463
+    },
+    {
+      "address": "0x950f384f566b82cca6380f75ae42e2bbe9b357b2",
+      "category": "v2",
+      "chainId": 10,
+      "isCrossChainOverlap": false,
+      "name": "Velodrome v2 MIM-USDC.e Factory yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x9c839cb0562785e2eb50c0e0fdd12f6da8bddb23",
+      "category": "v2",
+      "chainId": 10,
+      "isCrossChainOverlap": false,
+      "name": "USDC yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xa318373f0424ef0257b5b75460548d6d34947d97",
+      "category": "v2",
+      "chainId": 10,
+      "isCrossChainOverlap": false,
+      "name": "DAI yVault",
+      "tvlUsd": 0.5743288309073593
+    },
+    {
+      "address": "0xa628c54c850ff1077b5c954491d19ecce7e321ff",
+      "category": "v2",
+      "chainId": 10,
+      "isCrossChainOverlap": false,
+      "name": "WETH yVault",
+      "tvlUsd": 3074.821004190736
+    },
+    {
+      "address": "0xacb84e988327d7acc843d6f1389f99f5f864529a",
+      "category": "v2",
+      "chainId": 10,
+      "isCrossChainOverlap": false,
+      "name": "WETH yVault",
+      "tvlUsd": 1.134115062665335
+    },
+    {
+      "address": "0xad17a225074191d5c8a37b50fda1ae278a2ee6a2",
+      "category": "v2",
+      "chainId": 10,
+      "isCrossChainOverlap": false,
+      "name": "USDC.e yVault",
+      "tvlUsd": 41685.322651189985
+    },
+    {
+      "address": "0xb151887bbba5585119c91914e740613ea16e7afd",
+      "category": "v2",
+      "chainId": 10,
+      "isCrossChainOverlap": false,
+      "name": "DAI yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xb4e4cfa9971c7e1069685771dab61ca56e72e5c3",
+      "category": "v2",
+      "chainId": 10,
+      "isCrossChainOverlap": false,
+      "name": "Curve sETH Pool yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0xb6fb466c982c04aba1bdbea386c1af2a47b82e6d",
+      "category": "v2",
+      "chainId": 10,
+      "isCrossChainOverlap": false,
+      "name": "None",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xc328d83883f5f90e1108d4dd7a18ffca17ae74d7",
+      "category": "v2",
+      "chainId": 10,
+      "isCrossChainOverlap": false,
+      "name": "sUSD yVault",
+      "tvlUsd": 106.93400559973338
+    },
+    {
+      "address": "0xe496a661ca61ea424c0626119a5ea1f268d958fc",
+      "category": "v2",
+      "chainId": 10,
+      "isCrossChainOverlap": false,
+      "name": "None",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xe5c30a5083f5a5ca08a9896cd0fe807acf925271",
+      "category": "v2",
+      "chainId": 10,
+      "isCrossChainOverlap": false,
+      "name": "WBTC yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xed5d83bb6af23bcb05c144dc816f45a389d622a0",
+      "category": "v2",
+      "chainId": 10,
+      "isCrossChainOverlap": false,
+      "name": "None",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xfaee21d0f0af88ee72bb6d68e54a90e6ec2616de",
+      "category": "v2",
+      "chainId": 10,
+      "isCrossChainOverlap": false,
+      "name": "USDT yVault",
+      "tvlUsd": 4826.954329526872
+    },
+    {
+      "address": "0xfbef713696465ddab297164c3b6a0122d92a3bac",
+      "category": "v2",
+      "chainId": 10,
+      "isCrossChainOverlap": false,
+      "name": "DAI yVault",
+      "tvlUsd": 728.1336702387475
+    },
+    {
+      "address": "0x1b66b4a3a80ebcfa3ecabf5580cd9929aba57bb1",
+      "category": "v3",
+      "chainId": 100,
+      "isCrossChainOverlap": false,
+      "name": "StrategyCurveNoBoostEURe",
+      "tvlUsd": 447.65086927163145
+    },
+    {
+      "address": "0x4b40c9ff9d654fd7f1e24ed66d8f0f260b199b43",
+      "category": "v3",
+      "chainId": 100,
+      "isCrossChainOverlap": false,
+      "name": "Async-yvCurve-EURe",
+      "tvlUsd": 188.6905687516923
+    },
+    {
+      "address": "0x94c5786393ab223e0fc111d7463405f165ce86e3",
+      "category": "v3",
+      "chainId": 100,
+      "isCrossChainOverlap": false,
+      "name": "ajna-yvEURe-1-EURe",
+      "tvlUsd": 1.9783569755655053
+    },
+    {
+      "address": "0x99474363f03d21375da1af4c9694cabcf995e02a",
+      "category": "v3",
+      "chainId": 100,
+      "isCrossChainOverlap": false,
+      "name": "Aave V3 EURe Lender",
+      "tvlUsd": 31.926434325222196
+    },
+    {
+      "address": "0xa48359e7e970be9f38fb6d183c57c8d0b28268b9",
+      "category": "v3",
+      "chainId": 100,
+      "isCrossChainOverlap": false,
+      "name": "ajna-yvEURe-1-EURe",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x03e6010193c595ec168756af700479d1aff76895",
+      "category": "v3",
+      "chainId": 137,
+      "isCrossChainOverlap": false,
+      "name": "yearn-V3-Gamma-USDC.e-DAI",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x28f53ba70e5c8ce8d03b1fad41e9df11bb646c36",
+      "category": "v3",
+      "chainId": 137,
+      "isCrossChainOverlap": false,
+      "name": "WMATIC yVault-A",
+      "tvlUsd": 4254.2811592512
+    },
+    {
+      "address": "0x2a42a69f48efffdf2d4fb079af60d98d3e34d49c",
+      "category": "v3",
+      "chainId": 137,
+      "isCrossChainOverlap": false,
+      "name": "CompV3 WMATIC Lender USDC Borrower",
+      "tvlUsd": 13559.940428222095
+    },
+    {
+      "address": "0x305f25377d0a39091e99b975558b1bdfc3975654",
+      "category": "v3",
+      "chainId": 137,
+      "isCrossChainOverlap": false,
+      "name": "WETH yVault-A",
+      "tvlUsd": 23149.650959278166
+    },
+    {
+      "address": "0x32adfc6170344f848a8c0efe68dad93e5b6964aa",
+      "category": "v3",
+      "chainId": 137,
+      "isCrossChainOverlap": false,
+      "name": "yearn-V3-Gamma-USDC.e-WETH-Wide",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x335bc8366545faa446e0c1f639617ac40061f2ef",
+      "category": "v3",
+      "chainId": 137,
+      "isCrossChainOverlap": false,
+      "name": "USDC.e-1 yVault",
+      "tvlUsd": 159.03747715012224
+    },
+    {
+      "address": "0x34b9421fe3d52191b64bc32ec1ab764dcbcdbf5e",
+      "category": "v3",
+      "chainId": 137,
+      "isCrossChainOverlap": false,
+      "name": "USDC-1 yVault",
+      "tvlUsd": 76067.75834495964
+    },
+    {
+      "address": "0x3a58df70f9204bedcd6aee2b51582eb77fe30e02",
+      "category": "v3",
+      "chainId": 137,
+      "isCrossChainOverlap": false,
+      "name": "yearn-V3-Gamma-WBTC-WETH",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x42908891cbc13301c910b4e71055431bf134aaa0",
+      "category": "v3",
+      "chainId": 137,
+      "isCrossChainOverlap": false,
+      "name": "yearn-V3-Gamma-WMATIC-USDC.e",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x5136c2f7ab13e202ed42bc1ae82dd63475919653",
+      "category": "v3",
+      "chainId": 137,
+      "isCrossChainOverlap": false,
+      "name": "CompV3 WETH Lender USDC Borrower",
+      "tvlUsd": 0.000009035965237299664
+    },
+    {
+      "address": "0x54303f18161d9870b0fc66b88b0b129e8e5ff505",
+      "category": "v3",
+      "chainId": 137,
+      "isCrossChainOverlap": false,
+      "name": "yearn-V3-Gamma-USDC.e-WETH",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x5bfd56f9bcbdb2be985c64c620eca7f02fa7b439",
+      "category": "v3",
+      "chainId": 137,
+      "isCrossChainOverlap": false,
+      "name": "Bankr USDC Vault",
+      "tvlUsd": 28.67017122218535
+    },
+    {
+      "address": "0x6e9ac188dbcc14632a253aa9ce2783cd712ab3ca",
+      "category": "v3",
+      "chainId": 137,
+      "isCrossChainOverlap": false,
+      "name": "Morpho Compound USDC Compounder",
+      "tvlUsd": 55.164922885527226
+    },
+    {
+      "address": "0x6ed737ef2ef74e04005dc9810366de5ad38cf7d6",
+      "category": "v3",
+      "chainId": 137,
+      "isCrossChainOverlap": false,
+      "name": "yearn-V3-LST",
+      "tvlUsd": 6.848327752260543
+    },
+    {
+      "address": "0x7486325a843590b84c98563c6962c58655569eca",
+      "category": "v3",
+      "chainId": 137,
+      "isCrossChainOverlap": false,
+      "name": "yearn-V3-LST-WSTETH",
+      "tvlUsd": 4783.086165788288
+    },
+    {
+      "address": "0x8df66d28914084f44c4046783810cbad662fa633",
+      "category": "v3",
+      "chainId": 137,
+      "isCrossChainOverlap": false,
+      "name": "yearn-V3-Gamma-WMATIC-MATICX",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x90b2f54c6addad41b8f6c4fccd555197bc0f773b",
+      "category": "v3",
+      "chainId": 137,
+      "isCrossChainOverlap": false,
+      "name": "DAI yVault-A",
+      "tvlUsd": 49881.3508492202
+    },
+    {
+      "address": "0x91e646449a3105e9091e882c9a9a7a81950eebb8",
+      "category": "v3",
+      "chainId": 137,
+      "isCrossChainOverlap": false,
+      "name": "yearn-V3-Gamma-WMATIC-WETH-Wide",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x9d1046cecb0662037b13decf1cd125c4aa3fb65b",
+      "category": "v3",
+      "chainId": 137,
+      "isCrossChainOverlap": false,
+      "name": "Morpho Compound USDT Compounder",
+      "tvlUsd": 15.576034473045851
+    },
+    {
+      "address": "0xa013fbd4b711f9ded6fb09c1c0d358e2fbc2eaa0",
+      "category": "v3",
+      "chainId": 137,
+      "isCrossChainOverlap": false,
+      "name": "USDC yVault-A",
+      "tvlUsd": 45322.598337871525
+    },
+    {
+      "address": "0xa823ef7df6392800569946c6c1dec0e34356ef18",
+      "category": "v3",
+      "chainId": 137,
+      "isCrossChainOverlap": false,
+      "name": "yearn-V3-Gamma-USDC.e-USDT",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xa9c3b8f7ab9cc105ac4d27c1bf821ec0c6a9e954",
+      "category": "v3",
+      "chainId": 137,
+      "isCrossChainOverlap": false,
+      "name": "yearn-V3-Gamma-WBTC-USDC.e",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xb64ce1c06af365424060e2720df46997a4fd3a0a",
+      "category": "v3",
+      "chainId": 137,
+      "isCrossChainOverlap": false,
+      "name": "yearn-V3-Gamma-WMATIC-WETH",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xbb287e6017d3deb0e2e65061e8684eab21060123",
+      "category": "v3",
+      "chainId": 137,
+      "isCrossChainOverlap": false,
+      "name": "USDT yVault-A",
+      "tvlUsd": 52917.916952238505
+    },
+    {
+      "address": "0xd4a0aa006e0f70580aaa7ee1fd04fa447c36b259",
+      "category": "v3",
+      "chainId": 137,
+      "isCrossChainOverlap": false,
+      "name": "Morpho Compound WETH Compounder",
+      "tvlUsd": 63.79418860692494
+    },
+    {
+      "address": "0xf54a15f6da443041bb075959ea66ee47655ddfca",
+      "category": "v3",
+      "chainId": 137,
+      "isCrossChainOverlap": false,
+      "name": "Yearn-Ajna USDC Vault ",
+      "tvlUsd": 2939.5177353042463
+    },
+    {
+      "address": "0x03b82e4070ca32ff63a03f2ecfc16c0165689a9d",
+      "category": "v2",
+      "chainId": 250,
+      "isCrossChainOverlap": false,
+      "name": "Curve AVAX yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x0446acab3e0242fcf33aa526f1c95a88068d5042",
+      "category": "v2",
+      "chainId": 250,
+      "isCrossChainOverlap": false,
+      "name": "CRV yVault",
+      "tvlUsd": 4185.631060043134
+    },
+    {
+      "address": "0x0a0b23d9786963de69cb2447dc125c49929419d8",
+      "category": "v2",
+      "chainId": 250,
+      "isCrossChainOverlap": false,
+      "name": "MIM yVault",
+      "tvlUsd": 1747.410931893439
+    },
+    {
+      "address": "0x0dec85e74a92c52b7f708c4b10207d9560cefaf0",
+      "category": "v2",
+      "chainId": 250,
+      "isCrossChainOverlap": false,
+      "name": "WFTM yVault",
+      "tvlUsd": 32284.214192181887
+    },
+    {
+      "address": "0x0fbbf9848d969776a5eb842edafaf29ef4467698",
+      "category": "v2",
+      "chainId": 250,
+      "isCrossChainOverlap": false,
+      "name": "BOO yVault",
+      "tvlUsd": 1522.142234202568
+    },
+    {
+      "address": "0x1482faf8b5a9c458c94e6a561ccf93ed7a9f552e",
+      "category": "v2",
+      "chainId": 250,
+      "isCrossChainOverlap": false,
+      "name": "WFTM yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x148c05caf1bb09b5670f00d511718f733c54bc4c",
+      "category": "v2",
+      "chainId": 250,
+      "isCrossChainOverlap": false,
+      "name": "USDT yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x1b48641d8251c3e84ecbe3f2bd76b3701401906d",
+      "category": "v2",
+      "chainId": 250,
+      "isCrossChainOverlap": false,
+      "name": "DOLA yVault",
+      "tvlUsd": 9405.914689948651
+    },
+    {
+      "address": "0x1e2fe8074a5ce1bb7394856b0c618e75d823b93b",
+      "category": "v2",
+      "chainId": 250,
+      "isCrossChainOverlap": false,
+      "name": "fBEETS yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x209667b173fe4e9559bda7818e53bd5f5e0f9acd",
+      "category": "v2",
+      "chainId": 250,
+      "isCrossChainOverlap": false,
+      "name": "MIM yVault",
+      "tvlUsd": 0.10716901465803372
+    },
+    {
+      "address": "0x27cbf0fddb356a2d1ebdef604cfa90f8f300d34e",
+      "category": "v2",
+      "chainId": 250,
+      "isCrossChainOverlap": false,
+      "name": "WFTM yVault",
+      "tvlUsd": 1.9071717106862263
+    },
+    {
+      "address": "0x2c850cced00ce2b14aa9d658b7cad5df659493db",
+      "category": "v2",
+      "chainId": 250,
+      "isCrossChainOverlap": false,
+      "name": "YFI yVault",
+      "tvlUsd": 28979.52258270527
+    },
+    {
+      "address": "0x357ca46da26e1eefc195287ce9d838a6d5023ef3",
+      "category": "v2",
+      "chainId": 250,
+      "isCrossChainOverlap": false,
+      "name": "FRAX yVault",
+      "tvlUsd": 1631.826040961795
+    },
+    {
+      "address": "0x3d8473724287eb1d903fe62688d3734de2b97ee8",
+      "category": "v2",
+      "chainId": 250,
+      "isCrossChainOverlap": false,
+      "name": "Curve Geist yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x3f0e90a85eab7f2c441379cfc9a080a4e864ae82",
+      "category": "v2",
+      "chainId": 250,
+      "isCrossChainOverlap": false,
+      "name": "fBEETS yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x637ec617c86d24e421328e6caea1d92114892439",
+      "category": "v2",
+      "chainId": 250,
+      "isCrossChainOverlap": false,
+      "name": "DAI yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x85611d071406a9e08ba49c073087e3eb57819839",
+      "category": "v2",
+      "chainId": 250,
+      "isCrossChainOverlap": false,
+      "name": "WBTC yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x8853a6232e3debe12098bf682898a92ec10c9921",
+      "category": "v2",
+      "chainId": 250,
+      "isCrossChainOverlap": false,
+      "name": "WFTM yVault",
+      "tvlUsd": 1.53319805413196
+    },
+    {
+      "address": "0x9e3922fcbb28f40026da2e58926f0f249d8a138d",
+      "category": "v2",
+      "chainId": 250,
+      "isCrossChainOverlap": false,
+      "name": "USDC yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x9f87fc463327021b510f7e84a5683e1bdce02dcc",
+      "category": "v2",
+      "chainId": 250,
+      "isCrossChainOverlap": false,
+      "name": "USDC yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xa946c861de1dd6cb530a07687da99e989b929139",
+      "category": "v2",
+      "chainId": 250,
+      "isCrossChainOverlap": false,
+      "name": "Curve USDT yVault",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xa97e7da01c7047d6a65f894c99be8c832227a8bc",
+      "category": "v2",
+      "chainId": 250,
+      "isCrossChainOverlap": false,
+      "name": "Curve MIM Pool Vault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0xc3ca90f164d43e2053cca591ac6e63fcaad80782",
+      "category": "v2",
+      "chainId": 250,
+      "isCrossChainOverlap": false,
+      "name": "WFTM yVault",
+      "tvlUsd": 4.65844110470657
+    },
+    {
+      "address": "0xcbcaf8cb8cbeafa927ecee0c5c56560f83e9b7d9",
+      "category": "v2",
+      "chainId": 250,
+      "isCrossChainOverlap": false,
+      "name": "Curve Tricrypto Pool yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0xce2fc0bdc18bd6a4d9a725791a3dee33f3a23bb7",
+      "category": "v2",
+      "chainId": 250,
+      "isCrossChainOverlap": false,
+      "name": "WETH yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0xd3c19eb022cac706c898d60d756bf1535d605e1d",
+      "category": "v2",
+      "chainId": 250,
+      "isCrossChainOverlap": false,
+      "name": "SPELL yVault",
+      "tvlUsd": 900.4676246373455
+    },
+    {
+      "address": "0xd817a100ab8a29fe3dbd925c2eb489d67f758da9",
+      "category": "v2",
+      "chainId": 250,
+      "isCrossChainOverlap": false,
+      "name": "WBTC yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0xef0210eb96c7eb36af8ed1c20306462764935607",
+      "category": "v2",
+      "chainId": 250,
+      "isCrossChainOverlap": false,
+      "name": "USDC yVault",
+      "tvlUsd": null
+    },
+    {
+      "address": "0xf137d22d7b23eeb1950b3e19d1f578c053ed9715",
+      "category": "v2",
+      "chainId": 250,
+      "isCrossChainOverlap": false,
+      "name": "Curve Geist Pool yVault",
+      "tvlUsd": 169587.4078571853
+    },
+    {
+      "address": "0xf2d323621785a066e64282d2b407eac79cc04966",
+      "category": "v2",
+      "chainId": 250,
+      "isCrossChainOverlap": false,
+      "name": "LINK yVault",
+      "tvlUsd": 8616.94680510848
+    },
+    {
+      "address": "0x03c5aff0cd5e40889d689fd9d9caff286b1bd7fb",
+      "category": "v3",
+      "chainId": 8453,
+      "isCrossChainOverlap": false,
+      "name": "Moonwell cbBTC Lender WETH Borrower",
+      "tvlUsd": 47.270592278546516
+    },
+    {
+      "address": "0x0ace53f57a14acfd4d43c7d4c46be4b4a5347eff",
+      "category": "v3",
+      "chainId": 8453,
+      "isCrossChainOverlap": false,
+      "name": "LevMoonwell USDC",
+      "tvlUsd": 54.788859854881736
+    },
+    {
+      "address": "0x1d7a8593c249ab84b2733d09a9e4a6b9e42140fe",
+      "category": "v3",
+      "chainId": 8453,
+      "isCrossChainOverlap": false,
+      "name": "yPT-LBTC (auto-rolling Pendle PT)",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x25f32ec89ce7732a4e9f8f3340a09259f823b7d3",
+      "category": "v3",
+      "chainId": 8453,
+      "isCrossChainOverlap": false,
+      "name": "cbBTC Horizon yVault",
+      "tvlUsd": 88.19756575418975
+    },
+    {
+      "address": "0x44da1202285ed9678dab99b55aadb2fa549fdfdc",
+      "category": "v3",
+      "chainId": 8453,
+      "isCrossChainOverlap": false,
+      "name": "LevMoonwell wstETH",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x4d81c7d534d703e0a0aecadf668c0e0253e1f1c3",
+      "category": "v3",
+      "chainId": 8453,
+      "isCrossChainOverlap": false,
+      "name": "WETH Horizon yVault",
+      "tvlUsd": 1198.8570771747893
+    },
+    {
+      "address": "0x630db4ae19219025df594c943b638b5acb5e9d18",
+      "category": "v3",
+      "chainId": 8453,
+      "isCrossChainOverlap": false,
+      "name": "WETH-1 yVault",
+      "tvlUsd": 108.64651823587161
+    },
+    {
+      "address": "0x7c0fa3905b38d44c0f29150fd61f182d1e097ec2",
+      "category": "v3",
+      "chainId": 8453,
+      "isCrossChainOverlap": false,
+      "name": "LevMoonwell WETH",
+      "tvlUsd": 253.39283362568972
+    },
+    {
+      "address": "0x8436027a799ac6c8b512e68b4d3852217c63647d",
+      "category": "v3",
+      "chainId": 8453,
+      "isCrossChainOverlap": false,
+      "name": "Moonwell WETH Lender cbBTC Borrower",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x945df73d55557ea23c0c35cd350d8de3b745287e",
+      "category": "v3",
+      "chainId": 8453,
+      "isCrossChainOverlap": false,
+      "name": "Moonwell USDC Lender cbBTC Borrower",
+      "tvlUsd": 181.63422085198258
+    },
+    {
+      "address": "0x985cc9c306bfe075f7c67ec275fb0b80f0b21976",
+      "category": "v3",
+      "chainId": 8453,
+      "isCrossChainOverlap": false,
+      "name": "Morpho Moonwell Flagship EURC Compounder",
+      "tvlUsd": 535.6145555767612
+    },
+    {
+      "address": "0x989381f7efb45f97e46be9f390a69c5d94bf9e17",
+      "category": "v3",
+      "chainId": 8453,
+      "isCrossChainOverlap": false,
+      "name": "cbETH Horizon yVault",
+      "tvlUsd": 214.87079979638085
+    },
+    {
+      "address": "0xb9acb02818bddd3ac178fa51a0587101e54748b0",
+      "category": "v3",
+      "chainId": 8453,
+      "isCrossChainOverlap": false,
+      "name": "Morpho Moonwell Frontier cbBTC Compounder",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xbb808a822dd7aed1635956b85ca5e55478cca957",
+      "category": "v3",
+      "chainId": 8453,
+      "isCrossChainOverlap": false,
+      "name": "LevMoonwell cbBTC",
+      "tvlUsd": 65.56961206734718
+    },
+    {
+      "address": "0xd5428b889621eee8060fc105aa0ab0fa2e344468",
+      "category": "v3",
+      "chainId": 8453,
+      "isCrossChainOverlap": false,
+      "name": "Morpho Moonwell Flagship USDC Compounder",
+      "tvlUsd": 77134.7955171432
+    },
+    {
+      "address": "0xd80c675366966ef42b175125bbf1acb1db4151ac",
+      "category": "v3",
+      "chainId": 8453,
+      "isCrossChainOverlap": false,
+      "name": "USDC-1 yVault",
+      "tvlUsd": 17.915236122716145
+    },
+    {
+      "address": "0xd89a4f020c8d256a2a4b0dc40b36ee0b27680776",
+      "category": "v3",
+      "chainId": 8453,
+      "isCrossChainOverlap": false,
+      "name": "Moonwell cbETH Lender WETH Borrower",
+      "tvlUsd": 0.1414058233362429
+    },
+    {
+      "address": "0xdd120ded7c1c9e4978f92847bcb24847a9dbb071",
+      "category": "v3",
+      "chainId": 8453,
+      "isCrossChainOverlap": false,
+      "name": "LevMoonwell cbETH",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xef34b4dcb851385b8f3a8ff460c34adafd160802",
+      "category": "v3",
+      "chainId": 8453,
+      "isCrossChainOverlap": false,
+      "name": "Morpho Moonwell Flagship ETH Compounder",
+      "tvlUsd": 2.553187179103143
+    },
+    {
+      "address": "0xfcfbc79409e6a9358ad4d617e8684d21f39e9009",
+      "category": "v3",
+      "chainId": 8453,
+      "isCrossChainOverlap": false,
+      "name": "USDC-1 yVault",
+      "tvlUsd": 2.3313372091928017
+    },
+    {
+      "address": "0xfdb431e661372fa1146efb70bf120ecded944a78",
+      "category": "v3",
+      "chainId": 8453,
+      "isCrossChainOverlap": false,
+      "name": "Moonwell USDC Lender WETH Borrower",
+      "tvlUsd": 2014.024416076869
+    },
+    {
+      "address": "0x022061d81e42fcb59711193346bab758d24d6c43",
+      "category": "v3",
+      "chainId": 42161,
+      "isCrossChainOverlap": false,
+      "name": "yPT-MUXLP (auto-rolling Pendle PT)",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x02822b7b6de0bf087dcea626f6f19a838aedb7be",
+      "category": "v3",
+      "chainId": 42161,
+      "isCrossChainOverlap": false,
+      "name": "yPT-mPENDLE (auto-rolling Pendle PT)",
+      "tvlUsd": 0.23370262613732254
+    },
+    {
+      "address": "0x044e75fcbf7bd3f8f4577ff317554e9c0037f145",
+      "category": "v3",
+      "chainId": 42161,
+      "isCrossChainOverlap": false,
+      "name": "yPT-weETH (auto-rolling Pendle PT)",
+      "tvlUsd": 2204.162453865848
+    },
+    {
+      "address": "0x074943fefe3391d033a15557dfa1b6f246ce5fd0",
+      "category": "v3",
+      "chainId": 42161,
+      "isCrossChainOverlap": false,
+      "name": "eETH LP (25 APR 2024)",
+      "tvlUsd": 5.333779452054324e-14
+    },
+    {
+      "address": "0x075472d809aa98a4686d6f04e2c2663802653f2a",
+      "category": "v3",
+      "chainId": 42161,
+      "isCrossChainOverlap": false,
+      "name": "Stargate USDT LP (27 JUN 2024)",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x08e3d13d50310afbea2da20a3dbd92aacfc503ac",
+      "category": "v3",
+      "chainId": 42161,
+      "isCrossChainOverlap": false,
+      "name": "yPT-wstETH (auto-rolling Pendle PT)",
+      "tvlUsd": 0.06607151151966409
+    },
+    {
+      "address": "0x0a5e1394ba0c23d71167233a3b4b55cb8d214279",
+      "category": "v3",
+      "chainId": 42161,
+      "isCrossChainOverlap": false,
+      "name": "GLP LP (26 SEP 2024)",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x0d5e99a012415e22557f6df554e97159516e6d3c",
+      "category": "v3",
+      "chainId": 42161,
+      "isCrossChainOverlap": false,
+      "name": "aUSDC LP (27 JUN 2024)",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x0f2ae7531a83982f15ff1d26b165e2bf3d7566da",
+      "category": "v3",
+      "chainId": 42161,
+      "isCrossChainOverlap": false,
+      "name": "yPT-ezETH (auto-rolling Pendle PT)",
+      "tvlUsd": 11986.06749986965
+    },
+    {
+      "address": "0x15943b95af6bbe222c49f7501f39f1d2da55ccdf",
+      "category": "v3",
+      "chainId": 42161,
+      "isCrossChainOverlap": false,
+      "name": "Camelot GRAIL-ARB LP (27 JUN 2024)",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x1dba7641dc69188d6086a73b972ac4bda29ec35d",
+      "category": "v2",
+      "chainId": 42161,
+      "isCrossChainOverlap": false,
+      "name": "Curve MIM Pool Vault",
+      "tvlUsd": 12.918495481545417
+    },
+    {
+      "address": "0x1dd930add968ff5913c3627daa1e6e6fcc9dc544",
+      "category": "v3",
+      "chainId": 42161,
+      "isCrossChainOverlap": false,
+      "name": "yPT-rsETH (auto-rolling Pendle PT)",
+      "tvlUsd": 35990.58067072468
+    },
+    {
+      "address": "0x239e14a19dff93a17339dcc444f74406c17f8e67",
+      "category": "v2",
+      "chainId": 42161,
+      "isCrossChainOverlap": false,
+      "name": "Curve Tricrypto Pool Vault",
+      "tvlUsd": 17131.50253073769
+    },
+    {
+      "address": "0x252b965400862d94bda35fecf7ee0f204a53cc36",
+      "category": "v3",
+      "chainId": 42161,
+      "isCrossChainOverlap": false,
+      "name": "Yearn USND",
+      "tvlUsd": 2822.154933707458
+    },
+    {
+      "address": "0x2b0b6376083c6e1f376c7439f328436a673f333c",
+      "category": "v3",
+      "chainId": 42161,
+      "isCrossChainOverlap": false,
+      "name": "yPT-aUSDC (auto-rolling Pendle PT)",
+      "tvlUsd": 30.868176100376093
+    },
+    {
+      "address": "0x34a2b066af16409648ef15d239e656edb8790ca0",
+      "category": "v3",
+      "chainId": 42161,
+      "isCrossChainOverlap": false,
+      "name": "yPT-USDe (auto-rolling Pendle PT)",
+      "tvlUsd": 64109.41110309089
+    },
+    {
+      "address": "0x368d79018e525db25dba517a0b5d3cc34c87cafa",
+      "category": "v3",
+      "chainId": 42161,
+      "isCrossChainOverlap": false,
+      "name": "gDAI LP (26 SEP 2024)",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x461ad11a76b302f13ada1296da0178722a50838e",
+      "category": "v3",
+      "chainId": 42161,
+      "isCrossChainOverlap": false,
+      "name": "rETH LP (26 JUN 2025)",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x49448d2b94fb9c4e41a30ad8315d32f46004a34b",
+      "category": "v2",
+      "chainId": 42161,
+      "isCrossChainOverlap": false,
+      "name": "2CRV yVault",
+      "tvlUsd": 1372.8619093836405
+    },
+    {
+      "address": "0x4da30274267dedc73a6a7eb233fba81691f34ef7",
+      "category": "v3",
+      "chainId": 42161,
+      "isCrossChainOverlap": false,
+      "name": "Lido wstETH LP (27 JUN 2024)",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x586fb80ddadfc01294751a7cd58625ccff4bdb2f",
+      "category": "v3",
+      "chainId": 42161,
+      "isCrossChainOverlap": false,
+      "name": "Camelot ARB-ETH LP (27 JUN 2024)",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x65073e8c0a9c26d4280a43a3ecd3cdedd36fdb89",
+      "category": "v3",
+      "chainId": 42161,
+      "isCrossChainOverlap": false,
+      "name": "Lido wstETH LP (26 JUN 2025)",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x6faf8b7ffee3306efcfc2ba9fec912b4d49834c1",
+      "category": "v3",
+      "chainId": 42161,
+      "isCrossChainOverlap": false,
+      "name": "USDC-A yVault",
+      "tvlUsd": 4245.570559516959
+    },
+    {
+      "address": "0x7deb119b92b76f78c212bc54fbbb34cea75f4d4a",
+      "category": "v3",
+      "chainId": 42161,
+      "isCrossChainOverlap": false,
+      "name": "ARB-1 yVault",
+      "tvlUsd": 250.43366633837127
+    },
+    {
+      "address": "0x8a64111709ce75434b9156e3878cdd5b1fbc2d13",
+      "category": "v3",
+      "chainId": 42161,
+      "isCrossChainOverlap": false,
+      "name": "Silo PT-eETH LP (25 APR 2024)",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x8b5aa1688297bc2e4664a18df6ad22a70c4178b8",
+      "category": "v3",
+      "chainId": 42161,
+      "isCrossChainOverlap": false,
+      "name": "Camelot PENDLE-ETH LP (27 JUN 2024)",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x92f1e6d904f21c05074952bbad51d91fd9f8730f",
+      "category": "v3",
+      "chainId": 42161,
+      "isCrossChainOverlap": false,
+      "name": "ezETH LP (27 JUN 2024)",
+      "tvlUsd": 0.00006553259062639291
+    },
+    {
+      "address": "0x976a1c749cd8153909e0b04eebe931ef8957b15b",
+      "category": "v2",
+      "chainId": 42161,
+      "isCrossChainOverlap": false,
+      "name": "PHPTest",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x985c0271ad0bf0a45951b64eb6fc58010b050908",
+      "category": "v3",
+      "chainId": 42161,
+      "isCrossChainOverlap": false,
+      "name": "yPT-Pendle-ETH-Camelot (auto-rolling Pendle PT)",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0x9fa306b1f4a6a83fec98d8ebbabedff78c407f6b",
+      "category": "v3",
+      "chainId": 42161,
+      "isCrossChainOverlap": false,
+      "name": "USDC-2 yVault",
+      "tvlUsd": 22322.41740824666
+    },
+    {
+      "address": "0xaeba9f4a9293213e0e3ed18a2f688bddd7f5fb0c",
+      "category": "v3",
+      "chainId": 42161,
+      "isCrossChainOverlap": false,
+      "name": "yPT-gDAI (auto-rolling Pendle PT)",
+      "tvlUsd": 0
+    },
+    {
+      "address": "0xb119e90beb09fcf9abc92c20a8d84fe8bdfcc6e3",
+      "category": "v3",
+      "chainId": 42161,
+      "isCrossChainOverlap": false,
+      "name": "Kelp rsETH LP (25 APR 2024)",
+      "tvlUsd": 0.7023174575698745
+    },
+    {
+      "address": "0xc0ba9bfed28ab46da48d2b69316a3838698ef3f5",
+      "category": "v3",
+      "chainId": 42161,
+      "isCrossChainOverlap": false,
+      "name": "USDT-A yVault",
+      "tvlUsd": 750.9983559709193
+    },
+    {
+      "address": "0xc40da6a01ac36f39736731ee50fb3b1b8204e2d3",
+      "category": "v3",
+      "chainId": 42161,
+      "isCrossChainOverlap": false,
+      "name": "yPT-rETH (auto-rolling Pendle PT)",
+      "tvlUsd": 0.015466969989888588
+    },
+    {
+      "address": "0xcb1a0a9c9cbbca82a395301267d525125cfba557",
+      "category": "v3",
+      "chainId": 42161,
+      "isCrossChainOverlap": false,
+      "name": "Silo wstETH LP (26 DEC 2024)",
+      "tvlUsd": 0.004120501916723675
+    },
+    {
+      "address": "0xda3b69a45797dca697ff5bb2c10682f14373c063",
+      "category": "v3",
+      "chainId": 42161,
+      "isCrossChainOverlap": false,
+      "name": "USDC-1 yVault",
+      "tvlUsd": 538.618616342709
+    },
+    {
+      "address": "0xdfaa4001308f5ec4d06920cd0d2c649c6f930e2c",
+      "category": "v3",
+      "chainId": 42161,
+      "isCrossChainOverlap": false,
+      "name": "mPENDLE LP (26 SEP 2024)",
+      "tvlUsd": null
+    },
+    {
+      "address": "0x639bccf37cc0415812a6f110cfca33127a81c0e9",
+      "category": "v3",
+      "chainId": 747474,
+      "isCrossChainOverlap": false,
+      "name": "Woofy yVault",
+      "tvlUsd": 86.79170660858654
+    },
+    {
+      "address": "0x93fec6639717b6215a48e5a72a162c50dcc40d68",
+      "category": "v3",
+      "chainId": 747474,
+      "isCrossChainOverlap": false,
+      "name": "AUSD yVault",
+      "tvlUsd": 29168.89414277528
+    }
+  ],
+  "totalTvl": 171537470.2521514,
+  "tvlByCategory": {
+    "curation": 58476608.53089011,
+    "v1": 2382205.124290547,
+    "v2": 36197511.888071455,
+    "v3": 138678646.27653992
+  },
+  "tvlByChain": {
+    "Arbitrum": 198642.93790038954,
+    "Base": 8646400.890403172,
+    "Ethereum": 239918241.37525055,
+    "Fantom": 258869.68999875206,
+    "Gnosis": 670.2462293241115,
+    "HyperEVM": 0,
+    "Katana": 25549843.944820516,
+    "Optimism": 143594.04740023927,
+    "Polygon": 295776.1138152342,
+    "Robinhood Chain": 204334.77777268732
+  },
+  "v1Tvl": 2382205.124290547,
+  "v2Tvl": 36197511.888071455,
+  "v3Tvl": 138678646.27653992,
+  "vaultBridgeExcluded": 0,
+  "vaultCount": {
+    "active": 540,
+    "curation": 53,
+    "retired": 482,
+    "total": 1022,
+    "v1": 28,
+    "v2": 641,
+    "v3": 300
+  }
+}

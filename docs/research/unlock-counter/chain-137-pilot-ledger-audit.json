@@ -1,0 +1,28 @@
+{
+  "engine": {
+    "engine": "yearn_data.tvl.account",
+    "engineSha256": "ca49b7100309cc807a9725eca32ac13eb01fbc805f762e719822387d5a357293",
+    "sourceCommit": "0108ed6ec7279c917ff9f29dfac234319f5c1c29"
+  },
+  "baseline": {
+    "timestamp": 1793802839,
+    "rows": [],
+    "positions": [],
+    "diagnostics": {
+      "timestamp": null,
+      "gross_tvl_usd": "0",
+      "overlap_usd": "0",
+      "external_tvl_usd": "0",
+      "known_gross_tvl_usd": "0",
+      "known_overlap_usd": "0",
+      "known_external_tvl_usd": "0",
+      "vault_count": 0,
+      "valued_vault_count": 0,
+      "position_count": 0,
+      "unresolved_positions": 0,
+      "status": "complete",
+      "mapping_scope": "known candidates",
+      "issues": []
+    }
+  }
+}

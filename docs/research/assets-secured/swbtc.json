@@ -1,0 +1,23 @@
+{
+  "status": "observed",
+  "chainId": 1,
+  "address": "0x8db2350d78abc13f5673a411d4700bcf87864dde",
+  "blockNumber": 26257254,
+  "totalAssets": "580102791",
+  "asset": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+  "assetDecimals": 8,
+  "apiVersion": "3.0.2",
+  "grossUsd": 471311.73405463854,
+  "priceResponse": {
+    "coins": {
+      "ethereum:0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599": {
+        "decimals": 8,
+        "symbol": "WBTC",
+        "price": 81246.24486673751,
+        "timestamp": 1792781690,
+        "confidence": 0.99
+      }
+    }
+  },
+  "priceSource": "https://coins.llama.fi/prices/current/ethereum:0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599"
+}

@@ -1,0 +1,1070 @@
+[
+  {
+    "chainId": 1,
+    "address": "0xBe53A109B494E5c9f97b9Cd39Fe969BE68BF6204",
+    "externalSharesRaw": "8441148690214",
+    "internalAllocationSharesRaw": ["1", "3600449316431", "4184153706286"]
+  },
+  {
+    "chainId": 1,
+    "address": "0x696d02Db93291651ED510704c9b286841d506987",
+    "externalSharesRaw": "14850989316367",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0xAc37729B76db6438CE62042AE1270ee574CA7571",
+    "externalSharesRaw": "4672666263018416603656",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0xc56413869c6CDf96496f2b1eF801fEDBdFA7dDB0",
+    "externalSharesRaw": "3354903025926373975128",
+    "internalAllocationSharesRaw": ["615850735900320158559", "1", "412918036728093708162"]
+  },
+  {
+    "chainId": 1,
+    "address": "0x182863131F9a4630fF9E27830d945B1413e347E8",
+    "externalSharesRaw": "2446695538654681633075412",
+    "internalAllocationSharesRaw": ["3948600157780855144536982", "1505441897419685371716874"]
+  },
+  {
+    "chainId": 1,
+    "address": "0x0e297dE4005883C757c9F09fdF7cF1363C20e626",
+    "externalSharesRaw": "49033590189",
+    "internalAllocationSharesRaw": ["3279796415477", "123457341577"]
+  },
+  {
+    "chainId": 1,
+    "address": "0x9F4330700a36B29952869fac9b33f45EEdd8A3d8",
+    "externalSharesRaw": "77632445391559389305120",
+    "internalAllocationSharesRaw": ["7529884651688230681674388"]
+  },
+  {
+    "chainId": 1,
+    "address": "0x23346B04a7f55b8760E5860AA5A77383D63491cD",
+    "externalSharesRaw": "6831150992287829584760533",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x028eC7330ff87667b6dfb0D94b954c820195336c",
+    "externalSharesRaw": "2659147712935782080784863",
+    "internalAllocationSharesRaw": ["2388664547955013266232198"]
+  },
+  {
+    "chainId": 1,
+    "address": "0x310B7Ea7475A0B449Cfd73bE81522F1B88eFAFaa",
+    "externalSharesRaw": "1247310720723",
+    "internalAllocationSharesRaw": ["3916691873395"]
+  },
+  {
+    "chainId": 1,
+    "address": "0x751F0cC6115410A3eE9eC92d08f46Ff6Da98b708",
+    "externalSharesRaw": "5645501",
+    "internalAllocationSharesRaw": ["4741074954"]
+  },
+  {
+    "chainId": 1,
+    "address": "0x074134A2784F4F66b6ceD6f68849382990Ff3215",
+    "externalSharesRaw": "2121058622727",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0xBF319dDC2Edc1Eb6FDf9910E39b37Be221C8805F",
+    "externalSharesRaw": "1240031119042656921835927",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x863687e4E9751b57F38b4B0ebA04744C72d0f7B8",
+    "externalSharesRaw": "1100423069565",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0xfaC55fAFD0b55BFb8dD41F735EfCc195adA9891F",
+    "externalSharesRaw": "310003673264129341198",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0xc9f01b5c6048B064E6d925d1c2d7206d4fEeF8a3",
+    "externalSharesRaw": "377579353486048573567829",
+    "internalAllocationSharesRaw": ["0"]
+  },
+  {
+    "chainId": 1,
+    "address": "0x09AcE8B2f2fE2189A5B37046BBaFa29Dce31c920",
+    "externalSharesRaw": "844595922032369983706",
+    "internalAllocationSharesRaw": ["343545103898361818920376"]
+  },
+  {
+    "chainId": 1,
+    "address": "0xAe7d8Db82480E6d8e3873ecbF22cf17b3D8A7308",
+    "externalSharesRaw": "232617166140",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x1F6f16945e395593d8050d6Cc33e4328a515B648",
+    "externalSharesRaw": "1854861066617991800319002",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0xeEB6Be70fF212238419cD638FAB17910CF61CBE7",
+    "externalSharesRaw": "59311499582507976381",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x694E47AFD14A64661a04eee674FB331bCDEF3737",
+    "externalSharesRaw": "61303765613",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0xaF71a4f5d93fb88B24C67760BCF9688a6C3A54D4",
+    "externalSharesRaw": "538423021619159201580509",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0xC40dC53931cd184F782f3602d95C7e3609706004",
+    "externalSharesRaw": "6220655600806949184",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x7eE351aA702C8fC735D77Fb229b7676AC15D7c79",
+    "externalSharesRaw": "11952186034",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x05329AAb081B125eEF7FbbC8b857428D478E692B",
+    "externalSharesRaw": "12664740393251588180116",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x1Fc80CfCF5B345b904A0fB36d4222196Ed9eB8a5",
+    "externalSharesRaw": "8908042832877692126211401",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0xa258C4606Ca8206D8aA700cE2143D7db854D168c",
+    "externalSharesRaw": "3086545843160197197314",
+    "internalAllocationSharesRaw": ["191160582055964741836"]
+  },
+  {
+    "chainId": 1,
+    "address": "0x27B5739e22ad9033bcBf192059122d163b60349D",
+    "externalSharesRaw": "15999571930917291106931610",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0xa354F35829Ae975e850e23e9615b11Da1B3dC4DE",
+    "externalSharesRaw": "2696136935033",
+    "internalAllocationSharesRaw": ["1248256418638"]
+  },
+  {
+    "chainId": 1,
+    "address": "0x5B8C556B8b2a78696F0B9B830B3d67623122E270",
+    "externalSharesRaw": "681621023342459758499",
+    "internalAllocationSharesRaw": ["1083507156776414553593"]
+  },
+  {
+    "chainId": 1,
+    "address": "0x3B27F92C0e212C671EA351827EDF93DB27cc0c65",
+    "externalSharesRaw": "62784855345",
+    "internalAllocationSharesRaw": ["3755234046093"]
+  },
+  {
+    "chainId": 1,
+    "address": "0x7Da96a3891Add058AdA2E826306D812C638D87a7",
+    "externalSharesRaw": "3677366416939",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0xA696a63cc78DfFa1a63E9E50587C197387FF6C7E",
+    "externalSharesRaw": "4630602437",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x7c439Df9ADE8831180EA4D546c1E910D4Ba71a86",
+    "externalSharesRaw": "2402689133074979311772153",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0xdCD90C7f6324cfa40d7169ef80b12031770B4325",
+    "externalSharesRaw": "991790255977360146408",
+    "internalAllocationSharesRaw": ["0"]
+  },
+  {
+    "chainId": 1,
+    "address": "0x6A5468752f8DB94134B6508dAbAC54D3b45efCE6",
+    "externalSharesRaw": "976659740881241749594",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0xdA816459F1AB5631232FE5e97a05BBBb94970c95",
+    "externalSharesRaw": "1474161390678309472836350",
+    "internalAllocationSharesRaw": ["723633204040952778440458", "0", "0"]
+  },
+  {
+    "chainId": 1,
+    "address": "0xAD2f9A55518Dba12E8AB069502820923351667C5",
+    "externalSharesRaw": "648179478488634868735",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x5f18C75AbDAe578b483E5F43f12a39cF75b973a9",
+    "externalSharesRaw": "1189329640619",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0xf165a634296800812B8B0607a75DeDdcD4D3cC88",
+    "externalSharesRaw": "1173561877119994145067935",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x5fA5B62c8AF877CB37031e0a3B2f34A78e3C56A6",
+    "externalSharesRaw": "1099478458949135259094021",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x6E9455D109202b426169F0d8f01A3332DAE160f3",
+    "externalSharesRaw": "3270460928421831554476505",
+    "internalAllocationSharesRaw": ["303477862011589030474814"]
+  },
+  {
+    "chainId": 1,
+    "address": "0x342D24F2a3233F7Ac8A7347fA239187BFd186066",
+    "externalSharesRaw": "778291304957114883323045",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x6f0Ace0F94f4B9890Dfa99A4175B3Ef0288C16B3",
+    "externalSharesRaw": "277767961895948551363",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x19D3364A399d251E894aC732651be8B0E4e85001",
+    "externalSharesRaw": "708384075459001682225342",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0xaA379c2aA72529d5ec0da8A41e2F41ED7Fe4b48C",
+    "externalSharesRaw": "243143410293045170758",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x27b7b1ad7288079A66d12350c828D3C00A6F07d7",
+    "externalSharesRaw": "105293349624744034943019",
+    "internalAllocationSharesRaw": ["0", "0"]
+  },
+  {
+    "chainId": 1,
+    "address": "0xa9fE4601811213c340e850ea305481afF02f5b28",
+    "externalSharesRaw": "190940605763026601837",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x668c5Ef17f2F01503FBB4F285F32161251047720",
+    "externalSharesRaw": "327784664781308431786656",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x25212Df29073FfFA7A67399AcEfC2dd75a831A1A",
+    "externalSharesRaw": "263686961486114517866197",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0xAd86Df2e8F989c828B25A7Da5EB1Ec363283fA3F",
+    "externalSharesRaw": "476535084144358173111",
+    "internalAllocationSharesRaw": ["297132438340532665023304"]
+  },
+  {
+    "chainId": 1,
+    "address": "0xB53B70Cb960FeEAf2093Df3C733E368F6D254898",
+    "externalSharesRaw": "287483380376828551059685",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0xdb25cA703181E7484a155DD612b06f57E12Be5F0",
+    "externalSharesRaw": "97089832742062329283",
+    "internalAllocationSharesRaw": ["46707195473823870115"]
+  },
+  {
+    "chainId": 1,
+    "address": "0xD2433Ec6De2a932Ab7bc1A0080676333AeF8B546",
+    "externalSharesRaw": "233401740483244144005020",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x8078198Fc424986ae89Ce4a910Fc109587b6aBF3",
+    "externalSharesRaw": "36104884137188050718",
+    "internalAllocationSharesRaw": ["87433039771204713737"]
+  },
+  {
+    "chainId": 1,
+    "address": "0x790a60024bC3aea28385b60480f15a0771f26D09",
+    "externalSharesRaw": "41218445779493760872",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x04c8bfe2eb09a1e2e9fA97A2fd970E06d87B43de",
+    "externalSharesRaw": "41798274504263970504008",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x75A291F0232ADD37d72Dd1Dcff55B715755ECDEe",
+    "externalSharesRaw": "268896021543658315261",
+    "internalAllocationSharesRaw": ["393136207564561675615"]
+  },
+  {
+    "chainId": 1,
+    "address": "0xb83461b887398CD981957BD93CB7067cF89c21C0",
+    "externalSharesRaw": "176632696395078448742862",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0xE537B5cc158EB71037D4125BDD7538421981E6AA",
+    "externalSharesRaw": "78714097449712419246",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0xe0287cA62fE23f4FFAB827d5448d68aFe6DD9Fd7",
+    "externalSharesRaw": "163053881021258461097359",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0xB5dE7250128775a317B3f775a7AFcEC73571B732",
+    "externalSharesRaw": "60316847564255309013",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x7cA00559B978CFde81297849be6151d3ccB408A9",
+    "externalSharesRaw": "96556487868609379872147",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x671a912C10bba0CFA74Cfc2d6Fba9BA1ed9530B2",
+    "externalSharesRaw": "10982709905955155230985",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x986b4AFF588a109c09B50A03f42E4110E29D353F",
+    "externalSharesRaw": "25849663850217923766",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0xFBEB78a723b8087fD2ea7Ef1afEc93d35E8Bed42",
+    "externalSharesRaw": "15424871268027781594711",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0xDb26d8815EdA864Dfa43306766f2F8CA50C03F9E",
+    "externalSharesRaw": "19722372163400605679202",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x1635b506a88fBF428465Ad65d00e8d6B6E5846C3",
+    "externalSharesRaw": "358674774569504208486",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0xc952f3028E322da48e239A077b810A24556f36f1",
+    "externalSharesRaw": "148845228728366827783883",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x241AdD131B9aaa7527132b752252b99420937ADc",
+    "externalSharesRaw": "70385947087704196046984",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x192725C6516656f3e288c08Db8228c25Fe1f77D5",
+    "externalSharesRaw": "103626245446064681097244",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x9d409a0A012CFbA9B15F6D4B36Ac57A46966Ab9a",
+    "externalSharesRaw": "176124142493615402082972",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0xf2db9a7c0ACd427A680D640F02d90f6186E71725",
+    "externalSharesRaw": "9005455008772642593535",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x4282B8f159ee677559Dc6A20cd478DD0BDe75fF2",
+    "externalSharesRaw": "88368589063232173577121",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0xE14d13d8B3b85aF791b2AADD661cDBd5E6097Db1",
+    "externalSharesRaw": "44630149452341611486",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0xc97232527B62eFb0D8ed38CF3EA103A6CcA4037e",
+    "externalSharesRaw": "455221875582022483338062",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0xb37094c1B5614Bd6EcE40AFb295C26F4377069d3",
+    "externalSharesRaw": "31981712872589949597",
+    "internalAllocationSharesRaw": ["85052235276681338555000"]
+  },
+  {
+    "chainId": 1,
+    "address": "0xB4AdA607B9d6b2c9Ee07A275e9616B84AC560139",
+    "externalSharesRaw": "75683674549837603064080",
+    "internalAllocationSharesRaw": ["0"]
+  },
+  {
+    "chainId": 1,
+    "address": "0x84E13785B5a27879921D6F685f041421C7F482dA",
+    "externalSharesRaw": "73226427678975519233002",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x4CbB6A5EC00cEEC252a7091559484F7adb83165f",
+    "externalSharesRaw": "22662683589530049558",
+    "internalAllocationSharesRaw": ["72364406924559532426459"]
+  },
+  {
+    "chainId": 1,
+    "address": "0xA74d4B67b3368E83797a35382AFB776bAAE4F5C8",
+    "externalSharesRaw": "65675502376444097699201",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0xb4D1Be44BfF40ad6e506edf43156577a3f8672eC",
+    "externalSharesRaw": "74967934391467349711343",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x528D50dC9a333f01544177a924893FA1F5b9F748",
+    "externalSharesRaw": "69072825979325407991172312",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x82c83ddA32DB09F63F9A59A129278f3fdC3EeE67",
+    "externalSharesRaw": "9247323401884004484126",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0xe7c25cb1eac7D870F3cD103cBB060A6DFbc5eaF2",
+    "externalSharesRaw": "22604408381953379039",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0xa669d6C2Df33F41940c2646A9BF3031e2524d515",
+    "externalSharesRaw": "187171907672517476767279",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x8F49C410ac9d05aa7260ef0951b3f328E80d1f3D",
+    "externalSharesRaw": "53425857416884504435382",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x849dC56ceCa7Cf55AbF5ec87910DA21c5C7dA581",
+    "externalSharesRaw": "7621484986725542601",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x5a770DbD3Ee6bAF2802D29a901Ef11501C44797A",
+    "externalSharesRaw": "32937564167070782899383",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x2027D3b2B58F522178cE4cC4E86e99b7C4DE3876",
+    "externalSharesRaw": "35400343909584728986664",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x0844C227b892be5d7c837000C096f64bFc316c2d",
+    "externalSharesRaw": "436812414214182349477502",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x5AB64C599FcC59f0f2726A300b03166A395578Da",
+    "externalSharesRaw": "3921172017389376144867",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x3f34A7eF4f17528CbFFb7817060941BCdaC924fa",
+    "externalSharesRaw": "662088090186513705605",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0xb7b1C394b3F82091988A1e400C6499178eE64b99",
+    "externalSharesRaw": "20167641232186852651528",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x77e829FFF18C14AD9bb88963acB0010A0506de88",
+    "externalSharesRaw": "81983406642085",
+    "internalAllocationSharesRaw": ["11555132759068167381"]
+  },
+  {
+    "chainId": 1,
+    "address": "0xBfedbcbe27171C418CDabC2477042554b1904857",
+    "externalSharesRaw": "11052602615927304967",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x3D980E50508CFd41a13837A60149927a11c03731",
+    "externalSharesRaw": "17106116195067715749",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x5F208d3a8b13062adE45a33Ca9Bc8de64D520CB9",
+    "externalSharesRaw": "12263167430700809131",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x7845Ebf66c9575Fc5f5A0dBb9a34a706Ad997a3f",
+    "externalSharesRaw": "12841676772467488038",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0xa8E0c42F45C877e611C76F2D4bF57476f2014381",
+    "externalSharesRaw": "6434616522128534645281",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x8017B5d498f75d12dA6A857e867699fB07De41a4",
+    "externalSharesRaw": "419184446294329890105",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x944d749017053e0D37ec206c9898716A21e0B2E2",
+    "externalSharesRaw": "377762074692411825166",
+    "internalAllocationSharesRaw": ["25070893861757004709908"]
+  },
+  {
+    "chainId": 1,
+    "address": "0x5c0A86A32c129538D62C106Eb8115a8b02358d57",
+    "externalSharesRaw": "9703983355347366182",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x8cc94ccd0f3841a468184aCA3Cc478D2148E1757",
+    "externalSharesRaw": "22703532661972057545544",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x5fFd0C196838aa5e700657C1f6fd8A87f5d80ED2",
+    "externalSharesRaw": "10129565407715617473",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x6949145469362F9eeaB3c96Ea41b51D9B4cC2b21",
+    "externalSharesRaw": "120188207839154797513",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x2D5D4869381C4Fce34789BC1D38aCCe747E295AE",
+    "externalSharesRaw": "18941315145543742420061",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0xd9788f3931Ede4D5018184E198699dC6d66C1915",
+    "externalSharesRaw": "144667696808390189435",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0xe9Dc63083c464d6EDcCFf23444fF3CFc6886f6FB",
+    "externalSharesRaw": "201642498014414658",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x39CAF13a104FF567f71fd2A4c68C026FDB6E740B",
+    "externalSharesRaw": "14524554940228684158946",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0xd02b103f7f5dba89Ad316E2b3Fe247F280CcE5b2",
+    "externalSharesRaw": "113145062722676246233",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0xE2CaD35CFD1A9B5acD557558f44B096ef8340C1B",
+    "externalSharesRaw": "5512140819655753364",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0xF29AE508698bDeF169B89834F76704C3B205aedf",
+    "externalSharesRaw": "78660727837959897578911",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x490bD0886F221A5F79713D3E84404355A9293C50",
+    "externalSharesRaw": "8937485346065417079238",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x8414Db07a7F743dEbaFb402070AB01a4E0d2E45e",
+    "externalSharesRaw": "170496746287627787",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x03f8CCf5b5004B55309e949ea9D08136a32E9C5d",
+    "externalSharesRaw": "164322703755561933",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x2fB06235aB90812e5BaE28404024C9498fF9414d",
+    "externalSharesRaw": "153385041758344048362",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0xAE6eD98B1Bd9aAdd3185160324e0e011159B61D3",
+    "externalSharesRaw": "545547610859894902676",
+    "internalAllocationSharesRaw": ["6126796588146972965768"]
+  },
+  {
+    "chainId": 1,
+    "address": "0x5591Ac6CC8cdeE5d47E553a8c3543eF5eA808919",
+    "externalSharesRaw": "9703888172033529440511",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0xD6Ea40597Be05c201845c0bFd2e96A60bACde267",
+    "externalSharesRaw": "5087471223857563906334",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 10,
+    "address": "0xf7D66b41Cd4241eae450fd9D2d6995754634D9f3",
+    "externalSharesRaw": "248194486970140805623",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 10,
+    "address": "0xd0d2Ac44Cc842079e978bB11b094764f7D0dec6A",
+    "externalSharesRaw": "19292073382275645466",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 10,
+    "address": "0x5B977577Eb8a480f63e11FC615D6753adB8652Ae",
+    "externalSharesRaw": "25584798628173646430",
+    "internalAllocationSharesRaw": ["130000000000000"]
+  },
+  {
+    "chainId": 10,
+    "address": "0x7e1d451799af57EA5570D1015c342C12a918a30b",
+    "externalSharesRaw": "9831103930695150448",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 10,
+    "address": "0xaD17A225074191d5c8a37B50FdA1AE278a2EE6A2",
+    "externalSharesRaw": "38144519766",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 10,
+    "address": "0x65bAb5C963Aec5bFc72986c2a4c468c190d6de96",
+    "externalSharesRaw": "29773506848015350",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 10,
+    "address": "0x3B141BD7d6E1d67e2101A08E4dd849a8408d91aa",
+    "externalSharesRaw": "13917252794744192",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 10,
+    "address": "0x8e8D635E28BB8774FD23107cC1D9b6D30AD5D0B9",
+    "externalSharesRaw": "728154091578441374807",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 10,
+    "address": "0x7D2382b1f8Af621229d33464340541Db362B4907",
+    "externalSharesRaw": "140282943111075098814659",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 10,
+    "address": "0xbC61B71562b01a3a4808D3B9291A3Bf743AB3361",
+    "externalSharesRaw": "116316363284822164706",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 10,
+    "address": "0x88B429359665B8685b7431f5A0f6e8C719Bf49Aa",
+    "externalSharesRaw": "14258143546193376",
+    "internalAllocationSharesRaw": ["53977535338592"]
+  },
+  {
+    "chainId": 10,
+    "address": "0xfA3C6122906f2A2d644409dBB507DB1060D10b3A",
+    "externalSharesRaw": "7969430491815605236669",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 10,
+    "address": "0xd3668ca9DF5d1bba8d264b8d10dD2F0C5962CC4C",
+    "externalSharesRaw": "80064728821408315845",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 10,
+    "address": "0x65343F414FFD6c97b0f6add33d16F6845Ac22BAc",
+    "externalSharesRaw": "11876675470843864067407",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 250,
+    "address": "0xEF0210eB96c7EB36AF8ed1c20306462764935607",
+    "externalSharesRaw": "1738814078987",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 250,
+    "address": "0xd817A100AB8A29fE3DBd925c2EB489D67F758DA9",
+    "externalSharesRaw": "1896894535",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 250,
+    "address": "0x637eC617c86D24E421328e6CAEa1d92114892439",
+    "externalSharesRaw": "544180340128367169009610",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 250,
+    "address": "0xCe2Fc0bDc18BD6a4d9A725791A3DEe33F3a23BB7",
+    "externalSharesRaw": "98174458607836008178",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 250,
+    "address": "0xF137D22d7B23eeB1950B3e19d1f578c053ed9715",
+    "externalSharesRaw": "160591582866447127617373",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 250,
+    "address": "0x0DEC85e74A92c52b7F708c4B10207D9560CEFaf0",
+    "externalSharesRaw": "382140391297391758352326",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 250,
+    "address": "0x2C850cceD00ce2b14AA9D658b7Cad5dF659493Db",
+    "externalSharesRaw": "13717245591499505916",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 250,
+    "address": "0x148c05caf1Bb09B5670f00D511718f733C54bC4c",
+    "externalSharesRaw": "26184706623",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 250,
+    "address": "0xCbCaF8cB8cbeAFA927ECEE0c5C56560F83E9B7D9",
+    "externalSharesRaw": "5840717014425918432",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 8453,
+    "address": "0xF115C134c23C7A05FBD489A8bE3116EbF54B0D9f",
+    "externalSharesRaw": "2141782037",
+    "internalAllocationSharesRaw": ["195398898486", "117634044601"]
+  },
+  {
+    "chainId": 8453,
+    "address": "0xb13CF163d916917d9cD6E836905cA5f12a1dEF4B",
+    "externalSharesRaw": "1235451227591",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 8453,
+    "address": "0xc3BD0A2193c8F027B82ddE3611D18589ef3f62a9",
+    "externalSharesRaw": "675627968457",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 8453,
+    "address": "0x4d3ceBA4349ADB06d2De8EBD2F9320A61303aD81",
+    "externalSharesRaw": "11463595003713790064156",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 8453,
+    "address": "0x31Ce9aB5A358E5c802Cc01080F29a65a14EB45b8",
+    "externalSharesRaw": "1943211515911870172746",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 8453,
+    "address": "0x0dE119f5790c4EcF6eEd80Aac7c25D2dCAD10f0f",
+    "externalSharesRaw": "16873754516",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 42161,
+    "address": "0xCACc53bAcCe744ac7b5C1eC7eb7e3Ab01330733b",
+    "externalSharesRaw": "18311832602",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 42161,
+    "address": "0x239e14A19DFF93a17339DCC444f74406C17f8E67",
+    "externalSharesRaw": "8259416997770688983",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 747474,
+    "address": "0xE007CA01894c863d7898045ed5A3B4Abf0b18f37",
+    "externalSharesRaw": "2586949595234280729165",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 747474,
+    "address": "0x80c34BD3A3569E126e7055831036aa7b212cB159",
+    "externalSharesRaw": "4619688695833",
+    "internalAllocationSharesRaw": ["298463858178", "906331399954"]
+  },
+  {
+    "chainId": 747474,
+    "address": "0x9A6bd7B6Fd5C4F87eb66356441502fc7dCdd185B",
+    "externalSharesRaw": "1374745864713",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 747474,
+    "address": "0xAa0362eCC584B985056E47812931270b99C91f9d",
+    "externalSharesRaw": "1114320268",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 747474,
+    "address": "0x0432337365d89c0D73f1D0Cb263791F8f1B98D43",
+    "externalSharesRaw": "10016",
+    "internalAllocationSharesRaw": ["547987389"]
+  },
+  {
+    "chainId": 747474,
+    "address": "0x78EC25FBa1bAf6b7dc097Ebb8115A390A2a4Ee12",
+    "externalSharesRaw": "10006267094",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x0963232eb842baf53e8e517691f81745c1f228a0",
+    "externalSharesRaw": "394620118715254625854",
+    "internalAllocationSharesRaw": ["3794879175779357903097727"]
+  },
+  {
+    "chainId": 1,
+    "address": "0x2bb005127069a0f0325fb7370967e8a2b64fb77e",
+    "externalSharesRaw": "3809411602072",
+    "internalAllocationSharesRaw": ["47466733057090414327"]
+  },
+  {
+    "chainId": 1,
+    "address": "0x3dfe70b05657949a5db340754ad664810ac63b21",
+    "externalSharesRaw": "167182408107399752382",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0x5b8b9fa8e4145ee06025f642cadb1b47e5f39f04",
+    "externalSharesRaw": "848838355561516638559",
+    "internalAllocationSharesRaw": ["4297582116414496978951616"]
+  },
+  {
+    "chainId": 1,
+    "address": "0x68aea7b82df6ccdf76235d46445ed83f85f845a3",
+    "externalSharesRaw": "256536895420656980693633",
+    "internalAllocationSharesRaw": ["5625249110967756721865419"]
+  },
+  {
+    "chainId": 1,
+    "address": "0xe89371eaaac6d46d4c3ed23453241987916224fc",
+    "externalSharesRaw": "14465622415086926453",
+    "internalAllocationSharesRaw": ["598645947242831634316"]
+  },
+  {
+    "chainId": 1,
+    "address": "0xf9bddd4a9b3a45f980e11fdde96e16364ddbec49",
+    "externalSharesRaw": "2570843302202234170705455",
+    "internalAllocationSharesRaw": ["6902590725649161862981085"]
+  },
+  {
+    "chainId": 1,
+    "address": "0xb885f6d448da7e2c642ec31190b629e40e87b069",
+    "externalSharesRaw": "2730246404016628427211426",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 1,
+    "address": "0xfb154c729a16802c4ad1e8f7ff539a8b9f49c960",
+    "externalSharesRaw": "4298305362610998360135065",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 4663,
+    "address": "0x8c258f25fc6fbe3f01ccc828e2c3840a46a4a9a2",
+    "externalSharesRaw": "203378484609353875296946",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 8453,
+    "address": "0x1d795e29044a62da42d927c4b179269139a28a6b",
+    "externalSharesRaw": "17015055349738596679",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 8453,
+    "address": "0x581cc9a73ec7431723a4a80699b8f801205841f1",
+    "externalSharesRaw": "217319545258173632733",
+    "internalAllocationSharesRaw": ["1032462495866405424254731"]
+  },
+  {
+    "chainId": 8453,
+    "address": "0xef417a2512c5a41f69ae4e021648b69a7cde5d03",
+    "externalSharesRaw": "55398204698190340746837",
+    "internalAllocationSharesRaw": ["1801580112911231474733060"]
+  },
+  {
+    "chainId": 8453,
+    "address": "0x2ba14b2e1e7d2189d3550b708dfca01f899f33c1",
+    "externalSharesRaw": "1032476718398764769121957",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 8453,
+    "address": "0xe7d0dbe3493830e2ab62619211a2bff0fc60db42",
+    "externalSharesRaw": "298804790442129382458907",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 747474,
+    "address": "0xce2b8e464fc7b5e58710c24b7e5ebfb6027f29d7",
+    "externalSharesRaw": "12156800638537536777009",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 747474,
+    "address": "0x4284d4f9f4d61ea57b8f0943547c7c19c5b9b249",
+    "externalSharesRaw": "5142135501057606794742",
+    "internalAllocationSharesRaw": ["1200970939806724909272466"]
+  },
+  {
+    "chainId": 747474,
+    "address": "0x5920a6fc553af799542eda628adfcc9ea52e141c",
+    "externalSharesRaw": "182640330489689508119",
+    "internalAllocationSharesRaw": ["1781978007175548346685"]
+  },
+  {
+    "chainId": 747474,
+    "address": "0x9b1ae9548e4b46ceb6650f6cec702baf5cf2b8cc",
+    "externalSharesRaw": "97469467126408420901598272",
+    "internalAllocationSharesRaw": []
+  },
+  {
+    "chainId": 747474,
+    "address": "0xa2d38c8a3d810ebcf4c2075821c5ec8f976bb692",
+    "externalSharesRaw": "106811652326273230821641",
+    "internalAllocationSharesRaw": ["1831131572448556832306770"]
+  },
+  {
+    "chainId": 747474,
+    "address": "0xca44cbe1fb03691d43d2d93aa460e2fcb03878fe",
+    "externalSharesRaw": "11287370853612099443360",
+    "internalAllocationSharesRaw": ["2820017894407902754563831"]
+  }
+]

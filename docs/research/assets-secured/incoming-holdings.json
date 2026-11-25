@@ -1,0 +1,104 @@
+{
+  "blockNumber": "26244424",
+  "holderCount": 1135,
+  "results": [
+    {
+      "target": "0x3Ed6aa32c930253fc990dE58fF882B9186cd0072",
+      "name": "cap USDC",
+      "supply": "25036825912154",
+      "failures": 0,
+      "positions": []
+    },
+    {
+      "target": "0x0655977FEb2f289A4aB78af67BAB0d17aAb84367",
+      "name": "Savings crvUSD",
+      "supply": "13064241718787506108198434",
+      "failures": 0,
+      "positions": [
+        {
+          "holder": "0xbf319ddc2edc1eb6fdf9910e39b37be221c8805f",
+          "shares": "26954407453102866483",
+          "ownedUsd": 29.91241242296591,
+          "kind": "baseline-node"
+        },
+        {
+          "holder": "0xc522a6606bba746d7960404f22a3db936b6f4f50",
+          "shares": "3403849107123448879776673",
+          "ownedUsd": 3777391.081401796,
+          "kind": "baseline-asset-contract"
+        },
+        {
+          "holder": "0xf939e0a03fb07f59a73314e73794be0e57ac1b4e",
+          "shares": "10000000000000000000",
+          "ownedUsd": 11.097410497711584,
+          "kind": "baseline-asset-contract"
+        },
+        {
+          "holder": "0x3be454c4391690ab4ddae3fb987c8147b8ecc08a",
+          "shares": "8055113796109310382000",
+          "ownedUsd": 8939.090440120488,
+          "kind": "baseline-asset-contract"
+        },
+        {
+          "holder": "0x76a962ba6770068bcf454d34dde17175611e6637",
+          "shares": "1165198644602480206171749",
+          "ownedUsd": 1293068.7670530872,
+          "kind": "baseline-asset-contract"
+        },
+        {
+          "holder": "0xff17dab22f1e61078aba2623c89ce6110e878b3c",
+          "shares": "5517825279100890906677",
+          "ownedUsd": 6123.357217683258,
+          "kind": "baseline-asset-contract"
+        },
+        {
+          "holder": "0xe99810cd5adcd7b13455ae1be678b382d61f2d1e",
+          "shares": "469362988932322178117128",
+          "ownedUsd": 520871.37606148387,
+          "kind": "baseline-asset-contract"
+        },
+        {
+          "holder": "0x4d968a5db8da0822a2f08840f553de4129aae5f3",
+          "shares": "144770022001618501120",
+          "ownedUsd": 160.65723619146982,
+          "kind": "baseline-asset-contract"
+        }
+      ]
+    },
+    {
+      "target": "0x697c54a84D83F37380d034e2BfC6F7cE8d89F4Ee",
+      "name": "USDC Meta Vault",
+      "supply": "3579177022269",
+      "failures": 0,
+      "positions": []
+    },
+    {
+      "target": "0x26fCb50eEC367ddAB060ccf5E7394Cecd95F7Db2",
+      "name": "ETH Meta Vault",
+      "supply": "2837767116552187262165",
+      "failures": 0,
+      "positions": []
+    },
+    {
+      "target": "0x254bd33E2f62713F893F0842C99E68f855cDa315",
+      "name": "Coinflakes Vault v2.0",
+      "supply": "98110673824161564885678",
+      "failures": 0,
+      "positions": []
+    },
+    {
+      "target": "0x8db2350d78abc13f5673a411d4700bcf87864dde",
+      "name": "swBTC",
+      "supply": "580102791",
+      "failures": 0,
+      "positions": []
+    },
+    {
+      "target": "0xb21FbD35AC45caC1D5011b74Ce06b31f8EB2C377",
+      "name": "SHUGrantPool",
+      "supply": "1204295214287",
+      "failures": 0,
+      "positions": []
+    }
+  ]
+}

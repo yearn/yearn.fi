@@ -1,0 +1,43 @@
+{
+  "timestamp": "1793802839",
+  "blockNumber": "521200470",
+  "blockHash": "0x0f0ad10f4f12a6f48a2e0b93abc46ec3f47357c8893dc3034d1a71993511f54d",
+  "coverage": "2 pilot roots: V3 default queues, V2 withdrawal queues, and observed direct holdings; not a complete historical strategy list or ownership ledger",
+  "edges": [
+    {
+      "parent": "0x239e14A19DFF93a17339DCC444f74406C17f8E67",
+      "parentName": "Curve Tricrypto Pool Vault",
+      "child": "0xcDD989d84f9B63D2f0B1906A2d9B22355316dE31",
+      "childName": "StrategyCurveTricrypto",
+      "childVersion": "0.4.3",
+      "relationship": "unresolved-or-unregistered",
+      "heldShares": null,
+      "sameAsset": false,
+      "childMaxUnlockTime": null,
+      "childUnlockEnd": null,
+      "childUnlockRate": null,
+      "recordedDebt": "9172586449098210267",
+      "childAssetsNow": null,
+      "childAssetsAfterHour": null,
+      "childAssetsIncreaseOverHour": null,
+      "unreportedDifferenceAssets": null,
+      "parentAssetsNow": "9172586449098210267",
+      "parentAssetsAfterHour": null,
+      "parentAssetDecimals": 18,
+      "price": 1879.2083486756082
+    }
+  ],
+  "children": [
+    {
+      "address": "0xcdd989d84f9b63d2f0b1906a2d9b22355316de31",
+      "name": "StrategyCurveTricrypto",
+      "apiVersion": "0.4.3",
+      "asset": null,
+      "totalAssets": null,
+      "totalSupply": null,
+      "profitMaxUnlockTime": null,
+      "profitUnlockingRate": null,
+      "fullProfitUnlockDate": null
+    }
+  ]
+}

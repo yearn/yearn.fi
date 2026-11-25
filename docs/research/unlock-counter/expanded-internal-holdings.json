@@ -1,0 +1,252 @@
+{
+  "timestamp": "1793802839",
+  "blockNumber": "26342075",
+  "blockHash": "0x8ebbd85fc01dd9d549c5e439952f896e209edc7d678363344dd53b6e2fef9598",
+  "rootCount": 120,
+  "holderCount": 353,
+  "checkedPairs": 42240,
+  "zeroPairs": 42200,
+  "coverage": "Closed pilot: 25 selected roots plus observed default-queue/direct holders. No ownership dollars or ratios reused from the older metrics publication.",
+  "positions": [
+    {
+      "holder": "0x696d02db93291651ed510704c9b286841d506987",
+      "child": "0x0e297de4005883c757c9f09fdf7cf1363c20e626",
+      "shares": "3279796415477",
+      "status": "success"
+    },
+    {
+      "holder": "0xac37729b76db6438ce62042ae1270ee574ca7571",
+      "child": "0xc56413869c6cdf96496f2b1ef801fedbdfa7ddb0",
+      "shares": "615850735900320158559",
+      "status": "success"
+    },
+    {
+      "holder": "0x23346b04a7f55b8760e5860aa5a77383d63491cd",
+      "child": "0x9f4330700a36b29952869fac9b33f45eedd8a3d8",
+      "shares": "7529884651688230681674388",
+      "status": "success"
+    },
+    {
+      "holder": "0xbf319ddc2edc1eb6fdf9910e39b37be221c8805f",
+      "child": "0x09ace8b2f2fe2189a5b37046bbafa29dce31c920",
+      "shares": "343545103898361818920376",
+      "status": "success"
+    },
+    {
+      "holder": "0xfac55fafd0b55bfb8dd41f735efcc195ada9891f",
+      "child": "0xc56413869c6cdf96496f2b1ef801fedbdfa7ddb0",
+      "shares": "1",
+      "status": "success"
+    },
+    {
+      "holder": "0xae7d8db82480e6d8e3873ecbf22cf17b3d8a7308",
+      "child": "0xbe53a109b494e5c9f97b9cd39fe969be68bf6204",
+      "shares": "1",
+      "status": "success"
+    },
+    {
+      "holder": "0xae7d8db82480e6d8e3873ecbf22cf17b3d8a7308",
+      "child": "0x0e297de4005883c757c9f09fdf7cf1363c20e626",
+      "shares": "123457341577",
+      "status": "success"
+    },
+    {
+      "holder": "0x39c0aec5738ed939876245224afc7e09c8480a52",
+      "child": "0x182863131f9a4630ff9e27830d945b1413e347e8",
+      "shares": "3954648025910006747534034",
+      "status": "success"
+    },
+    {
+      "holder": "0x9e0a5943dfc1a85b48c191aa7c10487297aa675b",
+      "child": "0xc9f01b5c6048b064e6d925d1c2d7206d4feef8a3",
+      "shares": "767041302180",
+      "status": "success"
+    },
+    {
+      "holder": "0xaedf7d5f3112552e110e5f9d08c9997adce0b78d",
+      "child": "0x182863131f9a4630ff9e27830d945b1413e347e8",
+      "shares": "1506850323886967807920411",
+      "status": "success"
+    },
+    {
+      "holder": "0xff03dce6d95aa7a30b75efbafd11384221b9f9b5",
+      "child": "0xbe53a109b494e5c9f97b9cd39fe969be68bf6204",
+      "shares": "3602058673670",
+      "status": "success"
+    },
+    {
+      "holder": "0x85907b1af27fd04a5efabc0fb7162f8690a6b82f",
+      "child": "0xc56413869c6cdf96496f2b1ef801fedbdfa7ddb0",
+      "shares": "413796723552633091118",
+      "status": "success"
+    },
+    {
+      "holder": "0xd5aadcd054a00eff71bcb922cddc70752fa2bc68",
+      "child": "0xbe53a109b494e5c9f97b9cd39fe969be68bf6204",
+      "shares": "4198427340537",
+      "status": "success"
+    },
+    {
+      "holder": "0xe07d1e27d93eda41ab091fc91a2026df41763b56",
+      "child": "0x310b7ea7475a0b449cfd73be81522f1b88efafaa",
+      "shares": "3928133598928",
+      "status": "success"
+    },
+    {
+      "holder": "0x92c212f4d6a8ad964acae745e1b45309b470af6e",
+      "child": "0xb4ada607b9d6b2c9ee07a275e9616b84ac560139",
+      "shares": "764552996282",
+      "status": "success"
+    },
+    {
+      "holder": "0x65a8efc842d2ba536d3f781f504a1940f61124b4",
+      "child": "0x27b7b1ad7288079a66d12350c828d3c00a6f07d7",
+      "shares": "482222556079",
+      "status": "success"
+    },
+    {
+      "holder": "0xb0eb24077563db8b88384949011dc46410c0a31d",
+      "child": "0x3b27f92c0e212c671ea351827edf93db27cc0c65",
+      "shares": "3761311027333",
+      "status": "success"
+    },
+    {
+      "holder": "0x8b64692c42ac08a7275aff3e2cc59e7401c471d5",
+      "child": "0x751f0cc6115410a3ee9ec92d08f46ff6da98b708",
+      "shares": "4741148789",
+      "status": "success"
+    },
+    {
+      "holder": "0x9084b5a98e3b4b257affd82ae4a1753f87906dce",
+      "child": "0x5b8c556b8b2a78696f0b9b830b3d67623122e270",
+      "shares": "1088671830751338664337",
+      "status": "success"
+    },
+    {
+      "holder": "0x3dd9636ca2b554cccd219d73796e80d819c90cba",
+      "child": "0x6f0ace0f94f4b9890dfa99a4175b3ef0288c16b3",
+      "shares": "1",
+      "status": "success"
+    },
+    {
+      "holder": "0xa7496763f035e73ec6b56f4c86312cc1874a01e3",
+      "child": "0x028ec7330ff87667b6dfb0d94b954c820195336c",
+      "shares": "2396783878687757527310678",
+      "status": "success"
+    },
+    {
+      "holder": "0x36822d0b11f4594380181ce6e76bd4986d46c389",
+      "child": "0xa354f35829ae975e850e23e9615b11da1b3dc4de",
+      "shares": "1250994259930",
+      "status": "success"
+    },
+    {
+      "holder": "0x80af28cb1e44c44662f144475d7667c9c0aab3c3",
+      "child": "0x27b7b1ad7288079a66d12350c828d3c00a6f07d7",
+      "shares": "380661384833331752",
+      "status": "success"
+    },
+    {
+      "holder": "0x343a52634b2464a87146c44ed8005577937f885c",
+      "child": "0xad86df2e8f989c828b25a7da5eb1ec363283fa3f",
+      "shares": "297132438340532665023304",
+      "status": "success"
+    },
+    {
+      "holder": "0x3d6532c589a11117a4494d9725bb8518c731f1be",
+      "child": "0xda816459f1ab5631232fe5e97a05bbbb94970c95",
+      "shares": "724612655032000289003901",
+      "status": "success"
+    },
+    {
+      "holder": "0x7ff6d8ec53cb4f6d44e9471391339f5b772eaef4",
+      "child": "0xdcd90c7f6324cfa40d7169ef80b12031770b4325",
+      "shares": "2",
+      "status": "success"
+    },
+    {
+      "holder": "0xe5f7f2e59b259e11ecf2ff76fdf5dc7438363a3f",
+      "child": "0xa258c4606ca8206d8aa700ce2143d7db854d168c",
+      "shares": "191398632044325981087",
+      "status": "success"
+    },
+    {
+      "holder": "0xbc27c4873d0dde214387ce5a838dc78857633ea2",
+      "child": "0xda816459f1ab5631232fe5e97a05bbbb94970c95",
+      "shares": "2973319",
+      "status": "success"
+    },
+    {
+      "holder": "0xbb3f079b9788b53b605e105053dcdfc8f0b16668",
+      "child": "0xdb25ca703181e7484a155dd612b06f57e12be5f0",
+      "shares": "21135518517999253",
+      "status": "success"
+    },
+    {
+      "holder": "0xf06b5c192d1413e7a4db1b2a9640500fdd83f1b2",
+      "child": "0xda816459f1ab5631232fe5e97a05bbbb94970c95",
+      "shares": "53814",
+      "status": "success"
+    },
+    {
+      "holder": "0xa04947059831783c561e59a43b93dcb5bee7cab2",
+      "child": "0x790a60024bc3aea28385b60480f15a0771f26d09",
+      "shares": "2539817890343729",
+      "status": "success"
+    },
+    {
+      "holder": "0x906a5fb545d177ba441a57b3a24eaeda555d29e3",
+      "child": "0x8078198fc424986ae89ce4a910fc109587b6abf3",
+      "shares": "87433039771204713737",
+      "status": "success"
+    },
+    {
+      "holder": "0xdd38062704b09b897fd8ad652ce8294985fb3d33",
+      "child": "0x75a291f0232add37d72dd1dcff55b715755ecdee",
+      "shares": "400820163693864530723",
+      "status": "success"
+    },
+    {
+      "holder": "0x0a5157244e4f82f100a461ca65c7b05c8dacf835",
+      "child": "0xdb25ca703181e7484a155dd612b06f57e12be5f0",
+      "shares": "46707195473823870115",
+      "status": "success"
+    },
+    {
+      "holder": "0xda7a4d8868445cbf7769fba50a1a7185255f2cc2",
+      "child": "0x6e9455d109202b426169f0d8f01a3332dae160f3",
+      "shares": "541307805091770225860465",
+      "status": "success"
+    },
+    {
+      "holder": "0xaad21781fe48048264d89da52423097e4397ff36",
+      "child": "0xb37094c1b5614bd6ece40afb295c26f4377069d3",
+      "shares": "85052235276681338555000",
+      "status": "success"
+    },
+    {
+      "holder": "0x85b360dee557135d8903225939699dd644d33cb8",
+      "child": "0x4cbb6a5ec00ceec252a7091559484f7adb83165f",
+      "shares": "72364406924559532426459",
+      "status": "success"
+    },
+    {
+      "holder": "0xa7074434aa4419ed18f220152bcaa989b3b9d8c1",
+      "child": "0x77e829fff18c14ad9bb88963acb0010a0506de88",
+      "shares": "11555132759068167381",
+      "status": "success"
+    },
+    {
+      "holder": "0x199cffcc256d4195a81b10eb7695bf02d43e3b02",
+      "child": "0x944d749017053e0d37ec206c9898716a21e0b2e2",
+      "shares": "25070893861757004709908",
+      "status": "success"
+    },
+    {
+      "holder": "0xb2f45226d0b1ebe7ce3c7b0a53eb4a82e032060d",
+      "child": "0xae6ed98b1bd9aadd3185160324e0e011159b61d3",
+      "shares": "6126796588146972965768",
+      "status": "success"
+    }
+  ]
+}

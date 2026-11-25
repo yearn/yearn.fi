@@ -1,0 +1,448 @@
+{
+  "schemaVersion": "depositor-value-pilot-1",
+  "modelVersion": "fixed-share-attribution-v2-v3-unlock-v2",
+  "status": "incomplete-pilot",
+  "generatedAt": "2026-11-04T16:38:55.505Z",
+  "asOfTimestamp": 1793802839,
+  "sourceBlock": {
+    "chainId": 747474,
+    "number": "47060028",
+    "hash": "0x7e62ae686025ea93d5a3adb9eb7d4d0c00d77643e440b67721f3f271e4ee4eeb",
+    "timestamp": 1793802839
+  },
+  "scope": {
+    "label": "Closed Katana V2/V3 pilot, $10k cutoff",
+    "selectedRootCount": 6,
+    "valuedRootCount": 6,
+    "definition": "Non-self holder share-conversion value minus attributed internal share positions. Exact direct ownership; canonical metrics budgets and caps allocate routed positions once at the snapshot. Not a complete holder census or immediately withdrawable liquidity.",
+    "excludedFromScope": [
+      "Other chains (combined separately using chain-scoped positions)",
+      "V1 and curation-only roots",
+      "Hidden and sub-cutoff roots; retired V3 roots"
+    ],
+    "dependencies": "Observed queue strategies are included for routing even when not selected roots"
+  },
+  "aggregate": {
+    "completeValueUsd": null,
+    "knownSubtotalUsd": 14083918.963897362,
+    "unadjustedKnownSubtotalUsd": 14913474.382975562,
+    "observedOverlapUsd": 829555.4190781999,
+    "averageNextMinuteUsdPerSecond": 0.004812646533052126,
+    "unadjustedAverageNextMinuteUsdPerSecond": 0.005003810363511245,
+    "nextHourIncreaseUsd": 17.327104061841965,
+    "next24HoursIncreaseUsd": 415.8634489942342
+  },
+  "coverage": {
+    "status": "incomplete",
+    "unavailableRoots": [],
+    "checkedHolderPairs": 150,
+    "cutoffUnknownCandidates": [],
+    "observedPositiveHoldings": 2,
+    "appliedPositionCount": 2,
+    "limitations": [
+      "Ownership discovery covers observed queues/direct holders, not all historical allocations, adapters or cross-chain routes",
+      "Internal ownership is relative to selected pilot roots, not all Yearn contracts",
+      "Routed attribution uses recorded-debt caps; residual unreported strategy-owned appreciation is not proof of external wallet ownership",
+      "Base asset prices are frozen historical quotes; selected share-token underlying is repriced through the child conversion",
+      "No future reports, deposits, withdrawals, losses, configuration changes or new accrual beyond scheduled unlocking are assumed"
+    ]
+  },
+  "projection": {
+    "fromTimestamp": 1793802839,
+    "validUntilTimestamp": 1793806439,
+    "validUntilMeaning": "End of this historical pilot projection, not an assertion the snapshot remains live",
+    "interpolation": "linear between supplied timestamps; stop at validUntilTimestamp and request a refreshed snapshot",
+    "points": [
+      {
+        "timestamp": 1793802839,
+        "knownSubtotalUsd": 14083918.963897362
+      },
+      {
+        "timestamp": 1793802840,
+        "knownSubtotalUsd": 14083918.968710111
+      },
+      {
+        "timestamp": 1793802899,
+        "knownSubtotalUsd": 14083919.252656154
+      },
+      {
+        "timestamp": 1793802959,
+        "knownSubtotalUsd": 14083919.541413942
+      },
+      {
+        "timestamp": 1793803019,
+        "knownSubtotalUsd": 14083919.830171736
+      },
+      {
+        "timestamp": 1793803079,
+        "knownSubtotalUsd": 14083920.118931524
+      },
+      {
+        "timestamp": 1793803139,
+        "knownSubtotalUsd": 14083920.407689318
+      },
+      {
+        "timestamp": 1793803199,
+        "knownSubtotalUsd": 14083920.69644811
+      },
+      {
+        "timestamp": 1793803259,
+        "knownSubtotalUsd": 14083920.985206906
+      },
+      {
+        "timestamp": 1793803319,
+        "knownSubtotalUsd": 14083921.2739657
+      },
+      {
+        "timestamp": 1793803379,
+        "knownSubtotalUsd": 14083921.562724492
+      },
+      {
+        "timestamp": 1793803439,
+        "knownSubtotalUsd": 14083921.851482289
+      },
+      {
+        "timestamp": 1793803499,
+        "knownSubtotalUsd": 14083922.141023275
+      },
+      {
+        "timestamp": 1793803559,
+        "knownSubtotalUsd": 14083922.429781072
+      },
+      {
+        "timestamp": 1793803619,
+        "knownSubtotalUsd": 14083922.718540873
+      },
+      {
+        "timestamp": 1793803679,
+        "knownSubtotalUsd": 14083923.007298669
+      },
+      {
+        "timestamp": 1793803739,
+        "knownSubtotalUsd": 14083923.29605747
+      },
+      {
+        "timestamp": 1793803799,
+        "knownSubtotalUsd": 14083923.584817268
+      },
+      {
+        "timestamp": 1793803859,
+        "knownSubtotalUsd": 14083923.87357507
+      },
+      {
+        "timestamp": 1793803919,
+        "knownSubtotalUsd": 14083924.162333872
+      },
+      {
+        "timestamp": 1793803979,
+        "knownSubtotalUsd": 14083924.451093676
+      },
+      {
+        "timestamp": 1793804039,
+        "knownSubtotalUsd": 14083924.739852477
+      },
+      {
+        "timestamp": 1793804099,
+        "knownSubtotalUsd": 14083925.028610284
+      },
+      {
+        "timestamp": 1793804159,
+        "knownSubtotalUsd": 14083925.317370087
+      },
+      {
+        "timestamp": 1793804219,
+        "knownSubtotalUsd": 14083925.606128894
+      },
+      {
+        "timestamp": 1793804279,
+        "knownSubtotalUsd": 14083925.8948877
+      },
+      {
+        "timestamp": 1793804339,
+        "knownSubtotalUsd": 14083926.183645507
+      },
+      {
+        "timestamp": 1793804399,
+        "knownSubtotalUsd": 14083926.472405316
+      },
+      {
+        "timestamp": 1793804459,
+        "knownSubtotalUsd": 14083926.761164123
+      },
+      {
+        "timestamp": 1793804519,
+        "knownSubtotalUsd": 14083927.049922936
+      },
+      {
+        "timestamp": 1793804579,
+        "knownSubtotalUsd": 14083927.338681743
+      },
+      {
+        "timestamp": 1793804639,
+        "knownSubtotalUsd": 14083927.627441553
+      },
+      {
+        "timestamp": 1793804699,
+        "knownSubtotalUsd": 14083927.916199366
+      },
+      {
+        "timestamp": 1793804759,
+        "knownSubtotalUsd": 14083928.204959178
+      },
+      {
+        "timestamp": 1793804819,
+        "knownSubtotalUsd": 14083928.49371799
+      },
+      {
+        "timestamp": 1793804879,
+        "knownSubtotalUsd": 14083928.782477805
+      },
+      {
+        "timestamp": 1793804939,
+        "knownSubtotalUsd": 14083929.071236622
+      },
+      {
+        "timestamp": 1793804999,
+        "knownSubtotalUsd": 14083929.359995434
+      },
+      {
+        "timestamp": 1793805059,
+        "knownSubtotalUsd": 14083929.64875525
+      },
+      {
+        "timestamp": 1793805119,
+        "knownSubtotalUsd": 14083929.937513068
+      },
+      {
+        "timestamp": 1793805179,
+        "knownSubtotalUsd": 14083930.226272888
+      },
+      {
+        "timestamp": 1793805239,
+        "knownSubtotalUsd": 14083930.515031707
+      },
+      {
+        "timestamp": 1793805299,
+        "knownSubtotalUsd": 14083930.803792525
+      },
+      {
+        "timestamp": 1793805359,
+        "knownSubtotalUsd": 14083931.092550345
+      },
+      {
+        "timestamp": 1793805419,
+        "knownSubtotalUsd": 14083931.381310165
+      },
+      {
+        "timestamp": 1793805479,
+        "knownSubtotalUsd": 14083931.670068987
+      },
+      {
+        "timestamp": 1793805539,
+        "knownSubtotalUsd": 14083931.959610002
+      },
+      {
+        "timestamp": 1793805599,
+        "knownSubtotalUsd": 14083932.248368824
+      },
+      {
+        "timestamp": 1793805659,
+        "knownSubtotalUsd": 14083932.537127648
+      },
+      {
+        "timestamp": 1793805719,
+        "knownSubtotalUsd": 14083932.825888472
+      },
+      {
+        "timestamp": 1793805779,
+        "knownSubtotalUsd": 14083933.114647299
+      },
+      {
+        "timestamp": 1793805839,
+        "knownSubtotalUsd": 14083933.403407121
+      },
+      {
+        "timestamp": 1793805899,
+        "knownSubtotalUsd": 14083933.692164952
+      },
+      {
+        "timestamp": 1793805959,
+        "knownSubtotalUsd": 14083933.98092478
+      },
+      {
+        "timestamp": 1793806019,
+        "knownSubtotalUsd": 14083934.269684605
+      },
+      {
+        "timestamp": 1793806079,
+        "knownSubtotalUsd": 14083934.558443435
+      },
+      {
+        "timestamp": 1793806139,
+        "knownSubtotalUsd": 14083934.847203264
+      },
+      {
+        "timestamp": 1793806199,
+        "knownSubtotalUsd": 14083935.135963095
+      },
+      {
+        "timestamp": 1793806259,
+        "knownSubtotalUsd": 14083935.424722925
+      },
+      {
+        "timestamp": 1793806319,
+        "knownSubtotalUsd": 14083935.71348176
+      },
+      {
+        "timestamp": 1793806379,
+        "knownSubtotalUsd": 14083936.002242588
+      },
+      {
+        "timestamp": 1793806439,
+        "knownSubtotalUsd": 14083936.291001424
+      }
+    ],
+    "comparisonAfter24Hours": {
+      "timestamp": 1793889239,
+      "observedUnadjustedUsd": 14913906.764545169,
+      "observedOverlapUsd": 829571.9371988128,
+      "knownSubtotalUsd": 14084334.827346357
+    }
+  },
+  "engine": {
+    "engine": "yearn_data.tvl.account",
+    "engineSha256": "ca49b7100309cc807a9725eca32ac13eb01fbc805f762e719822387d5a357293",
+    "sourceCommit": "0108ed6ec7279c917ff9f29dfac234319f5c1c29",
+    "use": "Snapshot ownership budgets for routed positions; exact balances for direct internal holdings; no repeated future-dollar deductions"
+  },
+  "allocations": [
+    {
+      "parent": "0xaa0362ecc584b985056e47812931270b99c91f9d",
+      "holder": "0xaa0362ecc584b985056e47812931270b99c91f9d",
+      "child": "0x0432337365d89c0d73f1d0cb263791f8f1b98d43",
+      "method": "exact-direct-share-ownership",
+      "observedSharesRaw": "547987389",
+      "canonicalAllocatedSharesRaw": "547987389",
+      "attributedSharesRaw": "547987389",
+      "canonicalOverlapUsd": "522414.638471035",
+      "reason": "Direct internal ownership excludes the actual shares even when parent recorded debt or locking makes its conversion value smaller",
+      "attributedHolderValueUsd": 522414.638471035
+    },
+    {
+      "parent": "0x0432337365d89c0d73f1d0cb263791f8f1b98d43",
+      "holder": "0x0432337365d89c0d73f1d0cb263791f8f1b98d43",
+      "child": "0x80c34bd3a3569e126e7055831036aa7b212cb159",
+      "method": "exact-direct-share-ownership",
+      "observedSharesRaw": "298463858178",
+      "canonicalAllocatedSharesRaw": "298463858178",
+      "attributedSharesRaw": "298463858178",
+      "canonicalOverlapUsd": "307140.77982497524",
+      "reason": "Direct internal ownership excludes the actual shares even when parent recorded debt or locking makes its conversion value smaller",
+      "attributedHolderValueUsd": 307140.77982497524
+    }
+  ],
+  "entries": [
+    {
+      "chainId": 747474,
+      "address": "0xe007ca01894c863d7898045ed5a3b4abf0b18f37",
+      "name": "vbETH yVault",
+      "version": "v3",
+      "isFactory": false,
+      "isRetired": false,
+      "status": "valued",
+      "reason": null,
+      "nonSelfHolderSharesRaw": "2586949595234280729165",
+      "attributedInternalSharesRaw": "0",
+      "attributedExternalSharesRaw": "2586949595234280729165",
+      "unadjustedHolderValueUsd": 6100279.4565707045,
+      "adjustedHolderValueUsd": 6100279.4565707045,
+      "observedOverlapUsd": 0,
+      "averageNextMinuteUsdPerSecond": 0.0008041362278163433
+    },
+    {
+      "chainId": 747474,
+      "address": "0x80c34bd3a3569e126e7055831036aa7b212cb159",
+      "name": "vbUSDC yVault",
+      "version": "v3",
+      "isFactory": false,
+      "isRetired": false,
+      "status": "valued",
+      "reason": null,
+      "nonSelfHolderSharesRaw": "5824483953965",
+      "attributedInternalSharesRaw": "298463858178",
+      "attributedExternalSharesRaw": "5526020095787",
+      "unadjustedHolderValueUsd": 5993812.968255505,
+      "adjustedHolderValueUsd": 5686672.188429531,
+      "observedOverlapUsd": 307140.77982597426,
+      "averageNextMinuteUsdPerSecond": 0.003539530001580715
+    },
+    {
+      "chainId": 747474,
+      "address": "0x9a6bd7b6fd5c4f87eb66356441502fc7dcdd185b",
+      "name": "vbUSDT yVault",
+      "version": "v3",
+      "isFactory": false,
+      "isRetired": false,
+      "status": "valued",
+      "reason": null,
+      "nonSelfHolderSharesRaw": "1374745864713",
+      "attributedInternalSharesRaw": "0",
+      "attributedExternalSharesRaw": "1374745864713",
+      "unadjustedHolderValueUsd": 1413356.3631267364,
+      "adjustedHolderValueUsd": 1413356.3631267364,
+      "observedOverlapUsd": 0,
+      "averageNextMinuteUsdPerSecond": 0.00046898026096945007
+    },
+    {
+      "chainId": 747474,
+      "address": "0xaa0362ecc584b985056e47812931270b99c91f9d",
+      "name": "vbWBTC yVault",
+      "version": "v3",
+      "isFactory": false,
+      "isRetired": false,
+      "status": "valued",
+      "reason": null,
+      "nonSelfHolderSharesRaw": "1114320268",
+      "attributedInternalSharesRaw": "0",
+      "attributedExternalSharesRaw": "1114320268",
+      "unadjustedHolderValueUsd": 872611.0392206366,
+      "adjustedHolderValueUsd": 872611.0392206366,
+      "observedOverlapUsd": 0,
+      "averageNextMinuteUsdPerSecond": 0
+    },
+    {
+      "chainId": 747474,
+      "address": "0x0432337365d89c0d73f1d0cb263791f8f1b98d43",
+      "name": "Morpho vbWBTC/yvUSDC Lender Borrower",
+      "version": "v3",
+      "isFactory": false,
+      "isRetired": false,
+      "status": "valued",
+      "reason": null,
+      "nonSelfHolderSharesRaw": "547997405",
+      "attributedInternalSharesRaw": "547987389",
+      "attributedExternalSharesRaw": "10016",
+      "unadjustedHolderValueUsd": 522424.18774363,
+      "adjustedHolderValueUsd": 9.548491404517225,
+      "observedOverlapUsd": 522414.6392522255,
+      "averageNextMinuteUsdPerSecond": 0
+    },
+    {
+      "chainId": 747474,
+      "address": "0x78ec25fba1baf6b7dc097ebb8115a390a2a4ee12",
+      "name": "Morpho Yearn OG USDC Compounder",
+      "version": "v3",
+      "isFactory": false,
+      "isRetired": false,
+      "status": "valued",
+      "reason": null,
+      "nonSelfHolderSharesRaw": "10006267094",
+      "attributedInternalSharesRaw": "0",
+      "attributedExternalSharesRaw": "10006267094",
+      "unadjustedHolderValueUsd": 10990.368058349057,
+      "adjustedHolderValueUsd": 10990.368058349057,
+      "observedOverlapUsd": 0,
+      "averageNextMinuteUsdPerSecond": 0
+    }
+  ]
+}

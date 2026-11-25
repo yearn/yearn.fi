@@ -1,0 +1,67 @@
+{
+  "repository": "https://github.com/yearn/yPartners",
+  "commit": "6fcda70f31e9df622420b6f328778c4cd3f8dd62",
+  "source": "components/SectionPartnerLogos.tsx",
+  "partners": [
+    {
+      "name": "Asymmetry",
+      "logo": "./partners/Asymmetry_Finance_Logo_Light.svg"
+    },
+    {
+      "name": "Cap",
+      "logo": "./partners/cap.svg"
+    },
+    {
+      "name": "Curve Finance",
+      "logo": "./partners/Curve.svg"
+    },
+    {
+      "name": "Katana",
+      "logo": "./partners/katana_logo_primary_lockup_spark.svg"
+    },
+    {
+      "name": "Origin Protocol",
+      "logo": "./partners/Origin.svg"
+    },
+    {
+      "name": "Superform",
+      "logo": "./partners/Superform.svg"
+    },
+    {
+      "name": "Teller",
+      "logo": "./partners/teller-logo.svg"
+    },
+    {
+      "name": "Alchemix",
+      "logo": "./partners/Alchemix_Black.svg"
+    },
+    {
+      "name": "Inverse",
+      "logo": "./partners/Inverse_Finance_Logo_05.svg"
+    },
+    {
+      "name": "Birch Hill",
+      "logo": "./partners/birch-hill-logo.svg"
+    },
+    {
+      "name": "Octant",
+      "logo": "./partners/Octant-logo.svg"
+    },
+    {
+      "name": "Term",
+      "logo": "./partners/Term.svg"
+    },
+    {
+      "name": "Trueo",
+      "logo": "./partners/trueo-logo.svg"
+    },
+    {
+      "name": "Swell",
+      "logo": "./partners/swell-light.svg"
+    },
+    {
+      "name": "Robin",
+      "logo": "./partners/robin.svg"
+    }
+  ]
+}

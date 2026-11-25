@@ -1,0 +1,60 @@
+{
+  "timestamp": "1793802825",
+  "blockNumber": "123951333",
+  "blockHash": "0x0005729b000002f45e0eebe45c10d785227a20c0e74b1a77c19d2adff0e0681d",
+  "rootCount": 9,
+  "holderCount": 54,
+  "checkedPairs": 477,
+  "zeroPairs": 469,
+  "coverage": "Closed pilot: 9 selected roots plus observed queue/direct holders. No ownership dollars or ratios reused from the older metrics publication.",
+  "positions": [
+    {
+      "holder": "0xeebb0577c33ca0167047be543b5d56af1c7221ff",
+      "child": "0xf137d22d7b23eeb1950b3e19d1f578c053ed9715",
+      "shares": "202802411553",
+      "status": "success"
+    },
+    {
+      "holder": "0xc7a117e4d9adf7a099a04edc8a631e775fa2dd84",
+      "child": "0xd817a100ab8a29fe3dbd925c2eb489d67f758da9",
+      "shares": "69501",
+      "status": "success"
+    },
+    {
+      "holder": "0x7114cad096731f4d0b8e0de6e7cedc189a462dce",
+      "child": "0xd817a100ab8a29fe3dbd925c2eb489d67f758da9",
+      "shares": "437299",
+      "status": "success"
+    },
+    {
+      "holder": "0xa48c616144fd4429b216a86388cab0eed990ce87",
+      "child": "0xf137d22d7b23eeb1950b3e19d1f578c053ed9715",
+      "shares": "157968468517820287296987",
+      "status": "success"
+    },
+    {
+      "holder": "0x84f9e6d5d28edf0ae873a4d84903716684f473d5",
+      "child": "0x637ec617c86d24e421328e6caea1d92114892439",
+      "shares": "68724417921200262375",
+      "status": "success"
+    },
+    {
+      "holder": "0x2fc5f589b8b3e0cd449490e0a2db08054b8d04a8",
+      "child": "0xce2fc0bdc18bd6a4d9a725791a3dee33f3a23bb7",
+      "shares": "4203007618673661",
+      "status": "success"
+    },
+    {
+      "holder": "0xc7a336925674efeef22ceb56364e3658b8a0d467",
+      "child": "0x148c05caf1bb09b5670f00d511718f733c54bc4c",
+      "shares": "48823293",
+      "status": "success"
+    },
+    {
+      "holder": "0x0f8201293eb76efb656fa43617ef6a5f0f523d89",
+      "child": "0xf137d22d7b23eeb1950b3e19d1f578c053ed9715",
+      "shares": "300594748748127054",
+      "status": "success"
+    }
+  ]
+}

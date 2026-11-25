@@ -1,0 +1,320 @@
+{
+  "schemaVersion": "depositor-value-pilot-1",
+  "modelVersion": "fixed-share-attribution-v2-v3-unlock-v2",
+  "status": "incomplete-pilot",
+  "generatedAt": "2026-11-04T16:38:54.896Z",
+  "asOfTimestamp": 1793802839,
+  "sourceBlock": {
+    "chainId": 137,
+    "number": "96731588",
+    "hash": "0x26258317eda96b5b84240f6093a0577bd4b29b089cf5f28ca96d0ea371a340c5",
+    "timestamp": 1793802838
+  },
+  "scope": {
+    "label": "Closed Polygon V2/V3 pilot, $10k cutoff",
+    "selectedRootCount": 0,
+    "valuedRootCount": 0,
+    "definition": "Non-self holder share-conversion value minus attributed internal share positions. Exact direct ownership; canonical metrics budgets and caps allocate routed positions once at the snapshot. Not a complete holder census or immediately withdrawable liquidity.",
+    "excludedFromScope": [
+      "Other chains (combined separately using chain-scoped positions)",
+      "V1 and curation-only roots",
+      "Hidden and sub-cutoff roots; retired V3 roots"
+    ],
+    "dependencies": "Observed queue strategies are included for routing even when not selected roots"
+  },
+  "aggregate": {
+    "completeValueUsd": null,
+    "knownSubtotalUsd": 0,
+    "unadjustedKnownSubtotalUsd": 0,
+    "observedOverlapUsd": 0,
+    "averageNextMinuteUsdPerSecond": 0,
+    "unadjustedAverageNextMinuteUsdPerSecond": 0,
+    "nextHourIncreaseUsd": 0,
+    "next24HoursIncreaseUsd": 0
+  },
+  "coverage": {
+    "status": "incomplete",
+    "unavailableRoots": [],
+    "checkedHolderPairs": 0,
+    "cutoffUnknownCandidates": [],
+    "observedPositiveHoldings": 0,
+    "appliedPositionCount": 0,
+    "limitations": [
+      "Ownership discovery covers observed queues/direct holders, not all historical allocations, adapters or cross-chain routes",
+      "Internal ownership is relative to selected pilot roots, not all Yearn contracts",
+      "Routed attribution uses recorded-debt caps; residual unreported strategy-owned appreciation is not proof of external wallet ownership",
+      "Base asset prices are frozen historical quotes; selected share-token underlying is repriced through the child conversion",
+      "No future reports, deposits, withdrawals, losses, configuration changes or new accrual beyond scheduled unlocking are assumed"
+    ]
+  },
+  "projection": {
+    "fromTimestamp": 1793802839,
+    "validUntilTimestamp": 1793806439,
+    "validUntilMeaning": "End of this historical pilot projection, not an assertion the snapshot remains live",
+    "interpolation": "linear between supplied timestamps; stop at validUntilTimestamp and request a refreshed snapshot",
+    "points": [
+      {
+        "timestamp": 1793802839,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793802840,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793802899,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793802959,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793803019,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793803079,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793803139,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793803199,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793803259,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793803319,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793803379,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793803439,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793803499,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793803559,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793803619,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793803679,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793803739,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793803799,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793803859,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793803919,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793803979,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793804039,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793804099,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793804159,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793804219,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793804279,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793804339,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793804399,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793804459,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793804519,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793804579,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793804639,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793804699,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793804759,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793804819,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793804879,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793804939,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793804999,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793805059,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793805119,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793805179,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793805239,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793805299,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793805359,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793805419,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793805479,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793805539,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793805599,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793805659,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793805719,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793805779,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793805839,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793805899,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793805959,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793806019,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793806079,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793806139,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793806199,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793806259,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793806319,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793806379,
+        "knownSubtotalUsd": 0
+      },
+      {
+        "timestamp": 1793806439,
+        "knownSubtotalUsd": 0
+      }
+    ],
+    "comparisonAfter24Hours": {
+      "timestamp": 1793889239,
+      "observedUnadjustedUsd": 0,
+      "observedOverlapUsd": 0,
+      "knownSubtotalUsd": 0
+    }
+  },
+  "engine": {
+    "engine": "yearn_data.tvl.account",
+    "engineSha256": "ca49b7100309cc807a9725eca32ac13eb01fbc805f762e719822387d5a357293",
+    "sourceCommit": "0108ed6ec7279c917ff9f29dfac234319f5c1c29",
+    "use": "Snapshot ownership budgets for routed positions; exact balances for direct internal holdings; no repeated future-dollar deductions"
+  },
+  "allocations": [],
+  "entries": []
+}

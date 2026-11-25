@@ -1,0 +1,175 @@
+{
+  "source": "https://eth.blockscout.com/api/v2/addresses/{factory}/logs",
+  "factories": [
+    "0xbe5352d0eCdB13D9f74c244B634FdD729480Bb6F",
+    "0x052d20B0e0b141988bD32772C735085e45F357c1",
+    "0x6D8c4E4A158083E30B53ba7df3cFB885fC096fF6"
+  ],
+  "logs": [
+    {
+      "address": "0xbe5352d0eCdB13D9f74c244B634FdD729480Bb6F",
+      "blockNumber": 24622848,
+      "transactionHash": "0x2ef5600cf6b59150c3772db0f0227fe6009e24dfca82c0138dad8ff4505ee48e",
+      "args": {
+        "deployer": "0xeD0044FEB17407C989C5703767F3A8DE3f9DbD3f",
+        "donationAddress": "0x5Cfb4f2eCBA0A4Abb80ca98722C74296CA71054a",
+        "strategyAddress": "0x2f96cD32b8E84933929061f9e314E078f72C1f9b",
+        "vaultTokenName": "Strategy 1"
+      }
+    },
+    {
+      "address": "0xbe5352d0eCdB13D9f74c244B634FdD729480Bb6F",
+      "blockNumber": 23947773,
+      "transactionHash": "0x356bfc3c7d11a562471fa21f1b870eed1fd5b7efadcfd13b4814763fdea0c515",
+      "args": {
+        "deployer": "0xeD0044FEB17407C989C5703767F3A8DE3f9DbD3f",
+        "donationAddress": "0x9c69B298710461F2CFA8B29f98e46261c186F091",
+        "strategyAddress": "0x96dCe0fc1eBA3A3e54327e8E8aCA94a9BB2009a6",
+        "vaultTokenName": "Sky-PTS-2"
+      }
+    },
+    {
+      "address": "0xbe5352d0eCdB13D9f74c244B634FdD729480Bb6F",
+      "blockNumber": 23835402,
+      "transactionHash": "0x8704e4afdd3181b0706b5589729527a9a31cf98b5b167ad9ef7bc3232d604514",
+      "args": {
+        "deployer": "0x70A0A7be87Deb51e1FAb16d4F2Bf00BE1510e476",
+        "donationAddress": "0xE0979c969890045696b9b95D99A74386d321945d",
+        "strategyAddress": "0x763CB5712796E5650E2A249861e9c57449364686",
+        "vaultTokenName": "Sky-USDS->Msig"
+      }
+    },
+    {
+      "address": "0xbe5352d0eCdB13D9f74c244B634FdD729480Bb6F",
+      "blockNumber": 23806430,
+      "transactionHash": "0x956147a0d898dc50cce4962931a73e84de9e7549aaa1af74f1b839aa207c5c6f",
+      "args": {
+        "deployer": "0xd3D547d643A7FDb9c8b457c2D9D21158FE239B32",
+        "donationAddress": "0xeE710b4FF829517a1C336cc3F3BC215dd6bbb9D9",
+        "strategyAddress": "0x6a72f92B4A84C4970A183Ec3e3296800F06b1C9B",
+        "vaultTokenName": "MyStrategy1"
+      }
+    },
+    {
+      "address": "0xbe5352d0eCdB13D9f74c244B634FdD729480Bb6F",
+      "blockNumber": 23792024,
+      "transactionHash": "0x207a5fe6075cb163f09bfef51ca3af1a16986e5457a509811f618cd0708ae320",
+      "args": {
+        "deployer": "0x6807d714d10F249Fbc447547818Ff1f00c8C9d95",
+        "donationAddress": "0xdf04bcfA20a29C4D836906204f3f2Deb3a5F42EF",
+        "strategyAddress": "0xDeD221e57Be9e53a07f985F1eF6a21044610E546",
+        "vaultTokenName": "sky-protocol-team-mainnet"
+      }
+    },
+    {
+      "address": "0x052d20B0e0b141988bD32772C735085e45F357c1",
+      "blockNumber": 25044309,
+      "transactionHash": "0xbf1d1ffb53337e85c93630c986bdc8e36964a00500077f366c8264ede9a67b2b",
+      "args": {
+        "deployer": "0xbC73b20aecE249829a15d97a387c33FDF1f931e4",
+        "donationAddress": "0xf62bFEd4158ab39c92DcCB30c7f29835Ea7B646C",
+        "strategyAddress": "0xc35ef942828997a4f8475adDDEF7853d071cDA03",
+        "vaultTokenName": "DVS 1"
+      }
+    },
+    {
+      "address": "0x052d20B0e0b141988bD32772C735085e45F357c1",
+      "blockNumber": 24650540,
+      "transactionHash": "0xbb3129b65f8ed6f6f9ceb38fbc5dcabb4d432fa8de42f9f6b77d6ecc57d7ce20",
+      "args": {
+        "deployer": "0x36bD3044ab68f600f6d3e081056F34f2a58432c4",
+        "donationAddress": "0x4B4505dEdE6408642511Fc0586b62676111e4904",
+        "strategyAddress": "0xb21FbD35AC45caC1D5011b74Ce06b31f8EB2C377",
+        "vaultTokenName": "SHUGrantPool"
+      }
+    },
+    {
+      "address": "0x052d20B0e0b141988bD32772C735085e45F357c1",
+      "blockNumber": 24621433,
+      "transactionHash": "0x1b6c6bb5789600c3ed7e05b3ce0826b56b09ae44823725f38566dd2b60b26f3f",
+      "args": {
+        "deployer": "0xeD0044FEB17407C989C5703767F3A8DE3f9DbD3f",
+        "donationAddress": "0x991F87A17d74f9788ed4FaA65E3ad3493dcAf3F5",
+        "strategyAddress": "0x927D9aBD1eDceE7DBd9aBF9Fbea6DD9CE1D676dE",
+        "vaultTokenName": "Tutorial Test"
+      }
+    },
+    {
+      "address": "0x052d20B0e0b141988bD32772C735085e45F357c1",
+      "blockNumber": 24536834,
+      "transactionHash": "0x1016946101ef40cae5096a3f2ee9f990fed371d49ace9bbfd2178e6d89cbe069",
+      "args": {
+        "deployer": "0xeD0044FEB17407C989C5703767F3A8DE3f9DbD3f",
+        "donationAddress": "0xe8EFEE75C107b31D0DFBA9C7533a54844cc9B719",
+        "strategyAddress": "0x7291A96b261564f0dA1d9D068c5883FF19e7062B",
+        "vaultTokenName": "Morpho Test"
+      }
+    },
+    {
+      "address": "0x052d20B0e0b141988bD32772C735085e45F357c1",
+      "blockNumber": 24348891,
+      "transactionHash": "0xbdaaab78c49625419d25b5a3114c0439166a06ea836cd18d18eb4a6fd2cca7c5",
+      "args": {
+        "deployer": "0x36bD3044ab68f600f6d3e081056F34f2a58432c4",
+        "donationAddress": "0x4B4505dEdE6408642511Fc0586b62676111e4904",
+        "strategyAddress": "0xC5B26f6A954cf7480C6992e5C3E0c92F38B5695c",
+        "vaultTokenName": "SHUGrantPool"
+      }
+    },
+    {
+      "address": "0x052d20B0e0b141988bD32772C735085e45F357c1",
+      "blockNumber": 23806374,
+      "transactionHash": "0x961b324c0e5b9895984d17005f93f86b5ef2277930ff062e1ddd6ad97dfbb02b",
+      "args": {
+        "deployer": "0xd3D547d643A7FDb9c8b457c2D9D21158FE239B32",
+        "donationAddress": "0xeE710b4FF829517a1C336cc3F3BC215dd6bbb9D9",
+        "strategyAddress": "0x1346FC14262928Bc3C180484e013CFe402f09C38",
+        "vaultTokenName": "MyStrategy2"
+      }
+    },
+    {
+      "address": "0x052d20B0e0b141988bD32772C735085e45F357c1",
+      "blockNumber": 23798047,
+      "transactionHash": "0x97df71e8ea0a3f6c6f6442d2a6b1ab930ff25915922a56f976c2f61bd7ceab1f",
+      "args": {
+        "deployer": "0x8c1cF6ed2B483617C0547CDd8424a5593Dc55D20",
+        "donationAddress": "0x258F768D6cA7a71032932945d98Fe68bb473206D",
+        "strategyAddress": "0x04a8B8A80E3354f8f20FEe097D875e287C319dc5",
+        "vaultTokenName": "YEET #1"
+      }
+    },
+    {
+      "address": "0x052d20B0e0b141988bD32772C735085e45F357c1",
+      "blockNumber": 23796969,
+      "transactionHash": "0x265674ee69fe8f1c095df6d2af99e1b020c4d8366489d385e1bccfd0e748e48d",
+      "args": {
+        "deployer": "0x96a4CE5742a13Fd0cF846088AD7fC907dB641624",
+        "donationAddress": "0xA56B4D05FfA4CD090AEd698b652Ab74DB14E51b5",
+        "strategyAddress": "0x09b45BE25Fa18bdF5B60c18aEa4688D2B0Ac3930",
+        "vaultTokenName": "my_strategy"
+      }
+    },
+    {
+      "address": "0x052d20B0e0b141988bD32772C735085e45F357c1",
+      "blockNumber": 23792826,
+      "transactionHash": "0x3f04bdc3b2b3f420616fc29cd60dcf28bd2579cea2e8a8d45f38750aed578b94",
+      "args": {
+        "deployer": "0x88f710F5919b8c185Fe38906057C93e3dC6070ca",
+        "donationAddress": "0xc7245df168516F4d099B4Df2117Ea006C4812baf",
+        "strategyAddress": "0x214cC9861E6956bFC706dBB3855C5b2fD33fF000",
+        "vaultTokenName": "Morpho-USDC->PG"
+      }
+    },
+    {
+      "address": "0x052d20B0e0b141988bD32772C735085e45F357c1",
+      "blockNumber": 23792040,
+      "transactionHash": "0xcecbfd6d9132bf27ce6cd27a65d4cf83b4c62efa17d732133b4f5d8d90e98e8d",
+      "args": {
+        "deployer": "0x6807d714d10F249Fbc447547818Ff1f00c8C9d95",
+        "donationAddress": "0xdf04bcfA20a29C4D836906204f3f2Deb3a5F42EF",
+        "strategyAddress": "0xBe5123054CBaC2Cb1CE75b19913324B3468Ac9b5",
+        "vaultTokenName": "morpho-protocol-team-mainnet"
+      }
+    }
+  ]
+}

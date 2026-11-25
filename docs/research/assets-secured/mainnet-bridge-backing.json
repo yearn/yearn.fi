@@ -1,0 +1,73 @@
+{
+  "blockNumber": "26244424",
+  "rows": [
+    {
+      "address": "0x53E82ABbb12638F09d9e624578ccB666217a765e",
+      "asset": "0xA0b86991c6218b36c1d19D4a2e9Eb0cE3606eB48",
+      "totalAssets": "6635247583987",
+      "totalSupply": "6634961637992",
+      "bridgeShares": "6144427625820",
+      "bridgeUnderlying": "6144427625820",
+      "price": {
+        "decimals": 6,
+        "symbol": "USDC",
+        "price": 0.9997446375117297,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      },
+      "totalAssetsUsd": 6633553.190653664,
+      "bridgeUnderlyingUsd": 6142858.569492473
+    },
+    {
+      "address": "0x2DC70fb75b88d2eB4715bc06E1595E6D97c34DFF",
+      "asset": "0xC02aaA39b223FE8D0A0e5C4F27eAD9083C756Cc2",
+      "totalAssets": "2109540877070014321765",
+      "totalSupply": "2109480425178548054798",
+      "bridgeShares": "1805363604790539019974",
+      "bridgeUnderlying": "1805363604790539019974",
+      "price": {
+        "decimals": 18,
+        "symbol": "WETH",
+        "price": 2471.6514762626875,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      },
+      "totalAssetsUsd": 5214049.823046586,
+      "bridgeUnderlyingUsd": 4462229.618971463
+    },
+    {
+      "address": "0x6d4f9f9f8f0155509ecd6Ac6c544fF27999845CC",
+      "asset": "0xdAC17F958D2ee523a2206206994597C13D831ec7",
+      "totalAssets": "2505643072825",
+      "totalSupply": "2505582609032",
+      "bridgeShares": "2170318315343",
+      "bridgeUnderlying": "2170318315343",
+      "price": {
+        "decimals": 6,
+        "symbol": "USDT",
+        "price": 0.9994227281992402,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      },
+      "totalAssetsUsd": 2504196.635736289,
+      "bridgeUnderlyingUsd": 2169065.45178088
+    },
+    {
+      "address": "0x2C24B57e2CCd1f273045Af6A5f632504C432374F",
+      "asset": "0x2260FAC5E5542a773Aa44fBCfeDf7C193bc2C599",
+      "totalAssets": "14632493878",
+      "totalSupply": "14632493878",
+      "bridgeShares": "14471298412",
+      "bridgeUnderlying": "14471298412",
+      "price": {
+        "decimals": 8,
+        "symbol": "WBTC",
+        "price": 83935.74079329867,
+        "timestamp": 1792627200,
+        "confidence": 0.99
+      },
+      "totalAssetsUsd": 12281892.133033376,
+      "bridgeUnderlyingUsd": 12146591.524521066
+    }
+  ]
+}
