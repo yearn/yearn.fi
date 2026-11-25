@@ -46,7 +46,17 @@ export function getCategoryDescription(category?: string | null): string | null 
   return `${category} asset category.`
 }
 
-export function getProductTypeDescription(listKind: TVaultListKind): string {
+export function getProductTypeLabel(listKind: TVaultListKind, isNonYearnVault = false): string {
+  if (isNonYearnVault) return 'ERC-4626'
+  if (listKind === 'allocator' || listKind === 'strategy') return 'Single Asset'
+  if (listKind === 'legacy') return 'Legacy'
+  return 'LP Token'
+}
+
+export function getProductTypeDescription(listKind: TVaultListKind, isNonYearnVault = false): string {
+  if (isNonYearnVault) {
+    return 'This ERC-4626 vault is not a Yearn vault. Yearn does not build or manage it.'
+  }
   if (listKind === 'legacy') {
     return 'These vaults use a Legacy Yearn vault architecture. They were previously called "v2 Vaults").'
   }

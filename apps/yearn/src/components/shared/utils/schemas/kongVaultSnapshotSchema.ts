@@ -300,7 +300,8 @@ export const kongVaultSnapshotSchema = z
     debts: z.array(snapshotDebtSchema).optional().default([]),
     strategies: z.array(addressSchema).optional().default([]),
     staking: snapshotStakingSchema,
-    inclusion: z.record(z.string(), z.boolean()).optional()
+    inclusion: z.record(z.string(), z.boolean()).optional(),
+    origin: z.string().nullable().optional()
   })
   .passthrough()
 

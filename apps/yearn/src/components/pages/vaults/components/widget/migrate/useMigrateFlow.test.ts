@@ -7,6 +7,7 @@ import { describe, expect, it } from 'vitest'
 import {
   getErc4626RouterMigrateArgs,
   getMigrateArgs,
+  getMigrationMinSharesOut,
   getVaultMigratorArgs,
   getYearnVeCrvZapArgs
 } from './useMigrateFlow'
@@ -104,5 +105,22 @@ describe('getMigrateArgs', () => {
     })
 
     expect(data.slice(0, 10)).toBe(toFunctionSelector('zap(address,address,uint256,uint256,address)'))
+  })
+})
+
+describe('getMigrationMinSharesOut', () => {
+  it('never returns 0 and allows 0.5% below the quote', () => {
+    expect(getMigrationMinSharesOut(10_000n)).toBe(9_950n)
+    expect(getMigrationMinSharesOut(1n)).toBe(1n)
+    expect(getMigrationMinSharesOut(0n)).toBe(1n)
+  })
+
+  it('passes the quoted minimum into ERC-4626 router calldata', () => {
+    expect(getMigrateArgs(ERC_4626_MIGRATE_CONFIG, FROM_VAULT, TO_VAULT, SHARE_BALANCE, RECIPIENT, 9_950n)).toEqual([
+      FROM_VAULT,
+      TO_VAULT,
+      SHARE_BALANCE,
+      9_950n
+    ])
   })
 })

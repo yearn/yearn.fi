@@ -1,3 +1,4 @@
+import type { TErc4626WithdrawQuote } from '@yearn/vault-widget/erc4626/useErc4626WithdrawQuote'
 import { erc4626Abi } from '@yearn/vault-widget/internal/contracts/abi/4626.abi'
 import { vaultAbi } from '@yearn/vault-widget/internal/contracts/abi/vaultV2.abi'
 import {
@@ -22,6 +23,7 @@ interface UseDirectWithdrawParams {
   vaultDecimals: number // vault decimals
   enabled: boolean
   useErc4626: boolean
+  standardQuote?: TErc4626WithdrawQuote
 }
 
 function computeExpectedOut(params: {
@@ -63,9 +65,10 @@ export function useDirectWithdraw(params: UseDirectWithdrawParams): UseWidgetWit
   // Calculate required vault shares from desired underlying amount
   // Formula: requiredShares = (desiredUnderlying * 10^vaultDecimals) / pricePerShare
   const requiredShares =
-    params.pricePerShare > 0n
+    params.standardQuote?.shares ??
+    (params.pricePerShare > 0n
       ? (params.amount * 10n ** BigInt(params.vaultDecimals) + params.pricePerShare - 1n) / params.pricePerShare
-      : 0n
+      : 0n)
 
   const redeemSharesOverride = params.redeemSharesOverride ?? 0n
   const shouldRedeemExactShares = redeemSharesOverride > 0n
@@ -142,14 +145,16 @@ export function useDirectWithdraw(params: UseDirectWithdrawParams): UseWidgetWit
     erc4626FunctionName
   ])
 
-  const expectedOut = computeExpectedOut({
-    amount: params.amount,
-    pricePerShare: params.pricePerShare,
-    redeemAll,
-    shouldRedeemExactShares,
-    redeemShares,
-    vaultDecimals: params.vaultDecimals
-  })
+  const expectedOut =
+    params.standardQuote?.assets ??
+    computeExpectedOut({
+      amount: params.amount,
+      pricePerShare: params.pricePerShare,
+      redeemAll,
+      shouldRedeemExactShares,
+      redeemShares,
+      vaultDecimals: params.vaultDecimals
+    })
 
   return {
     actions: {

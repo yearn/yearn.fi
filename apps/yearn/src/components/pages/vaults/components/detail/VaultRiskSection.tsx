@@ -114,6 +114,18 @@ function SimpleRiskScore({
     return <VaultRiskScoreTag riskLevel={riskLevel} variant={'inline'} className={'w-auto flex-shrink-0 md:pt-0'} />
   }
 
+  const noRiskData = (
+    <div className={'grid grid-cols-1 gap-4 p-4 pt-0 md:grid-cols-12 md:gap-10 md:p-6 md:pt-0'}>
+      <div className={'col-span-12 w-full p-4 text-center text-text-primary'}>
+        {'No risk data available for this vault.'}
+      </div>
+    </div>
+  )
+
+  if (isMultiStrategy && info.riskLevel < 1) {
+    return noRiskData
+  }
+
   if (isMultiStrategy) {
     const multiStrategyRiskScore = {
       label: 'Overall Risk Score',

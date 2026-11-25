@@ -8,7 +8,7 @@ There is no standalone Bun API mirror and no catch-all pathname dispatcher. Loca
 
 - `app/api/**/route.ts` files define the public Next route surface and export HTTP methods directly.
 - `src/server/**` endpoint modules contain the implementation for each route.
-- `src/server/lib/**`, `src/server/optimization/_lib/**`, and `src/server/tenderly.helpers.ts` contain shared service logic.
+- `src/server/lib/**` and `src/server/optimization/_lib/**` contain shared service logic.
 
 ## Route Inventory
 
@@ -35,11 +35,6 @@ There is no standalone Bun API mirror and no catch-all pathname dispatcher. Loca
 | `/api/optimization/alignment` | `GET` | Next Node | Envio keeper-event alignment for a selected optimization |
 | `/api/optimization/vault-state` | `POST` | Next Node | Live vault and strategy debt state from chain RPCs |
 | `/api/yvusd/aprs` | `GET` | Next Node | Proxies the yvUSD APR service |
-| `/api/tenderly/status` | `GET` | Next Node | Returns configured local Tenderly chains |
-| `/api/tenderly/snapshot` | `POST` | Next Node | Creates a Tenderly EVM snapshot |
-| `/api/tenderly/revert` | `POST` | Next Node | Reverts a Tenderly EVM snapshot |
-| `/api/tenderly/increase-time` | `POST` | Next Node | Advances Tenderly chain time and optionally mines |
-| `/api/tenderly/fund` | `POST` | Next Node | Funds native or ERC-20 balances on Tenderly |
 
 ## Holdings APIs
 
@@ -57,7 +52,7 @@ The holdings implementation is the largest API surface here. See [`lib/holdings/
 
 - `/api/enso/status` returns `{ "configured": boolean }`.
 - `/api/enso/balances` requires `eoaAddress` and requests `chainId=all` upstream.
-- `/api/enso/route` requires `fromAddress`, `chainId`, `tokenIn`, `tokenOut`, and `amountIn`. Optional params are `slippage`, `routingStrategy`, `destinationChainId`, and `receiver`.
+- `/api/enso/route` requires `fromAddress`, `chainId`, `tokenIn`, `tokenOut`, and `amountIn`. Optional params are `slippage` (default `100`), `destinationChainId`, `receiver`, and `routingStrategy`. `receiver`, when set, must equal `fromAddress` (case-insensitive), and `routingStrategy`, when set, must be `router`; anything else gets a `400`. Upstream always receives `routingStrategy=router`. Every response, errors included, sets `Cache-Control: private, no-store, max-age=0, must-revalidate`.
 - `/api/enso/bridge-status` uses `RELAY_API_KEY` server-side to recover Relay request IDs from source transaction hashes before polling Relay directly. It falls back to Enso when the key or Relay status is unavailable.
 - `/api/enso/balances` sets `Cache-Control: private, no-store, max-age=0, must-revalidate`.
 
@@ -68,6 +63,11 @@ The holdings implementation is the largest API surface here. See [`lib/holdings/
 - Required params are `userAddress=0x...` and `chainId=<id>`.
 - The route sets `Cache-Control: private, no-store, max-age=0, must-revalidate`.
 
+## Plausible relay
+
+On Vercel, the relay gets the client IP from `x-vercel-forwarded-for`.
+Self-hosted deployments relay events without a client IP.
+
 ## Optimization APIs
 
 The optimization routes expose the current DOA optimization payloads and the local verification data used by optimization UI flows.
@@ -75,13 +75,18 @@ The optimization routes expose the current DOA optimization payloads and the loc
 - `/api/optimization/change` reads optimization records from Upstash Redis keys under `doa:optimizations:*`. `vault=0x...` selects one vault, and `history=1` or `history=true` returns all records for that vault instead of the latest one.
 - `/api/optimization/alignment` requires `vault=0x...`, selects the matching optimization, resolves its source chain, and fetches aligned keeper `DebtUpdated` events from Envio. It needs `ENVIO_GRAPHQL_URL`; `ENVIO_PASSWORD` is sent as a bearer token when configured.
 - `/api/optimization/vault-state` accepts `POST` JSON shaped as `{ "vault": "0x...", "chainId": 1, "strategies": ["0x..."] }`, then reads live vault and strategy debt state from configured public RPC endpoints.
-- CDN cache headers: `change` uses `Vercel-CDN-Cache-Control: public, s-maxage=600, stale-while-revalidate=60`; `alignment` and `vault-state` use `Vercel-CDN-Cache-Control: public, s-maxage=60, stale-while-revalidate=30`. Browser-facing `Cache-Control` stays `public, max-age=0, must-revalidate`.
+  - The vault must be in the DOA optimization payload in Redis for that `chainId` (`source.chainId`); otherwise `404`. It needs `UPSTASH_REDIS_REST_URL_DOA` and `UPSTASH_REDIS_REST_TOKEN_DOA`.
+  - `strategies` must be 1 to 50 addresses; otherwise `400`. An invalid `vault` or `chainId` is also a `400`.
+  - Bodies over 10 KB get a `413`, enforced while streaming, so a missing `Content-Length` does not bypass it. A body read that fails mid-upload gets a `400`.
+  - Redis or RPC failures return a generic `503` (`Vault state unavailable`); details are logged server-side.
+  - Responses are `Cache-Control: no-store` and are not CDN-cached.
+- CDN cache headers: `change` uses `Vercel-CDN-Cache-Control: public, s-maxage=600, stale-while-revalidate=60`; `alignment` uses `Vercel-CDN-Cache-Control: public, s-maxage=60, stale-while-revalidate=30`. Browser-facing `Cache-Control` stays `public, max-age=0, must-revalidate`.
 
 ## yvUSD APR Proxy
 
 `/api/yvusd/aprs` forwards query params to `YVUSD_APR_SERVICE_API`.
 
-- Default upstream: `https://yearn-yvusd-apr-service.vercel.app/api/aprs`.
+- Default upstream: `https://yvusd-api.yearn.fi/api/aprs`.
 - CDN cache header: `Vercel-CDN-Cache-Control: public, s-maxage=30, stale-while-revalidate=120`. Browser-facing `Cache-Control` stays `public, max-age=0, must-revalidate`.
 
 ## Machine-Readable Vault Routes
@@ -97,18 +102,23 @@ The optimization routes expose the current DOA optimization payloads and the loc
 
 Vault detail metadata is now generated by Next route metadata in `app/vaults/[chainID]/[address]/page.tsx` and `app/v3/[chainID]/[address]/page.tsx`. The old SPA HTML injection route was removed.
 
-## Tenderly Local Routes
+## Local fork controls
 
-Tenderly admin routes are exposed through `app/api/tenderly/**/route.ts` for local and non-production testing. The root
-Next proxy returns `404` for `/api/tenderly/*` when `VERCEL_ENV=production`, so production deployments should not reach
-these handlers. POST handlers also keep a localhost-only guard for local use.
+The local development panel uses a loopback Anvil RPC for snapshots, time skips and test-wallet funding.
+For an Ethereum fork running at `http://127.0.0.1:8547` with Anvil chain ID `694202`, set these values
+in the repository's `.env.local`:
 
-Required env for a configured chain:
+```dotenv
+NEXT_PUBLIC_LOCAL_FORK_MODE=true
+NEXT_PUBLIC_LOCAL_FORK_CHAIN_ID_FOR_1=694202
+NEXT_PUBLIC_LOCAL_FORK_RPC_URI_FOR_1=http://127.0.0.1:8547
+```
 
-- `NEXT_PUBLIC_TENDERLY_MODE=true`.
-- `NEXT_PUBLIC_TENDERLY_CHAIN_ID_FOR_<canonicalChainId>`.
-- `NEXT_PUBLIC_TENDERLY_RPC_URI_FOR_<canonicalChainId>`.
-- `TENDERLY_ADMIN_RPC_URI_FOR_<canonicalChainId>` for snapshot, revert, time travel, and funding actions.
+Bind Anvil to `127.0.0.1` and set `--allow-origin` to the exact URL you open in the browser.
+For `http://localhost:3000`, use `--allow-origin http://localhost:3000`. For `http://127.0.0.1:3000`,
+use `--allow-origin http://127.0.0.1:3000`.
+Start Anvil before running `bun run dev`. With local fork mode enabled, startup checks each configured Anvil
+node and exits if it cannot reach the node or the chain ID differs.
 
 ## Environment Variables
 
@@ -136,7 +146,7 @@ Required env for a configured chain:
 | `UPSTASH_REDIS_REST_URL_DOA` | optimization | Upstash Redis REST URL for optimization payloads |
 | `UPSTASH_REDIS_REST_TOKEN_DOA` | optimization | Upstash Redis REST token for optimization payloads |
 | `HOLDINGS_DEBUG` | holdings | Enables holdings debug logs |
-| `NEXT_PUBLIC_TENDERLY_MODE` | local Tenderly | Enables Tenderly config parsing |
-| `NEXT_PUBLIC_TENDERLY_CHAIN_ID_FOR_<id>` | local Tenderly | Tenderly execution chain ID for a canonical chain |
-| `NEXT_PUBLIC_TENDERLY_RPC_URI_FOR_<id>` | local Tenderly | Public Tenderly RPC URI |
-| `TENDERLY_ADMIN_RPC_URI_FOR_<id>` | local Tenderly | Admin Tenderly RPC URI |
+| `NEXT_PUBLIC_LOCAL_FORK_MODE` | fork configuration | Enables development chain mapping |
+| `NEXT_PUBLIC_LOCAL_FORK_CHAIN_ID_FOR_<id>` | fork configuration | Fork execution chain ID for a canonical chain |
+| `NEXT_PUBLIC_LOCAL_FORK_RPC_URI_FOR_<id>` | fork configuration | Local Anvil RPC URI |
+| `NEXT_PUBLIC_LOCAL_FORK_EXPLORER_URI_FOR_<id>` | fork configuration | Optional fork explorer URI |

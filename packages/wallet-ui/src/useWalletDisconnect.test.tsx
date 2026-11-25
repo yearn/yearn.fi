@@ -40,19 +40,22 @@ it('reproduces the old two-click behavior when disconnect only removes the curre
   expect(getAccount(config).isDisconnected).toBe(true)
 })
 
-it('disconnects both records with one UI action and allows a fresh connection afterward', async () => {
-  const { config, wrapper } = setup()
-  await connect(config, { connector: config.connectors[0] })
-  await connect(config, { connector: config.connectors[1] })
-  const { result } = renderHook(useWalletDisconnect, { wrapper })
-  act(() => result.current.disconnect())
-  await waitFor(() => expect(getAccount(config).isDisconnected).toBe(true))
-  expect(getConnections(config)).toEqual([])
-  await act(async () => {
+it.each(['disconnect', 'mutate'] as const)(
+  '%s disconnects both records and allows a fresh connection afterward',
+  async (method) => {
+    const { config, wrapper } = setup()
+    await connect(config, { connector: config.connectors[0] })
     await connect(config, { connector: config.connectors[1] })
-  })
-  expect(getAccount(config).isConnected).toBe(true)
-})
+    const { result } = renderHook(useWalletDisconnect, { wrapper })
+    act(() => result.current[method]())
+    await waitFor(() => expect(getAccount(config).isDisconnected).toBe(true))
+    expect(getConnections(config)).toEqual([])
+    await act(async () => {
+      await connect(config, { connector: config.connectors[1] })
+    })
+    expect(getAccount(config).isConnected).toBe(true)
+  }
+)
 
 it('clears a connected status without a connection record and permits reconnecting', async () => {
   const { config, wrapper } = setup()

@@ -6,7 +6,7 @@ import { MERKLE_DISTRIBUTOR_ADDRESS } from '@shared/utils/constants'
 import { useQuery } from '@tanstack/react-query'
 import { useCallback, useMemo } from 'react'
 import { useReadContracts } from 'wagmi'
-import { resolveExecutionChainId } from '@/config/tenderly'
+import { resolveExecutionChainId } from '@/config/localForkRuntime'
 
 export type MerklV4Reward = {
   root: string

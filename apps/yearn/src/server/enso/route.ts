@@ -1,6 +1,13 @@
-import { GET_CORS_HEADERS, json, noContent, queryString } from '../http'
+import { toBasisPoints, ZAP_SLIPPAGE_HARD_CAP } from '@shared/utils/slippage'
+import { GET_CORS_HEADERS as CORS_HEADERS, json, noContent, queryString, WALLET_SCOPED_CACHE_CONTROL } from '../http'
 
 const ENSO_API_BASE = 'https://api.enso.build'
+const GET_CORS_HEADERS = { ...CORS_HEADERS, 'Cache-Control': WALLET_SCOPED_CACHE_CONTROL }
+const MAX_SLIPPAGE_BPS = toBasisPoints(ZAP_SLIPPAGE_HARD_CAP)
+
+function isValidSlippage(slippage: string): boolean {
+  return /^\d+$/.test(slippage) && Number(slippage) <= MAX_SLIPPAGE_BPS
+}
 
 export function OPTIONS(): Response {
   return noContent(GET_CORS_HEADERS)
@@ -33,6 +40,17 @@ export async function GET(request: Request): Promise<Response> {
     return json({ error: 'Missing or invalid amountIn' }, { status: 400, headers: GET_CORS_HEADERS })
   }
 
+  if (slippage !== undefined && !isValidSlippage(slippage)) {
+    return json({ error: 'Missing or invalid slippage' }, { status: 400, headers: GET_CORS_HEADERS })
+  }
+
+  if (receiver && receiver.toLowerCase() !== fromAddress.toLowerCase()) {
+    return json({ error: 'receiver must equal fromAddress' }, { status: 400, headers: GET_CORS_HEADERS })
+  }
+  if (routingStrategy && routingStrategy !== 'router') {
+    return json({ error: 'Unsupported routingStrategy' }, { status: 400, headers: GET_CORS_HEADERS })
+  }
+
   const apiKey = process.env.ENSO_API_KEY
   if (!apiKey) {
     console.error('ENSO_API_KEY not configured')
@@ -46,7 +64,7 @@ export async function GET(request: Request): Promise<Response> {
       tokenIn,
       tokenOut,
       amountIn,
-      slippage: (slippage as string) || '100'
+      slippage: slippage || '100'
     })
 
     if (destinationChainId) {
@@ -55,9 +73,7 @@ export async function GET(request: Request): Promise<Response> {
     if (receiver) {
       params.set('receiver', receiver)
     }
-    if (routingStrategy) {
-      params.set('routingStrategy', routingStrategy)
-    }
+    params.set('routingStrategy', 'router')
 
     const url = `${ENSO_API_BASE}/api/v1/shortcuts/route?${params}`
 

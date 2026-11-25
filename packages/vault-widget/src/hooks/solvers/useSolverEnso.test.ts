@@ -3,6 +3,7 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query'
 import { act, renderHook, waitFor } from '@testing-library/react'
 import { createElement, type ReactElement, type ReactNode } from 'react'
+import { encodeAbiParameters, encodeFunctionData, parseAbi } from 'viem'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import { getEffectiveEnsoRequestSlippage, useSolverEnso } from './useSolverEnso'
 
@@ -116,5 +117,51 @@ describe('useSolverEnso request slippage', () => {
     expect(
       fetchMock.mock.calls.map(([url]) => new URL(String(url), 'http://localhost').searchParams.get('slippage'))
     ).toEqual(['1', '1'])
+  })
+})
+
+describe('useSolverEnso route binding', () => {
+  it('drops a route whose calldata spends a different amount than requested', async () => {
+    const abi = parseAbi([
+      'struct Token { uint8 tokenType; bytes data; }',
+      'function routeSingle(Token tokenIn, bytes data) payable returns (bytes)'
+    ])
+    const tokenIn = {
+      tokenType: 1,
+      data: encodeAbiParameters([{ type: 'address' }, { type: 'uint256' }], [TOKEN_IN, 2n])
+    }
+    fetchMock.mockResolvedValue({
+      status: 200,
+      json: vi.fn(async () => ({
+        tx: {
+          to: '0xF75584eF6673aD213a685a1B58Cc0330B8eA22Cf',
+          from: ACCOUNT,
+          value: '0',
+          chainId: 1,
+          data: encodeFunctionData({ abi, functionName: 'routeSingle', args: [tokenIn, '0x'] })
+        },
+        amountOut: '10',
+        minAmountOut: '9',
+        gas: '1',
+        route: []
+      }))
+    })
+
+    const { result } = renderHook(
+      () =>
+        useSolverEnso({
+          tokenIn: TOKEN_IN,
+          tokenOut: TOKEN_OUT,
+          amountIn: 1n,
+          fromAddress: ACCOUNT,
+          receiver: ACCOUNT,
+          chainId: 1
+        }),
+      { wrapper: createQueryWrapper() }
+    )
+
+    await waitFor(() => expect(result.current.periphery.error?.error).toBe('UnexpectedEnsoRoute'))
+    expect(result.current.periphery.route).toBeUndefined()
+    expect(result.current.methods.getEnsoTransaction()).toBeUndefined()
   })
 })

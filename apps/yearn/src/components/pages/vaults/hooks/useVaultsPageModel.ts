@@ -392,8 +392,10 @@ export function useVaultsPageModel(
     return Array.from(new Set(normalized))
   }, [listUnderlyingAssets])
   const [activeToggleValues, setActiveToggleValues] = useState<string[]>([])
-  const effectiveSortBy = sortBy === 'featuringScore' ? DEFAULT_SORT_BY : sortBy
-  const effectiveSortDirection = effectiveSortBy === 'none' ? '' : sortBy === 'featuringScore' ? 'desc' : sortDirection
+  const selectedSortBy = sortBy === 'featuringScore' ? DEFAULT_SORT_BY : sortBy
+  const isDefaultSort = selectedSortBy === DEFAULT_SORT_BY
+  const effectiveSortBy = isDefaultSort && listVaultType === 'all' ? 'tvl' : selectedSortBy
+  const effectiveSortDirection = effectiveSortBy === 'none' ? '' : isDefaultSort ? 'desc' : sortDirection
   const isAvailablePinned = activeToggleValues.includes(AVAILABLE_TOGGLE_VALUE)
   const {
     listCategoriesSanitized,
@@ -422,6 +424,7 @@ export function useVaultsPageModel(
     listShowLegacyVaults,
     listShowHiddenVaults,
     searchValue,
+    selectedSortBy,
     sortBy: effectiveSortBy,
     sortDirection: effectiveSortDirection,
     isAvailablePinned
@@ -462,6 +465,7 @@ export function useVaultsPageModel(
     listShowLegacyVaults,
     listShowHiddenVaults,
     searchValue,
+    selectedSortBy,
     sortBy: effectiveSortBy,
     sortDirection: blockingProbeSortDirection,
     isAvailablePinned: false
@@ -1054,8 +1058,8 @@ export function useVaultsPageModel(
   const listHeadProps: TListHead = {
     containerClassName: 'rounded-t-xl bg-surface shrink-0',
     wrapperClassName: 'relative z-10 border border-border rounded-t-lg bg-transparent',
-    sortBy: effectiveSortBy,
-    sortDirection: effectiveSortDirection,
+    sortBy: selectedSortBy,
+    sortDirection: isDefaultSort ? '' : sortDirection,
     onSort: (newSortBy: string, newSortDirection: TSortDirection): void => {
       let targetSortBy = newSortBy as TPossibleSortBy
       let targetSortDirection = newSortDirection as TSortDirection

@@ -1,8 +1,9 @@
 import type { TCTA } from '@shared/components/yToast'
 import { toast } from '@shared/components/yToast'
-import type { Client, Hash, SimulateContractParameters, WalletClient } from 'viem'
+import type { Client, Hash, WalletClient } from 'viem'
 import { BaseError } from 'viem'
 import type { Connector } from 'wagmi'
+import type { SimulateContractParameters } from 'wagmi/actions'
 import {
   getConnectorClient,
   simulateContract,
@@ -10,7 +11,7 @@ import {
   waitForTransactionReceipt,
   writeContract
 } from 'wagmi/actions'
-import { resolveExecutionChainId } from '@/config/tenderly'
+import { resolveExecutionChainId } from '@/config/localForkRuntime'
 import type { TAddress } from '../../types/address'
 import { assert, assertAddress } from '../assert'
 import { toBigInt } from '../format'
@@ -104,7 +105,7 @@ export async function handleTx(args: TWriteTransaction, props: TPrepareWriteCont
   try {
     const simulateContractConfig = await simulateContract(config, {
       ...wagmiProvider,
-      ...(props as SimulateContractParameters),
+      ...props,
       chainId: targetChainId,
       address: props.address,
       value: toBigInt(props.value)

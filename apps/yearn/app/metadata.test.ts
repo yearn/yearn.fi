@@ -1,4 +1,5 @@
 import { YBOLD_STAKING_ADDRESS, YBOLD_VAULT_ADDRESS } from '@pages/vaults/domain/yBoldProduct'
+import { YVBTC_CHAIN_ID, YVBTC_UNLOCKED_ADDRESS } from '@pages/vaults/utils/yvBtc'
 import { buildVaultSnapshotEndpoint } from '@shared/data/publicQueryEndpoints'
 import { afterEach, beforeEach, describe, expect, it, vi } from 'vitest'
 import {
@@ -18,6 +19,7 @@ vi.mock('@shared/utils/fetchQuery', () => ({
 }))
 
 const BASE_SNAPSHOT = {
+  origin: 'yearn',
   meta: {
     displayName: 'yBOLD',
     displaySymbol: 'yBOLD',
@@ -143,5 +145,54 @@ describe('yBOLD vault metadata', () => {
     expect(metadata.description).not.toContain('Est. APY')
     expect(structuredData.name).toBe('yBOLD (yBOLD)')
     expect(structuredData.annualPercentageRate).toBeUndefined()
+  })
+})
+
+describe('non-Yearn vault metadata', () => {
+  const address = '0x1111111111111111111111111111111111111111'
+  const snapshot = { ...BASE_SNAPSHOT, origin: null, meta: { displayName: 'Other Vault' } }
+
+  it('does not label an origin-null snapshot as a Yearn vault', () => {
+    const metadata = buildVaultMetadataFromInput({ chainID: '1', address, snapshot })
+
+    expect(metadata.description).toBe('Other Vault is an ERC-4626 vault on Ethereum. It is not a Yearn vault.')
+    expect(metadata.openGraph?.images).toBeUndefined()
+    expect(buildVaultStructuredDataFromInput({ chainID: '1', address, snapshot })).toBeNull()
+  })
+
+  it('keeps Yearn metadata for origin=yearn snapshots', () => {
+    const yearnSnapshot = { ...snapshot, origin: 'yearn' }
+
+    expect(buildVaultMetadataFromInput({ chainID: '1', address, snapshot: yearnSnapshot }).description).toContain(
+      'a Yearn vault on Ethereum'
+    )
+    expect(buildVaultStructuredDataFromInput({ chainID: '1', address, snapshot: yearnSnapshot })).not.toBeNull()
+  })
+
+  it('marks non-Yearn vault pages noindex and keeps Yearn vault pages indexable', () => {
+    expect(buildVaultMetadataFromInput({ chainID: '1', address, snapshot }).robots).toEqual({
+      index: false,
+      follow: false
+    })
+    expect(
+      buildVaultMetadataFromInput({ chainID: '1', address, snapshot: { ...snapshot, origin: 'yearn' } }).robots
+    ).toBeUndefined()
+  })
+
+  it('does not fall back to Yearn branding when a non-Yearn snapshot has no name', () => {
+    const unnamedSnapshot = { ...BASE_SNAPSHOT, origin: null, name: '', symbol: '', meta: {} }
+    const metadata = buildVaultMetadataFromInput({ chainID: '1', address, snapshot: unnamedSnapshot })
+
+    expect(metadata.title).toBe('ERC-4626 Vault')
+    expect(metadata.description).toBe('ERC-4626 Vault is an ERC-4626 vault on Ethereum. It is not a Yearn vault.')
+  })
+
+  it('ignores a snapshot body that claims the yvBTC chain and address', () => {
+    const spoofedSnapshot = { ...snapshot, chainId: YVBTC_CHAIN_ID, address: YVBTC_UNLOCKED_ADDRESS }
+
+    expect(buildVaultMetadataFromInput({ chainID: '1', address, snapshot: spoofedSnapshot }).description).toBe(
+      'Other Vault is an ERC-4626 vault on Ethereum. It is not a Yearn vault.'
+    )
+    expect(buildVaultStructuredDataFromInput({ chainID: '1', address, snapshot: spoofedSnapshot })).toBeNull()
   })
 })

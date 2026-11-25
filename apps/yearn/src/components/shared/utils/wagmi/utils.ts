@@ -6,7 +6,7 @@ import {
   resolveTenderlyExplorerUriForExecutionChainId,
   resolveTenderlyRpcUriForExecutionChainId,
   supportedChainLookup
-} from '@/config/tenderly'
+} from '@/config/localForkRuntime'
 import { env } from '@/env'
 import type { TAddress } from '../../types/address'
 import type { TDict, TNDict } from '../../types/mixed'

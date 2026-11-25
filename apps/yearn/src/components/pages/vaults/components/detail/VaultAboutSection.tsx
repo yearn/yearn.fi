@@ -15,7 +15,8 @@ import {
   getChainDescription,
   getChainWebsite,
   getKindDescription,
-  getProductTypeDescription
+  getProductTypeDescription,
+  getProductTypeLabel
 } from '@pages/vaults/utils/vaultTagCopy'
 import { Markdown } from '@shared/components/Markdown'
 import { TokenLogo } from '@shared/components/TokenLogo'
@@ -179,7 +180,8 @@ export function VaultAboutSection({
   vaultAddresses = [],
   additionalFeaturesContent,
   showKindTag = true,
-  showVaultAddress = false
+  showVaultAddress = false,
+  isNonYearnVault = false
 }: {
   currentVault: TKongVaultInput
   className?: string
@@ -189,6 +191,7 @@ export function VaultAboutSection({
   additionalFeaturesContent?: ReactNode
   showHiddenTag?: boolean
   isHidden?: boolean
+  isNonYearnVault?: boolean
 }): ReactElement {
   const token = getVaultToken(currentVault)
   const apr = getVaultAPR(currentVault)
@@ -201,9 +204,7 @@ export function VaultAboutSection({
   const chainName = getNetwork(chainID).name
   const chainLogoSrc = `${env.NEXT_PUBLIC_BASE_YEARN_ASSETS_URI}/chains/${chainID}/logo-32.png`
   const listKind = deriveListKind(currentVault)
-  const isAllocatorVault = listKind === 'allocator' || listKind === 'strategy'
-  const isLegacyVault = listKind === 'legacy'
-  const productTypeLabel = isAllocatorVault ? 'Single Asset' : isLegacyVault ? 'Legacy' : 'LP Token'
+  const productTypeLabel = getProductTypeLabel(listKind, isNonYearnVault)
   const baseKindType: 'multi' | 'single' | undefined =
     vaultKind === 'Multi Strategy' ? 'multi' : vaultKind === 'Single Strategy' ? 'single' : undefined
   const fallbackKindType: 'multi' | 'single' | undefined =
@@ -211,14 +212,14 @@ export function VaultAboutSection({
   const kindType = baseKindType ?? fallbackKindType
   const kindLabel: string | undefined =
     kindType === 'multi' ? 'Allocator' : kindType === 'single' ? 'Strategy' : vaultKind
-  const shouldShowKind = showKindTag && Boolean(kindLabel)
+  const shouldShowKind = showKindTag && !isNonYearnVault && Boolean(kindLabel)
   const vaultTypeLabel = [productTypeLabel, shouldShowKind ? kindLabel : null].filter(Boolean).join(' | ')
   const chainDescription = getChainDescription(chainID)
   const chainWebsite = getChainWebsite(chainID) ?? ''
   const hasChainWebsite = Boolean(chainWebsite)
   const assetTypeLabel = vaultCategory ?? 'Not specified'
   const assetTypeDescription = getCategoryDescription(vaultCategory) ?? 'No asset category provided.'
-  const productTypeDescription = getProductTypeDescription(listKind)
+  const productTypeDescription = getProductTypeDescription(listKind, isNonYearnVault)
   const vaultKindDescription = shouldShowKind ? getKindDescription(kindType, kindLabel) : null
   const managementFee = formatPercent((apr.fees.management || 0) * 100, 0, 2)
   const performanceFee = formatPercent((apr.fees.performance || 0) * 100, 0, 2)

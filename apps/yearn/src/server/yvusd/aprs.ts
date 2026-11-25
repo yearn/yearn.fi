@@ -1,9 +1,10 @@
 import { GET_CORS_HEADERS, json, noContent } from '../http'
 import { getVercelCdnCacheHeaders } from '../lib/cacheHeaders'
 
-const YVUSD_APR_SERVICE_API = (
-  process.env.YVUSD_APR_SERVICE_API || 'https://yearn-yvusd-apr-service.vercel.app/api/aprs'
-).replace(/\/$/, '')
+const YVUSD_APR_SERVICE_API = (process.env.YVUSD_APR_SERVICE_API || 'https://yvusd-api.yearn.fi/api/aprs').replace(
+  /\/$/,
+  ''
+)
 const YVUSD_APR_CDN_CACHE_CONTROL = 'public, s-maxage=30, stale-while-revalidate=120'
 const RESPONSE_HEADERS = {
   ...GET_CORS_HEADERS,

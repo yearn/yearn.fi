@@ -1,4 +1,5 @@
 import { mergeYBoldSnapshot, stripYBoldBaseMetrics } from '@pages/vaults/domain/normalizeVault'
+import { isNonYearnErc4626Vault } from '@pages/vaults/domain/vaultWarnings'
 import { isYBoldProductAddress, isYBoldVaultAddress, YBOLD_STAKING_ADDRESS } from '@pages/vaults/domain/yBoldProduct'
 import landingManifest from '@shared/data/landing-manifest.json'
 import { buildVaultSnapshotEndpoint } from '@shared/data/publicQueryEndpoints'
@@ -41,6 +42,7 @@ type TVaultMetadataInput = {
 }
 
 const genericVaultTitle = 'Yearn Vault'
+const genericNonYearnVaultTitle = 'ERC-4626 Vault'
 const genericVaultDescription = "Earn yield on your crypto with Yearn's automated vault strategies"
 
 export const yearnOrganizationJsonLd = {
@@ -127,6 +129,12 @@ function resolveVaultMetadataApy(address: string, snapshot?: TKongVaultSnapshot 
   )
 }
 
+function toRouteVaultOrigin(chainID: string, address: string, snapshot?: TKongVaultSnapshot | null) {
+  return snapshot
+    ? { chainId: Number(chainID), address, origin: snapshot.origin, inclusion: snapshot.inclusion }
+    : undefined
+}
+
 function buildVaultDescription({
   assetSymbol,
   chainName,
@@ -191,19 +199,29 @@ export function buildVaultMetadataFromInput({ chainID, address, snapshot }: TVau
     : vaultsManifest.og
   const chainIdNumber = Number(chainID)
   const chainName = Number.isInteger(chainIdNumber) ? getNetwork(chainIdNumber).name : 'Yearn'
-  const name = pickFirstText(snapshot?.meta?.displayName, snapshot?.meta?.name, snapshot?.name, genericVaultTitle)
+  const isNonYearn = isNonYearnErc4626Vault({ vault: toRouteVaultOrigin(chainID, address, snapshot) })
+  const name = pickFirstText(
+    snapshot?.meta?.displayName,
+    snapshot?.meta?.name,
+    snapshot?.name,
+    isNonYearn ? genericNonYearnVaultTitle : genericVaultTitle
+  )
   const symbol = pickFirstText(snapshot?.meta?.displaySymbol, snapshot?.symbol)
   const assetSymbol = pickFirstText(snapshot?.meta?.token?.symbol, snapshot?.asset?.symbol)
   const title = symbol ? `${name} (${symbol})` : name
   const apy = resolveVaultMetadataApy(address, snapshot)
   const tvl = pickFirstNumber(snapshot?.tvl?.close)
-  const description = snapshot
-    ? buildVaultDescription({ assetSymbol, chainName, name, apy, tvl })
-    : genericVaultDescription
+  const description = isNonYearn
+    ? `${name} is an ERC-4626 vault on ${chainName}. It is not a Yearn vault.`
+    : snapshot
+      ? buildVaultDescription({ assetSymbol, chainName, name, apy, tvl })
+      : genericVaultDescription
+  const images = ogImage && !isNonYearn ? [ogImage] : undefined
 
   return {
     title,
     description,
+    ...(isNonYearn ? { robots: { index: false, follow: false } } : {}),
     alternates: {
       canonical: canonicalPath,
       ...(discoveryUrls
@@ -219,14 +237,14 @@ export function buildVaultMetadataFromInput({ chainID, address, snapshot }: TVau
       title,
       description,
       url: canonicalPath,
-      images: ogImage ? [ogImage] : undefined,
+      images,
       type: 'website'
     },
     twitter: {
       card: 'summary_large_image',
       title,
       description,
-      images: ogImage ? [ogImage] : undefined
+      images
     },
     ...(discoveryUrls
       ? {
@@ -246,7 +264,10 @@ export function buildVaultStructuredDataFromInput({
   address,
   snapshot
 }: TVaultMetadataInput): Record<string, unknown> | null {
-  if (!isValidVaultMetadataParams(chainID, address)) {
+  if (
+    !isValidVaultMetadataParams(chainID, address) ||
+    isNonYearnErc4626Vault({ vault: toRouteVaultOrigin(chainID, address, snapshot) })
+  ) {
     return null
   }
 

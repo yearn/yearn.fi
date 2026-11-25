@@ -1,7 +1,7 @@
 import { useDeepCompareMemo } from '@react-hookz/web'
 import { type UseQueryOptions, useQueries } from '@tanstack/react-query'
 import { useCallback, useMemo, useRef } from 'react'
-import { resolveExecutionChainId } from '@/config/tenderly'
+import { resolveExecutionChainId } from '@/config/localForkRuntime'
 import type { TAddress } from '../types/address'
 import type { TChainTokens, TDict, TNDict, TToken } from '../types/mixed'
 import { isZeroAddress } from '../utils/tools.is'

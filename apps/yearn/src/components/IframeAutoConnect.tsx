@@ -1,12 +1,13 @@
 import { useAsyncTrigger } from '@shared/hooks/useAsyncTrigger'
 import { isIframe } from '@shared/utils/helpers'
 import type { FC, PropsWithChildren } from 'react'
-import { useAccount, useConnect, useDisconnect } from 'wagmi'
+import { useAccount, useConnect, useConnectors, useDisconnect } from 'wagmi'
 
 export const IframeAutoConnect: FC<PropsWithChildren> = ({ children }) => {
   const { connector } = useAccount()
-  const { connectors, connectAsync } = useConnect()
-  const { disconnectAsync } = useDisconnect()
+  const connectors = useConnectors()
+  const { mutateAsync: connectAsync } = useConnect()
+  const { mutateAsync: disconnectAsync } = useDisconnect()
 
   useAsyncTrigger(async () => {
     if (typeof window === 'undefined' || !isIframe()) {

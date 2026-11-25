@@ -7,7 +7,7 @@ import { useCallback, useMemo } from 'react'
 import type { Address } from 'viem'
 import { useConfig } from 'wagmi'
 import { readContract } from 'wagmi/actions'
-import { resolveExecutionChainId } from '@/config/tenderly'
+import { resolveExecutionChainId } from '@/config/localForkRuntime'
 
 type TTokenAndChain = { address: TAddress; chainID: number }
 type TBalanceGetter = (params: TTokenAndChain) => TNormalizedBN

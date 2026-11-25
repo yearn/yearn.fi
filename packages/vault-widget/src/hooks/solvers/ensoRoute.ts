@@ -1,4 +1,13 @@
-import type { Address, Hex } from 'viem'
+import { ETH_TOKEN_ADDRESS } from '@yearn/vault-widget/internal/utils/constants'
+import {
+  type Address,
+  decodeFunctionData,
+  encodeAbiParameters,
+  encodeFunctionData,
+  type Hex,
+  isAddressEqual,
+  parseAbi
+} from 'viem'
 
 export interface EnsoError {
   error: string
@@ -160,4 +169,101 @@ export function routeHasSwapStep(route: EnsoRouteResponse | undefined): boolean 
 export function getEnsoBridgeProtocol(route: EnsoRouteResponse | undefined): EnsoBridgeProtocol | undefined {
   const protocol = route?.route.find((step) => step.action?.toLowerCase() === 'bridge')?.protocol?.toLowerCase()
   return protocol === 'stargate' || protocol === 'ccip' || protocol === 'relay' ? protocol : undefined
+}
+
+const ENSO_ROUTER_ABI = parseAbi([
+  'struct Token { uint8 tokenType; bytes data; }',
+  'function routeSingle(Token tokenIn, bytes data) payable returns (bytes)',
+  'function safeRouteSingle(Token tokenIn, Token tokenOut, address receiver, bytes data) payable returns (bytes)'
+])
+const ENSO_NATIVE_TOKEN_TYPE = 0
+const ENSO_ERC20_TOKEN_TYPE = 1
+
+export type EnsoRouteRequest = {
+  fromAddress: Address
+  receiver?: Address
+  tokenIn: Address
+  tokenOut: Address
+  amountIn: bigint
+  isCrossChain: boolean
+}
+
+function encodeEnsoToken(token: Address, amount: bigint): { tokenType: number; data: Hex } {
+  return isAddressEqual(token, ETH_TOKEN_ADDRESS)
+    ? { tokenType: ENSO_NATIVE_TOKEN_TYPE, data: encodeAbiParameters([{ type: 'uint256' }], [amount]) }
+    : {
+        tokenType: ENSO_ERC20_TOKEN_TYPE,
+        data: encodeAbiParameters([{ type: 'address' }, { type: 'uint256' }], [token, amount])
+      }
+}
+
+function decodeRouteSingle(
+  route: EnsoRouteResponse
+): { tokenIn: { tokenType: number; data: Hex }; data: Hex } | undefined {
+  try {
+    const decoded = decodeFunctionData({ abi: ENSO_ROUTER_ABI, data: route.tx.data })
+    return decoded.functionName === 'routeSingle' ? { tokenIn: decoded.args[0], data: decoded.args[1] } : undefined
+  } catch {
+    return undefined
+  }
+}
+
+function parseBigInt(value: string): bigint | undefined {
+  try {
+    return BigInt(value)
+  } catch {
+    return undefined
+  }
+}
+
+export function bindEnsoRouteToRequest(
+  route: EnsoRouteResponse,
+  request: EnsoRouteRequest
+): { route?: EnsoRouteResponse; error?: EnsoError } {
+  const decoded = decodeRouteSingle(route)
+  const expectedTokenIn = encodeEnsoToken(request.tokenIn, request.amountIn)
+  const expectedValue = expectedTokenIn.tokenType === ENSO_NATIVE_TOKEN_TYPE ? request.amountIn : 0n
+  const minAmountOut = parseBigInt(route.minAmountOut)
+
+  if (
+    !decoded ||
+    minAmountOut === undefined ||
+    route.tx.from.toLowerCase() !== request.fromAddress.toLowerCase() ||
+    parseBigInt(route.tx.value) !== expectedValue ||
+    decoded.tokenIn.tokenType !== expectedTokenIn.tokenType ||
+    decoded.tokenIn.data.toLowerCase() !== expectedTokenIn.data.toLowerCase()
+  ) {
+    return {
+      error: buildEnsoError(
+        {
+          error: 'UnexpectedEnsoRoute',
+          message: 'Enso returned a transaction that does not match this request. Please retry the quote.'
+        },
+        0
+      )
+    }
+  }
+
+  if (request.isCrossChain) {
+    return { route }
+  }
+
+  return {
+    route: {
+      ...route,
+      tx: {
+        ...route.tx,
+        data: encodeFunctionData({
+          abi: ENSO_ROUTER_ABI,
+          functionName: 'safeRouteSingle',
+          args: [
+            decoded.tokenIn,
+            encodeEnsoToken(request.tokenOut, minAmountOut),
+            request.receiver ?? request.fromAddress,
+            decoded.data
+          ]
+        })
+      }
+    }
+  }
 }

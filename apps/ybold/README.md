@@ -2,7 +2,7 @@
 
 A single-page acquisition and position-management experience for
 [yBOLD](https://yearn.fi/v3/1/0x9F4330700a36B29952869fac9b33f45EEdd8A3d8), aimed at Liquity referral
-traffic. The app keeps its own Wagmi, React Query, and RainbowKit providers and consumes the shared local
+traffic. The app keeps its own Wagmi and React Query providers, uses the shared wallet UI, and consumes the shared local
 `@yearn/vault-widget` workspace package for deposits and withdrawals.
 
 ## Develop

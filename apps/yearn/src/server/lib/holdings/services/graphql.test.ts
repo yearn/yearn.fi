@@ -308,7 +308,7 @@ describe('fetchAddressActivityChainIdsByExistence', () => {
 
       return createGraphqlResponse({
         deposits: chainId === 1 ? [{ id: 'ethereum-deposit' }] : [],
-        withdrawals: [],
+        withdrawals: chainId === 4663 ? [{ id: 'robinhood-withdrawal' }] : [],
         transfersIn: chainId === 8453 ? [{ id: 'base-transfer-in' }] : [],
         transfersOut: [],
         v2Deposits: [],
@@ -321,8 +321,8 @@ describe('fetchAddressActivityChainIdsByExistence', () => {
     const { fetchAddressActivityChainIdsByExistence } = await importGraphqlModule()
     const chainIds = await fetchAddressActivityChainIdsByExistence(USER)
 
-    expect(chainIds).toEqual([1, 8453])
-    expect(fetchStub).toHaveBeenCalledTimes(7)
+    expect(chainIds).toEqual([1, 4663, 8453])
+    expect(fetchStub).toHaveBeenCalledTimes(8)
   })
 
   it('includes both v2 and v3 activity when checking chain presence', async () => {

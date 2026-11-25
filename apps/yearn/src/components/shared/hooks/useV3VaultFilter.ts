@@ -373,7 +373,8 @@ export function useV3VaultFilter(
       const shouldIncludeByCategory = !hasCategoryFilter || Boolean(categories?.includes(category))
       const isPinnedByUserContext = hasUserHoldings || isMigratableVault || isRetiredVault
       const isStrategy = kind === 'strategy'
-      const shouldIncludeByFeaturedGate = showHiddenVaults || isStrategy || isFeatured || isPinnedByUserContext
+      const shouldIncludeByFeaturedGate =
+        showHiddenVaults || isSearchEnabled || isStrategy || isFeatured || isPinnedByUserContext
       const shouldIncludeByKind =
         !hasTypeFilter ||
         (Boolean(types?.includes('multi')) && kind === 'allocator') ||

@@ -1,6 +1,9 @@
 import { fileURLToPath } from 'node:url'
 import { loadEnvConfig } from '@next/env'
 import type { NextConfig } from 'next'
+import { PHASE_DEVELOPMENT_SERVER } from 'next/constants'
+import { canonicalChains } from '@/config/chainDefinitions'
+import { parseLocalForkChains, readAnvilInstance } from '@/config/localFork'
 
 const WORKSPACE_ROOT = fileURLToPath(new URL('../..', import.meta.url))
 loadEnvConfig(WORKSPACE_ROOT, process.env.NODE_ENV !== 'production', console, true)
@@ -27,6 +30,42 @@ const FRAME_ANCESTORS = [
   'https://dapps.coin98.com'
 ]
 
+/**
+ * Script sources are enforced. Connection sources remain report-only while integrations are verified.
+ *
+ * RPC origins come from the build env plus viem's chain defaults for the normal transport fallback.
+ * Development also includes the configured local fork RPC origins.
+ * Owner: whoever bumps viem, wagmi, or WalletConnect must re-check this list.
+ */
+const SCRIPT_SRC = ["'self'", "'unsafe-inline'", "'unsafe-eval'", 'blob:']
+
+const toOrigin = (value: string | undefined): string[] => (value?.trim() ? [new URL(value.trim()).origin] : [])
+
+const RPC_ORIGINS = canonicalChains.flatMap((chain) => [
+  ...toOrigin(process.env[`NEXT_PUBLIC_RPC_URI_FOR_${chain.id}`]),
+  ...(process.env.NODE_ENV === 'development'
+    ? toOrigin(process.env[`NEXT_PUBLIC_LOCAL_FORK_RPC_URI_FOR_${chain.id}`])
+    : []),
+  ...toOrigin(chain.rpcUrls.default.http[0])
+])
+
+const CONNECT_SRC = [
+  ...new Set([
+    "'self'",
+    ...RPC_ORIGINS,
+    ...toOrigin(process.env.NEXT_PUBLIC_KONG_REST_URL || 'https://kong.yearn.fi'),
+    ...toOrigin(process.env.NEXT_PUBLIC_CLUSTERS_API_URL || 'https://api.clusters.xyz'),
+    'https://api.llama.fi',
+    'https://api.curve.finance',
+    'https://cdn.jsdelivr.net',
+    'wss://relay.walletconnect.org',
+    'https://pulse.walletconnect.org',
+    'https://verify.walletconnect.org',
+    'https://verify.walletconnect.com',
+    'https://rpc.walletconnect.org'
+  ])
+]
+
 const securityHeaders = [
   {
     key: 'Strict-Transport-Security',
@@ -44,7 +83,18 @@ const securityHeaders = [
     // X-Frame-Options is intentionally omitted: it cannot express a multi-origin allowlist and
     // would break the Safe App and Blockscout embeds.
     key: 'Content-Security-Policy',
-    value: [`frame-ancestors ${FRAME_ANCESTORS.join(' ')}`, `report-uri ${CSP_REPORT_URI}`].join('; ')
+    value: [
+      `frame-ancestors ${FRAME_ANCESTORS.join(' ')}`,
+      `script-src ${SCRIPT_SRC.join(' ')}`,
+      "object-src 'none'",
+      "base-uri 'none'",
+      "form-action 'self'",
+      `report-uri ${CSP_REPORT_URI}`
+    ].join('; ')
+  },
+  {
+    key: 'Content-Security-Policy-Report-Only',
+    value: [`connect-src ${CONNECT_SRC.join(' ')}`, `report-uri ${CSP_REPORT_URI}`].join('; ')
   }
 ]
 
@@ -52,7 +102,7 @@ const nextConfig: NextConfig = {
   agentRules: false,
   reactStrictMode: true,
   poweredByHeader: false,
-  transpilePackages: ['@yearn/vault-widget', '@yearn/wallet-ui'],
+  transpilePackages: ['@yearn/vault-widget', '@yearn/wallet-ui', '@yearn/site-header'],
   env: {
     NEXT_PUBLIC_SITE_UPDATED_AT: siteUpdatedAt
   },
@@ -83,7 +133,6 @@ const nextConfig: NextConfig = {
       { source: '/v2', destination: '/vaults?type=lp', permanent: false },
       { source: '/v2/:path*', destination: '/vaults?type=lp', permanent: false },
       { source: '/v3', destination: '/vaults', permanent: false },
-      { source: '/ybribe/:path*', destination: 'https://ybribe.yearn.fi/:path*', permanent: false },
       { source: '/ycrv/:path*', destination: 'https://ycrv.yearn.fi/:path*', permanent: false },
       { source: '/veyfi/:path*', destination: 'https://veyfi.yearn.fi/:path*', permanent: false },
       { source: '/twitter', destination: 'https://twitter.com/yearnfi', permanent: false },
@@ -98,10 +147,26 @@ const nextConfig: NextConfig = {
   async rewrites() {
     return {
       beforeFiles: [{ source: '/', destination: '/concepts/lifetime/index.html' }],
-      afterFiles: [{ source: '/proxy/plausible/:path*', destination: 'https://plausible.io/:path*' }],
+      afterFiles: [],
       fallback: []
     }
   }
 }
 
-export default nextConfig
+export default async function configureNext(phase: string): Promise<NextConfig> {
+  if (phase === PHASE_DEVELOPMENT_SERVER) {
+    const configuredChains = parseLocalForkChains(process.env, canonicalChains)
+    await Promise.all(
+      configuredChains.map(({ rpcUri, executionChainId }) =>
+        readAnvilInstance(rpcUri, executionChainId).catch((cause: unknown) => {
+          throw new Error(
+            `Local Fork mode requires Anvil at ${rpcUri} with chain ID ${executionChainId}. Start Anvil or set NEXT_PUBLIC_LOCAL_FORK_MODE=false.`,
+            { cause }
+          )
+        })
+      )
+    )
+  }
+
+  return nextConfig
+}
